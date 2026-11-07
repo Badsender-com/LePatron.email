@@ -353,7 +353,7 @@ describe('the retex loop', () => {
   });
 
   // Turned on by #1475 (dismiss a retex, and the candidates of a convergence)
-  describe.skip('dismissing a retex', () => {
+  describe('dismissing a retex', () => {
     let retexId;
 
     beforeEach(async () => {
@@ -397,6 +397,15 @@ describe('the retex loop', () => {
       expect(Math.round(days)).toBe(30);
     });
 
+    it('refuses an id that is no open retex', async () => {
+      const answer = await call(await asConsultant(), DISMISS, {
+        retexId: 'not-an-id',
+        reason: 'A one-off brand constraint',
+      });
+
+      expect(answer.error).toMatch(/no open retex/i);
+    });
+
     it('needs a reason', async () => {
       const answer = await call(await asConsultant(), DISMISS, {
         retexId,
@@ -408,7 +417,7 @@ describe('the retex loop', () => {
   });
 
   // Turned on by #1475 (dismiss a retex, and the candidates of a convergence)
-  describe.skip('the candidates of a convergence', () => {
+  describe('the candidates of a convergence', () => {
     let clientRetex;
 
     beforeEach(async () => {
@@ -455,6 +464,71 @@ describe('the retex loop', () => {
       });
 
       expect(second.candidates.map((c) => c.retexId)).toEqual([first.retexId]);
+    });
+
+    it('gives no candidates to a super admin connected without the skills:write scope', async () => {
+      const readOnly = await harness.connectAs(f.ALICE, {
+        group: f.PLATFORM_GROUP,
+      });
+
+      const answer = await call(readOnly, REPORT, B2B_COMPLEMENT);
+
+      expect(answer.kept).toBe(true);
+      expect(answer).not.toHaveProperty('candidates');
+    });
+
+    it('meets, on a section, the complements of the same expertise that name no passage, both ways', async () => {
+      const noPassage = await call(await asConsultant(), REPORT, {
+        ...B2B_COMPLEMENT,
+        section: undefined,
+      });
+
+      const onSection = await call(await asConsultant(), REPORT, {
+        ...LENGTH_DIVERGENCE,
+        decided: 'A 70-character subject',
+      });
+
+      expect(noPassage.candidates.map((c) => c.retexId).sort()).toEqual(
+        expect.arrayContaining([clientRetex])
+      );
+      expect(onSection.candidates.map((c) => c.retexId)).toEqual(
+        expect.arrayContaining([clientRetex, noPassage.retexId])
+      );
+    });
+
+    it('meets quotations of a skill that overlap, whatever their spacing and case', async () => {
+      const skillDivergence = {
+        kind: 'divergence',
+        about: { kind: 'skill', id: SUBJECT_IDEAS },
+        recommended: 'Under 50 characters',
+        decided: 'Over 50 characters',
+        why: 'A long brand name',
+      };
+      const first = await call(await asConsultant(), REPORT, {
+        ...skillDivergence,
+        quote: 'each under 50 characters',
+      });
+
+      const second = await call(await asConsultant(), REPORT, {
+        ...skillDivergence,
+        quote: 'Give three subject lines,   EACH under 50 characters',
+      });
+
+      expect(second.candidates.map((c) => c.retexId)).toEqual([first.retexId]);
+    });
+
+    it('keeps complements about nothing apart from those about a skill or an expertise', async () => {
+      await call(await asConsultant(), REPORT, {
+        ...B2B_COMPLEMENT,
+        section: undefined,
+      });
+
+      const orphan = await call(await asConsultant(), REPORT, {
+        ...ORPHAN_COMPLEMENT,
+        part: 'subject',
+      });
+
+      expect(orphan.candidates).toEqual([]);
     });
 
     it('gives a client user no candidates', async () => {

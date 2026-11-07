@@ -60,6 +60,7 @@ const McpRetexSchema = new Schema(
       ),
       default: null,
     },
+    closedAt: { type: Date, default: null },
     expiresAt: { type: Date, default: null },
   },
   { timestamps: true }
