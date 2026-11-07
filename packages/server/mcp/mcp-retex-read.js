@@ -71,6 +71,11 @@ async function listRetex(filters) {
     .sort({ createdAt: -1 })
     .limit(MAX_ITEMS)
     .lean();
+  return readableAll(found);
+}
+
+// Retex as a reader sees them, with their companies' names read once.
+async function readableAll(found) {
   const companyIds = [...new Set(found.map((r) => String(r._company)))];
   const companies = await Groups.find(
     { _id: { $in: companyIds } },
@@ -202,6 +207,7 @@ function registerRetexReading(server) {
 module.exports = {
   registerRetexReading,
   listRetex,
+  readableAll,
   forCurator,
   answerOf,
   partOf,
