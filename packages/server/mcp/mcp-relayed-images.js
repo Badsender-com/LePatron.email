@@ -101,8 +101,53 @@ async function fetchRelayedImage(url) {
   }
 }
 
+// An address as an attribute holds it: the entities a sanitised document
+// writes in an attribute, read back.
+const decoded = (value) =>
+  value
+    .replace(/&amp;/g, '&')
+    .replace(/&quot;/g, '"')
+    .replace(/&#39;/g, "'");
+
+// Whether an image is hosted outside the instance, over the web.
+function isExternal(url) {
+  if (!/^https?:\/\//i.test(url)) return false;
+  const origin = siteOrigin();
+  return url !== origin && !url.startsWith(`${origin}/`);
+}
+
+const relayed = (raw) => {
+  const url = decoded(raw.trim());
+  return isExternal(url) ? relayedUrlOf(url) : raw;
+};
+
+/**
+ * The preview an app is handed, every image hosted outside the instance
+ * rewritten to its relayed address: in an <img>, a background attribute, or a
+ * url() of a style. The images of the instance stay as they are.
+ *
+ * @param {string} html the sanitised preview
+ * @returns {string}
+ */
+function relayPreviewImages(html) {
+  return String(html)
+    .replace(
+      /(<img\b[^>]*?\ssrc\s*=\s*)(["'])(.*?)\2/gi,
+      (_m, before, quote, url) => `${before}${quote}${relayed(url)}${quote}`
+    )
+    .replace(
+      /(\sbackground\s*=\s*)(["'])(.*?)\2/gi,
+      (_m, before, quote, url) => `${before}${quote}${relayed(url)}${quote}`
+    )
+    .replace(
+      /url\(\s*(&quot;|["']?)(.*?)\1\s*\)/gi,
+      (_m, quote, url) => `url(${quote}${relayed(url)}${quote})`
+    );
+}
+
 module.exports = {
   relayedUrlOf,
+  relayPreviewImages,
   isSigned,
   fetchRelayedImage,
   imageTypeOf,

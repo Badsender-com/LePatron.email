@@ -170,7 +170,7 @@ describe('relayed images', () => {
   });
 
   // Turned on by #1488 (the preview relays the external images)
-  describe.skip('the preview relays the external images', () => {
+  describe('the preview relays the external images', () => {
     const ON_INSTANCE = `${siteOrigin()}/api/images/cover/600xnull/hero.jpeg`;
     const WITH_EXTERNAL_IMAGES = `<!DOCTYPE html><html><head><style>.hero { background-image: url('${BANNER}'); }</style></head><body>
 <table role="presentation" background="${BACKGROUND}"><tr><td>
@@ -216,6 +216,22 @@ describe('relayed images', () => {
         expect(preview).toContain(relayedOf(url).replace(/&/g, '&amp;'));
         expect(preview).not.toContain(`"${url}"`);
       });
+    });
+
+    it('relays an image of a style attribute, whatever its quotes', () => {
+      const {
+        relayPreviewImages,
+      } = require('../../../packages/server/mcp/mcp-relayed-images.js');
+
+      const html = relayPreviewImages(
+        `<td style="background-image: url(&quot;${LOGO}&quot;)"></td>`
+      );
+
+      expect(html).toBe(
+        `<td style="background-image: url(&quot;${relayedOf(
+          LOGO
+        )}&quot;)"></td>`
+      );
     });
 
     it('leaves the images of the instance where they are', async () => {

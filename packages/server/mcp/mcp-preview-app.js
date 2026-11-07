@@ -6,6 +6,7 @@ const path = require('path');
 const _ = require('lodash');
 const { siteOrigin } = require('../utils/site-origin.js');
 const { withIdentity } = require('./mcp-identity.js');
+const { relayPreviewImages } = require('./mcp-relayed-images.js');
 
 // The email itself in the conversation (ADR 0012, #1342): get_mailing points
 // the clients that render MCP Apps at this UI resource, and hands it the
@@ -88,15 +89,22 @@ function registerPreviewApp(server) {
 
 /**
  * A get_mailing result, with the preview the app shows. Not when the answer
- * holds the HTML already: the app reads it there, and it would travel twice.
+ * holds the HTML already and no image is relayed: the app reads it there, and
+ * it would travel twice.
  *
  * @param {Object} result the tool's result
  * @param {{ answer: Object, html: string|null }} read what was read
  * @returns {Object} the result
  */
 function withPreview(result, { answer, html }) {
-  if (!html || answer.html) return result;
-  return { ...result, _meta: { [PREVIEW_META_KEY]: html } };
+  if (!html) return result;
+  // The images hosted elsewhere, relayed by the instance (ADR 0022): the app
+  // loads images from the instance only.
+  const preview = relayPreviewImages(html);
+  // Asked as HTML, the answer keeps the original addresses for the assistant;
+  // the relayed preview travels beside it only when an image was relayed.
+  if (answer.html && preview === html) return result;
+  return { ...result, _meta: { [PREVIEW_META_KEY]: preview } };
 }
 
 module.exports = { registerPreviewApp, withPreview, PREVIEW_TOOL_META };
