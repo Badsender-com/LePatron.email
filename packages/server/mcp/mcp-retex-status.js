@@ -6,6 +6,10 @@
 
 const { McpRetexes, Groups } = require('../common/models.common.js');
 const { computeExpiresAt } = require('../group/log-retention.js');
+const { isObjectIdString } = require('../utils/model.js');
+
+// The ids that may be a retex's: an assistant may send anything.
+const asIds = (ids) => ids.map(String).filter(isObjectIdString);
 
 // The retention of each company, read once.
 async function retentionsOf(companyIds) {
@@ -28,13 +32,13 @@ async function retentionsOf(companyIds) {
  */
 async function closeRetex(ids, changes) {
   const open = await McpRetexes.find(
-    { _id: { $in: ids.map(String) }, status: 'open' },
+    { _id: { $in: asIds(ids) }, status: 'open' },
     { _company: 1 }
   ).lean();
   if (!open.length) return [];
   const retentions = await retentionsOf(open.map((r) => r._company));
   const closedAt = new Date();
-  await Promise.all(
+  const results = await Promise.all(
     open.map((retex) =>
       McpRetexes.updateOne(
         { _id: retex._id, status: 'open' },
@@ -51,7 +55,12 @@ async function closeRetex(ids, changes) {
       )
     )
   );
-  return open.map((retex) => String(retex._id));
+  // Only those this call closed: another may have closed one meanwhile.
+  return open
+    .filter(
+      (_retex, i) => (results[i].nModified ?? results[i].modifiedCount) === 1
+    )
+    .map((retex) => String(retex._id));
 }
 
 /**
@@ -62,7 +71,7 @@ async function closeRetex(ids, changes) {
  */
 async function notOpen(ids) {
   const open = await McpRetexes.find(
-    { _id: { $in: ids.map(String) }, status: 'open' },
+    { _id: { $in: asIds(ids) }, status: 'open' },
     { _id: 1 }
   ).lean();
   const found = new Set(open.map((r) => String(r._id)));
