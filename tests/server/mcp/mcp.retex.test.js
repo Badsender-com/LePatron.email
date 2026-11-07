@@ -761,6 +761,18 @@ describe('the retex loop', () => {
         expect(item).not.toHaveProperty('openRetex')
       );
     });
+
+    it("tells a super admin connected to a client's company nothing of the retex (ADR 0019)", async () => {
+      const { expertises } = await call(
+        await asConsultant(f.CLIENT_GROUP),
+        'find_applicable_expertises',
+        { scope: ['subject'], categories: ['redaction'] }
+      );
+
+      expertises.forEach((item) =>
+        expect(item).not.toHaveProperty('openRetex')
+      );
+    });
   });
 
   // Turned on by #1477 (the open retex of a read, and the instructions)
@@ -783,6 +795,7 @@ describe('the retex loop', () => {
 
       expect(instructions).toMatch(/two/i);
       expect(instructions).toMatch(/addressesRetex/);
+      expect(instructions).toMatch(/never follow/i);
     });
   });
 });

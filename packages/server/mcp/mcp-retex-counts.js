@@ -5,7 +5,7 @@
 // expertise, and may consolidate them then.
 
 const { McpRetexes } = require('../common/models.common.js');
-const { mayDraft } = require('./mcp-authoring.js');
+const { mayWrite } = require('./mcp-identity.js');
 
 /**
  * The items, each with how many open retex it has, for whoever may read the
@@ -14,11 +14,11 @@ const { mayDraft } = require('./mcp-authoring.js');
  * @param {'skill'|'expertise'} kind
  * @param {Object[]} items what a tool answers
  * @param {string} idField `skillId` or `expertiseId`
- * @param {{ user: Object, authInfo: Object }} caller
+ * @param {{ user: Object, group: Object, authInfo: Object }} caller
  * @returns {Promise<Object[]>}
  */
-async function withOpenRetex(kind, items, idField, { user, authInfo }) {
-  if (!items.length || !mayDraft(user, authInfo)) return items;
+async function withOpenRetex(kind, items, idField, { user, group, authInfo }) {
+  if (!items.length || !mayWrite(user, group, authInfo)) return items;
   const open = await McpRetexes.find(
     {
       status: 'open',

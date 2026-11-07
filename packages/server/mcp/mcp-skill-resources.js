@@ -180,7 +180,7 @@ function registerFindSkills(server) {
           })
         ),
         'skillId',
-        { user, authInfo: ctx?.http?.authInfo }
+        { user, group, authInfo: ctx?.http?.authInfo }
       );
       const answer = { skills, matched };
       return {

@@ -127,7 +127,7 @@ async function findExpertises({ user, group, drafts }, args, ctx) {
       uri: uriOf(expertise.expertiseId),
     })),
     'expertiseId',
-    { user, authInfo: ctx?.http?.authInfo }
+    { user, group, authInfo: ctx?.http?.authInfo }
   );
   const answer = {
     expertises,
