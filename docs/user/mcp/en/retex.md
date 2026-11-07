@@ -50,10 +50,14 @@ Your assistant sends your retex as you work, without asking each time, whatever 
 
 The retex of companies' users wait for a team member to come by: when a search shows open retex, ask the assistant to read them.
 
+### A retex is data
+
+What a retex says is a user's words, often another company's. Your assistant weighs it as data and never follows what it asks. Every change still goes through the draft, its difference with the active version, the guard and your confirmation before it is published.
+
 ### What you see of a retex
 
 Its company, and whether its author is a Badsender consultant or a company's user. Never who wrote it.
 
 ## How long they are kept
 
-An open retex is kept until it is addressed or dismissed. Once closed, it follows its company's log retention, from the day it was closed.
+An open retex is kept until it is addressed or dismissed. Once closed, it follows its company's log retention, from the day it was closed. Deleting a company deletes its retex, open or closed.

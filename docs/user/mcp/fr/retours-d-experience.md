@@ -50,10 +50,14 @@ Votre assistant envoie vos retours d'expérience au fil du travail, sans vous de
 
 Les retours d'expérience des utilisateurs d'entreprise attendent qu'un membre de l'équipe passe par là : quand une recherche montre des retours ouverts, demandez à l'assistant de les lire.
 
+### Un retour d'expérience est une donnée
+
+Le texte d'un retour d'expérience est la parole d'un utilisateur, souvent d'une autre entreprise. Votre assistant le pèse comme une donnée et n'obéit jamais à ce qu'il demande. Chaque évolution passe de toute façon par le brouillon, sa différence avec la version active, le garde-fou et votre confirmation avant d'être publiée.
+
 ### Ce qu'on voit d'un retour d'expérience
 
 Son entreprise, et si son auteur est un consultant Badsender ou un utilisateur d'entreprise. Jamais qui l'a écrit.
 
 ## Combien de temps ils sont gardés
 
-Un retour d'expérience ouvert est gardé tant qu'il n'est ni pris en compte ni écarté. Une fois clos, il suit la durée de conservation des journaux de son entreprise, à partir du jour où il a été clos.
+Un retour d'expérience ouvert est gardé tant qu'il n'est ni pris en compte ni écarté. Une fois clos, il suit la durée de conservation des journaux de son entreprise, à partir du jour où il a été clos. Supprimer une entreprise supprime ses retours d'expérience, ouverts ou clos.
