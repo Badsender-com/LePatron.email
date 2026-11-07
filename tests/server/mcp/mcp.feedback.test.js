@@ -3,16 +3,12 @@
  */
 'use strict';
 
-// Feedback and retex (ADR 0012, GLOSSARY.md). A feedback is a thumbs up or down
-// and a comment. Its retex, a session summary the assistant writes, is kept only
-// when the group allows retex and the user agrees to it for that feedback; the
-// tool says what it kept, since the user cannot see LePatron's side.
+// Feedback (ADR 0012, GLOSSARY.md). A feedback is a thumbs up or down and a
+// comment. What the work taught is a retex, apart (ADR 0021,
+// mcp.retex.test.js): a feedback no longer carries a summary of the session.
 
 const harness = require('../../helpers/mcp-harness');
 const f = require('../../helpers/mcp-fixtures');
-
-const SUMMARY =
-  'The user asked for Black Friday subject lines; two of three were too long.';
 
 describe('feedback and retex', () => {
   beforeEach(() => harness.seed(f.SEED));
@@ -32,7 +28,7 @@ describe('feedback and retex', () => {
       references: [{ kind: 'skill', id: 'redaction.subject-ideas' }],
     });
 
-    expect(answer).toEqual({ recorded: true, retex: 'none' });
+    expect(answer).toEqual({ recorded: true });
   });
 
   it('refuses a rating other than up or down', async () => {
@@ -62,26 +58,6 @@ describe('feedback and retex', () => {
     expect(answer.error).toMatch(/not found/i);
   });
 
-  it.each([
-    ['the group does not allow retex', false, true, 'dropped'],
-    ['the user does not agree to it', true, false, 'dropped'],
-    ['the group allows it and the user agrees', true, true, 'kept'],
-  ])(
-    'handles a session summary when %s',
-    async (_case, allowRetex, consent, retex) => {
-      harness.update('groups', f.CLIENT_GROUP, { allowRetex });
-
-      const answer = await submit(f.FRANK, {
-        rating: 'down',
-        comment: 'Too long',
-        consentToRetex: consent,
-        sessionSummary: SUMMARY,
-      });
-
-      expect(answer).toEqual({ recorded: true, retex });
-    }
-  );
-
   // The super admins' list of feedbacks, read through its route (agreed as a
   // third seam: no MCP client sees it).
   describe('the list of feedbacks', () => {
@@ -100,19 +76,14 @@ describe('feedback and retex', () => {
     });
 
     beforeEach(async () => {
-      harness.update('groups', f.CLIENT_GROUP, { allowRetex: true });
       await submit(f.FRANK, {
         rating: 'down',
         comment: 'Too long',
         references: [{ kind: 'skill', id: 'redaction.subject-ideas' }],
-        consentToRetex: true,
-        sessionSummary: SUMMARY,
       });
       await submit(f.WREN, {
         rating: 'up',
         references: [{ kind: 'expertise', id: 'redaction.subject-line' }],
-        consentToRetex: false,
-        sessionSummary: 'Not to be kept',
       });
     });
 
@@ -129,7 +100,6 @@ describe('feedback and retex', () => {
             references: [
               { kind: 'skill', id: 'redaction.subject-ideas', version: '1.2' },
             ],
-            retex: SUMMARY,
           }),
           expect.objectContaining({
             rating: 'up',
@@ -140,7 +110,6 @@ describe('feedback and retex', () => {
                 version: '2.1',
               },
             ],
-            retex: null,
           }),
         ])
       );

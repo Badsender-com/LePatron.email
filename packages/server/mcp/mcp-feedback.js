@@ -29,10 +29,9 @@ async function resolveReference({ kind, id }, identity) {
 }
 
 /**
- * A feedback, and its retex (ADR 0012): the session summary the assistant
- * writes is kept only when the company allows retex and the user agreed to it
- * for this feedback. The answer says what was kept, since the user cannot see
- * LePatron's side.
+ * A feedback (ADR 0012): a rating and a comment on what LePatron gave. What
+ * the work taught goes in a retex, apart (ADR 0021): a feedback no longer
+ * carries a summary of the session.
  */
 async function submitFeedback(identity, args, ctx) {
   const authInfo = ctx.http?.authInfo || {};
@@ -48,12 +47,6 @@ async function submitFeedback(identity, args, ctx) {
     references.push(resolved);
   }
 
-  const summary = (args.sessionSummary || '').trim();
-  const allowed =
-    identity.group.allowRetex === true && args.consentToRetex === true;
-  let retex = 'none';
-  if (summary) retex = allowed ? 'kept' : 'dropped';
-
   await McpFeedbacks.create({
     _company: identity.group._id,
     _user: identity.user._id,
@@ -61,11 +54,10 @@ async function submitFeedback(identity, args, ctx) {
     rating: args.rating,
     comment: args.comment || '',
     references,
-    retex: retex === 'kept' ? summary : null,
     expiresAt: computeExpiresAt(new Date(), identity.group.logRetentionDays),
   });
 
-  const answer = { recorded: true, retex };
+  const answer = { recorded: true };
   return {
     content: [{ type: 'text', text: JSON.stringify(answer) }],
     structuredContent: answer,
@@ -73,10 +65,9 @@ async function submitFeedback(identity, args, ctx) {
 }
 
 // What one feedback holds at most: a few things it is about, and a comment
-// and a summary a person reads.
+// a person reads.
 const MAX_REFERENCES = 20;
 const MAX_COMMENT = 4000;
-const MAX_SUMMARY = 20000;
 const MAX_ID_LENGTH = 200;
 
 const FEEDBACK_INPUT = z.object({
@@ -103,23 +94,9 @@ const FEEDBACK_INPUT = z.object({
     .max(MAX_REFERENCES)
     .optional()
     .describe(`What the feedback is about, ${MAX_REFERENCES} at most.`),
-  consentToRetex: z
-    .boolean()
-    .optional()
-    .describe(
-      'true only if the user explicitly agreed to share a summary of the session with the platform company, for this feedback.'
-    ),
-  sessionSummary: z
-    .string()
-    .max(MAX_SUMMARY)
-    .optional()
-    .describe(
-      "A summary of the session, kept only with consentToRetex and if the company allows it. Never the user's own content."
-    ),
 });
 const FEEDBACK_OUTPUT = z.object({
   recorded: z.boolean(),
-  retex: z.enum(['none', 'kept', 'dropped']),
 });
 
 function registerSubmitFeedback(server) {
@@ -128,7 +105,7 @@ function registerSubmitFeedback(server) {
     {
       title: 'Send feedback on LePatron',
       description:
-        "Sends the user's feedback on what LePatron gave them: a thumbs up or down, a comment, and what it is about (skills, expertises, mailings). The comment is always kept: write what the user says of LePatron, never the content of their conversation. A summary of the session may be attached only if the user explicitly agrees to share it with the platform company (consentToRetex); ask them first. The answer says whether the summary was kept.",
+        "Sends the user's feedback on what LePatron gave them: a thumbs up or down, a comment, and what it is about (skills, expertises, mailings). Write what the user says of LePatron, never the content of their conversation. What the work taught about a skill or an expertise is a retex: report_retex.",
       inputSchema: FEEDBACK_INPUT,
       outputSchema: FEEDBACK_OUTPUT,
       annotations: ADDITIVE,
