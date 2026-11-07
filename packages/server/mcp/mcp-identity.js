@@ -179,4 +179,18 @@ function withIdentity(handler) {
   };
 }
 
-module.exports = { resolveIdentity, withIdentity, READ_SCOPE, WRITE_SCOPE };
+// Whether who calls may write the platform's skills and expertises, and read
+// their retex: the capability is asked again on every call, whatever the
+// token says (ADR 0014, ADR 0021).
+function mayDraft(user, authInfo) {
+  const scoped = (authInfo?.scopes || []).includes(WRITE_SCOPE);
+  return scoped && permissions.can(user, CAPABILITIES.PLATFORM_MANAGE);
+}
+
+module.exports = {
+  resolveIdentity,
+  withIdentity,
+  mayDraft,
+  READ_SCOPE,
+  WRITE_SCOPE,
+};

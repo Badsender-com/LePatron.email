@@ -2,8 +2,6 @@
 
 const { z } = require('zod');
 const createError = require('http-errors');
-const permissions = require('../account/permissions.js');
-const { CAPABILITIES } = require('../../shared/access/roles.js');
 const expertiseService = require('../ai-skill/services/expertise.service.js');
 const skillService = require('../ai-skill/services/skill.service.js');
 const {
@@ -17,7 +15,7 @@ const {
   SkillIdRegex,
   MaxConsumedExpertises,
 } = require('../ai-skill/constant/skill-constants.js');
-const { withIdentity, WRITE_SCOPE } = require('./mcp-identity.js');
+const { withIdentity, mayDraft } = require('./mcp-identity.js');
 const { failure, ADDITIVE, OVERWRITING } = require('./mcp-tool-grammar.js');
 
 const ENTITIES = {
@@ -45,13 +43,6 @@ const success = (answer) => ({
   content: [{ type: 'text', text: JSON.stringify(answer) }],
   structuredContent: answer,
 });
-
-// Whether who calls may write: the capability is asked again on every call,
-// whatever the token says (ADR 0014).
-function mayDraft(user, authInfo) {
-  const scoped = (authInfo?.scopes || []).includes(WRITE_SCOPE);
-  return scoped && permissions.can(user, CAPABILITIES.PLATFORM_MANAGE);
-}
 
 // The lines the draft adds and removes against the active version, for the
 // person to read before publishing.

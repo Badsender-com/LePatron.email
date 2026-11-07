@@ -14,7 +14,7 @@
 const harness = require('../../helpers/mcp-harness');
 const f = require('../../helpers/mcp-fixtures');
 
-const WRITING_TOOLS = ['submit_feedback'];
+const WRITING_TOOLS = ['submit_feedback', 'report_retex'];
 
 describe('tool contracts', () => {
   let client;
