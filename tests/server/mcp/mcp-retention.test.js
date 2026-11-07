@@ -1,14 +1,16 @@
 'use strict';
 
-// A group's log retention reaches the MCP call logs and feedbacks already
-// kept, as it does the skill invocations: lowering it from 30 to 7 days must
-// not keep last week's calls for 30.
+// A group's log retention reaches the MCP call logs, feedbacks and closed
+// retex already kept, as it does the skill invocations: lowering it from 30 to
+// 7 days must not keep last week's calls for 30. An open retex has no expiry
+// (ADR 0021): a closed one's runs from when it was closed.
 
 const { Types } = require('mongoose');
 
 jest.mock('../../../packages/server/common/models.common.js', () => ({
   McpCallLogs: { find: jest.fn(), bulkWrite: jest.fn() },
   McpFeedbacks: { find: jest.fn(), bulkWrite: jest.fn() },
+  McpRetexes: { find: jest.fn(), bulkWrite: jest.fn() },
 }));
 jest.mock('../../../packages/server/utils/logger.js', () => ({
   log: jest.fn(),
@@ -20,6 +22,7 @@ const {
 const {
   McpCallLogs,
   McpFeedbacks,
+  McpRetexes,
 } = require('../../../packages/server/common/models.common.js');
 
 const GROUP_ID = new Types.ObjectId();
@@ -33,6 +36,7 @@ beforeEach(() => {
   jest.clearAllMocks();
   holds(McpCallLogs, []);
   holds(McpFeedbacks, []);
+  holds(McpRetexes, []);
 });
 
 describe('restampMcpRetention', () => {
@@ -47,7 +51,7 @@ describe('restampMcpRetention', () => {
       retentionDays: 7,
     });
 
-    expect(out).toEqual({ callLogs: 1, feedbacks: 0 });
+    expect(out).toEqual({ callLogs: 1, feedbacks: 0, retex: 0 });
     const [op] = McpCallLogs.bulkWrite.mock.calls[0][0];
     expect(op.updateOne.filter._id).toBe(log);
     expect(op.updateOne.update.$set.expiresAt.toISOString()).toBe(
@@ -68,6 +72,26 @@ describe('restampMcpRetention', () => {
     const [op] = McpFeedbacks.bulkWrite.mock.calls[0][0];
     expect(op.updateOne.update.$set.expiresAt.toISOString()).toBe(
       '2026-12-30T00:00:00.000Z'
+    );
+  });
+
+  it('recomputes a closed retex from when it was closed, and never an open one', async () => {
+    holds(McpRetexes, [
+      {
+        _id: new Types.ObjectId(),
+        createdAt: new Date('2026-06-01T00:00:00Z'),
+        closedAt: new Date('2026-10-01T00:00:00Z'),
+      },
+    ]);
+
+    await restampMcpRetention({ groupId: GROUP_ID, retentionDays: 7 });
+
+    expect(McpRetexes.find.mock.calls[0][0]).toMatchObject({
+      status: { $ne: 'open' },
+    });
+    const [op] = McpRetexes.bulkWrite.mock.calls[0][0];
+    expect(op.updateOne.update.$set.expiresAt.toISOString()).toBe(
+      '2026-10-08T00:00:00.000Z'
     );
   });
 
