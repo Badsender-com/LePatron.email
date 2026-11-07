@@ -17,6 +17,7 @@ const {
 } = require('../ai-skill/constant/skill-constants.js');
 const { withIdentity, mayDraft } = require('./mcp-identity.js');
 const { failure, ADDITIVE, OVERWRITING } = require('./mcp-tool-grammar.js');
+const { notOpen } = require('./mcp-retex-status.js');
 
 const ENTITIES = {
   expertise: {
@@ -89,13 +90,38 @@ async function draftOf(entity, id, major, userId) {
   return { doc: next, version: created };
 }
 
-async function writeDraft(entity, id, { major, ...patch }, user) {
+// The retex a draft may cite: open ones only (ADR 0021).
+async function assertCitable(retexIds) {
+  if (!retexIds || !retexIds.length) return;
+  const refused = await notOpen(retexIds);
+  if (refused.length) {
+    throw createError(
+      422,
+      `Not an open retex: ${refused.join(
+        ', '
+      )}. Cite only open retex, as list_retex gives them.`
+    );
+  }
+}
+
+async function writeDraft(
+  entity,
+  id,
+  { major, addressesRetex, ...patch },
+  user
+) {
   const { service, textOf } = ENTITIES[entity];
+  // Checked before a draft is started: a refusal leaves nothing behind.
+  await assertCitable(addressesRetex);
   const { version } = await draftOf(entity, id, major, user.id);
+  // The draft cites what it addresses, from every proposal written into it.
+  const retexIds = addressesRetex
+    ? [...new Set([...(version.retexIds || []), ...addressesRetex])]
+    : undefined;
   const saved = await service.updateVersion(
     id,
     { major: version.versionMajor, minor: version.versionMinor },
-    patch,
+    { ...patch, retexIds },
     user.id
   );
   const draft = saved.versions.find(
@@ -111,6 +137,7 @@ async function writeDraft(entity, id, { major, ...patch }, user) {
     status: String(draft.status).toLowerCase(),
     audience: saved.audience,
     diff: diffOf(active ? textOf(active) : '', textOf(draft)),
+    addressesRetex: draft.retexIds || [],
   };
 }
 
@@ -159,6 +186,7 @@ const MAX_EXAMPLE_LENGTH = 2000;
 const MAX_CHANGELOG_LENGTH = 2000;
 const MAX_SCOPES = 20;
 const MAX_SCOPE_LENGTH = 50;
+const MAX_CITED_RETEX = 50;
 
 const ID = z.string().min(1).max(MAX_ID_LENGTH);
 const NEW_ID = ID.regex(SkillIdRegex);
@@ -182,7 +210,17 @@ const ANSWER = z.object({
   status: z.enum(['draft']),
   audience: z.string().optional(),
   diff: z.string(),
+  addressesRetex: z
+    .array(z.string())
+    .describe('The retex the draft addresses, closed when it is published.'),
 });
+const addressesRetex = z
+  .array(z.string().max(MAX_ID_LENGTH))
+  .max(MAX_CITED_RETEX)
+  .optional()
+  .describe(
+    'The open retex this change addresses, as list_retex gives them: they are closed when the version is published.'
+  );
 const major = z
   .boolean()
   .optional()
@@ -214,6 +252,7 @@ const PROPOSE_EXPERTISE_INPUT = z.object({
     'The whole new list of bad examples. Left out: unchanged.'
   ),
   changelog,
+  addressesRetex,
   major,
 });
 const PROPOSE_SKILL_INPUT = z.object({
@@ -230,6 +269,7 @@ const PROPOSE_SKILL_INPUT = z.object({
     'A feature skill: the whole new input template.'
   ),
   changelog,
+  addressesRetex,
   major,
 });
 const CREATE_EXPERTISE_INPUT = z.object({
@@ -252,6 +292,7 @@ const CREATE_EXPERTISE_INPUT = z.object({
     .describe('true if it applies to every part of the email.'),
   body: TEXT.describe('Its text, in Markdown, in French.'),
   changelog,
+  addressesRetex,
 });
 const CREATE_TASK_SKILL_INPUT = z.object({
   skillId: newIdOf('skill'),
@@ -265,6 +306,7 @@ const CREATE_TASK_SKILL_INPUT = z.object({
   ),
   consumedExpertiseIds: expertiseIds,
   changelog,
+  addressesRetex,
 });
 
 function registerAuthoringTools(server) {
@@ -308,16 +350,22 @@ function registerAuthoringTools(server) {
       outputSchema: ANSWER,
       annotations: ADDITIVE,
     },
-    asAuthor(async ({ body, changelog: log, ...data }, user) => {
-      await assertNew('expertise', data.expertiseId);
-      await expertiseService.createExpertise(data, user.id);
-      return writeDraft(
-        'expertise',
-        data.expertiseId,
-        { body, changelog: log },
+    asAuthor(
+      async (
+        { body, changelog: log, addressesRetex: cited, ...data },
         user
-      );
-    })
+      ) => {
+        await assertNew('expertise', data.expertiseId);
+        await assertCitable(cited);
+        await expertiseService.createExpertise(data, user.id);
+        return writeDraft(
+          'expertise',
+          data.expertiseId,
+          { body, changelog: log, addressesRetex: cited },
+          user
+        );
+      }
+    )
   );
 
   server.registerTool(
@@ -332,10 +380,17 @@ function registerAuthoringTools(server) {
     },
     asAuthor(
       async (
-        { procedure, consumedExpertiseIds, changelog: log, ...data },
+        {
+          procedure,
+          consumedExpertiseIds,
+          changelog: log,
+          addressesRetex: cited,
+          ...data
+        },
         user
       ) => {
         await assertNew('skill', data.skillId);
+        await assertCitable(cited);
         await skillService.createSkill(data, user.id);
         // The nature is the version's (ADR 0013): its first draft is a task.
         return writeDraft(
@@ -346,6 +401,7 @@ function registerAuthoringTools(server) {
             procedure,
             consumedExpertiseIds: consumedExpertiseIds || [],
             changelog: log,
+            addressesRetex: cited,
           },
           user
         );

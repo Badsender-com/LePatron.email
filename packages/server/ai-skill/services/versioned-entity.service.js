@@ -105,6 +105,8 @@ function createVersionedEntityService({
     ...contentFields.map((f) => f.name),
     'changelog',
     'releaseNotes',
+    // The retex a draft addresses (ADR 0021).
+    'retexIds',
   ];
 
   /**
