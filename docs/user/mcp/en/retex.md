@@ -1,0 +1,59 @@
+# Retex
+
+LePatron's skills and expertises improve with use. When your work shows that a recommendation does not hold, or that something is missing, your assistant can report it: a **retex**.
+
+## What a retex is
+
+There are two kinds.
+
+| Kind           | When                                                                            | What it says                                                                               |
+| -------------- | ------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------ |
+| **Divergence** | you decided otherwise than a skill or an expertise recommended                  | the passage, what it recommended, what you decided, and why                                |
+| **Complement** | the skill or expertise said nothing about your case, and you brought the answer | what was missing, what you brought, and where it comes from (experience, a source, a test) |
+
+A complement may also be about know-how no expertise covers yet. It then names a category (copywriting, deliverability…) and a part of the email (subject, preheader…).
+
+A retex is **never a summary of the conversation**. No divergence and nothing brought, no retex: LePatron refuses the ones that say nothing precise. It must hold nothing that identifies your company or your clients.
+
+A feedback (thumbs up or down, with a comment) stays possible on its own. It says whether what LePatron gave you suits you, not what your work taught.
+
+## For a company's user
+
+Two agreements are needed:
+
+1. **your company** allows retex, in the MCP access section of the AI features page (its tech admin decides);
+2. **you** approve each retex, when your assistant offers it.
+
+Without either, nothing is sent, and the assistant tells you why. What you send is read by the Badsender team, who see your company, never your name.
+
+## For the Badsender team
+
+Your assistant sends your retex as you work, without asking each time, whatever company you picked when connecting. With the write permission (see [Publish from an assistant](./publish-from-an-assistant.md)), you can also read and handle them.
+
+### The loop
+
+1. You contradict a recommendation, or bring what was missing: the assistant records the retex.
+2. LePatron answers the open retex on the same passage (or, for a complement about no expertise, on the same category and part of the email), whatever the company.
+3. **Two retex pointing the same way are enough**: the assistant proposes the change at once, as a draft citing them. For a complement no expertise covers, it proposes a new expertise.
+4. You adjust, the guard replays the test cases if there are any, then you publish.
+5. The retex cited become **addressed** with the published version, whether you publish from the assistant or from the back office. If the draft is deleted before, they are open again.
+
+### The tools
+
+| Tool                                        | What it does                                                                                                                            |
+| ------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------- |
+| `report_retex`                              | records a divergence or a complement; for you, also answers the open retex close to it                                                  |
+| `list_retex`                                | reads the retex of every company, open by default, filtered by skill or expertise, passage, kind, category, part of the email or status |
+| `dismiss_retex`                             | dismisses an open retex, with the reason; it stays readable and no longer counts                                                        |
+| `propose_…_change`, `create_…`              | take `addressesRetex`, the retex the draft addresses                                                                                    |
+| `find_skills`, `find_applicable_expertises` | give the number of open retex of each skill and expertise                                                                               |
+
+The retex of companies' users wait for a team member to come by: when a search shows open retex, ask the assistant to read them.
+
+### What you see of a retex
+
+Its company, and whether its author is a Badsender consultant or a company's user. Never who wrote it.
+
+## How long they are kept
+
+An open retex is kept until it is addressed or dismissed. Once closed, it follows its company's log retention, from the day it was closed.

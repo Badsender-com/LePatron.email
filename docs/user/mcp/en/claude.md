@@ -28,7 +28,8 @@ In a conversation, turn LePatron on with the **+** button, then **Connectors**. 
 
 - read Badsender's expertises and find the ones that apply to your request;
 - use Badsender's skills, which also show among the suggested commands;
-- send feedback to Badsender when you ask it to.
+- send feedback to Badsender when you ask it to;
+- report a retex on a skill or an expertise, with your approval ([Retex](./retex.md)).
 
 ## Claude Code
 

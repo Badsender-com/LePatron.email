@@ -30,7 +30,8 @@ Dans une conversation, activez LePatron avec le bouton **+**, puis **Connectors*
 
 - lire les expertises Badsender et retrouver celles qui s'appliquent à votre demande ;
 - utiliser les skills Badsender, que vous retrouvez aussi parmi les commandes proposées ;
-- envoyer un avis à Badsender quand vous le lui demandez.
+- envoyer un avis à Badsender quand vous le lui demandez ;
+- signaler un retour d'expérience sur une skill ou une expertise, avec votre accord ([Retours d'expérience](./retours-d-experience.md)).
 
 ## Claude Code
 
