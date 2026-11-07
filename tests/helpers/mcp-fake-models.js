@@ -73,6 +73,8 @@ const MODELS = {
   expertises: 'Expertises',
   skills: 'LePatronSkills',
   feedbacks: 'McpFeedbacks',
+  // The retex loop (ADR 0021).
+  retex: 'McpRetexes',
   callLogs: 'McpCallLogs',
   clients: 'McpClients',
   connections: 'McpConnections',
