@@ -5,6 +5,7 @@ const {
   ResourceTemplate,
   ResourceNotFoundError,
 } = require('@modelcontextprotocol/server');
+const { withOpenRetex } = require('./mcp-retex-counts.js');
 const { withIdentity } = require('./mcp-identity.js');
 const { versionLabel } = require('../ai-skill/services/version-helpers.js');
 const {
@@ -123,6 +124,12 @@ const FIND_OUTPUT = z.object({
       nature: z.enum(SkillNatureValues),
       draft: z.boolean().optional(),
       uri: z.string(),
+      openRetex: z
+        .number()
+        .optional()
+        .describe(
+          'For a super admin: its open retex. Two that converge make a change: read them with list_retex.'
+        ),
     })
   ),
   matched: z.boolean(),
@@ -150,22 +157,27 @@ function registerFindSkills(server) {
       outputSchema: FIND_OUTPUT,
       annotations: READ_ONLY,
     },
-    withIdentity(async ({ group, drafts }, { query }) => {
+    withIdentity(async ({ user, group, drafts }, { query }, ctx) => {
       const served = await servedSkills(group, drafts);
       // Words of another language than the skills' match nothing: the whole
       // list is then answered, for the assistant to choose from (it is the
       // list of the skills' prompts and resources).
       const found = query ? served.filter(matching(query)) : [];
       const matched = found.length > 0;
-      const skills = (matched ? found.slice(0, MAX_FOUND_SKILLS) : served).map(
-        ({ doc, version, draft }) => ({
-          skillId: doc.skillId,
-          title: doc.title,
-          description: doc.description || '',
-          nature: natureOf(version),
-          ...(draft && { draft: true }),
-          uri: uriOf(doc.skillId),
-        })
+      const skills = await withOpenRetex(
+        'skill',
+        (matched ? found.slice(0, MAX_FOUND_SKILLS) : served).map(
+          ({ doc, version, draft }) => ({
+            skillId: doc.skillId,
+            title: doc.title,
+            description: doc.description || '',
+            nature: natureOf(version),
+            ...(draft && { draft: true }),
+            uri: uriOf(doc.skillId),
+          })
+        ),
+        'skillId',
+        { user, authInfo: ctx?.http?.authInfo }
       );
       const answer = { skills, matched };
       return {
