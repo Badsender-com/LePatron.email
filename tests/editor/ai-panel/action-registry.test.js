@@ -4,7 +4,7 @@
  * Acceptance tests of the AI panel (epic #1177): which AI actions a target
  * offers, and whether its AI icon opens the action itself or the list.
  *
- * Seam: one pure function, so that the « Outils IA » panel, the icons and the
+ * Seam: one pure function, so that the « Actions IA » panel, the icons and the
  * actions to come cannot disagree (ADR 0010).
  */
 
@@ -26,7 +26,7 @@ describe('ai panel: the action registry', () => {
 
   const ids = (result) => result.actions.map((action) => action.id);
 
-  describe('the whole email (« Outils IA » with nothing selected)', () => {
+  describe('the whole email (« Actions IA » with nothing selected)', () => {
     it('offers its actions as a list', () => {
       const result = availableActions({ kind: 'email' }, ON);
       expect(ids(result)).toEqual([

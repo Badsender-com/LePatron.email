@@ -49,8 +49,8 @@ beforeEach(() => {
         {
           id: 'l1',
           createdBy: 'Ana',
-          createdAt: '2026-09-29T15:20:00Z',
-          expiresAt: '2026-10-06T00:00:00Z',
+          createdAt: '2099-09-29T15:20:00Z',
+          expiresAt: '2099-10-06T00:00:00Z',
           url: 'https://app.test/share/old',
         },
       ],
@@ -72,12 +72,33 @@ describe('ShareLinkPanel', () => {
     expect(el.querySelector('.qc-share__created')).toBeNull();
   });
 
+  it('says a link expired while the tab was shown, with nothing left to do with it', async () => {
+    axios.get.mockResolvedValue({
+      data: {
+        items: [
+          {
+            id: 'l1',
+            createdBy: 'Ana',
+            createdAt: '2020-01-01T00:00:00Z',
+            expiresAt: '2020-01-08T00:00:00Z',
+            url: 'https://app.test/share/old',
+          },
+        ],
+      },
+    });
+    const { el } = await mount();
+    const item = el.querySelector('.qc-share__item');
+    expect(item.classList.contains('qc-share__item--expired')).toBe(true);
+    expect(item.textContent).toMatch(/quality-share-expired/);
+    expect(item.querySelectorAll('button')).toHaveLength(0);
+  });
+
   it('creates a link for the chosen time and shows its address once', async () => {
     axios.post.mockResolvedValue({
       data: {
         id: 'l2',
         url: 'https://app.test/share/abc',
-        expiresAt: '2026-09-30T00:00:00Z',
+        expiresAt: '2099-09-30T00:00:00Z',
         createdBy: 'Ana',
       },
     });

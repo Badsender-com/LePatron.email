@@ -32,8 +32,11 @@
   <!-- /ko -->
 
   <div id="toolbar" class="mo" data-bind="tooltips: {}">
-
-
+    <!-- The left of the top bar (boards « Éditeur v2 »): back to the list,
+         then the email's name, renamed from its pencil. -->
+    <a class="topbar-back" href="/" data-bind="attr: { href: $root.logoUrl, title: $root.t('Back to mailings list'), 'aria-label': $root.t('Back to mailings list') }">
+      <span class="lucide lucide-arrow-left" aria-hidden="true"></span>
+    </a>
     <!-- ko template: {name: 'edit-name' } --># creation name #<!-- /ko -->
 
     <!-- The right of the top bar (boards « Topbar allégée »): the preview,
@@ -46,12 +49,6 @@
         </button>
         <!-- /ko -->
       </div>
-      <span class="topbar-separator" aria-hidden="true"></span>
-      <!-- The gallery leaves for the left bar in its own iteration (tab
-           « Images »); it stays here until then. -->
-      <button type="button" class="topbar-icon-button" data-bind="click: function() { $root.showGallery(!$root.showGallery()); }, css: { 'is-active': $root.showGallery() }, attr: { title: $root.t('Show image gallery'), 'aria-label': $root.t('Gallery'), 'aria-pressed': $root.showGallery() ? 'true' : 'false' }">
-        <span class="lucide lucide-image" aria-hidden="true"></span>
-      </button>
       <!-- ko if: typeof $root.undo != 'undefined' -->
       <span class="topbar-separator" aria-hidden="true"></span>
       <span class="undo-button-wrapper">

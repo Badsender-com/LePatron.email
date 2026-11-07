@@ -4,6 +4,7 @@ const _ = require('lodash');
 const ko = require('knockout');
 const { getSubject } = require('../email-subject');
 const { readPreheader } = require('../email-preheader');
+const { blockLabel } = require('../block-label');
 
 // The tracking values the client filled in, as the tracking panel stores them.
 function readTrackingUrls(viewModel) {
@@ -49,6 +50,8 @@ function buildContext(viewModel, html, remote) {
     doc,
     blocks,
     blockDefs: ko.toJS(viewModel.blockDefs) || [],
+    // « Cover · bloc 2 », as every panel names a block (ext/block-label.js).
+    blockLabel: (blockId) => blockLabel(viewModel, blockId),
     trackingUrls: readTrackingUrls(viewModel),
     // The copy outside the blocks, the client's to write, through the
     // accessors the AI actions share: the subject (null when the ESP holds it)

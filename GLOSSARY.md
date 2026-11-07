@@ -107,12 +107,12 @@ _Avoid_: Media library, image bank
 
 **Mailing gallery**:
 The gallery of one email: the images uploaded while designing it.
-_UI_: Spécifique à l'email
+_UI_: Dans cet email
 _Avoid_: Email images, local gallery
 
 **Template gallery**:
 The gallery of one template, shared by every email made from it.
-_UI_: Commun au template
+_UI_: Galerie du template
 _Avoid_: Shared gallery, common gallery
 
 **Stored name**:
@@ -162,8 +162,18 @@ _Avoid_: Wireframe (the code keeps `_wireframe`)
 
 **Right panel**:
 One of the three panels that take turns on the right of the editor, one open at a time: the comments, the quality panel ("Tester l'email") and the AI panel. They share one shell: header, close button, body, foot, empty, loading and error states.
-_UI_: Commentaires, Tester l'email, Outils IA
+_UI_: Commentaires, Tester l'email, Actions IA
 _Avoid_: Drawer, sidebar, slidebar (in prose; the code keeps `.slidebar`)
+
+**Left bar**:
+The column on the left of the editor, under the top bar, with three tabs of two sub-tabs each: the blocks to add (the template's and the saved ones), the images (the email's gallery and the template's) and the settings (the content and the styles of the selected block, or of the email).
+_UI_: Blocs, Images, Réglages
+_Avoid_: Toolbox, sidebar (the code keeps `#main-toolbox`)
+
+**Saved block**:
+A block a user saved from an email, with its content, to add it again to the emails of the same template.
+_UI_: Enregistrés ; bloc enregistré
+_Avoid_: Custom block, personalized block (the code keeps `personalizedBlocks`)
 
 **Panel rail**:
 The vertical strip on the right edge of the editor, below the top bar, holding the button of each right panel and its badge.
@@ -292,7 +302,7 @@ _Avoid_: AI tool, AI command, prompt
 
 **AI panel**:
 The right-hand panel where the user picks an AI action, gives its options and instruction, and chooses among its proposals; it shares its place with the comments and the quality control panels, one open at a time.
-_UI_: Outils IA
+_UI_: Actions IA
 _Avoid_: AI sidebar, AI drawer, assistant
 
 **Skill**:

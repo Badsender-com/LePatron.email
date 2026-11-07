@@ -175,12 +175,13 @@ const QualityDrawer = Vue.component('QualityDrawer', {
         @run-checks="runFromSend"
       ></send-test-panel>
 
-      <!-- The checks' actions, in the panel's foot (boards q1 to q3). -->
+      <!-- The checks' actions, in the panel's foot (boards q1 to q3). Keyed:
+           « Annuler » is not « Lancer » restyled, its colour fading. -->
       <template v-if="tab === 'checks'" v-slot:footer>
-        <button v-if="status === 'idle'" type="button" class="qc-button qc-button--cta" @click="run">
+        <button key="run" v-if="status === 'idle'" type="button" class="qc-button qc-button--cta" @click="run">
           <span class="lucide lucide-play" aria-hidden="true"></span>{{ t('quality-run') }}
         </button>
-        <button v-else-if="status === 'running'" type="button" class="qc-button qc-button--outline" @click="vm.quality.cancel()">
+        <button key="cancel" v-else-if="status === 'running'" type="button" class="qc-button qc-button--outline" @click="vm.quality.cancel()">
           {{ t('quality-action-cancel') }}
         </button>
         <!-- Results of an earlier version: running again comes first. -->

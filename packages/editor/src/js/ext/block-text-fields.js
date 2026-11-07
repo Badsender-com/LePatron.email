@@ -54,4 +54,4 @@ function listTextFields(block, { blockDef = null, isHidden = () => false } = {})
   );
 }
 
-module.exports = { listTextFields };
+module.exports = { listTextFields, roleOf };

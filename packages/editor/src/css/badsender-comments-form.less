@@ -81,9 +81,11 @@
     font: inherit;
     resize: vertical;
 
+    // A text field: its border turns to the accent, as the left bar's.
     &:focus {
-      outline: 2px solid var(--primary);
-      outline-offset: -1px;
+      border-color: var(--accent);
+      outline: none;
+      box-shadow: none;
     }
   }
 

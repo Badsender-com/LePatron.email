@@ -4,7 +4,7 @@ const Vue = require('vue/dist/vue.common');
 
 /**
  * The shell of a right panel (ADR 0020): one header, one body, one foot, the
- * same in « Commentaires », « Tester l'email » and « Outils IA », which only
+ * same in « Commentaires », « Tester l'email » and « Actions IA », which only
  * fill them.
  *
  * - The header carries the title alone: the panel rail already says which

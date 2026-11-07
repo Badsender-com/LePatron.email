@@ -22,7 +22,7 @@ module.exports = `
   @back="showList()"
   @close="vm.rightPanel.hide()"
 >
-  <div class="ai-panel__body" :class="{ 'ai-panel__body--targeted': !session && target.kind !== 'email' }">
+  <div class="ai-panel__body" :class="{ 'ai-panel__body--targeted': !session && target.kind !== 'email' }" @keydown.esc="onEscape">
     <p class="qc-sr-only" aria-live="polite">{{ liveMessage }}</p>
 
     <!-- The list (boards a1, a2): what the selection offers, the action of
@@ -33,8 +33,10 @@ module.exports = `
         {{ t('ai-panel-select-invite') }}
       </p>
       <template v-else>
+        <!-- A field: « Champ sélectionné · Titre »; a block: its name. -->
         <h3 class="ai-panel__section">
-          {{ target.kind === 'block' ? t('ai-panel-selected-block') : t('ai-panel-selected-field') }}<span v-if="blockOf(target)" class="ai-panel__section-meta"> · {{ blockOf(target) }}</span>
+          <template v-if="target.kind === 'blockField'">{{ t('ai-panel-selected-field') }}<span v-if="fieldOf(target)" class="ai-panel__section-meta"> · {{ fieldOf(target) }}</span></template>
+          <template v-else>{{ target.kind === 'block' ? t('ai-panel-selected-block') : t('ai-panel-selected-field') }}<span v-if="blockOf(target)" class="ai-panel__section-meta"> · {{ blockOf(target) }}</span></template>
         </h3>
         <ul v-if="targetActions.length" class="ai-panel__actions">
           <li v-for="(item, i) in targetActions" :key="item.id">
@@ -49,6 +51,25 @@ module.exports = `
           </li>
         </ul>
         <p v-else class="ai-panel__hint">{{ t('ai-panel-no-action-yet') }}</p>
+
+        <!-- The field's block, its actions too (board a2). -->
+        <template v-if="target.kind === 'blockField' && blockActions.length">
+          <h3 class="ai-panel__section">
+            {{ t('ai-panel-selected-block') }}<span v-if="blockOf(target)" class="ai-panel__section-meta"> · {{ blockOf(target) }}</span>
+          </h3>
+          <ul class="ai-panel__actions">
+            <li v-for="item in blockActions" :key="item.id">
+              <button type="button" class="ai-panel__action" @click="openAction(item.id, blockTargetOf(target))">
+                <span :class="['lucide', iconOf(item.id), 'ai-panel__action-icon']" aria-hidden="true"></span>
+                <span class="ai-panel__action-text">
+                  <span class="ai-panel__action-name">{{ nameOf(item.id, blockTargetOf(target)) }}</span>
+                  <span v-if="descriptionOf(item.id, blockTargetOf(target))" class="ai-panel__action-desc">{{ descriptionOf(item.id, blockTargetOf(target)) }}</span>
+                </span>
+                <span class="lucide lucide-chevron-right ai-panel__action-chevron" aria-hidden="true"></span>
+              </button>
+            </li>
+          </ul>
+        </template>
       </template>
       <h3 class="ai-panel__section">{{ t('ai-panel-whole-email') }}</h3>
       <ul class="ai-panel__actions">

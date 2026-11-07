@@ -5,7 +5,7 @@
 'use strict';
 
 // The right of the top bar (boards « Topbar allégée »): the preview as a
-// segmented control, the gallery, the history, then Save and Export, in
+// segmented control, the history, then Save and Export, in
 // native buttons with their names.
 
 const fs = require('fs');

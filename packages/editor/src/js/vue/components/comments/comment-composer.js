@@ -6,11 +6,9 @@ const { MentionTextarea } = require('./mention-textarea');
 
 let uid = 0;
 
-const CATEGORIES = [
-  ['general', 'lucide-message-circle'],
-  ['design', 'lucide-brush'],
-  ['content', 'lucide-file-text'],
-];
+// The type goes by its name alone, as on the cards (board c1); a priority's
+// icon is the one of its badge, in its list only.
+const CATEGORIES = ['general', 'design', 'content'];
 const SEVERITIES = [
   ['info', 'lucide-info'],
   ['important', 'lucide-triangle-alert'],
@@ -81,9 +79,8 @@ const CommentComposer = Vue.component('CommentComposer', {
       return options;
     },
     categories() {
-      return CATEGORIES.map(([value, icon]) => ({
+      return CATEGORIES.map((value) => ({
         value,
-        icon,
         label: this.t(`comments-category-${value}`),
       }));
     },
@@ -122,7 +119,7 @@ const CommentComposer = Vue.component('CommentComposer', {
       ></comments-menu>
       <div class="comment-composer__row">
         <comments-menu :label="t('comments-type')" :value="category" :options="categories" @input="$emit('category', $event)"></comments-menu>
-        <comments-menu :label="t('comments-priority')" :value="severity" :options="severities" @input="$emit('severity', $event)"></comments-menu>
+        <comments-menu :label="t('comments-priority')" :value="severity" :options="severities" :icon-in-button="false" @input="$emit('severity', $event)"></comments-menu>
         <!-- Who may not approve adds on this line (board c1); who may, below. -->
         <button v-if="!canApprove" type="submit" class="qc-button qc-button--cta comment-composer__add" :disabled="busy || !text.trim()">{{ t('comments-add') }}</button>
       </div>

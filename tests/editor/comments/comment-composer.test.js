@@ -119,6 +119,29 @@ describe('the comment form', () => {
     ]);
   });
 
+  it('names the type and the priority without icons, the priority’s kept to its list (board c1)', async () => {
+    const { root } = composer({ severity: 'blocking' });
+    const [target, type, priority] = root.querySelectorAll(
+      '.comments-menu__button'
+    );
+    expect(target.querySelectorAll('.lucide')).toHaveLength(2);
+    expect(type.querySelectorAll('.lucide')).toHaveLength(1);
+    expect(priority.querySelectorAll('.lucide')).toHaveLength(1);
+    priority.click();
+    await Vue.nextTick();
+    expect(
+      root.querySelector('[role="option"] .lucide-alert-circle')
+    ).not.toBeNull();
+    priority.click();
+    type.click();
+    await Vue.nextTick();
+    expect(
+      [
+        ...type.parentElement.querySelectorAll('[role="option"]'),
+      ].some((option) => option.querySelector('.lucide:not(.lucide-check)'))
+    ).toBe(false);
+  });
+
   it('adds the comment, once while it is on its way', () => {
     const { root, events, app } = composer({ text: 'Hi' });
     root.dispatchEvent(new Event('submit'));

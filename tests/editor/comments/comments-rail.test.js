@@ -210,7 +210,7 @@ describe('the comment markers rail, after the review (ADR 0020, P4)', () => {
 });
 
 describe('the place of the rail (ADR 0020, P4)', () => {
-  function placed({ emailRight, canvasLeft, canvasWidth }) {
+  function placed({ emailRight, canvasLeft, canvasWidth, panelRoom = 0 }) {
     const { rail, scroller } = mount({
       blocks: ['b1'],
       counts: { b1: { count: 1 } },
@@ -220,9 +220,37 @@ describe('the place of the rail (ADR 0020, P4)', () => {
     scroller.appendChild(email);
     scroller.getBoundingClientRect = () => ({ left: canvasLeft });
     Object.defineProperty(scroller, 'clientWidth', { value: canvasWidth });
+    scroller.style.paddingRight = `${panelRoom}px`;
     rail.update();
     return rail.left();
   }
+
+  it('stays clear of an open panel, whose room the canvas keeps inside', () => {
+    expect(
+      placed({
+        emailRight: 1100,
+        canvasLeft: 400,
+        canvasWidth: 1000,
+        panelRoom: 448,
+      })
+    ).toBe(900);
+  });
+
+  it('moves again once the canvas has made room for a panel', () => {
+    jest.useFakeTimers();
+    const { rail, scroller } = mount({
+      blocks: ['b1'],
+      counts: { b1: { count: 1 } },
+    });
+    scroller.id = 'main-wysiwyg-area';
+    document.body.appendChild(scroller);
+    const measure = jest.spyOn(scroller, 'querySelectorAll');
+    scroller.dispatchEvent(new Event('transitionend', { bubbles: true }));
+    jest.runOnlyPendingTimers();
+    expect(measure).toHaveBeenCalled();
+    jest.useRealTimers();
+    rail.dispose();
+  });
 
   it('sits beside the email', () => {
     expect(

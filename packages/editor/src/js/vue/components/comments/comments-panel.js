@@ -59,6 +59,8 @@ const CommentsPanel = Vue.component('CommentsPanel', {
     busy: false,
     reply: null,
     edit: null,
+    // What was written, said to screen readers (ext/badsender-comments.js).
+    announcement: '',
   }),
   created() {
     const { vm } = this;
@@ -74,6 +76,9 @@ const CommentsPanel = Vue.component('CommentsPanel', {
     this.mirror(store.draftCategory, (v) => (this.category = v));
     this.mirror(store.draftSeverity, (v) => (this.severity = v));
     this.mirror(vm.hasOpenBlocking, (v) => (this.openBlocking = v));
+    if (vm.commentsAnnouncement) {
+      this.mirror(vm.commentsAnnouncement, (v) => (this.announcement = v));
+    }
     this.mirror(vm.groupUsers, (v) => (this.users = frozen(v)));
     this.mirror(vm.selectedBlock, (block) => {
       const id = block && (typeof block.id === 'function' ? block.id() : block.id);

@@ -10,6 +10,8 @@
  * gives each panel the same shell behaviours.
  */
 
+const $ = require('jquery');
+
 const PANELS = ['comments', 'quality', 'ai'];
 
 /**
@@ -78,6 +80,15 @@ const FOCUSABLE =
  * focus inside it, closing gives it back to the button that controls it
  * (`aria-controls`).
  */
+// The rail's tooltips (jQuery UI, bindings/tooltips.js) follow the pointer
+// and stay until it leaves the button: the panel it just opened would sit
+// under its label. Closed as the pointer leaving would.
+function closeToggleTooltip(element) {
+  const toggle =
+    element.id && document.querySelector(`[aria-controls="${element.id}"]`);
+  if (toggle) $(toggle).trigger('mouseleave');
+}
+
 function registerRightPanelBinding(ko) {
   if (ko.bindingHandlers.rightPanel) return;
   ko.bindingHandlers.rightPanel = {
@@ -107,6 +118,7 @@ function registerRightPanelBinding(ko) {
 
       const focusSub = sync.subscribe((isOpen) => {
         if (isOpen) {
+          closeToggleTooltip(element);
           const active = document.activeElement;
           opener = active && active !== document.body ? active : null;
           // After the panel's own content has rendered, and only if the panel

@@ -26,7 +26,7 @@ ADR 0010 gave the comments, the quality control and the AI panel one place and o
 
 **An email is ready when no error or warning is left unignored and every check ran**; an info counts only if it is blocking. It is the rule the top bar badge already called `cleared`, renamed `ready`, and now the one rule for the badge of the rail button, the card of the quality panel and the banner of the send test tab, which counted errors only; red means blocking, the accent means a number. What blocks the download and the ESP export does not change: it reads the blocking findings, not this rule.
 
-**The AI tools are hidden from whoever may not edit the content**, with every way into them: the server tells the editor, once, whether this user may use text generation on this email, from the same rule as the text generation routes.
+**The AI actions are hidden from whoever may not edit the content**, with every way into them: the server tells the editor, once, whether this user may use text generation on this email, from the same rule as the text generation routes.
 
 ## Considered Options
 
@@ -36,7 +36,7 @@ ADR 0010 gave the comments, the quality control and the AI panel one place and o
 - **An `Approval` model of its own**: "approved" would compare two collections, with their own routes and deletion, for no gain over a `decision` already stored.
 - **An approval created resolved**: it would show folded, and reopening it would put it back in the counters.
 - **A dedicated approval route**: it would change the route list and the guard test for a single flag on a comment; the capability is checked where the comment is created.
-- **Hiding the AI tools in the editor from the user's capabilities**: the capabilities arrive after the editor starts, so the button would appear late and shift its neighbours, and each way in would need its own check.
+- **Hiding the AI actions in the editor from the user's capabilities**: the capabilities arrive after the editor starts, so the button would appear late and shift its neighbours, and each way in would need its own check.
 
 ## Consequences
 
@@ -51,4 +51,8 @@ ADR 0010 gave the comments, the quality control and the AI panel one place and o
 
 ## Amendment: the right of the top bar
 
-The top bar keeps its place and stays in Knockout; its right follows the same grammar as the panels, with the same tokens (`--primary`, `--accent`) as the panels' kit. It holds the preview (a segmented control), the history, then « Sauvegarder » and « Exporter » on the accent. The image gallery stays there until the left bar's own iteration takes it in. « Exporter » is the download when there is one way out, else a menu that a button opens and closes, and Escape closes. When the user may not save, « Sauvegarder » stays focusable and says why. The bar is 52px tall, as on the boards: one height, read by the left bar, the canvas, the panel rail and the panels, so they move with it. The rail and the open panel float over the canvas, as cards 14px from its edges: closed, the canvas takes the whole width under the rail; open, it still makes room for the panel, 360px wide whatever the width of the left bar. Text on the accent is white, as everywhere in the app.
+The top bar keeps its place and stays in Knockout; its right follows the same grammar as the panels, with the same tokens (`--primary`, `--accent`) as the panels' kit. It holds the preview (a segmented control), the history, then « Sauvegarder » and « Exporter » on the accent. « Exporter » is the download when there is one way out, else a menu that a button opens and closes, and Escape closes. When the user may not save, « Sauvegarder » stays focusable and says why. The bar is 52px tall, as on the boards: one height, read by the left bar, the canvas, the panel rail and the panels, so they move with it. The rail and the open panel float over the canvas, as cards 14px under the top bar, a few pixels clear of the canvas's scrollbar: closed, the canvas takes the whole width under the rail; open, it still makes room for the panel inside, its scrollbar staying on the window's edge, the panel 360px wide whatever the width of the left bar. Text on the accent is white, as everywhere in the app.
+
+## Amendment: the left bar and the canvas
+
+The top bar spans the window: the way back to the list, then the email's name, renamed from a click on it. The left bar sits under it and keeps its 400px, wider than the boards' 268px, because Mosaico's option forms are laid out for that width. It has three tabs, two sub-tabs each: « Blocs » (« Blocs du template », with a search, and « Enregistrés »), « Images » (« Dans cet email » and « Galerie du template »: the gallery leaves the top bar) and « Réglages » (« Contenu » and « Styles »). The boards had no « Contenu »; it moves under « Réglages » rather than go. The tabs read the state the editor already keeps, so selecting a block still opens its content. The canvas is light grey, the email a card on it, and the toolbar of a block sits on the accent at the block's top right, « Commenter » named last.

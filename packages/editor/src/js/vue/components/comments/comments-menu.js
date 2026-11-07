@@ -21,6 +21,9 @@ const CommentsMenu = Vue.component('CommentsMenu', {
     // [{ value, label, hint?, icon? }]
     options: { type: Array, required: true },
     note: { type: String, default: '' },
+    // The chosen option's icon in the button: « Sur » shows it (board c1),
+    // « Priorité » keeps it to its list.
+    iconInButton: { type: Boolean, default: true },
   },
   data: () => ({ open: false, active: 0 }),
   created() {
@@ -111,7 +114,7 @@ const CommentsMenu = Vue.component('CommentsMenu', {
         @keydown.up.prevent="show(true)"
       >
         <span class="comments-menu__label">{{ label }}</span>
-        <span v-if="chosen.icon" :class="['lucide', chosen.icon]" aria-hidden="true"></span>
+        <span v-if="iconInButton && chosen.icon" :class="['lucide', chosen.icon]" aria-hidden="true"></span>
         <span class="comments-menu__value">{{ chosen.label }}</span>
         <span :class="['lucide', open ? 'lucide-chevron-up' : 'lucide-chevron-down', 'comments-menu__chevron']" aria-hidden="true"></span>
       </button>

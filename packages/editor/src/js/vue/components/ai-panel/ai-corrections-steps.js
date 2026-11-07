@@ -4,12 +4,8 @@ const Vue = require('vue/dist/vue.common');
 const template = require('./ai-corrections-steps.template');
 
 // Which field a correction is in, on a block or the whole email.
-const ROLE_LABELS = {
-  title: 'ai-panel-field-title',
-  text: 'ai-panel-field-text',
-  button: 'ai-panel-field-button',
-  alt: 'ai-panel-field-alt',
-};
+const { ROLE_LABELS } = require('./field-role-labels');
+const { pauseCountdown } = require('./pause-countdown');
 
 // What a correction that is no longer pending says.
 const STATUS_LABELS = {
@@ -42,6 +38,7 @@ const countKey = (key, count) => (count === 1 ? `${key}-one` : key);
  * the panel's foot, which calls `onFooter(id)`) and `back` (to the list).
  */
 const AiCorrectionsSteps = Vue.component('AiCorrectionsSteps', {
+  mixins: [pauseCountdown],
   props: {
     vm: { type: Object, required: true },
     session: { type: Object, required: true },
@@ -173,11 +170,6 @@ const AiCorrectionsSteps = Vue.component('AiCorrectionsSteps', {
     // the focus goes to its head rather than to the page.
     summary(shown, wasShown) {
       if (wasShown && !shown && !this.reviewing) this.focusRef('summary');
-    },
-    'state.pausedFor'(seconds) {
-      if (seconds) {
-        this.$emit('announce', this.t('ai-panel-correction-paused', { seconds }));
-      }
     },
   },
   mounted() {

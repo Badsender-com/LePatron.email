@@ -2,33 +2,30 @@
  * The right-hand place of the editor (ADR 0010): comments, quality control and
  * the AI panel take turns there, one open at a time (js/ext/right-panel.js).
  *
- * One copy of what each panel used to carry: the slide from the right, and the
+ * One copy of what each panel used to carry: its entrance, a fade in place, and the
  * canvas making room; and the panel rail that opens them (ADR 0020). The panels sit in #main-toolbox, whose
  * `#main-toolbox > div > div { height: 100% }` (1,0,2) would stretch them to
  * the whole window, their foot under its bottom edge: the selector takes the id
  * too (1,2,0), which also outranks the `.slidebar` defaults of the left bar.
  */
 
-@right-panel-motion: 0.2s ease-out;
+// A short fade and a few pixels of travel, decelerating in, quicker out:
+// the panel appears in place rather than crossing the screen.
+@right-panel-motion: 180ms cubic-bezier(0.2, 0, 0, 1);
+@right-panel-motion-out: 120ms cubic-bezier(0.4, 0, 1, 1);
+@right-panel-travel: 8px;
 // The boards' panel: 360px, whatever the left bar's width.
 @right-panel-width: 360px;
-@right-panel-offset: -(@right-panel-width + 50px);
 // The panel rail and the open panel float over the canvas, as on the boards
-// (ADR 0020): 14 px from the edges, the rail a card of 40 px buttons, the
+// (ADR 0020): 14 px under the top bar, the rail a card of 40 px buttons, the
 // panel 10 px beside it.
 @panel-float-inset: 14px;
 @panel-rail-width: 50px; // 40 px buttons, 4 px padding, 1 px border
-@right-panel-right: @panel-float-inset + @panel-rail-width + 10px;
-
-@keyframes right-panel-slide-in {
-  0% { right: @right-panel-offset; }
-  100% { right: @right-panel-right; }
-}
-
-@keyframes right-panel-slide-out {
-  0% { right: @right-panel-right; }
-  100% { right: @right-panel-offset; }
-}
+// On the right, the canvas's scrollbar (classic scrollbars are 15 px wide)
+// stays clear of the rail by a few pixels.
+@canvas-scrollbar-width: 15px;
+@panel-rail-right: @canvas-scrollbar-width + 8px;
+@right-panel-right: @panel-rail-right + @panel-rail-width + 10px;
 
 #main-toolbox .slidebar.right-panel {
   position: fixed;
@@ -41,12 +38,27 @@
   background: var(--white);
   border-radius: 12px;
   box-shadow: var(--shadow-3);
-  animation: right-panel-slide-in @right-panel-motion 0s 1;
+  // Mosaico's slide of its drawers, left out.
+  animation: none;
+  transition:
+    opacity @right-panel-motion,
+    transform @right-panel-motion,
+    visibility 0s;
 
+  // Closed, it stays in place, faded out: transitions, unlike animations, do
+  // not play when the editor loads. Hidden, it leaves the tab order.
   &.hidden {
     left: auto;
-    right: @right-panel-offset;
-    animation: right-panel-slide-out @right-panel-motion 0s 1;
+    right: @right-panel-right;
+    visibility: hidden;
+    opacity: 0;
+    transform: translateX(@right-panel-travel);
+    pointer-events: none;
+    animation: none;
+    transition:
+      opacity @right-panel-motion-out,
+      transform @right-panel-motion-out,
+      visibility 0s linear @right-panel-motion-out;
   }
 }
 
@@ -58,21 +70,21 @@
   right: 0;
 }
 
-.withRightPanel #main-edit-area {
-  right: @right-panel-width + @right-panel-right + @panel-float-inset;
-  transition: right @right-panel-motion;
+// The room is made inside the canvas, not by narrowing it: its scrollbar stays
+// on the window's right edge, beside the rail, and the panel floats over the
+// canvas as the rail does.
+#main-wysiwyg-area {
+  transition: padding-right @right-panel-motion;
 }
 
-// Around the floating panel, the canvas's white rather than the body's dark
-// brand colour, when the canvas keeps its minimum width.
-#page.withRightPanel {
-  background: var(--white);
+.withRightPanel #main-wysiwyg-area {
+  padding-right: @right-panel-width + @right-panel-right + @panel-float-inset;
 }
 
 @media (prefers-reduced-motion: reduce) {
   #main-toolbox .slidebar.right-panel,
   #main-toolbox .slidebar.right-panel.hidden,
-  .withRightPanel #main-edit-area {
+  #main-wysiwyg-area {
     animation: none;
     transition: none;
   }
@@ -84,7 +96,7 @@
 .panel-rail {
   position: fixed;
   top: calc(var(--top-bar-height, 52px) + @panel-float-inset);
-  right: @panel-float-inset;
+  right: @panel-rail-right;
   // The panels' level, and after them in the page: a sliding panel passes
   // under the rail. Below the top bar (201) and its menus, and the dialogs.
   z-index: 200;

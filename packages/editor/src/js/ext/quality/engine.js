@@ -1,7 +1,6 @@
 'use strict';
 
 const _ = require('lodash');
-const { getBlockLabelWithNumber } = require('../comments-utils');
 const { buildContext } = require('./context');
 
 const htmlSize = require('./rules/html-size');
@@ -132,7 +131,7 @@ function completeFinding(rule, finding, ctx) {
     messageKey: finding.messageKey,
     params: finding.params || {},
     blockId,
-    blockLabel: blockId ? getBlockLabelWithNumber(ctx.blocks, blockId) : null,
+    blockLabel: blockId ? ctx.blockLabel(blockId) : null,
     propertyPath,
     blocking,
     // Identifies "this issue on this content": it changes when the content

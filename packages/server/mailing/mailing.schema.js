@@ -628,7 +628,7 @@ MailingSchema.statics.findOneForMosaico = async function findOneForMosaico(
   const mailingService = require('./mailing.service.js');
   const canWrite = await mailingService.userCanEditMailing(user, mailing);
 
-  // Whether this user may use the AI tools on this email: the rule of the text
+  // Whether this user may use the AI actions on this email: the rule of the text
   // generation routes (the feature, the capability, where the email lives),
   // known before the editor starts so that every way in is hidden at once
   // (ADR 0020). The routes read the feature of the company billed, the
@@ -685,7 +685,7 @@ MailingSchema.statics.findOneForMosaico = async function findOneForMosaico(
       // Text generation on for the template's company; the editor reads
       // canUseTextGeneration below.
       hasTextGenerationFeature,
-      // The AI tools of the editor, for this user on this email.
+      // The AI actions of the editor, for this user on this email.
       canUseTextGeneration,
       // Drive palette visibility of the two synthetic blocks only — their
       // definitions are always injected client-side. Independent of each other.

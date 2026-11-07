@@ -2,7 +2,6 @@
 
 module.exports = {
   // edit title
-  'edit-title-double-click': 'Double-cliquer pour modifier',
   'edit-title-cancel': 'Annuler la modification',
   'edit-title-save': 'Enregistrer le nouveau nom',
   'edit-title-ajax-pending': 'Changement du nom…',
@@ -18,10 +17,10 @@ module.exports = {
 
   // gallery
   'gallery-title': 'Galeries :',
-  'gallery-mailing': "SPÉCIFIQUE À L'EMAIL",
+  'gallery-mailing': 'Dans cet email',
   'gallery-mailing-loading': "Chargement de la galerie de l'email…",
   'gallery-mailing-empty': "La galerie de l'email est vide",
-  'gallery-template': 'COMMUN AU TEMPLATE',
+  'gallery-template': 'Galerie du template',
   'gallery-template-loading': 'Chargement de la galerie du template…',
   'gallery-template-empty': 'La galerie du template est vide',
   'gallery-remove-image': 'Supprimer __label__',
@@ -229,13 +228,12 @@ module.exports = {
 
   // PersonalizedBlocksListComponent translations
   'personalized-blocks-fetch-error':
-    "Une erreur s'est produite lors de la récupération des blocs personnalisés.",
-  'personalized-blocks-loading': 'Chargement des blocs personnalisés...',
-  'personalized-blocks-empty':
-    'Aucun bloc personnalisé disponible pour ce template.',
+    "Une erreur s'est produite lors de la récupération des blocs enregistrés.",
+  'personalized-blocks-loading': 'Chargement des blocs enregistrés…',
+  'personalized-blocks-empty': 'Aucun bloc enregistré pour ce template.',
   'personalized-blocks-empty-search':
     'Aucun résultat trouvé pour votre recherche.',
-  'personalized-blocks-search-placeholder': 'Rechercher...',
+  'personalized-blocks-search-placeholder': 'Rechercher un bloc…',
 
   // Content feed toolbar/toolbox tooltips (raw-string keys, same convention as "Comment block")
   'Content feed available for this block':
@@ -261,7 +259,7 @@ module.exports = {
   // DeleteBlockModal translations
   'title-delete-block': 'Supprimer le bloc',
   'confirm-delete-block':
-    'Êtes-vous sûr de vouloir supprimer le bloc personnalisé :',
+    'Êtes-vous sûr de vouloir supprimer le bloc enregistré :',
   'deleting-block': 'Suppression du bloc en cours...',
   'delete-block': 'Supprimer',
   'delete-block-success': 'Bloc supprimé avec succès',
@@ -280,7 +278,21 @@ module.exports = {
 
   // Comments
   'Comment block': 'Commenter ce bloc',
+  'block-tool-comment': 'Commenter',
   'panel-rail-label': 'Panneaux',
+  // The left bar (js/ext/left-bar.js) and the left of the top bar.
+  'Back to mailings list': 'Retour à la liste des emails',
+  'topbar-rename': "Renommer l'email",
+  'left-bar-label': "Outils de l'email",
+  'left-bar-blocks': 'Blocs',
+  'left-bar-images': 'Images',
+  'left-bar-settings': 'Réglages',
+  'left-bar-template-blocks': 'Blocs du template',
+  'left-bar-saved-blocks': 'Enregistrés',
+  'left-bar-content': 'Contenu',
+  'left-bar-styles': 'Styles',
+  'left-bar-block-search': 'Rechercher un bloc…',
+  'left-bar-block-search-empty': 'Aucun bloc ne correspond à cette recherche.',
   'topbar-export': 'Exporter',
   'topbar-preview-label': 'Aperçu',
   'topbar-save-readonly':
@@ -353,7 +365,6 @@ module.exports = {
   'comments-block-deleted': 'Bloc supprimé',
   'comments-mention-placeholder': 'Tapez @ pour mentionner',
   'comments-filter-label': 'Filtrer les commentaires',
-  'comments-filter-no-block': 'Aucun bloc sélectionné',
   'comments-anonymous': 'Anonyme',
   'comments-whole-email': "Tout l'email",
   'comments-approval-lifted':
@@ -618,7 +629,9 @@ module.exports = {
   'Add comment': 'Ajouter un commentaire',
   'sending-test-mails': "Envoi de l'email de test…",
   'ai-panel-current-subject': 'Objet actuel',
+  'ai-panel-current-subject-empty': "Aucun objet pour l'instant",
   'ai-panel-current-preheader': 'Préheader actuel',
+  'ai-panel-current-preheader-empty': "Aucun préheader pour l'instant",
   'quality-test-sent-subject': 'Objet : « __subject__ ».',
   'quality-ready-title': 'Prêt à partir',
   'quality-ready-text':
@@ -648,8 +661,7 @@ module.exports = {
   'Missing mobile background image': 'Image de fond mobile manquante',
   'Exported HTML weighs __size__ KB: keep it under __max__ KB, Gmail clips emails over 102 KB once the ESP adds its tracking':
     "Le HTML exporté pèse __size__ Ko : restez sous __max__ Ko, Gmail coupe les emails de plus de 102 Ko une fois le tracking de l'ESP ajouté",
-  'Required tracking parameters missing: __keys__':
-    'Paramètres de tracking obligatoires manquants : __keys__',
+  'Required tracking parameters missing: __keys__': 'Manquants : __keys__',
   'Test email': "Tester l'email",
   'Run quality checks': 'Lancer le contrôle qualité',
   Blocking: 'Bloquant',
@@ -670,7 +682,7 @@ module.exports = {
     '__count__ point(s) à corriger : ouvrez le contrôle qualité',
   'Go to block': 'Aller au bloc',
   'This check could not run': "Ce contrôle n'a pas pu s'exécuter",
-  'Required tracking parameters': 'Paramètres de tracking obligatoires',
+  'Required tracking parameters': 'Paramètres de tracking',
   'All required tracking parameters are filled in':
     'Tous les paramètres de tracking obligatoires sont renseignés',
   'quality-title-links': 'Liens',
@@ -964,6 +976,7 @@ module.exports = {
     "Créé le __created__ par __name__, jusqu'au __date__",
   'Created __created__, until __date__':
     "Créé le __created__, jusqu'au __date__",
+  'quality-share-expired': 'Créé le __created__, expiré depuis le __date__',
   'Turn off the link: __link__': 'Désactiver le lien : __link__',
   'This email already has __count__ active links: turn one off first':
     "Cet email a déjà __count__ liens actifs : désactivez-en un d'abord",
@@ -972,7 +985,7 @@ module.exports = {
   'The links could not be loaded': "Les liens n'ont pas pu être chargés",
 
   // text generation (epic #1163)
-  // AI panel, « Outils IA » (ADR 0010)
+  // AI panel, « Actions IA » (ADR 0010)
   'right-panel-close': 'Fermer le panneau',
   'ai-panel-back': 'Retour aux actions',
   'ai-panel-correct-field': 'Corriger ce champ',
@@ -980,6 +993,8 @@ module.exports = {
   'ai-panel-correct-email': "Corriger tout l'email",
   'ai-panel-correct-field-desc': 'Orthographe et grammaire du champ',
   'ai-panel-correct-block-desc': 'Les champs de texte du bloc',
+  'ai-panel-correct-block-desc-count': 'Les __count__ champs de texte du bloc',
+  'ai-panel-correct-block-desc-count-one': 'Le champ de texte du bloc',
   'ai-panel-correct-email-desc': 'Orthographe et grammaire, bloc par bloc',
   'ai-panel-subject-desc': 'Trois propositions à partir du contenu',
   'ai-panel-preheader-desc': "En cohérence avec l'objet",
@@ -1014,7 +1029,7 @@ module.exports = {
   'ai-panel-blocks-count': '__count__ blocs',
   'ai-panel-fields-read-one': '1 champ relu',
   'ai-panel-fields-read': '__count__ champs relus',
-  'ai-panel-title': 'Outils IA',
+  'ai-panel-title': 'Actions IA',
   'ai-panel-action-subject': "Générer l'objet",
   'ai-panel-action-preheader': 'Générer le préheader',
   'ai-panel-copy-only':
@@ -1098,7 +1113,7 @@ module.exports = {
   'ai-panel-see-its-actions': 'Voir ses actions IA',
   'ai-field-subject-label': "Générer l'objet avec l'IA",
   'ai-field-preheader-label': "Générer le préheader avec l'IA",
-  'ai-block-tool': 'Outils IA du bloc',
+  'ai-block-tool': 'Actions IA du bloc',
   'ai-field-correct-label': "Corriger avec l'IA",
   'text-generation-applied-preheader': 'Préheader :',
   'text-generation-applied-subject': 'Objet :',
@@ -1108,7 +1123,7 @@ module.exports = {
   'text-generation-copy-hint-preheader':
     "Ce template n'a pas de préheader modifiable : copiez une proposition pour la coller dans votre outil d'envoi.",
   'text-generation-preheaders-title': 'Choisissez un préheader',
-  'text-generation-brief-label': 'Consigne (facultatif)',
+  'text-generation-brief-label': 'Consigne (facultative)',
   'text-generation-brief-placeholder': 'Ex. insister sur la livraison offerte',
   'text-generation-more': "Proposer d'autres",
   'text-generation-subjects-title': 'Choisissez un objet',
@@ -1129,7 +1144,7 @@ module.exports = {
   'text-generation-error-disabled':
     "La génération de texte n'est pas activée pour votre entreprise.",
   'text-generation-error-forbidden':
-    "Vous ne pouvez plus modifier cet email : les Outils IA ne sont plus disponibles. Rechargez la page, ou demandez l'accès à un administrateur.",
+    "Vous ne pouvez plus modifier cet email : les Actions IA ne sont plus disponibles. Rechargez la page, ou demandez l'accès à un administrateur.",
   'text-generation-error-unavailable':
     "La génération de texte n'est pas disponible pour le moment. Contactez votre administrateur.",
   'text-generation-error-rate-limited':

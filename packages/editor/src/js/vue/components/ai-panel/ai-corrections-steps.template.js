@@ -42,16 +42,14 @@ module.exports = `
 <div class="ai-panel__steps" @keydown="onKeydown">
   <p v-if="state.error" class="qc-notice qc-notice--error" role="alert">{{ t(state.error) }}</p>
 
-  <p v-if="state.pausedFor" class="qc-notice">
-    <span class="lucide lucide-info" aria-hidden="true"></span>
-    <span class="qc-notice__text">{{ t('ai-panel-correction-paused', { seconds: state.pausedFor }) }}</span>
-  </p>
-
   <!-- The analysis under way (board a4); « Arrêter l'analyse » is the foot. -->
   <div v-if="state.isLoading" ref="summary" tabindex="-1" class="ai-panel__progress" aria-labelledby="ai-panel-progress">
     <p id="ai-panel-progress" class="ai-panel__progress-line">
-      <span class="qc-spinner" aria-hidden="true"></span>
-      <span v-if="state.progress">
+      <!-- A pause on the usage limit counts down in place (« pause sur quota »). -->
+      <span v-if="pauseLeft" class="lucide lucide-pause ai-panel__progress-paused" aria-hidden="true"></span>
+      <span v-else class="qc-spinner" aria-hidden="true"></span>
+      <span v-if="pauseLeft">{{ t('ai-panel-correction-paused', { seconds: pauseLeft }) }}</span>
+      <span v-else-if="state.progress">
         {{ t('ai-panel-correcting-blocks', { done: Math.min(state.progress.done + 1, state.progress.total), total: state.progress.total }) }}
       </span>
       <span v-else>{{ t('ai-panel-correcting') }}</span>

@@ -22,10 +22,11 @@ const RAIL_GAP = 8;
 // The widest marker, active (scaled) and with a two-digit count.
 const RAIL_WIDTH = 52;
 // What moves the email without a scroll: the window resized, the canvas
-// sliding when a panel opens (watchSize: a preview switched).
+// making room when a panel opens (watchSize: a preview switched).
 const LAYOUT_EVENTS = ['resize', 'transitionend'];
-// The canvas, whose `right` slides when a right panel opens or closes.
-const CANVAS_ID = 'main-edit-area';
+// The canvas, whose right padding, the room of an open right panel, slides
+// when the panel opens or closes.
+const CANVAS_ID = 'main-wysiwyg-area';
 
 // A count is `{ count, maxSeverity }`, or a bare number from older answers.
 const countOf = (data) => (typeof data === 'object' ? data.count : data);
@@ -109,9 +110,14 @@ function createCommentsRail(
   function railLeft(container) {
     const email = container.querySelector('replacedbody');
     if (!email || !email.getBoundingClientRect) return null;
-    // The canvas's visible right edge, its scrollbar left out.
+    // The canvas's visible right edge, its scrollbar and the room kept for an
+    // open panel left out.
+    const panelRoom =
+      parseFloat(win.getComputedStyle(container).paddingRight) || 0;
     const canvasRight =
-      container.getBoundingClientRect().left + container.clientWidth;
+      container.getBoundingClientRect().left +
+      container.clientWidth -
+      panelRoom;
     const emailRight = email.getBoundingClientRect().right;
     if (!canvasRight && !emailRight) return null;
     return Math.min(emailRight + RAIL_GAP, canvasRight - RAIL_WIDTH);

@@ -44,10 +44,11 @@ module.exports = `
   </template>
 
   <template v-else>
-    <!-- What the field holds now (board a3), when it holds something. -->
-    <div v-if="currentText && labels.current" class="ai-panel__current">
+    <!-- What the field holds now (board a3), or that it is empty. -->
+    <div v-if="labels.current && (currentText || labels.currentEmpty)" class="ai-panel__current">
       <p class="ai-panel__label">{{ t(labels.current) }}</p>
-      <p class="ai-panel__current-text">{{ currentText }}</p>
+      <p v-if="currentText" class="ai-panel__current-text">{{ currentText }}</p>
+      <p v-else class="ai-panel__current-text ai-panel__current-text--empty">{{ t(labels.currentEmpty) }}</p>
     </div>
     <label for="ai-panel-brief" class="ai-panel__label">{{ t('text-generation-brief-label') }}</label>
     <textarea id="ai-panel-brief" ref="brief" class="ai-panel__brief" v-model="brief" rows="2" maxlength="500"

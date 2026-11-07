@@ -1091,7 +1091,7 @@ What relies on these names, so a template that wants them must keep them:
 - **Quality control and text generation** read and write the preheader at either
   location above. `preheaderVisible: false` counts as no preheader: a generated one
   is then offered to copy instead.
-- **The AI icon of the preheader field** (« Outils IA », ADR 0010) is placed in the
+- **The AI icon of the preheader field** (« Actions IA », ADR 0010) is placed in the
   label of the property editor whose input is bound to `value: preheaderText`.
   Mosaico offers no slot per property, so the binding is the only hook: a template
   that renames the property, or uses per-market variants, shows no icon.

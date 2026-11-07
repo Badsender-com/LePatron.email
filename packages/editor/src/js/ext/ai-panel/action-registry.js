@@ -5,7 +5,7 @@ const { ACTIONS } = require('./actions');
 /**
  * Which AI actions a target offers, and whether its AI icon opens the action
  * itself or the list (ADR 0010). One pure function over the action
- * definitions (ext/ai-panel/actions), so that the « Outils IA » panel, the
+ * definitions (ext/ai-panel/actions), so that the « Actions IA » panel, the
  * icons and the actions to come cannot disagree.
  *
  * Targets (ext/ai-panel/targets.js): `{ kind: 'email' }`, the subject and

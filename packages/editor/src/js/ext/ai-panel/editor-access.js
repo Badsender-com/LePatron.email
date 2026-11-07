@@ -16,10 +16,7 @@ const {
   injectBlockTranslations,
 } = require('../../utils/block-content-extractor');
 const { goToBlock, findBlockById } = require('../block-navigation');
-const {
-  getBlockLabelWithNumber,
-  formatBlockName,
-} = require('../comments-utils');
+const { blockLabel } = require('../block-label');
 
 const BLOCK_ID = /^ko_([A-Za-z][A-Za-z0-9]*)_(\d+)$/;
 
@@ -128,21 +125,8 @@ function createEditorAccess(viewModel) {
         .filter(Boolean)
         .map(([blockId, blockType]) => ({ blockId, blockType }));
     },
-    // How the quality drawer and the comments name a block: « Texte 2 ».
-    blockLabel(blockId) {
-      let blocks = [];
-      try {
-        blocks = viewModel.content().mainBlocks().blocks();
-      } catch (e) {
-        // A template without a main container.
-      }
-      // A fixed block of the template (a header, a footer) is named by type.
-      const match = BLOCK_ID.exec(blockId);
-      return (
-        getBlockLabelWithNumber(blocks, blockId) ||
-        (match ? formatBlockName(match[1]) : blockId)
-      );
-    },
+    // « Cover · bloc 2 », as every panel names a block (ext/block-label.js).
+    blockLabel: (blockId) => blockLabel(viewModel, blockId),
     // Only the blocks of the email can be reached, not the template's fixed
     // ones (a header, a footer).
     canGoToBlock: (blockId) => Boolean(findBlockById(viewModel, blockId)),

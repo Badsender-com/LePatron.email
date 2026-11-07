@@ -13,6 +13,7 @@ var slugFilename = require('../../../../server/helpers/slug-filename.js');
 const badsenderEventsHub = require('../badsender-events-hub.js');
 const serverStorage = require('./badsender-server-storage');
 const editTitle = require('./badsender-edit-title');
+const leftBar = require('./left-bar.js');
 const gallery = require('./badsender-gallery');
 const removeImage = require('./badsender-remove-gallery-image');
 const renameImage = require('./badsender-rename-gallery-image');
@@ -73,6 +74,7 @@ function extendViewModel(opts, customExtensions) {
   customExtensions.push(serverStorage(opts));
   customExtensions.push(editorIcon(opts));
   customExtensions.push(editTitle);
+  customExtensions.push(leftBar);
   customExtensions.push(gallery(opts));
   customExtensions.push(extendTextEditor(opts));
   customExtensions.push(colorPicker(opts));

@@ -2,7 +2,6 @@
 
 module.exports = {
   // edit title
-  'edit-title-double-click': 'Double click to edit',
   'edit-title-cancel': 'Cancel edition',
   'edit-title-save': 'Save the new name',
   'edit-title-ajax-pending': 'Changing name…',
@@ -18,10 +17,10 @@ module.exports = {
 
   // gallery
   'gallery-title': 'Galleries:',
-  'gallery-mailing': 'EMAIL ONLY',
+  'gallery-mailing': 'In this email',
   'gallery-mailing-loading': 'Loading email gallery…',
   'gallery-mailing-empty': 'The email gallery is empty',
-  'gallery-template': 'TEMPLATE SHARED',
+  'gallery-template': 'Template gallery',
   'gallery-template-loading': 'Loading template gallery…',
   'gallery-template-empty': 'The template gallery is empty',
   'gallery-remove-image': 'Delete __label__',
@@ -220,9 +219,9 @@ module.exports = {
 
   // PersonalizedBlocksListComponent translations
   'personalized-blocks-fetch-error':
-    'An error occurred while fetching custom blocks.',
-  'personalized-blocks-loading': 'Loading custom blocks...',
-  'personalized-blocks-empty': 'No custom blocks available for this template.',
+    'An error occurred while fetching saved blocks.',
+  'personalized-blocks-loading': 'Loading saved blocks…',
+  'personalized-blocks-empty': 'No saved blocks for this template.',
   'personalized-blocks-empty-search': 'No results found for your search.',
   'personalized-blocks-search-placeholder': 'Search...',
 
@@ -248,7 +247,7 @@ module.exports = {
 
   // DeleteBlockModal translations
   'title-delete-block': 'Delete block',
-  'confirm-delete-block': 'Are you sure you want to delete the custom block:',
+  'confirm-delete-block': 'Are you sure you want to delete the saved block:',
   'deleting-block': 'Deleting block...',
   'delete-block': 'Delete',
   'delete-block-success': 'Block deleted successfully',
@@ -267,7 +266,21 @@ module.exports = {
 
   // Comments
   'Comment block': 'Comment this block',
+  'block-tool-comment': 'Comment',
   'panel-rail-label': 'Panels',
+  // The left bar (js/ext/left-bar.js) and the left of the top bar.
+  'Back to mailings list': 'Back to the emails list',
+  'topbar-rename': 'Rename the email',
+  'left-bar-label': 'Email tools',
+  'left-bar-blocks': 'Blocks',
+  'left-bar-images': 'Images',
+  'left-bar-settings': 'Settings',
+  'left-bar-template-blocks': 'Template blocks',
+  'left-bar-saved-blocks': 'Saved',
+  'left-bar-content': 'Content',
+  'left-bar-styles': 'Styles',
+  'left-bar-block-search': 'Search a block…',
+  'left-bar-block-search-empty': 'No block matches this search.',
   'topbar-export': 'Export',
   'topbar-preview-label': 'Preview',
   'topbar-save-readonly':
@@ -340,7 +353,6 @@ module.exports = {
   'comments-block-deleted': 'Block deleted',
   'comments-mention-placeholder': 'Type @ to mention',
   'comments-filter-label': 'Filter the comments',
-  'comments-filter-no-block': 'No block selected',
   'comments-anonymous': 'Anonymous',
   'comments-whole-email': 'Whole email',
   'comments-approval-lifted':
@@ -602,7 +614,9 @@ module.exports = {
   'sending-test-mails': 'Sending test mail…',
   'Saved list of addresses': 'Saved list of addresses',
   'ai-panel-current-subject': 'Current subject',
+  'ai-panel-current-subject-empty': 'No subject yet',
   'ai-panel-current-preheader': 'Current preheader',
+  'ai-panel-current-preheader-empty': 'No preheader yet',
   'quality-test-sent-subject': 'Subject: « __subject__ ».',
   'quality-ready-title': 'Ready to go',
   'quality-ready-text':
@@ -631,8 +645,7 @@ module.exports = {
   'Missing mobile background image': 'Missing mobile background image',
   'Exported HTML weighs __size__ KB: keep it under __max__ KB, Gmail clips emails over 102 KB once the ESP adds its tracking':
     'Exported HTML weighs __size__ KB: keep it under __max__ KB, Gmail clips emails over 102 KB once the ESP adds its tracking',
-  'Required tracking parameters missing: __keys__':
-    'Required tracking parameters missing: __keys__',
+  'Required tracking parameters missing: __keys__': 'Missing: __keys__',
   'Test email': 'Test email',
   'Run quality checks': 'Run quality checks',
   Blocking: 'Blocking',
@@ -937,6 +950,7 @@ module.exports = {
     'Created __created__ by __name__, until __date__',
   'Created __created__, until __date__': 'Created __created__, until __date__',
   'Turn off the link: __link__': 'Turn off the link: __link__',
+  'quality-share-expired': 'Created __created__, expired since __date__',
   'This email already has __count__ active links: turn one off first':
     'This email already has __count__ active links: turn one off first',
   'Copy the link: __link__': 'Copy the link: __link__',
@@ -944,7 +958,7 @@ module.exports = {
   'The links could not be loaded': 'The links could not be loaded',
 
   // text generation (epic #1163)
-  // AI panel, « Outils IA » (ADR 0010)
+  // AI panel, « Actions IA » (ADR 0010)
   'right-panel-close': 'Close the panel',
   'ai-panel-back': 'Back to the actions',
   'ai-panel-correct-field': 'Correct this field',
@@ -952,6 +966,8 @@ module.exports = {
   'ai-panel-correct-email': 'Correct the whole email',
   'ai-panel-correct-field-desc': 'Spelling and grammar of the field',
   'ai-panel-correct-block-desc': 'The text fields of the block',
+  'ai-panel-correct-block-desc-count': 'The __count__ text fields of the block',
+  'ai-panel-correct-block-desc-count-one': 'The text field of the block',
   'ai-panel-correct-email-desc': 'Spelling and grammar, block by block',
   'ai-panel-subject-desc': 'Three proposals from the content',
   'ai-panel-preheader-desc': 'Consistent with the subject',
@@ -984,7 +1000,7 @@ module.exports = {
   'ai-panel-blocks-count': '__count__ blocks',
   'ai-panel-fields-read-one': '1 field read',
   'ai-panel-fields-read': '__count__ fields read',
-  'ai-panel-title': 'AI tools',
+  'ai-panel-title': 'AI actions',
   'ai-panel-action-subject': 'Generate the subject',
   'ai-panel-action-preheader': 'Generate the preheader',
   'ai-panel-copy-only':
@@ -1063,7 +1079,7 @@ module.exports = {
   'ai-panel-see-its-actions': 'See its AI actions',
   'ai-field-subject-label': 'Generate the subject with AI',
   'ai-field-preheader-label': 'Generate the preheader with AI',
-  'ai-block-tool': 'AI tools of the block',
+  'ai-block-tool': 'AI actions of the block',
   'ai-field-correct-label': 'Correct with AI',
   'text-generation-applied-preheader': 'Preheader:',
   'text-generation-applied-subject': 'Subject:',
@@ -1094,7 +1110,7 @@ module.exports = {
   'text-generation-error-disabled':
     'Text generation is not enabled for your company.',
   'text-generation-error-forbidden':
-    'You can no longer edit this email, so the AI tools are unavailable. Reload the page, or ask an administrator for access.',
+    'You can no longer edit this email, so the AI actions are unavailable. Reload the page, or ask an administrator for access.',
   'text-generation-error-unavailable':
     'Text generation is not available right now. Contact your administrator.',
   'text-generation-error-rate-limited':

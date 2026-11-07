@@ -4,6 +4,8 @@ const Vue = require('vue/dist/vue.common');
 const { definitionOf } = require('../../../ext/ai-panel/actions');
 const { placeFieldIcons } = require('../../../ext/ai-panel/field-icons');
 const { FIELD_TARGETS } = require('../../../ext/ai-panel/targets');
+const { roleOf } = require('../../../ext/block-text-fields');
+const { ROLE_LABELS } = require('./field-role-labels');
 const { AiProposalsSteps } = require('./ai-proposals-steps');
 const { AiCorrectionsSteps } = require('./ai-corrections-steps');
 const template = require('./ai-panel.template');
@@ -21,12 +23,14 @@ const MIRRORED = [
   'target',
   'actions',
   'targetActions',
+  'blockActions',
+  'blockFieldCount',
   'sessionAction',
   'selectionChanged',
 ];
 
 /**
- * The AI panel, « Outils IA » (ADR 0010). Its state and decisions are the
+ * The AI panel, « Actions IA » (ADR 0010). Its state and decisions are the
  * controller's (ext/ai-panel/ai-panel-controller.js): this renders the lists
  * and hands the action under way to the component of its family. Its place,
  * Escape and the focus on open and close are the right panel's
@@ -43,6 +47,8 @@ const AiPanel = Vue.component('AiPanel', {
     target: null,
     actions: [],
     targetActions: [],
+    blockActions: [],
+    blockFieldCount: null,
     session: null,
     sessionAction: null,
     selectionChanged: null,
@@ -88,8 +94,19 @@ const AiPanel = Vue.component('AiPanel', {
       const steps = this.$refs.steps;
       if (steps && typeof steps.onFooter === 'function') steps.onFooter(id);
     },
+    // Escape steps back one level: in an action, to the list, as the arrow
+    // does; from the list, the panel closes (ext/right-panel.js).
+    onEscape(event) {
+      if (!this.session || event.defaultPrevented) return;
+      event.stopPropagation();
+      this.showList();
+    },
     // Ctrl+Z from the foot undoes as it does from the steps.
     onFooterKey(event) {
+      if (event.key === 'Escape') {
+        this.onEscape(event);
+        return;
+      }
       const steps = this.$refs.steps;
       if (steps && typeof steps.onKeydown === 'function') steps.onKeydown(event);
     },
@@ -106,6 +123,13 @@ const AiPanel = Vue.component('AiPanel', {
     descriptionOf(id, target) {
       const { labels } = definitionOf(id);
       const kind = target && target.kind;
+      // « Les 4 champs de texte du bloc » (board a2).
+      const counted = labels.describeCountByKind && labels.describeCountByKind[kind];
+      if (counted && this.blockFieldCount) {
+        return this.t(this.blockFieldCount === 1 ? `${counted}-one` : counted, {
+          count: this.blockFieldCount,
+        });
+      }
       const key =
         (labels.describeByKind && labels.describeByKind[kind]) ||
         labels.description;
@@ -120,6 +144,16 @@ const AiPanel = Vue.component('AiPanel', {
       return typeof this.vm.commentBlockLabel === 'function'
         ? this.vm.commentBlockLabel(target.blockId)
         : '';
+    },
+    // The block of a selected field, as its own target.
+    blockTargetOf(target) {
+      return this.panel.blockOf(target);
+    },
+    // What a selected field is: « Titre », « Bouton ».
+    fieldOf(target) {
+      if (!target || !target.field) return '';
+      const key = ROLE_LABELS[roleOf(target.field)];
+      return key ? this.t(key) : '';
     },
     stepsOf(session) {
       return STEPS_BY_FAMILY[definitionOf(session.state.action).family];

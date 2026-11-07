@@ -50,7 +50,8 @@ describe('runQualityChecks', () => {
       messageKey: 'Fake',
       params: {},
       blockId: 'ko_heroBlock_2',
-      blockLabel: 'Hero #2',
+      // As every panel names a block (ext/block-label.js): « Hero · bloc 2 ».
+      blockLabel: 'Hero · comments-block-place',
       propertyPath: 'text',
     });
   });
