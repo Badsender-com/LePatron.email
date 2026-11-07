@@ -107,12 +107,12 @@ _Avoid_: Media library, image bank
 
 **Mailing gallery**:
 The gallery of one email: the images uploaded while designing it.
-_UI_: Spécifique à l'email
+_UI_: Dans cet email
 _Avoid_: Email images, local gallery
 
 **Template gallery**:
 The gallery of one template, shared by every email made from it.
-_UI_: Commun au template
+_UI_: Galerie du template
 _Avoid_: Shared gallery, common gallery
 
 **Stored name**:
@@ -260,3 +260,195 @@ _Avoid_: Done, fixed, applied
 A retex a super admin decided not to act on, with the reason. It stays readable and no longer counts towards a convergence.
 _UI_: Écarté
 _Avoid_: Rejected, closed, deleted
+
+### Editor
+
+**Template**:
+The email model a company is given, built by the operator: its blocks, styles and defaults. Every mailing of the company starts from one.
+_UI_: Template
+_Avoid_: Wireframe (the code keeps `_wireframe`)
+
+**Right panel**:
+One of the three panels that take turns on the right of the editor, one open at a time: the comments, the quality panel ("Tester l'email") and the AI panel. They share one shell: header, close button, body, foot, empty, loading and error states.
+_UI_: Commentaires, Tester l'email, Actions IA
+_Avoid_: Drawer, sidebar, slidebar (in prose; the code keeps `.slidebar`)
+
+**Left bar**:
+The column on the left of the editor, under the top bar, with three tabs of two sub-tabs each: the blocks to add (the template's and the saved ones), the images (the email's gallery and the template's) and the settings (the content and the styles of the selected block, or of the email).
+_UI_: Blocs, Images, Réglages
+_Avoid_: Toolbox, sidebar (the code keeps `#main-toolbox`)
+
+**Saved block**:
+A block a user saved from an email, with its content, to add it again to the emails of the same template.
+_UI_: Enregistrés ; bloc enregistré
+_Avoid_: Custom block, personalized block (the code keeps `personalizedBlocks`)
+
+**Panel rail**:
+The vertical strip on the right edge of the editor, below the top bar, holding the button of each right panel and its badge.
+_Avoid_: Toolbar, dock
+
+**Comment markers rail**:
+The column beside the email, in the canvas, with a marker on each block that has unresolved comments.
+_Avoid_: Panel rail (the rail of the panel buttons)
+
+### Comments
+
+**Comment**:
+A remark posted on an email, on the whole email or on one of its blocks, with a type and a priority; it is resolved once dealt with. A reply belongs to a root comment and has no type, priority or reply of its own.
+_UI_: Commentaire
+_Avoid_: Note, annotation
+
+**Comment target**:
+What a new comment is about: the whole email or one block. It follows the selection in the canvas until the user changes it, and is distinct from the filter of the list, which only reads.
+_UI_: « Sur : Tout l'email », « Sur : <bloc> »
+_Avoid_: Selected block, filter
+
+**Blocking comment**:
+A root comment of priority "blocking", not resolved. While one is open, the email cannot be approved. Not to be confused with a blocking rule of the quality control (see Check state), which stops the export.
+_UI_: Bloquant
+
+**Approval**:
+The event by which someone allowed to approve says an email may be sent. It shows in the thread of comments but is not a comment to resolve: it has no type, priority or block, and counts in no counter of unresolved comments. Its author, or a moderator of the comments, withdraws it by deleting it; editing the email does not withdraw it.
+_UI_: « Approuver l'email » ; « Bon pour envoi »
+_Avoid_: Validation (for the event), sign-off
+
+**Approved email**:
+An email whose last root comment is an approval and that has no blocking comment open. A new root comment lifts it, even once resolved: only deleting that comment restores the approval.
+_UI_: Validé
+_Avoid_: Validated, signed off
+
+### Quality control
+
+**Quality run**:
+One execution of the quality control on an email: one HTML export, parsed once, every rule run on the same context. Started from the quality panel, or by a download or an ESP send on the HTML they export.
+_UI_: Contrôle qualité
+_Avoid_: Scan, audit
+
+**Rule**:
+One check the quality control knows, in `ext/quality/rules/`: an id, a category, a default severity, a title and a "passed" message. A local rule runs in the browser on the export; a remote rule judges what the server measured (link states, image weights, threat lists); an optional rule is listed only when the platform is configured for it.
+_UI_: Contrôle
+
+**Check**:
+The outcome of one rule in a quality run: passed, failed (with findings), or not run (the rule failed or was cancelled). A rule with nothing to judge in this email is not listed.
+_Avoid_: Test
+
+**Finding**:
+One problem a rule reports: a message, a severity (error, warning, info), a category, the block it belongs to, and a fingerprint.
+_UI_: Résultat
+_Avoid_: Issue, alert, warning (a warning is one severity)
+
+**Fingerprint**:
+What identifies a finding across quality runs without storing it: `rule|block|property|hash(faulty value)|rank`. It changes when the faulty value changes, and only then.
+_UI_: Empreinte
+
+**Client's edit**:
+What the quality control judges: what the client put in the blocks of the email. The template's frame (header, footer, wrapper outside blocks) is never judged; a value left at the template's default (sample image, placeholder link) counts as forgotten by the client.
+_Avoid_: User content
+
+**Resources**:
+The links and images of the client's blocks that the editor sends to the server for it to measure. The server measures and answers; it never judges and never stores.
+
+**Ignore**:
+Hide a finding for the whole team, by fingerprint, until its content changes. Stored on the mailing, never copied with it. A finding of a blocking rule cannot be ignored.
+_UI_: Ignorer
+_Avoid_: Dismiss, mute
+
+**Share link**:
+A public URL that shows the last saved version of an email to someone without an account, for 1, 7 or 30 days. Created from the "Send a test" tab of the quality panel by anyone who can send a test of the email (a reviewer included), when the email's company allows it. Revoked by hand from the email, by expiry, or when the mailing changes company. Suspended while the company has sharing turned off.
+_UI_: Lien d'aperçu
+_Avoid_: Public link, preview URL
+
+**Required tracking parameters**:
+Configured per company in its tracking settings. The rule that checks them is blocking by default; with the quality settings, a company can set it off, on or blocking like any other.
+_UI_: Paramètres de tracking obligatoires
+
+**Check state**:
+How a rule applies to a company or a template: off, it does not run and is not listed; on, its findings warn; blocking, any of its findings stops the download and the ESP send. In the quality settings and their catalogue (`CHECKS`), the code calls a rule a "check".
+_UI_: Désactivé, Actif, Bloquant
+
+**Threshold**:
+A limit a rule compares an email with, such as the length of a subject or the weight of an image. Set within bounds by the quality settings.
+_UI_: Seuil
+_Avoid_: Limit, setting
+
+**Quality settings**:
+The state and thresholds of every rule for a company. A template overrides them one by one; whatever it does not set is inherited from its company.
+_UI_: Réglages du contrôle qualité
+_Avoid_: QC config, quality configuration
+
+**Recommended values**:
+The state and thresholds of a rule when nothing is set: the catalogue's. They cannot be changed.
+_UI_: Valeurs recommandées ; « Recommandé : 40 »
+_Avoid_: Default (in UI text)
+
+**Exception**:
+A rule whose state or thresholds a company or a template sets differently from what applies below it. The company's exceptions are its **general settings**, for all its templates; a template's own exceptions apply over them, for that template only. The settings page lists exceptions only, and names neither a company nor a group: its readers are the company's admins.
+_UI_: Exception ; Réglages généraux ; Exception propre à ce template ; « Réglage général : … »
+_Avoid_: Override, surcharge, Hérité du groupe, Propre au template
+
+**Ready email**:
+An email whose quality run went through every check and left no error and no warning unignored; an info counts only if it is blocking. Ready or not, only blocking findings stop the download and the ESP send.
+_UI_: Prêt ; « Prêt à partir »
+_Avoid_: Cleared, passed, valid
+
+### AI
+
+**AI feature**:
+A capability of the product that relies on an AI provider, enabled per company with its own integration and model (translation, text generation).
+_UI_: Fonctionnalité IA
+_Avoid_: Feature config, AI module
+
+**Text generation**:
+The AI feature that writes or corrects the text of an email for the user to accept: proposals to pick from (the subject, the preheader) or corrections to accept one by one.
+_UI_: Génération de texte
+_Avoid_: Textgen, copywriting, AI writing
+
+**AI action**:
+What the user triggers to have AI work on a target — the whole email, a block or a field —, from the AI panel or from the AI icon of that target; it relies on an AI feature and may chain several invocations.
+_UI_: Action IA
+_Avoid_: AI tool, AI command, prompt
+
+**AI panel**:
+The right-hand panel where the user picks an AI action, gives its options and instruction, and chooses among its proposals; it shares its place with the comments and the quality control panels, one open at a time.
+_UI_: Actions IA
+_Avoid_: AI sidebar, AI drawer, assistant
+
+**Skill**:
+A versioned prompt, written by Badsender consultants, that turns one input into one output; it never fetches context and never calls another skill.
+_UI_: Skill
+_Avoid_: Prompt, agent
+
+**Expertise**:
+A piece of Badsender know-how in structured Markdown, split into sections, that a skill reads as part of its input; either transversal or tied to one kind of content (its scope).
+_UI_: Expertise
+_Avoid_: Knowledge base, doctrine, guideline
+
+**Scope**:
+The kind of content an expertise is about (subject, preheader, call to action…); a transversal expertise has none and applies to every kind.
+_Avoid_: Category, perimeter
+
+**Invocation**:
+One call of one skill with one input; the unit of logging, cost and traceability. An AI feature may make several invocations, chained in its own code.
+_Avoid_: Run, execution, request
+
+**Proposal**:
+One piece of text an AI feature offers the user, who picks it or not; nothing is written into the email until the user picks.
+_UI_: Proposition
+_Avoid_: Suggestion, variant, generation
+
+**Correction**:
+One localized change to the spelling, grammar or typography of a text, with the text before, the text after and the reason; the user accepts it or ignores it, and nothing is written until they accept. Never a change of style or meaning.
+_UI_: Correction
+_Avoid_: Suggestion, fix, mistake
+
+### Email
+
+**Subject**:
+The subject line of an email, edited in the email's metadata when the company uses them; otherwise it lives in the ESP.
+_UI_: Objet
+_Avoid_: Title, object
+
+**Preheader**:
+The hidden preview text shown after the subject in the inbox, declared by the template.
+_UI_: Préheader
+_Avoid_: Preview text, pre-header, view-online banner

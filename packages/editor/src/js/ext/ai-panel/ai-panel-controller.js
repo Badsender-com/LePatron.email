@@ -1,0 +1,212 @@
+'use strict';
+
+const { availableActions } = require('./action-registry');
+const { ACTIONS, definitionOf } = require('./actions');
+const { createActionSession } = require('./action-session');
+const { EMAIL, targetOfBlock } = require('./targets');
+
+/**
+ * The AI panel's state and decisions, outside any component (#1192), as
+ * quality control keeps its own in ext/quality/quality-review.js: what the
+ * panel lists, the action under way, and following the canvas selection. The
+ * Vue panel renders it.
+ *
+ * @param {{
+ *   ko: Object,
+ *   editor: Object,       the email (ext/ai-panel/editor-access.js)
+ *   api: Object,          the text generation routes
+ *   isOpen: Function,     the AI panel's flag of the right panel
+ *   selection: Function,  the canvas selection (viewModel.selectedBlock)
+ *   fieldSelection?: Function, the field selection (viewModel.selectedItem)
+ *   editedField?: Function, the block field being edited, or null
+ *   definitions?: Array,  the action definitions, all of them by default
+ * }} params
+ */
+function createAiPanel({
+  ko,
+  editor,
+  api,
+  isOpen,
+  selection,
+  fieldSelection = null,
+  editedField = () => null,
+  definitions = ACTIONS,
+}) {
+  // What the list is about: the canvas selection, or the whole email.
+  const target = ko.observable(EMAIL);
+  // The actions of the whole email, and those of the selected element.
+  const actions = ko.observable([]);
+  const targetActions = ko.observable([]);
+  // The action under way, or null for the list, and what it offers now.
+  const session = ko.observable(null);
+  const sessionAction = ko.observable(null);
+  // The selection moved during an action, to an element with actions.
+  const selectionChanged = ko.observable(null);
+  // A field selected: its block's actions too, listed under the field's
+  // (board a2); and how many text fields that block has.
+  const blockActions = ko.observable([]);
+  const blockFieldCount = ko.observable(null);
+
+  const offer = (forTarget, context) =>
+    availableActions(forTarget, context, definitions);
+
+  // The block a target is in, or null for the email and its copy fields.
+  function blockOf(on) {
+    if (on.kind === 'block') return on;
+    if (on.kind !== 'blockField') return null;
+    return { kind: 'block', blockId: on.blockId, blockType: on.blockType };
+  }
+
+  // The text fields the reader sees: « Les 4 champs de texte du bloc ».
+  function countTextFields(blockId) {
+    if (typeof editor.textFieldsOf !== 'function') return null;
+    try {
+      return editor.textFieldsOf(blockId).filter((field) => !field.hidden)
+        .length;
+    } catch (e) {
+      return null;
+    }
+  }
+
+  // The email is read once for every list.
+  function refresh() {
+    const context = editor.context();
+    actions(offer(EMAIL, context).actions);
+    targetActions(
+      target().kind === 'email' ? [] : offer(target(), context).actions
+    );
+    const block = blockOf(target());
+    blockActions(
+      target().kind === 'blockField' ? offer(block, context).actions : []
+    );
+    blockFieldCount(block ? countTextFields(block.blockId) : null);
+    const current = session();
+    sessionAction(
+      current
+        ? offer(current.state.target, context).actions.find(
+            (action) => action.id === current.state.action
+          ) || null
+        : null
+    );
+  }
+
+  // What the canvas selection targets: the field being edited, or else the
+  // selected block, or the whole email. Read when the selection changes and
+  // kept: the focus later moves to the panel, the selection does not.
+  const selected = () => editedField() || targetOfBlock(selection());
+  let selectedTarget = selected();
+
+  // The panel follows the selection while it lists, never in the middle of an
+  // action, applied or not: its proposals are not lost to a click elsewhere.
+  function follow() {
+    const block = selection();
+    selectedTarget = selected();
+    const followed = selectedTarget;
+    if (session()) {
+      // An action of blocks run on the whole email covers every block:
+      // selecting one (« Aller au bloc ») is no other element.
+      const { action, target: under } = session().state;
+      const actsOnBlocks = definitionOf(action, definitions).targets.includes(
+        'block'
+      );
+      if (under.kind === 'email' && actsOnBlocks) {
+        selectionChanged(null);
+        return;
+      }
+      const offers =
+        block && offer(followed, editor.context()).actions.length > 0;
+      selectionChanged(offers ? followed : null);
+      return;
+    }
+    target(followed);
+    if (isOpen()) refresh();
+  }
+
+  // The action under way is let go of: what it still asks is cancelled.
+  function replaceSession(next) {
+    const current = session();
+    if (current && current !== next && current.cancel) current.cancel();
+    session(next);
+  }
+
+  function showList(listed = selectedTarget) {
+    replaceSession(null);
+    selectionChanged(null);
+    target(listed);
+    refresh();
+    isOpen(true);
+  }
+
+  /**
+   * Open an action on its target.
+   * @returns {boolean} false when the target does not offer it
+   */
+  function openAction(id, on = EMAIL) {
+    const offered = offer(on, editor.context()).actions.some(
+      (action) => action.id === id
+    );
+    if (!offered) return false;
+    replaceSession(
+      createActionSession({ action: id, target: on, api, editor, definitions })
+    );
+    selectionChanged(null);
+    refresh();
+    isOpen(true);
+    return true;
+  }
+
+  // From an AI icon or a target: its single action directly, the list otherwise.
+  function openTarget(opened) {
+    const { actions: offered, opens } = offer(opened, editor.context());
+    if (opens === 'action') openAction(offered[0].id, opened);
+    else if (opens === 'list') showList(opened);
+  }
+
+  // What each target offers, the email read once: for placing many icons.
+  function offerNow() {
+    const context = editor.context();
+    return (forTarget) => offer(forTarget, context);
+  }
+
+  const subscriptions = [
+    // Closed: the action under way stops asking, and keeps what it found.
+    isOpen.subscribe((open) => {
+      const current = session();
+      if (open) refresh();
+      else if (current && current.stop) current.stop();
+    }),
+    selection.subscribe(follow),
+    ...(fieldSelection ? [fieldSelection.subscribe(follow)] : []),
+  ];
+  // The action under way follows the editor's undo: a correction taken back.
+  const stopHistory = editor.onHistory
+    ? editor.onHistory(() => {
+        const current = session();
+        if (current && current.refresh) current.refresh();
+      })
+    : () => {};
+
+  return {
+    target,
+    actions,
+    targetActions,
+    blockActions,
+    blockFieldCount,
+    blockOf,
+    session,
+    sessionAction,
+    selectionChanged,
+    refresh,
+    showList,
+    openAction,
+    openTarget,
+    offerNow,
+    dispose() {
+      subscriptions.forEach((subscription) => subscription.dispose());
+      stopHistory();
+      replaceSession(null);
+    },
+  };
+}
+
+module.exports = { createAiPanel };

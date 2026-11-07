@@ -417,6 +417,11 @@ var templateCompiler = function (
     )
   );
 
+  // The template's own values for the whole email (preheader, root texts…),
+  // before the saved content replaces them: quality control compares with it
+  // to tell what the client changed from what the template shipped.
+  var templateDefaults = content._unwrap();
+
   var incompatibleTemplate = false;
   if (typeof jsorjson !== 'undefined' && jsorjson !== null) {
     var unwrapped;
@@ -578,6 +583,16 @@ var templateCompiler = function (
     );
   }
 
+  viewModel.templateDefaults = templateDefaults;
+  // The names the template gives its blocks (« Cover »), by type, as the
+  // settings title them: the left bar shows them on the blocks' cards.
+  viewModel.templateBlockNames = {};
+  Object.keys(templateDef._defs || {}).forEach(function (type) {
+    var name = templateDef._defs[type]._name;
+    if (typeof name === 'string' && name) {
+      viewModel.templateBlockNames[type] = name;
+    }
+  });
   // let's run some version check on template and editor used to build the model being loaded.
   // This will be replaced by browserify-versionify during the build
   var editver = '__VERSION__';

@@ -2,7 +2,6 @@
 
 module.exports = {
   // edit title
-  'edit-title-double-click': 'Double-cliquer pour modifier',
   'edit-title-cancel': 'Annuler la modification',
   'edit-title-save': 'Enregistrer le nouveau nom',
   'edit-title-ajax-pending': 'Changement du nom…',
@@ -18,10 +17,10 @@ module.exports = {
 
   // gallery
   'gallery-title': 'Galeries :',
-  'gallery-mailing': "SPÉCIFIQUE À L'EMAIL",
+  'gallery-mailing': 'Dans cet email',
   'gallery-mailing-loading': "Chargement de la galerie de l'email…",
   'gallery-mailing-empty': "La galerie de l'email est vide",
-  'gallery-template': 'COMMUN AU TEMPLATE',
+  'gallery-template': 'Galerie du template',
   'gallery-template-loading': 'Chargement de la galerie du template…',
   'gallery-template-empty': 'La galerie du template est vide',
   'gallery-remove-image': 'Supprimer __label__',
@@ -210,17 +209,8 @@ module.exports = {
     "Une erreur s'est produite lors de la communication avec l'API.",
 
   // test list
-  'title-send-test-mails': 'Envoyer un email de test',
   'send-test-success': 'Email envoyé avec succès',
   'send-test-error': "Erreur lors de l'envoi de l'email :(",
-  'placeholder-input-emails-test':
-    'Exemple : premieremail@test.com;secondemail@test.com',
-  'emails-test': 'Saisir un ou plusieurs emails',
-  'emails-invalid':
-    'Les adresses emails saisis sont invalides. Veuillez séparer les adresses emails par ";"',
-  'placeholder-emails-groups': 'Sélectionnez une liste',
-  'sending-test-mails': "Envoi de l'email de test…",
-  'send-test-mails': 'Envoyer',
 
   // SaveBlockModal translations
   'title-save-block': 'Enregistrer le bloc',
@@ -238,13 +228,12 @@ module.exports = {
 
   // PersonalizedBlocksListComponent translations
   'personalized-blocks-fetch-error':
-    "Une erreur s'est produite lors de la récupération des blocs personnalisés.",
-  'personalized-blocks-loading': 'Chargement des blocs personnalisés...',
-  'personalized-blocks-empty':
-    'Aucun bloc personnalisé disponible pour ce template.',
+    "Une erreur s'est produite lors de la récupération des blocs enregistrés.",
+  'personalized-blocks-loading': 'Chargement des blocs enregistrés…',
+  'personalized-blocks-empty': 'Aucun bloc enregistré pour ce template.',
   'personalized-blocks-empty-search':
     'Aucun résultat trouvé pour votre recherche.',
-  'personalized-blocks-search-placeholder': 'Rechercher...',
+  'personalized-blocks-search-placeholder': 'Rechercher un bloc…',
 
   // Content feed toolbar/toolbox tooltips (raw-string keys, same convention as "Comment block")
   'Content feed available for this block':
@@ -270,7 +259,7 @@ module.exports = {
   // DeleteBlockModal translations
   'title-delete-block': 'Supprimer le bloc',
   'confirm-delete-block':
-    'Êtes-vous sûr de vouloir supprimer le bloc personnalisé :',
+    'Êtes-vous sûr de vouloir supprimer le bloc enregistré :',
   'deleting-block': 'Suppression du bloc en cours...',
   'delete-block': 'Supprimer',
   'delete-block-success': 'Bloc supprimé avec succès',
@@ -289,8 +278,31 @@ module.exports = {
 
   // Comments
   'Comment block': 'Commenter ce bloc',
+  'block-tool-comment': 'Commenter',
+  'panel-rail-label': 'Panneaux',
+  // The left bar (js/ext/left-bar.js) and the left of the top bar.
+  'Back to mailings list': 'Retour à la liste des emails',
+  'topbar-rename': "Renommer l'email",
+  'left-bar-label': "Outils de l'email",
+  'left-bar-blocks': 'Blocs',
+  'left-bar-images': 'Images',
+  'left-bar-settings': 'Réglages',
+  'left-bar-template-blocks': 'Blocs du template',
+  'left-bar-saved-blocks': 'Enregistrés',
+  'left-bar-content': 'Contenu',
+  'left-bar-styles': 'Styles',
+  'left-bar-block-search': 'Rechercher un bloc…',
+  'left-bar-block-search-empty': 'Aucun bloc ne correspond à cette recherche.',
+  'topbar-export': 'Exporter',
+  'topbar-preview-label': 'Aperçu',
+  'topbar-save-readonly':
+    "Mode relecture : vous ne modifiez pas l'email, rien à enregistrer.",
+  'panel-rail-unresolved-one': '1 commentaire non résolu',
+  'panel-rail-unresolved': '__count__ commentaires non résolus',
+  'panel-rail-blocking-one': '1 point bloquant',
+  'panel-rail-blocking': '__count__ points bloquants',
+  'panel-rail-ready': 'Prêt à partir',
   'comments-title': 'Commentaires',
-  'comments-toggle': 'Afficher les commentaires',
   'comments-loading': 'Chargement des commentaires...',
   'comments-empty': 'Aucun commentaire',
   'comments-load-error': 'Erreur lors du chargement des commentaires',
@@ -352,9 +364,50 @@ module.exports = {
   'comments-severity-blocking': 'Bloquant',
   'comments-block-deleted': 'Bloc supprimé',
   'comments-mention-placeholder': 'Tapez @ pour mentionner',
-  'comments-no-block': "Ce commentaire n'est pas lié à un bloc",
+  'comments-filter-label': 'Filtrer les commentaires',
+  'comments-filter-no-block': 'Aucun bloc sélectionné',
+  'comments-anonymous': 'Anonyme',
+  'comments-whole-email': "Tout l'email",
+  'comments-approval-lifted':
+    "Validation levée par le commentaire de __name__. L'email doit être approuvé à nouveau.",
+  'comments-approval-held':
+    'Validation suspendue : un commentaire bloquant est ouvert.',
+  'comments-withdraw-approval': "Retirer l'approbation",
+  'comments-retry': 'Réessayer',
+  'comments-empty-block': 'Aucun commentaire sur ce bloc.',
+  'comments-empty-text':
+    "Écrivez sur l'email ou sélectionnez un bloc dans le canevas.",
+  'comments-resolved-count-one': '1 commentaire résolu',
+  'comments-resolved-count': '__count__ commentaires résolus',
+  'comments-approved-the-email': "a approuvé l'email",
+  'comments-details': 'Détails du commentaire résolu',
+  'comments-load-failed': 'Impossible de charger les commentaires',
+  'comments-filter-note':
+    "Filtre de lecture : vous lisez les commentaires du bloc __block__. Votre prochain commentaire porte sur ce qu'indique le champ « Sur », plus bas.",
+  'comments-target': 'Sur',
+  'comments-target-selected': 'Bloc sélectionné dans le canevas',
+  'comments-target-chosen': 'Bloc choisi',
+  'comments-target-note':
+    "La cible suit la sélection du canevas tant que vous ne la changez pas ici. Pour un autre bloc, sélectionnez-le dans l'email.",
+  'comments-type': 'Type',
+  'comments-priority': 'Priorité',
+  'comments-approve-email': "Approuver l'email",
+  'comments-mention-list': 'Personnes à mentionner',
+  'comments-approved-badge': 'Validé',
+  'comments-withdraw-confirm': "Retirer l'approbation de cet email ?",
+  'comments-withdrawn': 'Approbation retirée',
+  'comments-block-place': 'bloc __place__',
+  'comments-new-one': '1 nouveau commentaire · Afficher',
+  'comments-new': '__count__ nouveaux commentaires · Afficher',
+  'comments-rail-marker-one': '1 commentaire non résolu sur le bloc __block__',
+  'comments-rail-marker':
+    '__count__ commentaires non résolus sur le bloc __block__',
   'comments-decision-approve': 'Approuver',
-  'comments-decision-approve-default-text': 'Je valide cet email',
+  'comments-decision-approve-default-text': 'Bon pour envoi',
+  'comments-approve-blocked':
+    "Un commentaire bloquant est ouvert. Il doit être résolu avant d'approuver l'email.",
+  'comments-approve-forbidden':
+    "Vous n'avez pas le droit d'approuver cet email.",
   'comments-decision-approved': 'Approuvé',
   'comments-decision-changes-requested': 'Changements demandés',
   'toolbox-readonly-all':
@@ -510,4 +563,598 @@ module.exports = {
     "Enregistrement refusé : le CSS personnalisé n'est pas activé sur ce template.",
   'save-message-head-css-too-large':
     'Enregistrement refusé : le CSS personnalisé dépasse la taille maximale.',
+  // Quality control (ext/quality)
+  'Quality control': 'Contrôle qualité',
+  // Prefixed: this dictionary is merged with Mosaico's, where a bare
+  // "Error" or "Copy" would collide.
+  'quality-action-cancel': 'Annuler',
+  'quality-action-ignore': 'Ignorer',
+  'quality-ignore-locked':
+    'Seule une personne qui peut modifier cet email peut ignorer un résultat',
+  'quality-action-undo': 'Annuler',
+  // The editor's own undo button (undomanager/undomain.js).
+  Undo: 'Annuler',
+  'quality-severity-error': 'Erreur',
+  'quality-severity-warning': 'Avertissement',
+  'quality-severity-info': 'Info',
+  'quality-severity-not-run': 'Non exécuté',
+  'quality-severity-passed': 'Contrôle réussi',
+  'quality-group-errors': 'Erreurs',
+  'quality-group-warnings': 'Avertissements',
+  'quality-group-infos': 'Infos',
+  'quality-group-not-run': 'Non exécutés',
+  'quality-group-passed': 'Réussis',
+  'quality-group-ignored': 'Ignorés',
+  'quality-category-technical': 'Technique',
+  'quality-category-content': 'Contenu',
+  'quality-category-accessibility': 'Accessibilité',
+  'quality-category-copy': 'Rédaction',
+  'quality-category-performance': 'Performance',
+  'quality-run': 'Lancer le contrôle',
+  'quality-send-a-test': 'Envoyer un test',
+  'quality-ready-to-run': '__count__ contrôles prêts à être lancés',
+  'quality-ready-to-run-text':
+    'Liens, images, poids, accessibilité, rédaction et code. Les liens et les images sont vérifiés en ligne.',
+  'quality-not-ready': 'Pas prêt : __count__ points à corriger',
+  'quality-blocking-text':
+    "Tant que le bloquant reste, l'email ne peut être ni téléchargé ni envoyé à l'ESP.",
+  'quality-not-ready-text':
+    "Rien n'empêche de télécharger l'email ni d'envoyer un test.",
+  'quality-not-run-title': "Un contrôle n'a pas pu s'exécuter",
+  'quality-not-run-text': "Relancez le contrôle pour juger tout l'email.",
+  'quality-not-ready-one': 'Pas prêt : 1 point à corriger',
+  'quality-blocking-suffix-one': ', dont 1 bloquant',
+  'quality-blocking-suffix': ', dont __count__ bloquants',
+  'quality-recipients': 'Destinataires',
+  'quality-recipients-placeholder': 'Adresse ou liste…',
+  'quality-recipient-remove': 'Retirer __name__',
+  'quality-test-sent': 'Test envoyé à __count__ destinataires à __when__.',
+  'quality-send-test': 'Envoyer le test',
+  'quality-send-again': 'Envoyer à nouveau',
+  'quality-see-checks': 'Voir le contrôle',
+  'quality-share-definitive':
+    'Désactiver un lien est définitif : il ne fonctionnera plus.',
+  'quality-recipients-help':
+    "Tapez une adresse puis Entrée, ou le nom d'une liste enregistrée.",
+  'quality-send-not-ready-one':
+    "L'email n'est pas encore prêt (1 point à corriger). Vous pouvez quand même envoyer un test.",
+  'quality-send-not-ready':
+    "L'email n'est pas encore prêt (__count__ points à corriger). Vous pouvez quand même envoyer un test.",
+  'quality-test-sent-one': 'Test envoyé à 1 destinataire à __when__.',
+  'quality-recipient-remove-list': 'Retirer la liste __name__',
+  'quality-recipients-invalid': "« __value__ » n'est pas une adresse email.",
+  'quality-recipients-count-one': '1 destinataire.',
+  'quality-recipients-count': '__count__ destinataires.',
+  'quality-share-definitive-short': '· définitif, le lien ne fonctionnera plus',
+  'quality-share-revoked': 'Lien désactivé.',
+  'Add comment': 'Ajouter un commentaire',
+  'sending-test-mails': "Envoi de l'email de test…",
+  'ai-panel-current-subject': 'Objet actuel',
+  'ai-panel-current-subject-empty': "Aucun objet pour l'instant",
+  'ai-panel-current-preheader': 'Préheader actuel',
+  'ai-panel-current-preheader-empty': "Aucun préheader pour l'instant",
+  'quality-test-sent-subject': 'Objet : « __subject__ ».',
+  'quality-ready-title': 'Prêt à partir',
+  'quality-ready-text':
+    '__count__ contrôles exécutés à __when__. Aucune erreur ni avertissement.',
+  'quality-ready-infos': '__count__ info(s) à consulter si vous le souhaitez.',
+  'A check could not run: you can send a test anyway':
+    "Un contrôle n'a pas pu s'exécuter : vous pouvez tout de même envoyer un test",
+  'quality-badge-stale': 'À relancer',
+  '__count__ checks not run': '__count__ contrôle(s) non exécuté(s)',
+  '__count__ ignored findings': '__count__ résultat(s) ignoré(s)',
+  '__passed__ of __total__ checks passed':
+    '__passed__ contrôle(s) réussi(s) sur __total__',
+  'The results date from before your last changes':
+    "Les résultats datent d'avant vos dernières modifications",
+  'This check was cancelled': 'Ce contrôle a été annulé',
+  'Too many checks in a short time: try again in a few minutes':
+    'Trop de contrôles en peu de temps : réessayez dans quelques minutes',
+  'The links and images could not be checked':
+    "Les liens et les images n'ont pas pu être vérifiés",
+  'The block could not be shown': "Le bloc n'a pas pu être affiché",
+  'Link not filled in: __label__': 'Lien non renseigné : __label__',
+  'Clickable image has no link': 'Image cliquable sans lien',
+  'Image not replaced': 'Image non remplacée',
+  'Template sample image not replaced':
+    "Image d'exemple du template non remplacée",
+  'Missing Outlook background image': 'Image de fond Outlook manquante',
+  'Missing mobile background image': 'Image de fond mobile manquante',
+  'Exported HTML weighs __size__ KB: keep it under __max__ KB, Gmail clips emails over 102 KB once the ESP adds its tracking':
+    "Le HTML exporté pèse __size__ Ko : restez sous __max__ Ko, Gmail coupe les emails de plus de 102 Ko une fois le tracking de l'ESP ajouté",
+  'Required tracking parameters missing: __keys__': 'Manquants : __keys__',
+  'Test email': "Tester l'email",
+  'Run quality checks': 'Lancer le contrôle qualité',
+  Blocking: 'Bloquant',
+  'This email cannot leave yet': 'Cet email ne peut pas encore partir',
+  'Your quality settings make these checks blocking: fix them before downloading or sending the email.':
+    "Vos réglages du contrôle qualité rendent ces contrôles bloquants : corrigez-les avant de télécharger ou d'envoyer l'email.",
+  '__count__ checks turned off by your group or template':
+    '__count__ contrôle(s) désactivé(s) par votre groupe ou votre template',
+  'Running checks…': 'Contrôle en cours…',
+  'Running…': 'En cours…',
+  'Re-run': 'Relancer',
+  '__count__ errors': '__count__ erreur(s)',
+  '__count__ warnings': '__count__ avertissement(s)',
+  '__count__ infos': '__count__ info(s)',
+  '__count__ checks passed': '__count__ contrôle(s) réussi(s)',
+  '__count__ issues': '__count__ point(s) à corriger',
+  '__count__ issues to fix: open the quality control':
+    '__count__ point(s) à corriger : ouvrez le contrôle qualité',
+  'Go to block': 'Aller au bloc',
+  'This check could not run': "Ce contrôle n'a pas pu s'exécuter",
+  'Required tracking parameters': 'Paramètres de tracking',
+  'All required tracking parameters are filled in':
+    'Tous les paramètres de tracking obligatoires sont renseignés',
+  'quality-title-links': 'Liens',
+  'Every link has a destination': 'Tous les liens ont une destination',
+  'Clickable images': 'Images cliquables',
+  'Every clickable image has a link':
+    'Toutes les images cliquables ont un lien',
+  'quality-title-images': 'Images',
+  'Every image has been replaced': 'Toutes les images ont été remplacées',
+  'Background images': 'Images de fond',
+  'Every background image turned on is set':
+    'Toutes les images de fond activées sont renseignées',
+  'Email weight': "Poids de l'email",
+  'Exported HTML weighs __size__ KB, under the __max__ KB limit':
+    'Le HTML exporté pèse __size__ Ko, sous la limite de __max__ Ko',
+  'Link addresses': 'Adresses des liens',
+  'Every link address is well formed':
+    'Toutes les adresses de liens sont bien formées',
+  'Link URL contains a space: __url__':
+    "L'adresse du lien contient une espace : __url__",
+  'Link URL misses http:// or https://: __url__':
+    "Il manque http:// ou https:// à l'adresse du lien : __url__",
+  'Link URL is not a full address: __url__':
+    "L'adresse du lien est incomplète : __url__",
+  'Link URL has an unknown protocol: __url__':
+    "Le protocole de l'adresse du lien est inconnu : __url__",
+  'Email link has no valid address: __url__':
+    "Le lien email n'a pas d'adresse valide : __url__",
+  'Phone link has no valid number: __url__':
+    "Le lien téléphone n'a pas de numéro valide : __url__",
+  'Addresses shown as link text': 'Adresses affichées en texte de lien',
+  'No link shows an address as its text':
+    "Aucun lien n'affiche une adresse comme texte",
+  'Link text is an address (__label__): once the ESP rewrites links for tracking, it no longer matches its destination and can look like phishing':
+    "Le texte du lien est une adresse (__label__) : une fois les liens réécrits par l'ESP pour le tracking, elle ne correspondra plus à la destination et pourra ressembler à du phishing",
+  'Link domains': 'Domaines des liens',
+  'No link points to a suspicious domain':
+    'Aucun lien ne pointe vers un domaine suspect',
+  'Link address hides an identity before its domain: __host__':
+    "L'adresse du lien cache un identifiant avant le domaine : __host__",
+  'Link points to an IP address instead of a domain: __host__':
+    "Le lien pointe vers une adresse IP au lieu d'un domaine : __host__",
+  'Link points to a test environment: __host__':
+    'Le lien pointe vers un environnement de test : __host__',
+  'Link points to an example domain: __host__':
+    "Le lien pointe vers un domaine d'exemple : __host__",
+  'Public URL shortener: __host__': "Raccourcisseur d'URL public : __host__",
+  'Domain extension often used for spam: __host__':
+    'Extension de domaine souvent utilisée pour le spam : __host__',
+  'Internationalized domain, check it is the expected one: __host__':
+    "Domaine internationalisé, vérifiez qu'il s'agit du bon : __host__",
+  'Secure addresses': 'Adresses sécurisées',
+  'Every link and image uses https':
+    'Tous les liens et toutes les images utilisent https',
+  'Link is not secure (http): __url__':
+    "Le lien n'est pas sécurisé (http) : __url__",
+  'Image is not secure (http) and may not load: __url__':
+    "L'image n'est pas sécurisée (http) et risque de ne pas s'afficher : __url__",
+  'Linked images': 'Images avec lien',
+  'Every linked image has an alternative text':
+    'Toutes les images avec lien ont un texte alternatif',
+  'Linked image has no alternative text: screen readers announce a link with no name':
+    "L'image avec lien n'a pas de texte alternatif : les lecteurs d'écran annoncent un lien sans nom",
+  'Alternative texts': 'Textes alternatifs',
+  'Alternative texts look like descriptions':
+    'Les textes alternatifs ressemblent à des descriptions',
+  'Alternative text is an address: __alt__':
+    'Le texte alternatif est une adresse : __alt__',
+  'Alternative text looks like a file name: __alt__':
+    'Le texte alternatif ressemble à un nom de fichier : __alt__',
+  'Alternative text is too long (__count__ characters): keep it to a short description':
+    'Le texte alternatif est trop long (__count__ caractères) : limitez-le à une courte description',
+  'Readable text': 'Texte lisible',
+  'The email has text to read when images are blocked':
+    "L'email reste lisible quand les images sont bloquées",
+  'The email has almost no text besides its images (__count__ characters): with images blocked, nothing can be read':
+    "L'email n'a presque pas de texte en dehors de ses images (__count__ caractères) : si les images sont bloquées, rien n'est lisible",
+  'Image formats': "Formats d'image",
+  'Every image uses a format email clients show':
+    'Toutes les images utilisent un format affiché par les clients mail',
+  'Image format not shown by every email client (__format__): prefer JPG, PNG or GIF':
+    "Format d'image non affiché par tous les clients mail (__format__) : préférez JPG, PNG ou GIF",
+  'quality-title-subject': 'Objet',
+  'The subject is filled in and __count__ characters long':
+    "L'objet est renseigné et fait __count__ caractères",
+  'No subject': "Pas d'objet",
+  'Subject too long (__count__ characters): inboxes cut it, keep it under __max__':
+    'Objet trop long (__count__ caractères) : les boîtes de réception le coupent, restez sous __max__',
+  'Long subject (__count__ characters): ideally under __max__, it may be cut on mobile':
+    'Objet long (__count__ caractères) : idéalement sous __max__, il peut être coupé sur mobile',
+  'Subject starts like a reply or a forward (__prefix__) without being one':
+    "L'objet commence comme une réponse ou un transfert (__prefix__) sans en être un",
+  'Subject mostly in capital letters':
+    'Objet presque entièrement en majuscules',
+  'Subject repeats punctuation (!!, ??, $$)':
+    "L'objet répète de la ponctuation (!!, ??, $$)",
+  'Subject has more than one emoji': "L'objet contient plus d'un emoji",
+  'quality-title-preheader': 'Préheader',
+  'The preheader is filled in and __count__ characters long':
+    'Le préheader est renseigné et fait __count__ caractères',
+  'No preheader: inboxes show the first words of the body instead':
+    'Pas de préheader : les boîtes de réception affichent les premiers mots du corps à la place',
+  'The preheader repeats the subject: inboxes show the same words twice':
+    "Le préheader répète l'objet : les boîtes de réception affichent deux fois les mêmes mots",
+  'Preheader too long (__count__ characters): inboxes cut it well before':
+    'Préheader trop long (__count__ caractères) : les boîtes de réception le coupent bien avant',
+  'Long preheader (__count__ characters): its end will rarely be seen':
+    'Préheader long (__count__ caractères) : sa fin sera rarement lue',
+  'Personalization tags': 'Variables de personnalisation',
+  'Every personalization tag is closed':
+    'Toutes les variables de personnalisation sont bien fermées',
+  'Personalization tag not closed (__token__): __excerpt__':
+    'Variable de personnalisation non fermée (__token__) : __excerpt__',
+  'Personalization tag not closed in the subject (__token__): __excerpt__':
+    "Variable de personnalisation non fermée dans l'objet (__token__) : __excerpt__",
+  'Personalization tag not closed in the preheader (__token__): __excerpt__':
+    'Variable de personnalisation non fermée dans le préheader (__token__) : __excerpt__',
+  'Unbalanced %% (__excerpt__): a personalization tag left open, or a doubled percent sign':
+    '%% non apparié (__excerpt__) : balise de personnalisation non fermée, ou signe pour cent doublé',
+  'Unbalanced %% in the subject (__excerpt__): a personalization tag left open, or a doubled percent sign':
+    "%% non apparié dans l'objet (__excerpt__) : balise de personnalisation non fermée, ou signe pour cent doublé",
+  'Unbalanced %% in the preheader (__excerpt__): a personalization tag left open, or a doubled percent sign':
+    '%% non apparié dans le préheader (__excerpt__) : balise de personnalisation non fermée, ou signe pour cent doublé',
+  'Empty blocks': 'Blocs vides',
+  'Every block shows something': 'Tous les blocs affichent du contenu',
+  'Empty block: it shows no text and no image':
+    "Bloc vide : il n'affiche ni texte ni image",
+  'Capital letters': 'Majuscules',
+  'No long passage is written in capital letters':
+    "Aucun long passage n'est écrit en majuscules",
+  'Long passage in capital letters (__count__ words): __excerpt__':
+    'Long passage en majuscules (__count__ mots) : __excerpt__',
+  'Preheader still the sample text of the template: __text__':
+    "Le préheader est resté au texte d'exemple du template : __text__",
+  'Font size': 'Taille de police',
+  'No text was set under __min__ px, or __minHeaderFooter__ px in the header and footer':
+    "Aucun texte n'est réglé sous __min__ px, ou __minHeaderFooter__ px dans l'en-tête et le pied de page",
+  'Text set to __size__ px, under the __min__ px that reads comfortably: __text__':
+    'Texte réglé à __size__ px, sous les __min__ px confortables à lire : __text__',
+  'Hidden text': 'Texte masqué',
+  'No text is hidden': "Aucun texte n'est masqué",
+  'Hidden text: filters read hidden content as an attempt to fool them: __text__':
+    'Texte masqué : les filtres anti-spam y voient une tentative de les tromper : __text__',
+  'Colour contrast': 'Contraste des couleurs',
+  'Every coloured text reads against its background':
+    'Tous les textes colorés se lisent sur leur fond',
+  'Text almost invisible on its background (__ratio__:1): __text__':
+    'Texte presque invisible sur son fond (__ratio__:1) : __text__',
+  'Contrast too low (__ratio__:1): __required__:1 at least, __ideal__:1 ideally: __text__':
+    'Contraste trop faible (__ratio__:1) : __required__:1 au minimum, __ideal__:1 idéalement : __text__',
+  'Text layout': 'Mise en forme du texte',
+  'No text is justified, overlaps or is centred at length':
+    "Aucun texte n'est justifié, ne se chevauche ni n'est longuement centré",
+  'Justified text: word gaps get harder to read: __text__':
+    'Texte justifié : les espaces irréguliers entre les mots gênent la lecture : __text__',
+  'Line height under __min__ (__ratio__): the lines overlap: __text__':
+    'Interligne inférieur à __min__ (__ratio__) : les lignes se chevauchent : __text__',
+  'Centred text over about three lines is hard to read: align long texts to the left':
+    'Un texte centré de plus de trois lignes environ se lit mal : alignez les textes longs à gauche',
+  'Visible links': 'Liens visibles',
+  'Every link stands out from the text around it':
+    'Tous les liens se distinguent du texte qui les entoure',
+  'Link neither underlined nor coloured differently from its text: __label__':
+    "Lien ni souligné ni d'une autre couleur que son texte : __label__",
+  'quality-title-headings': 'Titres',
+  'Headings are filled in and follow each other':
+    'Les titres sont renseignés et se suivent',
+  'Empty heading (__tag__)': 'Titre vide (__tag__)',
+  'Heading level skipped: __from__ followed by __to__':
+    'Niveau de titre sauté : __from__ suivi de __to__',
+  'Repeated alternative texts': 'Textes alternatifs répétés',
+  'No alternative text repeats the text next to it':
+    'Aucun texte alternatif ne répète le texte voisin',
+  'Alternative text repeats the text next to the image: __alt__':
+    "Le texte alternatif répète le texte à côté de l'image : __alt__",
+  'quality-title-emojis': 'Emojis',
+  'Emojis sit at the end of sentences':
+    'Les emojis sont placés en fin de phrase',
+  'Several emojis in a row: screen readers read each name':
+    "Plusieurs emojis d'affilée : les lecteurs d'écran lisent le nom de chacun",
+  'Emoji in the middle of a sentence: screen readers read its name there':
+    "Emoji au milieu d'une phrase : les lecteurs d'écran y lisent son nom",
+  'Forbidden code': 'Code interdit',
+  'No code the email clients refuse': 'Aucun code refusé par les clients mail',
+  'Code that email clients never run, and filters distrust: __code__':
+    "Code que les clients mail n'exécutent jamais et dont les filtres se méfient : __code__",
+  'HTML structure': 'Structure HTML',
+  'The code of HTML code blocks is well formed':
+    'Le code des blocs de code HTML est bien formé',
+  'Tag never closed in the HTML code: <__tag__>':
+    'Balise jamais fermée dans le code HTML : <__tag__>',
+  'Closing tag with no opening one in the HTML code: </__tag__>':
+    'Balise fermante sans ouverture dans le code HTML : </__tag__>',
+  'Tag closed in the wrong order in the HTML code: <__tag__>':
+    'Balise fermée dans le mauvais ordre dans le code HTML : <__tag__>',
+  'Email-safe code': 'Code compatible email',
+  'The code of HTML code blocks only uses what email clients support':
+    "Le code des blocs de code HTML n'utilise que ce que les clients mail prennent en charge",
+  'HTML code uses what some email clients ignore: __features__':
+    'Le code HTML utilise des fonctions ignorées par certains clients mail : __features__',
+  'Addresses and colours in HTML code': 'Adresses et couleurs du code HTML',
+  'The HTML code uses full addresses and valid colours':
+    'Le code HTML utilise des adresses complètes et des couleurs valides',
+  'Relative address in the HTML code, it only works on its original site: __urls__':
+    "Adresse relative dans le code HTML, elle ne fonctionne que sur son site d'origine : __urls__",
+  'Address without protocol in the HTML code (//…), some email clients cannot open it: __urls__':
+    "Adresse sans protocole dans le code HTML (//…), certaines messageries ne peuvent pas l'ouvrir : __urls__",
+  'Colour an email client cannot read in the HTML code: __colors__':
+    'Couleur illisible par les clients mail dans le code HTML : __colors__',
+  'Send a test': 'Envoi de test',
+  'The quality checks have not run on this version yet':
+    "Le contrôle qualité n'a pas encore été lancé sur cette version",
+  'Saved list of addresses': "Liste d'adresses enregistrée",
+  'The saved lists of addresses could not be loaded':
+    "Les listes d'adresses enregistrées n'ont pas pu être chargées",
+  'Stop ignoring': 'Ne plus ignorer',
+  'Ignored: __title__': 'Ignoré : __title__',
+  'The change could not be saved':
+    "La modification n'a pas pu être enregistrée",
+  'Broken links': 'Liens cassés',
+  'Links checked: __count__, all answer':
+    'Liens vérifiés : __count__, tous répondent',
+  'Broken link (__status__): __label__': 'Lien cassé (__status__) : __label__',
+  'Link to a domain that does not exist: __label__':
+    "Lien vers un domaine qui n'existe pas : __label__",
+  'Link did not answer in time, check it by hand: __label__':
+    "Le lien n'a pas répondu à temps, vérifiez-le vous-même : __label__",
+  'Link could not be checked (__status__), check it by hand: __label__':
+    "Le lien n'a pas pu être vérifié (__status__), vérifiez-le vous-même : __label__",
+  'Link could not be checked, check it by hand: __label__':
+    "Le lien n'a pas pu être vérifié, vérifiez-le vous-même : __label__",
+  'Image weight': 'Poids des images',
+  'Images checked: __count__, each under __max__ KB':
+    'Images vérifiées : __count__, chacune sous __max__ Ko',
+  'Image could not be downloaded: the export will leave it out (__name__)':
+    "Image impossible à télécharger : l'export la laissera de côté (__name__)",
+  'Heavy GIF (__size__ KB): keep it under __max__ KB':
+    'GIF lourd (__size__ Ko) : restez sous __max__ Ko',
+  'Heavy image (__size__ KB): keep it under __max__ KB':
+    'Image lourde (__size__ Ko) : restez sous __max__ Ko',
+  'Total image weight': 'Poids total des images',
+  'Images weigh __size__ KB in all, under __max__ KB':
+    'Les images pèsent __size__ Ko au total, sous les __max__ Ko',
+  'Images weigh __size__ KB in all: over __max__ KB':
+    'Les images pèsent __size__ Ko au total : plus de __max__ Ko',
+  'Image dimensions': 'Dimensions des images',
+  'No image is much larger than it is shown':
+    "Aucune image n'est beaucoup plus grande que sa taille d'affichage",
+  'Image is __width__ px wide, shown at __shown__ px':
+    'Image de __width__ px de large, affichée en __shown__ px',
+  'Blocklisted domains': 'Domaines sur liste noire',
+  'No link points to a blocklisted domain':
+    'Aucun lien ne pointe vers un domaine sur liste noire',
+  'Domain on a blocklist (__lists__), filters may send the email to spam: __domain__':
+    "Domaine sur liste noire (__lists__), les filtres peuvent classer l'email en spam : __domain__",
+  'Domain could not be checked against the blocklists: __domain__':
+    "Le domaine n'a pas pu être vérifié sur les listes noires : __domain__",
+  'Checking links and images…': 'Vérification des liens et des images…',
+  'Dangerous links': 'Liens dangereux',
+  'Google lists none of the links as dangerous':
+    'Google ne signale aucun des liens comme dangereux',
+  'Google lists this link as phishing: __label__':
+    "Google signale ce lien comme de l'hameçonnage : __label__",
+  'Google lists this link as malware: __label__':
+    'Google signale ce lien comme un logiciel malveillant : __label__',
+  'Google lists this link as unwanted software: __label__':
+    'Google signale ce lien comme un logiciel indésirable : __label__',
+  'Google lists this link as unsafe: __label__':
+    'Google signale ce lien comme dangereux : __label__',
+  'Google could not check this link, check it by hand: __label__':
+    "Google n'a pas pu vérifier ce lien, vérifiez-le vous-même : __label__",
+  'Share a preview': "Lien d'aperçu",
+  'Anyone with the link sees the last saved version of the email, without an account.':
+    "Toute personne qui a le lien voit la dernière version enregistrée de l'email, sans compte.",
+  'Valid for': 'Valable',
+  '1 day': '1 jour',
+  '__count__ days': '__count__ jours',
+  'Create a link': 'Créer un lien',
+  'Preview link': "Lien d'aperçu",
+  'quality-share-copied': 'Copié',
+  'Copy it now: it will not be shown again.':
+    'Copiez-le maintenant : il ne sera plus affiché.',
+  'Active links': 'Liens actifs',
+  'Turn off': 'Désactiver le lien',
+  'The link could not be created': "Le lien n'a pas pu être créé",
+  'Copy failed: select the link and copy it':
+    'La copie a échoué : sélectionnez le lien et copiez-le',
+  'The link could not be turned off': "Le lien n'a pas pu être désactivé",
+  'Copy link': 'Copier',
+  'Created __created__ by __name__, until __date__':
+    "Créé le __created__ par __name__, jusqu'au __date__",
+  'Created __created__, until __date__':
+    "Créé le __created__, jusqu'au __date__",
+  'Turn off the link: __link__': 'Désactiver le lien : __link__',
+  'This email already has __count__ active links: turn one off first':
+    "Cet email a déjà __count__ liens actifs : désactivez-en un d'abord",
+  'Copy the link: __link__': 'Copier le lien : __link__',
+  'The link could not be copied': "Le lien n'a pas pu être copié",
+  'The links could not be loaded': "Les liens n'ont pas pu être chargés",
+
+  // text generation (epic #1163)
+  // AI panel, « Actions IA » (ADR 0010)
+  'right-panel-close': 'Fermer le panneau',
+  'ai-panel-back': 'Retour aux actions',
+  'ai-panel-correct-field': 'Corriger ce champ',
+  'ai-panel-correct-block': 'Corriger ce bloc',
+  'ai-panel-correct-email': "Corriger tout l'email",
+  'ai-panel-correct-field-desc': 'Orthographe et grammaire du champ',
+  'ai-panel-correct-block-desc': 'Les champs de texte du bloc',
+  'ai-panel-correct-block-desc-count': 'Les __count__ champs de texte du bloc',
+  'ai-panel-correct-block-desc-count-one': 'Le champ de texte du bloc',
+  'ai-panel-correct-email-desc': 'Orthographe et grammaire, bloc par bloc',
+  'ai-panel-subject-desc': 'Trois propositions à partir du contenu',
+  'ai-panel-preheader-desc': "En cohérence avec l'objet",
+  'ai-panel-list-note': "Rien n'est modifié dans l'email sans votre accord.",
+  'ai-panel-accept-all-count': 'Tout accepter (__count__)',
+  'ai-panel-done': 'Terminé',
+  'ai-panel-review': 'Revoir les corrections',
+  'ai-panel-analysis-done': 'Analyse terminée',
+  'ai-panel-tally-corrections': 'Corrections',
+  'ai-panel-tally-accepted': 'Acceptées',
+  'ai-panel-tally-ignored': 'Ignorées',
+  'ai-panel-tally-stale': "Non appliquées : le texte a changé depuis l'analyse",
+  'ai-panel-tally-unread': 'Non relus',
+  'ai-panel-tally-sample': "Champs encore au texte d'exemple",
+  'ai-panel-tally-too-long': 'Champs de plus de 5 000 caractères',
+  'ai-panel-tally-dropped':
+    'Corrections écartées : elles touchaient une mise en forme',
+  'ai-panel-analysis-stopped': 'Analyse arrêtée',
+  'ai-panel-tally-accepted-one': 'Acceptée',
+  'ai-panel-tally-ignored-one': 'Ignorée',
+  'ai-panel-tally-stale-one':
+    "Non appliquée : le texte a changé depuis l'analyse",
+  'ai-panel-tally-sample-one': "Champ encore au texte d'exemple",
+  'ai-panel-tally-too-long-one': 'Champ de plus de 5 000 caractères',
+  'ai-panel-tally-dropped-one':
+    'Correction écartée : elle touchait une mise en forme',
+  'ai-panel-tally-not-analysed-one': 'Bloc non analysé',
+  'ai-panel-tally-not-analysed': 'Blocs non analysés',
+  'ai-panel-tally-failed-one': 'Bloc en échec',
+  'ai-panel-tally-failed': 'Blocs en échec',
+  'ai-panel-blocks-count-one': '1 bloc',
+  'ai-panel-blocks-count': '__count__ blocs',
+  'ai-panel-fields-read-one': '1 champ relu',
+  'ai-panel-fields-read': '__count__ champs relus',
+  'ai-panel-title': 'Actions IA',
+  'ai-panel-action-subject': "Générer l'objet",
+  'ai-panel-action-preheader': 'Générer le préheader',
+  'ai-panel-copy-only':
+    "Pas de champ dans cet email : la proposition sera à copier pour votre outil d'envoi.",
+  'ai-panel-select-invite':
+    "Sélectionnez un champ ou un bloc dans l'email pour le corriger.",
+  'ai-panel-no-subject':
+    "Cet email n'a pas encore d'objet. Le préheader le complète : mieux vaut commencer par l'objet.",
+  'ai-panel-subject-first': "Générer d'abord l'objet",
+  'ai-panel-preheader-anyway': 'Générer le préheader quand même',
+  'ai-panel-next-preheader': 'Continuer avec le préheader',
+  'ai-panel-loading': 'Génération en cours…',
+  'ai-panel-action-correct': 'Corriger',
+  'ai-panel-selected-field': 'Champ sélectionné',
+  'ai-panel-correcting': 'Analyse en cours…',
+  'ai-panel-no-correction': 'Aucune faute trouvée.',
+  'ai-panel-corrections-count': '__count__ corrections',
+  'ai-panel-corrections-count-one': '1 correction',
+  'ai-panel-accept': 'Accepter',
+  'ai-panel-ignore': 'Ignorer',
+  'ai-panel-correction-accepted': 'Acceptée',
+  'ai-panel-correction-ignored': 'Ignorée',
+  'ai-panel-correction-undone': 'Annulée',
+  'ai-panel-correction-stale':
+    "Non appliquée : le texte a changé depuis l'analyse.",
+  'ai-panel-corrections-accepted': '__count__ corrections acceptées.',
+  'ai-panel-corrections-accepted-one': '1 correction acceptée.',
+  'ai-panel-corrections-stale':
+    "__count__ non appliquées : le texte a changé depuis l'analyse.",
+  'ai-panel-corrections-stale-one':
+    "1 non appliquée : le texte a changé depuis l'analyse.",
+  'ai-panel-correction-undo-hint':
+    '__keys__ annule la dernière correction acceptée.',
+  'ai-panel-correcting-blocks': 'Analyse : bloc __done__ sur __total__…',
+  'ai-panel-correction-paused':
+    "Pause : limite d'utilisation atteinte, reprise dans __seconds__ s.",
+  'ai-panel-correction-stop': "Arrêter l'analyse",
+  'ai-panel-correction-stopped':
+    'Analyse arrêtée après __done__ blocs sur __total__.',
+  'ai-panel-correction-stopped-one':
+    'Analyse arrêtée après 1 bloc sur __total__.',
+  'ai-panel-correction-finished':
+    'Analyse terminée : __count__ corrections à examiner.',
+  'ai-panel-correction-finished-one':
+    'Analyse terminée : 1 correction à examiner.',
+  'ai-panel-blocks-failed':
+    "Ces blocs n'ont pas pu être analysés, réessayez plus tard : __blocks__.",
+  'ai-panel-accept-block': 'Tout accepter dans ce bloc',
+  'ai-panel-go-to-block': 'Aller au bloc',
+  'ai-panel-nothing-to-correct': "Il n'y a pas de texte à corriger ici.",
+  'ai-panel-field-title': 'Titre',
+  'ai-panel-field-text': 'Texte',
+  'ai-panel-field-button': 'Bouton',
+  'ai-panel-field-alt': 'Texte alternatif',
+  'ai-panel-left-out-sample':
+    "__count__ champs encore à leur texte d'exemple laissés de côté.",
+  'ai-panel-left-out-sample-one':
+    "1 champ encore à son texte d'exemple laissé de côté.",
+  'ai-panel-left-out-too-long':
+    '__count__ champs trop longs pour être vérifiés laissés de côté.',
+  'ai-panel-left-out-too-long-one':
+    '1 champ trop long pour être vérifié laissé de côté.',
+  'ai-panel-corrections-dropped':
+    "__count__ corrections écartées : elles ne pouvaient pas s'appliquer sans risque pour la mise en forme ou les variables.",
+  'ai-panel-corrections-dropped-one':
+    "1 correction écartée : elle ne pouvait pas s'appliquer sans risque pour la mise en forme ou les variables.",
+  'ai-panel-correction-before': 'Avant :',
+  'ai-panel-correction-after': 'Après :',
+  'ai-panel-generate-subject': 'Proposer des objets',
+  'ai-panel-generate-preheader': 'Proposer des préheaders',
+  'ai-panel-proposed': '__count__ propositions',
+  'ai-panel-undo': 'Annuler la modification',
+  'ai-panel-undone': 'Modification annulée.',
+  'ai-panel-undo-changed':
+    "Le champ a été modifié depuis : rien n'a été annulé.",
+  'ai-panel-selected-block': 'Bloc sélectionné',
+  'ai-panel-no-action-yet': "Pas encore d'action IA pour ce bloc.",
+  'ai-panel-whole-email': "Tout l'email",
+  'ai-panel-selection-changed':
+    'Vous avez sélectionné un autre élément. Cette action reste ouverte ici.',
+  'ai-panel-see-its-actions': 'Voir ses actions IA',
+  'ai-field-subject-label': "Générer l'objet avec l'IA",
+  'ai-field-preheader-label': "Générer le préheader avec l'IA",
+  'ai-block-tool': 'Actions IA du bloc',
+  'ai-field-correct-label': "Corriger avec l'IA",
+  'text-generation-applied-preheader': 'Préheader :',
+  'text-generation-applied-subject': 'Objet :',
+  'text-generation-long': 'long : la fin sera rarement lue',
+  'text-generation-short':
+    "court : certaines boîtes de réception le complètent avec le début de l'email",
+  'text-generation-copy-hint-preheader':
+    "Ce template n'a pas de préheader modifiable : copiez une proposition pour la coller dans votre outil d'envoi.",
+  'text-generation-preheaders-title': 'Choisissez un préheader',
+  'text-generation-brief-label': 'Consigne (facultative)',
+  'text-generation-brief-placeholder': 'Ex. insister sur la livraison offerte',
+  'text-generation-more': "Proposer d'autres",
+  'text-generation-subjects-title': 'Choisissez un objet',
+  'text-generation-length': '__count__ caractères',
+  'text-generation-mobile': 'sur mobile : « __preview__… »',
+  'text-generation-dropped':
+    '__count__ proposition(s) écartée(s) : elles ne respectaient pas les règles de rédaction.',
+  'text-generation-none':
+    "Aucune proposition ne respectait les règles de rédaction. Demandez-en d'autres.",
+  'text-generation-apply': 'Appliquer',
+  'text-generation-copy': 'Copier',
+  'text-generation-copied': 'Copié',
+  'text-generation-copy-hint':
+    "L'objet de cet email n'est pas géré dans LePatron : copiez une proposition pour la coller dans votre outil d'envoi.",
+  'text-generation-applied': "Appliqué. Enregistrez l'email pour le conserver.",
+  'text-generation-empty-email':
+    "L'email ne contient pas encore de texte : ajoutez du contenu avant de demander des propositions.",
+  'text-generation-error-disabled':
+    "La génération de texte n'est pas activée pour votre entreprise.",
+  'text-generation-error-forbidden':
+    "Vous ne pouvez plus modifier cet email : les Actions IA ne sont plus disponibles. Rechargez la page, ou demandez l'accès à un administrateur.",
+  'text-generation-error-unavailable':
+    "La génération de texte n'est pas disponible pour le moment. Contactez votre administrateur.",
+  'text-generation-error-rate-limited':
+    'Trop de demandes. Réessayez dans quelques minutes.',
+  'text-generation-error-too-large':
+    "L'email est trop long pour être envoyé à l'IA.",
+  'text-generation-error-failed': 'La génération a échoué. Réessayez.',
+  'text-generation-error-network': 'Erreur réseau. Vérifiez votre connexion.',
+  'text-generation-error-signed-out':
+    'Votre session a expiré : rechargez la page pour vous reconnecter.',
+  'text-generation-error-copy':
+    'La copie a échoué : sélectionnez le texte et copiez-le à la main.',
 };

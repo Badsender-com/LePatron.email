@@ -1,0 +1,138 @@
+////////
+// THE SEARCH FIELDS OF THE LEFT BAR — one field for « Blocs du template »,
+// « Enregistrés » and the two galleries of « Images »: 34px, a 7px radius,
+// the icon then the text at the same places, 14px from the bar's edges as
+// the cards below, and one focus: the border turns to the accent. Imported
+// after badsender-left-bar.less.
+////////
+
+@left-bar-gutter: 14px;
+@search-height: 34px;
+// The text starts after the icon: 10px, the 14px icon, 8px.
+@search-text-left: 32px;
+
+.left-bar-search-box() {
+  box-sizing: border-box;
+  height: @search-height;
+  border: 1px solid var(--gray-300);
+  border-radius: 7px;
+  background: var(--white);
+  color: var(--gray-900);
+  font-family: inherit;
+  font-size: 13px;
+  transition: border-color 0.12s;
+
+  &:hover { border-color: var(--gray-400); }
+}
+
+.left-bar-search-focus() {
+  border-color: var(--v-accent-base);
+  outline: none;
+  box-shadow: none;
+}
+
+// ===== « Blocs du template »: the field is a label, its icon inside =====
+#main-toolbox .left-bar-search {
+  .left-bar-search-box();
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 12px @left-bar-gutter 0;
+  padding: 0 10px;
+  color: var(--gray-500);
+  cursor: text;
+
+  > .lucide { flex: none; font-size: 14px; }
+
+  &:focus-within { .left-bar-search-focus(); }
+
+  &__input {
+    flex: 1;
+    min-width: 0;
+    height: 100%;
+    margin: 0;
+    padding: 0;
+    border: 0;
+    outline: none;
+    background: transparent;
+    box-shadow: none;
+    color: var(--gray-900);
+    font: inherit;
+
+    &::placeholder { color: var(--gray-500); }
+  }
+}
+
+// ===== « Enregistrés », in Vue: the input, its icon laid over =====
+// Its list already keeps the gutter around it.
+#main-toolbox #toolblocks .search-container {
+  margin: 0 !important;
+
+  .search-input {
+    .left-bar-search-box();
+    height: @search-height !important;
+    min-height: @search-height !important;
+    padding: 0 10px 0 @search-text-left !important;
+    border: 1px solid var(--gray-300) !important;
+    border-radius: 7px !important;
+    color: var(--gray-900) !important;
+    font-size: 13px !important;
+    box-shadow: none !important;
+
+    &::placeholder { color: var(--gray-500); }
+
+    &:hover:not(:focus) { border-color: var(--gray-400) !important; }
+
+    &:focus {
+      border-color: var(--v-accent-base) !important;
+      outline: none !important;
+      box-shadow: none !important;
+    }
+  }
+
+  > label {
+    left: 11px !important;
+    color: var(--gray-500) !important;
+    font-size: 14px !important;
+    line-height: 1;
+  }
+
+  .search-icon { display: flex; }
+}
+
+// ===== The galleries of « Images », in Vue =====
+// The gutter of the bar, the cells' own 4px padding taken back so the images
+// line up with the field.
+#main-toolbox #toolimagestab .gallery-panel {
+  padding: 12px @left-bar-gutter;
+}
+
+#main-toolbox #toolimagestab {
+  // The upload zone's pane, flush with the gutter as the field below.
+  .img-dropzone.pane { margin: 0; padding: 0; }
+
+  .gallery-vue-search { margin: 12px 0 0; }
+
+  .gallery-vue-search__icon {
+    left: 11px;
+    font-size: 14px;
+    color: var(--gray-500);
+  }
+
+  .gallery-vue-search__input {
+    .left-bar-search-box();
+    padding: 0 30px 0 @search-text-left;
+
+    &::placeholder { color: var(--gray-500); }
+
+    &:focus,
+    &:focus-visible {
+      .left-bar-search-focus();
+      background: var(--white);
+    }
+  }
+
+  .gallery-vue-filters { padding: 8px 0 4px; }
+  .gallery-vue-panel__count { padding: 6px 0; }
+  .gallery-vue-scroller { margin: 0 -4px; }
+}

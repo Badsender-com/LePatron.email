@@ -35,6 +35,7 @@ function safeRequire(path) {
 const MANIFESTS = [
   safeRequire('../../translation/skill-manifest.js'),
   safeRequire('../../email-builder/skill-manifest.js'),
+  safeRequire('../../text-generation/skill-manifest.js'),
 ].filter(Boolean);
 
 function listManifests() {
@@ -61,8 +62,10 @@ function filterMatchesExpertise(filter, expertise) {
     ? [filter.scope]
     : [];
   const expScopes = Array.isArray(expertise.scope) ? expertise.scope : [];
-  const scopeMatches =
-    expertise.isTransversal || filterScopes.some((s) => expScopes.includes(s));
+  // A filter may leave the transversal expertise out (`excludeTransversal`).
+  const scopeMatches = expertise.isTransversal
+    ? !filter.excludeTransversal
+    : filterScopes.some((s) => expScopes.includes(s));
   if (!scopeMatches) return false;
 
   if (filter.emailType) {

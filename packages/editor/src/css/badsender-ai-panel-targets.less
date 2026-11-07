@@ -1,0 +1,216 @@
+////////
+// AI PANEL — its targets (ADR 0010): the AI icons on the fields, and the parts
+// of the panel that follow the canvas selection. The panel itself is in
+// badsender-ai-panel.less.
+////////
+
+// Right after the label of the subject field and of the preheader property.
+// 24px for a pointer target (WCAG 2.5.8); --primary for a 3:1 contrast.
+.mo .ai-field-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  margin-left: 4px;
+  padding: 0;
+  border: 0;
+  border-radius: 4px;
+  background: transparent;
+  color: var(--primary);
+  font-size: 15px;
+  line-height: 1;
+  vertical-align: middle;
+  cursor: pointer;
+
+  &:hover {
+    background: var(--gray-100);
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 1px;
+  }
+}
+
+// The subject's label row spreads its items apart: the icon stays by the label.
+.mo .email-metadata__label-row > .ai-field-icon {
+  align-self: center;
+  margin-right: auto;
+}
+
+// ===== The corrections (ADR 0011) =====
+#toolai .ai-panel {
+  &__corrections-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+  }
+
+  &__corrections {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  &__correction {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    padding: 10px 12px;
+    border: 1px solid var(--gray-200);
+    border-radius: @qc-radius-card;
+
+    &--accepted,
+    &--ignored,
+    &--stale {
+      background: var(--gray-50);
+    }
+
+    // Answered: the change and its status on one line.
+    &--answered {
+      flex-direction: row;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      padding: 6px 12px;
+    }
+  }
+
+  &__change {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 6px;
+    user-select: text;
+    -webkit-user-select: text;
+  }
+
+  // Before struck on red, after on green (board a4); the words say which.
+  &__before,
+  &__after {
+    padding: 0 2px;
+    border-radius: 3px;
+    color: var(--gray-900);
+  }
+
+  &__before {
+    background: @qc-tint-error;
+    text-decoration: line-through;
+  }
+
+  &__after {
+    background: @qc-tint-success;
+    text-decoration: none;
+  }
+
+  &__buttons--end {
+    justify-content: flex-end;
+  }
+
+  &__status-label {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--gray-800);
+
+    > .lucide { color: @qc-success; }
+  }
+
+  // ===== The analysis under way (board a4) =====
+  &__progress {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  &__progress-line {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  &__progress-count {
+    margin-left: auto;
+    color: var(--gray-700);
+  }
+
+  &__progress-bar {
+    width: 100%;
+    height: 4px;
+    border: 0;
+    border-radius: 2px;
+    background: var(--gray-200);
+    appearance: none;
+
+    &::-webkit-progress-bar { border-radius: 2px; background: var(--gray-200); }
+    &::-webkit-progress-value { border-radius: 2px; background: var(--accent); }
+    &::-moz-progress-bar { border-radius: 2px; background: var(--accent); }
+  }
+
+  // ===== The summary (board a5) =====
+  &__finished:focus {
+    outline: none;
+  }
+
+  &__tally {
+    margin: 0;
+
+    > div {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 8px 0;
+      border-bottom: 1px solid var(--gray-200);
+    }
+
+    dt { color: var(--gray-900); }
+    dd { margin: 0; font-weight: 600; }
+  }
+}
+
+#toolai .ai-panel__field-label {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--gray-600);
+}
+
+#toolai .ai-panel {
+  &__group {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  &__group-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    margin-top: 4px;
+
+    // A heading for screen readers' navigation, styled as a section label.
+    h3 {
+      margin: 0;
+    }
+
+    .lucide {
+      margin-left: 4px;
+    }
+  }
+
+  &__accept-block {
+    align-self: flex-start;
+  }
+}
+
+// The AI button of the text editor's toolbar (#1257): TinyMCE names its icon
+// `mce-i-<icon>`.
+.mce-i-ai-bot {
+  .lucide-icon-mask(@lucide-bot);
+}

@@ -47,9 +47,125 @@ const genericTextOutput = z
   })
   .strict();
 
+// --- Text generation (subject, preheader) ---
+
+// The email as the editor shows it: each piece of text with its role, in
+// reading order. Built by the editor, never by the skill.
+const emailCopySchema = z
+  .array(
+    z
+      .object({
+        role: z.enum(['title', 'text', 'button']),
+        text: z.string().min(1),
+      })
+      .strict()
+  )
+  .min(1);
+
+// Three proposals exactly: the feature shows them side by side, and a skill
+// that answers two has not done its job.
+const textProposalsOutput = z
+  .object({
+    proposals: z
+      .array(
+        z
+          .object({
+            text: z.string().min(1),
+            angle: z.string().min(1),
+          })
+          .strict()
+      )
+      .length(3),
+  })
+  .strict();
+
+const subjectGenInput = z
+  .object({
+    content: emailCopySchema,
+    emailType: z.string().optional(),
+    currentSubject: z.string().optional(),
+    brief: z.string().optional(),
+    // The proposals the user already saw: the skill moves away from them.
+    avoid: z.array(z.string()).optional(),
+    expertise: expertiseArraySchema.optional(),
+  })
+  .strict();
+
+const subjectGenOutput = textProposalsOutput;
+
+const preheaderGenInput = z
+  .object({
+    content: emailCopySchema,
+    // The subject the user picked: the preheader complements it. Absent when
+    // the subject is set elsewhere: the preheader carries the main point.
+    subject: z.string().min(1).optional(),
+    emailType: z.string().optional(),
+    currentPreheader: z.string().optional(),
+    brief: z.string().optional(),
+    avoid: z.array(z.string()).optional(),
+    expertise: expertiseArraySchema.optional(),
+  })
+  .strict();
+
+const preheaderGenOutput = textProposalsOutput;
+
+// Spelling correction (ADR 0011): the visible text of the fields of one block,
+// each with its path; the skill answers corrections the code then places.
+// A non-breaking space is written {nbsp}, in the text as in the corrections:
+// the model can neither write the character nor tell it from a space.
+const FIELD_ROLES = ['title', 'text', 'button', 'alt'];
+
+const correctionInput = z
+  .object({
+    fields: z
+      .array(
+        z
+          .object({
+            path: z.string().min(1),
+            role: z.enum(FIELD_ROLES),
+            text: z.string().min(1),
+          })
+          .strict()
+      )
+      .min(1),
+    expertise: expertiseArraySchema.optional(),
+  })
+  .strict();
+
+// Bounds a model's answer cannot exceed: corrections of a block, excerpts of a
+// few words.
+const MAX_CORRECTIONS = 100;
+const MAX_EXCERPT_LENGTH = 1000;
+const MAX_REASON_LENGTH = 300;
+
+const correctionOutput = z
+  .object({
+    // None for a text without mistake.
+    corrections: z
+      .array(
+        z
+          .object({
+            field: z.string().min(1),
+            // An exact excerpt of the field's text, long enough to be found once.
+            before: z.string().min(1).max(MAX_EXCERPT_LENGTH),
+            after: z.string().max(MAX_EXCERPT_LENGTH),
+            reason: z.string().min(1).max(MAX_REASON_LENGTH),
+          })
+          .strict()
+      )
+      .max(MAX_CORRECTIONS),
+  })
+  .strict();
+
 const schemas = Object.freeze({
   genericTextInput,
   genericTextOutput,
+  subjectGenInput,
+  subjectGenOutput,
+  preheaderGenInput,
+  preheaderGenOutput,
+  correctionInput,
+  correctionOutput,
 });
 
 /**
@@ -83,4 +199,5 @@ module.exports = {
   listSchemaIds,
   hasSchema,
   expertiseArraySchema,
+  FIELD_ROLES,
 };

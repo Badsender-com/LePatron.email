@@ -57,6 +57,14 @@ const config = rc('lepatron', {
     tmpDir: 'tmp',
     cache: false,
   },
+  // Ceiling on the requests that reach an AI provider (translation, text
+  // generation), shared by every AI feature. A safety net against runaway
+  // loops and quota burning, not a commercial quota.
+  aiRateLimits: {
+    perUserPerMinute: 20,
+    perUserPerDay: 300,
+    perGroupPerDay: 3000,
+  },
   admin: {
     id: '576b90a441ceadc005124896',
     username: 'admin',
@@ -72,6 +80,12 @@ const config = rc('lepatron', {
   // the former format, which the previous version of the application reads
   // (with scripts/reencrypt-secrets.js --downgrade, utils/crypto.js).
   encryptionWriteLegacy: process.env.ENCRYPTION_WRITE_LEGACY === 'true',
+  // The quality checks the server runs that need a third party; both off
+  // unless set (mailing/quality-web-risk.service.js, quality-blocklists.service.js).
+  qualityControl: {
+    webRiskApiKey: process.env.QC_WEB_RISK_API_KEY,
+    domainBlocklists: process.env.QC_DOMAIN_BLOCKLISTS,
+  },
   NODE_ENV: process.env.NODE_ENV,
   helpUrl: process.env.HELP_URL || 'https://docs.lepatron.email',
   // A copy (staging, development) follows production's skills and

@@ -18,6 +18,15 @@ packages/documentation/.vuepress/dist/
 packages/documentation/api/
 
 !packages/editor/src/js/vue/*
+# The quality control is new code written to the repository's style: linted.
+# Each level is re-included, then its other children ignored again.
+!packages/editor/src/
+packages/editor/src/*
+!packages/editor/src/js/
+packages/editor/src/js/*
+!packages/editor/src/js/ext/
+packages/editor/src/js/ext/*
+!packages/editor/src/js/ext/quality/
 # Vue 3 SFC, compiled at build time by scripts/compile-block-builder-components.js.
 # The project's eslint is configured for Vue 2 and cannot parse <script setup>.
 packages/shared/block-builder/components/*.vue

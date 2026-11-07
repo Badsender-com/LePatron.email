@@ -40,6 +40,18 @@ function translateBlock() {
   return `${prefixApi}/translation/block`;
 }
 
+function generateSubjects() {
+  return `${prefixApi}/text-generation/subject`;
+}
+
+function generatePreheaders() {
+  return `${prefixApi}/text-generation/preheader`;
+}
+
+function correctText() {
+  return `${prefixApi}/text-generation/corrections`;
+}
+
 function getTranslationLanguages() {
   return `${prefixApi}/translation/languages`;
 }
@@ -68,6 +80,9 @@ function readStoredImage(imageName) {
 }
 
 module.exports = {
+  generateSubjects,
+  generatePreheaders,
+  correctText,
   getEspIds,
   getProfileDetail,
   getCampaignDetail,

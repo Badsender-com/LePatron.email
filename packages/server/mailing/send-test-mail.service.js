@@ -57,15 +57,17 @@ async function sendTestMail({
     }
   }
 
+  // Now that an email carries a real subject, a test send should show it.
+  // Falls back on the mailing name, which is what every existing mailing has
+  // and what this used to send unconditionally.
+  const subject = mailing.subject || mailing.name;
+
   for (const address of adresses) {
     try {
       const mailInfo = await mail.send({
         to: address,
         replyTo: user?.email,
-        // Now that an email carries a real subject, a test send should show it.
-        // Falls back on the mailing name, which is what every existing mailing
-        // has and what this used to send unconditionally.
-        subject: mailing.subject || mailing.name,
+        subject,
         html,
       });
 
@@ -76,5 +78,6 @@ async function sendTestMail({
     }
   }
 
-  return adresses;
+  // The editor says to whom and with which subject it went (ADR 0020).
+  return { addresses: adresses, subject };
 }

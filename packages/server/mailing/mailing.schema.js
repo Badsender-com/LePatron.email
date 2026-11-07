@@ -2,6 +2,8 @@
 
 const _ = require('lodash');
 const { isBootstrapAccount } = require('../account/bootstrap-account.js');
+const permissions = require('../account/permissions.js');
+const { CAPABILITIES } = require('../../shared/access/roles.js');
 const mongoose = require('mongoose');
 const mongoosePaginate = require('mongoose-paginate-v2');
 const config = require('../node.config.js');
@@ -16,9 +18,11 @@ const {
   TaxonomyItemModel,
 } = require('../constant/model.names');
 const logger = require('../utils/logger.js');
-const AIFeatureTypes = require('../constant/ai-feature-type');
 const { EmailTriggerValues } = require('../constant/email-trigger');
 const { resolveTrackingConfig } = require('../utils/resolve-tracking-config');
+const {
+  resolveQualitySettings,
+} = require('../utils/resolve-quality-settings.js');
 const { HEAD_CSS_MAX_LENGTH } = require('../../shared/head-css/constants.js');
 const {
   TEMPLATE_FLAG_PROJECTION,
@@ -155,13 +159,48 @@ const MailingSchema = Schema(
       type: String,
       enum: EmailTriggerValues,
     },
+    // Quality control findings the team chose to ignore on this email (the
+    // quality drawer's "Ignore"). Keyed by the finding's fingerprint — rule,
+    // block, property and a hash of the faulty value — so an ignored finding
+    // comes back on its own once its content changes. Shared by everyone who
+    // edits the email. Bounded by MAX_QUALITY_IGNORES in mailing-quality.service.
+    qualityIgnores: {
+      type: [
+        {
+          _id: false,
+          fingerprint: { type: String, required: true, maxlength: 512 },
+          ruleId: { type: String, maxlength: 64 },
+          // Who ignored it is kept for audit and shown to nobody: the JSON
+          // transform below drops the whole list, and the editor's metadata
+          // (findOneForMosaico) keeps only the fingerprints. Never
+          // `select: false`: Mongoose would add `qualityIgnores._user: 0` to
+          // the lists' projection, which already excludes `qualityIgnores`,
+          // and MongoDB 4.4+ rejects that path collision.
+          _user: { type: ObjectId, ref: UserModel },
+          ignoredAt: { type: Date, default: Date.now },
+        },
+      ],
+      default: undefined,
+    },
     // http://mongoosejs.com/docs/schematypes.html#mixed
     data: {},
     espIds: {
       type: [],
     },
   },
-  { timestamps: true, toJSON: { virtuals: true } }
+  {
+    timestamps: true,
+    toJSON: {
+      virtuals: true,
+      // The ignored quality findings reach the editor with its own metadata
+      // (findOneForMosaico) and nowhere else: no API answer carries them, nor
+      // the ids of who ignored them.
+      transform: (doc, ret) => {
+        delete ret.qualityIgnores;
+        return ret;
+      },
+    },
+  }
 );
 
 MailingSchema.pre('find', function () {
@@ -187,6 +226,9 @@ MailingSchema.methods.duplicate = function duplicate(_user) {
   // keeping — a copy of an automated transactional email is still one; a planned
   // send date belongs to one campaign and must not be inherited.
   this.plannedSendDate = undefined;
+  // Ignored quality findings are a decision about the original: the copy is
+  // reviewed afresh (MAILING_COPY_OMITTED_FIELDS says the same for copies).
+  this.qualityIgnores = undefined;
   this.createdAt = new Date();
   this.updatedAt = new Date();
   // set new user
@@ -387,26 +429,8 @@ MailingSchema.statics.findForApiWithPagination = async function findForApiWithPa
   let approvedMailingIds = new Set();
   if (Comment) {
     approvedMailingIds = new Set(await Comment.findApprovedMailingIds(ids));
-    const commentCounts = await Comment.aggregate([
-      {
-        $match: {
-          _mailing: { $in: ids },
-          _parentComment: null,
-          resolved: false,
-          isDeleted: false,
-        },
-      },
-      {
-        $group: {
-          _id: '$_mailing',
-          count: { $sum: 1 },
-        },
-      },
-    ]);
-    commentCountsMap = commentCounts.reduce((acc, item) => {
-      acc[item._id.toString()] = item.count;
-      return acc;
-    }, {});
+    // Never a reply nor an approval (ADR 0020), as the editor counts them.
+    commentCountsMap = await Comment.countUnresolvedByMailings(ids);
   }
 
   // Strip previewHtml defensively: the projection above already omits it, but
@@ -558,6 +582,7 @@ MailingSchema.statics.findOneForMosaico = async function findOneForMosaico(
         _company: 1,
         assets: 1,
         trackingConfig: 1,
+        qualitySettings: 1,
         ...TEMPLATE_FLAG_PROJECTION,
       },
     });
@@ -576,21 +601,13 @@ MailingSchema.statics.findOneForMosaico = async function findOneForMosaico(
   const groupId = group._id;
   const templateId = mailing._wireframe._id;
 
-  // Check if translation feature is available for this group
-  // Lazy require to avoid circular dependency
+  // Which AI features the editor offers: each needs to be on, with an active
+  // integration. Lazy require to avoid a circular dependency.
   const aiFeatureService = require('../ai-feature/ai-feature.service');
-  const translationFeatureConfig = await aiFeatureService.getActiveFeatureWithIntegration(
-    {
-      groupId,
-      featureType: AIFeatureTypes.TRANSLATION,
-    }
-  );
-  const hasTranslationFeature = !!(
-    translationFeatureConfig &&
-    translationFeatureConfig.feature.isActive &&
-    translationFeatureConfig.integration &&
-    translationFeatureConfig.integration.isActive
-  );
+  const {
+    hasTranslationFeature,
+    hasTextGenerationFeature,
+  } = await aiFeatureService.getEditorFeatureFlags({ groupId });
 
   // Editorial metadata for the editor's email-settings section, when the company
   // opted in. The policy — which company the typology list is scoped to, what to
@@ -610,6 +627,34 @@ MailingSchema.statics.findOneForMosaico = async function findOneForMosaico(
   // instead of offering a save the server refuses. Lazy require, as above.
   const mailingService = require('./mailing.service.js');
   const canWrite = await mailingService.userCanEditMailing(user, mailing);
+
+  // Whether this user may use the AI actions on this email: the rule of the text
+  // generation routes (the feature, the capability, where the email lives),
+  // known before the editor starts so that every way in is hidden at once
+  // (ADR 0020). The routes read the feature of the company billed, the
+  // email's, which may not be its template's (invocation-context.js).
+  const billedGroupId = (mailing._company && mailing._company._id) || groupId;
+  const billedHasTextGeneration =
+    String(billedGroupId) === String(groupId)
+      ? hasTextGenerationFeature
+      : (
+          await aiFeatureService.getEditorFeatureFlags({
+            groupId: billedGroupId,
+          })
+        ).hasTextGenerationFeature;
+  const canUseTextGeneration = Boolean(
+    billedHasTextGeneration &&
+      canWrite &&
+      permissions.can(user, CAPABILITIES.MAILING_EDIT_CONTENT)
+  );
+
+  // Lazy require like the services above: share-link.service reaches
+  // models.common, which reaches back here.
+  const shareLinkService = require('../share-link/share-link.service.js');
+  // The company the server judges a link by, not always the template's.
+  const { allowed: shareLinksEnabled } = await shareLinkService.companySharing(
+    await shareLinkService.sharingCompanyOf(mailing)
+  );
 
   let redirectUrl = null;
 
@@ -637,6 +682,11 @@ MailingSchema.statics.findOneForMosaico = async function findOneForMosaico(
       hasHtmlPreview: !!mailing.previewHtml,
       canWrite,
       hasTranslationFeature,
+      // Text generation on for the template's company; the editor reads
+      // canUseTextGeneration below.
+      hasTextGenerationFeature,
+      // The AI actions of the editor, for this user on this email.
+      canUseTextGeneration,
       // Drive palette visibility of the two synthetic blocks only — their
       // definitions are always injected client-side. Independent of each other.
       // Named after the descriptors' flags, which the editor reads them by.
@@ -653,7 +703,22 @@ MailingSchema.statics.findOneForMosaico = async function findOneForMosaico(
         zip: `/api/mailings/${mailingId}/mosaico/download-zip`,
         profileList: `/api/profiles/${groupId}/profile-list-for-editor`,
         sendCampaignMail: `/api/profiles/${mailingId}/send-campaign-mail`,
+        qualityIgnores: `/api/mailings/${mailingId}/quality-ignores`,
+        qualityResources: `/api/mailings/${mailingId}/quality/resources`,
+        // Absent when the company turned the preview links off: the editor
+        // shows the sharing section only when the address is there.
+        ...(shareLinksEnabled && {
+          shareLinks: `/api/mailings/${mailingId}/share-links`,
+        }),
       },
+      // The limit the sharing section quotes, from the service that holds it.
+      ...(shareLinksEnabled && {
+        shareLinks: { maxActive: shareLinkService.MAX_ACTIVE_LINKS },
+      }),
+      // Fingerprints of the quality findings ignored on this email.
+      qualityIgnores: (mailing.qualityIgnores || []).map(
+        (ignore) => ignore.fingerprint
+      ),
       downloadConfig: {
         cdnImages: group.downloadMailingWithCdnImages,
         cdnButtonLabel: group.cdnButtonLabel,
@@ -661,6 +726,9 @@ MailingSchema.statics.findOneForMosaico = async function findOneForMosaico(
         ftpButtonLabel: group.ftpButtonLabel,
       },
       trackingConfig: resolveTrackingConfig(group, mailing._wireframe),
+      // Every check's state and thresholds for this mailing: its template's,
+      // else its group's, else the defaults (ADR 0009).
+      qualitySettings: resolveQualitySettings(group, mailing._wireframe),
       fileuploadConfig: {
         url: {
           mailing: `/api/images/gallery/${mailingId}`,

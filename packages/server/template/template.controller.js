@@ -13,11 +13,20 @@ const {
 const logger = require('../utils/logger.js');
 const modelsUtils = require('../utils/model.js');
 const permissions = require('../account/permissions.js');
+const { CAPABILITIES } = require('../../shared/access/roles.js');
 const templateService = require('./template.service.js');
 const fileManager = require('../common/file-manage.service.js');
 const generatePreview = require('./generate-preview.controller.js');
 const templateBlocks = require('./template-blocks.controller.js');
 const _getTemplateImagePrefix = require('../utils/get-template-image-prefix.js');
+const {
+  sanitizeQualitySettings,
+  keepsTechChecks,
+  qualitySettingsUpdate,
+} = require('../utils/sanitize-quality-settings.js');
+const {
+  resolveQualitySettings,
+} = require('../utils/resolve-quality-settings.js');
 const {
   sanitizeTrackingConfig,
 } = require('../utils/resolve-tracking-config.js');
@@ -32,6 +41,7 @@ module.exports = {
   readMarkup: asyncHandler(readMarkup),
   update: asyncHandler(update),
   updateTrackingConfig: asyncHandler(updateTrackingConfig),
+  updateQualitySettings: asyncHandler(updateQualitySettings),
   destroy: asyncHandler(destroy),
   destroyImages: asyncHandler(destroyImages),
   // expose generate preview controllers
@@ -226,6 +236,57 @@ async function updateTrackingConfig(req, res) {
   });
   await template.save();
   res.json(template);
+}
+
+/**
+ * @api {put} /templates/:templateId/quality-settings override quality settings
+ * @apiPermission group-admin (own group only) or super-admin
+ * @apiName UpdateTemplateQualitySettings
+ * @apiGroup Templates
+ *
+ * @apiParam (Body) {Object} checks `{ [checkId]: { state?, thresholds? } }`;
+ *   `null` brings a setting back to the group's (ADR 0009)
+ */
+async function updateQualitySettings(req, res) {
+  const { templateId } = req.params;
+  const { user } = req;
+  const template = await Templates.findById(templateId);
+  if (!template) throw new createError.NotFound();
+  // A company admin only touches the templates of their own company, a super
+  // admin any template.
+  if (!permissions.canManageGroup(user, template._company)) {
+    throw new createError.Forbidden();
+  }
+  // What the template does not set follows its group: thresholds that go
+  // together are checked against the group's values.
+  const group = template._company
+    ? await Groups.findById(template._company).select('qualitySettings')
+    : null;
+  const { checks } = resolveQualitySettings(group, null);
+  const inherited = Object.fromEntries(
+    Object.entries(checks).map(([id, check]) => [id, check.thresholds])
+  );
+  const qualitySettings = sanitizeQualitySettings(
+    req.body,
+    template.qualitySettings,
+    inherited
+  );
+  // The required tracking parameters are a tech admin's, on a template too.
+  if (
+    !permissions.can(user, CAPABILITIES.GROUP_MANAGE_TECH) &&
+    !keepsTechChecks(template.qualitySettings, qualitySettings)
+  ) {
+    throw new createError.Forbidden();
+  }
+  // Check by check, so a save made meanwhile to another check stays.
+  const update = qualitySettingsUpdate(
+    template.qualitySettings,
+    qualitySettings
+  );
+  if (Object.keys(update).length) {
+    await Templates.updateOne({ _id: template._id }, update);
+  }
+  res.json(await Templates.findById(templateId));
 }
 
 /**

@@ -10,9 +10,8 @@ const {
 } = require('../utils/editor-only-metadata-keys');
 const { errorKeyFor } = require('../utils/email-metadata');
 const { saveErrorKeyFor } = require('./synthetic-blocks/save-error.js');
+const { createExportMenu } = require('./topbar/export-menu.js');
 const {
-  getErrorsForControlQuality,
-  displayErrors,
   checkRequiredTrackingParams,
   displayTrackingError,
 } = require('../ext/badsender-control-quality');
@@ -175,17 +174,6 @@ function loader(opts) {
     };
 
     /// ///
-    // EMAIL
-    /// ///
-    const testCmd = {
-      name: 'Test', // l10n happens in the template
-      enabled: ko.observable(true),
-    };
-    testCmd.execute = function () {
-      viewModel.openTestModal(true);
-    };
-
-    /// ///
     // ZIP
     /// ///
 
@@ -200,32 +188,57 @@ function loader(opts) {
 
     const dlDefault = { forCdn: false, forFtp: false };
     downloadCmd.execute = function downloadMail(downloadOptions = dlDefault) {
+      const html = viewModel.exportHTML();
+
       // ====================================
-      // Block download if required tracking params are missing
-      const missingTracking = checkRequiredTrackingParams(viewModel);
-      if (missingTracking.length > 0) {
-        displayTrackingError(missingTracking, viewModel);
-        document.getElementById('main-wysiwyg-area').scrollTo({
-          behavior: 'smooth',
-          top: 0,
-        });
+      // Quality review of the same export the ZIP is built from: the drawer
+      // opens when there is something to see; a finding of a blocking check
+      // (the required tracking parameters by default) stops the download and
+      // is listed in a modal (ADR 0009).
+      if (!viewModel.quality) {
+        const missingTracking = checkRequiredTrackingParams(viewModel);
+        if (missingTracking.length > 0) {
+          displayTrackingError(missingTracking, viewModel);
+          document.getElementById('main-wysiwyg-area').scrollTo({
+            behavior: 'smooth',
+            top: 0,
+          });
+          return;
+        }
+        download(html, downloadOptions);
         return;
       }
-
-      // ====================================
-      // Check for missing input values
-      const errors = getErrorsForControlQuality(viewModel);
-      if (errors && errors.length > 0) {
-        displayErrors(errors, viewModel);
-        // Scroll to top so the user can see warnings if there is any
-        document.getElementById('main-wysiwyg-area').scrollTo({
-          behavior: 'smooth',
-          top: 0,
-        })
-      } else {
-        $('.error-message').remove();
+      // One export at a time: the button waits for the checks' verdict.
+      if (!downloadCmd.enabled()) return;
+      downloadCmd.enabled(false);
+      const verdict = gate(html);
+      // Said only when the server is actually asked, and one of its checks
+      // blocks.
+      if (viewModel.quality.waitsForServer && viewModel.quality.waitsForServer()) {
+        viewModel.notifier.info(viewModel.t('Checking links and images…'));
       }
+      verdict.then(({ blocked }) => {
+        if (blocked) downloadCmd.enabled(true);
+        else download(html, downloadOptions);
+      });
+    };
 
+    // A failure of the checks never blocks: the download goes on.
+    function gate(html) {
+      const notBlocked = (err) => {
+        console.error('Quality review failed', err);
+        return { blocked: false };
+      };
+      try {
+        return Promise.resolve(viewModel.quality.gate({ html })).catch(
+          notBlocked
+        );
+      } catch (err) {
+        return Promise.resolve(notBlocked(err));
+      }
+    }
+
+    function download(html, downloadOptions) {
       downloadCmd.enabled(false);
 
       viewModel.notifier.info(viewModel.t('Downloading...'));
@@ -235,7 +248,7 @@ function loader(opts) {
         method: 'POST',
         contentType: 'application/json',
         data: JSON.stringify({
-          html: viewModel.exportHTML(),
+          html,
           filename: viewModel.metadata.name(),
           downLoadForCdn: downloadOptions.forCdn,
           downLoadForFtp: downloadOptions.forFtp,
@@ -262,11 +275,13 @@ function loader(opts) {
           downloadCmd.enabled(true);
         },
       });
-    };
+    }
 
     viewModel.save = saveCmd;
-    viewModel.test = testCmd;
+    // Sending a test lives in the quality drawer (viewModel.quality.open('send')).
     viewModel.download = downloadCmd;
+    // Its menu in the top bar, when there are several ways out.
+    viewModel.exportMenu = createExportMenu(ko);
   };
 }
 
