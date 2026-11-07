@@ -247,6 +247,24 @@ function createVersionedEntityService({
     return doc;
   }
 
+  /**
+   * Adds the retex a draft addresses to it (ADR 0021), on the document read
+   * now, so that two proposals citing at once both count. Checked by the
+   * caller: only the writing tools of MCP cite, never a version update.
+   */
+  async function citeRetex(id, { major, minor }, retexIds, userId) {
+    const doc = await getDoc(id);
+    const version = findVersion(doc, major, minor);
+    assertDraft(version);
+    version.retexIds = [
+      ...new Set([...(version.retexIds || []), ...retexIds.map(String)]),
+    ];
+    version.updatedBy = userId;
+    version.updatedAt = new Date();
+    await doc.save();
+    return version.retexIds;
+  }
+
   async function deleteVersion(id, { major, minor }) {
     const doc = await getDoc(id);
     const version = findVersion(doc, major, minor);
@@ -322,6 +340,7 @@ function createVersionedEntityService({
     createVersionAt,
     importedDraft,
     updateVersion,
+    citeRetex,
     deleteVersion,
     activateVersion,
     archive,

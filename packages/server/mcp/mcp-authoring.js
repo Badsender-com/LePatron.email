@@ -17,6 +17,12 @@ const {
 } = require('../ai-skill/constant/skill-constants.js');
 const { withIdentity, mayDraft } = require('./mcp-identity.js');
 const { failure, ADDITIVE, OVERWRITING } = require('./mcp-tool-grammar.js');
+const {
+  addressesRetex,
+  addressedRetex,
+  assertCitable,
+  citeIn,
+} = require('./mcp-authoring-retex.js');
 
 const ENTITIES = {
   expertise: {
@@ -89,8 +95,14 @@ async function draftOf(entity, id, major, userId) {
   return { doc: next, version: created };
 }
 
-async function writeDraft(entity, id, { major, ...patch }, user) {
+async function writeDraft(
+  entity,
+  id,
+  { major, addressesRetex, ...patch },
+  user
+) {
   const { service, textOf } = ENTITIES[entity];
+  await assertCitable(addressesRetex);
   const { version } = await draftOf(entity, id, major, user.id);
   const saved = await service.updateVersion(
     id,
@@ -98,6 +110,7 @@ async function writeDraft(entity, id, { major, ...patch }, user) {
     patch,
     user.id
   );
+  const cited = await citeIn(service, id, version, addressesRetex, user.id);
   const draft = saved.versions.find(
     (v) =>
       v.versionMajor === version.versionMajor &&
@@ -111,6 +124,7 @@ async function writeDraft(entity, id, { major, ...patch }, user) {
     status: String(draft.status).toLowerCase(),
     audience: saved.audience,
     diff: diffOf(active ? textOf(active) : '', textOf(draft)),
+    addressesRetex: cited,
   };
 }
 
@@ -182,6 +196,7 @@ const ANSWER = z.object({
   status: z.enum(['draft']),
   audience: z.string().optional(),
   diff: z.string(),
+  addressesRetex: addressedRetex,
 });
 const major = z
   .boolean()
@@ -214,6 +229,7 @@ const PROPOSE_EXPERTISE_INPUT = z.object({
     'The whole new list of bad examples. Left out: unchanged.'
   ),
   changelog,
+  addressesRetex,
   major,
 });
 const PROPOSE_SKILL_INPUT = z.object({
@@ -230,6 +246,7 @@ const PROPOSE_SKILL_INPUT = z.object({
     'A feature skill: the whole new input template.'
   ),
   changelog,
+  addressesRetex,
   major,
 });
 const CREATE_EXPERTISE_INPUT = z.object({
@@ -252,6 +269,7 @@ const CREATE_EXPERTISE_INPUT = z.object({
     .describe('true if it applies to every part of the email.'),
   body: TEXT.describe('Its text, in Markdown, in French.'),
   changelog,
+  addressesRetex,
 });
 const CREATE_TASK_SKILL_INPUT = z.object({
   skillId: newIdOf('skill'),
@@ -265,6 +283,7 @@ const CREATE_TASK_SKILL_INPUT = z.object({
   ),
   consumedExpertiseIds: expertiseIds,
   changelog,
+  addressesRetex,
 });
 
 function registerAuthoringTools(server) {
@@ -308,16 +327,22 @@ function registerAuthoringTools(server) {
       outputSchema: ANSWER,
       annotations: ADDITIVE,
     },
-    asAuthor(async ({ body, changelog: log, ...data }, user) => {
-      await assertNew('expertise', data.expertiseId);
-      await expertiseService.createExpertise(data, user.id);
-      return writeDraft(
-        'expertise',
-        data.expertiseId,
-        { body, changelog: log },
+    asAuthor(
+      async (
+        { body, changelog: log, addressesRetex: cited, ...data },
         user
-      );
-    })
+      ) => {
+        await assertNew('expertise', data.expertiseId);
+        await assertCitable(cited);
+        await expertiseService.createExpertise(data, user.id);
+        return writeDraft(
+          'expertise',
+          data.expertiseId,
+          { body, changelog: log, addressesRetex: cited },
+          user
+        );
+      }
+    )
   );
 
   server.registerTool(
@@ -332,10 +357,17 @@ function registerAuthoringTools(server) {
     },
     asAuthor(
       async (
-        { procedure, consumedExpertiseIds, changelog: log, ...data },
+        {
+          procedure,
+          consumedExpertiseIds,
+          changelog: log,
+          addressesRetex: cited,
+          ...data
+        },
         user
       ) => {
         await assertNew('skill', data.skillId);
+        await assertCitable(cited);
         await skillService.createSkill(data, user.id);
         // The nature is the version's (ADR 0013): its first draft is a task.
         return writeDraft(
@@ -346,6 +378,7 @@ function registerAuthoringTools(server) {
             procedure,
             consumedExpertiseIds: consumedExpertiseIds || [],
             changelog: log,
+            addressesRetex: cited,
           },
           user
         );
