@@ -100,13 +100,12 @@ describe('authoring', () => {
       expect(answer.error).toMatch(/not allowed/i);
     });
 
-    // Publishing came with ADR 0019 (publish_draft, #1435), in two calls.
-    it('offers no tool that archives, deletes or opens to clients', async () => {
+    // Publishing and opening to clients came with ADR 0019 (publish_draft,
+    // #1435; set_audience, #1434).
+    it('offers no tool that archives or deletes', async () => {
       const names = await toolNames(await asAuthor());
 
-      names.forEach((name) =>
-        expect(name).not.toMatch(/archive|delete|audience/)
-      );
+      names.forEach((name) => expect(name).not.toMatch(/archive|delete/));
     });
 
     // Proposing rewrites the open draft; creating only adds one.

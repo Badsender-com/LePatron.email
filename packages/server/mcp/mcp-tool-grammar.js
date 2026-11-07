@@ -34,6 +34,14 @@ const OVERWRITING = Object.freeze({
   openWorldHint: false,
 });
 
+/** Replaces a state with the one given: the same call gives the same state. */
+const SWITCHING = Object.freeze({
+  readOnlyHint: false,
+  destructiveHint: true,
+  idempotentHint: true,
+  openWorldHint: false,
+});
+
 /** A setting of the connection: the same call gives the same state. */
 const SETTING = Object.freeze({
   readOnlyHint: false,
@@ -42,4 +50,11 @@ const SETTING = Object.freeze({
   openWorldHint: false,
 });
 
-module.exports = { failure, READ_ONLY, ADDITIVE, OVERWRITING, SETTING };
+module.exports = {
+  failure,
+  READ_ONLY,
+  ADDITIVE,
+  OVERWRITING,
+  SWITCHING,
+  SETTING,
+};

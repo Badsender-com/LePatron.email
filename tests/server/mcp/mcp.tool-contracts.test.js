@@ -144,8 +144,8 @@ describe('the grammar of every tool', () => {
     });
   });
 
-  // They rewrite the open draft, or publish it.
-  it('says the tools that rewrite or publish a draft are destructive', () => {
+  // They rewrite the open draft, publish it, or change who reads it.
+  it('says the tools that rewrite or publish a draft, or set an audience, are destructive', () => {
     const destructive = tools
       .filter((tool) => tool.annotations.destructiveHint)
       .map((tool) => tool.name)
@@ -155,6 +155,7 @@ describe('the grammar of every tool', () => {
       'propose_expertise_change',
       'propose_skill_change',
       'publish_draft',
+      'set_audience',
     ]);
   });
 
