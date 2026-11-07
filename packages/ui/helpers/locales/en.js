@@ -1660,6 +1660,81 @@ export default {
       done: 'Export downloaded.',
       failed: 'The export failed.',
     },
+    follow: {
+      title: 'Follow production',
+      description:
+        'This instance is a copy: it receives production\'s skills and expertises, as clients live them. What exists only here stays, and a newer local draft is never overwritten.',
+      production: 'Production: {origin}',
+      now: 'Follow now',
+      running: 'Following…',
+      never: 'Production has never been followed yet.',
+      last: 'Last followed on {date} by {by}',
+      lastNight: 'Last followed on {date}, by the nightly follow',
+      loadError: 'The follow of production could not be loaded.',
+      done: 'Production followed.',
+      statuses: {
+        succeeded: 'Succeeded',
+        partial: 'Partly succeeded',
+        failed: 'Failed',
+      },
+      outcomes: {
+        created: '{count} added',
+        updated: '{count} updated',
+        upToDate: '{count} already up to date',
+        kept: '{count} kept on the copy',
+        failed: '{count} failed',
+      },
+      failuresLabel: 'Failed items',
+      nothingWritten: 'Nothing was written.',
+      reasons: {
+        not_configured:
+          'This instance is configured to follow no production.',
+        invalid_address:
+          'Production\'s address is not a valid https address.',
+        unreachable: 'Production could not be reached.',
+        token_refused:
+          'Production refused the read token: it may have been revoked.',
+        production_error: 'Production answered with an error.',
+        unreadable:
+          'Production\'s answer could not be read: the two instances may not run the same version of LePatron.',
+      },
+    },
+    readTokens: {
+      title: 'Read tokens',
+      description:
+        'A copy (staging, development) follows the skills and expertises of this instance with a read token. A token reads nothing else.',
+      listLabel: 'Active read tokens',
+      add: 'Create a token',
+      addDescription:
+        'One token per copy: you can revoke the one you retire without touching the others.',
+      name: 'Name',
+      nameHint: 'The copy it serves, for example "Staging".',
+      nameTooLong: 'The name is 100 characters at most.',
+      meta: 'Created on {date} · {lastUse}',
+      lastUsed: 'last used on {date}',
+      neverUsed: 'never used',
+      empty: 'No read token.',
+      emptyHint:
+        'Create one for each copy that follows the skills and expertises of this instance.',
+      footnote:
+        'The token is shown at creation only. If it is lost, revoke it and create another one.',
+      createdBadge: 'Token created',
+      createdTitle: 'The "{name}" token',
+      token: 'Token',
+      copy: 'Copy',
+      copied: 'Copied',
+      copyToken: 'Copy the token',
+      once: 'This token will not be shown again: copy it now into the configuration of the copy.',
+      copyFirst: 'Copy the token before closing.',
+      saved: 'I saved the token',
+      revoke: 'Revoke',
+      revokeNamed: 'Revoke the "{name}" token',
+      revokeTitle: 'Revoke this token?',
+      revokeConfirm:
+        'The copy using "{name}" will no longer read this instance. A revoked token cannot be restored.',
+      revoked: 'Token revoked.',
+      loadError: 'The read tokens could not be loaded.',
+    },
     feedback: {
       tab: 'Feedback',
       caption:
@@ -1730,6 +1805,7 @@ export default {
       skills: 'Skills',
       expertise: 'Expertise',
       invocations: 'Invocations',
+      sync: 'Sync',
       details: 'Details',
       versions: 'Versions',
     },

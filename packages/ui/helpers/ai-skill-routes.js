@@ -105,5 +105,20 @@ export function aiVersionAction(kind, id, major, minor, action) {
 // Several drafts published at once (ADR 0019): `plan`, `guard`, `cancel`, or
 // the publication itself without an action.
 export function aiSkillsPublications(action) {
-  return action ? `/ai-skills/publications/${action}` : '/ai-skills/publications';
+  return action
+    ? `/ai-skills/publications/${action}`
+    : '/ai-skills/publications';
+}
+
+// Production's read tokens, for the copies that follow it (ADR 0019).
+export function aiSkillsReadTokens() {
+  return '/ai-skills/read-tokens';
+}
+export function aiSkillsReadToken(tokenId) {
+  return `/ai-skills/read-tokens/${tokenId}`;
+}
+
+// A copy following production, on demand (ADR 0019).
+export function aiSkillsFollow() {
+  return '/ai-skills/follow';
 }
