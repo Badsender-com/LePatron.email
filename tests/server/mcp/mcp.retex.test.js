@@ -1,0 +1,632 @@
+/**
+ * @jest-environment ./tests/helpers/node-globals-environment.js
+ */
+'use strict';
+
+// The retex loop (ADR 0021, epic #1472). A retex is a divergence (on a
+// passage of a skill or an expertise: what it recommended, what the user
+// decided, why) or a complement (what it lacked, what the user brought, where
+// it comes from), never a summary of the session. A super admin's is kept
+// whatever the company; anyone else's needs the company's permission and the
+// user's approval. Two retex that converge make a change: the draft cites
+// them, and its publication closes them. Super admins read and dismiss the
+// retex of every company.
+
+const harness = require('../../helpers/mcp-harness');
+const f = require('../../helpers/mcp-fixtures');
+
+const WRITE = ['mcp:read', 'skills:write'];
+const REPORT = 'report_retex';
+const LIST = 'list_retex';
+const DISMISS = 'dismiss_retex';
+const SUBJECT_LINES = 'redaction.subject-line'; // 2.1 active, 3.0 draft
+const SUBJECT_IDEAS = 'redaction.subject-ideas'; // a skill, 1.2 active
+
+// The subject line expertise with anchored sections, as the platform writes
+// them (`## [id] Title`), in its active version.
+const ANCHORED_BODY =
+  '## [length] Length\n\nKeep the subject under 50 characters.\n\n## [tone] Tone\n\nOne promise, no shouting.';
+const SEED = {
+  ...f.SEED,
+  expertises: f.EXPERTISES.map((e) =>
+    e.expertiseId === SUBJECT_LINES
+      ? {
+          ...e,
+          versions: e.versions.map((v) =>
+            v.status === 'ACTIVE' ? { ...v, body: ANCHORED_BODY } : v
+          ),
+        }
+      : e
+  ),
+};
+
+// A divergence on the length of a subject line.
+const LENGTH_DIVERGENCE = {
+  kind: 'divergence',
+  about: { kind: 'expertise', id: SUBJECT_LINES },
+  section: 'length',
+  recommended: 'A subject under 50 characters',
+  decided: 'A 62-character subject',
+  why: 'In B2B, the longer subject named the product and was opened more',
+};
+// A complement on the same expertise.
+const B2B_COMPLEMENT = {
+  kind: 'complement',
+  about: { kind: 'expertise', id: SUBJECT_LINES },
+  section: 'length',
+  missing: 'Nothing on B2B subjects',
+  brought: 'In B2B, a subject naming the product outweighs its length',
+  source: 'A/B tests on three B2B missions',
+};
+// A complement about know-how no expertise covers yet.
+const ORPHAN_COMPLEMENT = {
+  kind: 'complement',
+  category: 'redaction',
+  part: 'preheader',
+  missing: 'Nothing on preheaders in Arabic',
+  brought: 'An Arabic preheader is cut after about 40 characters in Gmail',
+  source: 'Rendering tests on Gmail and Outlook',
+};
+
+describe('the retex loop', () => {
+  beforeEach(() => harness.seed(SEED));
+  afterEach(() => harness.disconnect());
+
+  const call = async (client, name, args) =>
+    harness.answerOf(await client.callTool({ name, arguments: args }));
+  const toolsOf = async (client) =>
+    (await client.listTools()).tools.map((t) => t.name);
+  // A super admin, connected to the platform company or to a client's.
+  const asConsultant = (group = f.PLATFORM_GROUP) =>
+    harness.connectAs(f.ALICE, { group, scopes: WRITE });
+  const asClient = () => harness.connectAs(f.FRANK);
+  const allowRetex = () =>
+    harness.update('groups', f.CLIENT_GROUP, { allowRetex: true });
+  const listOpen = async (filters = {}) =>
+    (await call(await asConsultant(), LIST, filters)).items;
+
+  // Turned on by #1474 (report a retex: a divergence or a complement)
+  describe.skip('reporting a retex', () => {
+    it('records a super admin divergence on a section of an expertise', async () => {
+      const answer = await call(
+        await asConsultant(),
+        REPORT,
+        LENGTH_DIVERGENCE
+      );
+
+      expect(answer).toMatchObject({ kept: true, retexId: expect.any(String) });
+      expect(await listOpen()).toEqual([
+        expect.objectContaining({
+          retexId: answer.retexId,
+          kind: 'divergence',
+          status: 'open',
+          about: { kind: 'expertise', id: SUBJECT_LINES, version: '2.1' },
+          section: 'length',
+          recommended: LENGTH_DIVERGENCE.recommended,
+          decided: LENGTH_DIVERGENCE.decided,
+          why: LENGTH_DIVERGENCE.why,
+          author: 'consultant',
+        }),
+      ]);
+    });
+
+    it('records a divergence on a skill by a quotation of its version', async () => {
+      const answer = await call(await asConsultant(), REPORT, {
+        kind: 'divergence',
+        about: { kind: 'skill', id: SUBJECT_IDEAS },
+        quote: 'each under 50 characters',
+        recommended: 'Three subject lines under 50 characters',
+        decided: 'One of 58 characters',
+        why: 'The brand name is long',
+      });
+
+      expect(answer.kept).toBe(true);
+    });
+
+    it('records a complement about no skill or expertise, by its kind of know-how and part of the email', async () => {
+      const answer = await call(
+        await asConsultant(),
+        REPORT,
+        ORPHAN_COMPLEMENT
+      );
+
+      expect(answer.kept).toBe(true);
+      expect(
+        await listOpen({ category: 'redaction', part: 'preheader' })
+      ).toEqual([
+        expect.objectContaining({
+          kind: 'complement',
+          about: null,
+          category: 'redaction',
+          part: 'preheader',
+          brought: ORPHAN_COMPLEMENT.brought,
+        }),
+      ]);
+    });
+
+    it.each([
+      [
+        'a divergence without a passage',
+        { ...LENGTH_DIVERGENCE, section: undefined },
+        /passage|section/i,
+      ],
+      [
+        'a divergence that decided what was recommended',
+        { ...LENGTH_DIVERGENCE, decided: LENGTH_DIVERGENCE.recommended },
+        /divergence/i,
+      ],
+      [
+        'a complement that brings nothing',
+        { ...B2B_COMPLEMENT, brought: '' },
+        /brought/i,
+      ],
+      [
+        'a section the version does not have',
+        { ...LENGTH_DIVERGENCE, section: 'emojis' },
+        /emojis/i,
+      ],
+      [
+        'a quotation the skill does not hold',
+        {
+          ...LENGTH_DIVERGENCE,
+          about: { kind: 'skill', id: SUBJECT_IDEAS },
+          section: undefined,
+          quote: 'never use capitals',
+        },
+        /quot/i,
+      ],
+      [
+        'a complement about nothing, without a kind of know-how',
+        { ...ORPHAN_COMPLEMENT, category: undefined },
+        /category/i,
+      ],
+    ])('refuses %s', async (_case, retex, error) => {
+      const answer = await call(await asConsultant(), REPORT, retex);
+
+      expect(answer.error).toMatch(error);
+    });
+
+    it('refuses a retex about what the user may not read', async () => {
+      const answer = await call(await asClient(), REPORT, {
+        ...B2B_COMPLEMENT,
+        about: { kind: 'expertise', id: 'design.dark-mode' },
+        section: undefined,
+      });
+
+      expect(answer.error).toMatch(/not found/i);
+    });
+
+    it("keeps a super admin's retex in a company that does not allow retex", async () => {
+      const answer = await call(
+        await asConsultant(f.CLIENT_GROUP),
+        REPORT,
+        LENGTH_DIVERGENCE
+      );
+
+      expect(answer.kept).toBe(true);
+    });
+
+    it.each([
+      ['the company does not allow retex', false, true, 'company'],
+      ['the user does not approve it', true, false, 'approval'],
+    ])(
+      "drops a client user's retex when %s",
+      async (_case, allowed, approvedByUser, reason) => {
+        harness.update('groups', f.CLIENT_GROUP, { allowRetex: allowed });
+
+        const answer = await call(await asClient(), REPORT, {
+          ...LENGTH_DIVERGENCE,
+          approvedByUser,
+        });
+
+        expect(answer).toEqual({ kept: false, reason });
+        expect(harness.stored('retex')).toEqual([]);
+      }
+    );
+
+    it("keeps a client user's retex the company allows and the user approves", async () => {
+      allowRetex();
+
+      const answer = await call(await asClient(), REPORT, {
+        ...LENGTH_DIVERGENCE,
+        approvedByUser: true,
+      });
+
+      expect(answer.kept).toBe(true);
+      expect(await listOpen()).toEqual([
+        expect.objectContaining({
+          author: 'client',
+          company: { id: f.CLIENT_GROUP, name: 'A client' },
+        }),
+      ]);
+    });
+
+    it('keeps an open retex with no expiry', async () => {
+      allowRetex();
+      await call(await asClient(), REPORT, {
+        ...LENGTH_DIVERGENCE,
+        approvedByUser: true,
+      });
+
+      expect(harness.stored('retex')).toEqual([
+        expect.objectContaining({ expiresAt: null }),
+      ]);
+    });
+  });
+
+  // Turned on by #1474 (report a retex: a divergence or a complement)
+  describe.skip('a feedback is a rating and a comment', () => {
+    it('no longer takes a summary of the session', async () => {
+      allowRetex();
+
+      const answer = await call(await asClient(), 'submit_feedback', {
+        rating: 'down',
+        comment: 'Too long',
+        consentToRetex: true,
+        sessionSummary: 'The whole session',
+      });
+
+      expect(answer).toEqual({ recorded: true });
+      expect(harness.stored('feedbacks')).toEqual([
+        expect.not.objectContaining({ retex: 'The whole session' }),
+      ]);
+    });
+  });
+
+  // Turned on by #1475 (read and dismiss the retex)
+  describe.skip('reading the retex', () => {
+    beforeEach(async () => {
+      allowRetex();
+      await call(await asClient(), REPORT, {
+        ...LENGTH_DIVERGENCE,
+        approvedByUser: true,
+      });
+      await call(
+        await harness.connectAs(f.OTTO),
+        REPORT,
+        // Another company, which does not allow retex: dropped.
+        { ...B2B_COMPLEMENT, approvedByUser: true }
+      );
+      await call(await asConsultant(f.OTHER_GROUP), REPORT, B2B_COMPLEMENT);
+    });
+
+    it('is a tool listed only with the skills:write scope', async () => {
+      expect(await toolsOf(await asClient())).not.toContain(LIST);
+      expect(await toolsOf(await asConsultant())).toEqual(
+        expect.arrayContaining([REPORT, LIST, DISMISS])
+      );
+    });
+
+    it('reads the retex of every company, whatever company the super admin connected to', async () => {
+      const { items } = await call(
+        await asConsultant(f.CLIENT_GROUP),
+        LIST,
+        {}
+      );
+
+      expect(items.map((item) => item.company.id).sort()).toEqual(
+        [f.CLIENT_GROUP, f.OTHER_GROUP].sort()
+      );
+    });
+
+    it('says the company and the role of the author, never who', async () => {
+      const { items } = await call(await asConsultant(), LIST, {});
+
+      const text = JSON.stringify(items);
+      expect(text).not.toContain('Frank');
+      expect(text).not.toContain(f.FRANK);
+      expect(text).not.toContain(f.ALICE);
+      expect(items.map((item) => item.author).sort()).toEqual([
+        'client',
+        'consultant',
+      ]);
+    });
+
+    it('filters by skill or expertise, section and kind', async () => {
+      const divergences = await listOpen({
+        about: { kind: 'expertise', id: SUBJECT_LINES },
+        section: 'length',
+        kind: 'divergence',
+      });
+
+      expect(divergences.map((item) => item.author)).toEqual(['client']);
+    });
+
+    it('refuses a user who may not manage the platform, whatever the token says', async () => {
+      const client = await harness.connectAs(f.ERIN, { scopes: WRITE });
+
+      const answer = await call(client, LIST, {});
+
+      expect(answer.error).toMatch(/not allowed/i);
+    });
+  });
+
+  // Turned on by #1475 (read and dismiss the retex)
+  describe.skip('dismissing a retex', () => {
+    let retexId;
+
+    beforeEach(async () => {
+      allowRetex();
+      ({ retexId } = await call(await asClient(), REPORT, {
+        ...LENGTH_DIVERGENCE,
+        approvedByUser: true,
+      }));
+    });
+
+    it('closes it with the reason, and leaves it readable', async () => {
+      const answer = await call(await asConsultant(), DISMISS, {
+        retexId,
+        reason: 'A one-off brand constraint',
+      });
+
+      expect(answer).toEqual({ retexId, status: 'dismissed' });
+      expect(await listOpen()).toEqual([]);
+      expect(await listOpen({ status: 'dismissed' })).toEqual([
+        expect.objectContaining({
+          retexId,
+          status: 'dismissed',
+          dismissal: { reason: 'A one-off brand constraint' },
+        }),
+      ]);
+    });
+
+    it("starts the company's retention once dismissed", async () => {
+      await call(await asConsultant(), DISMISS, {
+        retexId,
+        reason: 'A one-off brand constraint',
+      });
+
+      const [stored] = harness.stored('retex');
+      const days = (stored.expiresAt - Date.now()) / 86400000;
+      expect(Math.round(days)).toBe(30);
+    });
+
+    it('needs a reason', async () => {
+      const answer = await call(await asConsultant(), DISMISS, {
+        retexId,
+        reason: '',
+      });
+
+      expect(answer.error).toMatch(/reason/i);
+    });
+  });
+
+  // Turned on by #1475 (read and dismiss the retex)
+  describe.skip('the candidates of a convergence', () => {
+    let clientRetex;
+
+    beforeEach(async () => {
+      allowRetex();
+      clientRetex = (
+        await call(await asClient(), REPORT, {
+          ...LENGTH_DIVERGENCE,
+          approvedByUser: true,
+        })
+      ).retexId;
+      // On another section: not a candidate.
+      await call(await asClient(), REPORT, {
+        ...LENGTH_DIVERGENCE,
+        section: 'tone',
+        recommended: 'One promise',
+        decided: 'Two promises',
+        approvedByUser: true,
+      });
+    });
+
+    it('answers a super admin the open retex on the same passage', async () => {
+      const answer = await call(await asConsultant(), REPORT, B2B_COMPLEMENT);
+
+      expect(answer.candidates.map((c) => c.retexId)).toEqual([clientRetex]);
+    });
+
+    it('leaves out a dismissed retex', async () => {
+      await call(await asConsultant(), DISMISS, {
+        retexId: clientRetex,
+        reason: 'A one-off brand constraint',
+      });
+
+      const answer = await call(await asConsultant(), REPORT, B2B_COMPLEMENT);
+
+      expect(answer.candidates).toEqual([]);
+    });
+
+    it('matches complements about nothing by kind of know-how and part of the email', async () => {
+      const first = await call(await asConsultant(), REPORT, ORPHAN_COMPLEMENT);
+
+      const second = await call(await asConsultant(), REPORT, {
+        ...ORPHAN_COMPLEMENT,
+        brought: 'Keep an Arabic preheader under 40 characters',
+      });
+
+      expect(second.candidates.map((c) => c.retexId)).toEqual([first.retexId]);
+    });
+
+    it('gives a client user no candidates', async () => {
+      const answer = await call(await asClient(), REPORT, {
+        ...LENGTH_DIVERGENCE,
+        approvedByUser: true,
+      });
+
+      expect(answer).not.toHaveProperty('candidates');
+    });
+  });
+
+  // Turned on by #1476 (a draft cites the retex, its publication closes them)
+  describe.skip('a draft cites the retex it addresses', () => {
+    let ids;
+
+    beforeEach(async () => {
+      allowRetex();
+      const first = await call(await asClient(), REPORT, {
+        ...LENGTH_DIVERGENCE,
+        approvedByUser: true,
+      });
+      const second = await call(await asConsultant(), REPORT, B2B_COMPLEMENT);
+      ids = [first.retexId, second.retexId];
+    });
+
+    const proposeWith = async (addressesRetex) =>
+      call(await asConsultant(), 'propose_expertise_change', {
+        expertiseId: SUBJECT_LINES,
+        body:
+          '## [length] Length\n\nUnder 50 characters, unless a B2B subject names the product.',
+        changelog: 'B2B subjects may name the product',
+        addressesRetex,
+      });
+
+    it('records the retex in the draft', async () => {
+      const answer = await proposeWith(ids);
+
+      expect(answer).toMatchObject({ version: '3.0', addressesRetex: ids });
+    });
+
+    it('refuses a retex that does not exist or is closed', async () => {
+      await call(await asConsultant(), DISMISS, {
+        retexId: ids[0],
+        reason: 'A one-off brand constraint',
+      });
+
+      const answer = await proposeWith(ids);
+
+      expect(answer.error).toMatch(new RegExp(ids[0]));
+    });
+
+    it('closes them when the draft is published from an assistant', async () => {
+      await proposeWith(ids);
+      const client = await asConsultant();
+      const { confirmation } = await call(client, 'publish_draft', {
+        kind: 'expertise',
+        id: SUBJECT_LINES,
+      });
+
+      await call(client, 'publish_draft', {
+        kind: 'expertise',
+        id: SUBJECT_LINES,
+        confirmation,
+      });
+
+      expect(await listOpen()).toEqual([]);
+      expect(await listOpen({ status: 'addressed' })).toEqual(
+        ids.map((retexId) =>
+          expect.objectContaining({
+            retexId,
+            status: 'addressed',
+            addressedIn: { version: '3.0' },
+          })
+        )
+      );
+    });
+  });
+
+  // Turned on by #1476 (a draft cites the retex, its publication closes them)
+  describe.skip('a publication closes the retex', () => {
+    let ids;
+    let publication;
+    let expertiseService;
+
+    beforeAll(() => {
+      // Not at the top of the file: required once the models are the
+      // stand-ins of the harness.
+      publication = require('../../../packages/server/ai-skill/services/skills-publication.service.js');
+      expertiseService = require('../../../packages/server/ai-skill/services/expertise.service.js');
+    });
+
+    beforeEach(async () => {
+      const first = await call(await asConsultant(), REPORT, LENGTH_DIVERGENCE);
+      const second = await call(await asConsultant(), REPORT, B2B_COMPLEMENT);
+      ids = [first.retexId, second.retexId];
+      await call(await asConsultant(), 'propose_expertise_change', {
+        expertiseId: SUBJECT_LINES,
+        body:
+          '## [length] Length\n\nUnder 50 characters, unless a B2B subject names the product.',
+        changelog: 'B2B subjects may name the product',
+        addressesRetex: ids,
+      });
+    });
+
+    it('closes them when the draft is published from the back office', async () => {
+      await publication.publishVersion(
+        {
+          kind: 'expertise',
+          id: SUBJECT_LINES,
+          version: { major: 3, minor: 0 },
+          payload: { changelog: 'B2B', releaseNotes: 'B2B subjects' },
+        },
+        { id: f.ALICE }
+      );
+
+      expect(await listOpen({ status: 'addressed' })).toHaveLength(2);
+      harness
+        .stored('retex')
+        .forEach((retex) => expect(retex.expiresAt).toEqual(expect.any(Date)));
+    });
+
+    it('leaves them open when the draft is deleted', async () => {
+      await expertiseService.deleteVersion(SUBJECT_LINES, {
+        major: 3,
+        minor: 0,
+      });
+
+      expect((await listOpen()).map((item) => item.retexId).sort()).toEqual(
+        [...ids].sort()
+      );
+    });
+  });
+
+  // Turned on by #1477 (the open retex of a read, and the instructions)
+  describe.skip('the open retex of a read', () => {
+    beforeEach(async () => {
+      await call(await asConsultant(), REPORT, LENGTH_DIVERGENCE);
+      await call(await asConsultant(), REPORT, B2B_COMPLEMENT);
+    });
+
+    it('tells a super admin how many open retex an expertise has', async () => {
+      const { expertises } = await call(
+        await asConsultant(),
+        'find_applicable_expertises',
+        { scope: ['subject'], categories: ['redaction'] }
+      );
+
+      expect(expertises).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({ expertiseId: SUBJECT_LINES, openRetex: 2 }),
+        ])
+      );
+    });
+
+    it('tells a client user nothing of the retex', async () => {
+      const { expertises } = await call(
+        await asClient(),
+        'find_applicable_expertises',
+        { scope: ['subject'], categories: ['redaction'] }
+      );
+
+      expertises.forEach((item) =>
+        expect(item).not.toHaveProperty('openRetex')
+      );
+    });
+  });
+
+  // Turned on by #1477 (the open retex of a read, and the instructions)
+  describe.skip('the instructions that start the loop', () => {
+    it('tell every client to report a divergence or a complement, never a summary', async () => {
+      const client = await asClient();
+
+      const instructions = client.getInstructions();
+
+      expect(instructions).toMatch(/report_retex/);
+      expect(instructions).toMatch(/divergence/i);
+      expect(instructions).toMatch(/complement/i);
+      expect(instructions).toMatch(/approv/i);
+    });
+
+    it('tell a super admin to propose the change once two retex converge', async () => {
+      const client = await asConsultant();
+
+      const instructions = client.getInstructions();
+
+      expect(instructions).toMatch(/two/i);
+      expect(instructions).toMatch(/addressesRetex/);
+    });
+  });
+});
