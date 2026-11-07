@@ -226,6 +226,13 @@
   border-color: transparent !important;
 }
 
+// The text toolbar belongs to the canvas: over the blocks' tools (101), under
+// the right panels and their rail (200) and the top bar (201). TinyMCE sets
+// 65535 inline, hence !important; its menus keep theirs, opened on demand.
+.mce-tinymce-inline {
+  z-index: 150 !important;
+}
+
 // Fix tinymce custom-color button (appeared on white upon white without this)
 .mce-custom-color-btn button {
   color: black !important;
