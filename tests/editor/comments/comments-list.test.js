@@ -306,9 +306,9 @@ describe('the filter of the comments', () => {
     ).toBeNull();
   });
 
-  it('says when no block is selected', () => {
+  it('shows « Tous » alone while no block is selected (board c1)', () => {
     const { root } = mount({ block: null }, CommentsFilter);
     expect(root.querySelectorAll('button')).toHaveLength(1);
-    expect(root.textContent).toContain('comments-filter-no-block');
+    expect(root.querySelectorAll('.comments-filter__chip')).toHaveLength(1);
   });
 });

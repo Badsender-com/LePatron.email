@@ -38,6 +38,9 @@ const ShareLinkPanel = Vue.component('ShareLinkPanel', {
     revoking: [],
     // Said once a link is turned off.
     revokedMessage: '',
+    // What « expired » is measured against: the list's last load, then each
+    // half minute while the tab is shown.
+    now: Date.now(),
   }),
   computed: {
     url() {
@@ -67,8 +70,15 @@ const ShareLinkPanel = Vue.component('ShareLinkPanel', {
       immediate: true,
       handler(isActive) {
         if (isActive && this.url) this.refresh();
+        clearInterval(this.clock);
+        this.clock = isActive
+          ? setInterval(() => (this.now = Date.now()), 30000)
+          : null;
       },
     },
+  },
+  beforeDestroy() {
+    clearInterval(this.clock);
   },
   created() {
     this.expiry = this.expiryOptions.find((option) => option.code === 7);
@@ -92,6 +102,11 @@ const ShareLinkPanel = Vue.component('ShareLinkPanel', {
         }
       );
     },
+    // A link that expired while the tab was shown: the server lists it no
+    // more, here it says so until the next visit.
+    isExpired(link) {
+      return Boolean(link.expiresAt) && new Date(link.expiresAt) <= this.now;
+    },
     // Two links of the same day must read differently: when each was made.
     describe(link) {
       const params = {
@@ -99,6 +114,9 @@ const ShareLinkPanel = Vue.component('ShareLinkPanel', {
         created: this.formatDate(link.createdAt),
         date: this.formatDate(link.expiresAt),
       };
+      if (this.isExpired(link)) {
+        return this.t('quality-share-expired', params);
+      }
       return link.createdBy
         ? this.t('Created __created__ by __name__, until __date__', params)
         : this.t('Created __created__, until __date__', params);
@@ -106,6 +124,7 @@ const ShareLinkPanel = Vue.component('ShareLinkPanel', {
     refresh() {
       return listShareLinks(this.url)
         .then((links) => {
+          this.now = Date.now();
           this.links = links;
         })
         .catch(() =>
@@ -219,10 +238,10 @@ const ShareLinkPanel = Vue.component('ShareLinkPanel', {
       </div>
 
       <ul v-if="links.length" class="qc-share__list" :aria-label="t('Active links')">
-        <li v-for="link in links" :key="link.id" class="qc-share__item">
+        <li v-for="link in links" :key="link.id" class="qc-share__item" :class="{ 'qc-share__item--expired': isExpired(link) }">
           <span class="qc-share__meta">{{ describe(link) }}</span>
           <button
-            v-if="link.url"
+            v-if="link.url && !isExpired(link)"
             type="button"
             class="qc-link-button"
             :aria-label="t('Copy the link: __link__', { link: describe(link) })"
@@ -238,6 +257,7 @@ const ShareLinkPanel = Vue.component('ShareLinkPanel', {
             aria-hidden="true"
             :value="link.url"
           >
+          <template v-if="!isExpired(link)">
           <button
             type="button"
             class="qc-link-button qc-link-button--danger"
@@ -247,6 +267,7 @@ const ShareLinkPanel = Vue.component('ShareLinkPanel', {
             @click="revoke(link)"
           >{{ t('Turn off') }}</button>
           <span class="qc-share__definitive" aria-hidden="true">{{ t('quality-share-definitive-short') }}</span>
+          </template>
         </li>
       </ul>
       <!-- Decision 5: anyone may turn a link off, for good, and is told so. -->

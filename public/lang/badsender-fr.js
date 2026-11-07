@@ -365,7 +365,6 @@ module.exports = {
   'comments-block-deleted': 'Bloc supprimé',
   'comments-mention-placeholder': 'Tapez @ pour mentionner',
   'comments-filter-label': 'Filtrer les commentaires',
-  'comments-filter-no-block': 'Aucun bloc sélectionné',
   'comments-anonymous': 'Anonyme',
   'comments-whole-email': "Tout l'email",
   'comments-approval-lifted':
@@ -977,6 +976,7 @@ module.exports = {
     "Créé le __created__ par __name__, jusqu'au __date__",
   'Created __created__, until __date__':
     "Créé le __created__, jusqu'au __date__",
+  'quality-share-expired': 'Créé le __created__, expiré depuis le __date__',
   'Turn off the link: __link__': 'Désactiver le lien : __link__',
   'This email already has __count__ active links: turn one off first':
     "Cet email a déjà __count__ liens actifs : désactivez-en un d'abord",
