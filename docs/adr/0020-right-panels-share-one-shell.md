@@ -26,7 +26,7 @@ ADR 0010 gave the comments, the quality control and the AI panel one place and o
 
 **An email is ready when no error or warning is left unignored and every check ran**; an info counts only if it is blocking. It is the rule the top bar badge already called `cleared`, renamed `ready`, and now the one rule for the badge of the rail button, the card of the quality panel and the banner of the send test tab, which counted errors only; red means blocking, the accent means a number. What blocks the download and the ESP export does not change: it reads the blocking findings, not this rule.
 
-**The AI tools are hidden from whoever may not edit the content**, with every way into them: the server tells the editor, once, whether this user may use text generation on this email, from the same rule as the text generation routes.
+**The AI actions are hidden from whoever may not edit the content**, with every way into them: the server tells the editor, once, whether this user may use text generation on this email, from the same rule as the text generation routes.
 
 ## Considered Options
 
@@ -36,7 +36,7 @@ ADR 0010 gave the comments, the quality control and the AI panel one place and o
 - **An `Approval` model of its own**: "approved" would compare two collections, with their own routes and deletion, for no gain over a `decision` already stored.
 - **An approval created resolved**: it would show folded, and reopening it would put it back in the counters.
 - **A dedicated approval route**: it would change the route list and the guard test for a single flag on a comment; the capability is checked where the comment is created.
-- **Hiding the AI tools in the editor from the user's capabilities**: the capabilities arrive after the editor starts, so the button would appear late and shift its neighbours, and each way in would need its own check.
+- **Hiding the AI actions in the editor from the user's capabilities**: the capabilities arrive after the editor starts, so the button would appear late and shift its neighbours, and each way in would need its own check.
 
 ## Consequences
 
