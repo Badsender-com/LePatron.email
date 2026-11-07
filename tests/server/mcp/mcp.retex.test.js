@@ -85,7 +85,7 @@ describe('the retex loop', () => {
   const listOpen = async (filters = {}) =>
     (await call(await asConsultant(), LIST, filters)).items;
 
-  // Turned on by #1474 (report a retex: a divergence or a complement)
+  // Turned on by #1474 (report a retex, and read them)
   describe.skip('reporting a retex', () => {
     it('records a super admin divergence on a section of an expertise', async () => {
       const answer = await call(
@@ -254,7 +254,7 @@ describe('the retex loop', () => {
     });
   });
 
-  // Turned on by #1474 (report a retex: a divergence or a complement)
+  // Turned on by #1474 (report a retex, and read them)
   describe.skip('a feedback is a rating and a comment', () => {
     it('no longer takes a summary of the session', async () => {
       allowRetex();
@@ -273,7 +273,7 @@ describe('the retex loop', () => {
     });
   });
 
-  // Turned on by #1475 (read and dismiss the retex)
+  // Turned on by #1474 (report a retex, and read them)
   describe.skip('reading the retex', () => {
     beforeEach(async () => {
       allowRetex();
@@ -293,7 +293,7 @@ describe('the retex loop', () => {
     it('is a tool listed only with the skills:write scope', async () => {
       expect(await toolsOf(await asClient())).not.toContain(LIST);
       expect(await toolsOf(await asConsultant())).toEqual(
-        expect.arrayContaining([REPORT, LIST, DISMISS])
+        expect.arrayContaining([REPORT, LIST])
       );
     });
 
@@ -341,7 +341,7 @@ describe('the retex loop', () => {
     });
   });
 
-  // Turned on by #1475 (read and dismiss the retex)
+  // Turned on by #1475 (dismiss a retex, and the candidates of a convergence)
   describe.skip('dismissing a retex', () => {
     let retexId;
 
@@ -351,6 +351,11 @@ describe('the retex loop', () => {
         ...LENGTH_DIVERGENCE,
         approvedByUser: true,
       }));
+    });
+
+    it('is a tool listed only with the skills:write scope', async () => {
+      expect(await toolsOf(await asClient())).not.toContain(DISMISS);
+      expect(await toolsOf(await asConsultant())).toContain(DISMISS);
     });
 
     it('closes it with the reason, and leaves it readable', async () => {
@@ -391,7 +396,7 @@ describe('the retex loop', () => {
     });
   });
 
-  // Turned on by #1475 (read and dismiss the retex)
+  // Turned on by #1475 (dismiss a retex, and the candidates of a convergence)
   describe.skip('the candidates of a convergence', () => {
     let clientRetex;
 
