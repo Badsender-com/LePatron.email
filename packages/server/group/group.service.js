@@ -13,6 +13,8 @@ const {
   EmailsGroups,
   AISkillInvocations,
   AIPlaygroundScenarios,
+  McpFeedbacks,
+  McpRetexes,
 } = require('../common/models.common.js');
 const { forgetConnections } = require('../mcp/mcp-connections.js');
 const { forgetCompanyClients } = require('../mcp/mcp-clients.js');
@@ -184,6 +186,10 @@ async function deleteGroup(groupId) {
       { $set: { groupContext: null } }
     ),
     forgetConnections({ _company: mongoose.Types.ObjectId(groupId) }),
+    // What its users wrote from their connected applications: the feedbacks,
+    // and the retex, open ones included (ADR 0012, ADR 0021).
+    McpFeedbacks.deleteMany({ _company: mongoose.Types.ObjectId(groupId) }),
+    McpRetexes.deleteMany({ _company: mongoose.Types.ObjectId(groupId) }),
     // And the MCP clients it registered, with their secrets (ADR 0012).
     forgetCompanyClients(mongoose.Types.ObjectId(groupId)),
     Groups.deleteOne({

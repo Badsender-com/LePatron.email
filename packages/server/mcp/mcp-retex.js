@@ -19,6 +19,7 @@ const { withIdentity } = require('./mcp-identity.js');
 const { readableExpertise } = require('./mcp-expertises.js');
 const { servedSkill } = require('./mcp-skill-catalog.js');
 const { failure, ADDITIVE } = require('./mcp-tool-grammar.js');
+const { partOf } = require('./mcp-retex-read.js');
 
 const MAX_ID_LENGTH = 200;
 const MAX_ANCHOR_LENGTH = 100;
@@ -163,6 +164,8 @@ async function reportRetex(identity, args, ctx) {
     about: about
       ? { ...retex.about, version: versionLabel(about.version) }
       : null,
+    part: retex.part ? partOf(retex.part) : null,
+    approvedAt: isConsultant(identity.user) ? null : new Date(),
     // Open: kept until it is addressed or dismissed.
     status: 'open',
     expiresAt: null,
