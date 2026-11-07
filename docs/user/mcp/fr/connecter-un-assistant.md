@@ -3,7 +3,7 @@
 Votre assistant IA (Claude, ChatGPT, Copilot…) peut lire LePatron en votre nom :
 
 - les expertises et les skills de Badsender, pour s'en servir quand vous lui demandez d'écrire ou de relire un email ;
-- vos mailings : il les liste (par workspace, dossier, auteur, tags ou dates, avec leur statut) et en lit le texte, ou le HTML de l'aperçu. Les variables de personnalisation, comme `{{firstname}}`, restent telles quelles. Claude, ChatGPT, Microsoft 365 Copilot et VS Code affichent aussi l'email lui-même dans la conversation, sans exécuter aucun script ; les images hébergées hors de LePatron y apparaissent par leur texte alternatif.
+- vos mailings : il les liste (par workspace, dossier, auteur, tags ou dates, avec leur statut) et en lit le texte, ou le HTML de l'aperçu. Les variables de personnalisation, comme `{{firstname}}`, restent telles quelles. Claude, ChatGPT, Microsoft 365 Copilot et VS Code affichent aussi l'email lui-même dans la conversation, sans exécuter aucun script ; les images hébergées hors de LePatron, comme le logo d'un template sur un CDN, y apparaissent aussi : LePatron les récupère et les sert lui-même. Une image qu'il ne peut pas récupérer, ou qui n'est ni un PNG, ni un JPEG, ni un GIF, ni un WebP, apparaît par son texte alternatif. Les pixels de suivi de l'email sont récupérés comme les autres images.
 
 Il le fait avec **vos droits**, dans **une seule entreprise**, celle que vous choisissez au moment de la connexion. Il ne modifie ni vos emails, ni les skills, ni vos réglages : il n'envoie à LePatron que vos avis, quand vous le lui demandez, et vos retours d'expérience, que vous approuvez un par un ([Retours d'expérience](./retours-d-experience.md)).
 
