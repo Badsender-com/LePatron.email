@@ -716,7 +716,7 @@ describe('the retex loop', () => {
   });
 
   // Turned on by #1477 (the open retex of a read, and the instructions)
-  describe.skip('the open retex of a read', () => {
+  describe('the open retex of a read', () => {
     beforeEach(async () => {
       await call(await asConsultant(), REPORT, LENGTH_DIVERGENCE);
       await call(await asConsultant(), REPORT, B2B_COMPLEMENT);
@@ -750,7 +750,7 @@ describe('the retex loop', () => {
   });
 
   // Turned on by #1477 (the open retex of a read, and the instructions)
-  describe.skip('the instructions that start the loop', () => {
+  describe('the instructions that start the loop', () => {
     it('tell every client to report a divergence or a complement, never a summary', async () => {
       const client = await asClient();
 

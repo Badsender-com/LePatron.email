@@ -10,6 +10,7 @@ const {
   SkillCategoryValues,
 } = require('../ai-skill/constant/skill-constants.js');
 const { withIdentity } = require('./mcp-identity.js');
+const { withOpenRetex } = require('./mcp-retex-counts.js');
 const { uriOf } = require('./mcp-expertises.js');
 const { READ_ONLY } = require('./mcp-tool-grammar.js');
 
@@ -57,6 +58,12 @@ const FIND_OUTPUT = z.object({
       version: z.string(),
       draft: z.boolean().optional(),
       uri: z.string(),
+      openRetex: z
+        .number()
+        .optional()
+        .describe(
+          'For a super admin: its open retex. Two that converge make a change: read them with list_retex.'
+        ),
     })
   ),
   scopesInUse: z.array(z.string()),
@@ -90,7 +97,7 @@ function noteOn(unmatched, inUse) {
 
 const filled = (value) => (value && value.trim()) || undefined;
 
-async function findExpertises({ group, drafts }, args) {
+async function findExpertises({ user, group, drafts }, args, ctx) {
   const scopes = normalizeScopes(args.scope);
   // The features' own lookup, with the scopes in use, both within the
   // audience of the caller's company. Its diagnostic is for a scope written
@@ -110,14 +117,20 @@ async function findExpertises({ group, drafts }, args) {
     drafts,
   });
   const unmatchedScopes = scopes.filter((scope) => !inUse.includes(scope));
-  const answer = {
-    expertises: found.map((expertise) => ({
+  const expertises = await withOpenRetex(
+    'expertise',
+    found.map((expertise) => ({
       expertiseId: expertise.expertiseId,
       title: expertise.title,
       version: versionLabel(expertise),
       ...(expertise.draft && { draft: true }),
       uri: uriOf(expertise.expertiseId),
     })),
+    'expertiseId',
+    { user, authInfo: ctx?.http?.authInfo }
+  );
+  const answer = {
+    expertises,
     scopesInUse: inUse.slice(0, MAX_LISTED_SCOPES),
     unmatchedScopes,
   };
