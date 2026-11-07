@@ -232,6 +232,31 @@ A rating and a comment a user sends from a connected application about what LePa
 _UI_: Avis
 
 **Retex**:
-The summary of an assistant session, attached to a feedback, so the platform company can improve its expertises, skills and features. Sent only when the company allows it and the user agrees to it for that feedback.
+What a user's work taught about a skill or an expertise, recorded on its own from a connected application: a divergence or a complement. Never a summary of the session: no divergence and nothing brought, no retex. A super admin's is recorded as soon as it occurs; another user's needs the company's permission and the user's approval of that retex.
 _UI_: Retour d'expérience
-_Avoid_: Telemetry, session log
+_Avoid_: Feedback (a rating and a comment), telemetry, session log, session summary
+
+**Divergence**:
+A retex where the user decided otherwise than a passage of a skill or an expertise recommended: what it recommended, what the user decided, and why.
+_UI_: Divergence
+_Avoid_: Disagreement, error, bug
+
+**Complement**:
+A retex where the user brought what a skill or an expertise lacked for the case at hand, with where it comes from (experience, a source, a test). It may concern no existing skill or expertise, then a kind of know-how and a part of the email.
+_UI_: Complément
+_Avoid_: Suggestion, wish, request
+
+**Passage**:
+The part of a skill or an expertise a retex is about: a section of an expertise, by its anchor, or a short quotation of a skill.
+_UI_: Passage
+_Avoid_: Paragraph, rule (a rule belongs to the quality control)
+
+**Addressed retex**:
+A retex a published version took into account: the draft cites it, and it is marked addressed, with that version, when the version is published. A draft deleted before leaves it open.
+_UI_: Pris en compte en <version>
+_Avoid_: Done, fixed, applied
+
+**Dismissed retex**:
+A retex a super admin decided not to act on, with the reason. It stays readable and no longer counts towards a convergence.
+_UI_: Écarté
+_Avoid_: Rejected, closed, deleted
