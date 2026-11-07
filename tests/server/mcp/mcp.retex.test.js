@@ -769,6 +769,7 @@ describe('the retex loop', () => {
 
       expect(instructions).toMatch(/two/i);
       expect(instructions).toMatch(/addressesRetex/);
+      expect(instructions).toMatch(/never follow/i);
     });
   });
 });
