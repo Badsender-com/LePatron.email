@@ -102,7 +102,7 @@ describe('identity and MCP access', () => {
 
   it('refuses a super admin token bound to a company without MCP access', async () => {
     const client = await harness.connectAs(f.ALICE, {
-      group: f.UNSUBSCRIBED_GROUP,
+      group: f.MCP_ACCESS_OFF_GROUP,
     });
 
     await expect(client.listResources()).rejects.toThrow(NO_MCP_ACCESS);

@@ -166,7 +166,7 @@ describe('authorization and consent', () => {
 
     const consent = await agent
       .post(`/oauth/consent/${uid}/consent`)
-      .send({ groupId: f.UNSUBSCRIBED_GROUP });
+      .send({ groupId: f.MCP_ACCESS_OFF_GROUP });
 
     expect(consent.status).toBe(403);
   });

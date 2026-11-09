@@ -5,9 +5,9 @@
  *
  * A client group with every role of ADR 0004, two of its workspaces (one the
  * regular user, the writer and the reviewer are members of, one they are not),
- * a group without MCP access, another subscribed group, the platform group and
- * its super admin, the expertises and skills of the platform, and the mailings
- * whose facts give each mailing status.
+ * a group with the MCP module but its MCP access off, another group with both,
+ * the platform group and its super admin, the expertises and skills of the
+ * platform, and the mailings whose facts give each mailing status.
  *
  * Plain records, stored as the schemas declare them: the MCP harness seeds them
  * in its stand-ins for the models (`tests/helpers/mcp-harness.js`).
@@ -19,7 +19,7 @@ const { NOW, daysFrom } = require('./mcp-clock');
 const PLATFORM_GROUP = '507f1f77bcf86cd799439a01';
 const CLIENT_GROUP = '507f1f77bcf86cd799439b01';
 const OTHER_GROUP = '507f1f77bcf86cd799439c01';
-const UNSUBSCRIBED_GROUP = '507f1f77bcf86cd799439d01';
+const MCP_ACCESS_OFF_GROUP = '507f1f77bcf86cd799439d01';
 
 const GROUPS = [
   {
@@ -46,8 +46,8 @@ const GROUPS = [
   },
   // Has the MCP module, but its MCP access is off.
   {
-    _id: UNSUBSCRIBED_GROUP,
-    name: 'Not subscribed',
+    _id: MCP_ACCESS_OFF_GROUP,
+    name: 'Module open, MCP access off',
     enableMcpModule: true,
     enableMcp: false,
   },
@@ -61,7 +61,7 @@ const WREN = '507f1f77bcf86cd799439108'; // writer, client group
 const REX = '507f1f77bcf86cd799439109'; // reviewer, client group
 const DEAN = '507f1f77bcf86cd79943910a'; // deactivated regular user, client group
 const OTTO = '507f1f77bcf86cd79943910b'; // regular user, other group
-const NINA = '507f1f77bcf86cd79943910c'; // regular user, unsubscribed group
+const NINA = '507f1f77bcf86cd79943910c'; // regular user, MCP access off group
 
 function user(_id, name, role, _company, extra = {}) {
   return {
@@ -84,7 +84,7 @@ const USERS = [
   user(REX, 'Rex', 'reviewer', CLIENT_GROUP),
   user(DEAN, 'Dean', 'regular_user', CLIENT_GROUP, { isDeactivated: true }),
   user(OTTO, 'Otto', 'regular_user', OTHER_GROUP),
-  user(NINA, 'Nina', 'regular_user', UNSUBSCRIBED_GROUP),
+  user(NINA, 'Nina', 'regular_user', MCP_ACCESS_OFF_GROUP),
 ];
 
 const WS_NEWS = '507f1f77bcf86cd799439201'; // Frank, Wren, Rex and Dean are members
@@ -239,7 +239,7 @@ module.exports = {
   PLATFORM_GROUP,
   CLIENT_GROUP,
   OTHER_GROUP,
-  UNSUBSCRIBED_GROUP,
+  MCP_ACCESS_OFF_GROUP,
   GROUPS,
   ALICE,
   ERIN,

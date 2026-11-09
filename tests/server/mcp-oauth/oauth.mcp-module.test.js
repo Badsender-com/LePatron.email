@@ -64,7 +64,7 @@ describe('the MCP module at consent', () => {
     });
 
     it('tells a user whose group has the module but no MCP access', async () => {
-      oauth.update(app, 'groups', f.UNSUBSCRIBED_GROUP, {
+      oauth.update(app, 'groups', f.MCP_ACCESS_OFF_GROUP, {
         enableMcpModule: true,
       });
       const { agent, uid } = await consentFor(f.NINA);
