@@ -42,9 +42,14 @@ async function authInfoOf(provider, header, resource) {
   const token = await provider.AccessToken.find(value);
   if (!token || token.isExpired || token.aud !== resource) return null;
   const identity = identityOf(token.accountId);
-  if (!(await isClientAllowed(token.clientId, identity.groupId))) return null;
-  // Revoked by its user or the group's admin: refused at once.
-  if (!(await useConnection(token.grantId))) return null;
+  // Its client still serves its company, and its connection still stands
+  // (revoked by its user or the group's admin: refused at once). Read at
+  // once: deleting a client revokes its connections anyway.
+  const [clientAllowed, connectionStands] = await Promise.all([
+    isClientAllowed(token.clientId, identity.groupId),
+    useConnection(token.grantId),
+  ]);
+  if (!clientAllowed || !connectionStands) return null;
   return {
     token: value,
     clientId: token.clientId,

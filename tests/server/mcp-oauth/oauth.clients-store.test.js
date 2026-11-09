@@ -176,6 +176,46 @@ describe('a client registered by hand', () => {
       secret: created.clientSecret,
     });
 
+  // Two independent reads of every call to /mcp: neither waits for the other.
+  it('is checked at /mcp while the connection is', async () => {
+    const tokens = await connect();
+    const {
+      McpClients,
+      McpConnections,
+    } = require('../../../packages/server/common/models.common.js');
+    const { findOne } = McpClients;
+    let release;
+    const gate = new Promise((resolve) => {
+      release = resolve;
+    });
+    const clientRead = jest
+      .spyOn(McpClients, 'findOne')
+      .mockImplementation((filter, ...rest) => {
+        const read = findOne(filter, ...rest);
+        if (!filter._company) return read;
+        const gated = {
+          select: () => gated,
+          lean: () => gate.then(() => read.select('_id').lean()),
+        };
+        return gated;
+      });
+    const connectionRead = jest.spyOn(McpConnections, 'updateOne');
+
+    const call = oauth.callMcp(app, tokens.access_token).then((r) => r);
+    for (let tick = 0; tick < 50 && !connectionRead.mock.calls.length; ) {
+      // eslint-disable-next-line no-await-in-loop
+      await new Promise((resolve) => setImmediate(resolve));
+      tick += 1;
+    }
+    const readMeanwhile = connectionRead.mock.calls.length;
+    release();
+
+    expect(readMeanwhile).toBe(1);
+    expect((await call).status).toBe(200);
+    clientRead.mockRestore();
+    connectionRead.mockRestore();
+  });
+
   it("is known by the company's settings alone", async () => {
     const tokens = await connect();
 
