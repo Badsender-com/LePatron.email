@@ -1127,6 +1127,10 @@ export default {
       'Ce compte ne peut pas connecter d\'assistant : connectez-vous avec votre compte utilisateur.',
     noAccess:
       'Votre entreprise n\'a pas l\'accès MCP : demandez à son administrateur de l\'activer.',
+    signInRequired:
+      'Votre session a expiré : reconnectez-vous à LePatron, puis relancez la connexion depuis votre assistant.',
+    readScopeRequired:
+      'L\'assistant doit au moins pouvoir lire LePatron : relancez la connexion depuis votre assistant.',
   },
   mcpClients: {
     pageTitle: 'Clients MCP',

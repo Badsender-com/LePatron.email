@@ -849,6 +849,10 @@ export default {
       'This account cannot connect an assistant: log in with your user account.',
     noAccess:
       'Your company has no MCP access: ask its administrator to turn it on.',
+    signInRequired:
+      'Your session has expired: log in to LePatron again, then start the connection again from your assistant.',
+    readScopeRequired:
+      'The assistant must at least be able to read LePatron: start the connection again from your assistant.',
   },
   mcpClients: {
     pageTitle: 'MCP clients',

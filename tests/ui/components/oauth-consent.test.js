@@ -37,16 +37,18 @@ const interaction = (scopes) => ({
   redirectHost: 'a.dev',
 });
 
-function mountConsent(scopes) {
-  const $post = jest.fn().mockResolvedValue({ redirectTo: '#answered' });
+function mountConsent(
+  scopes,
+  {
+    $get = jest.fn().mockResolvedValue(interaction(scopes)),
+    $post = jest.fn().mockResolvedValue({ redirectTo: '#answered' }),
+  } = {}
+) {
   const vm = mountSfc(FILE, {
     mocks: {
       $t: (key) => key,
       $route: { params: { uid: 'u1' }, path: '/oauth/consent/u1' },
-      $axios: {
-        $get: jest.fn().mockResolvedValue(interaction(scopes)),
-        $post,
-      },
+      $axios: { $get, $post },
     },
     imports: {
       'lucide-vue': {},
@@ -113,5 +115,84 @@ describe('the consent of a connected application', () => {
       groupId: 'g1',
       allowWrite: false,
     });
+  });
+});
+
+// What the consent API answers a refusal: its status, and the code the page
+// translates (ERROR_CODES.MCP_CONSENT_…).
+const refusal = (status, code) =>
+  Object.assign(new Error(code), {
+    response: { status, data: { message: code, code } },
+  });
+
+const buttonOf = (vm, label) =>
+  [...vm.$el.querySelectorAll('v-btn')].find((el) =>
+    el.textContent.includes(label)
+  );
+
+describe('the consent of a connected application, refused', () => {
+  it.each([
+    [404, 'expired', 'oauthConsent.expired'],
+    [401, 'sign_in_required', 'oauthConsent.signInRequired'],
+    [403, 'account_cannot_connect', 'oauthConsent.accountCannotConnect'],
+    [403, 'no_mcp_access', 'oauthConsent.noAccess'],
+    [403, 'client_of_another_company', 'oauthConsent.clientOfAnotherCompany'],
+  ])('says why, on a %s %s', async (status, code, text) => {
+    const $get = jest.fn().mockRejectedValue(refusal(status, code));
+    const { vm } = mountConsent([], { $get });
+    await settle(vm);
+
+    expect(vm.$el.querySelector('.bs-oauth-consent__message').textContent).toBe(
+      text
+    );
+  });
+
+  it('says why the consent itself is refused', async () => {
+    const $post = jest
+      .fn()
+      .mockRejectedValue(refusal(400, 'read_scope_required'));
+    const { vm } = mountConsent(['mcp:read'], { $post });
+    await settle(vm);
+
+    allowButton(vm).dispatchEvent(new Event('click'));
+    await settle(vm);
+
+    expect(vm.$el.querySelector('.bs-oauth-consent__message').textContent).toBe(
+      'oauthConsent.readScopeRequired'
+    );
+  });
+
+  it('still lets the user decline, which answers the application', async () => {
+    const $get = jest.fn().mockRejectedValue(refusal(403, 'no_mcp_access'));
+    const { vm, $post } = mountConsent([], { $get });
+    await settle(vm);
+
+    buttonOf(vm, 'oauthConsent.deny').dispatchEvent(new Event('click'));
+    await settle(vm);
+
+    expect($post).toHaveBeenCalledWith('/interaction/u1/deny', undefined);
+  });
+
+  it('offers no answer to a request that has expired', async () => {
+    const $get = jest.fn().mockRejectedValue(refusal(404, 'expired'));
+    const { vm } = mountConsent([], { $get });
+    await settle(vm);
+
+    expect(buttonOf(vm, 'oauthConsent.deny')).toBeUndefined();
+  });
+
+  it('offers no answer once the decline finds the request expired', async () => {
+    const $get = jest.fn().mockRejectedValue(refusal(403, 'no_mcp_access'));
+    const $post = jest.fn().mockRejectedValue(refusal(404, 'expired'));
+    const { vm } = mountConsent([], { $get, $post });
+    await settle(vm);
+
+    buttonOf(vm, 'oauthConsent.deny').dispatchEvent(new Event('click'));
+    await settle(vm);
+
+    expect(vm.$el.querySelector('.bs-oauth-consent__message').textContent).toBe(
+      'oauthConsent.expired'
+    );
+    expect(buttonOf(vm, 'oauthConsent.deny')).toBeUndefined();
   });
 });

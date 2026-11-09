@@ -16,6 +16,18 @@ import BsLoginLogo from '~/components/account/login-logo.vue';
 
 const WRITE_SCOPE = 'skills:write';
 
+// What the consent API answers a refusal (`code`, one of the server's
+// ERROR_CODES.MCP_CONSENT_…), as the key of its message.
+const EXPIRED = 'expired';
+const REFUSALS = {
+  [EXPIRED]: 'oauthConsent.expired',
+  sign_in_required: 'oauthConsent.signInRequired',
+  account_cannot_connect: 'oauthConsent.accountCannotConnect',
+  no_mcp_access: 'oauthConsent.noAccess',
+  client_of_another_company: 'oauthConsent.clientOfAnotherCompany',
+  read_scope_required: 'oauthConsent.readScopeRequired',
+};
+
 // Two letters for a name: the application's and the user's avatars.
 const initialsOf = (name) =>
   String(name || '?')
@@ -50,6 +62,8 @@ export default {
       interaction: null,
       groupId: null,
       error: null,
+      // Why, as the API's code: an expired request takes no answer.
+      errorCode: null,
       isLoading: true,
       // The answer being sent, 'allow' or 'deny', for its button to spin.
       sending: null,
@@ -118,6 +132,11 @@ export default {
     canWrite() {
       return (this.interaction?.scopes || []).includes(WRITE_SCOPE);
     },
+    // Whoever cannot connect still sends the application its answer, while
+    // the request stands.
+    canDeny() {
+      return this.errorCode !== EXPIRED;
+    },
   },
   async mounted() {
     try {
@@ -128,25 +147,25 @@ export default {
       const { groups } = this.interaction;
       this.groupId = groups.length === 1 ? groups[0].id : null;
     } catch (err) {
-      this.error = this.errorOf(err);
+      this.refused(err);
     } finally {
       this.isLoading = false;
     }
   },
   methods: {
-    errorOf(err) {
+    refused(err) {
       const status = err.response?.status;
       const code = err.response?.data?.code;
       // Expired, or started in another browser: the provider tells no more.
-      if (status === 404) return this.$t('oauthConsent.expired');
-      if (code === 'client_of_another_company') {
-        return this.$t('oauthConsent.clientOfAnotherCompany');
+      this.errorCode = status === 404 ? EXPIRED : code || null;
+      const key = REFUSALS[this.errorCode];
+      if (key) {
+        this.error = this.$t(key);
+      } else if (status === 403) {
+        this.error = this.$t('oauthConsent.noAccess');
+      } else {
+        this.error = this.$t('global.errors.errorOccured');
       }
-      if (code === 'account_cannot_connect') {
-        return this.$t('oauthConsent.accountCannotConnect');
-      }
-      if (status === 403) return this.$t('oauthConsent.noAccess');
-      return this.$t('global.errors.errorOccured');
     },
     async answer(sending, route, body) {
       this.sending = sending;
@@ -156,7 +175,7 @@ export default {
         // answer.
         window.location.assign(redirectTo);
       } catch (err) {
-        this.error = this.errorOf(err);
+        this.refused(err);
         this.sending = null;
       }
     },
@@ -198,6 +217,17 @@ export default {
           </p>
         </div>
         <div class="bs-oauth-consent__actions">
+          <v-btn
+            v-if="canDeny"
+            text
+            color="primary"
+            class="text-none"
+            :loading="sending === 'deny'"
+            :disabled="!!sending"
+            @click="deny"
+          >
+            {{ $t('oauthConsent.deny') }}
+          </v-btn>
           <v-btn
             outlined
             color="primary"
