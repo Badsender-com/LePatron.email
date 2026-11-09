@@ -1,5 +1,6 @@
 'use strict';
 
+const express = require('express');
 // ESM only: Node 24 lets the app require it (ADR 0012).
 const { default: Provider, errors } = require('oidc-provider');
 const { McpClients } = require('../common/models.common.js');
@@ -31,6 +32,23 @@ const CLIENT_AUTH_METHODS = [
   'client_secret_post',
   'client_secret_basic',
 ];
+
+// What an assistant sends the authorization server (a registration, a token
+// request) is small: read before the app's own limit of 50 MB, which anyone
+// could send to these endpoints, signed in or not.
+const BODY_LIMIT = '64kb';
+
+/**
+ * The body parsers of `/oauth`, mounted before the app's own.
+ *
+ * @returns {Function[]}
+ */
+function oauthBodyParsers() {
+  return [
+    express.json({ limit: BODY_LIMIT }),
+    express.urlencoded({ limit: BODY_LIMIT, extended: false }),
+  ];
+}
 
 // The account of a token is a user in the group the connection is bound to,
 // so the group survives every refresh.
@@ -177,6 +195,7 @@ function createAuthorizationServer({
 
 module.exports = {
   createAuthorizationServer,
+  oauthBodyParsers,
   keepRegisteredClient,
   accountIdOf,
   identityOf,

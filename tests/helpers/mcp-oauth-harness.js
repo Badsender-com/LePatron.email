@@ -98,6 +98,11 @@ function createApp() {
   require('../../packages/server/mcp/mcp-rate-limit.js').forgetCounts();
 
   const app = express();
+  // As index.js reads the bodies: the authorization server's first.
+  const {
+    oauthBodyParsers,
+  } = require('../../packages/server/mcp/mcp-oauth.js');
+  app.use('/oauth', ...oauthBodyParsers());
   app.use(express.json());
   app.use(express.urlencoded({ extended: false }));
   // What passport leaves of the session (deserializeUser): the user with

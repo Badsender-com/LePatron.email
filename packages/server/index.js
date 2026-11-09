@@ -69,6 +69,7 @@ const {
 } = require('./ai-skill/ai-skill.routes');
 const mcpFeedbackRouter = require('./mcp/mcp-feedback.routes.js');
 const { mountMcp } = require('./mcp/mcp-http.js');
+const { oauthBodyParsers } = require('./mcp/mcp-oauth.js');
 const { McpOAuthAdapter } = require('./mcp/mcp-oauth-adapter.js');
 const { siteOrigin } = require('./email-templates/email-template.js');
 const aiPlaygroundRouter = require('./ai-playground/ai-playground.routes');
@@ -156,6 +157,8 @@ if (cluster.isMaster) {
   // The MCP endpoint takes tool calls, never files (ADR 0012): read before the
   // app's own limit, which would let one call carry 50 MB of arguments.
   app.use('/mcp', bodyParser.json({ limit: '1mb' }));
+  // Nor does the authorization server, which anyone may call.
+  app.use('/oauth', ...oauthBodyParsers());
   app.use(bodyParser.json({ limit: '50mb' }));
   app.use(bodyParser.urlencoded({ limit: '50mb', extended: false }));
 
