@@ -109,6 +109,31 @@ describe('connected applications', () => {
     expect((await oauth.callMcp(app, second.access_token)).status).toBe(200);
   });
 
+  // Decided with the product (ADR 0012): ten connections of a user through
+  // one client for one company, the oldest revoked past them.
+  it('revokes the oldest connection of an application connected an eleventh time', async () => {
+    const connections = [];
+    // eslint-disable-next-line no-restricted-syntax
+    for (let machine = 0; machine < 11; machine += 1) {
+      // eslint-disable-next-line no-await-in-loop
+      connections.push(
+        await oauth.connect(app, f.FRANK, { group: f.CLIENT_GROUP })
+      );
+    }
+    const [oldest, second] = connections;
+    const newest = connections[10];
+    await oauth.connect(app, f.ERIN, { group: f.CLIENT_GROUP });
+
+    expect((await listFor(f.FRANK)).body.items).toHaveLength(10);
+    expect((await listFor(f.ERIN)).body.items).toHaveLength(1);
+    expect((await oauth.callMcp(app, oldest.access_token)).status).toBe(401);
+    expect((await refresh(app, oldest.refresh_token)).body.error).toBe(
+      'invalid_grant'
+    );
+    expect((await oauth.callMcp(app, second.access_token)).status).toBe(200);
+    expect((await oauth.callMcp(app, newest.access_token)).status).toBe(200);
+  });
+
   it("does not let a user revoke another user's application", async () => {
     await oauth.connect(app, f.ERIN, { group: f.CLIENT_GROUP });
     const [application] = (await listFor(f.ERIN)).body.items;
