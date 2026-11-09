@@ -5,9 +5,13 @@ const { findMailingsByWords } = require('../mailing/mailing-search.service.js');
 const { siteOrigin } = require('../utils/site-origin.js');
 const { versionLabel } = require('../ai-skill/services/version-helpers.js');
 const { containingRegExp } = require('../utils/text-search.js');
-const { withIdentity, failure, success } = require('./mcp-identity.js');
+const {
+  withIdentity,
+  failure,
+  success,
+  tooLongSearch,
+} = require('./mcp-identity.js');
 const { mailingOf, asPlainText } = require('./mcp-mailing-read.js');
-const { tooLongSearch } = require('./mcp-mailings.js');
 const expertises = require('./mcp-expertises.js');
 
 // `search` and `fetch` in the shape ChatGPT expects for deep research and

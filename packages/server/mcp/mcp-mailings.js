@@ -1,7 +1,6 @@
 'use strict';
 
 const { z } = require('zod');
-const ERROR_CODES = require('../constant/error-codes.js');
 const {
   DEFAULT_PAGE_SIZE,
   MAX_PAGE_SIZE,
@@ -9,7 +8,7 @@ const {
   searchMailings,
 } = require('../mailing/mailing-search.service.js');
 const { accessibleLocations } = require('../mailing/mailing-locations.js');
-const { withIdentity, failure } = require('./mcp-identity.js');
+const { withIdentity, failure, tooLongSearch } = require('./mcp-identity.js');
 const {
   MAILING_STATUSES,
   statusOf,
@@ -48,25 +47,6 @@ const MAILING = z.object({
   updatedAt: z.string(),
   uri: z.string(),
 });
-
-// What a search out of its time answers (ADR 0007), in list_mailings and in
-// search alike: a search to narrow, which the assistant can act on.
-const SEARCH_TOO_LONG =
-  'The search took too long: narrow it down, with more filters or more precise words.';
-
-/**
- * The answer to a search the database could not finish in its time; any
- * other error is thrown again.
- *
- * @param {Error} error
- * @returns {Object} the tool result
- */
-function tooLongSearch(error) {
-  if (error && error.message === ERROR_CODES.SEARCH_TIMEOUT) {
-    return failure(SEARCH_TOO_LONG);
-  }
-  throw error;
-}
 
 const isoOf = (date) => (date ? new Date(date).toISOString() : null);
 
@@ -230,7 +210,6 @@ function registerListWorkspaces(server) {
 
 module.exports = {
   registerListMailings,
-  tooLongSearch,
   registerListWorkspaces,
   asItem,
   MAILING,

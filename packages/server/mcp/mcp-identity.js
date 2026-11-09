@@ -6,6 +6,7 @@ const {
 } = require('@modelcontextprotocol/server');
 const { Users, Groups } = require('../common/models.common.js');
 const logger = require('../utils/logger.js');
+const ERROR_CODES = require('../constant/error-codes.js');
 const permissions = require('../account/permissions.js');
 const { isObjectIdString } = require('../utils/model.js');
 const { CAPABILITIES } = require('../../shared/access/roles.js');
@@ -145,6 +146,25 @@ function success(answer) {
     content: [{ type: 'text', text: JSON.stringify(answer) }],
     structuredContent: answer,
   };
+}
+
+// What a search out of its time answers (ADR 0007), in list_mailings and in
+// search alike: a search to narrow, which the assistant can act on.
+const SEARCH_TOO_LONG =
+  'The search took too long: narrow it down, with more filters or more precise words.';
+
+/**
+ * The answer to a search the database could not finish in its time; any
+ * other error is thrown again.
+ *
+ * @param {Error} error
+ * @returns {Object} the tool result
+ */
+function tooLongSearch(error) {
+  if (error && error.message === ERROR_CODES.SEARCH_TIMEOUT) {
+    return failure(SEARCH_TOO_LONG);
+  }
+  throw error;
 }
 
 /**
@@ -304,6 +324,7 @@ module.exports = {
   failure,
   refused,
   success,
+  tooLongSearch,
   READ_SCOPE,
   WRITE_SCOPE,
   SCOPES,
