@@ -71,6 +71,24 @@
           }
         }
 
+        // Where a link of the email leads, resolved, when it is a web page:
+        // an HTML link, or an SVG one, whose address may be an `xlink:href`.
+        var XLINK = 'http://www.w3.org/1999/xlink';
+        function webAddressOf(link, doc) {
+          var href =
+            link.getAttribute('href') || link.getAttributeNS(XLINK, 'href');
+          if (!href) return null;
+          var url;
+          try {
+            url = new URL(href, doc.baseURI);
+          } catch (error) {
+            return null;
+          }
+          return url.protocol === 'http:' || url.protocol === 'https:'
+            ? url.href
+            : null;
+        }
+
         function resize() {
           var doc = frame.contentDocument;
           if (!doc || !doc.documentElement) return;
@@ -97,15 +115,16 @@
             bound = true;
             // A link, or an image map's area, opens outside the
             // conversation, through the host; never inside the frame.
+            // Every click in one is caught, whatever holds its address.
             doc.addEventListener(
               'click',
               function (event) {
                 var link =
-                  event.target.closest &&
-                  event.target.closest('a[href], area[href]');
+                  event.target.closest && event.target.closest('a, area');
                 if (!link) return;
                 event.preventDefault();
-                if (/^https?:/i.test(link.href)) openLink(link.href);
+                var url = webAddressOf(link, doc);
+                if (url) openLink(url);
               },
               true
             );

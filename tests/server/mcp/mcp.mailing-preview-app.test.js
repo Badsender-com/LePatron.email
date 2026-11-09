@@ -315,6 +315,8 @@ describe('email preview app', () => {
     it.each([
       ['an HTML link', 'html', 'https://shop.example.test/html'],
       ['an image map area', 'area', 'https://shop.example.test/area'],
+      ['an SVG link', 'svg', 'https://shop.example.test/svg'],
+      ['an SVG link by xlink:href', 'xlink', 'https://shop.example.test/xlink'],
     ])(
       'opens %s through the host, never in the frame',
       async (_kind, id, url) => {
