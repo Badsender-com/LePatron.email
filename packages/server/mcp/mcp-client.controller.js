@@ -17,16 +17,13 @@ const {
   MCP_CLIENT_ACTIONS,
 } = require('../security-event/security-event.actions.js');
 
-// Why clientFieldsOf refuses the fields, as the error code the API answers.
-const FIELD_REFUSALS = {
-  invalid_name: ERROR_CODES.MCP_CLIENT_INVALID_NAME,
-  invalid_redirect_uris: ERROR_CODES.MCP_CLIENT_INVALID_REDIRECT_URIS,
-  invalid_auth_method: ERROR_CODES.MCP_CLIENT_INVALID_AUTH_METHOD,
-};
-
-// The code, and what is wrong in words, for whoever calls the API by hand.
-const invalid = (code, description) =>
-  createError(400, code, description ? { description } : {});
+// The code, what is wrong in words for whoever calls the API by hand, and
+// the redirect URI refused, which the back office names.
+const invalid = (code, description, redirectUri) =>
+  createError(400, code, {
+    ...(description && { description }),
+    ...(redirectUri && { redirectUri }),
+  });
 
 // The authorization server mountMcp mounted on the app, which checks a client
 // as it would read it.
@@ -82,17 +79,19 @@ async function list(req, res) {
  *   unless asked, or client_secret_basic
  * @apiSuccess (201) {String} clientId
  * @apiSuccess (201) {String} clientSecret
+ * @apiError (400) {String} message an ERROR_CODES.MCP_CLIENT_… code
+ * @apiError (400) {String} [redirectUri] the first redirect URI refused
  */
 async function create(req, res) {
-  const { fields, error, code } = clientFieldsOf(req.body);
-  if (error) throw invalid(FIELD_REFUSALS[code], error);
+  const { fields, error, code, redirectUri } = clientFieldsOf(req.body);
+  if (error) throw invalid(code, error, redirectUri);
   const registered = await registerClient(authorizationServer(req), {
     fields,
     groupId: req.params.groupId,
     userId: req.user.id,
   });
   if (registered.error) {
-    throw invalid(ERROR_CODES.MCP_CLIENT_INVALID_METADATA, registered.error);
+    throw invalid(registered.code, registered.error);
   }
   const { client, clientSecret } = registered;
   await recorded(req, MCP_CLIENT_ACTIONS.CREATED);

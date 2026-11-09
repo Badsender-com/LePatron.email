@@ -147,6 +147,28 @@ describe('what the API answers a client it refuses', () => {
     expect(body.message).toBe(code);
   });
 
+  it.each([
+    ['in HTTP on another host', 'http://assistant.example.test/callback'],
+    ['in a scheme of its own', 'cursor://anysphere.cursor/callback'],
+  ])('names the redirect URI it refuses, %s', async (_case, uri) => {
+    const { status, body } = await create(f.TESS, {
+      redirectUris: [COPILOT_REDIRECT, uri],
+    });
+
+    expect(status).toBe(400);
+    expect(body.message).toBe('MCP_CLIENT_INVALID_REDIRECT_URIS');
+    expect(body.redirectUri).toBe(uri);
+    expect(body.description).toContain(uri);
+  });
+
+  it("takes a redirect URI in HTTP to the user's own machine, on any port", async () => {
+    const { status } = await create(f.TESS, {
+      redirectUris: ['http://127.0.0.1:33418/callback'],
+    });
+
+    expect(status).toBe(201);
+  });
+
   it('answers an unknown client by its error code', async () => {
     const { status, body } = await oauth
       .signIn(app, f.TESS)

@@ -1,6 +1,7 @@
 'use strict';
 
 const crypto = require('crypto');
+const ERROR_CODES = require('../constant/error-codes.js');
 const { McpClients, Groups } = require('../common/models.common.js');
 const { isObjectIdString } = require('../utils/model.js');
 const { revokeConnections } = require('./mcp-connections.js');
@@ -13,7 +14,18 @@ const AUTH_METHODS = ['client_secret_post', 'client_secret_basic'];
 const MAX_NAME = 100;
 const MAX_REDIRECT_URIS = 10;
 
-// The new client's fields, or why they are refused.
+/**
+ * The fields of a client registered by hand, or why they are refused: the
+ * error code the API answers (`ERROR_CODES.MCP_CLIENT_…`), what is wrong in
+ * words, and the first redirect URI refused, if one is (the rule of
+ * mcp-client-metadata.js: HTTPS, or HTTP to the user's own machine). Unlike a
+ * client that registers itself, one refused URI refuses the client: the admin
+ * who typed it fixes it.
+ *
+ * @param {Object} body
+ * @returns {{ fields?: Object, error?: string, code?: string,
+ *   redirectUri?: string }}
+ */
 function clientFieldsOf(body = {}) {
   const name = String(body.name || '').trim();
   const redirectUris = Array.isArray(body.redirectUris)
@@ -24,23 +36,27 @@ function clientFieldsOf(body = {}) {
   if (!name || name.length > MAX_NAME) {
     return {
       error: `A name of 1 to ${MAX_NAME} characters is required.`,
-      code: 'invalid_name',
+      code: ERROR_CODES.MCP_CLIENT_INVALID_NAME,
     };
   }
-  if (
-    redirectUris.length === 0 ||
-    redirectUris.length > MAX_REDIRECT_URIS ||
-    !redirectUris.every(isRedirectUri)
-  ) {
+  if (redirectUris.length === 0 || redirectUris.length > MAX_REDIRECT_URIS) {
     return {
-      error: `1 to ${MAX_REDIRECT_URIS} redirect URIs are required, in HTTPS or to the user's own machine.`,
-      code: 'invalid_redirect_uris',
+      error: `1 to ${MAX_REDIRECT_URIS} redirect URIs are required.`,
+      code: ERROR_CODES.MCP_CLIENT_INVALID_REDIRECT_URIS,
+    };
+  }
+  const refused = redirectUris.find((uri) => !isRedirectUri(uri));
+  if (refused) {
+    return {
+      error: `"${refused}" is refused: a redirect URI is in HTTPS, or in HTTP to the user's own machine, without a fragment.`,
+      code: ERROR_CODES.MCP_CLIENT_INVALID_REDIRECT_URIS,
+      redirectUri: refused,
     };
   }
   if (!AUTH_METHODS.includes(tokenEndpointAuthMethod)) {
     return {
       error: `The authentication method is one of ${AUTH_METHODS}.`,
-      code: 'invalid_auth_method',
+      code: ERROR_CODES.MCP_CLIENT_INVALID_AUTH_METHOD,
     };
   }
   return { fields: { name, redirectUris, tokenEndpointAuthMethod } };
@@ -113,7 +129,7 @@ async function registerClient(provider, { fields, groupId, userId }) {
   } catch (invalid) {
     return {
       error: invalid.error_description || invalid.message,
-      code: 'invalid_client_metadata',
+      code: ERROR_CODES.MCP_CLIENT_INVALID_METADATA,
     };
   }
   const client = await McpClients.create({
