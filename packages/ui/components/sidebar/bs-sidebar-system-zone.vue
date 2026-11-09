@@ -67,10 +67,14 @@ export default {
           return canAccessSettings;
         }
         // The AI assistants connected to LePatron, where the group has the
-        // MCP module and allows them (ADR 0017). A super admin is shown its
-        // selected group, with no exception.
+        // MCP module and allows them (ADR 0017). Whoever manages the platform
+        // always has the page: it lists their connections in every company,
+        // which they revoke from it whatever the selected company has.
         if (item.id === 'connectedApplications') {
-          return canConnectApplications(this.modulesGroup);
+          return (
+            this.can(CAPABILITIES.PLATFORM_MANAGE) ||
+            canConnectApplications(this.modulesGroup)
+          );
         }
         // The others (help, logout) are for everyone
         return true;
