@@ -232,6 +232,23 @@ describe('drafts mode', () => {
       expect(text).toContain('Not validated yet.');
     });
 
+    it('finds and reads the expertises at their drafts with search and fetch', async () => {
+      const author = await asAuthor();
+      const ids = async (query) =>
+        (await call(author, 'search', { query })).results.map(({ id }) => id);
+
+      expect(await ids('dark mode')).toEqual([]);
+
+      await turnOn(author);
+
+      expect(await ids('dark mode')).toEqual(['expertise:design.dark-mode']);
+      const document = await call(author, 'fetch', {
+        id: 'expertise:redaction.subject-line',
+      });
+      expect(document.text).toContain(DRAFT_SUBJECT);
+      expect(document.metadata).toEqual({ version: '3.0', draft: true });
+    });
+
     it('tells the client its prompts and resources changed, so it reloads them', async () => {
       const author = await asAuthor();
       const changed = [];
