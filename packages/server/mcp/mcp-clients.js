@@ -6,7 +6,7 @@ const { McpClients, Groups } = require('../common/models.common.js');
 const { isObjectIdString } = require('../utils/model.js');
 const { revokeConnections } = require('./mcp-connections.js');
 const { secretDigest } = require('./mcp-oauth-store.js');
-const { isRedirectUri } = require('./mcp-client-metadata.js');
+const { acceptedRedirectUris } = require('./mcp-client-metadata.js');
 
 // The prefix of the ids given here, which `/mcp` checks are still listed.
 const CLIENT_ID_PREFIX = 'lepatron-';
@@ -45,10 +45,13 @@ function clientFieldsOf(body = {}) {
       code: ERROR_CODES.MCP_CLIENT_INVALID_REDIRECT_URIS,
     };
   }
-  const refused = redirectUris.find((uri) => !isRedirectUri(uri));
+  // What the authorization server would keep of them: an admin fixes what
+  // it would leave out.
+  const { accepted } = acceptedRedirectUris(redirectUris);
+  const refused = redirectUris.find((uri) => !accepted.includes(uri));
   if (refused) {
     return {
-      error: `"${refused}" is refused: a redirect URI is in HTTPS, or in HTTP to the user's own machine, without a fragment.`,
+      error: `"${refused}" is refused: a redirect URI is in HTTPS, or in HTTP to the user's own machine, written as a URL writes it, and none in HTTPS goes to that machine beside one in HTTP.`,
       code: ERROR_CODES.MCP_CLIENT_INVALID_REDIRECT_URIS,
       redirectUri: refused,
     };

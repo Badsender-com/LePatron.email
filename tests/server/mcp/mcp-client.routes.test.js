@@ -169,6 +169,16 @@ describe('what the API answers a client it refuses', () => {
     expect(body.description).toContain(uri);
   });
 
+  it("names an HTTPS redirect URI to the user's own machine beside an HTTP one", async () => {
+    const { status, body } = await create(f.TESS, {
+      redirectUris: ['https://localhost/cb', 'http://localhost:8400/cb'],
+    });
+
+    expect(status).toBe(400);
+    expect(body.message).toBe('MCP_CLIENT_INVALID_REDIRECT_URIS');
+    expect(body.redirectUri).toBe('https://localhost/cb');
+  });
+
   it("takes a redirect URI in HTTP to the user's own machine, on any port", async () => {
     const { status } = await create(f.TESS, {
       redirectUris: ['http://127.0.0.1:33418/callback'],

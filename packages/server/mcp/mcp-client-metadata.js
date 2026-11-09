@@ -56,6 +56,25 @@ const isHttpsLoopback = (uri) => {
 };
 
 /**
+ * The redirect URIs of a client the rule keeps, out of those it gives, and
+ * whether it is a native application: one that comes back to the user's own
+ * machine, whose HTTPS URIs never name it (RFC 8252, 7.2).
+ *
+ * @param {string[]} uris
+ * @returns {{ accepted: string[], native: boolean }}
+ */
+function acceptedRedirectUris(uris) {
+  const accepted = uris.filter(isRedirectUri);
+  const native = accepted.some(isLoopbackRedirect);
+  return {
+    accepted: native
+      ? accepted.filter((uri) => !isHttpsLoopback(uri))
+      : accepted,
+    native,
+  };
+}
+
+/**
  * The redirect URIs of a client as the authorization server keeps them, for
  * every client it reads: one that registers (DCR), one known by its metadata
  * document (CIMD), one a company registered by hand. A URI that is refused is
@@ -79,11 +98,8 @@ function keepAcceptedRedirects(ctx, key, value, metadata) {
     // None at all is the provider's to refuse.
     return;
   }
-  let accepted = value.filter(isRedirectUri);
-  if (accepted.some(isLoopbackRedirect)) {
-    metadata.application_type = 'native';
-    accepted = accepted.filter((uri) => !isHttpsLoopback(uri));
-  }
+  const { accepted, native } = acceptedRedirectUris(value);
+  if (native) metadata.application_type = 'native';
   if (accepted.length === 0) {
     // `redirect_uris…`: answered as `invalid_redirect_uri`.
     throw new errors.InvalidClientMetadata(
@@ -262,6 +278,7 @@ function providerFetch({ fetch, lookup } = {}) {
 }
 
 module.exports = {
+  acceptedRedirectUris,
   LOOPBACK_HOSTS,
   isLoopbackRedirect,
   isRedirectUri,
