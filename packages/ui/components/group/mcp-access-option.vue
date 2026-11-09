@@ -11,6 +11,7 @@ import BsSettingsRow from '~/components/layout/bs-settings-row.vue';
 import BsGroupFeatureSwitch from '~/components/group/feature-switch.vue';
 import BsGroupRetexOption from '~/components/group/retex-option.vue';
 import BsGroupConnectedApplicationsOption from '~/components/group/connected-applications-option.vue';
+import BsGroupMcpAccessSteps from '~/components/group/mcp-access-steps.vue';
 
 // MCP access (ADR 0012): the company's users connect their AI assistant to
 // LePatron. Set by a super admin or the company's tech admin, saved on its
@@ -25,6 +26,7 @@ export default {
     BsGroupFeatureSwitch,
     BsGroupRetexOption,
     BsGroupConnectedApplicationsOption,
+    BsGroupMcpAccessSteps,
     LucidePlug: Plug,
     LucideCopy: Copy,
     LucideCheck: Check,
@@ -134,18 +136,8 @@ export default {
       </template>
     </p>
 
-    <!-- Off, the section says what turning it on does, in three steps. -->
-    <ol v-else-if="!enabled" class="bs-group-mcp-access-option__steps">
-      <li v-for="step in [1, 2, 3]" :key="step">
-        <span
-          class="bs-group-mcp-access-option__step-number"
-          aria-hidden="true"
-        >
-          {{ step }}
-        </span>
-        {{ $t(`mcpAccess.step${step}`) }}
-      </li>
-    </ol>
+    <!-- Off, the section says what turning it on does. -->
+    <bs-group-mcp-access-steps v-else-if="!enabled" />
 
     <template v-else>
       <div class="bs-group-mcp-access-option__address">
@@ -279,35 +271,6 @@ export default {
       padding: 1rem 1.5rem;
       border-top: 1px solid var(--gray-200);
     }
-  }
-
-  &__steps {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(min(180px, 100%), 1fr));
-    gap: 24px;
-    margin: 0;
-    padding: 0;
-    list-style: none;
-
-    li {
-      display: flex;
-      flex-direction: column;
-      gap: 6px;
-      font-size: 0.8125rem;
-      color: var(--gray-800);
-    }
-  }
-
-  &__step-number {
-    width: 24px;
-    height: 24px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    border-radius: var(--r-pill);
-    background: var(--gray-100);
-    font-size: 0.75rem;
-    font-weight: 600;
   }
 }
 </style>
