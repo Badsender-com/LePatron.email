@@ -6,13 +6,15 @@ const permissions = require('../account/permissions.js');
 const { CAPABILITIES } = require('../../shared/access/roles.js');
 const { READ_SCOPE, WRITE_SCOPE, toRequestUser } = require('./mcp-identity.js');
 const logger = require('../utils/logger.js');
+const ERROR_CODES = require('../constant/error-codes.js');
 const { accountIdOf, keepRegisteredClient, TTL } = require('./mcp-oauth.js');
 const { recordConnection, revokeConnections } = require('./mcp-connections.js');
 const { companyOfClient } = require('./mcp-clients.js');
 
 const NO_ACCESS = 'This company has no MCP access to LePatron.';
 
-// `code` is what the consent page translates.
+// `code`, one of ERROR_CODES.MCP_CONSENT_…, is what the consent page
+// translates.
 const refuse = (res, status, message, code) =>
   res.status(status).json({ message, ...(code && { code }) });
 
@@ -95,7 +97,7 @@ function createInteractionsRouter(provider, resource) {
           res,
           404,
           'This connection request has expired, or was started in another browser.',
-          'expired'
+          ERROR_CODES.MCP_CONSENT_EXPIRED
         );
       }
       req.interaction = interaction;
@@ -106,7 +108,14 @@ function createInteractionsRouter(provider, resource) {
   };
 
   const signedIn = (req, res, next) =>
-    req.user ? next() : refuse(res, 401, 'Log in to LePatron first.');
+    req.user
+      ? next()
+      : refuse(
+          res,
+          401,
+          'Log in to LePatron first.',
+          ERROR_CODES.MCP_CONSENT_SIGN_IN_REQUIRED
+        );
 
   // The consenting user. The bootstrap account, which has no document,
   // connects nothing.
@@ -118,7 +127,7 @@ function createInteractionsRouter(provider, resource) {
           res,
           403,
           'This account cannot connect an assistant.',
-          'account_cannot_connect'
+          ERROR_CODES.MCP_CONSENT_ACCOUNT_CANNOT_CONNECT
         );
       }
       return next();
@@ -141,7 +150,7 @@ function createInteractionsRouter(provider, resource) {
             res,
             403,
             'This application belongs to another company.',
-            'client_of_another_company'
+            ERROR_CODES.MCP_CONSENT_CLIENT_OF_ANOTHER_COMPANY
           );
         }
         consenter.groups = consenter.groups.filter(
@@ -149,7 +158,7 @@ function createInteractionsRouter(provider, resource) {
         );
       }
       if (consenter.groups.length === 0) {
-        return refuse(res, 403, NO_ACCESS, 'no_mcp_access');
+        return refuse(res, 403, NO_ACCESS, ERROR_CODES.MCP_CONSENT_NO_ACCESS);
       }
       req.clientCompany = company;
       // What the user may grant, whatever the application asked for: the
@@ -214,10 +223,15 @@ function createInteractionsRouter(provider, resource) {
       );
       const groupId = String(req.body?.groupId || '');
       if (!consenter.groups.some((group) => group.id === groupId)) {
-        return refuse(res, 403, NO_ACCESS, 'no_mcp_access');
+        return refuse(res, 403, NO_ACCESS, ERROR_CODES.MCP_CONSENT_NO_ACCESS);
       }
       if (!granted.includes(READ_SCOPE)) {
-        return refuse(res, 400, `The ${READ_SCOPE} scope is required.`);
+        return refuse(
+          res,
+          400,
+          `The ${READ_SCOPE} scope is required.`,
+          ERROR_CODES.MCP_CONSENT_READ_SCOPE_REQUIRED
+        );
       }
       const accountId = accountIdOf(consenter.user.id, groupId);
       const grant = new provider.Grant({
