@@ -14,6 +14,7 @@
 const harness = require('../../helpers/mcp-harness');
 const f = require('../../helpers/mcp-fixtures');
 const grammar = require('../../../packages/server/mcp/mcp-tool-grammar.js');
+const { siteOrigin } = require('../../../packages/server/utils/site-origin.js');
 
 const WRITING_TOOLS = ['submit_feedback'];
 
@@ -87,6 +88,30 @@ describe('tool contracts', () => {
 
     expect(served).toMatch(/company/);
     expect(served).not.toMatch(/badsender|\bgroups?\b/i);
+  });
+});
+
+// What the server says of itself when a client connects: what the clients
+// show of LePatron beside its name.
+describe('the server', () => {
+  afterEach(() => harness.disconnect());
+
+  it('describes itself, links to the site and gives its icon', async () => {
+    harness.seed(f.SEED);
+    const client = await harness.connectAs(f.FRANK);
+
+    expect(client.getServerVersion()).toMatchObject({
+      name: 'lepatron',
+      title: 'LePatron',
+      description: expect.stringMatching(/email production platform/),
+      websiteUrl: siteOrigin(),
+      icons: [
+        {
+          src: `${siteOrigin()}/pique_aiguille.svg`,
+          mimeType: 'image/svg+xml',
+        },
+      ],
+    });
   });
 });
 

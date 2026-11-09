@@ -25,8 +25,7 @@ const { registerPreviewApp } = require('./mcp-preview-app.js');
 const { registerSearchAndFetch } = require('./mcp-search.js');
 const { guardCalls } = require('./mcp-call-guard.js');
 const { hasScope, WRITE_SCOPE } = require('./mcp-identity.js');
-
-const { siteOrigin } = require('../email-templates/email-template.js');
+const { siteOrigin } = require('../utils/site-origin.js');
 
 const { version } = require('../../../package.json');
 
