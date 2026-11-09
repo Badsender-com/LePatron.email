@@ -50,6 +50,11 @@ jest.doMock('../../packages/server/utils/logger.js', () => ({
   debug: jest.fn(),
 }));
 
+// The server, the stand-ins in place, loaded with the test file rather than
+// within its first test's time, which loading it alone can outlast on a
+// loaded machine.
+require('../../packages/server/mcp/mcp-http.js');
+
 const BASE = 'http://lepatron.test';
 const MCP_RESOURCE = `${BASE}/mcp`;
 const ISSUER = `${BASE}/oauth`;
