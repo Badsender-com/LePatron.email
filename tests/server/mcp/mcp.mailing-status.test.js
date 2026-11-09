@@ -84,6 +84,34 @@ describe('mailing status', () => {
     });
   });
 
+  // A day without a time: an assistant never announces a time nobody chose.
+  describe('the planned send date', () => {
+    const read = async (mailingId) => {
+      const client = await harness.connectAs(f.FRANK);
+      return harness.answerOf(
+        await client.callTool({ name: 'get_mailing', arguments: { mailingId } })
+      );
+    };
+
+    it.each([
+      ['list_mailings', listed],
+      ['get_mailing', read],
+    ])('%s gives the day the editor stored, read in UTC', async (_, answer) => {
+      harness.update('mailings', f.M_SCHEDULED, {
+        plannedSendDate: new Date('2026-12-01T12:00:00.000Z'),
+      });
+
+      expect((await answer(f.M_SCHEDULED)).plannedSendDate).toBe('2026-12-01');
+    });
+
+    it.each([
+      ['list_mailings', listed],
+      ['get_mailing', read],
+    ])('%s gives null when no day is planned', async (_, answer) => {
+      expect((await answer(f.M_APPROVED)).plannedSendDate).toBeNull();
+    });
+  });
+
   describe('approval, by the app’s own rule', () => {
     let nextComment = 0;
     const comment = (fields) => {

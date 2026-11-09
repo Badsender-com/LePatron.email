@@ -4,7 +4,11 @@ const { z } = require('zod');
 const { searchMailings } = require('../mailing/mailing-search.service.js');
 const { accessibleLocations } = require('../mailing/mailing-locations.js');
 const { withIdentity, failure } = require('./mcp-identity.js');
-const { MAILING_STATUSES, statusOf } = require('./mcp-mailing-status.js');
+const {
+  MAILING_STATUSES,
+  statusOf,
+  plannedDayOf,
+} = require('./mcp-mailing-status.js');
 
 const MAX_PAGE_SIZE = 100;
 const DEFAULT_PAGE_SIZE = 25;
@@ -56,7 +60,7 @@ function asItem(mailing, facts) {
       plannedSendDate: facts.plannedSendDate,
     }),
     approved: facts.approved,
-    plannedSendDate: isoOf(facts.plannedSendDate),
+    plannedSendDate: plannedDayOf(facts.plannedSendDate),
     espProfileCount,
     // The search answers the author's and the template's names under the
     // listing's own names.

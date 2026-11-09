@@ -41,4 +41,22 @@ function statusOf({ espProfileCount, approved, plannedSendDate }) {
   return 'approved';
 }
 
-module.exports = { MAILING_STATUSES, approvedMailingIds, statusOf };
+/**
+ * The day a mailing is planned to be sent, as an assistant reads it: a day
+ * without a time, which the editor stores at 12:00 UTC so that it is the same
+ * day in every time zone, read back in UTC.
+ *
+ * @param {Date|string|null} [plannedSendDate]
+ * @returns {string|null} `YYYY-MM-DD`, or null when none is planned
+ */
+function plannedDayOf(plannedSendDate) {
+  if (!plannedSendDate) return null;
+  return new Date(plannedSendDate).toISOString().slice(0, 10);
+}
+
+module.exports = {
+  MAILING_STATUSES,
+  approvedMailingIds,
+  statusOf,
+  plannedDayOf,
+};
