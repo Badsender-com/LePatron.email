@@ -12,6 +12,9 @@ const request = require('../../helpers/local-request');
 const oauth = require('../../helpers/mcp-oauth-harness');
 const f = require('../../helpers/mcp-fixtures');
 const { ROLES } = require('../../../packages/shared/access/roles.js');
+const {
+  SecurityEvents,
+} = require('../../../packages/server/common/models.common.js');
 
 const COPILOT_REDIRECT =
   'https://teams.microsoft.com/api/platform/v1.0/oAuthRedirect';
@@ -151,5 +154,62 @@ describe('what the API answers a client it refuses', () => {
 
     expect(status).toBe(404);
     expect(body.message).toBe('MCP_CLIENT_NOT_FOUND');
+  });
+});
+
+// Who registered or deleted a client, for which company: never its secret.
+describe('the security events of a client registered by hand', () => {
+  const events = () => SecurityEvents.find({}).lean();
+  const strip = ({ _id, ...event }) => event;
+
+  it('records its registration, by whom, for which company', async () => {
+    const { body } = await create(f.TESS);
+
+    expect((await events()).map(strip)).toEqual([
+      { action: 'mcp-client.created', actor: f.TESS, group: f.CLIENT_GROUP },
+    ]);
+    expect(JSON.stringify(await events())).not.toContain(body.clientSecret);
+  });
+
+  it('records its deletion, by whom, for which company', async () => {
+    const { clientId } = (await create(f.TESS)).body;
+
+    await oauth.signIn(app, f.ALICE).delete(`${CLIENTS}/${clientId}`);
+
+    expect((await events()).map(strip)).toEqual([
+      { action: 'mcp-client.created', actor: f.TESS, group: f.CLIENT_GROUP },
+      { action: 'mcp-client.deleted', actor: f.ALICE, group: f.CLIENT_GROUP },
+    ]);
+  });
+
+  it('records nothing it refused', async () => {
+    await create(f.ERIN);
+    await create(f.TESS, { name: ' ' });
+    await oauth.signIn(app, f.TESS).delete(`${CLIENTS}/lepatron-unknown`);
+
+    expect(await events()).toEqual([]);
+  });
+});
+
+describe('the security events of MCP settings, as stored', () => {
+  const mongoose = require('mongoose');
+  const SecurityEventSchema = require('../../../packages/server/security-event/security-event.schema.js');
+
+  it.each([
+    'mcp-client.created',
+    'mcp-client.deleted',
+    'connected-applications.all-revoked',
+  ])('is an action the security events accept: %s', (action) => {
+    const SecurityEvent = mongoose.model(
+      `McpSettingsEvent-${action}`,
+      SecurityEventSchema
+    );
+    const event = new SecurityEvent({
+      action,
+      actor: f.TESS,
+      group: f.CLIENT_GROUP,
+    });
+
+    expect(event.validateSync()).toBeUndefined();
   });
 });

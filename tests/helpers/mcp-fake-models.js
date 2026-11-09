@@ -52,6 +52,7 @@ const MODELS = {
   callLogs: 'McpCallLogs',
   clients: 'McpClients',
   connections: 'McpConnections',
+  securityEvents: 'SecurityEvents',
 };
 
 // Node 17+, given to the test files by node-globals-environment.js.

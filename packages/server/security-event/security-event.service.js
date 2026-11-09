@@ -5,7 +5,7 @@ const { SecurityEvents } = require('../common/models.common.js');
 
 /**
  * Records a security event (ADR 0008): two-factor authentication, or a
- * company's MCP access (ADR 0012). Never fails the request it records:
+ * company's MCP settings (ADR 0012). Never fails the request it records:
  * a record that cannot be written is logged instead.
  *
  * @param {Object} event

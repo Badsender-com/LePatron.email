@@ -14,6 +14,7 @@ const f = require('../../helpers/mcp-fixtures');
 const { ROLES } = require('../../../packages/shared/access/roles.js');
 const {
   McpConnections,
+  SecurityEvents,
 } = require('../../../packages/server/common/models.common.js');
 
 const OWN = '/api/connected-applications';
@@ -159,5 +160,33 @@ describe("a company's connected applications, for each role", () => {
       .delete('/api/groups/not-an-id/connected-applications');
 
     expect(status).toBe(400);
+  });
+});
+
+describe("the security event of a company's connected applications revoked", () => {
+  const events = async () =>
+    (await SecurityEvents.find({}).lean()).map(({ _id, ...event }) => event);
+
+  it('records who revoked them all, for which company', async () => {
+    await connected(f.FRANK);
+
+    await oauth.signIn(app, f.TESS).delete(OF_COMPANY);
+
+    expect(await events()).toEqual([
+      {
+        action: 'connected-applications.all-revoked',
+        actor: f.TESS,
+        group: f.CLIENT_GROUP,
+      },
+    ]);
+  });
+
+  it("records nothing for a refusal, nor for a user's own revocation", async () => {
+    const connection = await connected(f.FRANK);
+
+    await oauth.signIn(app, f.ERIN).delete(OF_COMPANY);
+    await oauth.signIn(app, f.FRANK).delete(`${OWN}/${connection._id}`);
+
+    expect(await events()).toEqual([]);
   });
 });

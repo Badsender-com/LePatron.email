@@ -32,6 +32,17 @@ const RETEX_ACTIONS = Object.freeze({
   DISALLOWED: 'retex.disallowed',
 });
 
+// A client a company registers by hand for its assistants (ADR 0012).
+const MCP_CLIENT_ACTIONS = Object.freeze({
+  CREATED: 'mcp-client.created',
+  DELETED: 'mcp-client.deleted',
+});
+
+// Every connected application of a company revoked at once (ADR 0012).
+const CONNECTED_APPLICATION_ACTIONS = Object.freeze({
+  ALL_REVOKED: 'connected-applications.all-revoked',
+});
+
 // How long a security event is kept, then removed by its TTL index.
 const SECURITY_EVENT_TTL_SECONDS = 365 * 24 * 60 * 60;
 
@@ -39,6 +50,8 @@ const SECURITY_EVENT_ACTIONS = Object.freeze([
   ...Object.values(TWO_FACTOR_ACTIONS),
   ...Object.values(MCP_ACCESS_ACTIONS),
   ...Object.values(RETEX_ACTIONS),
+  ...Object.values(MCP_CLIENT_ACTIONS),
+  ...Object.values(CONNECTED_APPLICATION_ACTIONS),
 ]);
 
 module.exports = {
@@ -46,6 +59,8 @@ module.exports = {
   TWO_FACTOR_METHODS,
   MCP_ACCESS_ACTIONS,
   RETEX_ACTIONS,
+  MCP_CLIENT_ACTIONS,
+  CONNECTED_APPLICATION_ACTIONS,
   SECURITY_EVENT_ACTIONS,
   SECURITY_EVENT_TTL_SECONDS,
 };

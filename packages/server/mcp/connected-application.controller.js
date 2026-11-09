@@ -7,6 +7,12 @@ const ERROR_CODES = require('../constant/error-codes.js');
 const { McpConnections, Groups } = require('../common/models.common.js');
 const { isObjectIdString } = require('../utils/model.js');
 const { forgetConnections } = require('./mcp-connections.js');
+const {
+  recordSecurityEvent,
+} = require('../security-event/security-event.service.js');
+const {
+  CONNECTED_APPLICATION_ACTIONS,
+} = require('../security-event/security-event.actions.js');
 
 // One row per connection, with the name of its company.
 async function listed(connections) {
@@ -83,7 +89,13 @@ async function countOfCompany(req, res) {
  * @apiParam {String} groupId
  */
 async function revokeAllOfCompany(req, res) {
-  await forgetConnections({ _company: req.params.groupId });
+  const { groupId } = req.params;
+  await forgetConnections({ _company: groupId });
+  await recordSecurityEvent({
+    action: CONNECTED_APPLICATION_ACTIONS.ALL_REVOKED,
+    actor: req.user.id,
+    group: groupId,
+  });
   res.status(204).end();
 }
 

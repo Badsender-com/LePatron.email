@@ -10,6 +10,12 @@ const {
   registerClient,
   deleteClient,
 } = require('./mcp-clients.js');
+const {
+  recordSecurityEvent,
+} = require('../security-event/security-event.service.js');
+const {
+  MCP_CLIENT_ACTIONS,
+} = require('../security-event/security-event.actions.js');
 
 // Why clientFieldsOf refuses the fields, as the error code the API answers.
 const FIELD_REFUSALS = {
@@ -29,6 +35,15 @@ function authorizationServer(req) {
   if (!provider) throw new Error('The MCP authorization server is not mounted');
   return provider;
 }
+
+// Who registered or deleted a client of which company: never the client's
+// secret, which only its creation answers.
+const recorded = (req, action) =>
+  recordSecurityEvent({
+    action,
+    actor: req.user.id,
+    group: req.params.groupId,
+  });
 
 const listed = (client) => ({
   clientId: client.clientId,
@@ -80,6 +95,7 @@ async function create(req, res) {
     throw invalid(ERROR_CODES.MCP_CLIENT_INVALID_METADATA, registered.error);
   }
   const { client, clientSecret } = registered;
+  await recorded(req, MCP_CLIENT_ACTIONS.CREATED);
   res.status(201).json({ ...listed(client), clientSecret });
 }
 
@@ -98,6 +114,7 @@ async function remove(req, res) {
   if (!(await deleteClient({ clientId, groupId }))) {
     throw new createError.NotFound(ERROR_CODES.MCP_CLIENT_NOT_FOUND);
   }
+  await recorded(req, MCP_CLIENT_ACTIONS.DELETED);
   res.status(204).end();
 }
 
