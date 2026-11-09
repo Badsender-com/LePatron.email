@@ -9,12 +9,21 @@
 // field to select.
 
 const { mountSfc, componentOf, settle } = require('../../helpers/mount-sfc.js');
+const Vue = require('vue');
 const mixinGroupSwitch = require('../../../packages/ui/helpers/mixins/mixin-group-switch.js');
 const {
   ROLES,
   CAPABILITIES,
   roleCan,
 } = require('../../../packages/shared/access/roles.js');
+
+// What Nuxt's link does: an anchor to its route.
+Vue.component('NuxtLink', {
+  props: { to: { type: String, default: '' } },
+  render(h) {
+    return h('a', { attrs: { href: this.to } }, this.$slots.default);
+  },
+});
 
 const OPEN_GROUP = {
   id: 'g1',
@@ -107,7 +116,7 @@ describe('the MCP access of a company without the MCP module', () => {
 
     expect(toggle.getAttribute('off-text')).toBe('mcpAccess.notIncluded');
     expect(toggle.hasAttribute('disabled')).toBe(true);
-    expect(Boolean(notice.querySelector('nuxt-link'))).toBe(opens);
+    expect(Boolean(notice.querySelector('a'))).toBe(opens);
     expect(notice.textContent).toContain(
       opens ? 'mcpAccess.moduleMissing' : 'mcpAccess.noModule'
     );
@@ -123,7 +132,7 @@ describe('the MCP access of a company without the MCP module', () => {
     });
     await settle(vm);
 
-    expect(vm.$el.querySelector('nuxt-link').getAttribute('to')).toBe(
+    expect(vm.$el.querySelector('a').getAttribute('href')).toBe(
       '/groups/g1/settings/general'
     );
   });
