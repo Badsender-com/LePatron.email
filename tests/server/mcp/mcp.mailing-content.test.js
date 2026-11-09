@@ -213,7 +213,7 @@ describe('mailing content', () => {
         'M_NEWSLETTER',
         'pushed-to-esp',
       ],
-      ['approved and planned in the future', 'M_SCHEDULED', 'scheduled'],
+      ['approved, with a planned send date', 'M_SCHEDULED', 'scheduled'],
       ['approved, with no planned date', 'M_APPROVED', 'approved'],
       [
         'planned in the past but never pushed nor approved',

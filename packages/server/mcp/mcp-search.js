@@ -2,7 +2,7 @@
 
 const { z } = require('zod');
 const { findMailingsByWords } = require('../mailing/mailing-search.service.js');
-const { siteOrigin } = require('../email-templates/email-template.js');
+const { siteOrigin } = require('../utils/site-origin.js');
 const { versionLabel } = require('../ai-skill/services/version-helpers.js');
 const { containingRegExp } = require('../utils/text-search.js');
 const { withIdentity, failure, success } = require('./mcp-identity.js');
