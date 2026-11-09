@@ -21,7 +21,7 @@ La commande affiche le JSON attendu par la variable : `{"keys":[{"kty":"RSA",…
 La changer ne déconnecte aucun assistant. Pour tout couper :
 
 - pour une entreprise, couper son accès MCP (**Paramètres › Fonctionnalités IA**, section **Accès MCP**) ;
-- pour toute la plateforme, lancer `node scripts/mcp-revoke-all.js`.
+- pour toute la plateforme, lancer `node scripts/mcp-revoke-all.js --yes`. Sans `--yes`, le script dit ce qu'il ferait et ne change rien. Les clients restent enregistrés : leurs utilisateurs se reconnectent.
 
 ### Comptes et entreprises de staging
 
@@ -50,7 +50,15 @@ La réponse annonce la ressource `$STAGING/mcp` et le serveur d'autorisation `$S
 curl -s $STAGING/.well-known/oauth-authorization-server/oauth
 ```
 
-La réponse contient `authorization_endpoint`, `token_endpoint`, `registration_endpoint`, `revocation_endpoint` et `code_challenge_methods_supported: ["S256"]`.
+La réponse contient `authorization_endpoint`, `token_endpoint`, `registration_endpoint`, `revocation_endpoint` et `code_challenge_methods_supported: ["S256"]`. Elle ne contient ni `userinfo_endpoint` ni `end_session_endpoint` : le serveur ne les sert pas.
+
+```bash
+head -c 70000 /dev/zero | tr '\0' 'a' | curl -s -o /dev/null -w "%{http_code}\n" -X POST $STAGING/oauth/reg -H 'Content-Type: application/json' --data-binary @-
+```
+
+Un corps de plus de 64 Ko est refusé : la réponse est `413`.
+
+Ouvrir `$STAGING/oauth/auth?client_id=inconnu&response_type=code` dans un navigateur : la page « This application cannot connect to LePatron. » s'affiche, avec l'erreur et rien d'autre.
 
 ```bash
 curl -s -o /dev/null -w "%{http_code}\n" -X POST $STAGING/mcp
@@ -87,6 +95,7 @@ La colonne « Enregistrement » dit comment le client se fait connaître de LePa
 - [ ] **Microsoft 365 Copilot :** l'agent obtient un secret à l'enregistrement, et le paquet se déploie depuis le centre d'administration. Le tester dans les 24 heures qui suivent sa création : un client enregistré dynamiquement que personne ne connecte est oublié au bout d'un jour.
 - [ ] **Renouvellement :** un assistant laissé connecté plus d'une heure fonctionne encore (renouvellement du token).
 - [ ] **Deux machines, un même client :** connecter Claude Code (ou VS Code) sur deux machines avec le même utilisateur et la même entreprise. **Applications connectées** affiche deux lignes, et les deux assistants lisent LePatron. Révoquer l'une ne coupe pas l'autre.
+- [ ] **Onzième connexion :** reconnecter onze fois le même client (Claude Code : `/mcp`, puis se reconnecter), avec le même utilisateur et la même entreprise. **Applications connectées** affiche dix lignes : la plus ancienne a disparu.
 
 ## 2. Refus
 
@@ -101,8 +110,10 @@ La colonne « Enregistrement » dit comment le client se fait connaître de LePa
 | Double authentification réinitialisée | l'admin technique de l'entreprise A réinitialise la double authentification de l'utilisateur connecté            | refus à la requête suivante ; l'application disparaît de la liste                                          | [ ] |
 | Client d'une autre entreprise         | utiliser le client manuel de l'entreprise A avec l'utilisateur de l'entreprise B                                 | consentement refusé : « Cette application est réservée aux utilisateurs de l'entreprise qui l'a déclarée » | [ ] |
 | Client manuel supprimé                | supprimer le client depuis **Accès MCP › Clients enregistrés à la main › Gérer**                                 | refus immédiat des connexions qui passaient par lui                                                        | [ ] |
+| Adresse changée                       | changer l'adresse d'un utilisateur connecté dont la double authentification passe par email                      | refus à la requête suivante ; l'application disparaît de la liste                                          | [ ] |
 | Compte d'amorçage                     | consentir avec le compte d'amorçage (_bootstrap account_ du glossaire)                                           | « Ce compte ne peut pas connecter d'assistant »                                                            | [ ] |
-| Consentement expiré                   | ouvrir l'écran de consentement et attendre plus de 10 minutes                                                    | « Cette demande de connexion a expiré… »                                                                   | [ ] |
+| Consentement expiré                   | ouvrir l'écran de consentement et attendre plus de 10 minutes                                                    | « Cette demande de connexion a expiré… », sans bouton **Refuser**                                          | [ ] |
+| Refus depuis un écran d'erreur        | sur l'écran « Votre entreprise n'a pas l'accès MCP » (entreprise C), cliquer **Refuser**                         | retour dans l'assistant, qui reçoit le refus (`access_denied`)                                             | [ ] |
 
 ### Adresses de retour
 
@@ -118,27 +129,37 @@ Une adresse de retour est acceptée en `https`, ou en `http` vers `localhost`, `
   Le client est enregistré : la réponse ne liste que `https://example.com/callback` et `http://localhost:4000/callback`.
 
 - [ ] **Enregistrement dynamique sans aucune bonne adresse :** la même commande avec seulement `cursor://example/callback` et `http://example.com/callback` est refusée avec `invalid_redirect_uri`.
-- [ ] **Client enregistré à la main :** dans **Ajouter un client**, une adresse `cursor://…` ou `http://` vers un autre hôte que `localhost` bloque la création, et le message nomme l'adresse refusée.
+- [ ] **Client enregistré à la main :** dans **Ajouter un client**, une adresse `cursor://…` ou `http://` vers un autre hôte que `localhost` bloque la création, et le message nomme l'adresse refusée. Appelée directement, la route répond `400` avec `MCP_CLIENT_INVALID_REDIRECT_URIS` et l'adresse dans `redirectUri`.
+- [ ] **Document de métadonnées sur un hôte privé :** ouvrir `$STAGING/oauth/auth?client_id=https%3A%2F%2F10.0.0.1%2Fclient.json&response_type=code&redirect_uri=https%3A%2F%2Fexample.com%2Fcallback` : la page d'erreur de LePatron s'affiche, et aucune requête ne part vers cette adresse. Un document n'est lu que sur un hôte public, et jusqu'à 5 Ko.
 
 ### Événements de sécurité
 
-Chaque action ci-dessous ajoute un événement dans la collection `securityevents` (via le shell Compass : `db.securityevents.find().sort({ _id: -1 }).limit(5)`), avec son auteur, l'entreprise et la date. Les noms des actions sont dans `packages/server/security-event/security-event.actions.js`.
+Chaque action ci-dessous ajoute un événement dans la collection `securityevents` (via le shell Compass : `db.securityevents.find().sort({ _id: -1 }).limit(5)`), avec son auteur (`actor`), l'entreprise (`group`) et la date. Les noms des actions sont dans `packages/server/security-event/security-event.actions.js`.
 
-- [ ] Activer, puis couper l'accès MCP de l'entreprise A.
-- [ ] Autoriser, puis arrêter le retex de l'entreprise A.
-- [ ] Créer, puis supprimer un client enregistré à la main.
-- [ ] **Tout révoquer** dans l'entreprise A.
+- [ ] Activer, puis couper l'accès MCP de l'entreprise A : `mcp-access.enabled`, puis `mcp-access.disabled`.
+- [ ] Autoriser, puis arrêter le retex de l'entreprise A : `retex.allowed`, puis `retex.disallowed`.
+- [ ] Créer, puis supprimer un client enregistré à la main : `mcp-client.created`, puis `mcp-client.deleted`. Chacun porte `clientId` et `clientName`, jamais le secret.
+- [ ] **Tout révoquer** dans l'entreprise A : `connected-applications.all-revoked`.
+
+### Stockage
+
+Via le shell Compass, après une connexion :
+
+- [ ] `db.mcp_oauth_accesstoken.findOne()` : l'`_id` est une empreinte (43 caractères), et le token de l'assistant n'apparaît nulle part. De même pour `mcp_oauth_refreshtoken` et `mcp_oauth_authorizationcode`.
+- [ ] `db.mcp_oauth_client.find({ _id: /^lepatron-/ })` ne renvoie rien : un client enregistré à la main n'existe que dans `db.mcpclients`, dont `secretDigest` commence par `sha256:`.
+- [ ] Pour un client enregistré dynamiquement avec secret, le `client_secret` lu dans le `payload` (du JSON) de son enregistrement dans `mcp_oauth_client` commence par `sha256:`.
 
 ## 3. Droits sur les écrans
 
 - [ ] **Clients MCP :**
   - l'admin technique de l'entreprise A crée, liste et supprime ses clients ;
-  - l'admin d'entreprise non technique n'a pas l'écran ;
+  - l'admin d'entreprise non technique n'a pas l'écran, et l'appel direct de `/api/groups/:groupId/mcp-clients` est refusé (`403`, `FORBIDDEN_CAPABILITY`) ;
+  - l'admin technique de l'entreprise A qui appelle la route de l'entreprise B est refusé (`403`, `MCP_FORBIDDEN_COMPANY`) ;
   - le super admin y accède pour n'importe quelle entreprise.
 - [ ] **Révocation en masse** (**Paramètres › Fonctionnalités IA**, section **Accès MCP**, **Tout révoquer**) :
   - l'admin technique de l'entreprise A révoque toutes ses connexions ;
   - le super admin le fait pour n'importe quelle entreprise ;
-  - l'admin d'entreprise non technique n'a pas la page Fonctionnalités IA, et l'appel direct de la route est refusé (`403`) ;
+  - l'admin d'entreprise non technique n'a pas la page Fonctionnalités IA, et l'appel direct de `DELETE /api/groups/:groupId/connected-applications` est refusé (`403`, `FORBIDDEN_CAPABILITY`) ;
   - l'utilisateur simple n'a pas la page non plus.
 - [ ] **Retex :** seuls l'admin technique et le super admin l'autorisent ou l'arrêtent ; l'admin d'entreprise non technique n'a pas l'interrupteur.
 - [ ] **Consentement d'un super admin :**

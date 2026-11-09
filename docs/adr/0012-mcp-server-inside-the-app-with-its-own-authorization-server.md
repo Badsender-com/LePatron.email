@@ -24,6 +24,9 @@ Its maintained major requires a current LTS, so the app moved from Node 18 to No
 Writing our own token storage and rotation on Node 18 was rejected: more security code of our own, to keep a runtime that is already out of support.
 Only the scopes this server knows are accepted (`mcp:read`, `skills:write`), so a client asking for others (`openid`, `offline_access`) is refused.
 No other site may frame the authorization server's pages, the consent page included.
+`/oauth` reads bodies of 64 KB at most, before the app's own parsers.
+It serves neither userinfo nor sign-out, which only an OpenID client would use, and `openid` is refused.
+An authorization that cannot go on (an unknown client, a redirect URI it did not register) shows a page of its own, which names the error and nothing of the server.
 The SAML login carries the way back to the consent page in its RelayState, the only thing the identity provider's cross-site answer brings back.
 
 ### Clients and redirect URIs
@@ -36,7 +39,12 @@ Because Claude, ChatGPT and Microsoft do not register clients the same way, the 
 
 A client registered by hand belongs to a company: its tech admin, or a super admin, registers it in the company's settings, because the assistant behind it is set up by that company's IT for its own users.
 Only that company is offered at its consent, and `/mcp` refuses its tokens for any other.
+It has one record, in the company's settings: the authorization server reads it there, by its id, which starts with `lepatron-`, and keeps no copy of its own.
+Its routes, `/api/groups/:groupId/mcp-clients`, declare `group.manage-tech`, and the company is checked by `canAccessGroup`: a super admin reaches every company, a tech admin their own.
 A platform-wide client, registered by a super admin alone, was rejected: it would let any company's users connect through another company's assistant, and would make every company wait on the platform company.
+
+A metadata document is read on public hosts only: the host's name is resolved first, and no request goes to an address that is not on the public internet.
+The document holds 5 KB at most, and names itself by the URL it is read at.
 
 A redirect URI is accepted over `https`, on any host.
 It is accepted over plain `http` on the loopback address only (`localhost`, `127.0.0.1`, `[::1]`), on any port, for an application on the user's own machine; such a client is treated as a native one (RFC 8252 §7.3).
@@ -63,10 +71,14 @@ A user keeps at most 10 connections to one application in one company; the 11th 
 
 The user revokes a connected application from its own page, reached from the sidebar (the app has no profile page).
 The company's tech admin, or a super admin, revokes all of a company's connections at once from its MCP access settings, where the retex is allowed and the clients registered by hand are reached: everything MCP is one section of the AI features page, the tech admin's.
+Its route, `/api/groups/:groupId/connected-applications`, has the scope of the clients' routes: `group.manage-tech`, and the company checked by `canAccessGroup`.
 A company admin who is not its tech admin does neither.
-The app's own events revoke the same way: MCP access turned off, a company deleted, a client registered by hand deleted, a user deactivated, given a new password, or whose two-factor authentication a tech admin or a super admin resets (ADR 0008).
+The app's own events revoke the same way: MCP access turned off, a company deleted, a client registered by hand deleted.
+A change of the credentials ends the account's connected assistants with its sessions, at one point (`endAccess`): the account deactivated, its password reset by an admin or set from the emailed link, its two-factor authentication reset by a tech admin or a super admin, and a change of its address that resets a two-factor authentication by email (ADR 0008).
+Revoking a connection unlists it first, which `/mcp` refuses at once, then deletes its grant and every token the grant issued, from the store alone: a script revokes as a user does.
 
-Turning MCP access on or off, allowing or stopping the retex, registering or deleting a client by hand, and revoking all of a company's connections are recorded as security events (ADR 0008).
+Turning MCP access on or off (`mcp-access.enabled`, `mcp-access.disabled`), allowing or stopping the retex (`retex.allowed`, `retex.disallowed`), registering or deleting a client by hand (`mcp-client.created`, `mcp-client.deleted`), and revoking all of a company's connections (`connected-applications.all-revoked`) are recorded as security events (ADR 0008).
+The events of a client registered by hand name it, by its id and its name, never by its secret.
 
 ### Keys
 
@@ -76,12 +88,14 @@ The keys of the deployment (`lepatron_mcpOauthJwks`) are still required: the ser
 Above all, they become essential the day something is signed (access tokens as JWTs, ID tokens, signed responses): the keys must then persist and be the same on every instance.
 Changing them today disconnects no assistant.
 Do not remove this variable.
-Cutting every connection goes through MCP access, turned off company by company, or through `scripts/mcp-revoke-all.js` for the whole platform.
+Cutting every connection goes through MCP access, turned off company by company, or through `node scripts/mcp-revoke-all.js --yes` for the whole platform, which keeps the clients registered.
 
 ### Storage
 
-Access tokens, refresh tokens and authorization codes are stored as their digest, never as the token itself.
-A client's secret is never stored in clear.
+Access tokens, refresh tokens and authorization codes are stored as their SHA-256 digest, never as the token itself.
+A client's secret is stored as its SHA-256 digest too, and the server compares the secret a client presents with it.
+The ids of grants, sessions and pending consents are stored as they are: a client never presents them as a credential, and a session or a consent is reached through a cookie the server signs.
+Each record keeps its payload as JSON: MongoDB before 5.0 refuses a key with a dot, and a grant names its resource by its URL.
 There is no migration: nothing ran in production before, and a token stored otherwise simply stops working.
 
 ## The MCP server

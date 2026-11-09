@@ -95,7 +95,7 @@ _UI_: Réinitialiser la double authentification
 _Avoid_: Disable two-factor, remove two-factor
 
 **Security event**:
-A record, kept a year, of an action on an account's two-factor authentication, or of a company's MCP access turned on or off, its retex allowed or stopped, a client registered by hand or deleted, or all its connections revoked: who did it, to whom, when.
+A record, kept a year, of an action on an account's two-factor authentication, or of a company's MCP access turned on or off, its retex allowed or stopped, a client registered by hand or deleted, named by its id and its name, or all its connections revoked: who did it, to whom, when.
 _Avoid_: Audit log, activity log
 
 ### Image gallery
@@ -193,7 +193,7 @@ _Avoid_: Client expertise, brand skill
 ### AI assistants
 
 **Connected application**:
-An AI assistant outside LePatron (Claude, ChatGPT, Copilot…) that a user has allowed to read LePatron on their behalf, with that user's rights, in one company. The user revokes it at any time; the company's tech admin or a super admin revokes all of the company's at once.
+An AI assistant outside LePatron (Claude, ChatGPT, Copilot…) that a user has allowed to read LePatron on their behalf, with that user's rights, in one company. The user revokes it at any time; the company's tech admin or a super admin revokes all of the company's at once. A change of the user's credentials revokes all of theirs: the account deactivated, a new password, a two-factor reset.
 _UI_: Application connectée
 _Avoid_: Integration (the AI provider settings of a company), connector, client
 
