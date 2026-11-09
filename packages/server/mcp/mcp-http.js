@@ -23,13 +23,20 @@ const limit = (windowMs, max) =>
 const RESOURCE_PATH = '/mcp';
 const ISSUER_PATH = '/oauth';
 
-// A refusal before any MCP exchange answers as the SDK's own bearer gate does:
-// the OAuth error body (RFC 6750). Clients act on the status and the
-// challenge; -32001 is the SDK's "Session not found", not a refusal.
+// A refusal before any MCP exchange answers with an HTTP status and the
+// OAuth error body (RFC 6750): its error code, when there is one, and why.
+// Clients act on the status and the challenge. Never a JSON-RPC error:
+// -32001 is the SDK's "Session not found", not a refusal.
 function refuse(res, status, error, description, headers = {}) {
   res.set(headers);
-  res.status(status).json({ error, error_description: description });
+  res
+    .status(status)
+    .json({ ...(error && { error }), error_description: description });
 }
+
+// Whether a request sent a bearer token, valid or not: only then does a
+// refusal give an error code (RFC 6750, section 3.1).
+const sentBearerToken = (header) => /^Bearer\s+\S/i.test(header || '');
 
 /**
  * The identity a bearer token carries, when it is an access token LePatron
@@ -168,9 +175,8 @@ function mountMcp(
     })
   );
   const discovery = `resource_metadata="${resourceMetadataUrl}", scope="${READ_SCOPE}"`;
-  // No error code when no token was sent (RFC 6750, section 3.1).
-  const challengeOf = (header) => ({
-    'WWW-Authenticate': header
+  const challengeOf = (tokenSent) => ({
+    'WWW-Authenticate': tokenSent
       ? `Bearer error="invalid_token", ${discovery}`
       : `Bearer ${discovery}`,
   });
@@ -183,12 +189,13 @@ function mountMcp(
         resource
       );
       if (!authInfo) {
+        const tokenSent = sentBearerToken(req.headers.authorization);
         return refuse(
           res,
           401,
-          'invalid_token',
+          tokenSent ? 'invalid_token' : null,
           'A valid access token is required.',
-          challengeOf(req.headers.authorization)
+          challengeOf(tokenSent)
         );
       }
       // What the token said at consent may no longer hold: say so before any

@@ -132,11 +132,28 @@ describe('token and refresh', () => {
     const response = await oauth.callMcp(app, 'not-a-token');
 
     expect(response.status).toBe(401);
-    // As the SDK's own gate answers (RFC 6750): the client reauthorizes.
+    // The OAuth error body (RFC 6750): the client reauthorizes.
     expect(response.body.error).toBe('invalid_token');
     expect(response.headers['www-authenticate']).toMatch(
       /^Bearer error="invalid_token", /
     );
+  });
+
+  // No error code without a bearer token (RFC 6750, section 3.1): the
+  // client was not refused a token, it sent none.
+  it.each([
+    ['no credentials', null],
+    ['credentials of another scheme', 'Basic dXNlcjpwYXNzd29yZA=='],
+    ['a bearer scheme without a token', 'Bearer '],
+  ])('refuses %s without an error code', async (_case, header) => {
+    const call = oauth.callMcp(app, null);
+    const response = await (header ? call.set('Authorization', header) : call);
+
+    expect(response.status).toBe(401);
+    expect(response.body.error).toBeUndefined();
+    expect(response.body.error_description).toEqual(expect.any(String));
+    expect(response.headers['www-authenticate']).toMatch(/^Bearer /);
+    expect(response.headers['www-authenticate']).not.toMatch(/error=/);
   });
 
   it('refuses a token once the group loses MCP access', async () => {
