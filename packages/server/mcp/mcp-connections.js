@@ -81,7 +81,7 @@ async function useConnection(grantId) {
   if (!grantId) return false;
   const now = Date.now();
   if (now - (notedAt.get(grantId) || 0) < USE_NOTED_EVERY) {
-    return (await McpConnections.countDocuments({ grantId })) > 0;
+    return McpConnections.exists({ grantId });
   }
   const stands = matchedOne(
     await McpConnections.updateOne(

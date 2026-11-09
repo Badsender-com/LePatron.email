@@ -242,6 +242,8 @@ function model(records) {
       return { deletedCount: index === -1 ? 0 : 1 };
     },
     countDocuments: (filter = {}) => Promise.resolve(matching(filter)().length),
+    // A boolean, as Mongoose 5 answers it.
+    exists: (filter = {}) => Promise.resolve(matching(filter)().length > 0),
     // A record without the field gives no value.
     distinct: (field, filter = {}) =>
       Promise.resolve([

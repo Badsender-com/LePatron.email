@@ -63,4 +63,29 @@ describe('a connection in use', () => {
 
     expect(await useConnection('a-revoked-grant')).toBe(false);
   });
+
+  // Within a minute of the use noted, `/mcp` only asks whether the record
+  // is still there: one document, never a count.
+  it('is read again without counting', async () => {
+    answering(1);
+    const findOne = jest
+      .spyOn(McpConnections.collection, 'findOne')
+      .mockImplementation((filter, options, callback) =>
+        callback(null, { _id: 'a-connection' })
+      );
+    const count = jest.spyOn(McpConnections.collection, 'countDocuments');
+
+    await useConnection('a-grant-used-twice');
+    const stands = await useConnection('a-grant-used-twice');
+
+    expect(stands).toBe(true);
+    expect(findOne).toHaveBeenCalledWith(
+      { grantId: 'a-grant-used-twice' },
+      expect.anything(),
+      expect.any(Function)
+    );
+    expect(count).not.toHaveBeenCalled();
+    findOne.mockRestore();
+    count.mockRestore();
+  });
 });
