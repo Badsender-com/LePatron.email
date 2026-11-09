@@ -10,11 +10,83 @@ LePatron exposes an MCP server so that the AI assistants its users already work 
 
 **It runs inside the Express app**, mounted on `/mcp`, not as a standalone service sharing the database. Every tool goes through the same services and access checks as the REST API (workspace and folder membership, `userHasAccessToAllWorkspaces`, the roles of ADR 0004), so no access rule is written twice.
 
-**LePatron is its own OAuth 2.1 authorization server**, embedded in the app. The login it shows is the existing one (local password or the company's SAML), followed by a consent screen. The consent screen asks for a session like any page of the app, so the two-factor step comes first: a member of a company that requires two-factor authentication, and a super admin signing in with a password, reach it only once their code is checked (ADR 0008); a password alone never consents. An external identity provider would have had to send users back to LePatron anyway, and would add a third party processing personal data. Because Claude, ChatGPT and Microsoft do not register clients the same way, the server accepts three: Client ID Metadata Documents, open Dynamic Client Registration, of public clients and of confidential ones, which get a secret (Microsoft 365 Copilot does not take public clients), and clients pre-registered by hand (Copilot Studio in manual mode). A client registered by hand belongs to a company: its tech admin, or a super admin, registers it in the company's settings, because the assistant behind it is set up by that company's IT for its own users. Only that company is offered at its consent, and `/mcp` refuses its tokens for any other. A platform-wide client, registered by a super admin alone, was rejected: it would let any company's users connect through another company's assistant, and would make every company wait on the platform company. It is built on `oidc-provider`, which serves the three natively; its maintained major requires a current LTS, so the app moved from Node 18 to Node 24 (#1337) before the authorization server; Node 24 also lets the CommonJS app `require()` that ESM-only package. Writing our own token storage and rotation on Node 18 was rejected: more security code of our own, to keep a runtime that is already out of support. Access tokens last an hour, refresh tokens rotate and last 30 days each, and a connection lasts 90 days at most, after which the user connects the assistant again; consent is asked at every connection, and only the scopes this server knows are accepted (`mcp:read`, `skills:write`), so a client asking for others (`openid`, `offline_access`) is refused. The tokens are signed with keys of the deployment (`lepatron_mcpOauthJwks`): the server does not start without them outside development, since oidc-provider's own development keys are published. No other site may frame the authorization server's pages, the consent page included, and the SAML login carries the way back to the consent page in its RelayState, the only thing the identity provider's cross-site answer brings back. Revocation: the user revokes a connected application from its own page, reached from the sidebar (the app has no profile page), and the company's tech admin revokes all of a company's from its MCP access settings, where the retex is allowed and the clients registered by hand are reached: everything MCP is one section of the AI features page, the tech admin's. Each consent is recorded as a connected application, and `/mcp` checks that record at every call: a revoked application is refused at its next call, before its access token expires, and its refresh tokens are revoked with it. The app's own events revoke the same way: MCP access turned off, a company deleted, a user deactivated or given a new password. Connecting an application again replaces its previous connection to the company, so each application is listed once.
+## The authorization server
 
-**Open registration has its safeguards.** Anyone may register a client, so a registration vouches for nothing. A redirect URI is `https`, or plain `http` on the loopback address only, for an application on the user's own machine. Registering is rate limited. The consent screen says that an application registered itself and that LePatron cannot vouch for its name, and it shows the host the user will be sent back to. A client that connects nobody is forgotten after a day; each consent keeps it as long as the connection it opens.
+### Server
 
-**A token is bound to one user and one company.** A super admin, who has rights on every company, picks the company on the consent screen, like the selected company of ADR 0002; working on another company means connecting again. This keeps two companies' data from meeting in one assistant conversation. On every call the server checks the user's current role, their membership of the company and the company's MCP access, so a change takes effect without waiting for the token to expire. What fails is told to the assistant only when it can act on it: a refusal, an item not found, or a request a service refuses with a message meant to be shown, which the server logs as a warning; anything else is logged as an error and answered with a message that says nothing of the server. A token's scopes only record what the user consented to (`mcp:read`, and `skills:write`, offered only to who may manage the platform, ADR 0014); what the user may do is asked of the permissions module on every call, from the capabilities of ADR 0004, like any route of the app. Reading through MCP needs no capability, as reading in the app does not: membership of the company and access to the workspace decide. The write tools will ask for the capabilities that already exist (`mailing.create`, `mailing.edit-content`), so a role is defined once for the app and for MCP.
+**LePatron is its own OAuth 2.1 authorization server**, embedded in the app.
+The login it shows is the existing one (local password or the company's SAML), followed by a consent screen.
+The consent screen asks for a session like any page of the app, so the two-factor step comes first: a member of a company that requires two-factor authentication, and a super admin signing in with a password, reach it only once their code is checked (ADR 0008).
+A password alone never consents.
+An external identity provider would have had to send users back to LePatron anyway, and would add a third party processing personal data.
+It is built on `oidc-provider`, which serves the three ways of registering a client natively.
+Its maintained major requires a current LTS, so the app moved from Node 18 to Node 24 (#1337) before the authorization server; Node 24 also lets the CommonJS app `require()` that ESM-only package.
+Writing our own token storage and rotation on Node 18 was rejected: more security code of our own, to keep a runtime that is already out of support.
+Only the scopes this server knows are accepted (`mcp:read`, `skills:write`), so a client asking for others (`openid`, `offline_access`) is refused.
+No other site may frame the authorization server's pages, the consent page included.
+The SAML login carries the way back to the consent page in its RelayState, the only thing the identity provider's cross-site answer brings back.
+
+### Clients and redirect URIs
+
+Because Claude, ChatGPT and Microsoft do not register clients the same way, the server accepts three kinds of client:
+
+- Client ID Metadata Documents;
+- open Dynamic Client Registration, of public clients and of confidential ones, which get a secret (Microsoft 365 Copilot does not take public clients);
+- clients registered by hand (Copilot Studio in manual mode).
+
+A client registered by hand belongs to a company: its tech admin, or a super admin, registers it in the company's settings, because the assistant behind it is set up by that company's IT for its own users.
+Only that company is offered at its consent, and `/mcp` refuses its tokens for any other.
+A platform-wide client, registered by a super admin alone, was rejected: it would let any company's users connect through another company's assistant, and would make every company wait on the platform company.
+
+A redirect URI is accepted over `https`, on any host.
+It is accepted over plain `http` on the loopback address only (`localhost`, `127.0.0.1`, `[::1]`), on any port, for an application on the user's own machine; such a client is treated as a native one (RFC 8252 §7.3).
+Any other redirect URI is refused: a scheme of the application's own (`cursor://…`, `com.example.app:/…`), and plain `http` to any other host.
+This is the rule of the MCP specification, whose redirect URIs must be either localhost or use HTTPS (Communication Security).
+At an open registration or in a metadata document, a refused redirect URI is left out of the client (RFC 7591 §3.2.1): the client is registered with the others, and the answer to the registration lists them.
+A registration left with no redirect URI is refused with `invalid_redirect_uri`.
+For a client registered by hand, any refused redirect URI blocks the creation, and the error names it.
+
+**Open registration has its safeguards.**
+Anyone may register a client, so a registration vouches for nothing.
+Registering is rate limited.
+The consent screen says that an application registered itself and that LePatron cannot vouch for its name, and it shows the host the user will be sent back to.
+A client that connects nobody is forgotten after a day; each consent keeps it as long as the connection it opens.
+
+### Connections and revocation
+
+Access tokens last an hour, refresh tokens rotate and last 30 days each, and a connection lasts 90 days at most, after which the user connects the assistant again.
+Consent is asked at every connection.
+Each consent is recorded as a connected application, one connection per consent.
+Connecting again does not replace an earlier connection of the same user to the same application: Claude Code or VS Code use the same `client_id` on every machine, and a second machine would otherwise disconnect the first.
+A user keeps at most 10 connections to one application in one company; the 11th revokes the oldest.
+`/mcp` checks that record at every call: a revoked connection is refused at its next call, before its access token expires, and its refresh tokens are revoked with it.
+
+The user revokes a connected application from its own page, reached from the sidebar (the app has no profile page).
+The company's tech admin, or a super admin, revokes all of a company's connections at once from its MCP access settings, where the retex is allowed and the clients registered by hand are reached: everything MCP is one section of the AI features page, the tech admin's.
+A company admin who is not its tech admin does neither.
+The app's own events revoke the same way: MCP access turned off, a company deleted, a client registered by hand deleted, a user deactivated, given a new password, or whose two-factor authentication a tech admin or a super admin resets (ADR 0008).
+
+Turning MCP access on or off, allowing or stopping the retex, registering or deleting a client by hand, and revoking all of a company's connections are recorded as security events (ADR 0008).
+
+### Keys
+
+Nothing is signed today.
+The tokens are opaque and checked against the database, and `openid` is refused, so no ID token is ever issued.
+The keys of the deployment (`lepatron_mcpOauthJwks`) are still required: the server does not start without them outside development, because `oidc-provider` would otherwise take its own development keys, which are published.
+Above all, they become essential the day something is signed (access tokens as JWTs, ID tokens, signed responses): the keys must then persist and be the same on every instance.
+Changing them today disconnects no assistant.
+Do not remove this variable.
+Cutting every connection goes through MCP access, turned off company by company, or through `scripts/mcp-revoke-all.js` for the whole platform.
+
+### Storage
+
+Access tokens, refresh tokens and authorization codes are stored as their digest, never as the token itself.
+A client's secret is never stored in clear.
+There is no migration: nothing ran in production before, and a token stored otherwise simply stops working.
+
+## The MCP server
+
+**A token is bound to one user and one company.** A super admin, who has rights on every company, picks the company on the consent screen, like the selected company of ADR 0002; working on another company means connecting again. This keeps two companies' data from meeting in one assistant conversation. On every call the server checks the user's current role, their membership of the company and the company's MCP access, so a change takes effect without waiting for the token to expire. What fails is told to the assistant only when it can act on it: a refusal, an item not found, or a request a service refuses with a message meant to be shown, which the server logs as a warning; anything else is logged as an error and answered with a message that says nothing of the server. A token's scopes only record what the user consented to (`mcp:read`, and `skills:write`, offered unticked, and only to who may manage the platform, ADR 0014); what the user may do is asked of the permissions module on every call, from the capabilities of ADR 0004, like any route of the app. Reading through MCP needs no capability, as reading in the app does not: membership of the company and access to the workspace decide. The write tools will ask for the capabilities that already exist (`mailing.create`, `mailing.edit-content`), so a role is defined once for the app and for MCP.
 
 **What is exposed.** Active versions of expertises (as resources, with their version and update date) and skills (as prompts); never drafts. Mailings the user can reach, listed through the search across accessible workspaces (ADR 0007, #1144) rather than a listing of its own, and read as extracted text by default and sanitised HTML on request. A mailing's status is derived from its facts and never stored (see `GLOSSARY.md`): LePatron does not know that an email was sent, so no status says so. The `search` and `fetch` tools follow the shape ChatGPT expects. Every tool declares an output schema and answers structured content; every tool that only reads is annotated read-only, so clients do not ask for a confirmation on each read, and the tools that write (`submit_feedback`, and the drafting tools of ADR 0014) say they destroy nothing; a list links each mailing as a resource. A mailing's preview is also offered as an MCP App, so the clients that render apps (Claude, ChatGPT, Microsoft 365 Copilot, VS Code) show the email itself in the conversation, sandboxed, while the others keep the text (#1342).
 

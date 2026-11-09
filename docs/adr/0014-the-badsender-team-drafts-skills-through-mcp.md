@@ -22,4 +22,4 @@ The skills and expertises improve with use: the feedback and retex of ADR 0012 t
 ## Consequences
 
 - MCP is no longer read-only: besides the feedback of ADR 0012, it writes the drafts of the platform company's own skills and expertises, and ADR 0012's title says so.
-- The authorization server of #1306 offers the `skills:write` scope, at consent, to holders of `platform.manage` only.
+- The authorization server of #1306 offers the `skills:write` scope at consent, unticked, to holders of `platform.manage` only; left unticked, the connection proposes no draft.
