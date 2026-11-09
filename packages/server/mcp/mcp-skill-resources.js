@@ -103,12 +103,12 @@ function registerSkillResources(server) {
 const MAX_QUERY_LENGTH = 200;
 const MAX_FOUND_SKILLS = 10;
 
+// A blank query is none: every skill is listed, as the description promises.
 const FIND_INPUT = z.object({
-  query: z
-    .string()
-    .max(MAX_QUERY_LENGTH)
-    .regex(/\S/, 'A query is not blank')
-    .optional(),
+  query: z.preprocess(
+    (query) => (typeof query === 'string' && !query.trim() ? undefined : query),
+    z.string().max(MAX_QUERY_LENGTH).optional()
+  ),
 });
 const FIND_OUTPUT = z.object({
   skills: z.array(

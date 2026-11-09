@@ -146,15 +146,12 @@ describe('find_skills', () => {
     });
   });
 
-  it.each([
-    ['a blank query', '   '],
-    ['a query too long to be an intent', 'report '.repeat(30)],
-  ])(
-    'refuses %s rather than answer the whole catalog',
-    async (_case, query) => {
-      expect((await find(query)).error).toMatch(/Input validation error/);
-    }
-  );
+  // A blank query is none: mcp.language.test.js lists every skill for it.
+  it('refuses a query too long to be an intent', async () => {
+    expect((await find('report '.repeat(30))).error).toMatch(
+      /Input validation error/
+    );
+  });
 });
 
 // A required argument is one the client sent, by its own name.

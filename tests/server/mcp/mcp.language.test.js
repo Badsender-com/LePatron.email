@@ -71,6 +71,16 @@ describe('the language of the skills and expertises', () => {
     expect(idsOf(answer)).toEqual(EVERY_SKILL);
   });
 
+  it.each([
+    ['an empty query', ''],
+    ['a blank query', ' \n '],
+  ])('lists every skill for %s, as for none', async (_case, query) => {
+    const answer = await findSkills({ query });
+
+    expect(answer.matched).toBe(false);
+    expect(idsOf(answer)).toEqual(EVERY_SKILL);
+  });
+
   it('finds a skill by its identifier too', async () => {
     const answer = await findSkills({ query: 'subject-ideas' });
 
