@@ -318,11 +318,22 @@ function withIdentity(handler) {
   };
 }
 
+// Whether who calls may write the platform's skills and expertises, and read
+// their retex: the capability is asked again on every call, whatever the
+// token says (ADR 0014, ADR 0021).
+function mayDraft(user, authInfo) {
+  return (
+    hasScope(authInfo, WRITE_SCOPE) &&
+    permissions.can(user, CAPABILITIES.PLATFORM_MANAGE)
+  );
+}
+
 module.exports = {
   resolveIdentity,
   toRequestUser,
   identify,
   withIdentity,
+  mayDraft,
   hasScope,
   isRefusal,
   failure,

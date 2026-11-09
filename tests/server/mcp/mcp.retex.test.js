@@ -144,6 +144,17 @@ describe('the retex loop', () => {
       ]);
     });
 
+    it('stores the part of the email trimmed and in lower case, so that two retex meet', async () => {
+      await call(await asConsultant(), REPORT, {
+        ...ORPHAN_COMPLEMENT,
+        part: ' Preheader ',
+      });
+
+      expect(await listOpen({ part: 'PREHEADER' })).toEqual([
+        expect.objectContaining({ part: 'preheader' }),
+      ]);
+    });
+
     it.each([
       [
         'a divergence without a passage',

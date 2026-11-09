@@ -1,8 +1,6 @@
 'use strict';
 
 const createError = require('http-errors');
-const permissions = require('../account/permissions.js');
-const { CAPABILITIES } = require('../../shared/access/roles.js');
 const expertiseService = require('../ai-skill/services/expertise.service.js');
 const skillService = require('../ai-skill/services/skill.service.js');
 const {
@@ -17,11 +15,10 @@ const {
 } = require('../ai-skill/constant/skill-constants.js');
 const {
   withIdentity,
-  hasScope,
+  mayDraft,
   isRefusal,
   failure,
   refused,
-  WRITE_SCOPE,
 } = require('./mcp-identity.js');
 const { draftDiff, differs } = require('./mcp-draft-diff.js');
 const {
@@ -52,15 +49,6 @@ const ENTITIES = {
     ],
   },
 };
-
-// Whether who calls may write: the capability is asked again on every call,
-// whatever the token says (ADR 0014).
-function mayDraft(user, authInfo) {
-  return (
-    hasScope(authInfo, WRITE_SCOPE) &&
-    permissions.can(user, CAPABILITIES.PLATFORM_MANAGE)
-  );
-}
 
 // What a write answers: the version written, and its difference with the
 // active version, for the person to read before publishing.

@@ -27,6 +27,9 @@ const McpRetexSchema = new Schema(
     _user: { type: ObjectId, ref: UserModel, required: true },
     author: { type: String, enum: ['consultant', 'client'], required: true },
     clientId: { type: String, default: '' },
+    // When a client user's approval was given, as the assistant said so: a
+    // super admin's retex asks for none.
+    approvedAt: { type: Date, default: null },
     kind: { type: String, enum: ['divergence', 'complement'], required: true },
     // What it is about; null for a complement about no skill or expertise,
     // which names a kind of know-how and a part of the email instead.
@@ -62,6 +65,7 @@ const McpRetexSchema = new Schema(
   { timestamps: true }
 );
 
+McpRetexSchema.index({ status: 1, createdAt: -1 });
 McpRetexSchema.index({ status: 1, 'about.kind': 1, 'about.id': 1 });
 McpRetexSchema.index({ status: 1, category: 1, part: 1 });
 McpRetexSchema.index({ expiresAt: 1 }, { expireAfterSeconds: 0 });
