@@ -89,7 +89,6 @@ describe("a client's secret", () => {
     const MCP_OAUTH = '../../../packages/server/mcp/mcp-oauth.js';
     let handed;
     let Adapter;
-    let compared;
     jest.isolateModules(() => {
       jest.doMock(MCP_OAUTH, () => ({
         ...jest.requireActual(MCP_OAUTH),
@@ -103,16 +102,40 @@ describe("a client's secret", () => {
       ({
         McpOAuthAdapter: Adapter,
       } = require('../../../packages/server/mcp/mcp-oauth-adapter.js'));
-      const provider = mountMcp(require('express')(), {
+      mountMcp(require('express')(), {
         origin: oauth.BASE,
         cookieKeys: ['a-test-cookie-key'],
       });
-      compared = provider.Client.prototype.compareClientSecret;
     });
     jest.dontMock(MCP_OAUTH);
 
     expect(handed).toBe(Adapter);
-    expect(compared).toEqual(expect.any(Function));
+  });
+
+  // Wherever the authorization server is created, beside its adapter.
+  it('is compared by its digest by the authorization server as created', () => {
+    const {
+      createAuthorizationServer,
+    } = require('../../../packages/server/mcp/mcp-oauth.js');
+    const {
+      secretDigest,
+    } = require('../../../packages/server/mcp/mcp-oauth-store.js');
+    const provider = createAuthorizationServer({
+      issuer: oauth.ISSUER,
+      resource: oauth.MCP_RESOURCE,
+      cookieKeys: ['a-test-cookie-key'],
+      adapter: (name) => new McpOAuthAdapter(name),
+    });
+    const kept = { clientSecret: secretDigest('a-secret') };
+    const { compareClientSecret } = provider.Client.prototype;
+
+    return Promise.all([
+      compareClientSecret.call(kept, 'a-secret'),
+      compareClientSecret.call(kept, kept.clientSecret),
+    ]).then(([presented, digest]) => {
+      expect(presented).toBe(true);
+      expect(digest).toBe(false);
+    });
   });
 
   it('of a client registered by hand is not kept as it is', async () => {

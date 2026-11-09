@@ -6,6 +6,7 @@ const { default: Provider, errors } = require('oidc-provider');
 const { McpClients } = require('../common/models.common.js');
 const logger = require('../utils/logger.js');
 const { attachAuthorizationServer } = require('./mcp-connections.js');
+const { compareClientSecretsByDigest } = require('./mcp-oauth-adapter.js');
 const { SCOPES } = require('./mcp-identity.js');
 const {
   EXTRA_CLIENT_METADATA,
@@ -284,6 +285,9 @@ function createAuthorizationServer({
       authorization_response_iss_parameter_supported: true,
     },
   });
+  // The adapter keeps a client's secret as its digest: the server compares
+  // what a client presents with it, whatever adapter it is given.
+  compareClientSecretsByDigest(provider);
   // The provider keeps `openid` among its scopes, and announces ID tokens,
   // whatever it is given: the discovery says what this server grants, and
   // `openid` stays refused (getResourceServerInfo).

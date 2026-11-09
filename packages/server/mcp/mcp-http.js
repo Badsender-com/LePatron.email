@@ -10,10 +10,7 @@ const { createRateLimiter, clientIp } = require('../utils/rate-limit.js');
 const { createMcpServer } = require('./mcp-server.js');
 const { resolveIdentity, READ_SCOPE } = require('./mcp-identity.js');
 const { createAuthorizationServer, identityOf } = require('./mcp-oauth.js');
-const {
-  McpOAuthAdapter,
-  compareClientSecretsByDigest,
-} = require('./mcp-oauth-adapter.js');
+const { McpOAuthAdapter } = require('./mcp-oauth-adapter.js');
 const { createInteractionsRouter } = require('./mcp-oauth-interactions.js');
 const { isClientAllowed } = require('./mcp-clients.js');
 const { useConnection } = require('./mcp-connections.js');
@@ -95,8 +92,6 @@ function mountMcp(
     adapter,
     ...providerOptions,
   });
-  // The adapter keeps a client's secret as its digest.
-  compareClientSecretsByDigest(provider);
   // What checks a client registered by hand (mcp-client.controller.js).
   app.locals.mcpAuthorizationServer = provider;
   // The provider builds the URLs it publishes from the request: it is handed
