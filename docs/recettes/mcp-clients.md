@@ -23,6 +23,10 @@ La changer ne déconnecte aucun assistant. Pour tout couper :
 - pour une entreprise, couper son accès MCP (**Paramètres › Fonctionnalités IA**, section **Accès MCP**) ;
 - pour toute la plateforme, lancer `node scripts/mcp-revoke-all.js --yes`. Sans `--yes`, le script dit ce qu'il ferait et ne change rien. Les clients restent enregistrés : leurs utilisateurs se reconnectent.
 
+### Environnement qui a fait tourner une version antérieure de la pile MCP
+
+Les tokens, les codes et les secrets sont désormais stockés sous leur empreinte, et un client enregistré à la main ne vit plus que dans `mcpclients`. Sur un environnement qui a fait tourner une version antérieure de la pile (staging, poste de développement), purger une fois, via le shell Compass, les collections `mcp_oauth_*` et `mcpclients` : `db.getCollectionNames().filter((name) => name.startsWith('mcp_oauth_') || name === 'mcpclients').forEach((name) => db.getCollection(name).drop())`. Les assistants se reconnectent, et les clients enregistrés à la main sont à recréer.
+
 ### Comptes et entreprises de staging
 
 | Rôle                               | Entreprise            | Accès MCP de l'entreprise |
@@ -97,6 +101,7 @@ La colonne « Enregistrement » dit comment le client se fait connaître de LePa
 - [ ] **Indépendante du navigateur :** connecter deux fois le même client dans le même navigateur : la première connexion fonctionne encore. Une connexion fonctionne encore le lendemain, quand la session du navigateur sur le serveur d'autorisation a expiré : elle ne dépend pas d'elle.
 - [ ] **Deux machines, un même client :** connecter Claude Code (ou VS Code) sur deux machines avec le même utilisateur et la même entreprise. **Applications connectées** affiche deux lignes, et les deux assistants lisent LePatron. Révoquer l'une ne coupe pas l'autre.
 - [ ] **Onzième connexion :** reconnecter onze fois le même client (Claude Code : `/mcp`, puis se reconnecter), avec le même utilisateur et la même entreprise. **Applications connectées** affiche dix lignes : la plus ancienne a disparu.
+- [ ] Pour ces deux cas, le plafond compte par `client_id` : vérifier que les connexions ont le même (`db.mcpconnections.find({}, { clientId: 1 })`), ou utiliser un client à document de métadonnées. Un assistant qui se réenregistre (enregistrement dynamique) obtient un nouvel id à chaque fois, et ses connexions ne comptent pas ensemble.
 
 ## 2. Refus
 

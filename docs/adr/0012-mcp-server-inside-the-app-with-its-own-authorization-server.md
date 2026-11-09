@@ -67,8 +67,9 @@ Access tokens last an hour, refresh tokens rotate and last 30 days each, and a c
 Consent is asked at every connection.
 A connection does not depend on the browser it was consented in: neither its code nor its tokens are bound to the authorization server's session of that browser, so another consent there, or that session's end after a day, leaves it whole.
 Each consent is recorded as a connected application, one connection per consent.
-Connecting again does not replace an earlier connection of the same user to the same application: Claude Code or VS Code use the same `client_id` on every machine, and a second machine would otherwise disconnect the first.
+Connecting again does not replace an earlier connection of the same user to the same application: an assistant known by its metadata document (Claude Code, VS Code) has the same `client_id` on every machine, and a second machine would otherwise disconnect the first.
 A user keeps at most 10 connections to one application in one company; the 11th revokes the oldest.
+The cap counts by `client_id`: an assistant that registers itself again (DCR) gets a new one, so two of its machines are the same client only when it is known by its metadata document.
 `/mcp` checks that record at every call: a revoked connection is refused at its next call, before its access token expires, and its refresh tokens are revoked with it.
 
 The user revokes a connected application from its own page, reached from the sidebar (the app has no profile page).
