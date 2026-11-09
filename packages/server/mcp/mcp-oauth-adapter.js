@@ -20,6 +20,9 @@ function payloadOf(record) {
   return record.consumed ? { ...payload, consumed: record.consumed } : payload;
 }
 
+// What MongoDB answers an insertion whose `_id` is taken.
+const DUPLICATE_KEY = 11000;
+
 /**
  * The storage of LePatron's authorization server (ADR 0012): `oidc-provider`'s
  * adapter interface over the store of mcp-oauth-store.js, one collection per
@@ -55,18 +58,28 @@ class McpOAuthAdapter {
     const expiresAt = expiresIn
       ? new Date(Date.now() + expiresIn * 1000)
       : null;
-    await (await this.collection()).updateOne(
-      { _id: this.storedId(id) },
-      {
-        $set: {
-          payload: JSON.stringify(this.kept(payload)),
-          ...(payload.grantId && { grantId: payload.grantId }),
-          ...(payload.uid && { uid: payload.uid }),
-          ...(expiresAt && { expiresAt }),
+    const collection = await this.collection();
+    const write = () =>
+      collection.updateOne(
+        { _id: this.storedId(id) },
+        {
+          $set: {
+            payload: JSON.stringify(this.kept(payload)),
+            ...(payload.grantId && { grantId: payload.grantId }),
+            ...(payload.uid && { uid: payload.uid }),
+            ...(expiresAt && { expiresAt }),
+          },
         },
-      },
-      { upsert: true }
-    );
+        { upsert: true }
+      );
+    try {
+      await write();
+    } catch (error) {
+      // Another upsert of the same record inserted it first: MongoDB before
+      // 4.2 refuses this one a duplicate key. Written again, it updates.
+      if (error.code !== DUPLICATE_KEY) throw error;
+      await write();
+    }
   }
 
   // What a payload is kept as: a credential's never names it (`find` gives

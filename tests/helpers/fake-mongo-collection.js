@@ -21,6 +21,9 @@
  * - A TTL index (`expireAfterSeconds`) removes a record once its date is
  *   past, read on the test's clock: the server does it within a minute, the
  *   fake before its next operation.
+ * - `raceNextUpsert()` has the next upsert that matches nothing meet another
+ *   one, run at the same time, that inserted the same `_id` first: it fails
+ *   with a duplicate key (E11000), as MongoDB before 4.2 answers it.
  */
 
 const { matches, projected } = require('./fake-mongo-query.js');
@@ -132,9 +135,14 @@ function createFakeCollection() {
     result: { n: n || (upserted ? 1 : 0), nModified, ok: 1 },
   });
 
+  let racing = false;
+
   return {
     records,
     indexes,
+    raceNextUpsert: () => {
+      racing = true;
+    },
     createIndex: async (keys, options = {}) => {
       indexes.push({ keys: copy(keys), options: copy(options) });
       return Object.keys(keys).join('_');
@@ -162,6 +170,13 @@ function createFakeCollection() {
       const inserted = copy(equalitiesOf(filter));
       applyUpdate(inserted, update);
       records.push(inserted);
+      if (racing) {
+        // The other upsert's insertion stands; this one's fails.
+        racing = false;
+        throw Object.assign(new Error('E11000 duplicate key error'), {
+          code: 11000,
+        });
+      }
       return answered(0, 0, true);
     },
     findOne: async (filter = {}, { projection } = {}) => {

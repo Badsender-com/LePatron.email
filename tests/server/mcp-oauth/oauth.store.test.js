@@ -236,3 +236,22 @@ describe('the store before the database is open', () => {
     expect(await found).toMatchObject({ jti: 'grant-1' });
   });
 });
+
+// Two upserts of the same record at once (a grant saved twice, say): MongoDB
+// before 4.2 lets one insert, and refuses the other a duplicate key.
+describe('two upserts of the same record at once', () => {
+  it('both take, the second as an update', async () => {
+    db.collection('mcp_oauth_grant').raceNextUpsert();
+
+    await new McpOAuthAdapter('Grant').upsert(
+      'grant-1',
+      { jti: 'grant-1', kind: 'Grant', accountId: 'user.group' },
+      60
+    );
+
+    expect(stored('Grant')).toHaveLength(1);
+    expect(JSON.parse(stored('Grant')[0].payload)).toMatchObject({
+      accountId: 'user.group',
+    });
+  });
+});
