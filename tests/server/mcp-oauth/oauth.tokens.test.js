@@ -168,6 +168,25 @@ describe('token and refresh', () => {
     expect(response.headers['www-authenticate']).toBeUndefined();
   });
 
+  // A failure of the server is not a refusal: the error handler answers it,
+  // without the server's own words, and the client is not told to give up.
+  it('answers a failure while reading who calls as a failure of the server', async () => {
+    const { body } = await exchange(await codeFor());
+    const {
+      Users,
+    } = require('../../../packages/server/common/models.common.js');
+    const findOne = jest.spyOn(Users, 'findOne').mockImplementation(() => {
+      throw new Error('The database is out of reach');
+    });
+
+    const response = await oauth.callMcp(app, body.access_token);
+    findOne.mockRestore();
+
+    expect(response.status).toBe(500);
+    expect(response.body.error).toBeUndefined();
+    expect(response.headers['www-authenticate']).toBeUndefined();
+  });
+
   describe('refresh', () => {
     const refresh = (refreshToken) =>
       token({ grant_type: 'refresh_token', refresh_token: refreshToken });
