@@ -1,7 +1,7 @@
 import { mapGetters, mapMutations } from 'vuex';
 import cloneDeep from 'lodash/cloneDeep';
 import { PAGE, SHOW_SNACKBAR } from '~/store/page.js';
-import { CAN, USER } from '~/store/user.js';
+import { CAN, GROUP_CHANGED, USER } from '~/store/user.js';
 import * as apiRoutes from '~/helpers/api-routes.js';
 import { changedGroupFields } from '~/helpers/group-changes.js';
 import { CAPABILITIES } from '../../../shared/access/roles.js';
@@ -92,6 +92,13 @@ export default {
         const saved = await $axios.$put(apiRoutes.groupsItem(params), changes);
         this.group = saved;
         this.loadedGroup = cloneDeep(saved);
+        // The MCP module decides the sidebar's connected applications link.
+        if ('enableMcpModule' in changes) {
+          this.$store.dispatch(`${USER}/${GROUP_CHANGED}`, {
+            group: { id: params.groupId },
+            changes: { enableMcpModule: saved.enableMcpModule },
+          });
+        }
         this.showSnackbar({
           text: this.$t('snackbars.updated'),
           color: 'success',

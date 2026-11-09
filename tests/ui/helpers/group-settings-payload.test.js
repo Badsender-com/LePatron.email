@@ -114,6 +114,7 @@ function settingsPage(group, put, { fields } = {}) {
     snackbars: [],
     $route: { params: { groupId: 'g1' } },
     $axios: { $put: put },
+    $store: { dispatch: jest.fn() },
     $options: { groupSettingsFields: fields },
     $t: (key) => key,
     $te: () => false,
@@ -185,5 +186,41 @@ describe('the save of a settings page', () => {
     expect(put).toHaveBeenCalledWith('/groups/g1', {
       colorScheme: { primary: '#111' },
     });
+  });
+});
+
+// The sidebar offers the connected applications page as the MCP module
+// allows it: a save of the module hands it to the user store.
+describe('the save of the MCP module', () => {
+  it('goes to the user store, whose action knows what the sidebar reads', async () => {
+    const saved = { ...loaded(), enableMcpModule: true };
+    const vm = settingsPage(loaded(), jest.fn().mockResolvedValue(saved));
+
+    vm.group.enableMcpModule = true;
+    await vm.updateGroup();
+
+    expect(vm.$store.dispatch).toHaveBeenCalledWith('user/GROUP_CHANGED', {
+      group: { id: 'g1' },
+      changes: { enableMcpModule: true },
+    });
+  });
+
+  it('is not sent to the store by a save that leaves the module', async () => {
+    const vm = settingsPage(loaded(), jest.fn().mockResolvedValue(loaded()));
+
+    vm.group.name = 'Acme Corp';
+    await vm.updateGroup();
+
+    expect(vm.$store.dispatch).not.toHaveBeenCalled();
+  });
+
+  it('is not sent to the store when the save fails', async () => {
+    const put = jest.fn().mockRejectedValue(new Error('offline'));
+    const vm = settingsPage(loaded(), put);
+
+    vm.group.enableMcpModule = true;
+    await vm.updateGroup();
+
+    expect(vm.$store.dispatch).not.toHaveBeenCalled();
   });
 });
