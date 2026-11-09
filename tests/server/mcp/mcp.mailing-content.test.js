@@ -7,6 +7,7 @@
 // its text by default and its sanitised HTML on request, with the rights the
 // user has in the app.
 
+const mongoose = require('mongoose');
 const harness = require('../../helpers/mcp-harness');
 const f = require('../../helpers/mcp-fixtures');
 const {
@@ -206,7 +207,7 @@ describe('mailing content', () => {
           ...f.COMMENTS,
           {
             _id: '507f1f77bcf86cd799439710',
-            _mailing: f.M_APPROVED,
+            _mailing: mongoose.Types.ObjectId(f.M_APPROVED),
             _company: f.CLIENT_GROUP,
             _author: f.ERIN,
             authorName: 'Erin',
