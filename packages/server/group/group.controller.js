@@ -24,6 +24,7 @@ const personalizedVariableService = require('../personalized-variables/personali
 const groupFtpService = require('../group/group-ftp.service.js');
 const { restampLogs } = require('./log-retention.js');
 const { forgetRetention } = require('../mcp/mcp-call-log.js');
+const { revokeConnections } = require('../mcp/mcp-connections.js');
 const taxonomyDefaultsService = require('../taxonomy/taxonomy-defaults.service.js');
 const { pickSeedLang } = require('../taxonomy/default-email-types.js');
 const logger = require('../utils/logger.js');
@@ -631,6 +632,16 @@ async function update(req, res) {
 
   // Fetch the updated group to return with masked credentials
   const updatedGroup = await Groups.findById(req.params.groupId);
+  // The MCP module closed ends the company's connected applications, as MCP
+  // access turned off does (forgetSwitchedOff): opening it again must not
+  // revive them (ADR 0012, ADR 0017). Read as saved, whatever was sent.
+  if (
+    'enableMcpModule' in groupToUpdate &&
+    updatedGroup &&
+    !updatedGroup.enableMcpModule
+  ) {
+    await revokeConnections({ _company: req.params.groupId });
+  }
   res.json(groupFtpService.maskFtpCredentials(updatedGroup));
 }
 

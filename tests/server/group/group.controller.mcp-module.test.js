@@ -13,7 +13,7 @@ const {
   update,
 } = require('./group-update.harness.js');
 const {
-  forgetConnections,
+  revokeConnections,
 } = require('../../../packages/server/mcp/mcp-connections.js');
 
 let saved;
@@ -69,20 +69,19 @@ describe('PUT /groups/:groupId — MCP module', () => {
   });
 });
 
-// Turned on by #1397 (closing it revokes, after a confirmation)
-describe.skip('PUT /groups/:groupId — closing and opening the MCP module', () => {
+describe('PUT /groups/:groupId — closing and opening the MCP module', () => {
   it("revokes the group's connected applications when closed", async () => {
     given({ enableMcpModule: true, enableMcp: true });
 
     await update(superAdmin, { enableMcpModule: false });
 
-    expect(forgetConnections).toHaveBeenCalledWith({ _company: GROUP_ID });
+    expect(revokeConnections).toHaveBeenCalledWith({ _company: GROUP_ID });
   });
 
   it('revokes nothing when opened', async () => {
     await update(superAdmin, { enableMcpModule: true });
 
-    expect(forgetConnections).not.toHaveBeenCalled();
+    expect(revokeConnections).not.toHaveBeenCalled();
   });
 
   it('keeps MCP access as the company set it when closed', async () => {
