@@ -89,6 +89,62 @@ describe('revoking connections', () => {
     expect(oauth.oauthStore('Grant').records).toHaveLength(1);
   });
 
+  describe('the connections it unlists', () => {
+    const {
+      McpConnections,
+    } = require('../../../packages/server/common/models.common.js');
+    const {
+      revokeConnections,
+    } = require('../../../packages/server/mcp/mcp-connections.js');
+    const connection = (grantId) => ({
+      grantId,
+      clientId: 'a-client',
+      clientName: 'An assistant',
+      _user: f.FRANK,
+      _company: f.CLIENT_GROUP,
+      connectedAt: new Date(),
+    });
+
+    beforeEach(() => {
+      oauth.createApp();
+    });
+
+    it('are the very ones it read: a consent given meanwhile stands', async () => {
+      await McpConnections.create(connection('grant-read'));
+      const deleteMany = McpConnections.deleteMany;
+      jest
+        .spyOn(McpConnections, 'deleteMany')
+        .mockImplementationOnce(async (filter) => {
+          await McpConnections.create(connection('grant-meanwhile'));
+          return deleteMany(filter);
+        });
+
+      await revokeConnections({ _user: f.FRANK });
+
+      expect(
+        oauth.stored('connections').map(({ grantId }) => grantId)
+      ).toEqual(['grant-meanwhile']);
+      McpConnections.deleteMany.mockRestore();
+    });
+
+    it('go 500 at most a query', async () => {
+      await Promise.all(
+        Array.from({ length: 1200 }, (_, index) =>
+          McpConnections.create(connection(`grant-${index}`))
+        )
+      );
+      const deleteMany = jest.spyOn(McpConnections, 'deleteMany');
+
+      await revokeConnections({ _user: f.FRANK });
+
+      expect(
+        deleteMany.mock.calls.map(([filter]) => filter.grantId.$in.length)
+      ).toEqual([500, 500, 200]);
+      expect(oauth.stored('connections')).toEqual([]);
+      deleteMany.mockRestore();
+    });
+  });
+
   it("forgets a deleted company's clients without the authorization server", async () => {
     const app = oauth.createApp();
     const { body } = await oauth

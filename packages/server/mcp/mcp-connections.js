@@ -2,7 +2,11 @@
 
 const { McpConnections } = require('../common/models.common.js');
 const logger = require('../utils/logger.js');
-const { revokeByGrantIds, revokeEverything } = require('./mcp-oauth-store.js');
+const {
+  batchesOf,
+  revokeByGrantIds,
+  revokeEverything,
+} = require('./mcp-oauth-store.js');
 
 // The last use is noted once a minute at most: `/mcp` is called often.
 const USE_NOTED_EVERY = 60 * 1000;
@@ -119,8 +123,13 @@ async function revokeConnections(filter, ...more) {
     .lean();
   if (connections.length === 0) return;
   const grantIds = connections.map(({ grantId }) => grantId);
-  // The very connections read: one consented meanwhile stays whole.
-  await McpConnections.deleteMany({ grantId: { $in: grantIds } });
+  // The very connections read, by batches: one consented meanwhile stays
+  // whole.
+  await Promise.all(
+    batchesOf(grantIds).map((batch) =>
+      McpConnections.deleteMany({ grantId: { $in: batch } })
+    )
+  );
   // Unlisted, they are already refused at `/mcp`: a grant or a token that
   // could not be revoked only mints tokens `/mcp` refuses, until it expires.
   await revokeByGrantIds(grantIds).catch((error) =>

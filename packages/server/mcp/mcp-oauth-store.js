@@ -197,6 +197,7 @@ async function revokeEverything() {
 
 module.exports = {
   collectionOf,
+  batchesOf,
   revokeByGrantIds,
   revokeEverything,
   storedId,
