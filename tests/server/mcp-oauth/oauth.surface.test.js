@@ -132,6 +132,18 @@ describe('what the authorization server offers', () => {
     }
   );
 
+  // /mcp reads a bearer token, and checks no proof of possession.
+  it('offers no DPoP, and issues bearer tokens', async () => {
+    const f = require('../../helpers/mcp-fixtures');
+    const { body } = await request(app).get(
+      '/.well-known/oauth-authorization-server/oauth'
+    );
+    const tokens = await oauth.connect(app, f.FRANK, { group: f.CLIENT_GROUP });
+
+    expect(body.dpop_signing_alg_values_supported).toBeUndefined();
+    expect(tokens.token_type).toBe('Bearer');
+  });
+
   it('shows an error page of its own, with nothing from another site', async () => {
     const response = await request(app)
       .get('/oauth/auth')

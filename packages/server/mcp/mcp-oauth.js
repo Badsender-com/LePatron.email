@@ -227,6 +227,9 @@ function createAuthorizationServer({
       // An assistant sends its authorization request to the browser, never
       // ahead of it to the server.
       pushedAuthorizationRequests: { enabled: false },
+      // /mcp takes a bearer token and checks no proof of possession: no
+      // token is bound to a client's key.
+      dPoP: { enabled: false },
       clientIdMetadataDocument: { enabled: true, ack: 'draft-02', allowFetch },
       // No registration access token: clients do not manage their
       // registration, and each token would be kept forever.
