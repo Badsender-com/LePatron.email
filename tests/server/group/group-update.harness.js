@@ -1,9 +1,9 @@
 'use strict';
 
 // Shared by the PUT /groups/:groupId tests of the company's switches
-// (two-factor authentication, MCP access, retex): the mocked database and
-// collaborators, the stored group, the driver that runs the controller, and
-// the guards the route puts before it.
+// (two-factor authentication, the MCP module, MCP access, retex): the mocked
+// database and collaborators, the stored group, the driver that runs the
+// controller, and the guards the route puts before it.
 //
 // Required before anything it mocks: the jest.mock calls below register on the
 // test's module registry when this file loads.

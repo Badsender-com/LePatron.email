@@ -95,7 +95,7 @@ _UI_: Réinitialiser la double authentification
 _Avoid_: Disable two-factor, remove two-factor
 
 **Security event**:
-A record, kept a year, of an action on an account's two-factor authentication, or of a company's MCP access turned on or off, its retex allowed or stopped, a client registered by hand or deleted, named by its id and its name, or all its connections revoked: who did it, to whom, when.
+A record, kept a year, of an action on an account's two-factor authentication, or of a company's MCP module opened or closed, its MCP access turned on or off, its retex allowed or stopped, a client registered by hand or deleted, named by its id and its name, or all its connections revoked: who did it, to whom, when.
 _Avoid_: Audit log, activity log
 
 ### Image gallery

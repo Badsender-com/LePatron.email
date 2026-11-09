@@ -6,6 +6,7 @@ const {
 } = require('../security-event/security-event.service.js');
 const {
   MCP_ACCESS_ACTIONS,
+  MCP_MODULE_ACTIONS,
   RETEX_ACTIONS,
 } = require('../security-event/security-event.actions.js');
 
@@ -23,6 +24,25 @@ async function recordMcpAccessChange(actor, groupId, change) {
   if (change === undefined) return;
   await recordSecurityEvent({
     action: change ? MCP_ACCESS_ACTIONS.ENABLED : MCP_ACCESS_ACTIONS.DISABLED,
+    actor: actor.id,
+    group: groupId,
+  });
+}
+
+/**
+ * Records who opened or closed the MCP module (ADR 0017): what the company
+ * pays for, without which MCP access opens nothing.
+ *
+ * @param {Object} actor the request user
+ * @param {string} groupId
+ * @param {boolean} [change] the new value, from writeSwitches; none when the
+ *   switch did not change
+ * @returns {Promise<void>}
+ */
+async function recordMcpModuleChange(actor, groupId, change) {
+  if (change === undefined) return;
+  await recordSecurityEvent({
+    action: change ? MCP_MODULE_ACTIONS.OPENED : MCP_MODULE_ACTIONS.CLOSED,
     actor: actor.id,
     group: groupId,
   });
@@ -118,6 +138,7 @@ async function forgetRetex(groupId, only = {}) {
 
 module.exports = {
   recordMcpAccessChange,
+  recordMcpModuleChange,
   recordRetexChange,
   forgetRetex,
   MAX_COMMENT_WITHOUT_RETEX,

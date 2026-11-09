@@ -25,6 +25,12 @@ const MCP_ACCESS_ACTIONS = Object.freeze({
   DISABLED: 'mcp-access.disabled',
 });
 
+// A company's MCP module, which a super admin opens or closes (ADR 0017).
+const MCP_MODULE_ACTIONS = Object.freeze({
+  OPENED: 'mcp-module.opened',
+  CLOSED: 'mcp-module.closed',
+});
+
 // Whether a company lets the summaries of its assistants' sessions be kept
 // for the platform company (ADR 0012).
 const RETEX_ACTIONS = Object.freeze({
@@ -49,6 +55,7 @@ const SECURITY_EVENT_TTL_SECONDS = 365 * 24 * 60 * 60;
 const SECURITY_EVENT_ACTIONS = Object.freeze([
   ...Object.values(TWO_FACTOR_ACTIONS),
   ...Object.values(MCP_ACCESS_ACTIONS),
+  ...Object.values(MCP_MODULE_ACTIONS),
   ...Object.values(RETEX_ACTIONS),
   ...Object.values(MCP_CLIENT_ACTIONS),
   ...Object.values(CONNECTED_APPLICATION_ACTIONS),
@@ -58,6 +65,7 @@ module.exports = {
   TWO_FACTOR_ACTIONS,
   TWO_FACTOR_METHODS,
   MCP_ACCESS_ACTIONS,
+  MCP_MODULE_ACTIONS,
   RETEX_ACTIONS,
   MCP_CLIENT_ACTIONS,
   CONNECTED_APPLICATION_ACTIONS,

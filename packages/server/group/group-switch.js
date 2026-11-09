@@ -4,19 +4,27 @@ const { Groups } = require('../common/models.common.js');
 const { recordRequirementChange } = require('../two-factor/group-option.js');
 const {
   recordMcpAccessChange,
+  recordMcpModuleChange,
   recordRetexChange,
   forgetRetex,
 } = require('../mcp/mcp-access-option.js');
 const { revokeConnections } = require('../mcp/mcp-connections.js');
 
 // The company's switches: two-factor authentication for every member (ADR
-// 0008), MCP access and the retex of its assistants' sessions (ADR 0012).
-// Each one switched is a security event.
-const SWITCHES = Object.freeze(['requireTwoFactor', 'enableMcp', 'allowRetex']);
+// 0008), the MCP module a super admin opens (ADR 0017), MCP access and the
+// retex of its assistants' sessions (ADR 0012). Each one switched is a
+// security event.
+const SWITCHES = Object.freeze([
+  'requireTwoFactor',
+  'enableMcpModule',
+  'enableMcp',
+  'allowRetex',
+]);
 
 // The security event each switch records, by field.
 const RECORDERS = Object.freeze({
   requireTwoFactor: recordRequirementChange,
+  enableMcpModule: recordMcpModuleChange,
   enableMcp: recordMcpAccessChange,
   allowRetex: recordRetexChange,
 });
@@ -84,8 +92,9 @@ async function recordSwitches(actor, groupId, switched) {
  * What a switch takes with it when a request says it is off, whenever it
  * says so: the security event records a change only, and a forgetting that
  * failed can be run again (ADR 0012). The retex stopped forgets what it let
- * the feedbacks keep; MCP access turned off ends the company's connected
- * applications, so turning it back on revives none of them.
+ * the feedbacks keep; MCP access turned off, or the MCP module closed (ADR
+ * 0017), ends the company's connected applications, so turning it back on
+ * revives none of them.
  *
  * @param {string} groupId
  * @param {Object} switches from takeSwitches
@@ -93,7 +102,7 @@ async function recordSwitches(actor, groupId, switched) {
  */
 async function forgetSwitchedOff(groupId, switches) {
   if (switches.allowRetex === false) await forgetRetex(groupId);
-  if (switches.enableMcp === false) {
+  if (switches.enableMcp === false || switches.enableMcpModule === false) {
     await revokeConnections({ _company: groupId });
   }
 }

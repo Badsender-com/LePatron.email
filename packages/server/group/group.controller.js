@@ -24,7 +24,6 @@ const personalizedVariableService = require('../personalized-variables/personali
 const groupFtpService = require('../group/group-ftp.service.js');
 const { restampLogs } = require('./log-retention.js');
 const { forgetRetention } = require('../mcp/mcp-call-log.js');
-const { revokeConnections } = require('../mcp/mcp-connections.js');
 const taxonomyDefaultsService = require('../taxonomy/taxonomy-defaults.service.js');
 const { pickSeedLang } = require('../taxonomy/default-email-types.js');
 const logger = require('../utils/logger.js');
@@ -186,8 +185,11 @@ async function create(req, res) {
   // Not a company field: the language the default email types are seeded in.
   const { defaultEmailTypesLang, ...groupToCreate } = req.body;
   // A company starts with its switches off: they are turned on from its
-  // settings, where each one is recorded as a security event.
-  takeSwitches(groupToCreate);
+  // settings, where each one is recorded as a security event. The MCP module
+  // alone may be opened at creation, as the other modules, by the super admin
+  // who creates the company (ADR 0017): recorded as its opening.
+  const { enableMcpModule } = takeSwitches(groupToCreate);
+  if (enableMcpModule) groupToCreate.enableMcpModule = true;
 
   if ('idpCert' in groupToCreate) {
     groupToCreate.idpCert = normalizeIdpCert(groupToCreate.idpCert);
@@ -203,6 +205,11 @@ async function create(req, res) {
 
   const defaultWorkspaceName = req.body.defaultWorkspaceName || 'Workspace';
   const newGroup = await groupService.createGroup(groupToCreate);
+  await recordSwitches(
+    req.user,
+    newGroup.id,
+    enableMcpModule ? { enableMcpModule } : {}
+  );
   const workspaceParams = { name: defaultWorkspaceName, groupId: newGroup.id };
   await createWorkspace(workspaceParams);
 
@@ -632,16 +639,6 @@ async function update(req, res) {
 
   // Fetch the updated group to return with masked credentials
   const updatedGroup = await Groups.findById(req.params.groupId);
-  // The MCP module closed ends the company's connected applications, as MCP
-  // access turned off does (forgetSwitchedOff): opening it again must not
-  // revive them (ADR 0012, ADR 0017). Read as saved, whatever was sent.
-  if (
-    'enableMcpModule' in groupToUpdate &&
-    updatedGroup &&
-    !updatedGroup.enableMcpModule
-  ) {
-    await revokeConnections({ _company: req.params.groupId });
-  }
   res.json(groupFtpService.maskFtpCredentials(updatedGroup));
 }
 
