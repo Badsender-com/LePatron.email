@@ -156,7 +156,7 @@ _Avoid_: Search mode, global search (in UI text)
 ### Mailings
 
 **Mailing status**:
-A label derived from a mailing's facts (approval, planned send date, ESP push), recomputed on every read and never stored. LePatron never knows that a mailing was sent, so no status says so.
+A label derived from a mailing's facts (approval, planned send date, ESP push), recomputed on every read and never stored: the first that applies of pushed to ESP, scheduled, approved and draft. Only a person changes it, by approving, planning or pushing; the planned day passing changes nothing. LePatron never knows that a mailing was sent, so no status says so.
 _UI_: Statut
 _Avoid_: Workflow state, sent
 
@@ -164,6 +164,24 @@ _Avoid_: Workflow state, sent
 A mailing from which a campaign or a template was created in at least one ESP profile. It says nothing about delivery.
 _UI_: Poussé vers l'ESP
 _Avoid_: Sent, exported (a ZIP download is also called an export)
+
+**Scheduled**:
+An approved mailing with a planned send date, whichever day it is, not pushed to an ESP. It says nothing about delivery either.
+_Avoid_: Planned (a draft may be planned too), sent
+
+**Approved**:
+A mailing whose latest top-level comment, not deleted, is an approval: any comment posted after it withdraws it, a reply does not. As a status, an approved mailing with no planned send date, not pushed to an ESP.
+_UI_: Approuvé
+_Avoid_: Validated
+
+**Draft mailing**:
+A mailing not approved yet, with a planned send date or not, and not pushed to an ESP. Draft is a status of the mailing itself, whereas a draft version is a version of a skill or an expertise kept apart from the one in use.
+_Avoid_: Unapproved, pending
+
+**Planned send date**:
+The day a mailing is planned to be sent, without a time, the same day in every time zone. The editor stores it at noon UTC, and an assistant reads it as the day alone.
+_UI_: Date d'envoi prévue
+_Avoid_: Send time, scheduled date
 
 ### Skills and expertises
 
@@ -185,6 +203,15 @@ _Avoid_: Workflow, playbook, recipe
 The companies that may use a skill or an expertise, in the editor as through an assistant: the platform company alone, while it is tried, or every company. A new one starts with the platform company.
 _UI_: Audience
 _Avoid_: Visibility, exposure, subscribers, scope (an expertise's scope is the part of an email it covers)
+
+**Draft version**:
+The open draft of a skill or an expertise: its latest version newer than the active one, not published yet, which no client is served and only a person publishes. It is a version kept apart from the one in use, whereas a draft mailing is a status of the mailing itself.
+_UI_: Brouillon
+_Avoid_: Pending version, unpublished version
+
+**Drafts mode**:
+A connection's mode in which an assistant is served the draft version of every skill and expertise that has one, and those never published, so that whoever may manage the platform tries them before publishing. It ends after four hours and at every new connection.
+_Avoid_: Preview mode, test mode, sandbox
 
 **CRM governance**:
 A company's own rules for its emails, such as its brand charter and its writing guidelines, kept by the company rather than written as skills or expertises. A module to come.
