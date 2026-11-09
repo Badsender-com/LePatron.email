@@ -11,6 +11,12 @@
 const Vue = require('vue');
 const { mountSfc, settle } = require('../../helpers/mount-sfc.js');
 
+const {
+  ROLES,
+  CAPABILITIES,
+  roleCan,
+} = require('../../../packages/shared/access/roles.js');
+
 const FILE = 'packages/ui/routes/oauth/consent/_uid.vue';
 
 // What Vuetify's checkbox does: its `change` carries the new value.
@@ -42,6 +48,7 @@ function mountConsent(
   {
     $get = jest.fn().mockResolvedValue(interaction(scopes)),
     $post = jest.fn().mockResolvedValue({ redirectTo: '#answered' }),
+    role = ROLES.REGULAR_USER,
   } = {}
 ) {
   const vm = mountSfc(FILE, {
@@ -52,6 +59,13 @@ function mountConsent(
     },
     imports: {
       'lucide-vue': {},
+      vuex: {
+        mapGetters: () => ({
+          can: () => (capability) => roleCan(role, capability),
+        }),
+      },
+      '~/store/user': { CAN: 'can', USER: 'user' },
+      '../../../../shared/access/roles.js': { CAPABILITIES },
       '~/helpers/api-routes.js': {
         oauthInteraction: (uid) => `/interaction/${uid}`,
         oauthInteractionConsent: (uid) => `/interaction/${uid}/consent`,
@@ -156,6 +170,27 @@ describe('the consent of a connected application, refused', () => {
       text
     );
   });
+
+  // Only the platform company opens the MCP module (ADR 0017): whoever may
+  // open it is told where, anyone else to ask for it.
+  it.each(Object.values(ROLES))(
+    'says where the module opens, or whom to ask, to a %s',
+    async (role) => {
+      const $get = jest
+        .fn()
+        .mockRejectedValue(refusal(403, 'MCP_CONSENT_NO_MODULE'));
+      const { vm } = mountConsent([], { $get, role });
+      await settle(vm);
+
+      expect(
+        vm.$el.querySelector('.bs-oauth-consent__message').textContent
+      ).toBe(
+        roleCan(role, CAPABILITIES.PLATFORM_MANAGE)
+          ? 'oauthConsent.noModuleCanOpen'
+          : 'oauthConsent.noModule'
+      );
+    }
+  );
 
   it('says why the consent itself is refused', async () => {
     const $post = jest

@@ -867,6 +867,8 @@ export default {
       'The assistant must at least be able to read LePatron: start the connection again from your assistant.',
     noModule:
       'The MCP module is not part of your company\'s subscription: contact the platform company to add it.',
+    noModuleCanOpen:
+      'The MCP module is not open for the company. As a super admin, you can open it in its Modules, then turn its MCP access on.',
   },
   mcpClients: {
     pageTitle: 'MCP clients',

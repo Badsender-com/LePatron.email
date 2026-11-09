@@ -10,10 +10,13 @@ import {
   Link2,
   User,
 } from 'lucide-vue';
+import { mapGetters } from 'vuex';
+import { CAN, USER } from '~/store/user';
 import * as apiRoutes from '~/helpers/api-routes.js';
 import * as acls from '~/helpers/pages-acls.js';
 import { ERROR_CODES } from '~/helpers/constants/error-codes.js';
 import BsLoginLogo from '~/components/account/login-logo.vue';
+import { CAPABILITIES } from '../../../../shared/access/roles.js';
 
 const WRITE_SCOPE = 'skills:write';
 
@@ -26,7 +29,8 @@ const REFUSALS = {
   [ERROR_CODES.MCP_CONSENT_ACCOUNT_CANNOT_CONNECT]:
     'oauthConsent.accountCannotConnect',
   [ERROR_CODES.MCP_CONSENT_NO_ACCESS]: 'oauthConsent.noAccess',
-  // Only Badsender opens the module (ADR 0017): not the tech admin's to fix.
+  // Only the platform company opens the module (ADR 0017): not the tech
+  // admin's to fix. A super admin, who opens it, is told where instead.
   [ERROR_CODES.MCP_CONSENT_NO_MODULE]: 'oauthConsent.noModule',
   [ERROR_CODES.MCP_CONSENT_CLIENT_OF_ANOTHER_COMPANY]:
     'oauthConsent.clientOfAnotherCompany',
@@ -85,6 +89,7 @@ export default {
     };
   },
   computed: {
+    ...mapGetters(USER, { can: CAN }),
     uid() {
       return this.$route.params.uid;
     },
@@ -164,7 +169,12 @@ export default {
       const code = err.response?.data?.message;
       // Expired, or started in another browser: the provider tells no more.
       this.errorCode = status === 404 ? EXPIRED : code || null;
-      const key = REFUSALS[this.errorCode];
+      const opensModules =
+        this.errorCode === ERROR_CODES.MCP_CONSENT_NO_MODULE &&
+        this.can(CAPABILITIES.PLATFORM_MANAGE);
+      const key = opensModules
+        ? 'oauthConsent.noModuleCanOpen'
+        : REFUSALS[this.errorCode];
       if (key) {
         this.error = this.$t(key);
       } else if (status === 403) {

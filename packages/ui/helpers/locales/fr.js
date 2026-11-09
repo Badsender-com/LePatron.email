@@ -1146,6 +1146,8 @@ export default {
       'L\'assistant doit au moins pouvoir lire LePatron : relancez la connexion depuis votre assistant.',
     noModule:
       'Le module MCP n\'est pas inclus dans l\'abonnement de votre entreprise : contactez l\'entreprise plateforme pour l\'ajouter.',
+    noModuleCanOpen:
+      'Le module MCP n\'est pas ouvert pour l\'entreprise. En tant que super admin, vous pouvez l\'ouvrir dans ses Modules, puis activer son accès MCP.',
   },
   mcpClients: {
     pageTitle: 'Clients MCP',
