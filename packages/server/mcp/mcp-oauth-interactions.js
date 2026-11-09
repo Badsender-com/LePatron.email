@@ -12,9 +12,6 @@ const { accountIdOf, keepRegisteredClient, TTL } = require('./mcp-oauth.js');
 const { recordConnection } = require('./mcp-connections.js');
 const { companyOfClient } = require('./mcp-clients.js');
 
-// The connections a user keeps of one application to one company.
-const CONNECTIONS_PER_CLIENT = 10;
-
 // A refusal of the consent is an http-error whose message is its code
 // (ERROR_CODES.MCP_CONSENT_…), which the app's error handler answers as it
 // answers any route's: what the consent page translates.
@@ -238,8 +235,9 @@ function createInteractionsRouter(provider, resource) {
       );
       const client = await provider.Client.find(interaction.params.client_id);
       // One connection per consent: the same application on another machine
-      // (Claude Code, VS Code) keeps its own. Past a cap, the oldest of the
-      // user's connections of that application to that company goes.
+      // (Claude Code, VS Code) keeps its own. Past ten (recordConnection), the
+      // oldest of the user's connections of that application to that company
+      // goes.
       await recordConnection({
         grantId,
         clientId: interaction.params.client_id,
@@ -247,7 +245,6 @@ function createInteractionsRouter(provider, resource) {
         userId: consenter.user.id,
         groupId,
         ttl: TTL.Grant,
-        cap: CONNECTIONS_PER_CLIENT,
       });
       // Never in the way of the consent: the client only lives on.
       await keepRegisteredClient(
