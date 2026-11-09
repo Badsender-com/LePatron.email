@@ -19,8 +19,15 @@ const notedAt = new Map();
 const matchedOne = (result) =>
   (typeof result.n === 'number' ? result.n : result.matchedCount) > 0;
 
+// The connections a user keeps through one application for one company: one
+// per consent, so an assistant installed on several machines, under the same
+// client id, keeps each. Beyond, the oldest are revoked.
+const MAX_CONNECTIONS = 10;
+
 /**
- * Records a connected application, at its consent (ADR 0012).
+ * Records a connected application, at its consent (ADR 0012): one connection
+ * per consent, the previous ones kept. Past `cap` connections of the user
+ * through this client for this company, the oldest are revoked.
  *
  * @param {Object} connection
  * @param {string} connection.grantId
@@ -29,17 +36,20 @@ const matchedOne = (result) =>
  * @param {string} connection.userId
  * @param {string} connection.groupId
  * @param {number} connection.ttl the grant's lifetime, in seconds
+ * @param {number} [connection.cap] how many such connections are kept
+ * @returns {Promise<Object>} the connection recorded
  */
-function recordConnection({
+async function recordConnection({
   grantId,
   clientId,
   clientName,
   userId,
   groupId,
   ttl,
+  cap = MAX_CONNECTIONS,
 }) {
   const now = new Date();
-  return McpConnections.create({
+  const connection = await McpConnections.create({
     grantId,
     clientId,
     clientName,
@@ -49,6 +59,21 @@ function recordConnection({
     lastUsedAt: null,
     expiresAt: new Date(now.getTime() + ttl * 1000),
   });
+  const beyond = await McpConnections.find({
+    _user: userId,
+    _company: groupId,
+    clientId,
+  })
+    .sort({ connectedAt: -1, _id: -1 })
+    .skip(cap)
+    .select('grantId')
+    .lean();
+  if (beyond.length > 0) {
+    await revokeConnections({
+      grantId: { $in: beyond.map((oldest) => oldest.grantId) },
+    });
+  }
+  return connection;
 }
 
 /**

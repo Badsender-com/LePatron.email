@@ -445,3 +445,79 @@ describe('a client registered by hand', () => {
     expect(await isClientAllowed(created.clientId, 'not-an-id')).toBe(false);
   });
 });
+
+// One connection per consent (ADR 0012): an assistant installed on several
+// machines has the same client id on each.
+describe('recording a connection', () => {
+  const {
+    recordConnection,
+  } = require('../../../packages/server/mcp/mcp-connections.js');
+  // Decided with the product (ADR 0012).
+  const MAX_CONNECTIONS = 10;
+  const CLIENT = 'https://assistant.example.test/oauth/client.json';
+
+  const record = (grantId, overrides = {}) =>
+    recordConnection({
+      grantId,
+      clientId: CLIENT,
+      clientName: 'An assistant',
+      userId: f.FRANK,
+      groupId: f.CLIENT_GROUP,
+      ttl: 3600,
+      ...overrides,
+    });
+  const grantsKept = () =>
+    oauth
+      .stored('connections')
+      .map(({ grantId }) => grantId)
+      .sort();
+
+  beforeEach(() => {
+    oauth.createApp();
+  });
+
+  it('keeps the connections the user made before', async () => {
+    await record('grant-1');
+    await record('grant-2');
+
+    expect(grantsKept()).toEqual(['grant-1', 'grant-2']);
+  });
+
+  it(`keeps ${MAX_CONNECTIONS} of them, the oldest revoked`, async () => {
+    const grantIds = Array.from(
+      { length: MAX_CONNECTIONS + 2 },
+      (_, index) => `grant-${String(index).padStart(2, '0')}`
+    );
+    await Promise.all(
+      grantIds.map((grantId) =>
+        new McpOAuthAdapter('Grant').upsert(grantId, { jti: grantId }, 60)
+      )
+    );
+    // eslint-disable-next-line no-restricted-syntax
+    for (const grantId of grantIds) {
+      // eslint-disable-next-line no-await-in-loop
+      await record(grantId);
+    }
+
+    expect(grantsKept()).toEqual(grantIds.slice(2));
+    expect(oauth.oauthStore('Grant').records.map(({ _id }) => _id)).toEqual(
+      grantIds.slice(2)
+    );
+  });
+
+  it("counts the user's connections through that client, for that company", async () => {
+    await record('grant-other-client', { clientId: 'another-client' });
+    await record('grant-other-company', { groupId: f.OTHER_GROUP });
+    await record('grant-other-user', { userId: f.ERIN });
+
+    await record('grant-1', { cap: 1 });
+    await record('grant-2', { cap: 1 });
+
+    expect(grantsKept()).toEqual([
+      'grant-2',
+      'grant-other-client',
+      'grant-other-company',
+      'grant-other-user',
+    ]);
+  });
+});
