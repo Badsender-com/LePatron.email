@@ -301,19 +301,28 @@ export default {
                 </span>
               </li>
             </ul>
-            <label
+            <div
               v-if="canWrite"
               :class="[
                 'bs-oauth-consent__write',
                 { 'bs-oauth-consent__write--on': allowWrite },
               ]"
             >
-              <input v-model="allowWrite" type="checkbox" />
-              <span>
-                <strong>{{ $t('oauthConsent.allowWrite') }}</strong>
-                <span>{{ $t('oauthConsent.allowWriteHint') }}</span>
-              </span>
-            </label>
+              <v-checkbox
+                :input-value="allowWrite"
+                color="accent"
+                hide-details
+                class="mt-0 pt-0"
+                @change="allowWrite = $event === true"
+              >
+                <template #label>
+                  <span class="bs-oauth-consent__write-text">
+                    <strong>{{ $t('oauthConsent.allowWrite') }}</strong>
+                    <span>{{ $t('oauthConsent.allowWriteHint') }}</span>
+                  </span>
+                </template>
+              </v-checkbox>
+            </div>
           </section>
 
           <section class="bs-oauth-consent__section">
@@ -392,7 +401,7 @@ export default {
   left: 50%;
   width: min(480px, calc(100vw - 32px));
   transform: translateX(-50%);
-  color: rgba(0, 0, 0, 0.87);
+  color: var(--gray-900);
 
   &__brand {
     display: flex;
@@ -400,7 +409,7 @@ export default {
     align-items: center;
     gap: 6px;
     margin-bottom: 24px;
-    color: #cfdbe1;
+    color: var(--v-primary-lighten5);
     font-size: 12px;
   }
 
@@ -415,15 +424,15 @@ export default {
     gap: 12px;
     align-items: flex-start;
     padding: 16px 32px;
-    background: rgba(255, 180, 0, 0.14);
-    border-bottom: 1px solid rgba(255, 180, 0, 0.35);
+    background: var(--v-warning-lighten5);
+    border-bottom: 1px solid var(--v-warning-lighten3);
     font-size: 13px;
     line-height: 1.5;
 
     svg {
       flex-shrink: 0;
       margin-top: 1px;
-      color: #b07400;
+      color: var(--v-warning-darken2);
     }
 
     strong {
@@ -455,7 +464,7 @@ export default {
     box-sizing: border-box;
     border: 1px solid var(--gray-200);
     border-radius: 7px;
-    background: #f9fafb;
+    background: var(--surface-muted);
 
     &--unverified {
       border: 1px dashed var(--gray-400);
@@ -487,8 +496,8 @@ export default {
       height: 32px;
       border: 1px solid var(--gray-300);
       border-radius: var(--r-pill);
-      background: #fff;
-      color: #0091b8;
+      background: var(--surface);
+      color: var(--v-accent-darken1);
     }
   }
 
@@ -501,14 +510,14 @@ export default {
     height: 36px;
     border-radius: 50%;
     background: var(--v-primary-base);
-    color: #fff;
+    color: var(--text-on-accent);
     font-size: 14px;
     font-weight: 600;
 
     &--app {
       width: 40px;
       height: 40px;
-      background: #265090;
+      background: var(--v-secondary-base);
       font-size: 15px;
     }
   }
@@ -538,8 +547,8 @@ export default {
     border-radius: var(--r-pill);
 
     &--error {
-      background: rgba(240, 78, 35, 0.12);
-      color: #c53a12;
+      background: var(--color-error-bg);
+      color: var(--v-error-darken1);
     }
   }
 
@@ -553,7 +562,7 @@ export default {
     box-sizing: border-box;
     border: 1px solid var(--gray-200);
     border-radius: 7px;
-    background: #f9fafb;
+    background: var(--surface-muted);
     color: var(--gray-700);
     font-size: 13px;
     text-align: left;
@@ -575,13 +584,13 @@ export default {
     line-height: 1.3;
 
     &--success {
-      background: rgba(76, 175, 80, 0.12);
-      color: #2e7d32;
+      background: var(--v-success-lighten5);
+      color: var(--v-success-darken2);
     }
 
     &--warning {
-      background: rgba(255, 180, 0, 0.16);
-      color: #8a5b00;
+      background: var(--v-warning-lighten5);
+      color: var(--v-warning-darken3);
     }
   }
 
@@ -599,10 +608,10 @@ export default {
     padding: 12px 16px;
     border: 1px solid var(--gray-200);
     border-radius: 7px;
-    background: #f9fafb;
+    background: var(--surface-muted);
 
     a {
-      color: #0091b8;
+      color: var(--v-accent-darken1);
       font-size: 13px;
       font-weight: 500;
       text-decoration: none;
@@ -689,41 +698,29 @@ export default {
     color: var(--gray-700);
 
     &--accent {
-      background: rgba(0, 172, 220, 0.12);
-      color: #0091b8;
+      background: var(--v-accent-lighten5);
+      color: var(--v-accent-darken1);
     }
   }
 
   &__write {
-    display: flex;
-    gap: 12px;
-    align-items: flex-start;
     margin-top: 4px;
     padding: 12px 16px;
     border: 1px solid var(--gray-300);
     border-radius: 7px;
-    cursor: pointer;
 
     &--on {
       border-color: var(--v-accent-base);
       background: var(--accent-tint-selected);
     }
+  }
 
-    input {
-      flex-shrink: 0;
-      width: 18px;
-      height: 18px;
-      margin-top: 1px;
-      accent-color: var(--v-accent-base);
-    }
-
-    span {
-      display: flex;
-      flex-direction: column;
-      gap: 4px;
-      color: var(--gray-600);
-      font-size: 12px;
-    }
+  &__write-text {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    color: var(--gray-600);
+    font-size: 12px;
 
     strong {
       color: var(--gray-900);

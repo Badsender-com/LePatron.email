@@ -309,12 +309,12 @@ export default {
     margin: 0;
     max-width: 680px;
     font-size: 0.875rem;
-    color: rgba(0, 0, 0, 0.7);
+    color: var(--gray-800);
   }
 
   &__card {
-    background: #fff;
-    border: 1px solid rgba(0, 0, 0, 0.12);
+    background: var(--surface);
+    border: 1px solid var(--gray-300);
     border-radius: 10px;
     overflow: hidden;
   }
@@ -332,7 +332,7 @@ export default {
     padding: 1rem 1rem 1rem 1.5rem;
 
     & + & {
-      border-top: 1px solid rgba(0, 0, 0, 0.08);
+      border-top: 1px solid var(--gray-200);
     }
   }
 
@@ -345,7 +345,7 @@ export default {
     align-items: center;
     justify-content: center;
     color: var(--v-secondary-base);
-    background: rgba(38, 80, 144, 0.1);
+    background: var(--v-secondary-lighten5);
   }
 
   &__client-text {
@@ -362,26 +362,26 @@ export default {
 
   &__client-meta {
     font-size: 0.8125rem;
-    color: rgba(0, 0, 0, 0.6);
+    color: var(--gray-700);
   }
 
   &__client-uri {
     font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
     font-size: 0.75rem;
-    color: rgba(0, 0, 0, 0.6);
+    color: var(--gray-700);
     overflow-wrap: anywhere;
   }
 
   &__footnote {
     margin: 0;
     font-size: 0.75rem;
-    color: rgba(0, 0, 0, 0.6);
+    color: var(--gray-700);
   }
 
   &__card > &__footnote {
     padding: 0.625rem 1.5rem;
-    background: rgba(0, 0, 0, 0.02);
-    border-top: 1px solid rgba(0, 0, 0, 0.08);
+    background: var(--surface-muted);
+    border-top: 1px solid var(--gray-200);
   }
 
   &__empty {
@@ -391,9 +391,9 @@ export default {
     gap: 0.5rem;
     padding: 2.5rem 2rem;
     text-align: center;
-    border: 1px dashed rgba(0, 0, 0, 0.2);
+    border: 1px dashed var(--field-border);
     border-radius: 10px;
-    background: #fff;
+    background: var(--surface);
   }
 
   &__empty-title {
@@ -403,7 +403,7 @@ export default {
   &__empty-text {
     max-width: 440px;
     font-size: 0.8125rem;
-    color: rgba(0, 0, 0, 0.6);
+    color: var(--gray-700);
   }
 
   &__server .bs-mcp-client-settings {
@@ -421,7 +421,7 @@ export default {
     margin: 0.125rem 0 0.5rem;
     padding: 0 1.5rem;
     font-size: 0.8125rem;
-    color: rgba(0, 0, 0, 0.6);
+    color: var(--gray-700);
   }
 }
 </style>

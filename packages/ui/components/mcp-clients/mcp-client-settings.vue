@@ -114,7 +114,7 @@ export default {
     padding: 0.5rem 0;
 
     & + & {
-      border-top: 1px solid rgba(0, 0, 0, 0.08);
+      border-top: 1px solid var(--gray-200);
     }
   }
 
@@ -122,13 +122,13 @@ export default {
   &__row--secret {
     padding: 0.5rem 0.75rem;
     border-radius: 5px;
-    border: 1px solid rgba(255, 180, 0, 0.6);
-    background: rgba(255, 180, 0, 0.08);
+    border: 1px solid var(--v-warning-base);
+    background: var(--v-warning-lighten5);
   }
 
   &__label {
     font-size: 0.8125rem;
-    color: rgba(0, 0, 0, 0.6);
+    color: var(--gray-700);
   }
 
   &__value {
@@ -144,7 +144,7 @@ export default {
       background: transparent;
       padding: 0;
       font-size: 0.8125rem;
-      color: rgba(0, 0, 0, 0.87);
+      color: var(--gray-900);
     }
   }
 }
