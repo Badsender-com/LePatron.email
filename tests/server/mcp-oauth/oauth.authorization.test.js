@@ -112,6 +112,25 @@ describe('authorization and consent', () => {
     expect(back.searchParams.get('iss')).toBe(ISSUER);
   });
 
+  it('takes one answer to a consent, whatever is sent after it', async () => {
+    const { agent, uid } = await consentFor(f.FRANK);
+    const send = (route) =>
+      agent.post(`/oauth/consent/${uid}/${route}`).send({
+        groupId: f.CLIENT_GROUP,
+      });
+
+    const first = await send('consent');
+    const again = await send('consent');
+    const denied = await send('deny');
+
+    expect(first.status).toBe(200);
+    expect(again.status).toBe(404);
+    expect(again.body.message).toBe('MCP_CONSENT_EXPIRED');
+    expect(denied.status).toBe(404);
+    expect(oauth.oauthStore('Grant').records).toHaveLength(1);
+    expect(oauth.stored('connections')).toHaveLength(1);
+  });
+
   // A consent link sent to someone else: the victim's consent must not
   // reach the browser of whoever started the authorization.
   it('answers nothing to a browser that did not start the authorization', async () => {

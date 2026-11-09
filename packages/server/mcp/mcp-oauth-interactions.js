@@ -86,14 +86,19 @@ function registrationOf(clientId, company) {
 function createInteractionsRouter(provider, resource) {
   const router = express.Router();
 
-  // The interaction this browser started: a consent link opened in another
-  // browser answers nothing.
+  // The interaction this browser started, still waiting for its answer: a
+  // consent link opened in another browser answers nothing, and a consent
+  // takes one answer, the first.
   const startedHere = async (req, res, next) => {
     try {
       const interaction = await provider
         .interactionDetails(req, res)
         .catch(() => null);
-      if (!interaction || interaction.uid !== req.params.uid) {
+      if (
+        !interaction ||
+        interaction.uid !== req.params.uid ||
+        interaction.result
+      ) {
         return next(createError(404, ERROR_CODES.MCP_CONSENT_EXPIRED));
       }
       req.interaction = interaction;
