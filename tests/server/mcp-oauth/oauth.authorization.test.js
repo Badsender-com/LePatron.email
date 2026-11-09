@@ -234,8 +234,7 @@ describe('authorization and consent', () => {
 
 // The consent screen asks for a session like any page of the app, so the
 // two-factor step of ADR 0008 comes before it: a password alone never consents.
-// Turned on by #1306 (OAuth connection end to end)
-describe.skip('two-factor authentication before the consent', () => {
+describe('two-factor authentication before the consent', () => {
   let app;
   beforeEach(() => {
     app = oauth.createApp();
@@ -259,7 +258,7 @@ describe.skip('two-factor authentication before the consent', () => {
     it('is shown no consent', async () => {
       const { agent, uid } = await beforeCode(userId);
 
-      const response = await agent.get(`/api/oauth/interactions/${uid}`);
+      const response = await agent.get(`/oauth/consent/${uid}/details`);
 
       expect(response.status).toBe(401);
     });
@@ -268,7 +267,7 @@ describe.skip('two-factor authentication before the consent', () => {
       const { agent, uid } = await beforeCode(userId);
 
       const consent = await agent
-        .post(`/api/oauth/interactions/${uid}/consent`)
+        .post(`/oauth/consent/${uid}/consent`)
         .send({ groupId: f.CLIENT_GROUP });
 
       expect(consent.status).toBe(401);
@@ -284,7 +283,7 @@ describe.skip('two-factor authentication before the consent', () => {
       oauth.pkce().challenge
     );
 
-    const response = await agent.get(`/api/oauth/interactions/${uid}`);
+    const response = await agent.get(`/oauth/consent/${uid}/details`);
 
     expect(response.status).toBe(200);
   });

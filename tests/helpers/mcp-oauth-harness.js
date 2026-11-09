@@ -24,8 +24,8 @@
  * what it issues through the app's own adapter, in the fake database of
  * fake-mongo-collection.js, which `oauthStore()` answers. Requiring
  * this file replaces the models with the stand-ins of `mcp-fake-models.js` for
- * the whole test file, and quiets the logger. `signInBeforeCode` is written
- * with the check of the verification code before the consent (ADR 0008).
+ * the whole test file, and quiets the logger. `signInBeforeCode` leaves the
+ * session between the password and the verification code (ADR 0008).
  */
 
 const crypto = require('crypto');
@@ -84,8 +84,7 @@ function fetchDocument(url) {
 }
 
 const TEST_USER = 'x-test-user';
-const NOT_YET =
-  'Signing in before the verification code is written with ADR 0008 at consent';
+const PENDING_USER = 'x-test-pending-user';
 
 /**
  * The app with the authorization server and the MCP endpoint mounted, the
@@ -109,6 +108,19 @@ function createApp() {
   // its capabilities, an id alone for an account with no record (the
   // configuration's admin), or nobody.
   const permissions = require('../../packages/server/account/permissions.js');
+  // Between the password and the verification code (ADR 0008): the session
+  // holds the pending step, and no user.
+  const pendingStep = require('../../packages/server/two-factor/pending-step.js');
+  const {
+    STEPS,
+  } = require('../../packages/server/two-factor/two-factor.constants.js');
+  app.use((req, res, next) => {
+    const userId = req.get(PENDING_USER);
+    if (!userId) return next();
+    req.session = {};
+    pendingStep.start(req, { id: userId }, STEPS.VERIFY, 'totp');
+    return next();
+  });
   app.use((req, res, next) => {
     const userId = req.get(TEST_USER);
     if (!userId) return next();
@@ -156,8 +168,8 @@ function signIn(app, userId) {
  * code (ADR 0008): the pending step is in its session, the account is not
  * signed in yet.
  */
-function signInBeforeCode() {
-  throw new Error(NOT_YET);
+function signInBeforeCode(app, userId) {
+  return request.agent(app).set(PENDING_USER, userId);
 }
 
 /** What a collection of the models holds, as copies (`McpClients`…). */
