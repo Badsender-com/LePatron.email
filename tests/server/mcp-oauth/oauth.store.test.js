@@ -213,3 +213,26 @@ describe('the adapter of the authorization server', () => {
     expect(createIndex.mock.calls.length).toBe(made);
   });
 });
+
+// The app mounts the authorization server before its database is open: what
+// it reads or writes then waits for it.
+describe('the store before the database is open', () => {
+  afterEach(() => {
+    mongoose.connection.db = db;
+  });
+
+  it('waits for the connection to open', async () => {
+    mongoose.connection.db = undefined;
+    const adapter = new McpOAuthAdapter('Grant');
+
+    const found = adapter.find('grant-1');
+    mongoose.connection.db = db;
+    db.collection('mcp_oauth_grant').records.push({
+      _id: 'grant-1',
+      payload: JSON.stringify({ jti: 'grant-1', kind: 'Grant' }),
+    });
+    mongoose.connection.emit('open');
+
+    expect(await found).toMatchObject({ jti: 'grant-1' });
+  });
+});

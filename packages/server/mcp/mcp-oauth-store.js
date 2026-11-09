@@ -1,6 +1,7 @@
 'use strict';
 
 const crypto = require('crypto');
+const { once } = require('events');
 const mongoose = require('mongoose');
 const logger = require('../utils/logger.js');
 
@@ -122,13 +123,26 @@ function ensureIndexes(db, model, collection) {
 }
 
 /**
+ * The app's database, once its connection has opened: the app mounts the
+ * authorization server before. The connection has no `db` until it first
+ * opens; one that drops later keeps it, and the driver waits for its return.
+ *
+ * @returns {Promise<import('mongodb').Db>}
+ */
+async function openedDb() {
+  const { connection } = mongoose;
+  if (!connection.db) await once(connection, 'open');
+  return connection.db;
+}
+
+/**
  * The collection of a model, its indexes created first.
  *
  * @param {string} model a model of `oidc-provider` (`AccessToken`, `Grant`…)
  * @returns {Promise<import('mongodb').Collection>}
  */
 async function collectionOf(model) {
-  const { db } = mongoose.connection;
+  const db = await openedDb();
   const collection = db.collection(
     `${COLLECTION_PREFIX}${model.toLowerCase()}`
   );
