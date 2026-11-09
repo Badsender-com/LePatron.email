@@ -144,6 +144,23 @@ describe('mailings list and status', () => {
       );
     });
 
+    it('filters by name, whatever the accents, both ways', async () => {
+      harness.update('mailings', f.M_APPROVED, {
+        name: 'Événement de rentrée',
+      });
+
+      expect(ids(await list(f.FRANK, { name: 'evenement' }))).toEqual([
+        f.M_APPROVED,
+      ]);
+      expect(ids(await list(f.FRANK, { name: 'Black Fridäy' }))).toEqual(
+        [f.M_ARCHIVED, f.M_NEWSLETTER].sort()
+      );
+    });
+
+    it('takes every character of the name as written', async () => {
+      expect(ids(await list(f.FRANK, { name: '.*' }))).toEqual([]);
+    });
+
     it('filters by tag', async () => {
       expect(ids(await list(f.FRANK, { tags: ['black-friday'] }))).toEqual(
         [f.M_ARCHIVED, f.M_NEWSLETTER].sort()

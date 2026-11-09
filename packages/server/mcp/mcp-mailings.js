@@ -89,7 +89,6 @@ async function listMailings({ user }, args) {
   const { items } = await searchMailings({
     user,
     filters: {
-      name: args.name,
       tags: args.tags,
       createdAtStart: args.createdAfter,
       createdAtEnd: args.createdBefore,
@@ -102,6 +101,8 @@ async function listMailings({ user }, args) {
       folderIds: args.folderIds,
       ...(args.mine && { userIds: [user.id] }),
       authorName: args.author,
+      // Whatever its case and accents, as the author's name.
+      name: args.name,
     },
   });
   // The listing reads each mailing's approval by the app's own rule.
@@ -159,7 +160,7 @@ function registerListMailings(server) {
     {
       title: 'List the mailings',
       description:
-        "Lists the mailings the user may read in LePatron, in the company of this connection, the most recently updated first, a page at a time. Filters: a part of the name, tags, creation and update dates, workspaces and folders (a folder with its subfolders; list_workspaces gives their ids), the user's own mailings (mine) or a part of the author's name. A mailing with no folder sits at the root of its workspace. Each one comes with its status, derived from its facts, the first that applies: pushed-to-esp (a campaign or template was created in an ESP; it says nothing of sending), scheduled (approved, with a planned send date, whichever day it is), approved (with no planned send date), or draft (not approved, even with a planned send date). approved and plannedSendDate (a day, YYYY-MM-DD) give the detail. LePatron never knows whether a mailing was sent. Read a mailing, its text or its HTML, with get_mailing.",
+        "Lists the mailings the user may read in LePatron, in the company of this connection, the most recently updated first, a page at a time. Filters: a part of the name, tags, creation and update dates, workspaces and folders (a folder with its subfolders; list_workspaces gives their ids), the user's own mailings (mine) or a part of the author's name. Names match whatever their case and accents. A mailing with no folder sits at the root of its workspace. Each one comes with its status, derived from its facts, the first that applies: pushed-to-esp (a campaign or template was created in an ESP; it says nothing of sending), scheduled (approved, with a planned send date, whichever day it is), approved (with no planned send date), or draft (not approved, even with a planned send date). approved and plannedSendDate (a day, YYYY-MM-DD) give the detail. LePatron never knows whether a mailing was sent. Read a mailing, its text or its HTML, with get_mailing.",
       inputSchema: LIST_INPUT,
       outputSchema: LIST_OUTPUT,
       annotations: { readOnlyHint: true, openWorldHint: false },

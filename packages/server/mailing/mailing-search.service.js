@@ -56,8 +56,9 @@ module.exports = {
  *   user may read: by location, `workspaceIds` and `folderIds` (a folder with
  *   its subfolders; one the user may not read finds nothing); by author,
  *   `userIds` (their accounts) or `authorName` (a part of their name); by
- *   text, `words` (each one in the name, the subject, a tag or the email
- *   type's label). Texts match whatever their case and accents.
+ *   name, `name` (a part of the email's name); by text, `words` (each one in
+ *   the name, the subject, a tag or the email type's label). Texts match
+ *   whatever their case and accents.
  * @returns {Promise<{ meta: Object, items: Object }>} the listing's answer,
  *   each email with its `location` and whether the user may open it
  *   (`hasAccess`)
@@ -79,7 +80,7 @@ async function searchMailings({
 
   const items = await findPage({
     ...readable,
-    ...authorsOf(within),
+    ...narrowedBy(within),
     ...(await wordsFilter(within, groupId)),
     paginationJSON: page,
     filtersJSON: filters,
@@ -190,13 +191,15 @@ async function readableScope(user, groupId, within = {}) {
   };
 }
 
-// The authors a search keeps, by account or by a part of their name.
-function authorsOf({ userIds, authorName } = {}) {
+// What a search keeps besides its locations: the authors, by account or by a
+// part of their name, and the emails by a part of their name.
+function narrowedBy({ userIds, authorName, name } = {}) {
   return {
     ...(userIds && {
       _user: { $in: userIds.map((id) => mongoose.Types.ObjectId(String(id))) },
     }),
     ...(authorName && { author: containing(authorName) }),
+    ...(name && { name: containing(name) }),
   };
 }
 
