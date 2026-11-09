@@ -11,7 +11,7 @@ const {
 } = require('../account/session-tracking.helper.js');
 const {
   completeSignIn,
-  endSessions,
+  endAccess,
   renewSession,
 } = require('../account/sign-in.js');
 const { stepAfterPassword } = require('../two-factor/sign-in-step.js');
@@ -23,7 +23,6 @@ const {
 } = require('../two-factor/reset.js');
 
 const { Users, Mailings, Groups } = require('../common/models.common.js');
-const { forgetConnections } = require('../mcp/mcp-connections.js');
 const config = require('../node.config.js');
 const userService = require('../user/user.service.js');
 const groupService = require('../group/group.service.js');
@@ -328,7 +327,7 @@ async function deactivate(req, res) {
   await user.deactivate();
   await forgetTrustedDevices(user.id);
   // Reactivated, the user connects their assistants again (ADR 0012).
-  await forgetConnections({ _user: user._id });
+  await endAccess(user.id);
   superAdminPolicy.logAction(req.user, 'deactivate', user);
   const updatedUser = await Users.findOneForApi({ _id: userId });
   res.json(updatedUser);
@@ -360,7 +359,7 @@ async function adminResetPassword(req, res) {
 
   await user.resetPassword('admin', user.lang);
   // Whoever held the old password connected no assistant that lives on.
-  await forgetConnections({ _user: user._id });
+  await endAccess(user.id);
   superAdminPolicy.logAction(req.user, 'reset-password', user);
   const updatedUser = await Users.findOneForApi({ _id: userId });
   res.json(updatedUser);
@@ -447,13 +446,13 @@ async function setPassword(req, res) {
 
   await user.setPassword(req.body.password, user.lang);
   await forgetTrustedDevices(user.id);
-  // Nor any assistant connected with the old one (ADR 0012).
-  await forgetConnections({ _user: user._id });
+  // Nothing the old password opened lives on: the sessions opened before
+  // it, and the assistants connected with it (ADR 0012).
+  await endAccess(user.id);
   // The emailed link opens no session for an account that needs a second
   // factor (ADR 0008): the member signs in with the new password, and the
-  // code. The sessions opened before it end all the same.
+  // code.
   if (await needsTwoFactor(user)) {
-    await endSessions(user.id);
     return res.json({ twoFactorRequired: true });
   }
   await renewSession(req);
@@ -463,8 +462,7 @@ async function setPassword(req, res) {
       resolve();
     });
   });
-  // This session becomes the account's only one, as on any sign-in: the
-  // sessions opened before the new password end.
+  // This session becomes the account's only one, as on any sign-in.
   await updateSessionTracking(req, user);
   const updatedUser = await Users.findOneForApi({ _id: user._id });
   res.json(updatedUser);

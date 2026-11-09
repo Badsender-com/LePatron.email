@@ -7,6 +7,7 @@ const permissions = require('./permissions.js');
 const { isBootstrapAccount } = require('./bootstrap-account.js');
 const { updateSessionTracking } = require('./session-tracking.helper.js');
 const { resolveSelectedGroup } = require('./selected-group.js');
+const { forgetConnections } = require('../mcp/mcp-connections.js');
 
 const promisify = (run) =>
   new Promise((resolve, reject) =>
@@ -72,8 +73,25 @@ async function endSessions(userId) {
   );
 }
 
+/**
+ * Ends what the account's credentials opened, when they change: its
+ * sessions, and the AI assistants it connected (ADR 0012), which `/mcp`
+ * refuses at their next call and whose refresh is revoked. The one call of
+ * every change of the credentials: the account deactivated, its password
+ * reset by an admin or set from the emailed link, its two-factor
+ * authentication reset by an admin (ADR 0008).
+ *
+ * @param {string} userId
+ * @returns {Promise<void>}
+ */
+async function endAccess(userId) {
+  await endSessions(userId);
+  await forgetConnections({ _user: userId });
+}
+
 module.exports = {
   completeSignIn,
+  endAccess,
   endSessions,
   renewSession,
 };

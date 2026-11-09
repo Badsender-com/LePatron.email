@@ -24,6 +24,9 @@ jest.mock('../../../packages/server/account/selected-group.js', () => ({
   resolveSelectedGroup: jest.fn().mockResolvedValue(null),
   forgetSessionSelection: jest.fn(),
 }));
+jest.mock('../../../packages/server/mcp/mcp-connections.js', () => ({
+  forgetConnections: jest.fn(),
+}));
 jest.mock('../../../packages/server/utils/logger.js', () => ({
   log: jest.fn(),
   info: jest.fn(),
@@ -33,6 +36,9 @@ jest.mock('../../../packages/server/utils/logger.js', () => ({
 
 const passport = require('passport');
 const mail = require('../../../packages/server/mailing/mail.service.js');
+const {
+  forgetConnections,
+} = require('../../../packages/server/mcp/mcp-connections.js');
 
 const { SecurityEvents } = harness.models;
 const { GROUP_ID, OTHER_GROUP_ID } = harness;
@@ -110,6 +116,17 @@ describe('resetting a member’s two-factor authentication', () => {
     await resetAs(techAdmin);
 
     expect(user.activeSessionId).not.toBe('previous-session');
+  });
+
+  // As a new password does (ADR 0012): whoever got past the second factor
+  // connected no assistant that lives on.
+  it('ends the assistants the member connected', async () => {
+    harness.addTotpUser();
+    forgetConnections.mockClear();
+
+    await resetAs(techAdmin);
+
+    expect(forgetConnections).toHaveBeenCalledWith({ _user: 'u1' });
   });
 
   it('emails the member, without saying who reset it', async () => {
