@@ -18,6 +18,12 @@ node -e "const {generateKeyPairSync}=require('node:crypto');const jwk=generateKe
 
 La commande affiche le JSON attendu par la variable : `{"keys":[{"kty":"RSA",…,"kid":"mcp-1","alg":"RS256","use":"sig"}]}`. Le copier tel quel dans `lepatron_mcpOauthJwks`.
 
+Sur Scalingo, en une fois, sans que la clé ne s'affiche :
+
+```bash
+scalingo --app <app> env-set "lepatron_mcpOauthJwks=$(node -e "const {generateKeyPairSync}=require('node:crypto');const jwk=generateKeyPairSync('rsa',{modulusLength:2048}).privateKey.export({format:'jwk'});console.log(JSON.stringify({keys:[{...jwk,kid:'mcp-1',alg:'RS256',use:'sig'}]}))")"
+```
+
 La changer ne déconnecte aucun assistant. Pour tout couper :
 
 - pour une entreprise, couper son accès MCP (**Paramètres › Fonctionnalités IA**, section **Accès MCP**) ;
