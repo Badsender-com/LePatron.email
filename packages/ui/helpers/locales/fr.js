@@ -1201,7 +1201,7 @@ export default {
   connectedApplications: {
     pageTitle: 'Applications connectées',
     description:
-      'Les assistants IA que vous avez connectés à LePatron. Chacun lit LePatron avec vos droits, dans l\'entreprise choisie à la connexion. Révoquez ceux que vous n\'utilisez plus.',
+      'Les assistants IA que vous avez connectés à LePatron. Chacun lit LePatron avec vos droits, dans l\'entreprise choisie à la connexion. Une ligne par connexion : un assistant connecté depuis deux machines apparaît deux fois. Révoquez celles que vous n\'utilisez plus.',
     name: 'Application',
     group: 'Entreprise',
     connectedAt: 'Connectée le',
@@ -1210,18 +1210,18 @@ export default {
     empty: 'Aucune application connectée.',
     loadError: 'Impossible de charger vos applications connectées.',
     revoke: 'Révoquer',
-    revokeOne: 'Révoquer {name}',
-    revokeTitle: 'Révoquer cette application\u00a0?',
+    revokeOne: 'Révoquer {name}, connectée le {date}',
+    revokeTitle: 'Révoquer cette connexion\u00a0?',
     revokeConfirm:
-      '« {name} » perdra aussitôt son accès à LePatron pour l\'entreprise {group}. Pour l\'utiliser à nouveau, il faudra la reconnecter.',
-    revoked: 'Application révoquée',
+      'La connexion de « {name} » du {date} perdra aussitôt son accès à LePatron pour l\'entreprise {group}. Vos autres connexions de cette application restent. Pour l\'utiliser à nouveau ici, il faudra la reconnecter.',
+    revoked: 'Connexion révoquée',
     groupCount:
-      'Aucune application connectée | 1 application connectée | {count} applications connectées',
+      'Aucune connexion d\'assistant IA | 1 connexion d\'assistant IA | {count} connexions d\'assistants IA',
     groupRevoke: 'Tout révoquer',
     groupRevokeTitle: 'Révoquer toutes les applications connectées\u00a0?',
     groupRevokeConfirm:
-      'Les assistants IA connectés pour l\'entreprise {group} perdent aussitôt leur accès. Chaque utilisateur devra reconnecter le sien. | L\'assistant IA connecté pour l\'entreprise {group} perd aussitôt son accès. Son utilisateur devra le reconnecter. | Les {count} assistants IA connectés pour l\'entreprise {group} perdent aussitôt leur accès. Chaque utilisateur devra reconnecter le sien.',
-    groupCountError: 'Nombre d\'applications connectées indisponible.',
+      'Les assistants IA connectés pour l\'entreprise {group} perdent aussitôt leur accès. Chaque utilisateur devra reconnecter le sien. | La connexion d\'assistant IA de l\'entreprise {group} perd aussitôt son accès. Son utilisateur devra la reconnecter. | Les {count} connexions d\'assistants IA de l\'entreprise {group} perdent aussitôt leur accès. Chaque utilisateur devra reconnecter les siennes.',
+    groupCountError: 'Nombre de connexions d\'assistants IA indisponible.',
     groupRevoked: 'Applications connectées révoquées',
   },
   mcpAccess: {

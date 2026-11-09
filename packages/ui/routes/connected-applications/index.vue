@@ -9,7 +9,8 @@ import BsPageHeader from '~/components/layout/bs-page-header.vue';
 import BsModalConfirm from '~/components/modal-confirm.vue';
 
 // The AI assistants the user connected to LePatron (ADR 0012), each bound to
-// a group, which they revoke one by one.
+// a group, which they revoke one by one. One row per connection: an
+// assistant connected from two machines has two, told apart by their date.
 export default {
   name: 'PageConnectedApplications',
   components: {
@@ -45,6 +46,11 @@ export default {
     title() {
       return this.$t('connectedApplications.pageTitle');
     },
+    // The date of the connection about to be revoked, which tells it from
+    // the other connections of the same application.
+    toRevokeConnectedAt() {
+      return this.connectedOn(this.toRevoke);
+    },
     headers() {
       return [
         { text: this.$t('connectedApplications.name'), value: 'name' },
@@ -63,6 +69,13 @@ export default {
   },
   methods: {
     ...mapMutations(PAGE, { showSnackbar: SHOW_SNACKBAR }),
+    connectedOn(application) {
+      if (!application) return '';
+      return this.$options.filters.preciseDateTime(
+        application.connectedAt,
+        this.$i18n.locale
+      );
+    },
     askRevoke(application) {
       this.toRevoke = application;
       this.$refs.revokeModal.open();
@@ -150,7 +163,10 @@ export default {
             small
             color="error"
             :aria-label="
-              $t('connectedApplications.revokeOne', { name: item.name })
+              $t('connectedApplications.revokeOne', {
+                name: item.name,
+                date: connectedOn(item),
+              })
             "
             @click="askRevoke(item)"
           >
@@ -170,6 +186,7 @@ export default {
             $t('connectedApplications.revokeConfirm', {
               name: toRevoke.name,
               group: toRevoke.group.name,
+              date: toRevokeConnectedAt,
             })
           }}
         </p>

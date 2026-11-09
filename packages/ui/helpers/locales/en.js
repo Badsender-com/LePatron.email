@@ -924,7 +924,7 @@ export default {
   connectedApplications: {
     pageTitle: 'Connected applications',
     description:
-      'The AI assistants you connected to LePatron. Each reads LePatron with your rights, in the company chosen when connecting. Revoke the ones you no longer use.',
+      'The AI assistants you connected to LePatron. Each reads LePatron with your rights, in the company chosen when connecting. One row per connection: an assistant connected from two machines shows twice. Revoke the ones you no longer use.',
     name: 'Application',
     group: 'Company',
     connectedAt: 'Connected on',
@@ -933,18 +933,18 @@ export default {
     empty: 'No connected applications.',
     loadError: 'Your connected applications could not be loaded.',
     revoke: 'Revoke',
-    revokeOne: 'Revoke {name}',
-    revokeTitle: 'Revoke this application?',
+    revokeOne: 'Revoke {name}, connected on {date}',
+    revokeTitle: 'Revoke this connection?',
     revokeConfirm:
-      '“{name}” will lose its access to LePatron for the company {group} at once. To use it again, connect it again.',
-    revoked: 'Application revoked',
+      'The connection of “{name}” of {date} will lose its access to LePatron for the company {group} at once. Your other connections of this application stay. To use it here again, connect it again.',
+    revoked: 'Connection revoked',
     groupCount:
-      'No connected applications | 1 connected application | {count} connected applications',
+      'No AI assistant connections | 1 AI assistant connection | {count} AI assistant connections',
     groupRevoke: 'Revoke all',
     groupRevokeTitle: 'Revoke every connected application?',
     groupRevokeConfirm:
-      'Every AI assistant connected for the company {group} loses its access at once. Each user will have to connect theirs again. | The AI assistant connected for the company {group} loses its access at once. Its user will have to connect it again. | The {count} AI assistants connected for the company {group} lose their access at once. Each user will have to connect theirs again.',
-    groupCountError: 'The number of connected applications is unavailable.',
+      'Every AI assistant connected for the company {group} loses its access at once. Each user will have to connect theirs again. | The AI assistant connection of the company {group} loses its access at once. Its user will have to connect it again. | The {count} AI assistant connections of the company {group} lose their access at once. Each user will have to connect theirs again.',
+    groupCountError: 'The number of AI assistant connections is unavailable.',
     groupRevoked: 'Connected applications revoked',
   },
   mcpAccess: {

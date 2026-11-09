@@ -105,6 +105,22 @@ describe("a user's own connected applications, for each role", () => {
     }
   );
 
+  // One connection per consent: the same assistant from two machines.
+  it('lists each connection of an application connected twice', async () => {
+    const first = await connected(f.FRANK);
+    const second = await connected(f.FRANK);
+
+    const items = await listOf(f.FRANK);
+
+    expect(items.map(({ id }) => id).sort()).toEqual(
+      [String(first._id), String(second._id)].sort()
+    );
+    expect(items.map(({ name }) => name)).toEqual([
+      'An assistant',
+      'An assistant',
+    ]);
+  });
+
   it('asks who is there', async () => {
     expect((await request(app).get(OWN)).status).toBe(401);
     expect((await request(app).delete(`${OWN}/${f.FRANK}`)).status).toBe(401);
