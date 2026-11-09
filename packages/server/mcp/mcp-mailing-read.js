@@ -82,8 +82,7 @@ async function readMailing(mailingId, { user }, format = 'text') {
       templateName: mailing.wireframe,
       location,
     },
-    { ...mailing, approved },
-    new Date()
+    { ...mailing, approved }
   );
   const { html = null, missing } = contentOf(mailing);
   const content =

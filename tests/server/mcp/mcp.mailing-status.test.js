@@ -10,6 +10,17 @@
 
 const harness = require('../../helpers/mcp-harness');
 const f = require('../../helpers/mcp-fixtures');
+const {
+  statusOf,
+} = require('../../../packages/server/mcp/mcp-mailing-status.js');
+
+// A planned send date as the editor stores it: a day, at 12:00 UTC.
+function plannedIn(days) {
+  const date = new Date();
+  date.setUTCDate(date.getUTCDate() + days);
+  date.setUTCHours(12, 0, 0, 0);
+  return date;
+}
 
 describe('mailing status', () => {
   beforeEach(() => harness.seed(f.SEED));
@@ -26,6 +37,52 @@ describe('mailing status', () => {
   };
   const listed = async (mailingId) =>
     (await list()).mailings.find((mailing) => mailing.id === mailingId);
+
+  // Only a person changes a status, by approving, planning or pushing; the
+  // planned day passing changes nothing.
+  describe('the rule', () => {
+    it.each([
+      ['today', 0],
+      ['yesterday', -1],
+      ['next month', 31],
+    ])('lists an approved mailing planned %s as scheduled', async (_, days) => {
+      harness.update('mailings', f.M_APPROVED, {
+        plannedSendDate: plannedIn(days),
+      });
+
+      expect(await listed(f.M_APPROVED)).toMatchObject({
+        approved: true,
+        status: 'scheduled',
+      });
+    });
+
+    it('lists a mailing planned but not approved as a draft', async () => {
+      expect(await listed(f.M_DRAFT_PAST)).toMatchObject({
+        approved: false,
+        status: 'draft',
+      });
+      harness.update('mailings', f.M_DRAFT_PAST, {
+        plannedSendDate: plannedIn(10),
+      });
+      expect((await listed(f.M_DRAFT_PAST)).status).toBe('draft');
+    });
+
+    it('lists an approved mailing with no planned date as approved', async () => {
+      expect((await listed(f.M_APPROVED)).status).toBe('approved');
+    });
+
+    it.each([
+      [
+        'approved and planned',
+        { approved: true, plannedSendDate: plannedIn(3) },
+      ],
+      ['approved', { approved: true }],
+      ['planned', { approved: false, plannedSendDate: plannedIn(-3) }],
+      ['neither', { approved: false }],
+    ])('says pushed-to-esp of a pushed mailing, %s', (_, facts) => {
+      expect(statusOf({ espProfileCount: 1, ...facts })).toBe('pushed-to-esp');
+    });
+  });
 
   describe('approval, by the app’s own rule', () => {
     let nextComment = 0;

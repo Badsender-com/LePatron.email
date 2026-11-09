@@ -22,25 +22,22 @@ async function approvedMailingIds(mailingIds) {
 }
 
 /**
- * A mailing's status, derived from its facts and never stored (ADR 0012):
- * pushed to an ESP, else scheduled (approved and planned in the future), else
- * approved, else draft. LePatron never knows that a mailing was sent, so no
- * status says so.
+ * A mailing's status, derived from its facts and never stored (ADR 0012,
+ * GLOSSARY.md "Mailing status"): pushed to an ESP, else scheduled (approved,
+ * with a planned send date, whichever day it is), else approved, else draft.
+ * Only a person changes it, by approving, planning or pushing: no clock does.
+ * LePatron never knows that a mailing was sent, so no status says so.
  *
  * @param {Object} facts
  * @param {number} facts.espProfileCount the ESP profiles it was pushed to
  * @param {boolean} facts.approved
  * @param {Date|string|null} [facts.plannedSendDate]
- * @param {Date} [now]
  * @returns {string} one of MAILING_STATUSES
  */
-function statusOf(
-  { espProfileCount, approved, plannedSendDate },
-  now = new Date()
-) {
+function statusOf({ espProfileCount, approved, plannedSendDate }) {
   if (espProfileCount > 0) return 'pushed-to-esp';
   if (!approved) return 'draft';
-  if (plannedSendDate && new Date(plannedSendDate) > now) return 'scheduled';
+  if (plannedSendDate) return 'scheduled';
   return 'approved';
 }
 

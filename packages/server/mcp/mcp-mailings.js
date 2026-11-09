@@ -43,21 +43,18 @@ const MAILING = z.object({
 
 const isoOf = (date) => (date ? new Date(date).toISOString() : null);
 
-function asItem(mailing, facts, now) {
+function asItem(mailing, facts) {
   const espProfileCount = espProfileCountOf(mailing.espIds);
   return {
     id: String(mailing._id),
     name: mailing.name,
     subject: facts.subject || null,
     tags: mailing.tags || [],
-    status: statusOf(
-      {
-        espProfileCount,
-        approved: facts.approved,
-        plannedSendDate: facts.plannedSendDate,
-      },
-      now
-    ),
+    status: statusOf({
+      espProfileCount,
+      approved: facts.approved,
+      plannedSendDate: facts.plannedSendDate,
+    }),
     approved: facts.approved,
     plannedSendDate: isoOf(facts.plannedSendDate),
     espProfileCount,
@@ -103,10 +100,9 @@ async function listMailings({ user }, args) {
       authorName: args.author,
     },
   });
-  const now = new Date();
   // The listing reads each mailing's approval by the app's own rule.
   const mailings = items.docs.map((mailing) =>
-    asItem(mailing, { ...mailing, approved: mailing.isApproved }, now)
+    asItem(mailing, { ...mailing, approved: mailing.isApproved })
   );
   const answer = {
     mailings,
