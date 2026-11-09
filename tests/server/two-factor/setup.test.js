@@ -35,6 +35,14 @@ jest.mock('../../../packages/server/utils/logger.js', () => ({
 
 const passport = require('passport');
 
+// The controllers, and all they require, loaded with the test file rather
+// than inside the 5 seconds of its first test: the harness's signIn requires
+// the user controller at its first call (the harness, which the models' mock
+// requires, cannot load it sooner), and the full suite's parallel load once
+// made that first load exceed them.
+require('../../../packages/server/user/user.controller.js');
+require('../../../packages/server/two-factor/two-factor.controller.js');
+
 const { SecurityEvents } = harness.models;
 
 let twoFactor;
