@@ -92,6 +92,20 @@ describe('what the authorization server offers', () => {
     app = oauth.createApp();
   });
 
+  it.each([
+    ['signing the user out', '/oauth/session/end'],
+    ["reading the user's profile", '/oauth/me'],
+  ])('does not offer %s', async (_case, path) => {
+    const response = await request(app).get(path);
+    const { body } = await request(app).get(
+      '/.well-known/oauth-authorization-server/oauth'
+    );
+
+    expect(response.status).toBe(404);
+    expect(body.end_session_endpoint).toBeUndefined();
+    expect(body.userinfo_endpoint).toBeUndefined();
+  });
+
   it('shows an error page of its own, with nothing from another site', async () => {
     const response = await request(app)
       .get('/oauth/auth')

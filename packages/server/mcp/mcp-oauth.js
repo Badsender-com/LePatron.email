@@ -198,7 +198,6 @@ function createAuthorizationServer({
     // The redirect URIs every client is kept to (mcp-client-metadata.js).
     extraClientMetadata: EXTRA_CLIENT_METADATA,
     scopes: SCOPES,
-    claims: { openid: ['sub'] },
     responseTypes: ['code'],
     clientAuthMethods: CLIENT_AUTH_METHODS,
     pkce: { required: () => true },
@@ -216,6 +215,10 @@ function createAuthorizationServer({
     renderError,
     features: {
       devInteractions: { enabled: false },
+      // An assistant only connects: it neither signs the user out nor reads
+      // a profile.
+      rpInitiatedLogout: { enabled: false },
+      userinfo: { enabled: false },
       clientIdMetadataDocument: { enabled: true, ack: 'draft-02', allowFetch },
       // No registration access token: clients do not manage their
       // registration, and each token would be kept forever.
