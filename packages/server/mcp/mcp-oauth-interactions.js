@@ -8,10 +8,12 @@ const { READ_SCOPE, WRITE_SCOPE, toRequestUser } = require('./mcp-identity.js');
 const logger = require('../utils/logger.js');
 const ERROR_CODES = require('../constant/error-codes.js');
 const { accountIdOf, keepRegisteredClient, TTL } = require('./mcp-oauth.js');
-const { recordConnection, revokeConnections } = require('./mcp-connections.js');
+const { recordConnection } = require('./mcp-connections.js');
 const { companyOfClient } = require('./mcp-clients.js');
 
 const NO_ACCESS = 'This company has no MCP access to LePatron.';
+// The connections a user keeps of one application to one company.
+const CONNECTIONS_PER_CLIENT = 10;
 
 // `code`, one of ERROR_CODES.MCP_CONSENT_…, is what the consent page
 // translates.
@@ -250,13 +252,9 @@ function createInteractionsRouter(provider, resource) {
         Math.max(interaction.exp - Math.floor(Date.now() / 1000), 1)
       );
       const client = await provider.Client.find(interaction.params.client_id);
-      // Connecting an application again replaces its previous connection to
-      // the group: one line per application, and no older token lives on.
-      await revokeConnections(provider, {
-        _user: consenter.user.id,
-        _company: groupId,
-        clientId: interaction.params.client_id,
-      });
+      // One connection per consent: the same application on another machine
+      // (Claude Code, VS Code) keeps its own. Past a cap, the oldest of the
+      // user's connections of that application to that company goes.
       await recordConnection({
         grantId,
         clientId: interaction.params.client_id,
@@ -264,6 +262,7 @@ function createInteractionsRouter(provider, resource) {
         userId: consenter.user.id,
         groupId,
         ttl: TTL.Grant,
+        cap: CONNECTIONS_PER_CLIENT,
       });
       // Never in the way of the consent: the client only lives on.
       await keepRegisteredClient(

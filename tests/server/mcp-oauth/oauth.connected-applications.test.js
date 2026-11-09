@@ -94,15 +94,17 @@ describe('connected applications', () => {
     );
   });
 
-  it('replaces the connection of an application connected again', async () => {
+  // The same application on two machines (Claude Code, VS Code): one
+  // connection per consent, each living on.
+  it('keeps the connection of an application connected again', async () => {
     const first = await oauth.connect(app, f.FRANK, { group: f.CLIENT_GROUP });
     const second = await oauth.connect(app, f.FRANK, {
       group: f.CLIENT_GROUP,
     });
 
-    expect((await listFor(f.FRANK)).body.items).toHaveLength(1);
-    expect((await refresh(app, first.refresh_token)).body.error).toBe(
-      'invalid_grant'
+    expect((await listFor(f.FRANK)).body.items).toHaveLength(2);
+    expect((await refresh(app, first.refresh_token)).body.access_token).toEqual(
+      expect.any(String)
     );
     expect((await oauth.callMcp(app, second.access_token)).status).toBe(200);
   });
