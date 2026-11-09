@@ -177,22 +177,22 @@ export default {
     gap: 0.5rem;
     padding: 1rem 1.25rem;
     border-radius: 7px;
-    background: rgba(0, 0, 0, 0.02);
-    border: 1px solid rgba(0, 0, 0, 0.08);
+    background: var(--surface-muted);
+    border: 1px solid var(--gray-200);
   }
 
   &__address-label {
     font-size: 0.8125rem;
     font-weight: 600;
-    color: rgba(0, 0, 0, 0.87);
+    color: var(--gray-900);
   }
 
   &__address-field {
     display: flex;
     align-items: center;
-    border: 1px solid rgba(0, 0, 0, 0.16);
+    border: 1px solid var(--field-border);
     border-radius: 5px;
-    background: #fff;
+    background: var(--surface);
     overflow: hidden;
 
     input {
@@ -204,11 +204,11 @@ export default {
       outline: none;
       font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
       font-size: 0.8125rem;
-      color: rgba(0, 0, 0, 0.87);
+      color: var(--gray-900);
     }
 
     .v-btn {
-      border-left: 1px solid rgba(0, 0, 0, 0.16);
+      border-left: 1px solid var(--field-border);
       border-radius: 0;
       height: 36px !important;
     }
@@ -217,7 +217,7 @@ export default {
   &__hint {
     margin: 0;
     font-size: 0.75rem;
-    color: rgba(0, 0, 0, 0.6);
+    color: var(--gray-700);
   }
 
   &__rows {

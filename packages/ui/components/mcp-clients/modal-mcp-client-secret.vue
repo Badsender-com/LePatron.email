@@ -48,7 +48,7 @@ export default {
   <v-dialog :value="!!client" width="560" persistent>
     <v-card v-if="client" flat tile>
       <v-card-title class="bs-modal-mcp-client-secret__title">
-        <v-chip small color="success" text-color="white" label>
+        <v-chip small color="success" dark label>
           <lucide-check :size="14" class="mr-1" />
           {{ $t('mcpClients.createdBadge') }}
         </v-chip>
