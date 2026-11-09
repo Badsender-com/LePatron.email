@@ -70,6 +70,21 @@ describe('workspaces and folders', () => {
     ]);
   });
 
+  // An argument it does not take is left aside: the call is answered.
+  it('ignores an argument it does not take', async () => {
+    const client = await harness.connectAs(f.FRANK);
+
+    const result = await client.callTool({
+      name: 'list_workspaces',
+      arguments: { workspaceIds: [f.WS_NEWS] },
+    });
+
+    expect(result.isError).toBeFalsy();
+    expect(harness.answerOf(result).workspaces.map((w) => w.id)).toEqual([
+      f.WS_NEWS,
+    ]);
+  });
+
   it('lists every workspace of the group to a company admin', async () => {
     expect((await workspacesOf(f.ERIN)).map((w) => w.id).sort()).toEqual(
       [f.WS_NEWS, f.WS_PROMO].sort()
