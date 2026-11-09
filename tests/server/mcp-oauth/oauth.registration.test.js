@@ -327,7 +327,7 @@ describe('how long a client is kept', () => {
       secret: body.clientSecret,
     });
 
-    expect(keptFor(body.clientId)).toEqual([undefined]);
+    expect(keptFor(body.clientId)).toEqual([]);
   });
 });
 

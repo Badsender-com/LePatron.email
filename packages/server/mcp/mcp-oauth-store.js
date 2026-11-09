@@ -164,26 +164,9 @@ async function revokeByGrantIds(grantIds) {
   );
 }
 
-/**
- * Forgets the clients the authorization server keeps under these ids, their
- * secrets with them.
- *
- * @param {string[]} clientIds
- */
-async function forgetClients(clientIds) {
-  if (clientIds.length === 0) return;
-  const clients = await collectionOf('Client');
-  await Promise.all(
-    batchesOf(clientIds).map((batch) =>
-      clients.deleteMany({ _id: { $in: batch } })
-    )
-  );
-}
-
 module.exports = {
   collectionOf,
   revokeByGrantIds,
-  forgetClients,
   storedId,
   digest,
   secretDigest,

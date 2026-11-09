@@ -360,5 +360,88 @@ describe('revoking connections', () => {
     expect(JSON.stringify(oauth.oauthStore('Client').records)).not.toContain(
       body.clientId
     );
+    expect(oauth.stored('clients')).toEqual([]);
+  });
+});
+
+describe('a client registered by hand', () => {
+  const CLIENTS = `/api/groups/${f.CLIENT_GROUP}/mcp-clients`;
+  const REDIRECT = 'https://copilot.example.test/callback';
+  let app;
+  let created;
+  beforeEach(async () => {
+    app = oauth.createApp();
+    ({ body: created } = await oauth
+      .signIn(app, f.TESS)
+      .post(CLIENTS)
+      .send({ name: 'Copilot Studio', redirectUris: [REDIRECT] }));
+  });
+
+  const connect = () =>
+    oauth.connect(app, f.FRANK, {
+      client: { client_id: created.clientId, redirect_uris: [REDIRECT] },
+      group: f.CLIENT_GROUP,
+      secret: created.clientSecret,
+    });
+
+  it("is known by the company's settings alone", async () => {
+    const tokens = await connect();
+
+    expect(tokens.access_token).toEqual(expect.any(String));
+    expect(oauth.oauthStore('Client').records).toEqual([]);
+    expect(oauth.stored('clients')).toEqual([
+      expect.objectContaining({
+        clientId: created.clientId,
+        secretDigest: expect.any(String),
+      }),
+    ]);
+  });
+
+  it('is never kept by the authorization server', async () => {
+    const adapter = new McpOAuthAdapter('Client');
+
+    await expect(
+      adapter.upsert(created.clientId, { client_id: created.clientId })
+    ).rejects.toThrow();
+  });
+
+  it('is known no more once deleted, and its connections go', async () => {
+    const tokens = await connect();
+
+    await oauth.signIn(app, f.TESS).delete(`${CLIENTS}/${created.clientId}`);
+
+    expect(oauth.stored('clients')).toEqual([]);
+    expect(oauth.stored('connections')).toEqual([]);
+    expect(oauth.oauthStore('Grant').records).toEqual([]);
+    const refreshed = await request(app)
+      .post('/oauth/token')
+      .type('form')
+      .send({
+        grant_type: 'refresh_token',
+        refresh_token: tokens.refresh_token,
+        client_id: created.clientId,
+        client_secret: created.clientSecret,
+      });
+    expect(refreshed.body.error).toBe('invalid_client');
+    expect((await oauth.callMcp(app, tokens.access_token)).status).toBe(401);
+  });
+
+  it("is not another company's to delete", async () => {
+    const response = await oauth
+      .signIn(app, f.ALICE)
+      .delete(`/api/groups/${f.OTHER_GROUP}/mcp-clients/${created.clientId}`);
+
+    expect(response.status).toBe(404);
+    expect(oauth.stored('clients')).toHaveLength(1);
+  });
+
+  it('serves no company other than its own', async () => {
+    const {
+      isClientAllowed,
+    } = require('../../../packages/server/mcp/mcp-clients.js');
+
+    expect(await isClientAllowed(created.clientId, f.CLIENT_GROUP)).toBe(true);
+    expect(await isClientAllowed(created.clientId, f.OTHER_GROUP)).toBe(false);
+    expect(await isClientAllowed(created.clientId, 'not-an-id')).toBe(false);
   });
 });

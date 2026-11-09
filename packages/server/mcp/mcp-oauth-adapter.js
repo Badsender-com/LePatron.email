@@ -7,6 +7,10 @@ const {
   isSecretOf,
   HASHED,
 } = require('./mcp-oauth-store.js');
+const {
+  isRegisteredByHand,
+  registeredClientMetadata,
+} = require('./mcp-clients.js');
 
 // The payload a record keeps, with when it was consumed, or nothing for a
 // record of another form.
@@ -38,7 +42,16 @@ class McpOAuthAdapter {
     return storedId(this.name, id);
   }
 
+  // A client registered by hand is kept by the company's settings alone
+  // (mcp-clients.js), its id given there.
+  isClientRegisteredByHand(id) {
+    return this.name === 'Client' && isRegisteredByHand(id);
+  }
+
   async upsert(id, payload, expiresIn) {
+    if (this.isClientRegisteredByHand(id)) {
+      throw new Error('A client registered by hand is kept by its company.');
+    }
     const expiresAt = expiresIn
       ? new Date(Date.now() + expiresIn * 1000)
       : null;
@@ -70,6 +83,7 @@ class McpOAuthAdapter {
   }
 
   async find(id) {
+    if (this.isClientRegisteredByHand(id)) return registeredClientMetadata(id);
     const payload = payloadOf(
       await (await this.collection()).findOne({ _id: this.storedId(id) })
     );
