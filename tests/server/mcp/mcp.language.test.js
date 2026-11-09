@@ -3,7 +3,7 @@
  */
 'use strict';
 
-// Badsender writes its skills and expertises in French, and keeps doing so.
+// The platform company writes its skills and expertises in French, and keeps doing so.
 // An assistant used in another language still finds and applies them: the
 // server tells it how, and finding a skill does not depend on the words of
 // one language.
@@ -11,10 +11,34 @@
 const harness = require('../../helpers/mcp-harness');
 const f = require('../../helpers/mcp-fixtures');
 
+// A second skill, which no query of these tests but its own words matches.
+const REPORT = {
+  _id: '507f1f77bcf86cd799439950',
+  skillId: 'qc.sending-report',
+  title: 'Read a sending report',
+  description: '',
+  category: 'qc',
+  status: 'ACTIVE',
+  audience: 'all',
+  servedToAssistants: false,
+  activeVersion: { major: 1, minor: 0 },
+  versions: [
+    {
+      versionMajor: 1,
+      versionMinor: 0,
+      status: 'ACTIVE',
+      nature: 'task',
+      procedure: 'Read it.',
+      consumedExpertiseIds: [],
+    },
+  ],
+};
+const EVERY_SKILL = ['qc.sending-report', 'redaction.subject-ideas'];
+
 describe('the language of the skills and expertises', () => {
   let client;
   beforeEach(async () => {
-    harness.seed(f.SEED);
+    harness.seed({ ...f.SEED, skills: [...f.SKILLS, REPORT] });
     client = await harness.connectAs(f.FRANK);
   });
   afterEach(() => harness.disconnect());
@@ -23,6 +47,7 @@ describe('the language of the skills and expertises', () => {
     harness.answerOf(
       await client.callTool({ name: 'find_skills', arguments: args })
     );
+  const idsOf = ({ skills }) => skills.map((skill) => skill.skillId).sort();
 
   it('tells the assistant they are written in French, and to answer in the user’s language', () => {
     const instructions = client.getInstructions();
@@ -36,25 +61,20 @@ describe('the language of the skills and expertises', () => {
     const answer = await findSkills({ query: 'Betreffzeilen vorschlagen' });
 
     expect(answer.matched).toBe(false);
-    expect(answer.skills.map((skill) => skill.skillId)).toEqual([
-      'redaction.subject-ideas',
-    ]);
+    expect(idsOf(answer)).toEqual(EVERY_SKILL);
   });
 
   it('lists every skill when asked for none in particular', async () => {
     const answer = await findSkills({});
 
-    expect(answer.skills.map((skill) => skill.skillId)).toEqual([
-      'redaction.subject-ideas',
-    ]);
+    expect(answer.matched).toBe(false);
+    expect(idsOf(answer)).toEqual(EVERY_SKILL);
   });
 
   it('finds a skill by its identifier too', async () => {
     const answer = await findSkills({ query: 'subject-ideas' });
 
     expect(answer.matched).toBe(true);
-    expect(answer.skills.map((skill) => skill.skillId)).toEqual([
-      'redaction.subject-ideas',
-    ]);
+    expect(idsOf(answer)).toEqual(['redaction.subject-ideas']);
   });
 });
