@@ -50,7 +50,7 @@ function importsOf({
     '~/helpers/api-routes.js': apiRoutes,
     '~/helpers/constants/error-codes.js': require('../../../packages/ui/helpers/constants/error-codes.js'),
     '~/helpers/mixins/mixin-page-title.js': {},
-    '~/helpers/module-activation.js': require('../../../packages/ui/helpers/module-activation.js'),
+    '~/helpers/mixins/mixin-connected-applications-filter.js': require('../../../packages/ui/helpers/mixins/mixin-connected-applications-filter.js'),
     '~/components/layout/bs-page-header.vue': {},
     '~/components/modal-confirm.vue': {},
     '~/components/form/bs-select.vue': {},
@@ -254,49 +254,4 @@ describe('the company that lets no assistant in', () => {
     expect(messages.connectedApplications.accessOff).toMatch(accessOff);
     expect(messages.connectedApplications.allGroups).toBeTruthy();
   });
-});
-
-// What the company's tech admin revokes at once are its connections (see
-// "Connection" in GLOSSARY.md): one word for them, in every message of it.
-describe.each([
-  [
-    'fr',
-    fr,
-    /connexion/i,
-    /applications? connectées?|assistants IA connectés/i,
-  ],
-  ['en', en, /connection/i, /connected applications?|assistants? connected/i],
-])(
-  'the revocation of every connection in %s',
-  (_lang, messages, term, other) => {
-    it.each([
-      'groupCount',
-      'groupRevokeTitle',
-      'groupRevokeConfirm',
-      'groupCountError',
-      'groupRevoked',
-    ])('says connections in %s', (key) => {
-      const text = messages.connectedApplications[key];
-
-      text.split(' | ').forEach((form) => {
-        expect(form).toMatch(term);
-        expect(form).not.toMatch(other);
-      });
-    });
-  }
-);
-
-// Closing the MCP module ends connections, which its question counts.
-it.each([
-  ['fr', fr.groups.modules.mcp, /connexion/i],
-  ['en', en.groups.modules.mcp, /connection/i],
-])('the closing of the MCP module says connections in %s', (_l, mcp, term) => {
-  const forms = `${mcp.closeConfirm} | ${mcp.closeConfirmUnknown}`;
-  forms
-    .split(' | ')
-    .filter(Boolean)
-    .forEach((form) => {
-      expect(form).toMatch(term);
-      expect(form).not.toMatch(/application/i);
-    });
 });

@@ -7,23 +7,17 @@ import * as acls from '~/helpers/pages-acls.js';
 import * as apiRoutes from '~/helpers/api-routes.js';
 import { ERROR_CODES } from '~/helpers/constants/error-codes.js';
 import mixinPageTitle from '~/helpers/mixins/mixin-page-title.js';
-import { canConnectApplications } from '~/helpers/module-activation.js';
+import mixinCompanyFilter from '~/helpers/mixins/mixin-connected-applications-filter.js';
 import BsPageHeader from '~/components/layout/bs-page-header.vue';
 import BsModalConfirm from '~/components/modal-confirm.vue';
 import BsSelect from '~/components/form/bs-select.vue';
 import { CAPABILITIES } from '../../../shared/access/roles.js';
 
-// The value of the company filter that shows every company.
-const ALL_GROUPS = 'all';
-
-const idOf = (group) => group && String(group.id || group._id);
-
 // The AI assistants the user connected to LePatron (ADR 0012), each bound to
 // a group, which they revoke one by one. One row per connection: an
 // assistant connected from two machines has two, told apart by their date.
-// Whoever manages the platform connects in any company: the page starts on
-// the selected one. A company shown without the MCP module or MCP access
-// (ADR 0017) is said to let no assistant in.
+// The company filter and what the page says of the company shown are in
+// mixin-connected-applications-filter.js.
 export default {
   name: 'PageConnectedApplications',
   components: {
@@ -33,7 +27,7 @@ export default {
     LucidePlug: Plug,
     LucideUnplug: Unplug,
   },
-  mixins: [mixinPageTitle],
+  mixins: [mixinPageTitle, mixinCompanyFilter],
   meta: {
     acl: acls.ACL_USER,
   },
@@ -51,7 +45,6 @@ export default {
       applications: [],
       loadError: false,
       toRevoke: null,
-      groupFilter: ALL_GROUPS,
     };
   },
   head() {
@@ -61,54 +54,6 @@ export default {
     ...mapGetters(USER, { can: CAN, modulesGroup: MODULES_GROUP }),
     canManagePlatform() {
       return this.can(CAPABILITIES.PLATFORM_MANAGE);
-    },
-    // The selected company first, whether it has connections or not, then
-    // the companies of the connections, by name.
-    groupItems() {
-      const names = new Map();
-      if (this.modulesGroup) {
-        names.set(idOf(this.modulesGroup), this.modulesGroup.name);
-      }
-      [...this.applications]
-        .sort((a, b) => a.group.name.localeCompare(b.group.name))
-        .forEach(({ group }) => {
-          if (!names.has(group.id)) names.set(group.id, group.name);
-        });
-      return [
-        { value: ALL_GROUPS, text: this.$t('connectedApplications.allGroups') },
-        ...[...names].map(([value, text]) => ({ value, text })),
-      ];
-    },
-    shownApplications() {
-      if (this.groupFilter === ALL_GROUPS) return this.applications;
-      return this.applications.filter(
-        ({ group }) => group.id === this.groupFilter
-      );
-    },
-    // The company the page shows: the one filtered on, or anyone else's own,
-    // where all their connections are. None for all the companies.
-    shownGroupId() {
-      if (this.groupFilter !== ALL_GROUPS) return this.groupFilter;
-      return this.canManagePlatform ? null : idOf(this.modulesGroup);
-    },
-    shownGroup() {
-      const id = this.shownGroupId;
-      if (!id) return null;
-      // As listed with the connections, or, without any, as the store has it.
-      const listed = this.applications.find(({ group }) => group.id === id);
-      if (listed) return listed.group;
-      return idOf(this.modulesGroup) === id ? this.modulesGroup : null;
-    },
-    shownGroupNotice() {
-      const group = this.shownGroup;
-      // A company whose flags did not load says nothing rather than a guess.
-      const known = group && typeof group.enableMcpModule === 'boolean';
-      if (!known || canConnectApplications(group)) return '';
-      const key =
-        group.enableMcpModule === true
-          ? 'connectedApplications.accessOff'
-          : 'connectedApplications.noModule';
-      return this.$t(key, { group: group.name });
     },
     title() {
       return this.$t('connectedApplications.pageTitle');
@@ -133,12 +78,6 @@ export default {
         { text: '', value: 'actions', sortable: false, align: 'end' },
       ];
     },
-  },
-  created() {
-    // Whoever manages the platform starts on the selected company.
-    if (this.canManagePlatform && this.modulesGroup) {
-      this.groupFilter = idOf(this.modulesGroup);
-    }
   },
   methods: {
     ...mapMutations(PAGE, { showSnackbar: SHOW_SNACKBAR }),
