@@ -681,7 +681,7 @@ describe('a client registered by a company', () => {
     const details = await agent.get(`/oauth/consent/${uid}/details`);
 
     expect(details.status).toBe(403);
-    expect(details.body.code).toBe('client_of_another_company');
+    expect(details.body.message).toBe('MCP_CONSENT_CLIENT_OF_ANOTHER_COMPANY');
   });
 
   it('lets a user of another company decline', async () => {
@@ -710,7 +710,7 @@ describe('a client registered by a company', () => {
     const details = await agent.get(`/oauth/consent/${uid}/details`);
 
     expect(details.status).toBe(403);
-    expect(details.body.code).toBe('no_mcp_access');
+    expect(details.body.message).toBe('MCP_CONSENT_NO_ACCESS');
   });
 
   it('offers a super admin its company alone', async () => {

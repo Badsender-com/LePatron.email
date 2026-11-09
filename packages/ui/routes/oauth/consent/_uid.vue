@@ -12,20 +12,24 @@ import {
 } from 'lucide-vue';
 import * as apiRoutes from '~/helpers/api-routes.js';
 import * as acls from '~/helpers/pages-acls.js';
+import { ERROR_CODES } from '~/helpers/constants/error-codes.js';
 import BsLoginLogo from '~/components/account/login-logo.vue';
 
 const WRITE_SCOPE = 'skills:write';
 
-// What the consent API answers a refusal (`code`, one of the server's
-// ERROR_CODES.MCP_CONSENT_…), as the key of its message.
-const EXPIRED = 'expired';
+// What the consent API answers a refusal: its code as the message
+// (ERROR_CODES.MCP_CONSENT_…), as the key of what the page says.
+const EXPIRED = ERROR_CODES.MCP_CONSENT_EXPIRED;
 const REFUSALS = {
   [EXPIRED]: 'oauthConsent.expired',
-  sign_in_required: 'oauthConsent.signInRequired',
-  account_cannot_connect: 'oauthConsent.accountCannotConnect',
-  no_mcp_access: 'oauthConsent.noAccess',
-  client_of_another_company: 'oauthConsent.clientOfAnotherCompany',
-  read_scope_required: 'oauthConsent.readScopeRequired',
+  [ERROR_CODES.MCP_CONSENT_SIGN_IN_REQUIRED]: 'oauthConsent.signInRequired',
+  [ERROR_CODES.MCP_CONSENT_ACCOUNT_CANNOT_CONNECT]:
+    'oauthConsent.accountCannotConnect',
+  [ERROR_CODES.MCP_CONSENT_NO_ACCESS]: 'oauthConsent.noAccess',
+  [ERROR_CODES.MCP_CONSENT_CLIENT_OF_ANOTHER_COMPANY]:
+    'oauthConsent.clientOfAnotherCompany',
+  [ERROR_CODES.MCP_CONSENT_READ_SCOPE_REQUIRED]:
+    'oauthConsent.readScopeRequired',
 };
 
 // Two letters for a name: the application's and the user's avatars.
@@ -155,7 +159,7 @@ export default {
   methods: {
     refused(err) {
       const status = err.response?.status;
-      const code = err.response?.data?.code;
+      const code = err.response?.data?.message;
       // Expired, or started in another browser: the provider tells no more.
       this.errorCode = status === 404 ? EXPIRED : code || null;
       const key = REFUSALS[this.errorCode];

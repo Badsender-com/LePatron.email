@@ -10,7 +10,6 @@
 const request = require('../../helpers/local-request');
 const oauth = require('../../helpers/mcp-oauth-harness');
 const f = require('../../helpers/mcp-fixtures');
-const ERROR_CODES = require('../../../packages/server/constant/error-codes.js');
 
 const { CIMD_CLIENT, ISSUER } = oauth;
 
@@ -46,7 +45,7 @@ describe('authorization and consent', () => {
     const response = await request(app).get(`/oauth/consent/${uid}/details`);
 
     expect(response.status).toBe(401);
-    expect(response.body.code).toBe(ERROR_CODES.MCP_CONSENT_SIGN_IN_REQUIRED);
+    expect(response.body.message).toBe('MCP_CONSENT_SIGN_IN_REQUIRED');
   });
 
   it('names the application, what it asks for and the user’s group', async () => {
@@ -87,7 +86,7 @@ describe('authorization and consent', () => {
       .get(`/oauth/consent/${uid}/details`);
 
     expect(response.status).toBe(403);
-    expect(response.body.code).toBe('account_cannot_connect');
+    expect(response.body.message).toBe('MCP_CONSENT_ACCOUNT_CANNOT_CONNECT');
   });
 
   it('stops a user whose group has no MCP access', async () => {
@@ -96,8 +95,7 @@ describe('authorization and consent', () => {
     const response = await agent.get(`/oauth/consent/${uid}/details`);
 
     expect(response.status).toBe(403);
-    expect(response.body.message).toMatch(/MCP access/i);
-    expect(response.body.code).toBe(ERROR_CODES.MCP_CONSENT_NO_ACCESS);
+    expect(response.body.message).toBe('MCP_CONSENT_NO_ACCESS');
   });
 
   it('hands the application a code, its state and the issuer', async () => {

@@ -59,6 +59,7 @@ function mountConsent(
       },
       '~/helpers/pages-acls.js': {},
       '~/components/account/login-logo.vue': {},
+      '~/helpers/constants/error-codes.js': require('../../../packages/ui/helpers/constants/error-codes.js'),
     },
   });
   return { vm, $post };
@@ -122,7 +123,7 @@ describe('the consent of a connected application', () => {
 // translates (ERROR_CODES.MCP_CONSENT_…).
 const refusal = (status, code) =>
   Object.assign(new Error(code), {
-    response: { status, data: { message: code, code } },
+    response: { status, data: { message: code, status } },
   });
 
 const buttonOf = (vm, label) =>
@@ -132,11 +133,19 @@ const buttonOf = (vm, label) =>
 
 describe('the consent of a connected application, refused', () => {
   it.each([
-    [404, 'expired', 'oauthConsent.expired'],
-    [401, 'sign_in_required', 'oauthConsent.signInRequired'],
-    [403, 'account_cannot_connect', 'oauthConsent.accountCannotConnect'],
-    [403, 'no_mcp_access', 'oauthConsent.noAccess'],
-    [403, 'client_of_another_company', 'oauthConsent.clientOfAnotherCompany'],
+    [404, 'MCP_CONSENT_EXPIRED', 'oauthConsent.expired'],
+    [401, 'MCP_CONSENT_SIGN_IN_REQUIRED', 'oauthConsent.signInRequired'],
+    [
+      403,
+      'MCP_CONSENT_ACCOUNT_CANNOT_CONNECT',
+      'oauthConsent.accountCannotConnect',
+    ],
+    [403, 'MCP_CONSENT_NO_ACCESS', 'oauthConsent.noAccess'],
+    [
+      403,
+      'MCP_CONSENT_CLIENT_OF_ANOTHER_COMPANY',
+      'oauthConsent.clientOfAnotherCompany',
+    ],
   ])('says why, on a %s %s', async (status, code, text) => {
     const $get = jest.fn().mockRejectedValue(refusal(status, code));
     const { vm } = mountConsent([], { $get });
@@ -150,7 +159,7 @@ describe('the consent of a connected application, refused', () => {
   it('says why the consent itself is refused', async () => {
     const $post = jest
       .fn()
-      .mockRejectedValue(refusal(400, 'read_scope_required'));
+      .mockRejectedValue(refusal(400, 'MCP_CONSENT_READ_SCOPE_REQUIRED'));
     const { vm } = mountConsent(['mcp:read'], { $post });
     await settle(vm);
 
@@ -163,7 +172,9 @@ describe('the consent of a connected application, refused', () => {
   });
 
   it('still lets the user decline, which answers the application', async () => {
-    const $get = jest.fn().mockRejectedValue(refusal(403, 'no_mcp_access'));
+    const $get = jest
+      .fn()
+      .mockRejectedValue(refusal(403, 'MCP_CONSENT_NO_ACCESS'));
     const { vm, $post } = mountConsent([], { $get });
     await settle(vm);
 
@@ -174,7 +185,9 @@ describe('the consent of a connected application, refused', () => {
   });
 
   it('offers no answer to a request that has expired', async () => {
-    const $get = jest.fn().mockRejectedValue(refusal(404, 'expired'));
+    const $get = jest
+      .fn()
+      .mockRejectedValue(refusal(404, 'MCP_CONSENT_EXPIRED'));
     const { vm } = mountConsent([], { $get });
     await settle(vm);
 
@@ -182,8 +195,12 @@ describe('the consent of a connected application, refused', () => {
   });
 
   it('offers no answer once the decline finds the request expired', async () => {
-    const $get = jest.fn().mockRejectedValue(refusal(403, 'no_mcp_access'));
-    const $post = jest.fn().mockRejectedValue(refusal(404, 'expired'));
+    const $get = jest
+      .fn()
+      .mockRejectedValue(refusal(403, 'MCP_CONSENT_NO_ACCESS'));
+    const $post = jest
+      .fn()
+      .mockRejectedValue(refusal(404, 'MCP_CONSENT_EXPIRED'));
     const { vm } = mountConsent([], { $get, $post });
     await settle(vm);
 

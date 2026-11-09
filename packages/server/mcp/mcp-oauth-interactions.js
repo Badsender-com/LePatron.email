@@ -1,6 +1,7 @@
 'use strict';
 
 const express = require('express');
+const createError = require('http-errors');
 const { Users, Groups } = require('../common/models.common.js');
 const permissions = require('../account/permissions.js');
 const { CAPABILITIES } = require('../../shared/access/roles.js');
@@ -11,14 +12,12 @@ const { accountIdOf, keepRegisteredClient, TTL } = require('./mcp-oauth.js');
 const { recordConnection } = require('./mcp-connections.js');
 const { companyOfClient } = require('./mcp-clients.js');
 
-const NO_ACCESS = 'This company has no MCP access to LePatron.';
 // The connections a user keeps of one application to one company.
 const CONNECTIONS_PER_CLIENT = 10;
 
-// `code`, one of ERROR_CODES.MCP_CONSENT_…, is what the consent page
-// translates.
-const refuse = (res, status, message, code) =>
-  res.status(status).json({ message, ...(code && { code }) });
+// A refusal of the consent is an http-error whose message is its code
+// (ERROR_CODES.MCP_CONSENT_…), which the app's error handler answers as it
+// answers any route's: what the consent page translates.
 
 // The account behind the app's session, read as the MCP server reads it, and
 // the groups a connection may be bound to: the user's own, or, for a super
@@ -95,12 +94,7 @@ function createInteractionsRouter(provider, resource) {
         .interactionDetails(req, res)
         .catch(() => null);
       if (!interaction || interaction.uid !== req.params.uid) {
-        return refuse(
-          res,
-          404,
-          'This connection request has expired, or was started in another browser.',
-          ERROR_CODES.MCP_CONSENT_EXPIRED
-        );
+        return next(createError(404, ERROR_CODES.MCP_CONSENT_EXPIRED));
       }
       req.interaction = interaction;
       return next();
@@ -112,12 +106,7 @@ function createInteractionsRouter(provider, resource) {
   const signedIn = (req, res, next) =>
     req.user
       ? next()
-      : refuse(
-          res,
-          401,
-          'Log in to LePatron first.',
-          ERROR_CODES.MCP_CONSENT_SIGN_IN_REQUIRED
-        );
+      : next(createError(401, ERROR_CODES.MCP_CONSENT_SIGN_IN_REQUIRED));
 
   // The consenting user. The bootstrap account, which has no document,
   // connects nothing.
@@ -125,11 +114,8 @@ function createInteractionsRouter(provider, resource) {
     try {
       req.consenter = await consenterOf(req);
       if (!req.consenter) {
-        return refuse(
-          res,
-          403,
-          'This account cannot connect an assistant.',
-          ERROR_CODES.MCP_CONSENT_ACCOUNT_CANNOT_CONNECT
+        return next(
+          createError(403, ERROR_CODES.MCP_CONSENT_ACCOUNT_CANNOT_CONNECT)
         );
       }
       return next();
@@ -148,11 +134,8 @@ function createInteractionsRouter(provider, resource) {
       const company = await companyOfClient(req.interaction.params.client_id);
       if (company) {
         if (!permissions.canAccessGroup(consenter.user, company.id)) {
-          return refuse(
-            res,
-            403,
-            'This application belongs to another company.',
-            ERROR_CODES.MCP_CONSENT_CLIENT_OF_ANOTHER_COMPANY
+          return next(
+            createError(403, ERROR_CODES.MCP_CONSENT_CLIENT_OF_ANOTHER_COMPANY)
           );
         }
         consenter.groups = consenter.groups.filter(
@@ -160,7 +143,7 @@ function createInteractionsRouter(provider, resource) {
         );
       }
       if (consenter.groups.length === 0) {
-        return refuse(res, 403, NO_ACCESS, ERROR_CODES.MCP_CONSENT_NO_ACCESS);
+        return next(createError(403, ERROR_CODES.MCP_CONSENT_NO_ACCESS));
       }
       req.clientCompany = company;
       // What the user may grant, whatever the application asked for: the
@@ -225,14 +208,11 @@ function createInteractionsRouter(provider, resource) {
       );
       const groupId = String(req.body?.groupId || '');
       if (!consenter.groups.some((group) => group.id === groupId)) {
-        return refuse(res, 403, NO_ACCESS, ERROR_CODES.MCP_CONSENT_NO_ACCESS);
+        return next(createError(403, ERROR_CODES.MCP_CONSENT_NO_ACCESS));
       }
       if (!granted.includes(READ_SCOPE)) {
-        return refuse(
-          res,
-          400,
-          `The ${READ_SCOPE} scope is required.`,
-          ERROR_CODES.MCP_CONSENT_READ_SCOPE_REQUIRED
+        return next(
+          createError(400, ERROR_CODES.MCP_CONSENT_READ_SCOPE_REQUIRED)
         );
       }
       const accountId = accountIdOf(consenter.user.id, groupId);
