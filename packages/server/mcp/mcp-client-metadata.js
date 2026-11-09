@@ -65,7 +65,8 @@ const EXTRA_CLIENT_METADATA = {
 
 // The addresses that are not on the public internet: unspecified, private,
 // shared (CGNAT), loopback, link-local, unique local (ULA), multicast and
-// reserved. An IPv4 address mapped in IPv6 is checked as itself.
+// reserved, and the IPv6 ranges that carry an IPv4 address (compatible,
+// NAT64, Teredo, 6to4). An IPv4 address mapped in IPv6 is checked as itself.
 const NOT_PUBLIC = new net.BlockList();
 [
   ['0.0.0.0', 8],
@@ -83,7 +84,15 @@ const NOT_PUBLIC = new net.BlockList();
 [
   ['::', 128],
   ['::1', 128],
+  // IPv4 compatible (deprecated), which carries any IPv4 address.
+  ['::', 96],
   ['64:ff9b::', 96],
+  ['64:ff9b:1::', 48],
+  // Discard only.
+  ['100::', 64],
+  // Teredo and 6to4, which carry an IPv4 address.
+  ['2001::', 32],
+  ['2002::', 16],
   ['fc00::', 7],
   ['fe80::', 10],
   ['ff00::', 8],

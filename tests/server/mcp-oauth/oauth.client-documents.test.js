@@ -55,6 +55,12 @@ describe('the hosts a client document is read on', () => {
   it.each([
     ['10.1.2.3', false],
     ['::ffff:127.0.0.1', false],
+    // IPv4 compatible, 6to4, Teredo, local NAT64 and discard-only.
+    ['::127.0.0.1', false],
+    ['2002:a00:1::', false],
+    ['2001:0:4136:e378:8000:63bf:3fff:fdd2', false],
+    ['64:ff9b:1::a00:1', false],
+    ['100::1', false],
     ['8.8.8.8', true],
     ['2606:4700:4700::1111', true],
     ['not an address', false],
