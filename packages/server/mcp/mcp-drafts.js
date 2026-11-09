@@ -83,8 +83,4 @@ function registerUseDrafts(server) {
   );
 }
 
-module.exports = {
-  draftNotice,
-  registerUseDrafts,
-  DRAFTS_TTL,
-};
+module.exports = { draftNotice, registerUseDrafts };
