@@ -106,6 +106,19 @@ describe('what the authorization server offers', () => {
     expect(body.userinfo_endpoint).toBeUndefined();
   });
 
+  it('takes no pushed authorization request', async () => {
+    const response = await request(app)
+      .post('/oauth/request')
+      .type('form')
+      .send(oauth.authorizeQuery(oauth.CIMD_CLIENT, oauth.pkce().challenge));
+    const { body } = await request(app).get(
+      '/.well-known/oauth-authorization-server/oauth'
+    );
+
+    expect(response.status).toBe(404);
+    expect(body.pushed_authorization_request_endpoint).toBeUndefined();
+  });
+
   it('shows an error page of its own, with nothing from another site', async () => {
     const response = await request(app)
       .get('/oauth/auth')

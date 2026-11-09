@@ -220,6 +220,9 @@ function createAuthorizationServer({
       // a profile.
       rpInitiatedLogout: { enabled: false },
       userinfo: { enabled: false },
+      // An assistant sends its authorization request to the browser, never
+      // ahead of it to the server.
+      pushedAuthorizationRequests: { enabled: false },
       clientIdMetadataDocument: { enabled: true, ack: 'draft-02', allowFetch },
       // No registration access token: clients do not manage their
       // registration, and each token would be kept forever.
