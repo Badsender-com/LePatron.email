@@ -13,6 +13,7 @@ const {
 } = require('./mcp-identity.js');
 const { mailingOf, asPlainText } = require('./mcp-mailing-read.js');
 const expertises = require('./mcp-expertises.js');
+const { MAILING_KIND } = require('./mcp-mailings.js');
 const { READ_ONLY } = require('./mcp-tool-grammar.js');
 
 // `search` and `fetch` in the shape ChatGPT expects for deep research and
@@ -30,8 +31,8 @@ const MAX_ID_LENGTH = 200;
 const MAX_QUERY_LENGTH = 200;
 const MAX_WORDS = 10;
 
-// The kinds of result, the first part of their id.
-const MAILING_KIND = 'mailing';
+// The kinds of result, the first part of their id. get_mailing reads a
+// mailing's too (MAILING_KIND).
 const EXPERTISE_KIND = 'expertise';
 
 const editorUrlOf = (mailingId) => `${siteOrigin()}/editor/${mailingId}`;

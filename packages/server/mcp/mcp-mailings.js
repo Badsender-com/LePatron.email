@@ -25,6 +25,18 @@ const MAX_ID_LENGTH = 100;
 
 const uriOf = (mailingId) => `lepatron://mailings/${mailingId}`;
 
+// The kind of a mailing among the results of search, the first part of their
+// id (`mailing:<id>`).
+const MAILING_KIND = 'mailing';
+const MAILING_ID_PREFIX = `${MAILING_KIND}:`;
+
+/**
+ * A mailing's id as list_mailings gives it, from that id or from the one
+ * search gives, prefixed with its kind.
+ */
+const bareMailingId = (id) =>
+  id.startsWith(MAILING_ID_PREFIX) ? id.slice(MAILING_ID_PREFIX.length) : id;
+
 // The ESP profiles a mailing was pushed to, each counted once.
 const espProfileCountOf = (espIds) =>
   new Set((espIds || []).map((push) => String(push.profileId))).size;
@@ -252,4 +264,6 @@ module.exports = {
   asItem,
   MAILING,
   uriOf,
+  MAILING_KIND,
+  bareMailingId,
 };

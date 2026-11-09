@@ -17,7 +17,7 @@ const { Mailings } = require('../common/models.common.js');
 const { withIdentity, failure } = require('./mcp-identity.js');
 const { approvedMailingIds } = require('./mcp-mailing-status.js');
 const { mailingText, variablesOf } = require('./mcp-mailing-text.js');
-const { MAILING, asItem } = require('./mcp-mailings.js');
+const { MAILING, asItem, bareMailingId } = require('./mcp-mailings.js');
 const { READ_ONLY } = require('./mcp-tool-grammar.js');
 const { PREVIEW_TOOL_META, withPreview } = require('./mcp-preview-app.js');
 
@@ -138,7 +138,9 @@ const GET_INPUT = z.object({
   mailingId: z
     .string()
     .max(MAX_ID_LENGTH)
-    .describe('The id of the mailing, as list_mailings or search gave it.'),
+    .describe(
+      'The id of the mailing, as list_mailings gave it, or as search did (mailing:…).'
+    ),
   format: z
     .enum(FORMATS)
     .optional()
@@ -167,7 +169,11 @@ function registerGetMailing(server) {
       _meta: PREVIEW_TOOL_META,
     },
     withIdentity(async (identity, { mailingId, format }) => {
-      const read = await readMailing(mailingId, identity, format);
+      const read = await readMailing(
+        bareMailingId(mailingId),
+        identity,
+        format
+      );
       if (!read) return failure(MAILING_NOT_FOUND);
       // The preview travels for the app only: the assistant reads the answer.
       return withPreview(

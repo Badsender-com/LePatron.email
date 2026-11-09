@@ -101,6 +101,45 @@ describe('feedback and retex', () => {
       expect(await send(f.M_PROMO)).toMatchObject({ recorded: true });
       expect((await send(f.M_OTHER)).error).toMatch(/not found/i);
     });
+
+    // search gives a mailing's id prefixed with its kind: the reference
+    // reads it as list_mailings' id, and says so.
+    describe('by the id search gives', () => {
+      it('records the mailing, once, by its id', async () => {
+        const client = await harness.connectAs(f.FRANK);
+        const { tools } = await client.listTools();
+        const { references } = tools.find(
+          (tool) => tool.name === 'submit_feedback'
+        ).inputSchema.properties;
+
+        expect(references.items.properties.id.description).toMatch(
+          /list_mailings or search.*mailing:/
+        );
+        expect(references.items.properties.id.description).not.toMatch(
+          /mailingId/
+        );
+        expect(
+          await submit(f.FRANK, {
+            rating: 'up',
+            references: [
+              { kind: 'mailing', id: `mailing:${f.M_NEWSLETTER}` },
+              { kind: 'mailing', id: f.M_NEWSLETTER },
+            ],
+          })
+        ).toEqual({ recorded: true, retex: 'none' });
+        expect(harness.stored('feedbacks')[0].references).toEqual([
+          { kind: 'mailing', id: f.M_NEWSLETTER, version: null },
+        ]);
+      });
+
+      it('refuses a mailing the user may not read as its plain id', async () => {
+        const prefixed = await submit(f.FRANK, about(`mailing:${f.M_PROMO}`));
+
+        expect(prefixed.error).toMatch(/not found/i);
+        expect(prefixed).toEqual(await submit(f.FRANK, about(f.M_PROMO)));
+        expect(harness.stored('feedbacks')).toEqual([]);
+      });
+    });
   });
 
   it('keeps who sent it, from which application, until the company’s log retention ends', async () => {

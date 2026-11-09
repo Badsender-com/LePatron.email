@@ -11,12 +11,20 @@ const { withIdentity, success, failure } = require('./mcp-identity.js');
 const { ADDITIVE } = require('./mcp-tool-grammar.js');
 const { namedExpertises } = require('./mcp-expertises.js');
 const { namedSkills } = require('./mcp-skill-catalog.js');
+const { bareMailingId } = require('./mcp-mailings.js');
 const {
   findReadableMailings,
 } = require('../mailing/mailing-search.service.js');
 const { computeExpiresAt } = require('../group/log-retention.js');
 
 const keyOf = ({ kind, id }) => `${kind}:${id}`;
+
+// A mailing is referred to by its id from list_mailings, or by the one search
+// gives it: both name the same mailing.
+const asReferred = (reference) =>
+  reference.kind === 'mailing'
+    ? { ...reference, id: bareMailingId(reference.id) }
+    : reference;
 
 async function stillAllowsRetex(groupId) {
   const group = await Groups.findById(groupId).select('allowRetex').lean();
@@ -49,7 +57,9 @@ const READERS = {
  *   references with their version, or the first one the user may not read
  */
 async function resolveReferences(references, identity) {
-  const unique = [...new Map(references.map((r) => [keyOf(r), r])).values()];
+  const unique = [
+    ...new Map(references.map(asReferred).map((r) => [keyOf(r), r])).values(),
+  ];
   const found = new Map();
   await Promise.all(
     Object.entries(READERS).map(async ([kind, read]) => {
@@ -152,7 +162,9 @@ const FEEDBACK_INPUT = z.object({
         id: z
           .string()
           .max(MAX_ID_LENGTH)
-          .describe('Its skillId, expertiseId or mailingId.'),
+          .describe(
+            "A skill's skillId, an expertise's expertiseId, or a mailing's id, as list_mailings or search gives it (mailing:…)."
+          ),
       })
     )
     .max(MAX_REFERENCES)

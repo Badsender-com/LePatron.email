@@ -291,6 +291,36 @@ describe('mailing content', () => {
       expect(answer.error).not.toContain('Spring sale');
     });
 
+    // search gives a mailing's id prefixed with its kind: get_mailing reads
+    // it as list_mailings' id, and says so.
+    describe('the id search gives', () => {
+      it('reads the mailing', async () => {
+        const client = await harness.connectAs(f.FRANK);
+        const { tools } = await client.listTools();
+        const { mailingId } = tools.find(
+          (tool) => tool.name === 'get_mailing'
+        ).inputSchema.properties;
+
+        expect(mailingId.description).toMatch(/search.*mailing:/);
+        expect(
+          await getMailing(client, { mailingId: `mailing:${f.M_NEWSLETTER}` })
+        ).toMatchObject({ id: f.M_NEWSLETTER, name: 'Black Friday 2025' });
+      });
+
+      it('refuses a mailing the user may not read as its plain id', async () => {
+        const client = await harness.connectAs(f.FRANK);
+
+        const prefixed = await getMailing(client, {
+          mailingId: `mailing:${f.M_PROMO}`,
+        });
+
+        expect(prefixed.error).toMatch(/not found/i);
+        expect(prefixed).toEqual(
+          await getMailing(client, { mailingId: f.M_PROMO })
+        );
+      });
+    });
+
     it('reads a mailing in a folder of a workspace the user is a member of', async () => {
       const client = await harness.connectAs(f.FRANK);
 
