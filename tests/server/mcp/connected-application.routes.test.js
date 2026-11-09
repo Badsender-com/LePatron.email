@@ -133,7 +133,7 @@ describe('the company of each connection', () => {
   it('says whether it has the MCP module and MCP access', async () => {
     oauth.update(app, 'groups', f.OTHER_GROUP, { enableMcpModule: false });
     const open = await connected(f.ALICE, f.CLIENT_GROUP);
-    const accessOff = await connected(f.ALICE, f.UNSUBSCRIBED_GROUP);
+    const accessOff = await connected(f.ALICE, f.MCP_ACCESS_OFF_GROUP);
     const moduleClosed = await connected(f.ALICE, f.OTHER_GROUP);
 
     const items = await listOf(f.ALICE);
