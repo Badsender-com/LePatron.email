@@ -4,6 +4,7 @@ import { Plug, Unplug } from 'lucide-vue';
 import { PAGE, SHOW_SNACKBAR } from '~/store/page.js';
 import * as acls from '~/helpers/pages-acls.js';
 import * as apiRoutes from '~/helpers/api-routes.js';
+import { ERROR_CODES } from '~/helpers/constants/error-codes.js';
 import mixinPageTitle from '~/helpers/mixins/mixin-page-title.js';
 import BsPageHeader from '~/components/layout/bs-page-header.vue';
 import BsModalConfirm from '~/components/modal-confirm.vue';
@@ -94,8 +95,21 @@ export default {
           color: 'success',
         });
       } catch (error) {
+        // Revoked already, from another tab or by the company's admin.
+        const gone =
+          error?.response?.data?.message ===
+          ERROR_CODES.MCP_CONNECTION_NOT_FOUND;
+        if (gone) {
+          this.applications = this.applications.filter(
+            (candidate) => candidate.id !== application.id
+          );
+        }
         this.showSnackbar({
-          text: this.$t('global.errors.errorOccured'),
+          text: gone
+            ? this.$t(
+                `connectedApplications.errors.${ERROR_CODES.MCP_CONNECTION_NOT_FOUND}`
+              )
+            : this.$t('global.errors.errorOccured'),
           color: 'error',
         });
         console.error(error);

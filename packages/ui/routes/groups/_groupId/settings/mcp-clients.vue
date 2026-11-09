@@ -135,15 +135,21 @@ export default {
         this.toDelete = null;
       }
     },
+    // The API answers its error code as the message (ERROR_CODES.MCP_…),
+    // and names the redirect URI it refuses.
+    errorText(error) {
+      const { message: code, redirectUri } = error?.response?.data || {};
+      if (redirectUri) {
+        return this.$t('mcpClients.errors.redirectUriRefused', {
+          uri: redirectUri,
+        });
+      }
+      return code && this.$te(`mcpClients.errors.${code}`)
+        ? this.$t(`mcpClients.errors.${code}`)
+        : this.$t('global.errors.errorOccured');
+    },
     notifyError(error) {
-      const code = error?.response?.data?.code;
-      this.showSnackbar({
-        text:
-          code && this.$te(`mcpClients.errors.${code}`)
-            ? this.$t(`mcpClients.errors.${code}`)
-            : this.$t('global.errors.errorOccured'),
-        color: 'error',
-      });
+      this.showSnackbar({ text: this.errorText(error), color: 'error' });
       console.error(error);
     },
   },

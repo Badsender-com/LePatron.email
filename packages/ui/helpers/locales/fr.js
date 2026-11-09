@@ -1193,13 +1193,17 @@ export default {
         'Lire, et envoyer les avis de l\'utilisateur. Proposer des brouillons de skills et d\'expertises (skills:write) n\'est accordé qu\'aux super admins, sur leur demande à la connexion.',
     },
     errors: {
-      invalid_name: 'Donnez un nom de 1 à 100 caractères.',
-      invalid_redirect_uris:
+      // The codes the API answers (ERROR_CODES.MCP_CLIENT_…).
+      MCP_CLIENT_INVALID_NAME: 'Donnez un nom de 1 à 100 caractères.',
+      MCP_CLIENT_INVALID_REDIRECT_URIS:
         'Indiquez de 1 à 10 adresses de redirection, en HTTPS ou vers la machine de l\'utilisateur.',
-      invalid_auth_method: 'Choisissez comment l\'assistant envoie le secret.',
-      invalid_client_metadata:
+      MCP_CLIENT_INVALID_AUTH_METHOD:
+        'Choisissez comment l\'assistant envoie le secret.',
+      MCP_CLIENT_INVALID_METADATA:
         'LePatron refuserait ce client à sa connexion : vérifiez ses adresses de redirection.',
-      not_found: 'Ce client n\'existe plus.',
+      MCP_CLIENT_NOT_FOUND: 'Ce client n\'existe plus.',
+      MCP_FORBIDDEN_COMPANY:
+        'Vous ne gérez pas les clients MCP de cette entreprise.',
       nameTooLong: 'Le nom fait au plus 100 caractères.',
       redirectUrisRequired: 'Au moins une URL de redirection est requise.',
       redirectUrisInvalid:
@@ -1233,6 +1237,10 @@ export default {
       'Les assistants IA connectés pour l\'entreprise {group} perdent aussitôt leur accès. Chaque utilisateur devra reconnecter le sien. | La connexion d\'assistant IA de l\'entreprise {group} perd aussitôt son accès. Son utilisateur devra la reconnecter. | Les {count} connexions d\'assistants IA de l\'entreprise {group} perdent aussitôt leur accès. Chaque utilisateur devra reconnecter les siennes.',
     groupCountError: 'Nombre de connexions d\'assistants IA indisponible.',
     groupRevoked: 'Applications connectées révoquées',
+    errors: {
+      MCP_CONNECTION_NOT_FOUND:
+        'Cette connexion n\'existe plus : elle a déjà été révoquée.',
+    },
   },
   mcpAccess: {
     title: 'Accès MCP',

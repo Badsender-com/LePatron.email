@@ -914,13 +914,15 @@ export default {
         'Read, and send the user\'s feedback. Proposing drafts of skills and expertises (skills:write) is only granted to super admins, when they ask for it at connection.',
     },
     errors: {
-      invalid_name: 'Give a name of 1 to 100 characters.',
-      invalid_redirect_uris:
+      // The codes the API answers (ERROR_CODES.MCP_CLIENT_…).
+      MCP_CLIENT_INVALID_NAME: 'Give a name of 1 to 100 characters.',
+      MCP_CLIENT_INVALID_REDIRECT_URIS:
         'Give 1 to 10 redirect addresses, in HTTPS or to the user\'s own machine.',
-      invalid_auth_method: 'Pick how the assistant sends the secret.',
-      invalid_client_metadata:
+      MCP_CLIENT_INVALID_AUTH_METHOD: 'Pick how the assistant sends the secret.',
+      MCP_CLIENT_INVALID_METADATA:
         'LePatron would refuse this client when it connects: check its redirect addresses.',
-      not_found: 'This client no longer exists.',
+      MCP_CLIENT_NOT_FOUND: 'This client no longer exists.',
+      MCP_FORBIDDEN_COMPANY: 'You do not manage the MCP clients of this company.',
       nameTooLong: 'The name is at most 100 characters long.',
       redirectUrisRequired: 'At least one redirect URL is required.',
       redirectUrisInvalid:
@@ -954,6 +956,10 @@ export default {
       'Every AI assistant connected for the company {group} loses its access at once. Each user will have to connect theirs again. | The AI assistant connection of the company {group} loses its access at once. Its user will have to connect it again. | The {count} AI assistant connections of the company {group} lose their access at once. Each user will have to connect theirs again.',
     groupCountError: 'The number of AI assistant connections is unavailable.',
     groupRevoked: 'Connected applications revoked',
+    errors: {
+      MCP_CONNECTION_NOT_FOUND:
+        'This connection no longer exists: it was already revoked.',
+    },
   },
   mcpAccess: {
     title: 'MCP access',
