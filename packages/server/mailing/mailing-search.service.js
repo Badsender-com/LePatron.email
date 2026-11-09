@@ -42,6 +42,7 @@ const ID_ONLY = Object.freeze({ _id: 1 });
 
 module.exports = {
   searchMailings,
+  findMailingsByWords,
   findReadableMailings,
   findReadableMailing,
   locateReadableMailing,
@@ -102,6 +103,34 @@ async function searchMailings({
       }),
     },
   };
+}
+
+/**
+ * The mailings a user may read, by the rule of the search, that hold every
+ * word somewhere in what describes them (see `searchMailings`), the most
+ * recently updated first. Their id, name and update date only, with no count
+ * and nothing else read of them: what an assistant picks a result from (MCP
+ * `search`).
+ *
+ * @param {Object} user the request user
+ * @param {string[]} words
+ * @param {number} limit how many at most, 100 at most
+ * @returns {Promise<Object[]>} lean mailings: `_id`, `name`, `updatedAt`
+ */
+async function findMailingsByWords(user, words, limit) {
+  const groupId = listingGroupIdOf(user);
+  const { readable } = await readableScope(user, groupId);
+  const filter = { ...readable, ...(await wordsFilter({ words }, groupId)) };
+  try {
+    return await Mailings.find(filter)
+      .select('name updatedAt')
+      .sort({ updatedAt: -1 })
+      .limit(Math.min(limit, MAX_PAGE_SIZE))
+      .maxTimeMS(MAX_TIME_MS)
+      .lean();
+  } catch (error) {
+    throw outOfTime(error);
+  }
 }
 
 /**
@@ -237,11 +266,15 @@ async function findPage(query) {
   try {
     return await Mailings.findForApiWithPagination(query);
   } catch (error) {
-    if (error && error.code === MAX_TIME_EXPIRED) {
-      throw new ServiceUnavailable(ERROR_CODES.SEARCH_TIMEOUT);
-    }
-    throw error;
+    throw outOfTime(error);
   }
+}
+
+// A query out of its time is a search to narrow, answered as a 503.
+function outOfTime(error) {
+  return error && error.code === MAX_TIME_EXPIRED
+    ? new ServiceUnavailable(ERROR_CODES.SEARCH_TIMEOUT)
+    : error;
 }
 
 // The page the database serves: 25 emails unless asked, 100 at most, "All"

@@ -18,7 +18,10 @@ describe('search and fetch', () => {
     harness.seed(f.SEED);
     client = await harness.connectAs(f.FRANK);
   });
-  afterEach(() => harness.disconnect());
+  afterEach(() => {
+    jest.restoreAllMocks();
+    return harness.disconnect();
+  });
 
   const search = async (query) =>
     harness.answerOf(
@@ -137,6 +140,40 @@ describe('search and fetch', () => {
     // No full-text search on content in this version.
     it('does not search the content of a mailing', async () => {
       expect(ids(await search('free delivery'))).toEqual([]);
+    });
+
+    it('gives the most recently updated mailings first, 20 at most', async () => {
+      const promos = Array.from({ length: 22 }, (_, i) => ({
+        ...f.SEED.mailings.find((m) => m._id === f.M_APPROVED),
+        _id: `507f1f77bcf86cd7994395${String(i).padStart(2, '0')}`,
+        name: `Promo ${i}`,
+        updatedAt: f.daysFrom(-i),
+      }));
+      harness.seed({ ...f.SEED, mailings: [...f.SEED.mailings, ...promos] });
+      client = await harness.connectAs(f.FRANK);
+
+      const { results } = await search('promo');
+
+      expect(results.map((result) => result.title)).toEqual(
+        promos.slice(0, 20).map((promo) => promo.name)
+      );
+    });
+
+    // A search reads a page of names, never the listing's count nor what the
+    // listing adds to each mailing.
+    it('counts nothing', async () => {
+      const {
+        Mailings,
+        Comments,
+      } = require('../../../packages/server/common/models.common.js');
+      const counts = jest.spyOn(Mailings, 'countDocuments');
+      const approvals = jest.spyOn(Comments, 'findApprovedMailingIds');
+
+      expect(ids(await search('black friday'))).toEqual(
+        [`mailing:${f.M_ARCHIVED}`, `mailing:${f.M_NEWSLETTER}`].sort()
+      );
+      expect(counts).not.toHaveBeenCalled();
+      expect(approvals).not.toHaveBeenCalled();
     });
   });
 

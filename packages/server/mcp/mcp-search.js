@@ -1,7 +1,7 @@
 'use strict';
 
 const { z } = require('zod');
-const { searchMailings } = require('../mailing/mailing-search.service.js');
+const { findMailingsByWords } = require('../mailing/mailing-search.service.js');
 const { siteOrigin } = require('../email-templates/email-template.js');
 const { versionLabel } = require('../ai-skill/services/version-helpers.js');
 const { containingRegExp } = require('../utils/text-search.js');
@@ -52,11 +52,7 @@ async function search({ user, group, drafts }, { query }) {
   let found;
   try {
     found = await Promise.all([
-      searchMailings({
-        user,
-        pagination: { page: 1, itemsPerPage: MAX_MAILINGS },
-        within: { words },
-      }),
+      findMailingsByWords(user, words, MAX_MAILINGS),
       expertises.searchableExpertises(group, drafts),
     ]);
   } catch (error) {
@@ -65,10 +61,10 @@ async function search({ user, group, drafts }, { query }) {
       'The search took too long: try again with more precise words.'
     );
   }
-  const [{ items }, served] = found;
+  const [mailings, served] = found;
   const patterns = words.map(containingRegExp);
   const results = [
-    ...items.docs.map((mailing) => ({
+    ...mailings.map((mailing) => ({
       id: `${MAILING_KIND}:${mailing._id}`,
       title: mailing.name,
       url: editorUrlOf(mailing._id),

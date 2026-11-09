@@ -33,8 +33,11 @@
  *   fake-mongo-aggregate.js reads.
  * - Each collection the seed names is a model; the others are empty.
  * - `paginate` answers like mongoose-paginate-v2, as fake-listing-models.js
- *   does, and `Mailings.findForApiWithPagination` is the schema's own static
- *   over it: the search across workspaces (ADR 0007) runs as in the app.
+ *   does, and counts a page as it does: through the caller's
+ *   `useCustomCountFn`, or else `countDocuments`. The schema's own
+ *   `findForApiWithPagination` runs over it: the search across workspaces
+ *   (ADR 0007) runs as in the app.
+ * - A query takes `maxTimeMS`, and never runs out of its time.
  * - `Comments.findApprovedMailingIds` is the schema's own static, an
  *   aggregation over the fake comments, and the fake `Comments` is the
  *   `Comment` model Mongoose knows: the listing reads the approval of each
@@ -194,6 +197,10 @@ function query(list, shape) {
       limit = count;
       return chain;
     },
+    // No query runs out of its time here.
+    maxTimeMS() {
+      return chain;
+    },
     skip(count) {
       skip = count;
       return chain;
@@ -257,13 +264,20 @@ function model(records) {
       if (index !== -1) records.splice(index, 1);
       return { deletedCount: index === -1 ? 0 : 1 };
     },
-    countDocuments: (filter = {}) => Promise.resolve(matching(filter)().length),
+    countDocuments: (filter = {}) =>
+      query(matching(filter), (docs) => docs.length),
     // A boolean, as Mongoose 5 answers it.
     exists: (filter = {}) => Promise.resolve(matching(filter)().length > 0),
-    // What mongoose-paginate-v2 answers, with the options the search passes.
-    paginate: async (filter, options = {}) => {
+    // What mongoose-paginate-v2 answers, with the options the search passes:
+    // a page is counted, through the caller's count when it gives one.
+    async paginate(filter, options = {}) {
       const all = sortedBy(options.sort, matching(filter)());
       const paginated = options.pagination !== false;
+      const totalDocs = paginated
+        ? await (typeof options.useCustomCountFn === 'function'
+            ? options.useCustomCountFn()
+            : this.countDocuments(filter).exec())
+        : all.length;
       const limit = paginated ? options.limit ?? 10 : all.length;
       const page = paginated ? options.page ?? 1 : 1;
       const start = (page - 1) * limit;
@@ -280,7 +294,7 @@ function model(records) {
           : docs.map((doc, index) =>
               toDocument(doc, options.projection ? undefined : records[index])
             ),
-        totalDocs: all.length,
+        totalDocs,
         limit,
         page,
         totalPages,
