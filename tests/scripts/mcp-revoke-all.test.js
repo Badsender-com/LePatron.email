@@ -1,7 +1,7 @@
 'use strict';
 
 // The script that cuts every assistant off (ADR 0012) does nothing unless
-// told to: what it runs is tested in oauth.store.test.js.
+// told to: what it runs is tested in oauth.revocation.test.js.
 
 const mongoose = require('mongoose');
 const { main } = require('../../scripts/mcp-revoke-all.js');

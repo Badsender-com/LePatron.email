@@ -4,8 +4,9 @@
  * An in-memory stand-in for the MongoDB driver's database, for what the app
  * reads and writes through `mongoose.connection.db` rather than a model: the
  * store of the authorization server (mcp-oauth-store.js). There is no test
- * database: each collection answers as the driver the app pins (mongodb 3.6)
- * and the MongoDB it targets (before 5.0) would, and throws where they would.
+ * database: each collection answers as the driver the app reads it through,
+ * the one Mongoose nests (mongodb 3.7.4, `mongoose.connection.db`), and the
+ * MongoDB it targets (before 5.0) would, and throws where they would.
  *
  * - `createIndex(keys, options)` is recorded in `indexes`.
  * - `updateOne(filter, update, { upsert })` takes `$set` and `$unset`; a
