@@ -3,16 +3,12 @@
  */
 'use strict';
 
-// Feedback and retex (ADR 0012, GLOSSARY.md). A feedback is a thumbs up or down
-// and a comment. Its retex, a session summary the assistant writes, is kept only
-// when the group allows retex and the user agrees to it for that feedback; the
-// tool says what it kept, since the user cannot see LePatron's side.
+// Feedback (ADR 0012, GLOSSARY.md). A feedback is a thumbs up or down and a
+// comment. What the work taught is a retex, apart (ADR 0021,
+// mcp.retex.test.js): a feedback no longer carries a summary of the session.
 
 const harness = require('../../helpers/mcp-harness');
 const f = require('../../helpers/mcp-fixtures');
-
-const SUMMARY =
-  'The user asked for Black Friday subject lines; two of three were too long.';
 
 describe('feedback and retex', () => {
   beforeEach(() => harness.seed(f.SEED));
@@ -32,7 +28,7 @@ describe('feedback and retex', () => {
       references: [{ kind: 'skill', id: 'redaction.subject-ideas' }],
     });
 
-    expect(answer).toEqual({ recorded: true, retex: 'none' });
+    expect(answer).toEqual({ recorded: true });
   });
 
   it('refuses a rating other than up or down', async () => {
@@ -73,7 +69,6 @@ describe('feedback and retex', () => {
     it('records one the user may read', async () => {
       expect(await submit(f.FRANK, about(f.M_NEWSLETTER))).toEqual({
         recorded: true,
-        retex: 'none',
       });
       expect(harness.stored('feedbacks')[0].references).toEqual([
         { kind: 'mailing', id: f.M_NEWSLETTER, version: null },
@@ -126,7 +121,7 @@ describe('feedback and retex', () => {
               { kind: 'mailing', id: f.M_NEWSLETTER },
             ],
           })
-        ).toEqual({ recorded: true, retex: 'none' });
+        ).toEqual({ recorded: true });
         expect(harness.stored('feedbacks')[0].references).toEqual([
           { kind: 'mailing', id: f.M_NEWSLETTER, version: null },
         ]);
@@ -168,7 +163,7 @@ describe('feedback and retex', () => {
             { kind: 'expertise', id: 'redaction.subject-line' },
           ],
         })
-      ).toEqual({ recorded: true, retex: 'none' });
+      ).toEqual({ recorded: true });
       expect(harness.stored('feedbacks')[0].references).toEqual([
         { kind: 'expertise', id: 'redaction.subject-line', version: '2.1' },
       ]);
@@ -225,47 +220,25 @@ describe('feedback and retex', () => {
     ]);
   });
 
-  // The comment reaches the platform company whatever the retex: without
-  // it, a short word on LePatron, never room for a session summary.
+  // The comment reaches the platform company: a short word on LePatron,
+  // never room for a session summary, which a feedback no longer carries
+  // (ADR 0021).
   describe('the length of a comment', () => {
     const SHORT = 'c'.repeat(500);
     const LONG = 'c'.repeat(501);
 
     it.each([
-      ['the company does not allow retex', false, true],
-      ['the user does not agree to it', true, false],
-    ])(
-      'is 500 characters at most when %s',
-      async (_case, allowRetex, consent) => {
-        harness.update('groups', f.CLIENT_GROUP, { allowRetex });
+      ['the company allows retex', true],
+      ['the company does not allow retex', false],
+    ])('is 500 characters at most when %s', async (_case, allowRetex) => {
+      harness.update('groups', f.CLIENT_GROUP, { allowRetex });
 
-        const short = await submit(f.FRANK, {
-          rating: 'up',
-          comment: SHORT,
-          consentToRetex: consent,
-        });
-        const long = await submit(f.FRANK, {
-          rating: 'up',
-          comment: LONG,
-          consentToRetex: consent,
-        });
+      const short = await submit(f.FRANK, { rating: 'up', comment: SHORT });
+      const long = await submit(f.FRANK, { rating: 'up', comment: LONG });
 
-        expect(short).toMatchObject({ recorded: true });
-        expect(long.error).toMatch(/500 characters/);
-        expect(harness.stored('feedbacks')).toHaveLength(1);
-      }
-    );
-
-    it('is 4000 characters at most when the retex is granted', async () => {
-      harness.update('groups', f.CLIENT_GROUP, { allowRetex: true });
-
-      const answer = await submit(f.FRANK, {
-        rating: 'up',
-        comment: 'c'.repeat(4000),
-        consentToRetex: true,
-      });
-
-      expect(answer).toMatchObject({ recorded: true });
+      expect(short).toMatchObject({ recorded: true });
+      expect(long.error).toMatch(/500 characters/);
+      expect(harness.stored('feedbacks')).toHaveLength(1);
     });
 
     it('is said in the description of the tool', async () => {
@@ -280,28 +253,9 @@ describe('feedback and retex', () => {
     });
   });
 
-  it.each([
-    ['the group does not allow retex', false, true, 'dropped'],
-    ['the user does not agree to it', true, false, 'dropped'],
-    ['the group allows it and the user agrees', true, true, 'kept'],
-  ])(
-    'handles a session summary when %s',
-    async (_case, allowRetex, consent, retex) => {
-      harness.update('groups', f.CLIENT_GROUP, { allowRetex });
-
-      const answer = await submit(f.FRANK, {
-        rating: 'down',
-        comment: 'Too long',
-        consentToRetex: consent,
-        sessionSummary: SUMMARY,
-      });
-
-      expect(answer).toEqual({ recorded: true, retex });
-    }
-  );
-
   // Stopping the retex forgets what it let the feedbacks keep (ADR 0012): the
-  // summaries, and the comments longer than 500 characters, cut. The PUT that
+  // summaries stored before ADR 0021, and the comments longer than 500
+  // characters, cut. The PUT that
   // calls it is tested with the group's switches.
   describe('the retex stopped', () => {
     const LONG = 'c'.repeat(1200);
@@ -312,17 +266,19 @@ describe('feedback and retex', () => {
         ...args
       );
     const kept = () => harness.stored('feedbacks');
+    const SUMMARY =
+      'The user asked for Black Friday subject lines; two of three were too long.';
 
     beforeEach(() => {
       harness.update('groups', f.CLIENT_GROUP, { allowRetex: true });
     });
 
     it('forgets the summaries and cuts the long comments of the company, and keeps its feedbacks', async () => {
-      await submit(f.FRANK, {
+      await models().McpFeedbacks.create({
+        _company: f.CLIENT_GROUP,
         rating: 'down',
         comment: LONG,
-        consentToRetex: true,
-        sessionSummary: SUMMARY,
+        retex: SUMMARY,
       });
       await models().McpFeedbacks.create({
         _company: f.OTHER_GROUP,
@@ -366,42 +322,6 @@ describe('feedback and retex', () => {
       expect(odd).not.toMatch(/[\uD800-\uDBFF]$/);
       expect(short).toBe('é'.repeat(400));
     });
-
-    // The switch turned off while the feedback was being written: the
-    // feedback keeps no more than the others once the retex is stopped.
-    it('forgets what a feedback written meanwhile kept', async () => {
-      const create = models().McpFeedbacks.create;
-      const spy = jest
-        .spyOn(models().McpFeedbacks, 'create')
-        .mockImplementationOnce(async (record) => {
-          harness.update('groups', f.CLIENT_GROUP, { allowRetex: false });
-          return create(record);
-        });
-
-      const answer = await submit(f.FRANK, {
-        rating: 'down',
-        comment: LONG,
-        consentToRetex: true,
-        sessionSummary: SUMMARY,
-      });
-      spy.mockRestore();
-
-      expect(answer).toEqual({ recorded: true, retex: 'dropped' });
-      expect(kept()[0]).toMatchObject({ retex: null });
-      expect(kept()[0].comment).toHaveLength(500);
-    });
-
-    it('leaves a feedback written while it is allowed as written', async () => {
-      const answer = await submit(f.FRANK, {
-        rating: 'down',
-        comment: LONG,
-        consentToRetex: true,
-        sessionSummary: SUMMARY,
-      });
-
-      expect(answer).toEqual({ recorded: true, retex: 'kept' });
-      expect(kept()[0]).toMatchObject({ retex: SUMMARY, comment: LONG });
-    });
   });
 
   // The super admins' list of feedbacks, read through its route (agreed as a
@@ -422,19 +342,14 @@ describe('feedback and retex', () => {
     });
 
     beforeEach(async () => {
-      harness.update('groups', f.CLIENT_GROUP, { allowRetex: true });
       await submit(f.FRANK, {
         rating: 'down',
         comment: 'Too long',
         references: [{ kind: 'skill', id: 'redaction.subject-ideas' }],
-        consentToRetex: true,
-        sessionSummary: SUMMARY,
       });
       await submit(f.WREN, {
         rating: 'up',
         references: [{ kind: 'expertise', id: 'redaction.subject-line' }],
-        consentToRetex: false,
-        sessionSummary: 'Not to be kept',
       });
     });
 
@@ -451,7 +366,6 @@ describe('feedback and retex', () => {
             references: [
               { kind: 'skill', id: 'redaction.subject-ideas', version: '1.2' },
             ],
-            retex: SUMMARY,
           }),
           expect.objectContaining({
             rating: 'up',
@@ -462,7 +376,6 @@ describe('feedback and retex', () => {
                 version: '2.1',
               },
             ],
-            retex: null,
           }),
         ])
       );

@@ -39,6 +39,7 @@ const McpFeedbackSchema = require('../mcp/mcp-feedback.schema.js');
 const McpCallLogSchema = require('../mcp/mcp-call-log.schema.js');
 const McpClientSchema = require('../mcp/mcp-client.schema.js');
 const McpConnectionSchema = require('../mcp/mcp-connection.schema.js');
+const McpRetexSchema = require('../mcp/mcp-retex.schema.js');
 
 /// ///
 // EXPORTS
@@ -135,6 +136,7 @@ const McpConnections = mongoose.model(
   modelNames.McpConnectionModel,
   McpConnectionSchema
 );
+const McpRetexes = mongoose.model(modelNames.McpRetexModel, McpRetexSchema);
 
 module.exports = {
   mongoose,
@@ -172,4 +174,5 @@ module.exports = {
   McpCallLogs,
   McpClients,
   McpConnections,
+  McpRetexes,
 };

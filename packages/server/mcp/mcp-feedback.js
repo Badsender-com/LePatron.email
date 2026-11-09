@@ -1,11 +1,8 @@
 'use strict';
 
 const { z } = require('zod');
-const { McpFeedbacks, Groups } = require('../common/models.common.js');
-const {
-  forgetRetex,
-  MAX_COMMENT_WITHOUT_RETEX,
-} = require('./mcp-access-option.js');
+const { McpFeedbacks } = require('../common/models.common.js');
+const { MAX_COMMENT_WITHOUT_RETEX } = require('./mcp-access-option.js');
 const { versionLabel } = require('../ai-skill/services/version-helpers.js');
 const { withIdentity, success, failure } = require('./mcp-identity.js');
 const { ADDITIVE } = require('./mcp-tool-grammar.js');
@@ -26,11 +23,6 @@ const asReferred = (reference) =>
   BARE_ID[reference.kind]
     ? { ...reference, id: BARE_ID[reference.kind](reference.id) }
     : reference;
-
-async function stillAllowsRetex(groupId) {
-  const group = await Groups.findById(groupId).select('allowRetex').lean();
-  return Boolean(group && group.allowRetex === true);
-}
 
 // What each kind of reference is read with, as the user may read it, by name
 // only: the version a skill or an expertise was given on (a draft's in drafts
@@ -83,10 +75,9 @@ async function resolveReferences(references, identity) {
 }
 
 /**
- * A feedback, and its retex (ADR 0012): the session summary the assistant
- * writes is kept only when the company allows retex and the user agreed to it
- * for this feedback. The answer says what was kept, since the user cannot see
- * LePatron's side.
+ * A feedback (ADR 0012): a rating and a comment on what LePatron gave. What
+ * the work taught goes in a retex, apart (ADR 0021): a feedback no longer
+ * carries a summary of the session.
  */
 async function submitFeedback(identity, args, ctx) {
   const authInfo = ctx.http?.authInfo || {};
@@ -100,49 +91,33 @@ async function submitFeedback(identity, args, ctx) {
     );
   }
 
-  const summary = (args.sessionSummary || '').trim();
-  const allowed =
-    identity.group.allowRetex === true && args.consentToRetex === true;
-  // The comment reaches the platform company whatever the retex: without it,
-  // it stays a short word on LePatron, never room for a session summary.
+  // The comment reaches the platform company: a short word on LePatron,
+  // never room for a session summary, which a feedback no longer carries
+  // (ADR 0021): what the work taught is a retex, apart.
   const comment = args.comment || '';
-  if (!allowed && comment.length > MAX_COMMENT_WITHOUT_RETEX) {
+  if (comment.length > MAX_COMMENT_WITHOUT_RETEX) {
     return failure(
-      `The comment is limited to ${MAX_COMMENT_WITHOUT_RETEX} characters when no session summary may be shared (the user's consent and the company's): say in a few words what the user thinks of LePatron.`
+      `The comment is limited to ${MAX_COMMENT_WITHOUT_RETEX} characters: say in a few words what the user thinks of LePatron. What the work taught about a skill or an expertise is a retex: report_retex.`
     );
   }
-  let retex = 'none';
-  if (summary) retex = allowed ? 'kept' : 'dropped';
 
-  const feedback = await McpFeedbacks.create({
+  await McpFeedbacks.create({
     _company: identity.group._id,
     _user: identity.user._id,
     clientId: authInfo.clientId || '',
     rating: args.rating,
     comment,
     references,
-    retex: retex === 'kept' ? summary : null,
     expiresAt: computeExpiresAt(new Date(), identity.group.logRetentionDays),
   });
 
-  // The company may have stopped the retex while this feedback was written:
-  // what it let the feedback keep is then forgotten, as for the others.
-  const keptByRetex =
-    retex === 'kept' || comment.length > MAX_COMMENT_WITHOUT_RETEX;
-  if (keptByRetex && !(await stillAllowsRetex(identity.group._id))) {
-    await forgetRetex(identity.group._id, { _id: feedback._id });
-    if (retex === 'kept') retex = 'dropped';
-  }
-
-  return success({ recorded: true, retex });
+  return success({ recorded: true });
 }
 
 // What one feedback holds at most: a few things it is about, and a comment
-// and a summary a person reads. The comment is short unless the retex is
-// granted, by the company and by the user (ADR 0012).
+// a person reads, short (ADR 0012), checked with a readable refusal.
 const MAX_REFERENCES = 20;
 const MAX_COMMENT = 4000;
-const MAX_SUMMARY = 20000;
 const MAX_ID_LENGTH = 200;
 
 const FEEDBACK_INPUT = z.object({
@@ -171,23 +146,9 @@ const FEEDBACK_INPUT = z.object({
     .max(MAX_REFERENCES)
     .optional()
     .describe(`What the feedback is about, ${MAX_REFERENCES} at most.`),
-  consentToRetex: z
-    .boolean()
-    .optional()
-    .describe(
-      'true only if the user explicitly agreed to share a summary of the session with the platform company, for this feedback.'
-    ),
-  sessionSummary: z
-    .string()
-    .max(MAX_SUMMARY)
-    .optional()
-    .describe(
-      "A summary of the session, kept only with consentToRetex and if the company allows it. Never the user's own content."
-    ),
 });
 const FEEDBACK_OUTPUT = z.object({
   recorded: z.boolean(),
-  retex: z.enum(['none', 'kept', 'dropped']),
 });
 
 function registerSubmitFeedback(server) {
@@ -195,7 +156,7 @@ function registerSubmitFeedback(server) {
     'submit_feedback',
     {
       title: 'Send feedback on LePatron',
-      description: `Sends the user's feedback on what LePatron gave them: a thumbs up or down, a comment, and what it is about (skills, expertises, mailings). The rating and the comment are always shared with the platform company: write what the user says of LePatron, never the content of their conversation, in ${MAX_COMMENT_WITHOUT_RETEX} characters at most, or ${MAX_COMMENT} when a session summary may be shared. A summary of the session may be attached only if the user explicitly agrees to share it with the platform company (consentToRetex); ask them first. It is kept only if their company allows it too. The answer says whether the summary was kept.`,
+      description: `Sends the user's feedback on what LePatron gave them: a thumbs up or down, a comment, and what it is about (skills, expertises, mailings). The rating and the comment are always shared with the platform company: write what the user says of LePatron, never the content of their conversation, in ${MAX_COMMENT_WITHOUT_RETEX} characters at most. What the work taught about a skill or an expertise is a retex: report_retex.`,
       inputSchema: FEEDBACK_INPUT,
       outputSchema: FEEDBACK_OUTPUT,
       annotations: ADDITIVE,

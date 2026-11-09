@@ -14,6 +14,8 @@ const { registerAuthoringTools } = require('./mcp-authoring.js');
 const { registerPublicationTools } = require('./mcp-publication.js');
 const { registerUseDrafts } = require('./mcp-drafts.js');
 const { registerSubmitFeedback } = require('./mcp-feedback.js');
+const { registerReportRetex } = require('./mcp-retex.js');
+const { registerRetexReading } = require('./mcp-retex-read.js');
 const {
   registerListMailings,
   registerListWorkspaces,
@@ -82,6 +84,8 @@ function createMcpServer({ authInfo } = {}) {
   registerSkillResources(server);
   registerFindSkills(server);
   registerSubmitFeedback(server);
+  // What the work taught (ADR 0021): anyone reports a retex.
+  registerReportRetex(server);
   registerListMailings(server);
   registerListWorkspaces(server);
   registerGetMailing(server);
@@ -96,6 +100,8 @@ function createMcpServer({ authInfo } = {}) {
     registerPublicationTools(server);
     // Trying the drafts before publishing them (#1385).
     registerUseDrafts(server);
+    // The retex of every company, to improve the skills and expertises.
+    registerRetexReading(server);
   }
   return server;
 }
