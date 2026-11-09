@@ -234,8 +234,39 @@ describe('fake listing models, dotted projections and aggregations', () => {
     ]);
   });
 
+  // `$strLenCP` counts code points, as MongoDB does, and fails on what is no
+  // string: a preview's length is read without the preview.
+  it('measures a string in code points, and nothing else', () => {
+    const records = [
+      { _id: 'a', html: 'é😀<p>' },
+      { _id: 'b' },
+      { _id: 'c', html: null },
+    ];
+    const length = { $strLenCP: { $ifNull: ['$html', ''] } };
+
+    expect(aggregated(records, [{ $project: { length } }])).toEqual([
+      { _id: 'a', length: 5 },
+      { _id: 'b', length: 0 },
+      { _id: 'c', length: 0 },
+    ]);
+    expect(
+      aggregated(records, [{ $project: { _id: 0, length, title: 1 } }])
+    ).toEqual([{ length: 5 }, { length: 0 }, { length: 0 }]);
+  });
+
+  it.each([
+    ['a missing field', { _id: 'b' }, 'missing'],
+    ['null', { _id: 'c', html: null }, 'null'],
+    ['a number', { _id: 'd', html: 42 }, 'int'],
+  ])('fails to measure %s, as MongoDB does', (_, record, found) => {
+    expect(() =>
+      aggregated([record], [{ $project: { length: { $strLenCP: '$html' } } }])
+    ).toThrow(`$strLenCP requires a string argument, found: ${found}`);
+  });
+
   it.each([
     ['an unknown stage', [{ $lookup: {} }]],
+    ['an unknown operator', [{ $project: { n: { $size: '$versions' } } }]],
     ['the unwind of a dotted path', [{ $unwind: '$a.b' }]],
     ['a group by an expression', [{ $group: { _id: { a: '$a' } } }]],
     [

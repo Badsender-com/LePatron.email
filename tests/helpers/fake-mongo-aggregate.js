@@ -5,15 +5,17 @@
  * `$match`, `$unwind` (of a top-level array, given as a string), `$project`,
  * `$sort`, `$limit` and `$group` stages, read as fake-mongo-query.js reads a
  * find, but for what Mongoose does to a find and not to an aggregation: a
- * string is not cast to an id, and `$elemMatch` is no projection. A `$group`
- * keys on a top-level field (`'$_mailing'`) and accumulates with `$first` of
- * a field or `$sum` of a number or a field, its groups in the order their
- * first document came. Any other stage or accumulator throws, rather than
- * answer what MongoDB would not.
+ * string is not cast to an id, and `$elemMatch` is no projection. A `$project`
+ * also computes a field with `$strLenCP` (a string's length in code points,
+ * an error for anything else) and `$ifNull`, of a top-level field or a value.
+ * A `$group` keys on a top-level field (`'$_mailing'`) and accumulates with
+ * `$first` of a field or `$sum` of a number or a field, its groups in the
+ * order their first document came. Any other stage, operator or accumulator
+ * throws, rather than answer what MongoDB would not.
  */
 
 const { matches, sortedBy, projected } = require('./fake-mongo-query.js');
-const { comparable } = require('./fake-mongo-equality.js');
+const { comparable, isPlainObject } = require('./fake-mongo-equality.js');
 
 // `'$field'`: a top-level field of the document.
 function fieldOf(expression, what) {
@@ -68,6 +70,80 @@ function grouped(documents, { _id: key, ...accumulators }) {
   }));
 }
 
+// The value of an expression for a document: `'$field'`, a literal, or one
+// of the operators below.
+function evaluated(document, expression) {
+  if (typeof expression === 'string' && expression.startsWith('$')) {
+    return document[fieldOf(expression, 'the expression')];
+  }
+  if (!isPlainObject(expression)) return expression;
+  const [[name, argument], ...others] = Object.entries(expression);
+  if (others.length || !OPERATORS[name]) {
+    throw new Error(`fake models: the operator ${name} is not supported`);
+  }
+  return OPERATORS[name](document, argument);
+}
+
+// The BSON type MongoDB names in an error, for the values a record holds.
+function bsonTypeOf(value) {
+  if (value === undefined) return 'missing';
+  if (value === null) return 'null';
+  if (typeof value === 'number') {
+    return Number.isInteger(value) && Math.abs(value) < 2 ** 31
+      ? 'int'
+      : 'double';
+  }
+  if (typeof value === 'boolean') return 'bool';
+  if (Array.isArray(value)) return 'array';
+  return typeof value;
+}
+
+const OPERATORS = {
+  // Code points, not the UTF-16 units of `length`. MongoDB fails the whole
+  // aggregation on anything but a string: a missing field and null too.
+  $strLenCP: (document, argument) => {
+    const value = evaluated(document, argument);
+    if (typeof value !== 'string') {
+      throw new Error(
+        `$strLenCP requires a string argument, found: ${bsonTypeOf(value)}`
+      );
+    }
+    return [...value].length;
+  },
+  // A missing field or null gives the replacement.
+  $ifNull: (document, [value, replacement]) =>
+    evaluated(document, value) ?? evaluated(document, replacement),
+};
+
+const isExpression = (value) =>
+  isPlainObject(value) && !('$elemMatch' in value);
+
+// What a find projects, then the fields an expression computes. A computed
+// field makes it an inclusion: of the `_id`, unless it is left out.
+function projectedWith(document, projection) {
+  const entries = Object.entries(projection);
+  const computed = entries.filter(([, value]) => isExpression(value));
+  const kept = Object.fromEntries(
+    entries.filter(([, value]) => !isExpression(value))
+  );
+  const fields = Object.keys(kept).filter((field) => field !== '_id');
+  const base =
+    computed.length && !fields.length
+      ? kept._id === 0 || kept._id === false
+        ? {}
+        : { _id: document._id }
+      : projected(document, kept, { aggregation: true });
+  return {
+    ...base,
+    ...Object.fromEntries(
+      computed.map(([field, expression]) => [
+        field,
+        evaluated(document, expression),
+      ])
+    ),
+  };
+}
+
 // `$unwind: '$versions'`: one document per element of a top-level array, none
 // for a document whose array is missing or empty.
 function unwound(documents, path) {
@@ -94,9 +170,7 @@ const STAGES = {
     ),
   $unwind: unwound,
   $project: (documents, projection) =>
-    documents.map((document) =>
-      projected(document, projection, { aggregation: true })
-    ),
+    documents.map((document) => projectedWith(document, projection)),
   $sort: (documents, spec) => sortedBy(spec, documents),
   $limit: (documents, count) => documents.slice(0, count),
   $group: grouped,
