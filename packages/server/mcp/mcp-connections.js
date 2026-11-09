@@ -100,13 +100,20 @@ async function useConnection(grantId) {
  * stops their refresh. From the store alone: the authorization server need
  * not be mounted (a script).
  *
- * Called as `(filter)`. The consent still calls it as `(provider, filter)`,
- * its former form, whose provider is not read.
+ * It takes the filter alone, which names some connections: every one of them
+ * is revokeAllConnections's, and a call in another form is refused.
  *
  * @param {Object} filter which connections
  */
-async function revokeConnections(...args) {
-  const filter = args[args.length - 1];
+async function revokeConnections(filter, ...more) {
+  if (
+    more.length > 0 ||
+    !filter ||
+    typeof filter !== 'object' ||
+    Object.keys(filter).length === 0
+  ) {
+    throw new TypeError('revokeConnections takes a filter of connections');
+  }
   const connections = await McpConnections.find(filter)
     .select('grantId')
     .lean();

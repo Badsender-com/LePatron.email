@@ -67,6 +67,28 @@ describe('revoking connections', () => {
     expect((await oauth.callMcp(app, otto.access_token)).status).toBe(200);
   });
 
+  it.each([
+    [
+      'in its former form, after the authorization server',
+      (filter, app) => [app.provider, filter],
+    ],
+    ['by an empty filter', () => [{}]],
+    ['by no filter', () => []],
+  ])('revokes nothing when called %s', async (_case, argsOf) => {
+    const app = oauth.createApp();
+    await oauth.connect(app, f.FRANK, { group: f.CLIENT_GROUP });
+    const {
+      revokeConnections,
+    } = require('../../../packages/server/mcp/mcp-connections.js');
+
+    await expect(
+      revokeConnections(...argsOf({ _user: f.FRANK }, app))
+    ).rejects.toThrow(TypeError);
+
+    expect(oauth.stored('connections')).toHaveLength(1);
+    expect(oauth.oauthStore('Grant').records).toHaveLength(1);
+  });
+
   it("forgets a deleted company's clients without the authorization server", async () => {
     const app = oauth.createApp();
     const { body } = await oauth
