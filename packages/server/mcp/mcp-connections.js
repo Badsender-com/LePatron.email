@@ -6,7 +6,7 @@ const permissions = require('../account/permissions.js');
 const { CAPABILITIES } = require('../../shared/access/roles.js');
 const { isObjectIdString } = require('../utils/model.js');
 const logger = require('../utils/logger.js');
-const { revokeByGrantIds } = require('./mcp-oauth-store.js');
+const { revokeByGrantIds, revokeEverything } = require('./mcp-oauth-store.js');
 
 const refuse = (res, status, message) => res.status(status).json({ message });
 
@@ -137,6 +137,20 @@ async function revokeConnections(...args) {
  */
 function forgetConnections(filter) {
   return revokeConnections(filter);
+}
+
+/**
+ * Revokes every connected application of every company at once: unlisted,
+ * then every grant and every token, every login and pending consent of the
+ * authorization server. The clients stay registered: their users connect
+ * again. What scripts/mcp-revoke-all.js runs.
+ *
+ * @returns {Promise<Object<string, number>>} how many went: `connections`,
+ *   and by model of the authorization server
+ */
+async function revokeAllConnections() {
+  const { deletedCount } = await McpConnections.deleteMany({});
+  return { connections: deletedCount, ...(await revokeEverything()) };
 }
 
 /**
@@ -273,6 +287,7 @@ module.exports = {
   useConnection,
   revokeConnections,
   forgetConnections,
+  revokeAllConnections,
   attachAuthorizationServer,
   createConnectionsRouter,
   createGroupConnectionsRouter,

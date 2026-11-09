@@ -521,3 +521,49 @@ describe('recording a connection', () => {
     ]);
   });
 });
+
+// What scripts/mcp-revoke-all.js runs: every assistant cut off at once.
+describe('revoking every connection', () => {
+  const REFRESH = (app, refreshToken) =>
+    request(app).post('/oauth/token').type('form').send({
+      grant_type: 'refresh_token',
+      refresh_token: refreshToken,
+      client_id: oauth.CIMD_CLIENT.client_id,
+      resource: oauth.MCP_RESOURCE,
+    });
+
+  it('stops every connected application, and keeps the clients', async () => {
+    const app = oauth.createApp();
+    const { body: client } = await oauth
+      .signIn(app, f.ALICE)
+      .post(`/api/groups/${f.CLIENT_GROUP}/mcp-clients`)
+      .send({
+        name: 'Copilot Studio',
+        redirectUris: ['https://copilot.example.test/callback'],
+      });
+    const frank = await oauth.connect(app, f.FRANK, { group: f.CLIENT_GROUP });
+    const otto = await oauth.connect(app, f.OTTO, { group: f.OTHER_GROUP });
+    const {
+      revokeAllConnections,
+    } = require('../../../packages/server/mcp/mcp-connections.js');
+
+    const counts = await revokeAllConnections();
+
+    expect(counts).toMatchObject({ connections: 2, Grant: 2 });
+    expect(oauth.stored('connections')).toEqual([]);
+    const calls = await Promise.all(
+      [frank, otto].map((tokens) => oauth.callMcp(app, tokens.access_token))
+    );
+    const refreshes = await Promise.all(
+      [frank, otto].map((tokens) => REFRESH(app, tokens.refresh_token))
+    );
+    expect(calls.map(({ status }) => status)).toEqual([401, 401]);
+    expect(refreshes.map(({ body }) => body.error)).toEqual([
+      'invalid_grant',
+      'invalid_grant',
+    ]);
+    expect(oauth.stored('clients')).toEqual([
+      expect.objectContaining({ clientId: client.clientId }),
+    ]);
+  });
+});

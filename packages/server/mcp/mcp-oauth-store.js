@@ -164,9 +164,27 @@ async function revokeByGrantIds(grantIds) {
   );
 }
 
+/**
+ * Revokes every grant and every token, and drops every login and pending
+ * consent of the authorization server. The clients stay registered.
+ *
+ * @returns {Promise<Object<string, number>>} how many went, by model
+ */
+async function revokeEverything() {
+  const models = [...ISSUED_BY_GRANT, 'Grant', 'Session', 'Interaction'];
+  const counts = await Promise.all(
+    models.map(async (model) => {
+      const { deletedCount } = await (await collectionOf(model)).deleteMany({});
+      return [model, deletedCount];
+    })
+  );
+  return Object.fromEntries(counts);
+}
+
 module.exports = {
   collectionOf,
   revokeByGrantIds,
+  revokeEverything,
   storedId,
   digest,
   secretDigest,
