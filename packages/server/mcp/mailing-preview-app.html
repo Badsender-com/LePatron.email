@@ -84,7 +84,8 @@
         }
 
         // Where a link of the email leads, resolved, when it is a web page:
-        // an HTML link, or an SVG one, whose address may be an `xlink:href`.
+        // an HTML link, an SVG one, whose address may be an `xlink:href`, or
+        // any element with an address, as MathML gives every element one.
         var XLINK = 'http://www.w3.org/1999/xlink';
         function webAddressOf(link, doc) {
           var href =
@@ -125,14 +126,16 @@
             // the frame away, there is nothing to bind to.
             if (bound || !doc || doc.URL !== 'about:srcdoc') return;
             bound = true;
-            // A link, or an image map's area, opens outside the
-            // conversation, through the host; never inside the frame.
-            // Every click in one is caught, whatever holds its address.
+            // A link, an image map's area, or any element with an address,
+            // opens outside the conversation, through the host; never inside
+            // the frame. Every click in one is caught, whatever holds its
+            // address (`*|href`: an `href` of any namespace, `xlink:` too).
             doc.addEventListener(
               'click',
               function (event) {
                 var link =
-                  event.target.closest && event.target.closest('a, area');
+                  event.target.closest &&
+                  event.target.closest('a, area, [*|href]');
                 if (!link) return;
                 event.preventDefault();
                 var url = webAddressOf(link, doc);

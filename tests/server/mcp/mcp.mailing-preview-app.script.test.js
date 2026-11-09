@@ -214,6 +214,10 @@ describe('the preview app, as a host runs it', () => {
       <a href="https://shop.example.test/svg"><text id="svg">SVG</text></a>
       <a xlink:href="https://shop.example.test/xlink"><text id="xlink">XLink</text></a>
     </svg>
+    <math>
+      <mrow href="https://shop.example.test/mathml"><mtext id="mathml">MathML</mtext></mrow>
+      <mrow href="javascript:void(0)"><mtext id="mathml-script">Script</mtext></mrow>
+    </math>
     <p><a id="mail" href="mailto:someone@example.test">Mail</a></p>
     <p><a id="script" href="javascript:void(0)">Script</a></p>`;
 
@@ -233,6 +237,11 @@ describe('the preview app, as a host runs it', () => {
     ['an image map area', 'area', 'https://shop.example.test/area'],
     ['an SVG link', 'svg', 'https://shop.example.test/svg'],
     ['an SVG link by xlink:href', 'xlink', 'https://shop.example.test/xlink'],
+    [
+      'a MathML element with an address',
+      'mathml',
+      'https://shop.example.test/mathml',
+    ],
   ])(
     'opens %s through the host, never in the frame',
     async (_kind, id, url) => {
@@ -253,6 +262,7 @@ describe('the preview app, as a host runs it', () => {
   it.each([
     ['a mail address', 'mail'],
     ['a script', 'script'],
+    ['a script, from a MathML element', 'mathml-script'],
   ])('opens no link to %s, nor follows it', async (_kind, id) => {
     const { sent, frame } = await showing(LINKS);
 
