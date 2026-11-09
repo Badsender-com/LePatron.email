@@ -23,6 +23,9 @@ const TTL = {
   Grant: 90 * 24 * 3600,
   RefreshToken: 30 * 24 * 3600,
 };
+// Where the provider answers its discovery document.
+const DISCOVERY_PATH = '/.well-known/openid-configuration';
+
 // A client that registered (DCR) and connected nobody since.
 const REGISTRATION_TTL = 24 * 3600;
 
@@ -280,6 +283,16 @@ function createAuthorizationServer({
     discovery: {
       authorization_response_iss_parameter_supported: true,
     },
+  });
+  // The provider keeps `openid` among its scopes, and announces ID tokens,
+  // whatever it is given: the discovery says what this server grants, and
+  // `openid` stays refused (getResourceServerInfo).
+  provider.use(async (ctx, next) => {
+    await next();
+    if (ctx.path === DISCOVERY_PATH && ctx.body && ctx.status === 200) {
+      ctx.body.scopes_supported = [...SCOPES];
+      delete ctx.body.id_token_signing_alg_values_supported;
+    }
   });
   attachAuthorizationServer(provider);
   provider.on('registration_create.success', (ctx, client) =>

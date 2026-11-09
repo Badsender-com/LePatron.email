@@ -119,6 +119,19 @@ describe('what the authorization server offers', () => {
     expect(body.pushed_authorization_request_endpoint).toBeUndefined();
   });
 
+  it.each([
+    '/.well-known/oauth-authorization-server/oauth',
+    '/oauth/.well-known/openid-configuration',
+  ])(
+    'announces only the scopes it grants, and no ID token, at %s',
+    async (path) => {
+      const { body } = await request(app).get(path);
+
+      expect(body.scopes_supported).toEqual(['mcp:read', 'skills:write']);
+      expect(body.id_token_signing_alg_values_supported).toBeUndefined();
+    }
+  );
+
   it('shows an error page of its own, with nothing from another site', async () => {
     const response = await request(app)
       .get('/oauth/auth')
