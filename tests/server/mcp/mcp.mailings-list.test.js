@@ -167,6 +167,49 @@ describe('mailings list and status', () => {
       );
     });
 
+    // The search's own filter, shared with the app: a mailing carrying any
+    // of the tags asked for.
+    it('filters by tags, at least one of them, as it says', async () => {
+      harness.update('mailings', f.M_SCHEDULED, { tags: ['christmas'] });
+      const client = await harness.connectAs(f.FRANK);
+      const { tools } = await client.listTools();
+      const { tags } = tools.find(
+        (tool) => tool.name === 'list_mailings'
+      ).inputSchema.properties;
+
+      expect(tags.description).toMatch(/at least one/i);
+      expect(
+        ids(await list(f.FRANK, { tags: ['black-friday', 'christmas'] }))
+      ).toEqual([f.M_ARCHIVED, f.M_NEWSLETTER, f.M_SCHEDULED].sort());
+    });
+
+    // The search's own bound, shared with the app: the instant given is
+    // left out.
+    it.each([
+      ['createdBefore', 'createdAt'],
+      ['updatedBefore', 'updatedAt'],
+    ])('leaves out the instant %s gives, as it says', async (filter, field) => {
+      const instant = f.daysFrom(-40);
+      harness.update('mailings', f.M_APPROVED, { [field]: instant });
+      const client = await harness.connectAs(f.FRANK);
+      const { tools } = await client.listTools();
+      const { properties } = tools.find(
+        (tool) => tool.name === 'list_mailings'
+      ).inputSchema;
+
+      expect(properties[filter].description).toMatch(/excluded/);
+      expect(
+        ids(await list(f.FRANK, { [filter]: instant.toISOString() }))
+      ).toEqual([]);
+      expect(
+        ids(
+          await list(f.FRANK, {
+            [filter]: new Date(instant.getTime() + 1).toISOString(),
+          })
+        )
+      ).toEqual([f.M_APPROVED]);
+    });
+
     it('filters by update date', async () => {
       const answer = await list(f.FRANK, {
         updatedAfter: f.daysFrom(-3).toISOString(),

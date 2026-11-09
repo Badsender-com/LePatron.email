@@ -161,7 +161,7 @@ const LIST_INPUT = z.object({
     .array(z.string().max(MAX_TAG_LENGTH))
     .max(MAX_TAGS)
     .optional()
-    .describe('Tags the mailing carries, all of them.'),
+    .describe('At least one of these tags.'),
   workspaceIds: LOCATION_IDS.optional().describe(
     'Workspace ids, from list_workspaces.'
   ),
@@ -178,9 +178,9 @@ const LIST_INPUT = z.object({
     .optional()
     .describe("A part of the author's name."),
   createdAfter: dateFilter('Created on or after this date.'),
-  createdBefore: dateFilter('Created on or before this date.'),
+  createdBefore: dateFilter('Created before this instant, excluded.'),
   updatedAfter: dateFilter('Updated on or after this date.'),
-  updatedBefore: dateFilter('Updated on or before this date.'),
+  updatedBefore: dateFilter('Updated before this instant, excluded.'),
   page: z
     .number()
     .int()
