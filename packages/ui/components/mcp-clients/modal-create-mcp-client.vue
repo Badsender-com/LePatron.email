@@ -6,8 +6,7 @@ import BsTextField from '~/components/form/bs-text-field';
 import BsTextarea from '~/components/form/bs-textarea';
 import BsSelect from '~/components/form/bs-select';
 import { ChevronDown, ChevronRight } from 'lucide-vue';
-
-const LOOPBACK = ['localhost', '127.0.0.1', '[::1]'];
+import { acceptedRedirectUris } from '../../../shared/mcp/redirect-uris.js';
 
 // One redirect URI a line, as the assistant's set-up screen gives them.
 const urisOf = (text) =>
@@ -15,19 +14,6 @@ const urisOf = (text) =>
     .split('\n')
     .map((line) => line.trim())
     .filter(Boolean);
-
-function isRedirectUri(value) {
-  try {
-    const url = new URL(value);
-    return (
-      !url.hash &&
-      (url.protocol === 'https:' ||
-        (url.protocol === 'http:' && LOOPBACK.includes(url.hostname)))
-    );
-  } catch {
-    return false;
-  }
-}
 
 const emptyClient = () => ({
   name: '',
@@ -60,7 +46,8 @@ export default {
           required,
           valid: (text) => {
             const uris = urisOf(text);
-            return uris.length <= 10 && uris.every(isRedirectUri);
+            const { accepted } = acceptedRedirectUris(uris);
+            return uris.length <= 10 && accepted.length === uris.length;
           },
         },
       },
@@ -86,11 +73,12 @@ export default {
       if (!name.maxLength) return [this.$t('mcpClients.errors.nameTooLong')];
       return [];
     },
-    // The first address refused, for the error to name it (ADR 0012).
+    // The first address refused, for the error to name it (ADR 0012): by the
+    // rule the server applies (shared/mcp/redirect-uris.js).
     refusedUri() {
-      return urisOf(this.client.redirectUris).find(
-        (uri) => !isRedirectUri(uri)
-      );
+      const uris = urisOf(this.client.redirectUris);
+      const { accepted } = acceptedRedirectUris(uris);
+      return uris.find((uri) => !accepted.includes(uri));
     },
     redirectUrisErrors() {
       const { redirectUris } = this.$v.client;

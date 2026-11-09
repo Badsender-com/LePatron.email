@@ -5,9 +5,14 @@ const net = require('net');
 // ESM only: Node 24 lets the app require it (ADR 0012).
 const { errors } = require('oidc-provider');
 
-// The user's own machine, as a redirect URI names it: the provider's own
-// list, so a client it reads as native takes any port on them (RFC 8252, 7.3).
-const LOOPBACK_HOSTS = new Set(['localhost', '127.0.0.1', '[::1]']);
+// The rule of the redirect URIs, which the form of a client registered by
+// hand reads too.
+const {
+  LOOPBACK_HOSTS,
+  isLoopbackRedirect,
+  isRedirectUri,
+  acceptedRedirectUris,
+} = require('../../shared/mcp/redirect-uris.js');
 
 function parsed(uri) {
   try {
@@ -15,63 +20,6 @@ function parsed(uri) {
   } catch {
     return null;
   }
-}
-
-/**
- * Whether `uri` sends the code to the user's own machine, in plain HTTP.
- *
- * @param {string} uri
- * @returns {boolean}
- */
-function isLoopbackRedirect(uri) {
-  const url = parsed(uri);
-  return url?.protocol === 'http:' && LOOPBACK_HOSTS.has(url.hostname);
-}
-
-/**
- * Where the authorization server may send a code (ADR 0012, and the MCP
- * specification: "MUST be either localhost or use HTTPS"): HTTPS on any host,
- * or plain HTTP to the user's own machine, on any port. An application's own
- * scheme, or plain HTTP to any other host, is refused.
- *
- * A URI is also written as a URL writes it, so that every reader of it reads
- * the same host: no backslash, no user nor password, no fragment, and the
- * very text its URL gives back (`href`), in lower case and with its slashes.
- *
- * @param {string} uri
- * @returns {boolean}
- */
-function isRedirectUri(uri) {
-  const url = parsed(uri);
-  if (!url || url.href !== uri || uri.includes('\\')) return false;
-  if (url.username || url.password || url.hash || uri.includes('#')) {
-    return false;
-  }
-  return url.protocol === 'https:' || isLoopbackRedirect(uri);
-}
-
-const isHttpsLoopback = (uri) => {
-  const url = parsed(uri);
-  return url?.protocol === 'https:' && LOOPBACK_HOSTS.has(url.hostname);
-};
-
-/**
- * The redirect URIs of a client the rule keeps, out of those it gives, and
- * whether it is a native application: one that comes back to the user's own
- * machine, whose HTTPS URIs never name it (RFC 8252, 7.2).
- *
- * @param {string[]} uris
- * @returns {{ accepted: string[], native: boolean }}
- */
-function acceptedRedirectUris(uris) {
-  const accepted = uris.filter(isRedirectUri);
-  const native = accepted.some(isLoopbackRedirect);
-  return {
-    accepted: native
-      ? accepted.filter((uri) => !isHttpsLoopback(uri))
-      : accepted,
-    native,
-  };
 }
 
 /**

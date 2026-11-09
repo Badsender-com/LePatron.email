@@ -28,6 +28,8 @@ function mountModal() {
         '~/components/form/bs-text-field': {},
         '~/components/form/bs-textarea': {},
         '~/components/form/bs-select': {},
+        // The rule the server applies, which the form imports.
+        '../../../shared/mcp/redirect-uris.js': require('../../../packages/shared/mcp/redirect-uris.js'),
       },
     }
   );
@@ -57,6 +59,11 @@ describe('the redirect URLs of an MCP client registered by hand', () => {
     ['com.example.app:/callback'],
     ['http://copilot.example.com/callback'],
     ['https://copilot.example.com/callback#fragment'],
+    ['http://localhost\\@evil.example/cb'],
+    ['http:\\\\localhost/cb'],
+    ['https:evil.example'],
+    ['HTTP://LOCALHOST/'],
+    ['https://user:secret@copilot.example.com/cb'],
   ])('refuses %s, and names it', async (uri) => {
     const vm = mountModal();
     const text = `https://copilot.example.com/callback\n${uri}`;
@@ -64,6 +71,14 @@ describe('the redirect URLs of an MCP client registered by hand', () => {
     expect(await errorsFor(vm, text)).toEqual([
       `mcpClients.errors.redirectUriRefused ${uri}`,
     ]);
+  });
+
+  it("names an HTTPS address to the user's own machine beside an HTTP one, as the server does", async () => {
+    const vm = mountModal();
+
+    expect(
+      await errorsFor(vm, 'https://localhost/cb\nhttp://localhost:8400/cb')
+    ).toEqual(['mcpClients.errors.redirectUriRefused https://localhost/cb']);
   });
 
   it.each([
