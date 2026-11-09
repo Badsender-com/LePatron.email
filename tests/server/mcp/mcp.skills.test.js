@@ -131,6 +131,15 @@ describe('find_skills', () => {
   });
   afterEach(() => harness.disconnect());
 
+  // It answers a list, as its name says.
+  it('is titled in the plural', async () => {
+    const { tools } = await client.listTools();
+
+    expect(tools.find((tool) => tool.name === 'find_skills').title).toBe(
+      'Find skills'
+    );
+  });
+
   const find = async (query) =>
     harness.answerOf(
       await client.callTool({ name: 'find_skills', arguments: { query } })

@@ -147,7 +147,7 @@ function registerFindSkills(server) {
   server.registerTool(
     'find_skills',
     {
-      title: 'Find a skill',
+      title: 'Find skills',
       description: `Finds the skills whose identifier, title or description match what the user wants to do, ${MAX_FOUND_SKILLS} at most. They are written in French: search with French words. When nothing matches, or without a query, every skill is listed (matched is false then): pick by their descriptions. Read the one that fits through its resource URI, then follow it.`,
       inputSchema: FIND_INPUT,
       outputSchema: FIND_OUTPUT,
