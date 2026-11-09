@@ -865,6 +865,8 @@ export default {
       'Your session has expired: log in to LePatron again, then start the connection again from your assistant.',
     readScopeRequired:
       'The assistant must at least be able to read LePatron: start the connection again from your assistant.',
+    noModule:
+      'The MCP module is not part of your company\'s subscription: contact the platform company to add it.',
   },
   mcpClients: {
     pageTitle: 'MCP clients',
@@ -989,6 +991,10 @@ export default {
       'Only Copilot Studio in manual mode needs one: Claude, ChatGPT and Microsoft 365 Copilot register themselves.',
     manageClients: 'Manage',
     turnOff: 'Turn off access',
+    notIncluded: 'Not included',
+    noModule:
+      'The MCP module is not part of the subscription of {group}. Contact the platform company to add it.',
+    openModule: 'Open the module',
     offTitle: 'Turn MCP access off?',
     offConfirm:
       'Every assistant connected to the accounts of {group} will be disconnected at once. Turning it back on reconnects none: each user will connect theirs again.',

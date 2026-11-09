@@ -26,6 +26,8 @@ const REFUSALS = {
   [ERROR_CODES.MCP_CONSENT_ACCOUNT_CANNOT_CONNECT]:
     'oauthConsent.accountCannotConnect',
   [ERROR_CODES.MCP_CONSENT_NO_ACCESS]: 'oauthConsent.noAccess',
+  // Only Badsender opens the module (ADR 0017): not the tech admin's to fix.
+  [ERROR_CODES.MCP_CONSENT_NO_MODULE]: 'oauthConsent.noModule',
   [ERROR_CODES.MCP_CONSENT_CLIENT_OF_ANOTHER_COMPANY]:
     'oauthConsent.clientOfAnotherCompany',
   [ERROR_CODES.MCP_CONSENT_READ_SCOPE_REQUIRED]:

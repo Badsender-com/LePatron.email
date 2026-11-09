@@ -1144,6 +1144,8 @@ export default {
       'Votre session a expiré : reconnectez-vous à LePatron, puis relancez la connexion depuis votre assistant.',
     readScopeRequired:
       'L\'assistant doit au moins pouvoir lire LePatron : relancez la connexion depuis votre assistant.',
+    noModule:
+      'Le module MCP n\'est pas inclus dans l\'abonnement de votre entreprise : contactez l\'entreprise plateforme pour l\'ajouter.',
   },
   mcpClients: {
     pageTitle: 'Clients MCP',
@@ -1271,6 +1273,10 @@ export default {
       'Seul Copilot Studio en mode manuel en a besoin : Claude, ChatGPT et Microsoft 365 Copilot s\'enregistrent seuls.',
     manageClients: 'Gérer',
     turnOff: 'Couper l\'accès',
+    notIncluded: 'Non inclus',
+    noModule:
+      'Le module MCP n\'est pas inclus dans l\'abonnement de {group}. Contactez l\'entreprise plateforme pour l\'ajouter.',
+    openModule: 'Ouvrir le module',
     offTitle: 'Couper l\'accès MCP ?',
     offConfirm:
       'Tous les assistants connectés aux comptes de {group} seront déconnectés tout de suite. Le réactiver ne les reconnectera pas : chaque utilisateur devra connecter le sien à nouveau.',

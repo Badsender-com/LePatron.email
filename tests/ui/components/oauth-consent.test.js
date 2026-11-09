@@ -141,6 +141,7 @@ describe('the consent of a connected application, refused', () => {
       'oauthConsent.accountCannotConnect',
     ],
     [403, 'MCP_CONSENT_NO_ACCESS', 'oauthConsent.noAccess'],
+    [403, 'MCP_CONSENT_NO_MODULE', 'oauthConsent.noModule'],
     [
       403,
       'MCP_CONSENT_CLIENT_OF_ANOTHER_COMPANY',

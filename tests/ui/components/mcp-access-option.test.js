@@ -15,7 +15,14 @@ function mountOption(copied) {
   const commit = jest.fn();
   const copy = jest.fn().mockResolvedValue(copied);
   const vm = mountSfc('packages/ui/components/group/mcp-access-option.vue', {
-    props: { group: { id: 'g1', name: 'Company A', enableMcp: true } },
+    props: {
+      group: {
+        id: 'g1',
+        name: 'Company A',
+        enableMcpModule: true,
+        enableMcp: true,
+      },
+    },
     mocks: {
       $t: (key) => key,
       $store: {
@@ -24,7 +31,10 @@ function mountOption(copied) {
       },
     },
     imports: {
+      vuex: { mapGetters: () => ({ can: () => () => false }) },
       'lucide-vue': {},
+      '~/store/user': { CAN: 'can', USER: 'user' },
+      '../../../shared/access/roles.js': { CAPABILITIES: {} },
       '~/helpers/mixins/mixin-group-switch.js': mixinGroupSwitch,
       '~/helpers/copy-to-clipboard.js': { __esModule: true, default: copy },
       '~/components/layout/bs-form-section.vue': {},

@@ -38,8 +38,15 @@ async function consenterOf(req) {
     .select('_id name')
     .sort({ name: 1 })
     .lean();
+  // A user stopped by their own group is told whether it lacks the module,
+  // which only Badsender opens, or MCP access, which its tech admin turns on.
+  const ownGroup =
+    !isPlatform && groups.length === 0
+      ? await Groups.findById(record._company).select('enableMcpModule').lean()
+      : null;
   return {
     user,
+    lacksModule: Boolean(ownGroup) && ownGroup.enableMcpModule !== true,
     groups: groups.map((group) => ({
       id: String(group._id),
       name: group.name,
@@ -146,8 +153,18 @@ function createInteractionsRouter(provider, resource) {
           (group) => group.id === company.id
         );
       }
+      // A user stopped by their own group is told whether it lacks the
+      // module, which only Badsender opens, or MCP access, which its tech
+      // admin turns on.
       if (consenter.groups.length === 0) {
-        return next(createError(403, ERROR_CODES.MCP_CONSENT_NO_ACCESS));
+        return next(
+          createError(
+            403,
+            consenter.lacksModule
+              ? ERROR_CODES.MCP_CONSENT_NO_MODULE
+              : ERROR_CODES.MCP_CONSENT_NO_ACCESS
+          )
+        );
       }
       req.clientCompany = company;
       // What the user may grant, whatever the application asked for: the
