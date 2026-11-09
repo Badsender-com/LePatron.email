@@ -161,6 +161,72 @@ describe('connected applications', () => {
   // Every role's rights: tests/server/mcp/connected-application.routes.test.js.
 });
 
+// A connection lasts 90 days whatever the browser it was consented in does
+// (ADR 0012): it ends when it is revoked, never with the authorization
+// server's session of that browser.
+describe('a connection and the session of its browser', () => {
+  const DAY_MS = 24 * 3600 * 1000;
+  let app;
+  beforeEach(() => {
+    app = oauth.createApp();
+  });
+  afterEach(() => {
+    oauth.restoreClock();
+  });
+
+  it('lives on when the same browser connects the application again', async () => {
+    const agent = oauth.signIn(app, f.FRANK);
+    const first = await oauth.connect(app, f.FRANK, {
+      group: f.CLIENT_GROUP,
+      agent,
+    });
+    await oauth.connect(app, f.FRANK, { group: f.CLIENT_GROUP, agent });
+
+    expect((await oauth.callMcp(app, first.access_token)).status).toBe(200);
+    expect((await refresh(app, first.refresh_token)).body.access_token).toEqual(
+      expect.any(String)
+    );
+  });
+
+  it("lives on once the browser's session is gone", async () => {
+    const tokens = await oauth.connect(app, f.FRANK, { group: f.CLIENT_GROUP });
+
+    await oauth.oauthStore('Session').deleteMany({});
+
+    expect((await oauth.callMcp(app, tokens.access_token)).status).toBe(200);
+    expect(
+      (await refresh(app, tokens.refresh_token)).body.access_token
+    ).toEqual(expect.any(String));
+  });
+
+  it("refreshes past the browser's session, a day later", async () => {
+    const tokens = await oauth.connect(app, f.FRANK, { group: f.CLIENT_GROUP });
+
+    oauth.later(DAY_MS + 60 * 1000);
+    const { body } = await refresh(app, tokens.refresh_token);
+
+    expect(body.access_token).toEqual(expect.any(String));
+    expect((await oauth.callMcp(app, body.access_token)).status).toBe(200);
+  });
+
+  it('stays refused once revoked', async () => {
+    const tokens = await oauth.connect(app, f.FRANK, { group: f.CLIENT_GROUP });
+    const [connection] = (
+      await oauth.signIn(app, f.FRANK).get('/api/connected-applications')
+    ).body.items;
+
+    await oauth
+      .signIn(app, f.FRANK)
+      .delete(`/api/connected-applications/${connection.id}`);
+    oauth.later(DAY_MS + 60 * 1000);
+
+    expect((await oauth.callMcp(app, tokens.access_token)).status).toBe(401);
+    expect((await refresh(app, tokens.refresh_token)).body.error).toBe(
+      'invalid_grant'
+    );
+  });
+});
+
 describe("a group's connected applications", () => {
   let app;
   beforeEach(() => {

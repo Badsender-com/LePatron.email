@@ -94,6 +94,7 @@ La colonne « Enregistrement » dit comment le client se fait connaître de LePa
 - [ ] **Copilot Studio, Manual :** le parcours en trois temps de la documentation fonctionne (outil créé avec des valeurs provisoires, client LePatron créé avec la callback URL, valeurs remplacées), avec PKCE et l'envoi du secret dans le corps de la requête.
 - [ ] **Microsoft 365 Copilot :** l'agent obtient un secret à l'enregistrement, et le paquet se déploie depuis le centre d'administration. Le tester dans les 24 heures qui suivent sa création : un client enregistré dynamiquement que personne ne connecte est oublié au bout d'un jour.
 - [ ] **Renouvellement :** un assistant laissé connecté plus d'une heure fonctionne encore (renouvellement du token).
+- [ ] **Indépendante du navigateur :** connecter deux fois le même client dans le même navigateur : la première connexion fonctionne encore. Une connexion fonctionne encore le lendemain, quand la session du navigateur sur le serveur d'autorisation a expiré : elle ne dépend pas d'elle.
 - [ ] **Deux machines, un même client :** connecter Claude Code (ou VS Code) sur deux machines avec le même utilisateur et la même entreprise. **Applications connectées** affiche deux lignes, et les deux assistants lisent LePatron. Révoquer l'une ne coupe pas l'autre.
 - [ ] **Onzième connexion :** reconnecter onze fois le même client (Claude Code : `/mcp`, puis se reconnecter), avec le même utilisateur et la même entreprise. **Applications connectées** affiche dix lignes : la plus ancienne a disparu.
 

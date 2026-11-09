@@ -284,9 +284,16 @@ async function followToClient(agent, redirectTo) {
 async function connect(
   app,
   userId,
-  { client = CIMD_CLIENT, group, secret, scope, allowWrite } = {}
+  {
+    client = CIMD_CLIENT,
+    group,
+    secret,
+    scope,
+    allowWrite,
+    // The browser it consents in: a new one unless given.
+    agent = signIn(app, userId),
+  } = {}
 ) {
-  const agent = signIn(app, userId);
   const { verifier, challenge } = pkce();
   const uid = await startConsent(agent, client, challenge, scope && { scope });
   const consent = await agent

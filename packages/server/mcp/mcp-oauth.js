@@ -263,6 +263,12 @@ function createAuthorizationServer({
     },
     issueRefreshToken: (ctx, client) =>
       client.grantTypeAllowed('refresh_token'),
+    // A connection lasts until it expires or is revoked (ADR 0012), never
+    // as long as the authorization server's session of the browser it was
+    // consented in: neither its code nor its tokens are bound to that
+    // session, so a second consent in the same browser, or the session's end
+    // after a day, leaves it whole.
+    expiresWithSession: () => false,
     rotateRefreshToken: true,
     findAccount: (ctx, accountId) => ({
       accountId,
