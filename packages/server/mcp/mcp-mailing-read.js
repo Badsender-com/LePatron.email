@@ -1,5 +1,6 @@
 'use strict';
 
+const mongoose = require('mongoose');
 const { z } = require('zod');
 const {
   ResourceTemplate,
@@ -12,6 +13,7 @@ const {
   sanitizePreviewCached,
   PREVIEW_CACHE_MAX_ENTRY,
 } = require('../mailing/mailing.service.js');
+const { Mailings } = require('../common/models.common.js');
 const { withIdentity, failure } = require('./mcp-identity.js');
 const { approvedMailingIds } = require('./mcp-mailing-status.js');
 const { mailingText, variablesOf } = require('./mcp-mailing-text.js');
@@ -50,17 +52,35 @@ const READ_FIELDS = [
   'wireframe',
   'createdAt',
   'updatedAt',
-  'previewHtml',
   // The template's own preheader, when it declares one.
   'data.preheaderText',
 ].join(' ');
 
-function contentOf(mailing) {
-  if (!mailing.previewHtml) return { missing: NO_CONTENT.NEVER_SAVED };
-  if (mailing.previewHtml.length > MAX_PREVIEW_LENGTH) {
+const codePointsOf = (text) => [...text].length;
+
+// The preview of a mailing the user may read, measured in the database first,
+// in code points as `$strLenCP` counts them: past the bound, it is never
+// transferred.
+async function contentOf(mailing) {
+  const _id = mongoose.Types.ObjectId(String(mailing._id));
+  const [measured] = await Mailings.aggregate([
+    { $match: { _id } },
+    {
+      $project: { length: { $strLenCP: { $ifNull: ['$previewHtml', ''] } } },
+    },
+  ]);
+  if (!measured || !measured.length) return { missing: NO_CONTENT.NEVER_SAVED };
+  if (measured.length > MAX_PREVIEW_LENGTH) {
     return { missing: NO_CONTENT.TOO_LARGE };
   }
-  return { html: sanitizePreviewCached(mailing) };
+  // Read with its own last write, which keys the cache of sanitised previews.
+  const read = await Mailings.findOne({ _id }, 'previewHtml updatedAt').lean();
+  if (!read || !read.previewHtml) return { missing: NO_CONTENT.NEVER_SAVED };
+  // Saved again between the two reads: measured again, the same way.
+  if (codePointsOf(read.previewHtml) > MAX_PREVIEW_LENGTH) {
+    return { missing: NO_CONTENT.TOO_LARGE };
+  }
+  return { html: sanitizePreviewCached(read) };
 }
 
 /**
@@ -89,7 +109,7 @@ async function readMailing(mailingId, { user }, format = 'text') {
     },
     { ...mailing, approved }
   );
-  const { html = null, missing } = contentOf(mailing);
+  const { html = null, missing } = await contentOf(mailing);
   const content =
     format === 'html'
       ? { html }

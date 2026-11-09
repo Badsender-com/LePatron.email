@@ -19,6 +19,10 @@ const {
 const {
   PREVIEW_CACHE_MAX_ENTRY,
 } = require('../../../packages/server/mailing/mailing.service.js');
+// The models the harness stands in for, to watch what is read of them.
+const {
+  Mailings,
+} = require('../../../packages/server/common/models.common.js');
 
 // A subfolder of FOLDER_ARCHIVE, known by its parent, as the app files it.
 const SUBFOLDER = {
@@ -147,6 +151,44 @@ describe('mailing content', () => {
       const answer = await getMailing(client, { mailingId: f.M_NEWSLETTER });
 
       expect(answer).toMatchObject({ text: null, contentMissing: 'too-large' });
+    });
+
+    it('never reads a preview past the bound out of the database', async () => {
+      harness.update('mailings', f.M_NEWSLETTER, {
+        previewHtml: `<p>${'x'.repeat(MAX_PREVIEW_LENGTH)}</p>`,
+      });
+      const reads = ['find', 'findOne', 'findById'].map((name) =>
+        jest.spyOn(Mailings, name)
+      );
+
+      try {
+        const answer = await getMailing(client, { mailingId: f.M_NEWSLETTER });
+
+        expect(answer).toMatchObject({ contentMissing: 'too-large' });
+        const projections = reads.flatMap((spy) =>
+          spy.mock.calls.map(([, projection]) => JSON.stringify(projection))
+        );
+        expect(projections.length).toBeGreaterThan(0);
+        projections.forEach((projection) => {
+          // Every read names its fields, and none is the preview.
+          expect(projection).toBeDefined();
+          expect(projection).not.toMatch(/previewHtml/);
+        });
+      } finally {
+        reads.forEach((spy) => spy.mockRestore());
+      }
+    });
+
+    it('measures a preview in code points, as the database does', async () => {
+      const smileys = '\u{1F600}'.repeat(Math.floor(MAX_PREVIEW_LENGTH) - 100);
+      harness.update('mailings', f.M_NEWSLETTER, {
+        previewHtml: `<p>${smileys}</p>`,
+      });
+
+      const answer = await getMailing(client, { mailingId: f.M_NEWSLETTER });
+
+      expect(answer.contentMissing).toBeUndefined();
+      expect(answer.text).toContain('\u{1F600}');
     });
 
     it('gives no content for a preview larger than the app keeps sanitised', async () => {
