@@ -75,6 +75,7 @@ const {
   connectedApplicationsRouter,
   groupConnectedApplicationsRouter,
 } = require('./mcp/connected-application.routes.js');
+const relayedImagesRouter = require('./mcp/mcp-relayed-images.routes.js');
 const { mountMcp } = require('./mcp/mcp-http.js');
 const { oauthBodyParsers, jwksOf } = require('./mcp/mcp-oauth.js');
 const { McpOAuthAdapter } = require('./mcp/mcp-oauth-adapter.js');
@@ -409,6 +410,8 @@ if (cluster.isMaster) {
   app.use('/api/users/me/selected-group', selectedGroupRouter);
   app.use('/api/users', userRouter);
   app.use('/api/images', imageRouter);
+  // The external images of an assistant's preview, relayed (ADR 0022).
+  app.use('/api/relayed-images', relayedImagesRouter);
   app.use('/api/emails-groups', EmailGroupRouter);
   app.use('/api/integrations', integrationRouter);
   app.use('/api/feed-mappings', feedMappingRouter);

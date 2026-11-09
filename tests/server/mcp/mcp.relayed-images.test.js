@@ -69,7 +69,7 @@ describe('relayed images', () => {
   });
 
   // Turned on by #1487 (a signed route serves an external image)
-  describe.skip('the relayed image', () => {
+  describe('the relayed image', () => {
     let app;
     let relayedPathOf;
 

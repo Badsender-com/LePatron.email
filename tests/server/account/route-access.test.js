@@ -66,6 +66,7 @@ const ROUTERS = {
   '/api/dashboards': load('dashboard/dashboard.routes.js'),
   '/api/mcp-feedbacks': load('mcp/mcp-feedback.routes.js'),
   '/api/connected-applications': connectedApplicationsRouter,
+  '/api/relayed-images': load('mcp/mcp-relayed-images.routes.js'),
 };
 
 // Open to anyone, or to any signed-in user, on purpose.
