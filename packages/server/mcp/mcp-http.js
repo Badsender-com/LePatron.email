@@ -10,6 +10,10 @@ const { createRateLimiter, clientIp } = require('../utils/rate-limit.js');
 const { createMcpServer } = require('./mcp-server.js');
 const { resolveIdentity, READ_SCOPE } = require('./mcp-identity.js');
 const { createAuthorizationServer, identityOf } = require('./mcp-oauth.js');
+const {
+  McpOAuthAdapter,
+  compareClientSecretsByDigest,
+} = require('./mcp-oauth-adapter.js');
 const { createInteractionsRouter } = require('./mcp-oauth-interactions.js');
 const { createClientsRouter, isClientAllowed } = require('./mcp-clients.js');
 const {
@@ -77,20 +81,27 @@ async function authInfoOf(provider, header, resource) {
  * @param {Object} options
  * @param {string} options.origin the site's public origin
  * @param {string[]} options.cookieKeys
- * @param {Function} [options.adapter] see createAuthorizationServer
+ * @param {Function} [options.adapter] the storage of the authorization
+ *   server: McpOAuthAdapter, or what builds one by model
  * @param {Object} [options.jwks]
  * @param {Function} [options.fetch]
  * @returns {import('oidc-provider').default} the authorization server
  */
-function mountMcp(app, { origin, ...providerOptions }) {
+function mountMcp(
+  app,
+  { origin, adapter = McpOAuthAdapter, ...providerOptions }
+) {
   const resource = `${origin}${RESOURCE_PATH}`;
   const issuer = `${origin}${ISSUER_PATH}`;
   const resourceMetadataUrl = `${origin}/.well-known/oauth-protected-resource${RESOURCE_PATH}`;
   const provider = createAuthorizationServer({
     issuer,
     resource,
+    adapter,
     ...providerOptions,
   });
+  // The adapter keeps a client's secret as its digest.
+  compareClientSecretsByDigest(provider);
   // The provider builds the URLs it publishes from the request: it is handed
   // the site's public origin, never what a Host header claims.
   provider.proxy = true;

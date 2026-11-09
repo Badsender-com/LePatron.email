@@ -9,15 +9,10 @@
 // provider over it too; this one holds it to what the provider expects.
 
 const mongoose = require('mongoose');
+const request = require('../../helpers/local-request');
+const oauth = require('../../helpers/mcp-oauth-harness');
+const f = require('../../helpers/mcp-fixtures');
 const { createFakeDb } = require('../../helpers/fake-mongo-collection');
-
-jest.doMock('../../../packages/server/utils/logger.js', () => ({
-  log: jest.fn(),
-  info: jest.fn(),
-  warn: jest.fn(),
-  error: jest.fn(),
-  debug: jest.fn(),
-}));
 
 const {
   McpOAuthAdapter,
@@ -218,5 +213,80 @@ describe('the adapter of the authorization server', () => {
     await adapter.find('refresh-1');
 
     expect(createIndex.mock.calls.length).toBe(made);
+  });
+});
+
+describe("a client's secret", () => {
+  const REDIRECT = 'https://copilot.example.test/callback';
+
+  it('is kept as its digest, once', async () => {
+    const adapter = new McpOAuthAdapter('Client');
+    await adapter.upsert('a-client', {
+      client_id: 'a-client',
+      client_secret: 'a-secret',
+    });
+    const digest = (await adapter.find('a-client')).client_secret;
+
+    // As keepRegisteredClient keeps it again, as found.
+    await adapter.upsert('a-client', await adapter.find('a-client'), 60);
+
+    expect(JSON.stringify(stored('Client'))).not.toContain('a-secret');
+    expect((await adapter.find('a-client')).client_secret).toBe(digest);
+  });
+
+  describe('of a client that registered', () => {
+    let app;
+    let client;
+    beforeEach(async () => {
+      app = oauth.createApp();
+      ({ body: client } = await request(app)
+        .post('/oauth/reg')
+        .send({
+          client_name: 'A copilot',
+          redirect_uris: [REDIRECT],
+          token_endpoint_auth_method: 'client_secret_post',
+        }));
+    });
+
+    it('is not kept as it is', () => {
+      expect(client.client_secret).toEqual(expect.any(String));
+      expect(JSON.stringify(oauth.oauthStore('Client').records)).not.toContain(
+        client.client_secret
+      );
+    });
+
+    it('is what the client proves itself with', async () => {
+      const tokens = await oauth.connect(app, f.FRANK, {
+        client,
+        group: f.CLIENT_GROUP,
+        secret: client.client_secret,
+      });
+      const kept = oauth.oauthStore('Client').records[0];
+      const asKept = await oauth.connect(app, f.FRANK, {
+        client,
+        group: f.CLIENT_GROUP,
+        secret: JSON.parse(kept.payload).client_secret,
+      });
+
+      expect(tokens.access_token).toEqual(expect.any(String));
+      expect(asKept.error).toBe('invalid_client');
+    });
+  });
+
+  it('of a client registered by hand is not kept as it is', async () => {
+    const app = oauth.createApp();
+
+    const { body } = await oauth
+      .signIn(app, f.ALICE)
+      .post(`/api/groups/${f.CLIENT_GROUP}/mcp-clients`)
+      .send({ name: 'Copilot Studio', redirectUris: [REDIRECT] });
+
+    expect(body.clientSecret).toEqual(expect.any(String));
+    expect(
+      JSON.stringify([
+        oauth.oauthStore('Client').records,
+        oauth.stored('clients'),
+      ])
+    ).not.toContain(body.clientSecret);
   });
 });

@@ -148,6 +148,11 @@ function signInBeforeCode() {
   throw new Error(NOT_YET);
 }
 
+/** What a collection of the models holds, as copies (`McpClients`…). */
+function stored(collection) {
+  return store.stored(collection);
+}
+
 /** Changes a seeded record, the way the app would (MCP access turned off). */
 function update(_app, collection, id, changes) {
   store.update(collection, id, changes);
@@ -259,6 +264,7 @@ module.exports = {
   signIn,
   signInBeforeCode,
   update,
+  stored,
   oauthStore,
   serveClientMetadata,
   pkce,

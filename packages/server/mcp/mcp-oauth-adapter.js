@@ -1,6 +1,12 @@
 'use strict';
 
-const { collectionOf, storedId, HASHED } = require('./mcp-oauth-store.js');
+const {
+  collectionOf,
+  storedId,
+  secretDigest,
+  isSecretOf,
+  HASHED,
+} = require('./mcp-oauth-store.js');
 
 // The payload a record keeps, with when it was consumed, or nothing for a
 // record of another form.
@@ -14,7 +20,9 @@ function payloadOf(record) {
  * The storage of LePatron's authorization server (ADR 0012): `oidc-provider`'s
  * adapter interface over the store of mcp-oauth-store.js, one collection per
  * model. A record goes when it expires, by a TTL index. An access token, a
- * refresh token or a code is kept under its digest, and found by its value.
+ * refresh token or a code is kept under its digest, and found by its value;
+ * a client's secret is kept as its digest, which the provider compares with
+ * the secret presented (`compareClientSecretsByDigest`).
  */
 class McpOAuthAdapter {
   constructor(name) {
@@ -34,13 +42,11 @@ class McpOAuthAdapter {
     const expiresAt = expiresIn
       ? new Date(Date.now() + expiresIn * 1000)
       : null;
-    // A credential's payload never names it: `find` gives it back.
-    const { jti: _jti, ...kept } = payload;
     await (await this.collection()).updateOne(
       { _id: this.storedId(id) },
       {
         $set: {
-          payload: JSON.stringify(HASHED.has(this.name) ? kept : payload),
+          payload: JSON.stringify(this.kept(payload)),
           ...(payload.grantId && { grantId: payload.grantId }),
           ...(payload.uid && { uid: payload.uid }),
           ...(expiresAt && { expiresAt }),
@@ -48,6 +54,19 @@ class McpOAuthAdapter {
       },
       { upsert: true }
     );
+  }
+
+  // What a payload is kept as: a credential's never names it (`find` gives
+  // it back), a client's secret is kept as its digest.
+  kept(payload) {
+    if (HASHED.has(this.name)) {
+      const { jti: _jti, ...kept } = payload;
+      return kept;
+    }
+    if (this.name === 'Client' && payload.client_secret) {
+      return { ...payload, client_secret: secretDigest(payload.client_secret) };
+    }
+    return payload;
   }
 
   async find(id) {
@@ -83,4 +102,18 @@ class McpOAuthAdapter {
   }
 }
 
-module.exports = { McpOAuthAdapter };
+/**
+ * Has the authorization server compare the secret a client presents with the
+ * digest the adapter keeps of it.
+ *
+ * @param {import('oidc-provider').default} provider
+ */
+function compareClientSecretsByDigest(provider) {
+  Object.assign(provider.Client.prototype, {
+    async compareClientSecret(presented) {
+      return isSecretOf(this.clientSecret, presented);
+    },
+  });
+}
+
+module.exports = { McpOAuthAdapter, compareClientSecretsByDigest };

@@ -20,7 +20,8 @@ const logger = require('../utils/logger.js');
  *
  * What a client presents as its credential, the access token, the refresh
  * token and the authorization code, is kept under its digest, and its
- * payload without it: the store alone gives none of them.
+ * payload without it; a client's secret is kept as its digest too: the store
+ * alone gives none of them.
  */
 
 const COLLECTION_PREFIX = 'mcp_oauth_';
@@ -50,6 +51,39 @@ const digest = (value) =>
  * @returns {string}
  */
 const storedId = (model, id) => (HASHED.has(model) ? digest(id) : id);
+
+// A client's secret, as kept: marked, so a secret read back and kept again
+// (keepRegisteredClient) is not digested twice.
+const SECRET_DIGEST = 'sha256:';
+
+/**
+ * A client's secret as it is kept: its digest. The secret itself is only
+ * answered once, when the client is created.
+ *
+ * @param {string} secret the secret, or its digest already
+ * @returns {string}
+ */
+const secretDigest = (secret) =>
+  String(secret).startsWith(SECRET_DIGEST)
+    ? secret
+    : `${SECRET_DIGEST}${digest(secret)}`;
+
+/**
+ * Whether a client presents the secret whose digest is kept.
+ *
+ * @param {string} kept the digest, as `secretDigest` gave it
+ * @param {string} presented
+ * @returns {boolean}
+ */
+function isSecretOf(kept, presented) {
+  if (typeof kept !== 'string' || typeof presented !== 'string') return false;
+  const expected = Buffer.from(kept);
+  const actual = Buffer.from(`${SECRET_DIGEST}${digest(presented)}`);
+  return (
+    expected.length === actual.length &&
+    crypto.timingSafeEqual(expected, actual)
+  );
+}
 
 // The indexes of each collection, by database: marked once created, so a
 // failure is tried again at the next use.
@@ -97,4 +131,12 @@ async function collectionOf(model) {
   return collection;
 }
 
-module.exports = { collectionOf, storedId, digest, HASHED, ISSUED_BY_GRANT };
+module.exports = {
+  collectionOf,
+  storedId,
+  digest,
+  secretDigest,
+  isSecretOf,
+  HASHED,
+  ISSUED_BY_GRANT,
+};
