@@ -186,15 +186,15 @@ function createInteractionsRouter(provider, resource) {
     try {
       const { params } = req.interaction;
       const client = await provider.Client.find(params.client_id);
-      const redirect = new URL(params.redirect_uri);
       res.json({
         client: {
           name: client?.clientName || params.client_id,
           ...registrationOf(params.client_id, req.clientCompany),
         },
-        // Where the answer goes, for the user to recognise the application;
-        // the whole URI when it has no host (an app's own scheme).
-        redirectHost: redirect.host || params.redirect_uri,
+        // Where the answer goes, for the user to recognise the application
+        // (the MCP specification asks the consent to show it). Every redirect
+        // URI has a host (mcp-client-metadata.js).
+        redirectHost: new URL(params.redirect_uri).host,
         scopes: req.granted,
         groups: req.consenter.groups,
         // Whose rights the application gets, for the user to check.

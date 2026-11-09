@@ -138,8 +138,9 @@ function identityOf(accountId) {
 /**
  * Keeps a client that registered (DCR) for as long as its last connection may
  * be refreshed: open registration would otherwise keep every client forever.
- * A client a super admin registered stays until deleted; a client known by
- * its metadata document is not stored.
+ * A client a company registered by hand (its tech admin, or a super admin)
+ * stays until deleted; a client known by its metadata document is not
+ * stored.
  *
  * @param {import('oidc-provider').default} provider
  * @param {string} clientId
