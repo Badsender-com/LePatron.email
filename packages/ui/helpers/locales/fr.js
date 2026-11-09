@@ -1262,7 +1262,7 @@ export default {
     groupRevoked: 'Connexions d\'assistants IA révoquées',
     allGroups: 'Toutes',
     noModule:
-      'Le module MCP n\'est pas actif pour {group} : aucun assistant ne peut s\'y connecter, et ses connexions ont été coupées à sa fermeture.',
+      'Le module MCP n\'est pas inclus dans l\'abonnement de {group} : aucun assistant ne peut s\'y connecter.',
     accessOff:
       'L\'accès MCP est désactivé pour {group} : aucun assistant ne peut s\'y connecter, et ses connexions ont été coupées à sa désactivation.',
     errors: {

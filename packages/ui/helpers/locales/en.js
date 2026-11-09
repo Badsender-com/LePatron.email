@@ -866,7 +866,7 @@ export default {
     readScopeRequired:
       'The assistant must at least be able to read LePatron: start the connection again from your assistant.',
     noModule:
-      'The MCP module is not part of your company\'s subscription: contact the platform company to add it.',
+      'The MCP module is not included in your company\'s subscription: contact the platform company to add it.',
     noModuleCanOpen:
       'The MCP module is not included in the company\'s subscription. As a super admin, you can open it in its Modules, then turn its MCP access on.',
     noModuleCanOpenIn:
@@ -980,7 +980,7 @@ export default {
     groupRevoked: 'AI assistant connections revoked',
     allGroups: 'All',
     noModule:
-      'The MCP module is not active for {group}: no assistant can connect to it, and its connections were ended when the module closed.',
+      'The MCP module is not included in the subscription of {group}: no assistant can connect to it.',
     accessOff:
       'MCP access is off for {group}: no assistant can connect to it, and its connections were ended when it was turned off.',
     errors: {
@@ -1006,8 +1006,9 @@ export default {
     turnOff: 'Turn off access',
     notIncluded: 'Not included',
     noModule:
-      'The MCP module is not part of the subscription of {group}. Contact the platform company to add it.',
-    moduleMissing: 'The MCP module is not part of the subscription of {group}.',
+      'The MCP module is not included in the subscription of {group}. Contact the platform company to add it.',
+    moduleMissing:
+      'The MCP module is not included in the subscription of {group}.',
     openModule: 'Open the module',
     offTitle: 'Turn MCP access off?',
     offConfirm:
