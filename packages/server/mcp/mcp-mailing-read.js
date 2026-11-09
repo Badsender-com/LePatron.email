@@ -200,7 +200,6 @@ function registerMailingResources(server) {
 }
 
 module.exports = {
-  readMailing,
   mailingOf,
   asPlainText,
   registerGetMailing,
