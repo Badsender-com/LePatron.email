@@ -63,8 +63,11 @@ export default {
   },
   computed: {
     ...mapGetters(USER, { can: CAN }),
+    canManagePlatform() {
+      return this.can(CAPABILITIES.PLATFORM_MANAGE);
+    },
     showGroupBadge() {
-      return this.can(CAPABILITIES.PLATFORM_MANAGE) && this.group.name;
+      return this.canManagePlatform && this.group.name;
     },
     groupId() {
       return this.$route.params.groupId;
@@ -188,14 +191,23 @@ export default {
         {{ $t('mcpClients.description') }}
       </p>
       <!-- Without the MCP module, these clients cannot connect either
-           (ADR 0017). -->
+           (ADR 0017). Who may open the module is sent to it; anyone else, to
+           whoever sells it. -->
       <v-alert
         v-if="group.id && group.enableMcpModule !== true"
         type="info"
         outlined
         text
       >
-        {{ $t('mcpAccess.noModule', { group: group.name }) }}
+        <template v-if="canManagePlatform">
+          {{ $t('mcpAccess.moduleMissing', { group: group.name }) }}
+          <nuxt-link :to="`/groups/${groupId}/settings/general`">
+            {{ $t('mcpAccess.openModule') }}
+          </nuxt-link>
+        </template>
+        <template v-else>
+          {{ $t('mcpAccess.noModule', { group: group.name }) }}
+        </template>
       </v-alert>
       <v-alert
         v-else-if="group.id && group.enableMcp !== true"
