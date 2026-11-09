@@ -85,3 +85,26 @@ describe('what the keys of lepatron_mcpOauthJwks sign', () => {
     expect(failure.message).not.toContain('a-private-part');
   });
 });
+
+describe('what the authorization server offers', () => {
+  let app;
+  beforeEach(() => {
+    app = oauth.createApp();
+  });
+
+  it('shows an error page of its own, with nothing from another site', async () => {
+    const response = await request(app)
+      .get('/oauth/auth')
+      .query(
+        oauth.authorizeQuery(oauth.CIMD_CLIENT, oauth.pkce().challenge, {
+          redirect_uri: 'https://elsewhere.example.test/<b>callback</b>',
+        })
+      );
+
+    expect(response.status).toBe(400);
+    expect(response.headers['content-type']).toMatch(/text\/html/);
+    expect(response.text).toContain('invalid_redirect_uri');
+    expect(response.text).not.toMatch(/https?:\/\/(?!www\.w3\.org)/);
+    expect(response.text).not.toContain('<b>');
+  });
+});

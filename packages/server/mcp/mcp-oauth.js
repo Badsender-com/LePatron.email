@@ -77,6 +77,56 @@ function jwksOf(text) {
   return jwks;
 }
 
+const htmlSafe = (value) =>
+  String(value).replace(
+    /[&<>"']/g,
+    (char) =>
+      ({
+        '&': '&amp;',
+        '<': '&lt;',
+        '>': '&gt;',
+        '"': '&quot;',
+        "'": '&#39;',
+      }[char])
+  );
+
+/**
+ * The page the browser is shown when an authorization cannot go on (an
+ * unknown client, a redirect URI it did not register): the error, and
+ * nothing from another site.
+ *
+ * @param {Object} ctx
+ * @param {{ error: string, error_description?: string }} out
+ */
+function renderError(ctx, out) {
+  ctx.type = 'html';
+  ctx.body = `<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<title>LePatron: connection refused</title>
+<style>
+body{font-family:system-ui,sans-serif;margin:0;padding:48px 16px;background:#f5f5f5;color:#222}
+main{max-width:480px;margin:0 auto;padding:24px;background:#fff;border-radius:8px}
+h1{font-size:1.25rem;margin:0 0 12px}
+p{line-height:1.5;margin:0 0 12px}
+code{word-break:break-word}
+</style>
+</head>
+<body>
+<main>
+<h1>This application cannot connect to LePatron.</h1>
+<p>Close this page and try again from the application. If it happens again, give its publisher this error:</p>
+<p><code>${htmlSafe(out.error)}</code>${
+    out.error_description ? `: ${htmlSafe(out.error_description)}` : ''
+  }</p>
+</main>
+</body>
+</html>`;
+}
+
 // The account of a token is a user in the group the connection is bound to,
 // so the group survives every refresh.
 const accountIdOf = (userId, groupId) => `${userId}.${groupId}`;
@@ -163,6 +213,7 @@ function createAuthorizationServer({
       short: { sameSite: 'lax' },
     },
     ttl: TTL,
+    renderError,
     features: {
       devInteractions: { enabled: false },
       clientIdMetadataDocument: { enabled: true, ack: 'draft-02', allowFetch },
