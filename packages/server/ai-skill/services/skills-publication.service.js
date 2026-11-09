@@ -18,7 +18,8 @@ const { SkillStatuses } = require('../constant/skill-constants.js');
 const manifestRegistry = require('./manifest-registry.js');
 const { asList, manifestsUsing, describeFeature } = require('./feature-use.js');
 const { planReplay, replay } = require('./publication-guard.js');
-const { findVersion } = require('./version-helpers.js');
+const { findVersion, versionLabel } = require('./version-helpers.js');
+const { closeRetex } = require('../../mcp/mcp-retex-status.js');
 
 // What an expertise filter is matched against.
 const MATCHED_ATTRIBUTES = {
@@ -217,6 +218,18 @@ async function record(
   return doc;
 }
 
+// The retex the published draft cites are addressed by this version (ADR
+// 0021), wherever it was published from.
+async function closeAddressedRetex(doc, { major, minor }) {
+  const published = findVersion(doc, major, minor);
+  const ids = (published && published.retexIds) || [];
+  if (!ids.length) return;
+  await closeRetex(ids, {
+    status: 'addressed',
+    addressedIn: versionLabel(published),
+  });
+}
+
 /**
  * Publish a draft. A version a feature uses is published only once its guard
  * has run, whatever it showed: the guard warns, it never blocks. The decision
@@ -249,6 +262,7 @@ async function publishVersion(params, user) {
   // A skill's publication answers the warnings of its opening too.
   const { skill, warnings = [] } =
     kind === 'skill' ? published : { skill: published };
+  await closeAddressedRetex(skill, version);
   if (!isGuard(guard)) return { doc: skill, warnings };
   return { doc: await record(params, user, 'published'), warnings };
 }

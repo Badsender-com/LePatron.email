@@ -29,6 +29,7 @@ const {
   CREATE_TASK_SKILL_INPUT,
 } = require('./mcp-authoring.schemas.js');
 const { ADDITIVE, OVERWRITING } = require('./mcp-tool-grammar.js');
+const { notOpen } = require('./mcp-retex-status.js');
 
 // What an assistant writes of each, and the fields its difference shows.
 const ENTITIES = {
@@ -61,6 +62,8 @@ function answerOf(entity, doc, draft) {
       // Lower case, as every other state an assistant reads.
       status: String(draft.status).toLowerCase(),
       audience: doc.audience,
+      // The retex the draft addresses, closed when it is published (ADR 0021).
+      addressesRetex: (draft.retexIds || []).map(String),
     },
     diff: draftDiff(findActiveVersion(doc), draft, fields),
     differs: differs(findActiveVersion(doc), draft, fields),
@@ -116,19 +119,48 @@ function changelogAfter(version, changelog) {
   return after;
 }
 
+// The retex a draft may cite: open ones only (ADR 0021). Checked before a
+// draft is started or created: a refusal leaves nothing behind.
+async function assertCitable(retexIds) {
+  if (!retexIds || !retexIds.length) return;
+  const refused = await notOpen(retexIds);
+  if (refused.length) {
+    throw createError(
+      422,
+      `Not an open retex: ${refused.join(
+        ', '
+      )}. Cite only open retex, as list_retex gives them.`
+    );
+  }
+}
+
 // The open draft, or a new one the versioning service starts, written on the
-// condition that it did not change since it was read (ADR 0014).
-async function writeDraft(entity, id, { major, ...patch }, user) {
+// condition that it did not change since it was read (ADR 0014). The draft
+// cites what it addresses, from every proposal written into it (ADR 0021).
+async function writeDraft(
+  entity,
+  id,
+  { major, addressesRetex, ...patch },
+  user
+) {
   const { service } = ENTITIES[entity];
+  await assertCitable(addressesRetex);
   const { doc, version } = await service.openOrStartDraft(id, {
     major,
     userId: user.id,
   });
   const ref = { major: version.versionMajor, minor: version.versionMinor };
+  const retexIds = addressesRetex
+    ? [...new Set([...(version.retexIds || []), ...addressesRetex])]
+    : undefined;
   const saved = await service.writeDraftIfUnchanged(
     doc,
     version,
-    { ...patch, changelog: changelogAfter(version, patch.changelog) },
+    {
+      ...patch,
+      changelog: changelogAfter(version, patch.changelog),
+      retexIds,
+    },
     user.id
   );
   return answerOf(entity, saved, findVersion(saved, ref.major, ref.minor));
@@ -150,13 +182,20 @@ async function assertNew(entity, id) {
 
 // A creation is one write, the v1.0 draft whole: nothing is left behind when
 // any of it is refused.
-async function createDraft(entity, data, firstVersion, user) {
+async function createDraft(
+  entity,
+  { addressesRetex, ...data },
+  firstVersion,
+  user
+) {
   const { service, idField } = ENTITIES[entity];
   await assertNew(entity, data[idField]);
+  await assertCitable(addressesRetex);
+  const version = { ...firstVersion, retexIds: addressesRetex };
   const created =
     entity === 'skill'
-      ? await service.createSkill(data, user.id, firstVersion)
-      : await service.createExpertise(data, user.id, firstVersion);
+      ? await service.createSkill(data, user.id, version)
+      : await service.createExpertise(data, user.id, version);
   return answerOf(entity, created, created.versions[0]);
 }
 

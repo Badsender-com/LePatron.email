@@ -542,7 +542,7 @@ describe('the retex loop', () => {
   });
 
   // Turned on by #1476 (a draft cites the retex, its publication closes them)
-  describe.skip('a draft cites the retex it addresses', () => {
+  describe('a draft cites the retex it addresses', () => {
     let ids;
 
     beforeEach(async () => {
@@ -609,7 +609,7 @@ describe('the retex loop', () => {
   });
 
   // Turned on by #1476 (a draft cites the retex, its publication closes them)
-  describe.skip('a publication closes the retex', () => {
+  describe('a publication closes the retex', () => {
     let ids;
     let publication;
     let expertiseService;
@@ -648,7 +648,11 @@ describe('the retex loop', () => {
       expect(await listOpen({ status: 'addressed' })).toHaveLength(2);
       harness
         .stored('retex')
-        .forEach((retex) => expect(retex.expiresAt).toEqual(expect.any(Date)));
+        .forEach((retex) =>
+          expect(new Date(retex.expiresAt).getTime()).toBeGreaterThan(
+            Date.now()
+          )
+        );
     });
 
     it('leaves them open when the draft is deleted', async () => {

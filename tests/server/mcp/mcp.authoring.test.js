@@ -280,6 +280,7 @@ describe('authoring', () => {
         version: '2.2',
         status: 'draft',
         audience: 'all',
+        addressesRetex: [],
       });
     });
 
