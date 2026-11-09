@@ -15,6 +15,8 @@ const { SecurityEvents } = require('../common/models.common.js');
  * @param {string} [event.actor] the id of who acted
  * @param {string} [event.group] the id of the group acted on
  * @param {string} [event.method] the verification method
+ * @param {string} [event.clientId] the MCP client of an `mcp-client.…` event
+ * @param {string} [event.clientName] its name
  * @returns {Promise<void>}
  */
 async function recordSecurityEvent(event) {

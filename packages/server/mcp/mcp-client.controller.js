@@ -33,13 +33,15 @@ function authorizationServer(req) {
   return provider;
 }
 
-// Who registered or deleted a client of which company: never the client's
-// secret, which only its creation answers.
-const recorded = (req, action) =>
+// Who registered or deleted which client of which company: its id and its
+// name, never its secret, which only its creation answers.
+const recorded = (req, action, client) =>
   recordSecurityEvent({
     action,
     actor: req.user.id,
     group: req.params.groupId,
+    clientId: client.clientId,
+    clientName: client.name,
   });
 
 const listed = (client) => ({
@@ -94,7 +96,7 @@ async function create(req, res) {
     throw invalid(registered.code, registered.error);
   }
   const { client, clientSecret } = registered;
-  await recorded(req, MCP_CLIENT_ACTIONS.CREATED);
+  await recorded(req, MCP_CLIENT_ACTIONS.CREATED, client);
   res.status(201).json({ ...listed(client), clientSecret });
 }
 
@@ -110,10 +112,11 @@ async function create(req, res) {
 async function remove(req, res) {
   const { clientId, groupId } = req.params;
   // Another company's is answered as unknown.
-  if (!(await deleteClient({ clientId, groupId }))) {
+  const deleted = await deleteClient({ clientId, groupId });
+  if (!deleted) {
     throw new createError.NotFound(ERROR_CODES.MCP_CLIENT_NOT_FOUND);
   }
-  await recorded(req, MCP_CLIENT_ACTIONS.DELETED);
+  await recorded(req, MCP_CLIENT_ACTIONS.DELETED, deleted);
   res.status(204).end();
 }
 

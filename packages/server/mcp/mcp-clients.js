@@ -149,16 +149,21 @@ async function registerClient(provider, { fields, groupId, userId }) {
  * @param {Object} client
  * @param {string} client.clientId
  * @param {string} client.groupId the company it must belong to
- * @returns {Promise<boolean>} whether the company had it
+ * @returns {Promise<{ clientId: string, name: string }|null>} the client
+ *   deleted, or null when the company had none such
  */
 async function deleteClient({ clientId, groupId }) {
+  const client = await McpClients.findOne({ clientId, _company: groupId })
+    .select('clientId name')
+    .lean();
+  if (!client) return null;
   const { deletedCount } = await McpClients.deleteOne({
     clientId,
     _company: groupId,
   });
-  if (!deletedCount) return false;
+  if (!deletedCount) return null;
   await revokeConnections({ clientId });
-  return true;
+  return { clientId: client.clientId, name: client.name };
 }
 
 /**

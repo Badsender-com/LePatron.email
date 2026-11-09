@@ -30,6 +30,10 @@ const SecurityEventSchema = Schema(
     group: { type: ObjectId, ref: GroupModel },
     // The verification method of a two-factor event.
     method: { type: String, enum: Object.values(TWO_FACTOR_METHODS) },
+    // The client of an MCP client event (`mcp-client.…`): its id and its
+    // name, never its secret.
+    clientId: { type: String },
+    clientName: { type: String },
   },
   { timestamps: { createdAt: true, updatedAt: false } }
 );

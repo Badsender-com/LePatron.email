@@ -184,23 +184,31 @@ describe('the security events of a client registered by hand', () => {
   const events = () => SecurityEvents.find({}).lean();
   const strip = ({ _id, ...event }) => event;
 
-  it('records its registration, by whom, for which company', async () => {
+  const eventOf = (action, actor, clientId) => ({
+    action,
+    actor,
+    group: f.CLIENT_GROUP,
+    clientId,
+    clientName: 'Copilot Studio',
+  });
+
+  it('records its registration, by whom, for which company, which client', async () => {
     const { body } = await create(f.TESS);
 
     expect((await events()).map(strip)).toEqual([
-      { action: 'mcp-client.created', actor: f.TESS, group: f.CLIENT_GROUP },
+      eventOf('mcp-client.created', f.TESS, body.clientId),
     ]);
     expect(JSON.stringify(await events())).not.toContain(body.clientSecret);
   });
 
-  it('records its deletion, by whom, for which company', async () => {
+  it('records its deletion, by whom, for which company, which client', async () => {
     const { clientId } = (await create(f.TESS)).body;
 
     await oauth.signIn(app, f.ALICE).delete(`${CLIENTS}/${clientId}`);
 
     expect((await events()).map(strip)).toEqual([
-      { action: 'mcp-client.created', actor: f.TESS, group: f.CLIENT_GROUP },
-      { action: 'mcp-client.deleted', actor: f.ALICE, group: f.CLIENT_GROUP },
+      eventOf('mcp-client.created', f.TESS, clientId),
+      eventOf('mcp-client.deleted', f.ALICE, clientId),
     ]);
   });
 
@@ -233,5 +241,24 @@ describe('the security events of MCP settings, as stored', () => {
     });
 
     expect(event.validateSync()).toBeUndefined();
+  });
+
+  it('keeps which client an MCP client event is about', () => {
+    const SecurityEvent = mongoose.model(
+      'McpClientEvent-client',
+      SecurityEventSchema
+    );
+    const event = new SecurityEvent({
+      action: 'mcp-client.deleted',
+      actor: f.TESS,
+      group: f.CLIENT_GROUP,
+      clientId: 'lepatron-a-client',
+      clientName: 'Copilot Studio',
+    });
+
+    expect(event.toObject()).toMatchObject({
+      clientId: 'lepatron-a-client',
+      clientName: 'Copilot Studio',
+    });
   });
 });
