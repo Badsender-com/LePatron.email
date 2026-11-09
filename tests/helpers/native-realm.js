@@ -23,4 +23,8 @@ function toNativeRealm(value) {
   return value;
 }
 
-module.exports = { toNativeRealm };
+// The clock of this realm, which the provider reads: a test's own `Date` is
+// the sandbox's, and moving it leaves the provider's time as it is.
+const NativeDate = Date;
+
+module.exports = { toNativeRealm, NativeDate };

@@ -158,6 +158,26 @@ function stored(collection) {
   return store.stored(collection);
 }
 
+// The clock of the authorization server, which runs in Node's own realm (see
+// native-oidc-provider.js): spying on the test's `Date` does not move it.
+const { NativeDate } = process
+  .getBuiltinModule('module')
+  .createRequire(__filename)('./native-realm.js');
+const clocks = [];
+
+/** Moves the authorization server's clock, and the test's, `ms` ahead. */
+function later(ms) {
+  [NativeDate, Date].forEach((clock) => {
+    const now = clock.now();
+    clocks.push(jest.spyOn(clock, 'now').mockReturnValue(now + ms));
+  });
+}
+
+/** Gives both clocks back their time. */
+function restoreClock() {
+  clocks.splice(0).forEach((spy) => spy.mockRestore());
+}
+
 /** Changes a seeded record, the way the app would (MCP access turned off). */
 function update(_app, collection, id, changes) {
   store.update(collection, id, changes);
@@ -271,6 +291,8 @@ module.exports = {
   update,
   stored,
   oauthStore,
+  later,
+  restoreClock,
   serveClientMetadata,
   pkce,
   authorizeQuery,

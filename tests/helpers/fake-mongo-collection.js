@@ -18,6 +18,9 @@
  * - `findOne(filter, { projection })`, `deleteOne`, `deleteMany` and
  *   `countDocuments` read filters through fake-mongo-query.js. The ids are
  *   strings, as the store keeps them.
+ * - A TTL index (`expireAfterSeconds`) removes a record once its date is
+ *   past, read on the test's clock: the server does it within a minute, the
+ *   fake before its next operation.
  */
 
 const { matches, projected } = require('./fake-mongo-query.js');
@@ -107,6 +110,21 @@ const matching = (filter) => (record) => matches(record, filter);
 function createFakeCollection() {
   const records = [];
   const indexes = [];
+  // What the TTL indexes have removed by now.
+  const expire = () => {
+    indexes
+      .filter(({ options }) => Number.isFinite(options.expireAfterSeconds))
+      .forEach(({ keys, options }) => {
+        const [field] = Object.keys(keys);
+        const kept = records.filter(
+          (record) =>
+            !isDate(record[field]) ||
+            record[field].getTime() + options.expireAfterSeconds * 1000 >
+              Date.now()
+        );
+        records.splice(0, Infinity, ...kept);
+      });
+  };
   const answered = (n, nModified, upserted) => ({
     matchedCount: n,
     modifiedCount: nModified,
@@ -122,6 +140,7 @@ function createFakeCollection() {
       return Object.keys(keys).join('_');
     },
     insertOne: async (record) => {
+      expire();
       assertStorable(record);
       if (records.some(matching({ _id: record._id }))) {
         throw Object.assign(new Error('E11000 duplicate key error'), {
@@ -132,6 +151,7 @@ function createFakeCollection() {
       return { insertedCount: 1, insertedId: record._id };
     },
     updateOne: async (filter, update, { upsert = false } = {}) => {
+      expire();
       const record = records.find(matching(filter));
       if (record) {
         const before = JSON.stringify(record);
@@ -145,22 +165,27 @@ function createFakeCollection() {
       return answered(0, 0, true);
     },
     findOne: async (filter = {}, { projection } = {}) => {
+      expire();
       const record = records.find(matching(filter));
       return record ? copy(projected(record, projection)) : null;
     },
     deleteOne: async (filter = {}) => {
+      expire();
       const index = records.findIndex(matching(filter));
       if (index !== -1) records.splice(index, 1);
       return { deletedCount: index === -1 ? 0 : 1 };
     },
     deleteMany: async (filter = {}) => {
+      expire();
       const kept = records.filter((record) => !matching(filter)(record));
       const deletedCount = records.length - kept.length;
       records.splice(0, Infinity, ...kept);
       return { deletedCount };
     },
-    countDocuments: async (filter = {}) =>
-      records.filter(matching(filter)).length,
+    countDocuments: async (filter = {}) => {
+      expire();
+      return records.filter(matching(filter)).length;
+    },
   };
 }
 

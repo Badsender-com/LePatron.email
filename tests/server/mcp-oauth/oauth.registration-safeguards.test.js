@@ -1,3 +1,6 @@
+/**
+ * @jest-environment ./tests/helpers/node-globals-environment.js
+ */
 'use strict';
 
 // Open Dynamic Client Registration lets anyone register a client (ADR 0012):
@@ -12,15 +15,16 @@ const f = require('../../helpers/mcp-fixtures');
 const COPILOT_REDIRECT =
   'https://teams.microsoft.com/api/platform/v1.0/oAuthRedirect';
 
-// Turned on by #1307 (ChatGPT and Microsoft clients)
-describe.skip('DCR safeguards', () => {
+describe('DCR safeguards', () => {
   const DAY_MS = 24 * 3600 * 1000;
+  // Past the clock tolerance the authorization server allows (15 seconds).
+  const A_DAY_LATER = DAY_MS + 60 * 1000;
   let app;
   beforeEach(() => {
     app = oauth.createApp();
   });
   afterEach(() => {
-    jest.restoreAllMocks();
+    oauth.restoreClock();
   });
 
   const register = (metadata) =>
@@ -38,10 +42,6 @@ describe.skip('DCR safeguards', () => {
     request(app)
       .get('/oauth/auth')
       .query(oauth.authorizeQuery(client, oauth.pkce().challenge));
-  const later = (ms) => {
-    const now = Date.now();
-    jest.spyOn(Date, 'now').mockReturnValue(now + ms);
-  };
 
   it.each([
     ['in HTTPS', 'https://assistant.example.test/oauth/callback'],
@@ -64,12 +64,14 @@ describe.skip('DCR safeguards', () => {
 
   it('slows down registrations sent one after another', async () => {
     const statuses = [];
-    for (let attempt = 0; attempt < 100; attempt += 1) {
+    // A hundred an hour from one address, then none.
+    for (let attempt = 0; attempt < 101; attempt += 1) {
+      // eslint-disable-next-line no-await-in-loop
       statuses.push((await register()).status);
     }
 
-    expect(statuses[0]).toBe(201);
-    expect(statuses).toContain(429);
+    expect(statuses.slice(0, 100)).toEqual(Array(100).fill(201));
+    expect(statuses[100]).toBe(429);
   });
 
   it('tells the user at consent that the application registered itself, and where it sends them back', async () => {
@@ -77,7 +79,7 @@ describe.skip('DCR safeguards', () => {
     const agent = oauth.signIn(app, f.FRANK);
     const uid = await oauth.startConsent(agent, client, oauth.pkce().challenge);
 
-    const { body } = await agent.get(`/api/oauth/interactions/${uid}`);
+    const { body } = await agent.get(`/oauth/consent/${uid}/details`);
 
     expect(body.client).toMatchObject({
       name: 'A copilot',
@@ -89,7 +91,7 @@ describe.skip('DCR safeguards', () => {
   it('forgets a client that connected nobody within a day', async () => {
     const { body: client } = await register();
 
-    later(DAY_MS + 1000);
+    oauth.later(A_DAY_LATER);
     const response = await authorize(client);
 
     expect(response.status).toBe(400);
@@ -100,7 +102,7 @@ describe.skip('DCR safeguards', () => {
     const { body: client } = await register();
     await oauth.connect(app, f.FRANK, { client, group: f.CLIENT_GROUP });
 
-    later(DAY_MS + 1000);
+    oauth.later(A_DAY_LATER);
     const response = await authorize(client);
 
     expect(response.status).toBe(303);
