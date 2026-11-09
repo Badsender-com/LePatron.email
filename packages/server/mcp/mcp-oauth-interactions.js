@@ -9,7 +9,7 @@ const { READ_SCOPE, WRITE_SCOPE, toRequestUser } = require('./mcp-identity.js');
 const logger = require('../utils/logger.js');
 const ERROR_CODES = require('../constant/error-codes.js');
 const { accountIdOf, keepRegisteredClient, TTL } = require('./mcp-oauth.js');
-const { recordConnection } = require('./mcp-connections.js');
+const { recordConnection, revokeConnections } = require('./mcp-connections.js');
 const { companyOfClient } = require('./mcp-clients.js');
 
 // A refusal of the consent is an http-error whose message is its code
@@ -281,6 +281,17 @@ function createInteractionsRouter(provider, resource) {
         groupId,
         ttl: TTL.Grant,
       });
+      // The module closed, or MCP access turned off, while the user
+      // consented: the closing revoked the connections it found, which this
+      // one may have been recorded after. Read again now it is recorded, so
+      // it goes as the others did, and a reopened module revives none.
+      const lack = lackOf(
+        await Groups.findById(groupId).select(OPEN_FIELDS).lean()
+      );
+      if (lack) {
+        await revokeConnections({ grantId });
+        return next(createError(403, lack));
+      }
       // Never in the way of the consent: the client only lives on.
       await keepRegisteredClient(
         provider,

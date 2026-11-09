@@ -149,4 +149,70 @@ describe('the MCP module at consent', () => {
       expect(response.body.message).toBe('MCP_CONSENT_NO_ACCESS');
     });
   });
+
+  // The company closed while its user consents: the closing revokes the
+  // connections it finds, before this one is recorded. Read again once
+  // recorded, it goes too, so a reopened module revives nothing (ADR 0017).
+  describe('a company closed while its user consents', () => {
+    const {
+      revokeConnections,
+    } = require('../../../packages/server/mcp/mcp-connections.js');
+    const {
+      McpConnections,
+    } = require('../../../packages/server/common/models.common.js');
+
+    // The closing lands between the reading of the companies offered and the
+    // recording of the connection: written, then revoking what it finds.
+    const closedBeforeRecording = (changes) => {
+      const create = McpConnections.create.bind(McpConnections);
+      jest
+        .spyOn(McpConnections, 'create')
+        .mockImplementationOnce(async (record) => {
+          oauth.update(app, 'groups', f.CLIENT_GROUP, changes);
+          await revokeConnections({ _company: f.CLIENT_GROUP });
+          return create(record);
+        });
+    };
+
+    afterEach(() => jest.restoreAllMocks());
+
+    it.each([
+      [
+        'the module closed',
+        { enableMcpModule: false },
+        'MCP_CONSENT_NO_MODULE',
+      ],
+      ['MCP access turned off', { enableMcp: false }, 'MCP_CONSENT_NO_ACCESS'],
+    ])(
+      'revokes the connection and refuses the consent, %s',
+      async (_case, changes, code) => {
+        const { agent, uid } = await consentFor(f.FRANK);
+        closedBeforeRecording(changes);
+
+        const consent = await agent
+          .post(`/oauth/consent/${uid}/consent`)
+          .send({ groupId: f.CLIENT_GROUP });
+
+        expect(consent.status).toBe(403);
+        expect(consent.body.message).toBe(code);
+        expect(oauth.stored('connections')).toEqual([]);
+        expect(oauth.oauthStore('Grant').records).toEqual([]);
+      }
+    );
+
+    it('revives nothing once the module is opened again', async () => {
+      const { agent, uid } = await consentFor(f.FRANK);
+      closedBeforeRecording({ enableMcpModule: false });
+      await agent
+        .post(`/oauth/consent/${uid}/consent`)
+        .send({ groupId: f.CLIENT_GROUP });
+
+      oauth.update(app, 'groups', f.CLIENT_GROUP, { enableMcpModule: true });
+      const list = await oauth
+        .signIn(app, f.FRANK)
+        .get('/api/connected-applications');
+
+      expect(list.body.items).toEqual([]);
+    });
+  });
 });
