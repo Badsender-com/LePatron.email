@@ -970,6 +970,11 @@ export default {
       'Every AI assistant connection of the company {group} loses its access at once. Each user will have to connect their assistant again. | The AI assistant connection of the company {group} loses its access at once. Its user will have to connect it again. | The {count} AI assistant connections of the company {group} lose their access at once. Each user will have to connect theirs again.',
     groupCountError: 'The number of AI assistant connections is unavailable.',
     groupRevoked: 'AI assistant connections revoked',
+    allGroups: 'All',
+    noModule:
+      'The MCP module is not active for {group}: no assistant can connect to it, and its connections were ended when the module closed.',
+    accessOff:
+      'MCP access is off for {group}: no assistant can connect to it, and its connections were ended when it was turned off.',
     errors: {
       MCP_CONNECTION_NOT_FOUND:
         'This connection no longer exists: it was already revoked.',

@@ -1252,6 +1252,11 @@ export default {
       'Les connexions d\'assistants IA de l\'entreprise {group} perdent aussitôt leur accès. Chaque utilisateur devra reconnecter son assistant. | La connexion d\'assistant IA de l\'entreprise {group} perd aussitôt son accès. Son utilisateur devra la reconnecter. | Les {count} connexions d\'assistants IA de l\'entreprise {group} perdent aussitôt leur accès. Chaque utilisateur devra reconnecter les siennes.',
     groupCountError: 'Nombre de connexions d\'assistants IA indisponible.',
     groupRevoked: 'Connexions d\'assistants IA révoquées',
+    allGroups: 'Toutes',
+    noModule:
+      'Le module MCP n\'est pas actif pour {group} : aucun assistant ne peut s\'y connecter, et ses connexions ont été coupées à sa fermeture.',
+    accessOff:
+      'L\'accès MCP est désactivé pour {group} : aucun assistant ne peut s\'y connecter, et ses connexions ont été coupées à sa désactivation.',
     errors: {
       MCP_CONNECTION_NOT_FOUND:
         'Cette connexion n\'existe plus : elle a déjà été révoquée.',
