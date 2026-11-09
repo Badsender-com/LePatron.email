@@ -123,6 +123,18 @@ describe('drafts mode', () => {
       });
     });
 
+    // As the description of use_drafts says: the right is asked again at
+    // every call, the mode on or not.
+    it('serves the published versions to a super admin who lost the right, at the next call', async () => {
+      const author = await asAuthor();
+      await turnOn(author);
+      expect(await read(author, SUBJECT_LINES)).toContain(DRAFT_SUBJECT);
+
+      harness.update('users', f.ALICE, { role: 'company_admin' });
+
+      expect(await read(author, SUBJECT_LINES)).toContain(PUBLISHED_SUBJECT);
+    });
+
     it('says when the connection cannot keep the mode', async () => {
       const author = await asAuthor({ grantId: undefined });
 
