@@ -289,6 +289,7 @@ function withIdentity(handler) {
 
 module.exports = {
   resolveIdentity,
+  toRequestUser,
   identify,
   withIdentity,
   hasScope,

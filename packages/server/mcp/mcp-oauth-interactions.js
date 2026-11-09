@@ -4,7 +4,7 @@ const express = require('express');
 const { Users, Groups } = require('../common/models.common.js');
 const permissions = require('../account/permissions.js');
 const { CAPABILITIES } = require('../../shared/access/roles.js');
-const { READ_SCOPE, WRITE_SCOPE } = require('./mcp-identity.js');
+const { READ_SCOPE, WRITE_SCOPE, toRequestUser } = require('./mcp-identity.js');
 const logger = require('../utils/logger.js');
 const { accountIdOf, keepRegisteredClient, TTL } = require('./mcp-oauth.js');
 const { recordConnection, revokeConnections } = require('./mcp-connections.js');
@@ -27,11 +27,8 @@ async function consenterOf(req) {
       .select('_id name email role _company')
       .lean());
   if (!record) return null;
-  const user = permissions.withCapabilities({
-    ...record,
-    id: String(record._id),
-    group: { id: String(record._company) },
-  });
+  // No company is chosen yet: the user's own stands for it.
+  const user = toRequestUser(record, record._company);
   const isPlatform = permissions.can(user, CAPABILITIES.PLATFORM_MANAGE);
   const groups = await Groups.find(
     isPlatform ? { enableMcp: true } : { _id: record._company, enableMcp: true }
