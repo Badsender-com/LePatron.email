@@ -35,11 +35,11 @@ describe('revoking connections', () => {
   it('revokes their grants and tokens without the authorization server', async () => {
     const app = oauth.createApp();
     await oauth.connect(app, f.FRANK, { group: f.CLIENT_GROUP });
-    const { forgetConnections } = unmounted(
+    const { revokeConnections } = unmounted(
       '../../../packages/server/mcp/mcp-connections.js'
     );
 
-    await forgetConnections({ _user: f.FRANK });
+    await revokeConnections({ _user: f.FRANK });
 
     [...ISSUED, 'Grant'].forEach((model) =>
       expect(oauth.oauthStore(model).records).toEqual([])

@@ -6,7 +6,7 @@
 // and the models replaced by an in-memory store.
 
 jest.mock('../../../packages/server/mcp/mcp-connections.js', () => ({
-  forgetConnections: jest.fn(),
+  revokeConnections: jest.fn(),
 }));
 jest.mock('../../../packages/server/common/models.common.js', () => {
   const users = [];
@@ -81,7 +81,7 @@ jest.mock('../../../packages/server/utils/logger.js', () => ({
 
 const { Users } = require('../../../packages/server/common/models.common.js');
 const {
-  forgetConnections,
+  revokeConnections,
 } = require('../../../packages/server/mcp/mcp-connections.js');
 const controller = require('../../../packages/server/user/user.controller.js');
 
@@ -267,9 +267,9 @@ describe('an admin changing the credentials of a member', () => {
       ['deactivates', 'resets the password of'].includes(label)
     )
   )('%s them, and ends their assistants', async (_, act) => {
-    forgetConnections.mockClear();
+    revokeConnections.mockClear();
 
     expect((await act(companyAdminOfA, DAVE)).status).toBe(200);
-    expect(forgetConnections).toHaveBeenCalledWith({ _user: DAVE });
+    expect(revokeConnections).toHaveBeenCalledWith({ _user: DAVE });
   });
 });

@@ -6,7 +6,7 @@ const asyncHandler = require('express-async-handler');
 const ERROR_CODES = require('../constant/error-codes.js');
 const { McpConnections, Groups } = require('../common/models.common.js');
 const { isObjectIdString } = require('../utils/model.js');
-const { forgetConnections } = require('./mcp-connections.js');
+const { revokeConnections } = require('./mcp-connections.js');
 const {
   recordSecurityEvent,
 } = require('../security-event/security-event.service.js');
@@ -64,7 +64,7 @@ async function revokeOwn(req, res) {
   if (!isObjectIdString(id) || !(await McpConnections.findOne(filter).lean())) {
     throw new createError.NotFound(ERROR_CODES.MCP_CONNECTION_NOT_FOUND);
   }
-  await forgetConnections(filter);
+  await revokeConnections(filter);
   res.status(204).end();
 }
 
@@ -90,7 +90,7 @@ async function countOfCompany(req, res) {
  */
 async function revokeAllOfCompany(req, res) {
   const { groupId } = req.params;
-  await forgetConnections({ _company: groupId });
+  await revokeConnections({ _company: groupId });
   await recordSecurityEvent({
     action: CONNECTED_APPLICATION_ACTIONS.ALL_REVOKED,
     actor: req.user.id,

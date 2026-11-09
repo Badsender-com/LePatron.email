@@ -32,7 +32,7 @@ jest.mock('../../../packages/server/account/selected-group.js', () => ({
   forgetSessionSelection: jest.fn(),
 }));
 jest.mock('../../../packages/server/mcp/mcp-connections.js', () => ({
-  forgetConnections: jest.fn(),
+  revokeConnections: jest.fn(),
 }));
 jest.mock('../../../packages/server/utils/logger.js', () => ({
   log: jest.fn(),

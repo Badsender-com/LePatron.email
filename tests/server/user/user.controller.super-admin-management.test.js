@@ -6,7 +6,7 @@
 // user.controller.super-admin-role.test.js.
 
 jest.mock('../../../packages/server/mcp/mcp-connections.js', () => ({
-  forgetConnections: jest.fn(),
+  revokeConnections: jest.fn(),
 }));
 jest.mock('../../../packages/server/common/models.common.js', () => {
   const { createStore } = require('../../helpers/fake-user-models.js');

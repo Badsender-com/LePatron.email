@@ -7,7 +7,7 @@ const {
   recordRetexChange,
   forgetRetex,
 } = require('../mcp/mcp-access-option.js');
-const { forgetConnections } = require('../mcp/mcp-connections.js');
+const { revokeConnections } = require('../mcp/mcp-connections.js');
 
 // The company's switches: two-factor authentication for every member (ADR
 // 0008), MCP access and the retex of its assistants' sessions (ADR 0012).
@@ -94,7 +94,7 @@ async function recordSwitches(actor, groupId, switched) {
 async function forgetSwitchedOff(groupId, switches) {
   if (switches.allowRetex === false) await forgetRetex(groupId);
   if (switches.enableMcp === false) {
-    await forgetConnections({ _company: groupId });
+    await revokeConnections({ _company: groupId });
   }
 }
 

@@ -82,10 +82,10 @@ describe('connected applications', () => {
   it('stops an application the app ends at its next call and its next refresh', async () => {
     const tokens = await oauth.connect(app, f.FRANK, { group: f.CLIENT_GROUP });
     const {
-      forgetConnections,
+      revokeConnections,
     } = require('../../../packages/server/mcp/mcp-connections.js');
 
-    await forgetConnections({ _user: f.FRANK });
+    await revokeConnections({ _user: f.FRANK });
 
     expect((await listFor(f.FRANK)).body.items).toEqual([]);
     expect((await oauth.callMcp(app, tokens.access_token)).status).toBe(401);

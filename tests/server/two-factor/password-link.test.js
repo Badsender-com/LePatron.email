@@ -24,7 +24,7 @@ jest.mock('../../../packages/server/account/selected-group.js', () => ({
   forgetSessionSelection: jest.fn(),
 }));
 jest.mock('../../../packages/server/mcp/mcp-connections.js', () => ({
-  forgetConnections: jest.fn(),
+  revokeConnections: jest.fn(),
 }));
 jest.mock('../../../packages/server/utils/logger.js', () => ({
   log: jest.fn(),
@@ -36,7 +36,7 @@ jest.mock('../../../packages/server/utils/logger.js', () => ({
 const passport = require('passport');
 const users = require('../../../packages/server/user/user.controller.js');
 const {
-  forgetConnections,
+  revokeConnections,
 } = require('../../../packages/server/mcp/mcp-connections.js');
 
 const { RFC_CODE, RFC_TIME } = harness;
@@ -104,11 +104,11 @@ describe('the password link and the trusted devices', () => {
     const user = harness.addTotpUser();
     user.token = 'emailed-token';
     user.tokenExpire = RFC_TIME + 60 * 1000;
-    forgetConnections.mockClear();
+    revokeConnections.mockClear();
 
     await followLink();
 
-    expect(forgetConnections).toHaveBeenCalledWith({ _user: user._id });
+    expect(revokeConnections).toHaveBeenCalledWith({ _user: user._id });
   });
 
   it('forgets the trusted devices of the account', async () => {

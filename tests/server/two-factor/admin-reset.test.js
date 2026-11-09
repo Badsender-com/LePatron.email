@@ -25,7 +25,7 @@ jest.mock('../../../packages/server/account/selected-group.js', () => ({
   forgetSessionSelection: jest.fn(),
 }));
 jest.mock('../../../packages/server/mcp/mcp-connections.js', () => ({
-  forgetConnections: jest.fn(),
+  revokeConnections: jest.fn(),
 }));
 jest.mock('../../../packages/server/utils/logger.js', () => ({
   log: jest.fn(),
@@ -37,7 +37,7 @@ jest.mock('../../../packages/server/utils/logger.js', () => ({
 const passport = require('passport');
 const mail = require('../../../packages/server/mailing/mail.service.js');
 const {
-  forgetConnections,
+  revokeConnections,
 } = require('../../../packages/server/mcp/mcp-connections.js');
 
 const { SecurityEvents } = harness.models;
@@ -122,11 +122,11 @@ describe('resetting a member’s two-factor authentication', () => {
   // connected no assistant that lives on.
   it('ends the assistants the member connected', async () => {
     harness.addTotpUser();
-    forgetConnections.mockClear();
+    revokeConnections.mockClear();
 
     await resetAs(techAdmin);
 
-    expect(forgetConnections).toHaveBeenCalledWith({ _user: 'u1' });
+    expect(revokeConnections).toHaveBeenCalledWith({ _user: 'u1' });
   });
 
   it('emails the member, without saying who reset it', async () => {

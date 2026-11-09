@@ -14,7 +14,7 @@ const {
   AISkillInvocations,
   AIPlaygroundScenarios,
 } = require('../common/models.common.js');
-const { forgetConnections } = require('../mcp/mcp-connections.js');
+const { revokeConnections } = require('../mcp/mcp-connections.js');
 const { forgetCompanyClients } = require('../mcp/mcp-clients.js');
 const Roles = require('../account/roles');
 const permissions = require('../account/permissions.js');
@@ -183,7 +183,7 @@ async function deleteGroup(groupId) {
       { groupContext: mongoose.Types.ObjectId(groupId) },
       { $set: { groupContext: null } }
     ),
-    forgetConnections({ _company: mongoose.Types.ObjectId(groupId) }),
+    revokeConnections({ _company: mongoose.Types.ObjectId(groupId) }),
     // And the MCP clients it registered, with their secrets (ADR 0012).
     forgetCompanyClients(mongoose.Types.ObjectId(groupId)),
     Groups.deleteOne({

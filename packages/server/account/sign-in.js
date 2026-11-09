@@ -7,7 +7,7 @@ const permissions = require('./permissions.js');
 const { isBootstrapAccount } = require('./bootstrap-account.js');
 const { updateSessionTracking } = require('./session-tracking.helper.js');
 const { resolveSelectedGroup } = require('./selected-group.js');
-const { forgetConnections } = require('../mcp/mcp-connections.js');
+const { revokeConnections } = require('../mcp/mcp-connections.js');
 
 const promisify = (run) =>
   new Promise((resolve, reject) =>
@@ -86,7 +86,7 @@ async function endSessions(userId) {
  */
 async function endAccess(userId) {
   await endSessions(userId);
-  await forgetConnections({ _user: userId });
+  await revokeConnections({ _user: userId });
 }
 
 module.exports = {

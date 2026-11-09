@@ -104,6 +104,10 @@ async function useConnection(grantId) {
  * stops their refresh. From the store alone: the authorization server need
  * not be mounted (a script).
  *
+ * What ends them on an event of the app too (a company turning MCP off, or
+ * deleted, a change of a user's credentials): neither their calls nor their
+ * refresh go on, and turning MCP back on, or the user, revives none of them.
+ *
  * It takes the filter alone, which names some connections: every one of them
  * is revokeAllConnections's, and a call in another form is refused.
  *
@@ -138,18 +142,6 @@ async function revokeConnections(filter, ...more) {
 }
 
 /**
- * Ends connected applications on an event of the app (a group turning MCP
- * off, a group deleted, a user deactivated or given a new password): revoked
- * like a user revokes one, so neither their calls nor their refresh go on,
- * and turning MCP back on, or the user, revives none of them.
- *
- * @param {Object} filter which connections
- */
-function forgetConnections(filter) {
-  return revokeConnections(filter);
-}
-
-/**
  * Revokes every connected application of every company at once: unlisted,
  * then every grant and every token, every login and pending consent of the
  * authorization server. The clients stay registered: their users connect
@@ -181,7 +173,6 @@ module.exports = {
   recordConnection,
   useConnection,
   revokeConnections,
-  forgetConnections,
   revokeAllConnections,
   attachAuthorizationServer,
 };

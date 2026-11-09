@@ -89,26 +89,26 @@ describe('PUT /groups/:groupId — MCP access', () => {
 
   it("ends the group's connected applications when turned off, not on", async () => {
     const {
-      forgetConnections,
+      revokeConnections,
     } = require('../../../packages/server/mcp/mcp-connections.js');
 
     await update(techAdmin, { enableMcp: true });
-    expect(forgetConnections).not.toHaveBeenCalled();
+    expect(revokeConnections).not.toHaveBeenCalled();
 
     await update(techAdmin, { enableMcp: false });
-    expect(forgetConnections).toHaveBeenCalledWith({ _company: GROUP_ID });
+    expect(revokeConnections).toHaveBeenCalledWith({ _company: GROUP_ID });
   });
 
   // As the retex: a revocation that failed can be run again.
   it('ends them whenever a request says it is off, already off or not', async () => {
     const {
-      forgetConnections,
+      revokeConnections,
     } = require('../../../packages/server/mcp/mcp-connections.js');
 
     await update(techAdmin, { enableMcp: false });
 
     expect(SecurityEvents.create).not.toHaveBeenCalled();
-    expect(forgetConnections).toHaveBeenCalledWith({ _company: GROUP_ID });
+    expect(revokeConnections).toHaveBeenCalledWith({ _company: GROUP_ID });
   });
 
   it('keeps it out of the reach of a company admin', async () => {
