@@ -38,6 +38,14 @@ const REFUSALS = {
     'oauthConsent.readScopeRequired',
 };
 
+// What the refusals whoever manages the platform can lift say instead: where
+// to lift it. Each has a form naming the company, the `…In` key, for when the
+// page knows it.
+const LIFTED_BY_PLATFORM = {
+  [ERROR_CODES.MCP_CONSENT_NO_MODULE]: 'oauthConsent.noModuleCanOpen',
+  [ERROR_CODES.MCP_CONSENT_NO_ACCESS]: 'oauthConsent.noAccessCanOpen',
+};
+
 // Two letters for a name: the application's and the user's avatars.
 const initialsOf = (name) =>
   String(name || '?')
@@ -169,12 +177,17 @@ export default {
       const code = err.response?.data?.message;
       // Expired, or started in another browser: the provider tells no more.
       this.errorCode = status === 404 ? EXPIRED : code || null;
-      const opensModules =
-        this.errorCode === ERROR_CODES.MCP_CONSENT_NO_MODULE &&
+      const lifts =
+        LIFTED_BY_PLATFORM[this.errorCode] &&
         this.can(CAPABILITIES.PLATFORM_MANAGE);
-      const key = opensModules
-        ? 'oauthConsent.noModuleCanOpen'
-        : REFUSALS[this.errorCode];
+      if (lifts) {
+        // The company picked, when the consent itself was refused.
+        const group = this.groupName;
+        const key = LIFTED_BY_PLATFORM[this.errorCode];
+        this.error = group ? this.$t(`${key}In`, { group }) : this.$t(key);
+        return;
+      }
+      const key = REFUSALS[this.errorCode];
       if (key) {
         this.error = this.$t(key);
       } else if (status === 403) {

@@ -868,7 +868,13 @@ export default {
     noModule:
       'The MCP module is not part of your company\'s subscription: contact the platform company to add it.',
     noModuleCanOpen:
-      'The MCP module is not open for the company. As a super admin, you can open it in its Modules, then turn its MCP access on.',
+      'The MCP module is not included in the company\'s subscription. As a super admin, you can open it in its Modules, then turn its MCP access on.',
+    noModuleCanOpenIn:
+      'The MCP module is not included in the subscription of {group}. As a super admin, you can open it in its Modules, then turn its MCP access on.',
+    noAccessCanOpen:
+      'The company\'s MCP access is off. As a super admin, you can turn it on in its AI Features.',
+    noAccessCanOpenIn:
+      'The MCP access of {group} is off. As a super admin, you can turn it on in its AI Features.',
   },
   mcpClients: {
     pageTitle: 'MCP clients',

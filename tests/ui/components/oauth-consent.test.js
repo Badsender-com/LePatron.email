@@ -53,7 +53,7 @@ function mountConsent(
 ) {
   const vm = mountSfc(FILE, {
     mocks: {
-      $t: (key) => key,
+      $t: (key, params = {}) => [key, ...Object.values(params)].join(' | '),
       $route: { params: { uid: 'u1' }, path: '/oauth/consent/u1' },
       $axios: { $get, $post },
     },
@@ -171,26 +171,55 @@ describe('the consent of a connected application, refused', () => {
     );
   });
 
-  // Only the platform company opens the MCP module (ADR 0017): whoever may
-  // open it is told where, anyone else to ask for it.
-  it.each(Object.values(ROLES))(
-    'says where the module opens, or whom to ask, to a %s',
-    async (role) => {
-      const $get = jest
-        .fn()
-        .mockRejectedValue(refusal(403, 'MCP_CONSENT_NO_MODULE'));
-      const { vm } = mountConsent([], { $get, role });
+  // Whoever manages the platform opens the MCP module and turns MCP access on
+  // (ADR 0017): they are told where, anyone else whom to ask.
+  describe.each([
+    ['MCP_CONSENT_NO_MODULE', 'noModule'],
+    ['MCP_CONSENT_NO_ACCESS', 'noAccess'],
+  ])('on %s', (code, key) => {
+    it.each(Object.values(ROLES))(
+      'says where to lift it, or whom to ask, to a %s',
+      async (role) => {
+        const $get = jest.fn().mockRejectedValue(refusal(403, code));
+        const { vm } = mountConsent([], { $get, role });
+        await settle(vm);
+
+        expect(
+          vm.$el.querySelector('.bs-oauth-consent__message').textContent
+        ).toBe(
+          roleCan(role, CAPABILITIES.PLATFORM_MANAGE)
+            ? `oauthConsent.${key}CanOpen`
+            : `oauthConsent.${key}`
+        );
+      }
+    );
+
+    it('names the company picked, when the consent itself is refused', async () => {
+      const $post = jest.fn().mockRejectedValue(refusal(403, code));
+      const { vm } = mountConsent(['mcp:read'], {
+        $post,
+        role: ROLES.SUPER_ADMIN,
+      });
+      await settle(vm);
+
+      allowButton(vm).dispatchEvent(new Event('click'));
       await settle(vm);
 
       expect(
         vm.$el.querySelector('.bs-oauth-consent__message').textContent
-      ).toBe(
-        roleCan(role, CAPABILITIES.PLATFORM_MANAGE)
-          ? 'oauthConsent.noModuleCanOpen'
-          : 'oauthConsent.noModule'
-      );
-    }
-  );
+      ).toBe(`oauthConsent.${key}CanOpenIn | Company A`);
+    });
+  });
+
+  it.each([
+    ['fr', require('../../../packages/ui/helpers/locales/fr.js').default],
+    ['en', require('../../../packages/ui/helpers/locales/en.js').default],
+  ])('names the company in %s when it is known', (_lang, messages) => {
+    const { oauthConsent } = messages;
+    expect(oauthConsent.noModuleCanOpenIn).toContain('{group}');
+    expect(oauthConsent.noAccessCanOpenIn).toContain('{group}');
+    expect(oauthConsent.noAccessCanOpen).toMatch(/MCP/);
+  });
 
   it('says why the consent itself is refused', async () => {
     const $post = jest

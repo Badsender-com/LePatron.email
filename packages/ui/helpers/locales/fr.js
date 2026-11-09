@@ -1147,7 +1147,13 @@ export default {
     noModule:
       'Le module MCP n\'est pas inclus dans l\'abonnement de votre entreprise : contactez l\'entreprise plateforme pour l\'ajouter.',
     noModuleCanOpen:
-      'Le module MCP n\'est pas ouvert pour l\'entreprise. En tant que super admin, vous pouvez l\'ouvrir dans ses Modules, puis activer son accès MCP.',
+      'Le module MCP n\'est pas inclus dans l\'abonnement de l\'entreprise. En tant que super admin, vous pouvez l\'ouvrir dans ses Modules, puis activer son accès MCP.',
+    noModuleCanOpenIn:
+      'Le module MCP n\'est pas inclus dans l\'abonnement de {group}. En tant que super admin, vous pouvez l\'ouvrir dans ses Modules, puis activer son accès MCP.',
+    noAccessCanOpen:
+      'L\'accès MCP de l\'entreprise est désactivé. En tant que super admin, vous pouvez l\'activer dans ses Fonctionnalités IA.',
+    noAccessCanOpenIn:
+      'L\'accès MCP de {group} est désactivé. En tant que super admin, vous pouvez l\'activer dans ses Fonctionnalités IA.',
   },
   mcpClients: {
     pageTitle: 'Clients MCP',
