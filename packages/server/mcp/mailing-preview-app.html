@@ -6,11 +6,12 @@
       The CSP the host is told of (mcp-preview-app.js), held by the app
       itself, whatever the host makes of it, and inherited by the email's
       `srcdoc` frame: no connection, and images from the site's origin only,
-      written here as the resource is served.
+      written here as the resource is served; no base address, and no form
+      sent anywhere.
     -->
     <meta
       http-equiv="Content-Security-Policy"
-      content="default-src 'none'; img-src {{siteOrigin}} data:; style-src 'unsafe-inline'; script-src 'unsafe-inline'"
+      content="default-src 'none'; img-src {{siteOrigin}} data:; style-src 'unsafe-inline'; script-src 'unsafe-inline'; base-uri 'none'; form-action 'none'"
     />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>LePatron mailing preview</title>

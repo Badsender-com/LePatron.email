@@ -67,7 +67,8 @@ describe('email preview app', () => {
     );
 
   // Whatever the host makes of the CSP declared, the app and the email's
-  // frame, which inherits it, load nothing but images from LePatron.
+  // frame, which inherits it, load nothing but images from LePatron, take no
+  // base address and send no form.
   it('holds the CSP it declares, images from LePatron only', async () => {
     const { contents } = await client.readResource({ uri: PREVIEW_APP });
     const [origin] = contents[0]._meta.ui.csp.resourceDomains;
@@ -76,7 +77,7 @@ describe('email preview app', () => {
 
     expect(policies).toHaveLength(1);
     expect(policies[0].getAttribute('content')).toBe(
-      `default-src 'none'; img-src ${origin} data:; style-src 'unsafe-inline'; script-src 'unsafe-inline'`
+      `default-src 'none'; img-src ${origin} data:; style-src 'unsafe-inline'; script-src 'unsafe-inline'; base-uri 'none'; form-action 'none'`
     );
   });
 
