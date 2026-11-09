@@ -5,7 +5,7 @@ const { findMailingsByWords } = require('../mailing/mailing-search.service.js');
 const { siteOrigin } = require('../email-templates/email-template.js');
 const { versionLabel } = require('../ai-skill/services/version-helpers.js');
 const { containingRegExp } = require('../utils/text-search.js');
-const { withIdentity } = require('./mcp-identity.js');
+const { withIdentity, failure, success } = require('./mcp-identity.js');
 const { mailingOf, asPlainText } = require('./mcp-mailing-read.js');
 const { tooLongSearch } = require('./mcp-mailings.js');
 const expertises = require('./mcp-expertises.js');
@@ -46,7 +46,7 @@ function describes({ doc, version }) {
 
 async function search({ user, group, drafts }, { query }) {
   const words = queryWords(query);
-  if (words.length === 0) return answered({ results: [] });
+  if (words.length === 0) return success({ results: [] });
   let found;
   try {
     found = await Promise.all([
@@ -74,7 +74,7 @@ async function search({ user, group, drafts }, { query }) {
         url: expertises.uriOf(doc.expertiseId),
       })),
   ];
-  return answered({ results });
+  return success({ results });
 }
 
 // A search result read back as a document, or null when the user may not
@@ -128,19 +128,7 @@ async function fetchDocument(identity, { id }) {
       'Not found: no such document, or this user may not read it.'
     );
   }
-  return answered(document);
-}
-
-const failure = (text) => ({
-  isError: true,
-  content: [{ type: 'text', text }],
-});
-
-function answered(answer) {
-  return {
-    content: [{ type: 'text', text: JSON.stringify(answer) }],
-    structuredContent: answer,
-  };
+  return success(document);
 }
 
 const RESULT = z.object({ id: z.string(), title: z.string(), url: z.string() });
