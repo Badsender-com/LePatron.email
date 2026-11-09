@@ -8,32 +8,17 @@ const { CAPABILITIES } = require('../../shared/access/roles.js');
 const { isObjectIdString } = require('../utils/model.js');
 const { revokeConnections } = require('./mcp-connections.js');
 const { secretDigest } = require('./mcp-oauth-store.js');
+const { isRedirectUri } = require('./mcp-client-metadata.js');
 
 // The prefix of the ids given here, which `/mcp` checks are still listed.
 const CLIENT_ID_PREFIX = 'lepatron-';
 const AUTH_METHODS = ['client_secret_post', 'client_secret_basic'];
 const MAX_NAME = 100;
 const MAX_REDIRECT_URIS = 10;
-const LOOPBACK = new Set(['localhost', '127.0.0.1', '[::1]']);
 
 // `code` is what the back office translates.
 const refuse = (res, status, message, code) =>
   res.status(status).json({ message, ...(code && { code }) });
-
-// Where the authorization server may send a code: HTTPS, or a loopback
-// address for a client running on the user's machine.
-function isRedirectUri(value) {
-  try {
-    const url = new URL(value);
-    return (
-      !url.hash &&
-      (url.protocol === 'https:' ||
-        (url.protocol === 'http:' && LOOPBACK.has(url.hostname)))
-    );
-  } catch {
-    return false;
-  }
-}
 
 // The new client's fields, or why they are refused.
 function clientFieldsOf(body = {}) {
