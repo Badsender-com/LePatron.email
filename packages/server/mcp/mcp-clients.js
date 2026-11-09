@@ -6,10 +6,8 @@ const { McpClients, Groups } = require('../common/models.common.js');
 const permissions = require('../account/permissions.js');
 const { CAPABILITIES } = require('../../shared/access/roles.js');
 const { isObjectIdString } = require('../utils/model.js');
-const {
-  revokeConnections,
-  mountedAuthorizationServer,
-} = require('./mcp-connections.js');
+const { revokeConnections } = require('./mcp-connections.js');
+const { forgetClients } = require('./mcp-oauth-store.js');
 
 // The prefix of the ids given here, which `/mcp` checks are still listed.
 const CLIENT_ID_PREFIX = 'lepatron-';
@@ -225,12 +223,7 @@ async function forgetCompanyClients(groupId) {
   const clients = await McpClients.find({ _company: groupId })
     .select('clientId')
     .lean();
-  const provider = mountedAuthorizationServer();
-  if (provider) {
-    await Promise.all(
-      clients.map(({ clientId }) => provider.Client.adapter.destroy(clientId))
-    );
-  }
+  await forgetClients(clients.map(({ clientId }) => clientId));
   await McpClients.deleteMany({ _company: groupId });
 }
 

@@ -6,9 +6,7 @@ const permissions = require('../account/permissions.js');
 const { CAPABILITIES } = require('../../shared/access/roles.js');
 const { isObjectIdString } = require('../utils/model.js');
 const logger = require('../utils/logger.js');
-
-// What a grant may have issued: revoked with it.
-const ISSUED_BY_GRANT = ['AccessToken', 'RefreshToken', 'AuthorizationCode'];
+const { revokeByGrantIds } = require('./mcp-oauth-store.js');
 
 const refuse = (res, status, message) => res.status(status).json({ message });
 
@@ -80,12 +78,16 @@ async function useConnection(grantId) {
 /**
  * Revokes connected applications: unlisted first, which stops them at
  * `/mcp` at once, then their grants and every token they issued, which
- * stops their refresh.
+ * stops their refresh. From the store alone: the authorization server need
+ * not be mounted (a script).
  *
- * @param {import('oidc-provider').default} provider
+ * Called as `(filter)`. The consent still calls it as `(provider, filter)`,
+ * its former form, whose provider is not read.
+ *
  * @param {Object} filter which connections
  */
-async function revokeConnections(provider, filter) {
+async function revokeConnections(...args) {
+  const filter = args[args.length - 1];
   const connections = await McpConnections.find(filter)
     .select('grantId')
     .lean();
@@ -95,52 +97,30 @@ async function revokeConnections(provider, filter) {
   await McpConnections.deleteMany({ grantId: { $in: grantIds } });
   // Unlisted, they are already refused at `/mcp`: a grant or a token that
   // could not be revoked only mints tokens `/mcp` refuses, until it expires.
-  const results = await Promise.allSettled(
-    grantIds.flatMap((grantId) => [
-      ...ISSUED_BY_GRANT.map((model) =>
-        provider[model].revokeByGrantId(grantId)
-      ),
-      provider.Grant.adapter.destroy(grantId),
-    ])
+  await revokeByGrantIds(grantIds).catch((error) =>
+    logger.error('[mcp-oauth] revoke grants', error.message)
   );
-  results
-    .filter(({ status }) => status === 'rejected')
-    .forEach(({ reason }) =>
-      logger.error('[mcp-oauth] revoke grant', reason?.message)
-    );
 }
-
-// The authorization server the app mounted (mcp-oauth.js), for the app's own
-// events to revoke through it; none in scripts and in the tool suites.
-let authorizationServer = null;
 
 /**
  * Ends connected applications on an event of the app (a group turning MCP
  * off, a group deleted, a user deactivated or given a new password): revoked
  * like a user revokes one, so neither their calls nor their refresh go on,
- * and turning MCP back on, or the user, revives none of them. Without an
- * authorization server, they are unlisted, which `/mcp` refuses.
+ * and turning MCP back on, or the user, revives none of them.
  *
  * @param {Object} filter which connections
  */
 function forgetConnections(filter) {
-  return authorizationServer
-    ? revokeConnections(authorizationServer, filter)
-    : McpConnections.deleteMany(filter).then(() => undefined);
+  return revokeConnections(filter);
 }
 
-// The authorization server the app mounted, or null.
-const mountedAuthorizationServer = () => authorizationServer;
-
 /**
- * Binds the connections to the authorization server: the app's events revoke
- * through it, and the connection of a grant it revoked itself (a client
- * revoking its refresh token) goes.
+ * Binds the connections to the authorization server: the connection of a
+ * grant it revoked itself (a client revoking its refresh token) goes.
  *
  * @param {import('oidc-provider').default} provider
  */
 function attachAuthorizationServer(provider) {
-  authorizationServer = provider;
   provider.on('grant.revoked', (ctx, grantId) =>
     McpConnections.deleteOne({ grantId }).catch((error) =>
       logger.error('[mcp-oauth] grant revoked', error.message)
@@ -269,7 +249,6 @@ module.exports = {
   revokeConnections,
   forgetConnections,
   attachAuthorizationServer,
-  mountedAuthorizationServer,
   createConnectionsRouter,
   createGroupConnectionsRouter,
 };

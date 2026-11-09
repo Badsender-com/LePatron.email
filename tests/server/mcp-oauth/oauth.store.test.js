@@ -290,3 +290,75 @@ describe("a client's secret", () => {
     ).not.toContain(body.clientSecret);
   });
 });
+
+describe('revoking connections', () => {
+  const ISSUED = ['AccessToken', 'RefreshToken', 'AuthorizationCode'];
+
+  // A fresh copy of the module, which no authorization server was mounted
+  // with, as in a script, over the same database.
+  const unmounted = (path) => {
+    let module;
+    jest.isolateModules(() => {
+      // eslint-disable-next-line global-require
+      require('mongoose').connection.db = mongoose.connection.db;
+      // eslint-disable-next-line global-require, import/no-dynamic-require
+      module = require(path);
+    });
+    return module;
+  };
+
+  it('revokes their grants and tokens without the authorization server', async () => {
+    const app = oauth.createApp();
+    await oauth.connect(app, f.FRANK, { group: f.CLIENT_GROUP });
+    const { forgetConnections } = unmounted(
+      '../../../packages/server/mcp/mcp-connections.js'
+    );
+
+    await forgetConnections({ _user: f.FRANK });
+
+    [...ISSUED, 'Grant'].forEach((model) =>
+      expect(oauth.oauthStore(model).records).toEqual([])
+    );
+  });
+
+  it('revokes many connections with one query per model', async () => {
+    const app = oauth.createApp();
+    await oauth.connect(app, f.FRANK, { group: f.CLIENT_GROUP });
+    await oauth.connect(app, f.ERIN, { group: f.CLIENT_GROUP });
+    const otto = await oauth.connect(app, f.OTTO, { group: f.OTHER_GROUP });
+    const deletes = [...ISSUED, 'Grant'].map((model) =>
+      jest.spyOn(oauth.oauthStore(model), 'deleteMany')
+    );
+    const {
+      revokeConnections,
+    } = require('../../../packages/server/mcp/mcp-connections.js');
+
+    await revokeConnections({ _company: f.CLIENT_GROUP });
+
+    deletes.forEach((deleteMany) =>
+      expect(deleteMany).toHaveBeenCalledTimes(1)
+    );
+    expect(oauth.oauthStore('Grant').records).toHaveLength(1);
+    expect((await oauth.callMcp(app, otto.access_token)).status).toBe(200);
+  });
+
+  it("forgets a deleted company's clients without the authorization server", async () => {
+    const app = oauth.createApp();
+    const { body } = await oauth
+      .signIn(app, f.ALICE)
+      .post(`/api/groups/${f.CLIENT_GROUP}/mcp-clients`)
+      .send({
+        name: 'Copilot Studio',
+        redirectUris: ['https://copilot.example.test/callback'],
+      });
+    const { forgetCompanyClients } = unmounted(
+      '../../../packages/server/mcp/mcp-clients.js'
+    );
+
+    await forgetCompanyClients(f.CLIENT_GROUP);
+
+    expect(JSON.stringify(oauth.oauthStore('Client').records)).not.toContain(
+      body.clientId
+    );
+  });
+});

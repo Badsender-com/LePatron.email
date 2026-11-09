@@ -6,8 +6,10 @@ const logger = require('../utils/logger.js');
 
 /**
  * Where LePatron's authorization server keeps what it issues (ADR 0012), in
- * the app's MongoDB, one collection per model of `oidc-provider`, read and
- * written by the adapter (mcp-oauth-adapter.js).
+ * the app's MongoDB, one collection per model of `oidc-provider`: read and
+ * written by the adapter (mcp-oauth-adapter.js), and revoked here without the
+ * provider, by whatever ends a connection: a user, an admin, the app's
+ * events, a script.
  *
  * A record is `{ _id, payload, grantId?, uid?, consumed?, expiresAt? }`:
  *
@@ -25,6 +27,9 @@ const logger = require('../utils/logger.js');
  */
 
 const COLLECTION_PREFIX = 'mcp_oauth_';
+
+// A `$in` of at most this many ids per query.
+const BATCH = 500;
 
 // What a grant issues: revoked with it.
 const ISSUED_BY_GRANT = ['AccessToken', 'RefreshToken', 'AuthorizationCode'];
@@ -131,8 +136,54 @@ async function collectionOf(model) {
   return collection;
 }
 
+function batchesOf(ids) {
+  const batches = [];
+  for (let start = 0; start < ids.length; start += BATCH) {
+    batches.push(ids.slice(start, start + BATCH));
+  }
+  return batches;
+}
+
+/**
+ * Revokes grants and every token they issued, from the store alone: one
+ * query per model for up to `BATCH` grants.
+ *
+ * @param {string[]} grantIds
+ */
+async function revokeByGrantIds(grantIds) {
+  if (grantIds.length === 0) return;
+  const issued = await Promise.all(ISSUED_BY_GRANT.map(collectionOf));
+  const grants = await collectionOf('Grant');
+  await Promise.all(
+    batchesOf(grantIds).flatMap((batch) => [
+      ...issued.map((collection) =>
+        collection.deleteMany({ grantId: { $in: batch } })
+      ),
+      grants.deleteMany({ _id: { $in: batch } }),
+    ])
+  );
+}
+
+/**
+ * Forgets the clients the authorization server keeps under these ids, their
+ * secrets with them.
+ *
+ * @param {string[]} clientIds
+ */
+async function forgetClients(clientIds) {
+  if (clientIds.length === 0) return;
+  const clients = await collectionOf('Client');
+  await Promise.all(
+    batchesOf(clientIds).map((batch) =>
+      clients.deleteMany({ _id: { $in: batch } })
+    )
+  );
+}
+
 module.exports = {
   collectionOf,
+  revokeByGrantIds,
+  forgetClients,
   storedId,
   digest,
   secretDigest,
