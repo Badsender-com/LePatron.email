@@ -116,10 +116,10 @@ async function searchMailings({
  *
  * @param {Object} user the request user
  * @param {string[]} words
- * @param {number} limit how many at most, 100 at most
+ * @param {number} [limit] how many at most: 25 unless asked, 100 at most
  * @returns {Promise<Object[]>} lean mailings: `_id`, `name`, `updatedAt`
  */
-async function findMailingsByWords(user, words, limit) {
+async function findMailingsByWords(user, words, limit = DEFAULT_PAGE_SIZE) {
   const groupId = listingGroupIdOf(user);
   const { readable } = await readableScope(user, groupId);
   const filter = { ...readable, ...(await wordsFilter({ words }, groupId)) };

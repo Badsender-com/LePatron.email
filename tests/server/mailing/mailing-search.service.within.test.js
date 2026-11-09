@@ -170,7 +170,7 @@ describe('the mailings a user may read, by words', () => {
     expect(Object.keys(found).sort()).toEqual(['_id', 'name', 'updatedAt']);
   });
 
-  it('gives as many as asked, 100 at most', async () => {
+  it('gives as many as asked, 25 unless asked, 100 at most', async () => {
     const limits = [];
     const find = Mailings.find;
     jest.spyOn(Mailings, 'find').mockImplementation((...args) => {
@@ -187,7 +187,8 @@ describe('the mailings a user may read, by words', () => {
       1
     );
     await findMailingsByWords(companyAdmin, ['spring'], 500);
-    expect(limits).toEqual([1, 100]);
+    await findMailingsByWords(companyAdmin, ['spring']);
+    expect(limits).toEqual([1, 100, 25]);
   });
 
   it('keeps a super admin to the selected group', async () => {
