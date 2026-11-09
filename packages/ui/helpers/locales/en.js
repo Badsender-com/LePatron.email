@@ -999,6 +999,7 @@ export default {
     notIncluded: 'Not included',
     noModule:
       'The MCP module is not part of the subscription of {group}. Contact the platform company to add it.',
+    moduleMissing: 'The MCP module is not part of the subscription of {group}.',
     openModule: 'Open the module',
     offTitle: 'Turn MCP access off?',
     offConfirm:

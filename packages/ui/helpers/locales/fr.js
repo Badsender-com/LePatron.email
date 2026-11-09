@@ -1281,6 +1281,8 @@ export default {
     notIncluded: 'Non inclus',
     noModule:
       'Le module MCP n\'est pas inclus dans l\'abonnement de {group}. Contactez l\'entreprise plateforme pour l\'ajouter.',
+    moduleMissing:
+      'Le module MCP n\'est pas inclus dans l\'abonnement de {group}.',
     openModule: 'Ouvrir le module',
     offTitle: 'Couper l\'accès MCP ?',
     offConfirm:

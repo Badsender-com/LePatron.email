@@ -8,21 +8,27 @@
 // clipboard API, and a copy that fails says so, the address left in its
 // field to select.
 
-const { mountSfc, settle } = require('../../helpers/mount-sfc.js');
+const { mountSfc, componentOf, settle } = require('../../helpers/mount-sfc.js');
 const mixinGroupSwitch = require('../../../packages/ui/helpers/mixins/mixin-group-switch.js');
+const {
+  ROLES,
+  CAPABILITIES,
+  roleCan,
+} = require('../../../packages/shared/access/roles.js');
 
-function mountOption(copied) {
+const OPEN_GROUP = {
+  id: 'g1',
+  name: 'Company A',
+  enableMcpModule: true,
+  enableMcp: true,
+};
+
+function mountOption(copied, { group = OPEN_GROUP, role } = {}) {
   const commit = jest.fn();
   const copy = jest.fn().mockResolvedValue(copied);
+  const can = (capability) => Boolean(role) && roleCan(role, capability);
   const vm = mountSfc('packages/ui/components/group/mcp-access-option.vue', {
-    props: {
-      group: {
-        id: 'g1',
-        name: 'Company A',
-        enableMcpModule: true,
-        enableMcp: true,
-      },
-    },
+    props: { group },
     mocks: {
       $t: (key) => key,
       $store: {
@@ -31,13 +37,16 @@ function mountOption(copied) {
       },
     },
     imports: {
-      vuex: { mapGetters: () => ({ can: () => () => false }) },
+      vuex: { mapGetters: () => ({ can: () => can }) },
       'lucide-vue': {},
       '~/store/user': { CAN: 'can', USER: 'user' },
-      '../../../shared/access/roles.js': { CAPABILITIES: {} },
+      '../../../shared/access/roles.js': { CAPABILITIES },
       '~/helpers/mixins/mixin-group-switch.js': mixinGroupSwitch,
       '~/helpers/copy-to-clipboard.js': { __esModule: true, default: copy },
-      '~/components/layout/bs-form-section.vue': {},
+      // Rendered, for the switch in its header.
+      '~/components/layout/bs-form-section.vue': componentOf(
+        'packages/ui/components/layout/bs-form-section.vue'
+      ),
       '~/components/modal-confirm.vue': {},
       '~/components/layout/bs-settings-row.vue': {},
       '~/components/group/feature-switch.vue': {},
@@ -77,5 +86,54 @@ describe('the MCP address of a company', () => {
       color: 'error',
     });
     expect(copyButton(vm).textContent).not.toContain('mcpClients.copied');
+  });
+});
+
+// Without the MCP module (ADR 0017), the section stays, its switch disabled
+// and saying the module is not included. Whoever may open the module is sent
+// to it; anyone else is told to ask the platform company.
+describe('the MCP access of a company without the MCP module', () => {
+  const closed = { ...OPEN_GROUP, enableMcpModule: false };
+
+  it.each(Object.values(ROLES))('shows it to a %s', async (role) => {
+    const { vm } = mountOption(true, { group: closed, role });
+    await settle(vm);
+
+    const toggle = vm.$el.querySelector('bs-group-feature-switch');
+    const notice = vm.$el.querySelector(
+      '.bs-group-mcp-access-option__no-module'
+    );
+    const opens = roleCan(role, CAPABILITIES.PLATFORM_MANAGE);
+
+    expect(toggle.getAttribute('off-text')).toBe('mcpAccess.notIncluded');
+    expect(toggle.hasAttribute('disabled')).toBe(true);
+    expect(Boolean(notice.querySelector('nuxt-link'))).toBe(opens);
+    expect(notice.textContent).toContain(
+      opens ? 'mcpAccess.moduleMissing' : 'mcpAccess.noModule'
+    );
+    expect(notice.textContent).not.toContain(
+      opens ? 'mcpAccess.noModule' : 'mcpAccess.moduleMissing'
+    );
+  });
+
+  it('sends whoever may open it to the Modules of the company', async () => {
+    const { vm } = mountOption(true, {
+      group: closed,
+      role: ROLES.SUPER_ADMIN,
+    });
+    await settle(vm);
+
+    expect(vm.$el.querySelector('nuxt-link').getAttribute('to')).toBe(
+      '/groups/g1/settings/general'
+    );
+  });
+
+  it.each([
+    ['fr', require('../../../packages/ui/helpers/locales/fr.js').default],
+    ['en', require('../../../packages/ui/helpers/locales/en.js').default],
+  ])('asks only the others to contact the platform company, in %s', (_l, m) => {
+    expect(m.mcpAccess.noModule).toMatch(/plat(e)?form/);
+    expect(m.mcpAccess.moduleMissing).toContain('{group}');
+    expect(m.mcpAccess.moduleMissing).not.toMatch(/plat(e)?form/);
   });
 });

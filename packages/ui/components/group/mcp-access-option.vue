@@ -118,14 +118,18 @@ export default {
       />
     </template>
 
+    <!-- Who may open the module is sent to it; anyone else, to whoever
+         sells it. -->
     <p v-if="!hasModule" class="bs-group-mcp-access-option__no-module">
-      {{ $t('mcpAccess.noModule', { group: group.name }) }}
-      <nuxt-link
-        v-if="canOpenModule"
-        :to="`/groups/${group.id}/settings/general`"
-      >
-        {{ $t('mcpAccess.openModule') }}
-      </nuxt-link>
+      <template v-if="canOpenModule">
+        {{ $t('mcpAccess.moduleMissing', { group: group.name }) }}
+        <nuxt-link :to="`/groups/${group.id}/settings/general`">
+          {{ $t('mcpAccess.openModule') }}
+        </nuxt-link>
+      </template>
+      <template v-else>
+        {{ $t('mcpAccess.noModule', { group: group.name }) }}
+      </template>
     </p>
 
     <template v-else-if="enabled">
