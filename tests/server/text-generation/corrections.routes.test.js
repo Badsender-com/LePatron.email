@@ -248,6 +248,7 @@ describe('spelling correction: POST /api/text-generation/corrections', () => {
       expect(findApplicable).toHaveBeenCalledWith({
         scope: 'correction',
         categories: ['redaction'],
+        groupId: 'g1',
       });
     });
 

@@ -92,11 +92,15 @@ async function prepare({ user, mailingId, scope, byEmailType = true }) {
     ? await mailingMetadataService.findCanonicalEmailType(mailing)
     : null;
   const filter = expertiseFilter(scope);
+  const groupId = await billedGroupId(user, mailing);
+  // For the group it bills: a company reads the expertises opened to it
+  // (ADR 0013), the platform company every one.
   const applicable = await expertiseRepo.findApplicable(
     compact({
       scope,
       categories: filter.categories,
       emailType: emailType || undefined,
+      groupId,
     })
   );
   const expertise = filter.excludeTransversal
@@ -104,7 +108,7 @@ async function prepare({ user, mailingId, scope, byEmailType = true }) {
     : applicable;
 
   return {
-    groupId: await billedGroupId(user, mailing),
+    groupId,
     emailType: emailType || undefined,
     expertise,
   };
