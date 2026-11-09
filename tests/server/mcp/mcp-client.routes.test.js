@@ -97,6 +97,15 @@ describe("a company's MCP clients, for each role", () => {
   );
 });
 
+describe('the secret of a client registered by hand', () => {
+  it('is answered once, never kept by a cache', async () => {
+    const response = await create(f.TESS);
+
+    expect(response.body.clientSecret).toEqual(expect.any(String));
+    expect(response.headers['cache-control']).toBe('no-store');
+  });
+});
+
 describe("a company's MCP clients, out of reach", () => {
   const otherClients = `/api/groups/${f.OTHER_GROUP}/mcp-clients`;
 

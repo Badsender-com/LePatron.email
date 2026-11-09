@@ -97,6 +97,8 @@ async function create(req, res) {
   }
   const { client, clientSecret } = registered;
   await recorded(req, MCP_CLIENT_ACTIONS.CREATED, client);
+  // The secret, answered this once, is kept by no cache.
+  res.set('Cache-Control', 'no-store');
   res.status(201).json({ ...listed(client), clientSecret });
 }
 
