@@ -2,19 +2,16 @@
 import { validationMixin } from 'vuelidate';
 import { required } from 'vuelidate/lib/validators';
 import { mapGetters, mapMutations } from 'vuex';
-import {
-  groupsItem,
-  groupConnectedApplications,
-} from '~/helpers/api-routes.js';
+import { groupsItem } from '~/helpers/api-routes.js';
 import { CAN, USER } from '~/store/user';
 import { PAGE, SHOW_SNACKBAR } from '~/store/page';
 import { Status } from '~/helpers/constants/status';
 import BsModalConfirmForm from '~/components/modal-confirm-form';
-import BsModalConfirm from '~/components/modal-confirm.vue';
 import BsTextField from '~/components/form/bs-text-field';
 import BsTextarea from '~/components/form/bs-textarea.vue';
 import BsSelect from '~/components/form/bs-select';
 import BsFormSection from '~/components/layout/bs-form-section.vue';
+import BsGroupMcpModuleOption from '~/components/group/mcp-module-option.vue';
 import { escapeHtml } from '~/helpers/escape-html';
 import {
   Palette,
@@ -25,7 +22,6 @@ import {
   Boxes,
   Shield,
   KeyRound,
-  Plug,
 } from 'lucide-vue';
 import { CAPABILITIES } from '../../../shared/access/roles.js';
 
@@ -33,11 +29,11 @@ export default {
   name: 'BsGroupForm',
   components: {
     BsModalConfirmForm,
-    BsModalConfirm,
     BsTextField,
     BsTextarea,
     BsSelect,
     BsFormSection,
+    BsGroupMcpModuleOption,
     LucidePalette: Palette,
     LucideLineChart: LineChart,
     LucideArrowRight: ArrowRight,
@@ -46,7 +42,6 @@ export default {
     LucideBoxes: Boxes,
     LucideShield: Shield,
     LucideKeyRound: KeyRound,
-    LucidePlug: Plug,
   },
   mixins: [validationMixin],
   model: { prop: 'group', event: 'update' },
@@ -60,10 +55,7 @@ export default {
   data() {
     return {
       useSamlAuthentication: null,
-      // The MCP module as loaded: only closing an open one is asked.
-      loadedMcpModule: false,
-      // The connected applications a closed MCP module is about to end.
-      mcpConnections: 0,
+      // The MCP module's card counts the connections a closing would end.
       checkingMcp: false,
     };
   },
@@ -82,16 +74,6 @@ export default {
       set(updatedGroup) {
         this.$emit('update', updatedGroup);
       },
-    },
-    closeMcpMessage() {
-      const group = this.group.name;
-      if (!Number.isFinite(this.mcpConnections)) {
-        return this.$t('groups.modules.mcp.closeConfirmUnknown', { group });
-      }
-      return this.$tc('groups.modules.mcp.closeConfirm', this.mcpConnections, {
-        count: this.mcpConnections,
-        group,
-      });
     },
     isGroupCreationPage() {
       return this.$route.path === '/groups/new';
@@ -114,13 +96,6 @@ export default {
     },
   },
   watch: {
-    // The page swaps the group for the saved one: what was saved is loaded.
-    group: {
-      immediate: true,
-      handler() {
-        this.loadedMcpModule = this.group?.enableMcpModule === true;
-      },
-    },
     useSamlAuthentication: {
       immediate: true,
       handler(newVal) {
@@ -155,34 +130,17 @@ export default {
     },
     async onSubmit() {
       this.$v.$touch();
-      if (this.$v.$invalid) return;
-      // Closing an open MCP module revokes the company's connected
-      // applications (ADR 0017): asked first, as long as some are left.
-      const closing =
-        this.isEdit && this.loadedMcpModule && !this.group.enableMcpModule;
-      if (closing) {
-        if (this.checkingMcp) return;
-        this.checkingMcp = true;
-        this.mcpConnections = await this.connectionsCount();
-        this.checkingMcp = false;
-        if (this.mcpConnections > 0) return this.$refs.closeMcpModal.open();
-      }
-      return this.save();
-    },
-    async connectionsCount() {
+      if (this.$v.$invalid || this.checkingMcp) return;
+      // Closing an open MCP module revokes the company's connections
+      // (ADR 0017): its card asks first, then lets the save go on (`save`).
+      const mcpModule = this.$refs.mcpModule;
+      if (!mcpModule) return this.save();
+      this.checkingMcp = true;
       try {
-        const { count } = await this.$axios.$get(
-          groupConnectedApplications({ groupId: this.group.id })
-        );
-        return count;
-      } catch (error) {
-        // Unknown: still asked, without a number.
-        return Infinity;
+        await mcpModule.requestSave();
+      } finally {
+        this.checkingMcp = false;
       }
-    },
-    // Not closed after all: the switch goes back to the module as loaded.
-    keepMcpModule() {
-      this.$set(this.group, 'enableMcpModule', this.loadedMcpModule);
     },
     save() {
       const currentGroup = this.group;
@@ -332,36 +290,13 @@ export default {
             />
           </div>
 
-          <!-- MCP Module (ADR 0017): sold apart from MCP access, which the
-               company's tech admin then turns on in its AI features. -->
-          <div class="module-card">
-            <div class="module-card__content">
-              <div class="module-card__icon">
-                <lucide-plug :size="28" color="#00acdc" />
-              </div>
-              <div class="module-card__info">
-                <div class="module-card__name">
-                  {{ $t('groups.modules.mcp.name') }}
-                </div>
-                <div class="module-card__description">
-                  {{ $t('groups.modules.mcp.description') }}
-                </div>
-                <div
-                  v-if="localModel.enableMcpModule"
-                  class="module-card__hint"
-                >
-                  <lucide-arrow-right :size="14" color="#9e9e9e" />
-                  {{ $t('groups.modules.mcp.configHint') }}
-                </div>
-              </div>
-            </div>
-            <v-switch
-              v-model="localModel.enableMcpModule"
-              hide-details
-              :disabled="disabled"
-              class="module-card__switch"
-            />
-          </div>
+          <bs-group-mcp-module-option
+            ref="mcpModule"
+            :group="group"
+            :disabled="disabled"
+            @change="$set(localModel, 'enableMcpModule', $event)"
+            @save="save"
+          />
         </bs-form-section>
 
         <!-- ==================== SECTION 3: PERMISSIONS ==================== -->
@@ -504,16 +439,6 @@ export default {
         "
       />
     </bs-modal-confirm-form>
-
-    <bs-modal-confirm
-      ref="closeMcpModal"
-      :title="$t('groups.modules.mcp.closeTitle')"
-      :action-label="$t('groups.modules.mcp.close')"
-      @confirm="save"
-      @cancel="keepMcpModule"
-    >
-      <p>{{ closeMcpMessage }}</p>
-    </bs-modal-confirm>
   </div>
 </template>
 
