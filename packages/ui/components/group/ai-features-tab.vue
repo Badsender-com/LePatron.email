@@ -344,7 +344,7 @@ export default {
         <slot />
 
         <!-- Section: Coming Soon Features -->
-        <bs-form-section card last>
+        <bs-form-section card last :active="false">
           <template #icon>
             <lucide-sparkles :size="20" />
           </template>
