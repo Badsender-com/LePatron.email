@@ -6,9 +6,14 @@
 const DEFAULTS = {
   sessionSecret: '3MYdqy0lZZz2TXCr7YlxT9N6',
   'admin.password': 'admin',
-  // No default, but one all the same: without its keys, the MCP authorization
-  // server (ADR 0012) signs its tokens with oidc-provider's development keys,
-  // which are published.
+  // No default, but one all the same: the keys of the MCP authorization
+  // server (ADR 0012). Nothing is signed with them today: its tokens are
+  // opaque, and the `openid` scope is refused, so there is no ID token. They
+  // are required for two reasons: without them oidc-provider falls back on
+  // its development keys, which are public; and they are what will sign the
+  // day something is (JWT access tokens, ID tokens, signed responses). Do not
+  // remove them, and do not change them to disconnect the assistants: that
+  // disconnects nobody.
   mcpOauthJwks: undefined,
 };
 

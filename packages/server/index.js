@@ -69,7 +69,7 @@ const {
 } = require('./ai-skill/ai-skill.routes');
 const mcpFeedbackRouter = require('./mcp/mcp-feedback.routes.js');
 const { mountMcp } = require('./mcp/mcp-http.js');
-const { oauthBodyParsers } = require('./mcp/mcp-oauth.js');
+const { oauthBodyParsers, jwksOf } = require('./mcp/mcp-oauth.js');
 const { McpOAuthAdapter } = require('./mcp/mcp-oauth-adapter.js');
 const { siteOrigin } = require('./email-templates/email-template.js');
 const aiPlaygroundRouter = require('./ai-playground/ai-playground.routes');
@@ -364,7 +364,12 @@ if (cluster.isMaster) {
         .digest('base64'),
     ],
     adapter: McpOAuthAdapter,
-    ...(config.mcpOauthJwks && { jwks: JSON.parse(config.mcpOauthJwks) }),
+    // Required outside development, though nothing is signed with them
+    // today (opaque tokens, no ID token): without them the provider would
+    // use its public development keys, and they will sign the day something
+    // is. Do not remove them; changing them disconnects no assistant. See
+    // createAuthorizationServer.
+    ...(config.mcpOauthJwks && { jwks: jwksOf(config.mcpOauthJwks) }),
   });
 
   // Passport configuration

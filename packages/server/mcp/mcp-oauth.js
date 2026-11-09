@@ -50,6 +50,33 @@ function oauthBodyParsers() {
   ];
 }
 
+const JWKS_VARIABLE = 'lepatron_mcpOauthJwks';
+
+/**
+ * The keys of the authorization server, as `lepatron_mcpOauthJwks` holds
+ * them: a JSON Web Key Set with its private keys. Never quoted when it cannot
+ * be read: it is a secret.
+ *
+ * @param {string} text the variable's value
+ * @returns {{ keys: Object[] }}
+ * @throws {Error} naming the variable, when it is no key set
+ */
+function jwksOf(text) {
+  let jwks;
+  try {
+    jwks = JSON.parse(text);
+  } catch {
+    jwks = null;
+  }
+  if (!Array.isArray(jwks?.keys) || jwks.keys.length === 0) {
+    throw new Error(
+      `${JWKS_VARIABLE} is not a JSON Web Key Set: set it to {"keys": [...]}, ` +
+        'with the private keys of the MCP authorization server.'
+    );
+  }
+  return jwks;
+}
+
 // The account of a token is a user in the group the connection is bound to,
 // so the group survives every refresh.
 const accountIdOf = (userId, groupId) => `${userId}.${groupId}`;
@@ -89,7 +116,8 @@ async function keepRegisteredClient(provider, clientId, seconds = TTL.Grant) {
  *   cookies with
  * @param {Function} [options.adapter] the storage of grants, codes and
  *   tokens; in memory when not given (the tests)
- * @param {Object} [options.jwks] the signing keys; generated when not given
+ * @param {Object} [options.jwks] the keys, from `lepatron_mcpOauthJwks`;
+ *   the provider's development keys when not given
  * @param {Function} [options.fetch] what sends the provider's requests (a
  *   client's metadata document); the global `fetch` when not given
  * @param {Function} [options.lookup] what resolves a host's name, as
@@ -107,6 +135,13 @@ function createAuthorizationServer({
 }) {
   const provider = new Provider(issuer, {
     ...(adapter && { adapter }),
+    // Nothing is signed with these keys today: the tokens are opaque, and
+    // the `openid` scope is refused, so no ID token is issued (see
+    // oauth.surface.test.js). They are required all the same, outside
+    // development (config/dev-defaults.js): without them the provider signs
+    // with its development keys, which are public, and they are what will
+    // sign the day something is (JWT access tokens, ID tokens, signed
+    // responses). Do not remove them. Changing them disconnects no assistant.
     ...(jwks && { jwks }),
     // Every fetch of the provider: client documents, on public hosts only.
     fetch: providerFetch({ fetch, lookup }),
@@ -196,6 +231,7 @@ function createAuthorizationServer({
 module.exports = {
   createAuthorizationServer,
   oauthBodyParsers,
+  jwksOf,
   keepRegisteredClient,
   accountIdOf,
   identityOf,
