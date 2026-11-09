@@ -150,6 +150,14 @@ describe('what the API answers a client it refuses', () => {
   it.each([
     ['in HTTP on another host', 'http://assistant.example.test/callback'],
     ['in a scheme of its own', 'cursor://anysphere.cursor/callback'],
+    ['with a backslash before its host', 'http://localhost\\@evil.example/cb'],
+    ['with backslashes for slashes', 'http:\\\\localhost/cb'],
+    ['without the slashes of its host', 'https:evil.example'],
+    ['in capitals, as no URL writes it', 'HTTP://LOCALHOST/'],
+    [
+      'with a user and a password',
+      'https://user:secret@assistant.example.test/cb',
+    ],
   ])('names the redirect URI it refuses, %s', async (_case, uri) => {
     const { status, body } = await create(f.TESS, {
       redirectUris: [COPILOT_REDIRECT, uri],

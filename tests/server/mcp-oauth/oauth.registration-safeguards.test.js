@@ -55,6 +55,14 @@ describe('DCR safeguards', () => {
   it.each([
     ['in HTTP on another host', 'http://assistant.example.test/callback'],
     ['in a scheme of its own', 'com.example.app:/callback'],
+    ['with a backslash before its host', 'http://localhost\\@evil.example/cb'],
+    ['with backslashes for slashes', 'http:\\\\localhost/cb'],
+    ['without the slashes of its host', 'https:evil.example'],
+    ['in capitals, as no URL writes it', 'HTTP://LOCALHOST/'],
+    [
+      'with a user and a password',
+      'https://user:secret@assistant.example.test/cb',
+    ],
   ])('refuses a redirect URI %s', async (_case, uri) => {
     const response = await register({ redirect_uris: [uri] });
 

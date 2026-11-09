@@ -49,6 +49,7 @@ The document holds 5 KB at most, and names itself by the URL it is read at.
 A redirect URI is accepted over `https`, on any host.
 It is accepted over plain `http` on the loopback address only (`localhost`, `127.0.0.1`, `[::1]`), on any port, for an application on the user's own machine; such a client is treated as a native one (RFC 8252 §7.3).
 Any other redirect URI is refused: a scheme of the application's own (`cursor://…`, `com.example.app:/…`), and plain `http` to any other host.
+A redirect URI is also written as a URL writes it, so every reader of it reads the same host: no backslash, no user or password, no fragment, and the very text its URL gives back (lower case, slashes included).
 This is the rule of the MCP specification, whose redirect URIs must be either localhost or use HTTPS (Communication Security).
 At an open registration or in a metadata document, a refused redirect URI is left out of the client (RFC 7591 §3.2.1): the client is registered with the others, and the answer to the registration lists them.
 A registration left with no redirect URI is refused with `invalid_redirect_uri`.
