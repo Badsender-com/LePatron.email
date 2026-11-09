@@ -71,6 +71,20 @@ describe('mailing status', () => {
       expect((await listed(f.M_APPROVED)).status).toBe('approved');
     });
 
+    it('tells the assistant the rule, and where to read a mailing', async () => {
+      const client = await harness.connectAs(f.FRANK);
+      const { tools } = await client.listTools();
+      const { description } = tools.find((t) => t.name === 'list_mailings');
+
+      expect(description).toMatch(
+        /scheduled \(approved, with a planned send date, whichever day it is\)/
+      );
+      expect(description).toMatch(/draft \(not approved, even with a planned/);
+      expect(description).toMatch(/approved and plannedSendDate .* detail/);
+      expect(description).toMatch(/with get_mailing/);
+      expect(description).not.toMatch(/future|resource URI/);
+    });
+
     it.each([
       [
         'approved and planned',
