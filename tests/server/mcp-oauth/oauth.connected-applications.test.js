@@ -41,7 +41,12 @@ describe('connected applications', () => {
       {
         id: expect.any(String),
         name: 'An assistant',
-        group: { id: f.CLIENT_GROUP, name: 'A client' },
+        group: {
+          id: f.CLIENT_GROUP,
+          name: 'A client',
+          enableMcpModule: true,
+          enableMcp: true,
+        },
         connectedAt: expect.any(String),
         lastUsedAt: expect.any(String),
       },

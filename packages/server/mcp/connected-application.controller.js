@@ -14,31 +14,38 @@ const {
   CONNECTED_APPLICATION_ACTIONS,
 } = require('../security-event/security-event.actions.js');
 
-// One row per connection, with the name of its company.
+// One row per connection, with its company's name and whether the company
+// still lets an assistant in: the MCP module and MCP access (ADR 0017), which
+// the page says when one is missing.
 async function listed(connections) {
   const groupIds = [...new Set(connections.map((c) => String(c._company)))];
   const groups = await Groups.find({ _id: { $in: groupIds } })
-    .select('_id name')
+    .select('_id name enableMcpModule enableMcp')
     .lean();
-  const nameOf = new Map(
-    groups.map((group) => [String(group._id), group.name])
-  );
-  return connections.map((connection) => ({
-    id: String(connection._id),
-    name: connection.clientName,
-    group: {
-      id: String(connection._company),
-      name: nameOf.get(String(connection._company)) || '',
-    },
-    connectedAt: connection.connectedAt,
-    lastUsedAt: connection.lastUsedAt,
-  }));
+  const groupOf = new Map(groups.map((group) => [String(group._id), group]));
+  return connections.map((connection) => {
+    const group = groupOf.get(String(connection._company));
+    return {
+      id: String(connection._id),
+      name: connection.clientName,
+      group: {
+        id: String(connection._company),
+        name: group?.name || '',
+        // Strict booleans: a company stored before a flag has it off.
+        enableMcpModule: group?.enableMcpModule === true,
+        enableMcp: group?.enableMcp === true,
+      },
+      connectedAt: connection.connectedAt,
+      lastUsedAt: connection.lastUsedAt,
+    };
+  });
 }
 
 /**
  * @api {get} /connected-applications The applications the user connected
  * @apiDescription One per consent: an assistant connected from two machines
- * is listed twice (ADR 0012).
+ * is listed twice (ADR 0012). Each names its company, and whether the company
+ * has the MCP module and MCP access (ADR 0017).
  * @apiPermission user
  * @apiGroup MCP
  * @apiSuccess {Object[]} items the latest connected first

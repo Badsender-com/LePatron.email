@@ -127,6 +127,36 @@ describe("a user's own connected applications, for each role", () => {
   });
 });
 
+// The page says when a connection's company lets no assistant in (ADR 0017):
+// each row carries the MCP module and MCP access of its company.
+describe('the company of each connection', () => {
+  it('says whether it has the MCP module and MCP access', async () => {
+    oauth.update(app, 'groups', f.OTHER_GROUP, { enableMcpModule: false });
+    const open = await connected(f.ALICE, f.CLIENT_GROUP);
+    const accessOff = await connected(f.ALICE, f.UNSUBSCRIBED_GROUP);
+    const moduleClosed = await connected(f.ALICE, f.OTHER_GROUP);
+
+    const items = await listOf(f.ALICE);
+    const groupOf = (connection) =>
+      items.find(({ id }) => id === String(connection._id)).group;
+
+    expect(groupOf(open)).toEqual({
+      id: f.CLIENT_GROUP,
+      name: 'A client',
+      enableMcpModule: true,
+      enableMcp: true,
+    });
+    expect(groupOf(accessOff)).toMatchObject({
+      enableMcpModule: true,
+      enableMcp: false,
+    });
+    expect(groupOf(moduleClosed)).toMatchObject({
+      enableMcpModule: false,
+      enableMcp: true,
+    });
+  });
+});
+
 describe("a company's connected applications, for each role", () => {
   it.each(Object.values(ROLES))(
     'counts them for a %s who revokes them all',
