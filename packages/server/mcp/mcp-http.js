@@ -34,17 +34,22 @@ function refuse(res, status, error, description, headers = {}) {
     .json({ ...(error && { error }), error_description: description });
 }
 
-// Whether a request sent a bearer token, valid or not: only then does a
-// refusal give an error code (RFC 6750, section 3.1).
-const sentBearerToken = (header) => /^Bearer\s+\S/i.test(header || '');
+// The bearer token an Authorization header carries, valid or not, whatever
+// the case of its scheme (RFC 7235, section 2.1); null when it carries none.
+// Only a request that sent one is refused with an error code (RFC 6750,
+// section 3.1).
+function bearerTokenOf(header) {
+  const [, token = null] =
+    /^Bearer\s+(\S+)\s*$/i.exec(String(header || '')) || [];
+  return token;
+}
 
 /**
  * The identity a bearer token carries, when it is an access token LePatron
  * issued for the MCP endpoint and still valid.
  */
-async function authInfoOf(provider, header, resource) {
-  const [kind, value] = String(header || '').split(' ');
-  if (kind !== 'Bearer' || !value) return null;
+async function authInfoOf(provider, value, resource) {
+  if (!value) return null;
   const token = await provider.AccessToken.find(value);
   if (!token || token.isExpired || token.aud !== resource) return null;
   const identity = identityOf(token.accountId);
@@ -183,13 +188,10 @@ function mountMcp(
 
   app.all(RESOURCE_PATH, async (req, res, next) => {
     try {
-      const authInfo = await authInfoOf(
-        provider,
-        req.headers.authorization,
-        resource
-      );
+      const bearerToken = bearerTokenOf(req.headers.authorization);
+      const authInfo = await authInfoOf(provider, bearerToken, resource);
       if (!authInfo) {
-        const tokenSent = sentBearerToken(req.headers.authorization);
+        const tokenSent = Boolean(bearerToken);
         return refuse(
           res,
           401,

@@ -108,6 +108,17 @@ describe('token and refresh', () => {
     );
   });
 
+  // The scheme is read whatever its case (RFC 7235, section 2.1).
+  it('opens the MCP endpoint to the access token under a lower-case scheme', async () => {
+    const { body } = await exchange(await codeFor());
+
+    const response = await oauth
+      .callMcp(app, null)
+      .set('Authorization', `bearer ${body.access_token}`);
+
+    expect(response.status).toBe(200);
+  });
+
   // Checked at the endpoint, before any MCP exchange, then read by the
   // call it serves.
   it('reads who calls once per call', async () => {
