@@ -205,7 +205,7 @@ _UI_: Audience
 _Avoid_: Visibility, exposure, subscribers, scope (an expertise's scope is the part of an email it covers)
 
 **Draft version**:
-The open draft of a skill or an expertise: its latest version newer than the active one, not published yet, which no client is served and only a person publishes. It is a version kept apart from the one in use, whereas a draft mailing is a status of the mailing itself.
+The open draft of a skill or an expertise: its latest version newer than the active one, not published yet, which no client is served outside the drafts mode and only a person publishes. It is a version kept apart from the one in use, whereas a draft mailing is a status of the mailing itself.
 _UI_: Brouillon
 _Avoid_: Pending version, unpublished version
 
