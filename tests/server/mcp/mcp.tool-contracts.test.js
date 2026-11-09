@@ -19,7 +19,7 @@ const f = require('../../helpers/mcp-fixtures');
 const grammar = require('../../../packages/server/mcp/mcp-tool-grammar.js');
 const { siteOrigin } = require('../../../packages/server/utils/site-origin.js');
 
-const WRITING_TOOLS = ['submit_feedback'];
+const WRITING_TOOLS = ['submit_feedback', 'report_retex'];
 
 describe('tool contracts', () => {
   let client;

@@ -46,4 +46,6 @@ module.exports = Object.freeze({
   McpCallLogModel: 'McpCallLog',
   McpClientModel: 'McpClient',
   McpConnectionModel: 'McpConnection',
+  // The retex loop (ADR 0021)
+  McpRetexModel: 'McpRetex',
 });

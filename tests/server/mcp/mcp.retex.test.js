@@ -86,7 +86,7 @@ describe('the retex loop', () => {
     (await call(await asConsultant(), LIST, filters)).items;
 
   // Turned on by #1474 (report a retex, and read them)
-  describe.skip('reporting a retex', () => {
+  describe('reporting a retex', () => {
     it('records a super admin divergence on a section of an expertise', async () => {
       const answer = await call(
         await asConsultant(),
@@ -255,7 +255,7 @@ describe('the retex loop', () => {
   });
 
   // Turned on by #1474 (report a retex, and read them)
-  describe.skip('a feedback is a rating and a comment', () => {
+  describe('a feedback is a rating and a comment', () => {
     it('no longer takes a summary of the session', async () => {
       allowRetex();
 
@@ -274,7 +274,7 @@ describe('the retex loop', () => {
   });
 
   // Turned on by #1474 (report a retex, and read them)
-  describe.skip('reading the retex', () => {
+  describe('reading the retex', () => {
     beforeEach(async () => {
       allowRetex();
       await call(await asClient(), REPORT, {
