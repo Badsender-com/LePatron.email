@@ -684,6 +684,35 @@ describe('a client registered by a company', () => {
     expect(details.body.code).toBe('client_of_another_company');
   });
 
+  it('lets a user of another company decline', async () => {
+    const agent = oauth.signIn(app, f.OTTO);
+    const uid = await oauth.startConsent(
+      agent,
+      asClient(),
+      oauth.pkce().challenge
+    );
+
+    const denied = await agent.post(`/oauth/consent/${uid}/deny`);
+    const back = await oauth.followToClient(agent, denied.body.redirectTo);
+
+    expect(back.searchParams.get('error')).toBe('access_denied');
+  });
+
+  it("tells a super admin that the client's company has no MCP access", async () => {
+    oauth.update(app, 'groups', f.CLIENT_GROUP, { enableMcp: false });
+    const agent = oauth.signIn(app, f.ALICE);
+    const uid = await oauth.startConsent(
+      agent,
+      asClient(),
+      oauth.pkce().challenge
+    );
+
+    const details = await agent.get(`/oauth/consent/${uid}/details`);
+
+    expect(details.status).toBe(403);
+    expect(details.body.code).toBe('no_mcp_access');
+  });
+
   it('offers a super admin its company alone', async () => {
     const agent = oauth.signIn(app, f.ALICE);
     const uid = await oauth.startConsent(

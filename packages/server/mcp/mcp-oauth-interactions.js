@@ -86,28 +86,14 @@ function registrationOf(clientId, company) {
 function createInteractionsRouter(provider, resource) {
   const router = express.Router();
 
-  // The consenting user, the interaction this browser started, and what may
-  // be granted to the user.
-  router.param('uid', async (req, res, next, uid) => {
+  // The interaction this browser started: a consent link opened in another
+  // browser answers nothing.
+  const startedHere = async (req, res, next) => {
     try {
-      if (!req.user) return refuse(res, 401, 'Log in to LePatron first.');
-      const consenter = await consenterOf(req);
-      // The bootstrap account, which has no document, connects nothing.
-      if (!consenter) {
-        return refuse(
-          res,
-          403,
-          'This account cannot connect an assistant.',
-          'account_cannot_connect'
-        );
-      }
-      if (consenter.groups.length === 0) {
-        return refuse(res, 403, NO_ACCESS, 'no_mcp_access');
-      }
       const interaction = await provider
         .interactionDetails(req, res)
         .catch(() => null);
-      if (!interaction || interaction.uid !== uid) {
+      if (!interaction || interaction.uid !== req.params.uid) {
         return refuse(
           res,
           404,
@@ -115,13 +101,45 @@ function createInteractionsRouter(provider, resource) {
           'expired'
         );
       }
-      // A client a company registered connects that company alone.
-      const company = await companyOfClient(interaction.params.client_id);
-      if (company) {
-        consenter.groups = consenter.groups.filter(
-          (group) => group.id === company.id
+      req.interaction = interaction;
+      return next();
+    } catch (err) {
+      return next(err);
+    }
+  };
+
+  const signedIn = (req, res, next) =>
+    req.user ? next() : refuse(res, 401, 'Log in to LePatron first.');
+
+  // The consenting user. The bootstrap account, which has no document,
+  // connects nothing.
+  const consenting = async (req, res, next) => {
+    try {
+      req.consenter = await consenterOf(req);
+      if (!req.consenter) {
+        return refuse(
+          res,
+          403,
+          'This account cannot connect an assistant.',
+          'account_cannot_connect'
         );
-        if (consenter.groups.length === 0) {
+      }
+      return next();
+    } catch (err) {
+      return next(err);
+    }
+  };
+
+  // What may be granted to the user. Checked in the order that tells them
+  // why they cannot connect: the company of a client registered by hand,
+  // then the MCP access.
+  const mayConnect = async (req, res, next) => {
+    try {
+      const { consenter } = req;
+      // A client a company registered connects that company alone.
+      const company = await companyOfClient(req.interaction.params.client_id);
+      if (company) {
+        if (!permissions.canAccessGroup(consenter.user, company.id)) {
           return refuse(
             res,
             403,
@@ -129,10 +147,14 @@ function createInteractionsRouter(provider, resource) {
             'client_of_another_company'
           );
         }
+        consenter.groups = consenter.groups.filter(
+          (group) => group.id === company.id
+        );
       }
-      req.interaction = interaction;
+      if (consenter.groups.length === 0) {
+        return refuse(res, 403, NO_ACCESS, 'no_mcp_access');
+      }
       req.clientCompany = company;
-      req.consenter = consenter;
       // What the user may grant, whatever the application asked for: the
       // clients only know of the read scope the server advertises, and the
       // consent offers drafting to whoever may manage the platform (ADR 0014).
@@ -141,7 +163,16 @@ function createInteractionsRouter(provider, resource) {
     } catch (err) {
       return next(err);
     }
-  });
+  };
+
+  // Seeing and giving the consent need a user who may give it.
+  router.use(
+    ['/:uid/details', '/:uid/consent'],
+    signedIn,
+    consenting,
+    startedHere,
+    mayConnect
+  );
 
   router.get('/:uid/details', async (req, res, next) => {
     try {
@@ -239,7 +270,9 @@ function createInteractionsRouter(provider, resource) {
     }
   });
 
-  router.post('/:uid/deny', async (req, res, next) => {
+  // Declining needs nothing but the interaction: whoever cannot connect may
+  // still send the application its answer.
+  router.post('/:uid/deny', startedHere, async (req, res, next) => {
     try {
       return await finish(req, res, {
         error: 'access_denied',

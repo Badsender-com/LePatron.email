@@ -161,6 +161,36 @@ describe('authorization and consent', () => {
     expect(back.searchParams.get('code')).toBeNull();
   });
 
+  // The application waits for an answer: it gets one whatever stops the
+  // user from connecting.
+  it.each([
+    ['a user whose company has no MCP access', f.NINA],
+    ['the bootstrap account', '576b90a441ceadc005124896'],
+  ])('lets %s decline', async (_who, userId) => {
+    const agent = oauth.signIn(app, userId);
+    const uid = await oauth.startConsent(
+      agent,
+      CIMD_CLIENT,
+      oauth.pkce().challenge
+    );
+
+    const denied = await agent.post(`/oauth/consent/${uid}/deny`);
+    const back = await oauth.followToClient(agent, denied.body.redirectTo);
+
+    expect(denied.status).toBe(200);
+    expect(back.searchParams.get('error')).toBe('access_denied');
+  });
+
+  it('answers nothing to a decline from a browser that did not start the authorization', async () => {
+    const { uid } = await consentFor(f.OTTO);
+
+    const denied = await oauth
+      .signIn(app, f.FRANK)
+      .post(`/oauth/consent/${uid}/deny`);
+
+    expect(denied.status).toBe(404);
+  });
+
   describe('what the authorization request must carry', () => {
     const authorize = (overrides) =>
       request(app)
