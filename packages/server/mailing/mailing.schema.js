@@ -346,6 +346,9 @@ MailingSchema.statics.findForApiWithPagination = async function findForApiWithPa
       _workspace: 1,
       _parentFolder: 1,
       espIds: 1,
+      // What a mailing's status reads besides its approval (MCP, ADR 0012).
+      subject: 1,
+      plannedSendDate: 1,
       updatedAt: 1,
       createdAt: 1,
     },

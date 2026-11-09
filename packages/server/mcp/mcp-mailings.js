@@ -1,15 +1,10 @@
 'use strict';
 
 const { z } = require('zod');
-const { Mailings } = require('../common/models.common.js');
 const { searchMailings } = require('../mailing/mailing-search.service.js');
 const { accessibleLocations } = require('../mailing/mailing-locations.js');
 const { withIdentity, failure } = require('./mcp-identity.js');
-const {
-  MAILING_STATUSES,
-  approvedMailingIds,
-  statusOf,
-} = require('./mcp-mailing-status.js');
+const { MAILING_STATUSES, statusOf } = require('./mcp-mailing-status.js');
 
 const MAX_PAGE_SIZE = 100;
 const DEFAULT_PAGE_SIZE = 25;
@@ -25,23 +20,6 @@ const uriOf = (mailingId) => `lepatron://mailings/${mailingId}`;
 // The ESP profiles a mailing was pushed to, each counted once.
 const espProfileCountOf = (espIds) =>
   new Set((espIds || []).map((push) => String(push.profileId))).size;
-
-// What the listing leaves out and the status needs: one query for the page.
-async function factsOf(mailingIds) {
-  const [mailings, approved] = await Promise.all([
-    Mailings.find({ _id: { $in: mailingIds } })
-      .select('subject plannedSendDate')
-      .lean(),
-    approvedMailingIds(mailingIds),
-  ]);
-  const byId = new Map(
-    mailings.map((mailing) => [String(mailing._id), mailing])
-  );
-  return (id) => ({
-    ...byId.get(id),
-    approved: approved.has(id),
-  });
-}
 
 const REFERENCE = z.object({ id: z.string(), name: z.string() });
 const MAILING = z.object({
@@ -125,10 +103,10 @@ async function listMailings({ user }, args) {
       authorName: args.author,
     },
   });
-  const factsFor = await factsOf(items.docs.map((mailing) => mailing._id));
   const now = new Date();
+  // The listing reads each mailing's approval by the app's own rule.
   const mailings = items.docs.map((mailing) =>
-    asItem(mailing, factsFor(String(mailing._id)), now)
+    asItem(mailing, { ...mailing, approved: mailing.isApproved }, now)
   );
   const answer = {
     mailings,
