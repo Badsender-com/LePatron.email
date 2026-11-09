@@ -104,6 +104,7 @@ export default {
     </div>
     <v-switch
       :input-value="group.enableMcpModule"
+      :aria-label="$t('groups.modules.mcp.name')"
       hide-details
       :disabled="disabled"
       class="bs-group-mcp-module-option__switch"

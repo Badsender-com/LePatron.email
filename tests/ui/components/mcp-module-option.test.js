@@ -112,6 +112,16 @@ async function toggle(host) {
   await settle(host);
 }
 
+// The switch has no visible label of its own: the module's name is its
+// accessible name.
+it('names its switch after the module', () => {
+  const { vm } = mountCard({ enableMcpModule: false });
+
+  expect(switchOf(vm).getAttribute('aria-label')).toBe(
+    'groups.modules.mcp.name'
+  );
+});
+
 describe('the save of the MCP module', () => {
   it('asks before closing a module that was open, with the count', async () => {
     const { host, vm, $get } = mountCard({ enableMcpModule: true });
