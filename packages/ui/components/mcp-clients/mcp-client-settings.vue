@@ -2,6 +2,7 @@
 import { mapMutations } from 'vuex';
 import { Copy, Check } from 'lucide-vue';
 import { PAGE, SHOW_SNACKBAR } from '~/store/page.js';
+import copyToClipboard from '~/helpers/copy-to-clipboard.js';
 
 /**
  * What an assistant's set-up screen asks for, each with a copy button: the
@@ -45,21 +46,21 @@ export default {
         field: this.$t(`mcpClients.settings.${key}`),
       });
     },
+    // On a browser that cannot copy, the value stays on screen to select.
     async copy(row) {
-      try {
-        await navigator.clipboard.writeText(row.value);
-        this.copiedKey = row.key;
-        this.$emit('copied', row.key);
-        clearTimeout(this.copiedTimer);
-        this.copiedTimer = setTimeout(() => {
-          this.copiedKey = null;
-        }, 2000);
-      } catch (error) {
+      if (!(await copyToClipboard(row.value))) {
         this.showSnackbar({
-          text: this.$t('global.errors.errorOccured'),
+          text: this.$t('mcpClients.copyFailed'),
           color: 'error',
         });
+        return;
       }
+      this.copiedKey = row.key;
+      this.$emit('copied', row.key);
+      clearTimeout(this.copiedTimer);
+      this.copiedTimer = setTimeout(() => {
+        this.copiedKey = null;
+      }, 2000);
     },
   },
 };

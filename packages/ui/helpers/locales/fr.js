@@ -1161,8 +1161,11 @@ export default {
     createdTitle: 'Copiez ces valeurs dans « {name} »',
     secretOnce: 'Le secret ne sera plus jamais affiché.',
     serverOnPage: 'Les adresses du serveur restent disponibles sur cette page.',
-    copySecretFirst: 'Copiez le secret pour terminer',
-    secretSaved: 'J\'ai copié le secret',
+    copySecretFirst: 'Copiez le secret, ou cochez la case, pour terminer',
+    secretSavedConfirm: 'J\'ai enregistré ce secret',
+    secretDone: 'Terminer',
+    copyFailed:
+      'La copie a échoué : sélectionnez la valeur et copiez-la à la main.',
     copyField: 'Copier : {field}',
     deleteNamed: 'Supprimer {name}',
     copy: 'Copier',

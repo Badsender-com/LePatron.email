@@ -1,6 +1,7 @@
 <script>
 import { Plug, Copy, Check, ChevronRight } from 'lucide-vue';
 import mixinGroupSwitch from '~/helpers/mixins/mixin-group-switch.js';
+import copyToClipboard from '~/helpers/copy-to-clipboard.js';
 import BsFormSection from '~/components/layout/bs-form-section.vue';
 import BsModalConfirm from '~/components/modal-confirm.vue';
 import BsSettingsRow from '~/components/layout/bs-settings-row.vue';
@@ -57,20 +58,20 @@ export default {
     restore() {
       this.switchKey += 1;
     },
+    // On a browser that cannot copy, the address stays in its field to select.
     async copyUrl() {
-      try {
-        await navigator.clipboard.writeText(this.mcpUrl);
-        this.copied = true;
-        clearTimeout(this.copiedTimer);
-        this.copiedTimer = setTimeout(() => {
-          this.copied = false;
-        }, 2000);
-      } catch (error) {
+      if (!(await copyToClipboard(this.mcpUrl))) {
         this.showSnackbar({
-          text: this.$t('global.errors.errorOccured'),
+          text: this.$t('mcpClients.copyFailed'),
           color: 'error',
         });
+        return;
       }
+      this.copied = true;
+      clearTimeout(this.copiedTimer);
+      this.copiedTimer = setTimeout(() => {
+        this.copied = false;
+      }, 2000);
     },
   },
 };

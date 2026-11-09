@@ -1,6 +1,6 @@
 <script>
 import { mapGetters, mapMutations } from 'vuex';
-import { Plus, Trash2, KeyRound, Check, AlertTriangle } from 'lucide-vue';
+import { Plus, Trash2, KeyRound } from 'lucide-vue';
 import { PAGE, SHOW_SNACKBAR } from '~/store/page.js';
 import * as acls from '~/helpers/pages-acls.js';
 import * as apiRoutes from '~/helpers/api-routes.js';
@@ -12,6 +12,7 @@ import BsPageHeader from '~/components/layout/bs-page-header.vue';
 import BsModalConfirm from '~/components/modal-confirm.vue';
 import BsModalCreateMcpClient from '~/components/mcp-clients/modal-create-mcp-client.vue';
 import BsMcpClientSettings from '~/components/mcp-clients/mcp-client-settings.vue';
+import BsModalMcpClientSecret from '~/components/mcp-clients/modal-mcp-client-secret.vue';
 
 // The assistants that cannot register themselves (Copilot Studio in manual
 // mode) are given a client id and a secret here, by the company's tech admin
@@ -23,11 +24,10 @@ export default {
     BsModalConfirm,
     BsModalCreateMcpClient,
     BsMcpClientSettings,
+    BsModalMcpClientSecret,
     LucidePlus: Plus,
     LucideTrash2: Trash2,
     LucideKeyRound: KeyRound,
-    LucideCheck: Check,
-    LucideAlertTriangle: AlertTriangle,
   },
   mixins: [mixinSettingsTitle],
   meta: {
@@ -52,10 +52,8 @@ export default {
       clients: [],
       loadError: false,
       modalLoading: false,
+      // The client just created, its secret with it, for the dialog.
       created: null,
-      showCreated: false,
-      // The dialog of the secret closes once the secret has been copied.
-      secretCopied: false,
       toDelete: null,
       origin: '',
     };
@@ -91,8 +89,6 @@ export default {
         this.$refs.createModal.close();
         // The secret is shown once, here, and kept nowhere in the page.
         this.created = { ...client, clientSecret };
-        this.secretCopied = false;
-        this.showCreated = true;
       } catch (error) {
         this.notifyError(error);
       } finally {
@@ -100,11 +96,7 @@ export default {
       }
     },
     closeCreated() {
-      this.showCreated = false;
       this.created = null;
-    },
-    onCopied(key) {
-      if (key === 'clientSecret') this.secretCopied = true;
     },
     metaOf(client) {
       return this.$t('mcpClients.clientMeta', {
@@ -291,47 +283,7 @@ export default {
         :loading="modalLoading"
         @submit="createClient"
       />
-      <!-- Closed only by its button, once the secret is copied: it is shown
-           this once. -->
-      <v-dialog :value="showCreated" width="560" persistent>
-        <v-card v-if="created" flat tile>
-          <v-card-title class="bs-mcp-clients__created-title">
-            <v-chip small color="success" text-color="white" label>
-              <lucide-check :size="14" class="mr-1" />
-              {{ $t('mcpClients.createdBadge') }}
-            </v-chip>
-            <span>{{
-              $t('mcpClients.createdTitle', { name: created.name })
-            }}</span>
-          </v-card-title>
-          <v-card-text>
-            <bs-mcp-client-settings :client="created" @copied="onCopied" />
-            <p class="bs-mcp-clients__secret-warning">
-              <lucide-alert-triangle :size="14" />
-              {{ $t('mcpClients.secretOnce') }}
-            </p>
-            <p class="bs-mcp-clients__footnote mb-0">
-              {{ $t('mcpClients.serverOnPage') }}
-            </p>
-          </v-card-text>
-          <v-divider />
-          <v-card-actions>
-            <v-spacer />
-            <span v-if="!secretCopied" class="bs-mcp-clients__footnote mr-3">
-              {{ $t('mcpClients.copySecretFirst') }}
-            </span>
-            <v-btn
-              color="accent"
-              elevation="0"
-              class="text-none"
-              :disabled="!secretCopied"
-              @click="closeCreated"
-            >
-              {{ $t('mcpClients.secretSaved') }}
-            </v-btn>
-          </v-card-actions>
-        </v-card>
-      </v-dialog>
+      <bs-modal-mcp-client-secret :client="created" @close="closeCreated" />
       <bs-modal-confirm
         ref="deleteModal"
         :title="$t('mcpClients.deleteTitle')"
@@ -470,23 +422,6 @@ export default {
     padding: 0 1.5rem;
     font-size: 0.8125rem;
     color: rgba(0, 0, 0, 0.6);
-  }
-
-  &__created-title {
-    display: flex;
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 0.5rem;
-    word-break: normal;
-  }
-
-  &__secret-warning {
-    display: flex;
-    align-items: center;
-    gap: 0.375rem;
-    margin: 0.75rem 0 0.5rem;
-    font-size: 0.75rem;
-    color: #8a5a00;
   }
 }
 </style>
