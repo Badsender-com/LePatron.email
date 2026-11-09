@@ -60,6 +60,7 @@ const McpRetexSchema = new Schema(
       ),
       default: null,
     },
+    closedAt: { type: Date, default: null },
     expiresAt: { type: Date, default: null },
   },
   { timestamps: true }
@@ -68,6 +69,9 @@ const McpRetexSchema = new Schema(
 McpRetexSchema.index({ status: 1, createdAt: -1 });
 McpRetexSchema.index({ status: 1, 'about.kind': 1, 'about.id': 1 });
 McpRetexSchema.index({ status: 1, category: 1, part: 1 });
+// A change of the company's retention re-stamps its closed retex
+// (group/log-retention.js).
+McpRetexSchema.index({ _company: 1, closedAt: -1 });
 McpRetexSchema.index({ expiresAt: 1 }, { expireAfterSeconds: 0 });
 
 module.exports = McpRetexSchema;

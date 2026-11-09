@@ -207,7 +207,7 @@ describe('the grammar of every tool', () => {
   });
 
   // As its preset declares it: said of a tool that writes only, and true
-  // for a setting alone, which the same call leaves the same.
+  // for a setting or a dismissal, which the same call leaves the same.
   it('says whether calling a tool that writes again changes anything', () => {
     const presets = Object.values(grammar);
     const idempotent = (value) =>
@@ -224,7 +224,7 @@ describe('the grammar of every tool', () => {
         ),
       }).toEqual({ tool: tool.name, preset: true });
     });
-    expect(idempotent(true)).toEqual(['use_drafts']);
+    expect(idempotent(true)).toEqual(['dismiss_retex', 'use_drafts']);
     expect(idempotent(undefined)).toEqual(
       tools
         .filter((tool) => tool.annotations.readOnlyHint)

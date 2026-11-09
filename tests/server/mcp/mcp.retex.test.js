@@ -353,7 +353,7 @@ describe('the retex loop', () => {
   });
 
   // Turned on by #1475 (dismiss a retex, and the candidates of a convergence)
-  describe.skip('dismissing a retex', () => {
+  describe('dismissing a retex', () => {
     let retexId;
 
     beforeEach(async () => {
@@ -408,7 +408,7 @@ describe('the retex loop', () => {
   });
 
   // Turned on by #1475 (dismiss a retex, and the candidates of a convergence)
-  describe.skip('the candidates of a convergence', () => {
+  describe('the candidates of a convergence', () => {
     let clientRetex;
 
     beforeEach(async () => {
