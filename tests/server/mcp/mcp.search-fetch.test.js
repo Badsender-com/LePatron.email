@@ -177,6 +177,43 @@ describe('search and fetch', () => {
     });
   });
 
+  // Past its time, a search answers the same in both tools: narrow it down.
+  describe('a search out of its time', () => {
+    beforeEach(() => {
+      const {
+        Mailings,
+      } = require('../../../packages/server/common/models.common.js');
+      const outOfTime = Object.assign(new Error('operation exceeded time'), {
+        code: 50,
+      });
+      const query = {
+        select: () => query,
+        sort: () => query,
+        limit: () => query,
+        maxTimeMS: () => query,
+        lean: () => Promise.reject(outOfTime),
+      };
+      jest.spyOn(Mailings, 'find').mockReturnValue(query);
+      jest.spyOn(Mailings, 'paginate').mockRejectedValue(outOfTime);
+    });
+
+    it('tells list_mailings and search alike to narrow it down', async () => {
+      const listed = await client.callTool({
+        name: 'list_mailings',
+        arguments: { name: 'black' },
+      });
+      const searched = await client.callTool({
+        name: 'search',
+        arguments: { query: 'black' },
+      });
+
+      expect(listed.isError).toBe(true);
+      expect(searched.isError).toBe(true);
+      expect(harness.answerOf(listed).error).toMatch(/too long.*narrow/);
+      expect(harness.answerOf(searched)).toEqual(harness.answerOf(listed));
+    });
+  });
+
   describe('fetch', () => {
     it('reads back a mailing found by search, as text', async () => {
       const document = await fetch(`mailing:${f.M_NEWSLETTER}`);

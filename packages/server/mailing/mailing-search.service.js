@@ -41,6 +41,9 @@ const MOST_RECENT_FIRST = { sortBy: ['updatedAt'], sortDesc: [true] };
 const ID_ONLY = Object.freeze({ _id: 1 });
 
 module.exports = {
+  DEFAULT_PAGE_SIZE,
+  MAX_PAGE_SIZE,
+  MAX_PAGE,
   searchMailings,
   findMailingsByWords,
   findReadableMailings,

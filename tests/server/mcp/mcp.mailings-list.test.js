@@ -266,6 +266,16 @@ describe('mailings list and status', () => {
 
       expect(answer.error).toMatch(/100/);
     });
+
+    it('refuses a page past the 10,000th, saying so', async () => {
+      const answer = await list(f.FRANK, { page: 10001 });
+
+      expect(answer.error).toMatch(/10000/);
+      expect(answer.error).not.toMatch(/BAD_FORMAT_PAGINATION/);
+      expect(await list(f.FRANK, { page: 10000 })).toMatchObject({
+        mailings: [],
+      });
+    });
   });
 
   describe('workspaces and folders', () => {

@@ -7,6 +7,7 @@ const { versionLabel } = require('../ai-skill/services/version-helpers.js');
 const { containingRegExp } = require('../utils/text-search.js');
 const { withIdentity } = require('./mcp-identity.js');
 const { mailingOf, asPlainText } = require('./mcp-mailing-read.js');
+const { tooLongSearch } = require('./mcp-mailings.js');
 const expertises = require('./mcp-expertises.js');
 
 // `search` and `fetch` in the shape ChatGPT expects for deep research and
@@ -43,9 +44,6 @@ function describes({ doc, version }) {
   return `${doc.title} ${doc.description || ''} ${headings}`;
 }
 
-// What a search answers when the database took too long (ADR 0007).
-const isTimeout = (error) => error && error.status === 503;
-
 async function search({ user, group, drafts }, { query }) {
   const words = queryWords(query);
   if (words.length === 0) return answered({ results: [] });
@@ -56,10 +54,7 @@ async function search({ user, group, drafts }, { query }) {
       expertises.searchableExpertises(group, drafts),
     ]);
   } catch (error) {
-    if (!isTimeout(error)) throw error;
-    return failure(
-      'The search took too long: try again with more precise words.'
-    );
+    return tooLongSearch(error);
   }
   const [mailings, served] = found;
   const patterns = words.map(containingRegExp);

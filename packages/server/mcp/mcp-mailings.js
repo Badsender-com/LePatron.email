@@ -1,7 +1,13 @@
 'use strict';
 
 const { z } = require('zod');
-const { searchMailings } = require('../mailing/mailing-search.service.js');
+const ERROR_CODES = require('../constant/error-codes.js');
+const {
+  DEFAULT_PAGE_SIZE,
+  MAX_PAGE_SIZE,
+  MAX_PAGE,
+  searchMailings,
+} = require('../mailing/mailing-search.service.js');
 const { accessibleLocations } = require('../mailing/mailing-locations.js');
 const { withIdentity, failure } = require('./mcp-identity.js');
 const {
@@ -10,8 +16,6 @@ const {
   plannedDayOf,
 } = require('./mcp-mailing-status.js');
 
-const MAX_PAGE_SIZE = 100;
-const DEFAULT_PAGE_SIZE = 25;
 // What an assistant may send: bounded, like every input of this server.
 const MAX_NAME_LENGTH = 200;
 const MAX_TAGS = 20;
@@ -45,6 +49,25 @@ const MAILING = z.object({
   uri: z.string(),
 });
 
+// What a search out of its time answers (ADR 0007), in list_mailings and in
+// search alike: a search to narrow, which the assistant can act on.
+const SEARCH_TOO_LONG =
+  'The search took too long: narrow it down, with more filters or more precise words.';
+
+/**
+ * The answer to a search the database could not finish in its time; any
+ * other error is thrown again.
+ *
+ * @param {Error} error
+ * @returns {Object} the tool result
+ */
+function tooLongSearch(error) {
+  if (error && error.message === ERROR_CODES.SEARCH_TIMEOUT) {
+    return failure(SEARCH_TOO_LONG);
+  }
+  throw error;
+}
+
 const isoOf = (date) => (date ? new Date(date).toISOString() : null);
 
 function asItem(mailing, facts) {
@@ -73,20 +96,9 @@ function asItem(mailing, facts) {
   };
 }
 
-/**
- * The mailings a user may read in the company the token is bound to (ADR 0012),
- * answered by the search across accessible workspaces (ADR 0007): the same
- * rule decides what comes back in the app and in an assistant. Each one with
- * its derived status, and linked as a resource.
- */
-async function listMailings({ user }, args) {
-  const pageSize = args.pageSize ?? DEFAULT_PAGE_SIZE;
-  if (pageSize > MAX_PAGE_SIZE) {
-    return failure(
-      `A page holds ${MAX_PAGE_SIZE} mailings at most: ask for the next page.`
-    );
-  }
-  const { items } = await searchMailings({
+// The search across accessible workspaces an assistant's arguments ask for.
+function searchOf(user, args, pageSize) {
+  return {
     user,
     filters: {
       tags: args.tags,
@@ -104,7 +116,28 @@ async function listMailings({ user }, args) {
       // Whatever its case and accents, as the author's name.
       name: args.name,
     },
-  });
+  };
+}
+
+/**
+ * The mailings a user may read in the company the token is bound to (ADR 0012),
+ * answered by the search across accessible workspaces (ADR 0007): the same
+ * rule decides what comes back in the app and in an assistant. Each one with
+ * its derived status, and linked as a resource.
+ */
+async function listMailings({ user }, args) {
+  const pageSize = args.pageSize ?? DEFAULT_PAGE_SIZE;
+  if (pageSize > MAX_PAGE_SIZE) {
+    return failure(
+      `A page holds ${MAX_PAGE_SIZE} mailings at most: ask for the next page.`
+    );
+  }
+  let items;
+  try {
+    ({ items } = await searchMailings(searchOf(user, args, pageSize)));
+  } catch (error) {
+    return tooLongSearch(error);
+  }
   // The listing reads each mailing's approval by the app's own rule.
   const mailings = items.docs.map((mailing) =>
     asItem(mailing, { ...mailing, approved: mailing.isApproved })
@@ -143,7 +176,7 @@ const LIST_INPUT = z.object({
   createdBefore: DATE.optional(),
   updatedAfter: DATE.optional(),
   updatedBefore: DATE.optional(),
-  page: z.number().int().min(1).optional(),
+  page: z.number().int().min(1).max(MAX_PAGE).optional(),
   pageSize: z.number().int().min(1).optional(),
 });
 const LIST_OUTPUT = z.object({
@@ -197,6 +230,7 @@ function registerListWorkspaces(server) {
 
 module.exports = {
   registerListMailings,
+  tooLongSearch,
   registerListWorkspaces,
   asItem,
   MAILING,
