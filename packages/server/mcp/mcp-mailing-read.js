@@ -32,8 +32,10 @@ const MAX_ID_LENGTH = 100;
 
 // Sanitising and parsing are synchronous, about a second per megabyte: past
 // this, a preview is not read for an assistant. Real ones weigh 50 to 120 KB.
-// The bound is the app's own for a sanitised preview it caches: what is read
-// here is not sanitised again at every read.
+// The bound is the size of the largest sanitised preview the app caches, but
+// it counts the preview as saved, in code points, and the cache counts it
+// sanitised, which can be longer (`>` becomes `&gt;`): it bounds what is read,
+// and most previews read stay in the cache, not all.
 const MAX_PREVIEW_LENGTH = PREVIEW_CACHE_MAX_ENTRY;
 
 // Why a mailing comes without content.
