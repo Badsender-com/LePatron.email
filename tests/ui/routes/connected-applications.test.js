@@ -62,7 +62,7 @@ describe('revoking a connection', () => {
 
   it.each([
     ['fr', fr, /connexion de « \{name\} » du \{date\}.*autres connexions/],
-    ['en', en, /connection of “\{name\}” of \{date\}.*other connections/],
+    ['en', en, /connection of “\{name\}” made on \{date\}.*other connections/],
   ])('says it in %s', (_lang, messages, confirm) => {
     expect(messages.connectedApplications.revokeConfirm).toMatch(confirm);
     expect(messages.connectedApplications.revokeOne).toContain('{date}');
@@ -113,3 +113,33 @@ describe('revoking a connection already gone', () => {
     expect(vm.applications).toEqual([]);
   });
 });
+
+// What the company's tech admin revokes at once are its connections (see
+// "Connection" in GLOSSARY.md): one word for them, in every message of it.
+describe.each([
+  [
+    'fr',
+    fr,
+    /connexion/i,
+    /applications? connectées?|assistants IA connectés/i,
+  ],
+  ['en', en, /connection/i, /connected applications?|assistants? connected/i],
+])(
+  'the revocation of every connection in %s',
+  (_lang, messages, term, other) => {
+    it.each([
+      'groupCount',
+      'groupRevokeTitle',
+      'groupRevokeConfirm',
+      'groupCountError',
+      'groupRevoked',
+    ])('says connections in %s', (key) => {
+      const text = messages.connectedApplications[key];
+
+      text.split(' | ').forEach((form) => {
+        expect(form).toMatch(term);
+        expect(form).not.toMatch(other);
+      });
+    });
+  }
+);

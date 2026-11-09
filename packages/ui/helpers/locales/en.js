@@ -946,16 +946,16 @@ export default {
     revokeOne: 'Revoke {name}, connected on {date}',
     revokeTitle: 'Revoke this connection?',
     revokeConfirm:
-      'The connection of “{name}” of {date} will lose its access to LePatron for the company {group} at once. Your other connections of this application stay. To use it here again, connect it again.',
+      'The connection of “{name}” made on {date} will lose its access to LePatron for the company {group} at once. Your other connections of this application stay. To use it here again, connect it again.',
     revoked: 'Connection revoked',
     groupCount:
       'No AI assistant connections | 1 AI assistant connection | {count} AI assistant connections',
     groupRevoke: 'Revoke all',
-    groupRevokeTitle: 'Revoke every connected application?',
+    groupRevokeTitle: 'Revoke every AI assistant connection?',
     groupRevokeConfirm:
-      'Every AI assistant connected for the company {group} loses its access at once. Each user will have to connect theirs again. | The AI assistant connection of the company {group} loses its access at once. Its user will have to connect it again. | The {count} AI assistant connections of the company {group} lose their access at once. Each user will have to connect theirs again.',
+      'Every AI assistant connection of the company {group} loses its access at once. Each user will have to connect their assistant again. | The AI assistant connection of the company {group} loses its access at once. Its user will have to connect it again. | The {count} AI assistant connections of the company {group} lose their access at once. Each user will have to connect theirs again.',
     groupCountError: 'The number of AI assistant connections is unavailable.',
-    groupRevoked: 'Connected applications revoked',
+    groupRevoked: 'AI assistant connections revoked',
     errors: {
       MCP_CONNECTION_NOT_FOUND:
         'This connection no longer exists: it was already revoked.',

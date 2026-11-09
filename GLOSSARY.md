@@ -204,6 +204,7 @@ _Avoid_: MCP subscription (MCP access is not what is sold)
 
 **Connection**:
 One consent of one user, in one company, through one connected application: what an access token opens, and what the rate limit counts first, before the user across their applications and the company. Connecting again opens another one, so two machines with the same application make two connections; past 10 of them for one application in one company, the oldest is revoked.
+_UI_: Connexion d'assistant IA
 _Avoid_: Session, link, integration
 
 **Call log**:

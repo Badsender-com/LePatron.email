@@ -1232,11 +1232,11 @@ export default {
     groupCount:
       'Aucune connexion d\'assistant IA | 1 connexion d\'assistant IA | {count} connexions d\'assistants IA',
     groupRevoke: 'Tout révoquer',
-    groupRevokeTitle: 'Révoquer toutes les applications connectées\u00a0?',
+    groupRevokeTitle: 'Révoquer toutes les connexions d\'assistants IA\u00a0?',
     groupRevokeConfirm:
-      'Les assistants IA connectés pour l\'entreprise {group} perdent aussitôt leur accès. Chaque utilisateur devra reconnecter le sien. | La connexion d\'assistant IA de l\'entreprise {group} perd aussitôt son accès. Son utilisateur devra la reconnecter. | Les {count} connexions d\'assistants IA de l\'entreprise {group} perdent aussitôt leur accès. Chaque utilisateur devra reconnecter les siennes.',
+      'Les connexions d\'assistants IA de l\'entreprise {group} perdent aussitôt leur accès. Chaque utilisateur devra reconnecter son assistant. | La connexion d\'assistant IA de l\'entreprise {group} perd aussitôt son accès. Son utilisateur devra la reconnecter. | Les {count} connexions d\'assistants IA de l\'entreprise {group} perdent aussitôt leur accès. Chaque utilisateur devra reconnecter les siennes.',
     groupCountError: 'Nombre de connexions d\'assistants IA indisponible.',
-    groupRevoked: 'Applications connectées révoquées',
+    groupRevoked: 'Connexions d\'assistants IA révoquées',
     errors: {
       MCP_CONNECTION_NOT_FOUND:
         'Cette connexion n\'existe plus : elle a déjà été révoquée.',
