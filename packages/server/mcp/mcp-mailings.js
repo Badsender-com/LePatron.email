@@ -2,10 +2,8 @@
 
 const { z } = require('zod');
 const { Mailings } = require('../common/models.common.js');
-const {
-  searchMailings,
-  accessibleLocations,
-} = require('../mailing/mailing-search.service.js');
+const { searchMailings } = require('../mailing/mailing-search.service.js');
+const { accessibleLocations } = require('../mailing/mailing-locations.js');
 const { withIdentity, failure } = require('./mcp-identity.js');
 const {
   MAILING_STATUSES,

@@ -4,18 +4,18 @@ const { BadRequest, ServiceUnavailable } = require('http-errors');
 const mongoose = require('mongoose');
 
 const ERROR_CODES = require('../constant/error-codes.js');
-const {
-  Groups,
-  Workspaces,
-  Folders,
-  Mailings,
-  TaxonomyItems,
-} = require('../common/models.common.js');
+const { Mailings, TaxonomyItems } = require('../common/models.common.js');
 const { TaxonomyTypes } = require('../constant/taxonomy-type.js');
 const { containing, containingRegExp } = require('../utils/text-search.js');
 const permissions = require('../account/permissions.js');
 const { listingGroupIdOf } = require('../account/request-scope.js');
 const { isObjectIdString } = require('../utils/model.js');
+const {
+  accessibleWorkspaces,
+  foldersOf,
+  scopeOf,
+  locator,
+} = require('./mailing-locations.js');
 
 // Searching every accessible workspace (ADR 0007): the emails of every
 // workspace the user may read in the group the listing reads, in any folder or
@@ -42,7 +42,6 @@ const ID_ONLY = Object.freeze({ _id: 1 });
 
 module.exports = {
   searchMailings,
-  accessibleLocations,
   findReadableMailings,
   findReadableMailing,
   locateReadableMailing,
@@ -231,78 +230,6 @@ async function wordsFilter({ words } = {}, groupId) {
   };
 }
 
-// The locations a search looks through: every accessible one, or those the
-// caller narrows it to. A folder brings its subfolders, and only the emails
-// filed in them; a workspace brings its emails and its folders.
-function scopeOf(workspaces, folders, { workspaceIds, folderIds } = {}) {
-  // An empty list narrows nothing: it is a filter left blank.
-  const named = (ids) => (ids && ids.length ? new Set(ids.map(String)) : null);
-  const keptWorkspaces = named(workspaceIds);
-  const inWorkspaces = keptWorkspaces
-    ? workspaces.filter((workspace) =>
-        keptWorkspaces.has(String(workspace._id))
-      )
-    : workspaces;
-  const workspaceIdsKept = new Set(inWorkspaces.map((w) => String(w._id)));
-  const parentOf = new Map(
-    folders.map((folder) => [String(folder._id), folder])
-  );
-  const workspaceOfFolder = (folder) =>
-    String(
-      folder._parentFolder
-        ? parentOf.get(String(folder._parentFolder))?._workspace
-        : folder._workspace
-    );
-  let kept = folders.filter((folder) =>
-    workspaceIdsKept.has(workspaceOfFolder(folder))
-  );
-  const keptFolders = named(folderIds);
-  if (keptFolders) {
-    kept = kept.filter(
-      (folder) =>
-        keptFolders.has(String(folder._id)) ||
-        keptFolders.has(String(folder._parentFolder))
-    );
-    return { workspaces: [], folders: kept };
-  }
-  return { workspaces: inWorkspaces, folders: kept };
-}
-
-/**
- * The workspaces a user may read in the group the listing reads, each with its
- * folders and their subfolders: where a search may look.
- *
- * @param {Object} user the request user
- * @returns {Promise<Array<{ id: string, name: string, folders: Array }>>}
- */
-async function accessibleLocations(user) {
-  const workspaces = await accessibleWorkspaces(user, listingGroupIdOf(user));
-  const folders = await foldersOf(workspaces);
-  const reference = ({ _id, name }) => ({ id: String(_id), name });
-  const byName = (a, b) => a.name.localeCompare(b.name);
-  const childrenOf = (parentId) =>
-    folders
-      .filter((folder) => String(folder._parentFolder) === parentId)
-      .map(reference)
-      .sort(byName);
-  return workspaces
-    .map((workspace) => ({
-      ...reference(workspace),
-      folders: folders
-        .filter(
-          (folder) =>
-            !folder._parentFolder &&
-            String(folder._workspace) === String(workspace._id)
-        )
-        .map((folder) => ({
-          ...reference(folder),
-          subfolders: childrenOf(String(folder._id)),
-        }))
-        .sort(byName),
-    }))
-    .sort(byName);
-}
-
 async function findPage(query) {
   try {
     return await Mailings.findForApiWithPagination(query);
@@ -340,71 +267,5 @@ function pageOf({ page, itemsPerPage, sortBy, sortDesc }) {
     ...(sorted
       ? { sortBy: [sortBy[0]], sortDesc: [!!sortDesc[0]] }
       : MOST_RECENT_FIRST),
-  };
-}
-
-async function accessibleWorkspaces(user, groupId) {
-  const [group, workspaces] = await Promise.all([
-    Groups.findById(groupId).select('userHasAccessToAllWorkspaces').lean(),
-    Workspaces.find({ _company: groupId })
-      .select('name _company _users')
-      .lean(),
-  ]);
-  return workspaces.filter((workspace) =>
-    permissions.canReadWorkspace(user, workspace, group)
-  );
-}
-
-// The folders of the workspaces, then their subfolders. A subfolder is known
-// by its parent folder: one from older data may still name a workspace.
-async function foldersOf(workspaces) {
-  const rootFolders = await Folders.find({
-    _workspace: { $in: workspaces.map((workspace) => workspace._id) },
-    _parentFolder: null,
-  })
-    .select('name _workspace _parentFolder')
-    .lean();
-  const subfolders = await Folders.find({
-    _parentFolder: { $in: rootFolders.map((folder) => folder._id) },
-  })
-    .select('name _workspace _parentFolder')
-    .lean();
-  return [...rootFolders, ...subfolders];
-}
-
-// Where an email sits, from the workspace down, read from its folder's parent
-// before any workspace it names (a move leaves `null` in the field it left).
-function locator(workspaces, folders) {
-  const byId = (list) => new Map(list.map((item) => [String(item._id), item]));
-  const workspaceById = byId(workspaces);
-  const folderById = byId(folders);
-  const reference = ({ _id, name }) => ({ id: String(_id), name });
-
-  return function locate(mailing) {
-    if (!mailing._parentFolder) {
-      const workspace = workspaceById.get(String(mailing._workspace));
-      return { workspace, location: { workspace: reference(workspace) } };
-    }
-    const folder = folderById.get(String(mailing._parentFolder));
-    if (!folder._parentFolder) {
-      const workspace = workspaceById.get(String(folder._workspace));
-      return {
-        workspace,
-        location: {
-          workspace: reference(workspace),
-          folder: reference(folder),
-        },
-      };
-    }
-    const parent = folderById.get(String(folder._parentFolder));
-    const workspace = workspaceById.get(String(parent._workspace));
-    return {
-      workspace,
-      location: {
-        workspace: reference(workspace),
-        folder: reference(parent),
-        subfolder: reference(folder),
-      },
-    };
   };
 }
