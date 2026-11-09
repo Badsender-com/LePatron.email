@@ -70,9 +70,10 @@ describe('workspaces and folders', () => {
     ]);
   });
 
-  // An argument it does not take is left aside: the call is answered.
+  // An argument it does not take is left aside: the call is answered, and
+  // filters nothing (a company admin reads both workspaces).
   it('ignores an argument it does not take', async () => {
-    const client = await harness.connectAs(f.FRANK);
+    const client = await harness.connectAs(f.ERIN);
 
     const result = await client.callTool({
       name: 'list_workspaces',
@@ -80,9 +81,12 @@ describe('workspaces and folders', () => {
     });
 
     expect(result.isError).toBeFalsy();
-    expect(harness.answerOf(result).workspaces.map((w) => w.id)).toEqual([
-      f.WS_NEWS,
-    ]);
+    expect(
+      harness
+        .answerOf(result)
+        .workspaces.map((w) => w.id)
+        .sort()
+    ).toEqual([f.WS_NEWS, f.WS_PROMO].sort());
   });
 
   it('lists every workspace of the group to a company admin', async () => {
