@@ -819,7 +819,7 @@ export default {
       read: 'Read the expertises, the skills and your mailings',
       readHint: 'With your rights, exactly as in the app.',
       readOnly: 'Change, publish or delete nothing',
-      readOnlyHint: 'The access is read only.',
+      readOnlyHint: 'It can only send your feedback on what LePatron gave you.',
     },
     registration: {
       dynamicTitle: 'Unverified application',
@@ -831,7 +831,7 @@ export default {
     },
     allowWrite: 'Also propose drafts of skills and expertises',
     allowWriteHint:
-      'Super admins only. Only a person publishes a draft. Tick it only for an assistant of the Badsender team.',
+      'Super admins only. Only a person publishes a draft. Tick it only for an assistant of the platform company.',
     group: 'Company',
     groupHint:
       'The assistant will only see this company. To read another one, connect it again.',
@@ -907,7 +907,7 @@ export default {
       tokenUrl: 'Token and refresh URL',
       scope: 'Scope',
       scopeHint:
-        'Read only. Proposing drafts of skills and expertises (skills:write) is only granted to Badsender super admins, when they ask for it at connection.',
+        'Read, and send the user\'s feedback. Proposing drafts of skills and expertises (skills:write) is only granted to super admins, when they ask for it at connection.',
     },
     errors: {
       invalid_name: 'Give a name of 1 to 100 characters.',

@@ -7,7 +7,13 @@
 const fr = require('../../../packages/ui/helpers/locales/fr.js').default;
 const en = require('../../../packages/ui/helpers/locales/en.js').default;
 
-const NAMESPACES = ['retex', 'aiSkills.feedback'];
+const NAMESPACES = [
+  'retex',
+  'aiSkills.feedback',
+  'oauthConsent',
+  'mcpClients',
+  'mcpAccess',
+];
 
 const at = (messages, path) =>
   path.split('.').reduce((node, key) => node && node[key], messages);

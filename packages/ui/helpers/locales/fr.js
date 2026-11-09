@@ -1096,7 +1096,8 @@ export default {
       read: 'Lire les expertises, les skills et vos mailings',
       readHint: 'Avec vos droits, exactement comme dans l\'application.',
       readOnly: 'Rien modifier, publier ni supprimer',
-      readOnlyHint: 'L\'accès est en lecture seule.',
+      readOnlyHint:
+        'Il peut seulement envoyer vos avis sur ce que LePatron vous a donné.',
     },
     registration: {
       dynamicTitle: 'Application non vérifiée',
@@ -1108,7 +1109,7 @@ export default {
     },
     allowWrite: 'Proposer aussi des brouillons de skills et d\'expertises',
     allowWriteHint:
-      'Réservé aux super admins. Seule une personne publie un brouillon. À ne cocher que pour un assistant de l\'équipe Badsender.',
+      'Réservé aux super admins. Seule une personne publie un brouillon. À ne cocher que pour un assistant de l\'entreprise plateforme.',
     group: 'Entreprise',
     groupHint:
       'L\'assistant ne verra que cette entreprise. Pour en lire une autre, connectez-le à nouveau.',
@@ -1185,7 +1186,7 @@ export default {
       tokenUrl: 'URL du token et de renouvellement',
       scope: 'Scope',
       scopeHint:
-        'Lecture seule. Proposer des brouillons de skills et d\'expertises (skills:write) n\'est accordé qu\'aux super admins Badsender, sur leur demande à la connexion.',
+        'Lire, et envoyer les avis de l\'utilisateur. Proposer des brouillons de skills et d\'expertises (skills:write) n\'est accordé qu\'aux super admins, sur leur demande à la connexion.',
     },
     errors: {
       invalid_name: 'Donnez un nom de 1 à 100 caractères.',
@@ -1199,9 +1200,9 @@ export default {
       redirectUrisRequired: 'Au moins une URL de redirection est requise.',
       redirectUrisInvalid:
         'Jusqu\'à 10 URL, en HTTPS (HTTP seulement vers localhost), sans fragment #.',
-    },
       redirectUriRefused:
         '« {uri} » est refusée : une URL de redirection est en HTTPS, ou en HTTP vers localhost, sans fragment #.',
+    },
   },
   connectedApplications: {
     pageTitle: 'Applications connectées',
