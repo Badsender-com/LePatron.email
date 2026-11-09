@@ -190,6 +190,11 @@ describe('the MCP access of a company with the MCP module', () => {
       vm.$el.querySelector('.bs-form-section__content--flush')
     ).not.toBeNull();
     expect(vm.$el.querySelector('.bs-group-mcp-access-steps')).toBeNull();
+    expect(
+      vm.$el
+        .querySelector('ul.bs-group-mcp-access-option__rows')
+        .getAttribute('role')
+    ).toBe('list');
     expect(copyButton(vm)).toBeDefined();
   });
 });

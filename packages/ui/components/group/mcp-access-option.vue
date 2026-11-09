@@ -171,7 +171,7 @@ export default {
         </p>
       </div>
 
-      <ul class="bs-group-mcp-access-option__rows">
+      <ul class="bs-group-mcp-access-option__rows" role="list">
         <bs-group-connected-applications-option :group="group" />
         <bs-group-retex-option
           :group="group"
