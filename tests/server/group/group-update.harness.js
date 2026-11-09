@@ -98,9 +98,11 @@ function storedGroup(fields) {
       return before;
     }),
   }));
-  // The rest of the update, as saved: what the controller reads back.
-  groupService.updateGroup.mockImplementation(async (changes) =>
-    Object.assign(group, changes)
+  // The rest of the update, as saved: what the controller reads back. As
+  // Mongoose's updateOne does, a `$set` among the fields is an operator,
+  // whose fields are written too.
+  groupService.updateGroup.mockImplementation(async ({ $set, ...changes }) =>
+    Object.assign(group, changes, $set)
   );
   return group;
 }

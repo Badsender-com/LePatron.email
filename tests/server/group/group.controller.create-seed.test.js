@@ -168,3 +168,19 @@ describe('POST /groups — the MCP module', () => {
     }
   );
 });
+
+// A company is created from its named fields only: a key that starts with `$`
+// is not one of them.
+describe('POST /groups — named fields only', () => {
+  it.each(['enableMcpModule', 'enableMcp', 'allowRetex', 'requireTwoFactor'])(
+    'creates the company without %s sent as an operator',
+    async (field) => {
+      await create({ name: 'Acme', $set: { [field]: true } });
+
+      expect(groupService.createGroup.mock.calls[0][0]).toEqual({
+        name: 'Acme',
+      });
+      expect(SecurityEvents.create).not.toHaveBeenCalled();
+    }
+  );
+});

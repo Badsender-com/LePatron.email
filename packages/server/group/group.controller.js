@@ -45,6 +45,22 @@ const {
   sanitizeEmailMetadata,
 } = require('../utils/sanitize-email-metadata.js');
 
+/**
+ * The company fields a request names: its own keys, but those that start
+ * with `$`, which the database would read as an update operator rather than
+ * a field. A company is written by its named fields only, each one through
+ * the rule it answers to (the switches through group-switch.js).
+ *
+ * @param {Object} body the request body
+ * @returns {Object} a copy, with the named fields only
+ */
+function namedFieldsOf(body) {
+  if (!body || typeof body !== 'object' || Array.isArray(body)) return {};
+  return Object.fromEntries(
+    Object.entries(body).filter(([key]) => !key.startsWith('$'))
+  );
+}
+
 module.exports = {
   list: asyncHandler(list),
   seedGroups: asyncHandler(seedGroups),
@@ -183,7 +199,7 @@ async function create(req, res) {
   }
 
   // Not a company field: the language the default email types are seeded in.
-  const { defaultEmailTypesLang, ...groupToCreate } = req.body;
+  const { defaultEmailTypesLang, ...groupToCreate } = namedFieldsOf(req.body);
   // A company starts with its switches off: they are turned on from its
   // settings, where each one is recorded as a security event. The MCP module
   // alone may be opened at creation, as the other modules, by the super admin
@@ -529,7 +545,9 @@ async function update(req, res) {
   const { user } = req;
 
   // Process credentials (handle masking and deletion)
-  const processedBody = groupFtpService.processCredentialsForUpdate(req.body);
+  const processedBody = groupFtpService.processCredentialsForUpdate(
+    namedFieldsOf(req.body)
+  );
   // The platform flag has its own endpoint and its own guardrail (ADR 0002).
   delete processedBody.isPlatform;
 
