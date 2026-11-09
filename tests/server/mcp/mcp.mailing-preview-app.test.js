@@ -60,6 +60,44 @@ describe('email preview app', () => {
     ]);
   });
 
+  // The policy of the app's own page, as a browser reads it.
+  const ownPolicyOf = (html) =>
+    new JSDOM(html).window.document.querySelectorAll(
+      'head meta[http-equiv="Content-Security-Policy"]'
+    );
+
+  // Whatever the host makes of the CSP declared, the app and the email's
+  // frame, which inherits it, load nothing but images from LePatron.
+  it('holds the CSP it declares, images from LePatron only', async () => {
+    const { contents } = await client.readResource({ uri: PREVIEW_APP });
+    const [origin] = contents[0]._meta.ui.csp.resourceDomains;
+
+    const policies = ownPolicyOf(contents[0].text);
+
+    expect(policies).toHaveLength(1);
+    expect(policies[0].getAttribute('content')).toBe(
+      `default-src 'none'; img-src ${origin} data:; style-src 'unsafe-inline'; script-src 'unsafe-inline'`
+    );
+  });
+
+  it('writes the origin into its CSP as text', async () => {
+    const config = require('../../../packages/server/node.config.js');
+    const { host } = config;
+    config.host = 'lepatron.test" data-host="lepatron.test';
+    try {
+      const { contents } = await client.readResource({ uri: PREVIEW_APP });
+
+      const [policy] = ownPolicyOf(contents[0].text);
+
+      expect(policy.hasAttribute('data-host')).toBe(false);
+      expect(policy.getAttribute('content')).toContain(
+        'lepatron.test" data-host="lepatron.test data:;'
+      );
+    } finally {
+      config.host = host;
+    }
+  });
+
   // Whatever the sanitiser missed, nothing in the email runs.
   it('frames the email where no script runs', async () => {
     const { contents } = await client.readResource({ uri: PREVIEW_APP });

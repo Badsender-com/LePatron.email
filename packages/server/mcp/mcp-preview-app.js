@@ -2,7 +2,8 @@
 
 const fs = require('fs');
 const path = require('path');
-const { siteOrigin } = require('../email-templates/email-template.js');
+const _ = require('lodash');
+const { siteOrigin } = require('../utils/site-origin.js');
 const { withIdentity } = require('./mcp-identity.js');
 
 // The email itself in the conversation (ADR 0012, #1342): get_mailing points
@@ -20,6 +21,11 @@ const APP_HTML = fs.readFileSync(
   path.join(__dirname, 'mailing-preview-app.html'),
   'utf8'
 );
+// Where the app's own CSP names the site's origin, known only once running.
+const ORIGIN_SLOT = '{{siteOrigin}}';
+
+// The app, its CSP naming the site's origin, as text of an attribute.
+const appHtml = (origin) => APP_HTML.split(ORIGIN_SLOT).join(_.escape(origin));
 
 // What get_mailing declares: the MCP Apps key, and its ChatGPT alias.
 const PREVIEW_TOOL_META = {
@@ -31,8 +37,9 @@ const PREVIEW_TOOL_META = {
  * The preview app, served as an MCP App. The host frames it under the CSP it
  * declares: no connection anywhere, and images from LePatron only, where the
  * editor uploads them; an image hosted elsewhere shows as its alternative text.
- * It reads no data, but is read like every primitive, by who may call
- * (`withIdentity`).
+ * The app holds the same CSP itself, which the email's frame inherits, should
+ * the host apply the one declared poorly. It reads no data, but is read like
+ * every primitive, by who may call (`withIdentity`).
  *
  * @param {import('@modelcontextprotocol/server').McpServer} server
  */
@@ -52,7 +59,7 @@ function registerPreviewApp(server) {
           {
             uri: uri.href,
             mimeType: APP_MIME_TYPE,
-            text: APP_HTML,
+            text: appHtml(origin),
             _meta: {
               ui: {
                 csp: { connectDomains: [], resourceDomains: [origin] },
