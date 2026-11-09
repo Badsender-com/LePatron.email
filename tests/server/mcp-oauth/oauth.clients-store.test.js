@@ -83,6 +83,38 @@ describe("a client's secret", () => {
     });
   });
 
+  // The provider runs in Node's own realm, and tells no class of the test's
+  // (transpiled) from a function: what mountMcp hands it is read instead.
+  it('is kept by the adapter mountMcp gives a server that names none', () => {
+    const MCP_OAUTH = '../../../packages/server/mcp/mcp-oauth.js';
+    let handed;
+    let Adapter;
+    let compared;
+    jest.isolateModules(() => {
+      jest.doMock(MCP_OAUTH, () => ({
+        ...jest.requireActual(MCP_OAUTH),
+        createAuthorizationServer: ({ adapter }) => {
+          handed = adapter;
+          const Client = function Client() {};
+          return { Client, callback: () => () => {} };
+        },
+      }));
+      const { mountMcp } = require('../../../packages/server/mcp/mcp-http.js');
+      ({
+        McpOAuthAdapter: Adapter,
+      } = require('../../../packages/server/mcp/mcp-oauth-adapter.js'));
+      const provider = mountMcp(require('express')(), {
+        origin: oauth.BASE,
+        cookieKeys: ['a-test-cookie-key'],
+      });
+      compared = provider.Client.prototype.compareClientSecret;
+    });
+    jest.dontMock(MCP_OAUTH);
+
+    expect(handed).toBe(Adapter);
+    expect(compared).toEqual(expect.any(Function));
+  });
+
   it('of a client registered by hand is not kept as it is', async () => {
     const app = oauth.createApp();
 
