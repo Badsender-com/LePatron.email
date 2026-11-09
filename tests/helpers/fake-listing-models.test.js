@@ -208,9 +208,40 @@ describe('fake listing models, dotted projections and aggregations', () => {
     expect(matches(stored[0], { _company: 'abc' })).toBe(true);
   });
 
+  it('groups by a field, with the first of each group and a sum', () => {
+    const comments = [
+      { _mailing: 'm1', decision: 'approved', score: 2 },
+      { _mailing: 'm2', decision: null, score: 'n/a' },
+      { _mailing: 'm1', decision: null, score: 3 },
+      { decision: 'approved' },
+    ];
+
+    expect(
+      aggregated(comments, [
+        {
+          $group: {
+            _id: '$_mailing',
+            decision: { $first: '$decision' },
+            count: { $sum: 1 },
+            score: { $sum: '$score' },
+          },
+        },
+      ])
+    ).toEqual([
+      { _id: 'm1', decision: 'approved', count: 2, score: 5 },
+      { _id: 'm2', decision: null, count: 1, score: 0 },
+      { _id: null, decision: 'approved', count: 1, score: 0 },
+    ]);
+  });
+
   it.each([
     ['an unknown stage', [{ $lookup: {} }]],
     ['the unwind of a dotted path', [{ $unwind: '$a.b' }]],
+    ['a group by an expression', [{ $group: { _id: { a: '$a' } } }]],
+    [
+      'an unknown accumulator',
+      [{ $group: { _id: '$a', all: { $push: '$b' } } }],
+    ],
     [
       'an $elemMatch in a $project',
       [{ $project: { versions: { $elemMatch: { status: 'ACTIVE' } } } }],

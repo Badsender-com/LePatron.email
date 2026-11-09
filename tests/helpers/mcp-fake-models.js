@@ -35,12 +35,23 @@
  * - `paginate` answers like mongoose-paginate-v2, as fake-listing-models.js
  *   does, and `Mailings.findForApiWithPagination` is the schema's own static
  *   over it: the search across workspaces (ADR 0007) runs as in the app.
+ * - `Comments.findApprovedMailingIds` is the schema's own static, an
+ *   aggregation over the fake comments, and the fake `Comments` is the
+ *   `Comment` model Mongoose knows: the listing reads the approval of each
+ *   mailing by the app's own rule, as in the app.
  */
 
 const { isDeepStrictEqual } = require('util');
+const mongoose = require('mongoose');
 const { matches, sortedBy, projected } = require('./fake-mongo-query.js');
 const { aggregated } = require('./fake-mongo-aggregate.js');
 const MailingSchema = require('../../packages/server/mailing/mailing.schema.js');
+const {
+  CommentSchema,
+} = require('../../packages/server/comment/comment.schema.js');
+const {
+  CommentModel,
+} = require('../../packages/server/constant/model.names.js');
 
 // Collection → the name `models.common.js` exports it under.
 const MODELS = {
@@ -332,28 +343,11 @@ function createMcpStore() {
   });
   models.Mailings.findForApiWithPagination =
     MailingSchema.statics.findForApiWithPagination;
-  // The app's approval rule, an aggregation the fakes do not run, written
-  // the way it reads (comment.schema.js): the latest root comment not
-  // deleted decides, `isDeleted: false` as the schema stores it.
-  models.Comments.findApprovedMailingIds = async (mailingIds) => {
-    const wanted = new Set(mailingIds.map(String));
-    const latest = new Map();
-    sortedBy(
-      { createdAt: -1 },
-      collections.comments.filter(
-        (comment) =>
-          wanted.has(String(comment._mailing)) &&
-          !comment._parentComment &&
-          comment.isDeleted === false
-      )
-    ).forEach((comment) => {
-      const id = String(comment._mailing);
-      if (!latest.has(id)) latest.set(id, comment.decision);
-    });
-    return [...latest]
-      .filter(([, decision]) => decision === 'approved')
-      .map(([id]) => id);
-  };
+  models.Comments.findApprovedMailingIds =
+    CommentSchema.statics.findApprovedMailingIds;
+  // What the listing reads the comments through (mailing.schema.js), in this
+  // test file's own Mongoose.
+  mongoose.models[CommentModel] = models.Comments;
 
   return {
     models,
