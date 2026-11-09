@@ -14,6 +14,8 @@ const SCREENS = [
   'packages/ui/routes/oauth/consent/_uid.vue',
   'packages/ui/components/group/mcp-access-option.vue',
   'packages/ui/components/mcp-clients/modal-mcp-client-secret.vue',
+  'packages/ui/components/layout/bs-form-section.vue',
+  'packages/ui/components/group/ai-features-tab.vue',
 ];
 
 const colorLinesOf = (file) =>

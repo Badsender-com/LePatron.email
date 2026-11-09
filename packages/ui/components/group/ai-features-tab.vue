@@ -410,12 +410,12 @@ export default {
   align-items: flex-start;
   gap: 0.75rem;
   padding: 0.75rem 1rem;
-  background: rgba(0, 0, 0, 0.02);
+  background: var(--surface-muted);
   border-radius: 8px;
 
   &__icon {
     flex-shrink: 0;
-    color: rgba(0, 0, 0, 0.4);
+    color: var(--gray-500);
     margin-top: 2px;
   }
 
@@ -429,12 +429,12 @@ export default {
   &__title {
     font-weight: 500;
     font-size: 0.875rem;
-    color: rgba(0, 0, 0, 0.87);
+    color: var(--gray-900);
   }
 
   &__description {
     font-size: 0.75rem;
-    color: rgba(0, 0, 0, 0.6);
+    color: var(--gray-700);
     margin-top: 0.125rem;
   }
 }

@@ -78,7 +78,7 @@ export default {
 .bs-form-section {
   margin-bottom: 2rem;
   padding-bottom: 2rem;
-  border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+  border-bottom: 1px solid var(--gray-200);
 
   &:last-of-type,
   &--last {
@@ -114,13 +114,13 @@ export default {
   &__title {
     font-size: 1rem;
     font-weight: 600;
-    color: rgba(0, 0, 0, 0.87);
+    color: var(--gray-900);
     margin: 0 0 0.25rem 0;
   }
 
   &__description {
     font-size: 0.875rem;
-    color: rgba(0, 0, 0, 0.6);
+    color: var(--gray-700);
     margin: 0;
   }
 
@@ -167,7 +167,7 @@ export default {
     margin-top: 0;
     justify-content: center;
     border-radius: 7px;
-    background: rgba(0, 172, 220, 0.12);
+    background: var(--accent-tint-tile);
     color: var(--v-accent-darken1);
   }
 
