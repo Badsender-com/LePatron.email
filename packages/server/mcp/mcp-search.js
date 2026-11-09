@@ -31,9 +31,9 @@ const MAX_ID_LENGTH = 200;
 const MAX_QUERY_LENGTH = 200;
 const MAX_WORDS = 10;
 
-// The kinds of result, the first part of their id. get_mailing reads a
-// mailing's too (MAILING_KIND).
-const EXPERTISE_KIND = 'expertise';
+// The kinds of result, the first part of their id, are declared with what
+// reads them: get_mailing and submit_feedback read these ids too.
+const { EXPERTISE_KIND } = expertises;
 
 const editorUrlOf = (mailingId) => `${siteOrigin()}/editor/${mailingId}`;
 

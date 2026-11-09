@@ -16,6 +16,17 @@ const { draftNotice } = require('./mcp-drafts.js');
 const URI_TEMPLATE = 'lepatron://expertises/{expertiseId}';
 const uriOf = (expertiseId) => `lepatron://expertises/${expertiseId}`;
 
+// The kind of an expertise among the results of search, the first part of
+// their id (`expertise:<expertiseId>`).
+const EXPERTISE_KIND = 'expertise';
+const EXPERTISE_ID_PREFIX = `${EXPERTISE_KIND}:`;
+
+/** An expertiseId, from itself or from the id search gives it. */
+const bareExpertiseId = (id) =>
+  id.startsWith(EXPERTISE_ID_PREFIX)
+    ? id.slice(EXPERTISE_ID_PREFIX.length)
+    : id;
+
 // What each read keeps of an expertise and of the version it is served at:
 // its active version, or in a super admin's drafts mode its open draft
 // (#1385).
@@ -181,4 +192,6 @@ module.exports = {
   consumedExpertises,
   asMarkdown,
   uriOf,
+  EXPERTISE_KIND,
+  bareExpertiseId,
 };

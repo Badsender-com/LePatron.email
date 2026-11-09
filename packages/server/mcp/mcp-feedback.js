@@ -9,7 +9,7 @@ const {
 const { versionLabel } = require('../ai-skill/services/version-helpers.js');
 const { withIdentity, success, failure } = require('./mcp-identity.js');
 const { ADDITIVE } = require('./mcp-tool-grammar.js');
-const { namedExpertises } = require('./mcp-expertises.js');
+const { namedExpertises, bareExpertiseId } = require('./mcp-expertises.js');
 const { namedSkills } = require('./mcp-skill-catalog.js');
 const { bareMailingId } = require('./mcp-mailings.js');
 const {
@@ -19,11 +19,12 @@ const { computeExpiresAt } = require('../group/log-retention.js');
 
 const keyOf = ({ kind, id }) => `${kind}:${id}`;
 
-// A mailing is referred to by its id from list_mailings, or by the one search
-// gives it: both name the same mailing.
+// An expertise or a mailing is referred to by its own id, or by the one search
+// gives it, prefixed with its kind: both name the same thing.
+const BARE_ID = { expertise: bareExpertiseId, mailing: bareMailingId };
 const asReferred = (reference) =>
-  reference.kind === 'mailing'
-    ? { ...reference, id: bareMailingId(reference.id) }
+  BARE_ID[reference.kind]
+    ? { ...reference, id: BARE_ID[reference.kind](reference.id) }
     : reference;
 
 async function stillAllowsRetex(groupId) {
@@ -163,7 +164,7 @@ const FEEDBACK_INPUT = z.object({
           .string()
           .max(MAX_ID_LENGTH)
           .describe(
-            "A skill's skillId, an expertise's expertiseId, or a mailing's id, as list_mailings or search gives it (mailing:…)."
+            "A skill's skillId; an expertise's expertiseId, or its id from search (expertise:…); a mailing's id, as list_mailings or search gives it (mailing:…)."
           ),
       })
     )

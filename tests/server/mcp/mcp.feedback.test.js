@@ -142,6 +142,52 @@ describe('feedback and retex', () => {
     });
   });
 
+  // search gives an expertise's id prefixed with its kind: the reference
+  // reads it as its expertiseId, and says so.
+  describe('a reference to an expertise by the id search gives', () => {
+    const about = (id) => ({
+      rating: 'up',
+      references: [{ kind: 'expertise', id }],
+    });
+
+    it('records the expertise, once, by its expertiseId', async () => {
+      const client = await harness.connectAs(f.FRANK);
+      const { tools } = await client.listTools();
+      const { references } = tools.find(
+        (tool) => tool.name === 'submit_feedback'
+      ).inputSchema.properties;
+
+      expect(references.items.properties.id.description).toMatch(
+        /expertiseId, or its id from search \(expertise:/
+      );
+      expect(
+        await submit(f.FRANK, {
+          rating: 'up',
+          references: [
+            { kind: 'expertise', id: 'expertise:redaction.subject-line' },
+            { kind: 'expertise', id: 'redaction.subject-line' },
+          ],
+        })
+      ).toEqual({ recorded: true, retex: 'none' });
+      expect(harness.stored('feedbacks')[0].references).toEqual([
+        { kind: 'expertise', id: 'redaction.subject-line', version: '2.1' },
+      ]);
+    });
+
+    it('refuses an expertise not served as its plain id', async () => {
+      const prefixed = await submit(
+        f.FRANK,
+        about('expertise:design.dark-mode')
+      );
+
+      expect(prefixed.error).toMatch(/not found/i);
+      expect(prefixed).toEqual(
+        await submit(f.FRANK, about('design.dark-mode'))
+      );
+      expect(harness.stored('feedbacks')).toEqual([]);
+    });
+  });
+
   it('keeps who sent it, from which application, until the company’s log retention ends', async () => {
     const client = await harness.connectAs(f.FRANK, { clientId: 'claude' });
     const before = Date.now();
