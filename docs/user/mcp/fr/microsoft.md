@@ -23,7 +23,7 @@ Les intitulés ci-dessous sont ceux de l'interface anglaise de Copilot Studio.
 
 ### Dynamic discovery (recommandé)
 
-Choisir **Dynamic discovery**, puis **Create** : Copilot Studio trouve LePatron et s'enregistre seul. Passer à « Créer la connexion ».
+Choisir **Dynamic discovery**, puis **Create** : Copilot Studio trouve LePatron et s'enregistre seul. Passer tout de suite à « Créer la connexion » : un client qui s'est enregistré seul et que personne ne connecte dans les 24 heures est oublié, et il faut alors recréer l'outil.
 
 ### Manual
 
@@ -53,9 +53,9 @@ Dans **Add tool**, choisir **Create a new connection** : l'écran de consentemen
 1. Dans LePatron, ouvrir **Paramètres › Fonctionnalités IA**, puis, dans la section Accès MCP, le lien **Gérer** de la ligne « Clients enregistrés à la main », puis **Ajouter un client**.
 2. Renseigner :
    - le nom, qui s'affichera sur l'écran de consentement ;
-   - l'URL de redirection : la callback URL donnée par Copilot Studio ;
+   - l'URL de redirection : la callback URL donnée par Copilot Studio. Elle doit être en HTTPS, ou en HTTP vers `localhost` ; toute autre adresse est refusée, et le formulaire la nomme ;
    - l'envoi du secret, sous « Réglage avancé » : garder « Dans le corps de la requête » sauf indication contraire.
-3. **Copier le secret tout de suite** : il ne sera plus jamais affiché, et la fenêtre ne se ferme qu'une fois qu'il est copié. S'il est perdu, supprimer le client et en créer un autre.
+3. **Copier le secret tout de suite** : il ne sera plus jamais affiché. La fenêtre se ferme une fois qu'il est copié, ou une fois cochée la case qui dit qu'il est enregistré. S'il est perdu, supprimer le client et en créer un autre.
 
 Ce client appartient à votre entreprise : seuls ses utilisateurs peuvent se connecter avec. Le supprimer coupe aussitôt toutes les connexions qui passent par lui.
 
@@ -70,7 +70,7 @@ LePatron s'ajoute à Microsoft 365 Copilot par un **agent déclaratif** doté d'
 
    LePatron délivre à l'agent le secret qu'exige Microsoft.
 
-2. Tester l'agent, puis en faire un paquet d'application.
+2. Tester l'agent peu après sa création, dans les 24 heures : l'agent s'enregistre à sa création, et LePatron oublie au bout d'un jour un client que personne ne connecte. Passé ce délai, ajouter l'action à nouveau. Puis en faire un paquet d'application.
 3. **L'administrateur du tenant** déploie ce paquet aux utilisateurs concernés, depuis le centre d'administration Microsoft 365 (applications intégrées).
 4. À la première utilisation, chaque utilisateur donne son accord sur l'écran LePatron.
 

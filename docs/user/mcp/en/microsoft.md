@@ -21,7 +21,7 @@ Two Microsoft products connect to LePatron. In both cases, the company's IT sets
 
 ### Dynamic discovery (recommended)
 
-Choose **Dynamic discovery**, then **Create**: Copilot Studio finds LePatron and registers itself. Go on to "Create the connection".
+Choose **Dynamic discovery**, then **Create**: Copilot Studio finds LePatron and registers itself. Go on to "Create the connection" right away: a client that registered itself and that nobody connects within 24 hours is forgotten, and the tool must then be created again.
 
 ### Manual
 
@@ -51,9 +51,9 @@ In **Add tool**, choose **Create a new connection**: the LePatron consent screen
 1. In LePatron, open **Settings › AI features**, then, in the MCP access section, the **Manage** link of the "Clients registered by hand" row, then **Add a client**.
 2. Fill in:
    - the name, shown on the consent screen;
-   - the redirect URL: the callback URL Copilot Studio gave;
+   - the redirect URL: the callback URL Copilot Studio gave. It must be HTTPS, or HTTP to `localhost`; any other address is refused, and the form names it;
    - how the secret is sent, under "Advanced setting": keep "In the request body" unless told otherwise.
-3. **Copy the secret right away**: it will never be shown again, and the dialog only closes once it is copied. If it is lost, delete the client and create another one.
+3. **Copy the secret right away**: it will never be shown again. The dialog closes once it is copied, or once you tick that you saved it. If it is lost, delete the client and create another one.
 
 The client belongs to your company: only its users can connect with it. Deleting it cuts every connection made through it at once.
 
@@ -68,7 +68,7 @@ LePatron is added to Microsoft 365 Copilot through a **declarative agent** with 
 
    LePatron gives the agent the secret Microsoft requires.
 
-2. Test the agent, then package it as an app.
+2. Test the agent soon after creating it, within 24 hours: the agent registers itself when it is created, and LePatron forgets a client that nobody connects within a day. Past that, add the action again. Then package it as an app.
 3. **The tenant admin** deploys the package to the users concerned, from the Microsoft 365 admin center (integrated apps).
 4. On first use, each user allows it on the LePatron screen.
 
