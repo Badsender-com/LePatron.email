@@ -108,6 +108,26 @@ describe('token and refresh', () => {
     );
   });
 
+  // Checked at the endpoint, before any MCP exchange, then read by the
+  // call it serves.
+  it('reads who calls once per call', async () => {
+    const { body } = await exchange(await codeFor());
+    const {
+      Users,
+      Groups,
+    } = require('../../../packages/server/common/models.common.js');
+    const users = jest.spyOn(Users, 'findOne');
+    const groups = jest.spyOn(Groups, 'findById');
+
+    const response = await oauth.callMcp(app, body.access_token);
+
+    expect(response.status).toBe(200);
+    expect(users).toHaveBeenCalledTimes(1);
+    expect(groups).toHaveBeenCalledTimes(1);
+    users.mockRestore();
+    groups.mockRestore();
+  });
+
   it('refuses a token that is not one of LePatron’s', async () => {
     const response = await oauth.callMcp(app, 'not-a-token');
 

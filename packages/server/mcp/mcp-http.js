@@ -199,16 +199,18 @@ function mountMcp(
         );
       }
       // What the token said at consent may no longer hold: say so before any
-      // MCP exchange, with the HTTP status a client acts on.
+      // MCP exchange, with the HTTP status a client acts on. The call reads
+      // who calls from here (`identify`).
+      let identity;
       try {
-        await resolveIdentity(authInfo);
+        identity = await resolveIdentity(authInfo);
       } catch (refusal) {
         // A refusal says why; anything else is a failure of the server,
         // which the error handler logs and answers without its message.
         if (!(refusal instanceof ProtocolError)) throw refusal;
         return jsonRpcError(res, 403, refusal.message);
       }
-      req.auth = authInfo;
+      req.auth = { ...authInfo, identity };
       return mcpHandler(req, res, req.body);
     } catch (err) {
       return next(err);

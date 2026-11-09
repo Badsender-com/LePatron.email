@@ -221,16 +221,21 @@ const identities = new WeakMap();
 
 /**
  * Resolves who makes a call, and keeps the answer for the handler of that
- * call: the identity, or why it is refused.
+ * call: the identity, or why it is refused. The MCP endpoint resolved it
+ * already for the request (mcp-http.js), and keeps it on the token
+ * (`authInfo.identity`): it is read from there.
  *
  * @param {Object} [ctx] the request context the SDK hands the handler
  * @returns {Promise<{ identity?: Object, refusal?: Error }>}
  */
 async function identify(ctx) {
-  const answer = await resolveIdentity(ctx?.http?.authInfo).then(
-    (identity) => ({ identity }),
-    (refusal) => ({ refusal })
-  );
+  const authInfo = ctx?.http?.authInfo;
+  const answer = authInfo?.identity
+    ? { identity: authInfo.identity }
+    : await resolveIdentity(authInfo).then(
+        (identity) => ({ identity }),
+        (refusal) => ({ refusal })
+      );
   if (ctx?.http) identities.set(ctx.http, answer);
   return answer;
 }
