@@ -86,11 +86,24 @@ export default {
       if (!name.maxLength) return [this.$t('mcpClients.errors.nameTooLong')];
       return [];
     },
+    // The first address refused, for the error to name it (ADR 0012).
+    refusedUri() {
+      return urisOf(this.client.redirectUris).find(
+        (uri) => !isRedirectUri(uri)
+      );
+    },
     redirectUrisErrors() {
       const { redirectUris } = this.$v.client;
       if (!redirectUris.$dirty) return [];
       if (!redirectUris.required) {
         return [this.$t('mcpClients.errors.redirectUrisRequired')];
+      }
+      if (!redirectUris.valid && this.refusedUri) {
+        return [
+          this.$t('mcpClients.errors.redirectUriRefused', {
+            uri: this.refusedUri,
+          }),
+        ];
       }
       if (!redirectUris.valid) {
         return [this.$t('mcpClients.errors.redirectUrisInvalid')];

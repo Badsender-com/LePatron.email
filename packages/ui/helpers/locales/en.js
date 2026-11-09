@@ -867,7 +867,7 @@ export default {
     name: 'Name',
     nameHint: 'Shown to the user on the consent screen.',
     redirectUris: 'Redirect URLs',
-    redirectUrisHint: 'One per line, over HTTPS.',
+    redirectUrisHint: 'One per line, over HTTPS, or over HTTP to localhost.',
     authMethod: 'Secret sent',
     authMethodHint:
       'Where the assistant sends the secret to LePatron. If unsure, keep “In the request body”.',
@@ -921,6 +921,8 @@ export default {
       redirectUrisRequired: 'At least one redirect URL is required.',
       redirectUrisInvalid:
         'Up to 10 URLs, over HTTPS (HTTP only to localhost), without a # fragment.',
+      redirectUriRefused:
+        '“{uri}” is refused: a redirect URL is over HTTPS, or over HTTP to localhost, without a # fragment.',
     },
   },
   connectedApplications: {

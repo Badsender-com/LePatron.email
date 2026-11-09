@@ -1144,7 +1144,7 @@ export default {
     name: 'Nom',
     nameHint: 'Montré à l\'utilisateur sur l\'écran de consentement.',
     redirectUris: 'URL de redirection',
-    redirectUrisHint: 'Une par ligne, en HTTPS.',
+    redirectUrisHint: 'Une par ligne, en HTTPS, ou en HTTP vers localhost.',
     authMethod: 'Envoi du secret',
     authMethodHint:
       'Où l\'assistant envoie le secret à LePatron. Dans le doute, gardez « Dans le corps de la requête ».',
@@ -1200,6 +1200,8 @@ export default {
       redirectUrisInvalid:
         'Jusqu\'à 10 URL, en HTTPS (HTTP seulement vers localhost), sans fragment #.',
     },
+      redirectUriRefused:
+        '« {uri} » est refusée : une URL de redirection est en HTTPS, ou en HTTP vers localhost, sans fragment #.',
   },
   connectedApplications: {
     pageTitle: 'Applications connectées',
