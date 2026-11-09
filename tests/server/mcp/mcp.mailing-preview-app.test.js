@@ -7,6 +7,7 @@
 // points the clients that render apps at a UI resource, which shows the
 // mailing's sanitised preview in a sandbox. The other clients keep the text.
 
+const crypto = require('crypto');
 const { JSDOM } = require('jsdom');
 const harness = require('../../helpers/mcp-harness');
 const f = require('../../helpers/mcp-fixtures');
@@ -60,6 +61,14 @@ describe('email preview app', () => {
     ]);
   });
 
+  // The hash by which a CSP allows an inline script: of its text, as a
+  // browser parses it.
+  const hashOf = (script) =>
+    `'sha256-${crypto
+      .createHash('sha256')
+      .update(script.textContent, 'utf8')
+      .digest('base64')}'`;
+
   // The policy of the app's own page, as a browser reads it.
   const ownPolicyOf = (html) =>
     new JSDOM(html).window.document.querySelectorAll(
@@ -67,17 +76,21 @@ describe('email preview app', () => {
     );
 
   // Whatever the host makes of the CSP declared, the app and the email's
-  // frame, which inherits it, load nothing but images from LePatron, take no
-  // base address and send no form.
+  // frame, which inherits it, load nothing but images from LePatron, run no
+  // script but the app's, take no base address and send no form.
   it('holds the CSP it declares, images from LePatron only', async () => {
     const { contents } = await client.readResource({ uri: PREVIEW_APP });
     const [origin] = contents[0]._meta.ui.csp.resourceDomains;
+    const scripts = new JSDOM(contents[0].text).window.document.scripts;
 
     const policies = ownPolicyOf(contents[0].text);
 
+    expect(scripts).toHaveLength(1);
     expect(policies).toHaveLength(1);
     expect(policies[0].getAttribute('content')).toBe(
-      `default-src 'none'; img-src ${origin} data:; style-src 'unsafe-inline'; script-src 'unsafe-inline'; base-uri 'none'; form-action 'none'`
+      `default-src 'none'; img-src ${origin} data:; style-src 'unsafe-inline'; script-src ${hashOf(
+        scripts[0]
+      )}; base-uri 'none'; form-action 'none'`
     );
   });
 

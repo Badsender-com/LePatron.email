@@ -1,5 +1,6 @@
 'use strict';
 
+const crypto = require('crypto');
 const fs = require('fs');
 const path = require('path');
 const _ = require('lodash');
@@ -17,10 +18,17 @@ const APP_MIME_TYPE = 'text/html;profile=mcp-app';
 // the `ui` namespace the MCP Apps spec keeps for itself.
 const PREVIEW_META_KEY = 'lepatron/previewHtml';
 
-const APP_HTML = fs.readFileSync(
+const APP_PAGE = fs.readFileSync(
   path.join(__dirname, 'mailing-preview-app.html'),
   'utf8'
 );
+// The app's one script, which its CSP allows by its hash, as no other.
+const [, APP_SCRIPT] = /<script>([\s\S]*?)<\/script>/.exec(APP_PAGE);
+const SCRIPT_HASH = `'sha256-${crypto
+  .createHash('sha256')
+  .update(APP_SCRIPT, 'utf8')
+  .digest('base64')}'`;
+const APP_HTML = APP_PAGE.split('{{scriptHash}}').join(SCRIPT_HASH);
 // Where the app's own CSP names the site's origin, known only once running.
 const ORIGIN_SLOT = '{{siteOrigin}}';
 
