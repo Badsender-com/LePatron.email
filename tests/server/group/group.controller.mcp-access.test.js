@@ -99,6 +99,18 @@ describe('PUT /groups/:groupId — MCP access', () => {
     expect(forgetConnections).toHaveBeenCalledWith({ _company: GROUP_ID });
   });
 
+  // As the retex: a revocation that failed can be run again.
+  it('ends them whenever a request says it is off, already off or not', async () => {
+    const {
+      forgetConnections,
+    } = require('../../../packages/server/mcp/mcp-connections.js');
+
+    await update(techAdmin, { enableMcp: false });
+
+    expect(SecurityEvents.create).not.toHaveBeenCalled();
+    expect(forgetConnections).toHaveBeenCalledWith({ _company: GROUP_ID });
+  });
+
   it('keeps it out of the reach of a company admin', async () => {
     const payload = await update(companyAdmin, {
       name: 'Renamed',

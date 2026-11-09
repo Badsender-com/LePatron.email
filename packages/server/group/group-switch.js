@@ -5,7 +5,9 @@ const { recordRequirementChange } = require('../two-factor/group-option.js');
 const {
   recordMcpAccessChange,
   recordRetexChange,
+  forgetRetex,
 } = require('../mcp/mcp-access-option.js');
+const { forgetConnections } = require('../mcp/mcp-connections.js');
 
 // The company's switches: two-factor authentication for every member (ADR
 // 0008), MCP access and the retex of its assistants' sessions (ADR 0012).
@@ -78,4 +80,27 @@ async function recordSwitches(actor, groupId, switched) {
   }
 }
 
-module.exports = { takeSwitches, writeSwitches, recordSwitches };
+/**
+ * What a switch takes with it when a request says it is off, whenever it
+ * says so: the security event records a change only, and a forgetting that
+ * failed can be run again (ADR 0012). The retex stopped forgets what it let
+ * the feedbacks keep; MCP access turned off ends the company's connected
+ * applications, so turning it back on revives none of them.
+ *
+ * @param {string} groupId
+ * @param {Object} switches from takeSwitches
+ * @returns {Promise<void>}
+ */
+async function forgetSwitchedOff(groupId, switches) {
+  if (switches.allowRetex === false) await forgetRetex(groupId);
+  if (switches.enableMcp === false) {
+    await forgetConnections({ _company: groupId });
+  }
+}
+
+module.exports = {
+  takeSwitches,
+  writeSwitches,
+  recordSwitches,
+  forgetSwitchedOff,
+};

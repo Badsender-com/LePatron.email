@@ -15,6 +15,7 @@ const {
   takeSwitches,
   writeSwitches,
   recordSwitches,
+  forgetSwitchedOff,
 } = require('./group-switch.js');
 const { CAPABILITIES } = require('../../shared/access/roles.js');
 const profileService = require('../profile/profile.service.js');
@@ -22,7 +23,6 @@ const emailsGroupService = require('../emails-group/emails-group.service.js');
 const personalizedVariableService = require('../personalized-variables/personalized-variable.service.js');
 const groupFtpService = require('../group/group-ftp.service.js');
 const { restampLogs } = require('./log-retention.js');
-const { forgetRetex } = require('../mcp/mcp-access-option.js');
 const { forgetRetention } = require('../mcp/mcp-call-log.js');
 const taxonomyDefaultsService = require('../taxonomy/taxonomy-defaults.service.js');
 const { pickSeedLang } = require('../taxonomy/default-email-types.js');
@@ -38,7 +38,6 @@ const {
   Mailings,
   Profiles,
 } = require('../common/models.common.js');
-const { forgetConnections } = require('../mcp/mcp-connections.js');
 const {
   sanitizeTrackingConfig,
 } = require('../utils/resolve-tracking-config.js');
@@ -612,10 +611,7 @@ async function update(req, res) {
   await groupService.updateGroup(groupToUpdate);
   const switched = await writeSwitches(req.params.groupId, switches);
   await recordSwitches(user, req.params.groupId, switched);
-  // Stopping the retex forgets what it let the feedbacks keep (ADR 0012),
-  // whenever a request says it is off: the security event records the
-  // change only, and a forgetting that failed can be run again.
-  if (switches.allowRetex === false) await forgetRetex(req.params.groupId);
+  await forgetSwitchedOff(req.params.groupId, switches);
 
   // A log's end of retention is stamped at write time, so a retention change
   // has to reach the logs already kept: lowering it would otherwise apply to
@@ -635,11 +631,6 @@ async function update(req, res) {
 
   // Fetch the updated group to return with masked credentials
   const updatedGroup = await Groups.findById(req.params.groupId);
-  // MCP turned off ends the company's connected applications: turning it
-  // back on must not revive them (ADR 0012). Read as saved, whatever was sent.
-  if ('enableMcp' in switches && updatedGroup && !updatedGroup.enableMcp) {
-    await forgetConnections({ _company: req.params.groupId });
-  }
   res.json(groupFtpService.maskFtpCredentials(updatedGroup));
 }
 
