@@ -29,7 +29,7 @@ const {
   CREATE_TASK_SKILL_INPUT,
 } = require('./mcp-authoring.schemas.js');
 const { ADDITIVE, OVERWRITING } = require('./mcp-tool-grammar.js');
-const { notOpen } = require('./mcp-retex-status.js');
+const { assertCitable, citeIn } = require('./mcp-authoring-retex.js');
 
 // What an assistant writes of each, and the fields its difference shows.
 const ENTITIES = {
@@ -53,7 +53,7 @@ const ENTITIES = {
 
 // What a write answers: the version written, and its difference with the
 // active version, for the person to read before publishing.
-function answerOf(entity, doc, draft) {
+function answerOf(entity, doc, draft, retexIds) {
   const { idField, fields } = ENTITIES[entity];
   return {
     answer: {
@@ -63,7 +63,7 @@ function answerOf(entity, doc, draft) {
       status: String(draft.status).toLowerCase(),
       audience: doc.audience,
       // The retex the draft addresses, closed when it is published (ADR 0021).
-      addressesRetex: (draft.retexIds || []).map(String),
+      addressesRetex: (retexIds || []).map(String),
     },
     diff: draftDiff(findActiveVersion(doc), draft, fields),
     differs: differs(findActiveVersion(doc), draft, fields),
@@ -119,24 +119,11 @@ function changelogAfter(version, changelog) {
   return after;
 }
 
-// The retex a draft may cite: open ones only (ADR 0021). Checked before a
-// draft is started or created: a refusal leaves nothing behind.
-async function assertCitable(retexIds) {
-  if (!retexIds || !retexIds.length) return;
-  const refused = await notOpen(retexIds);
-  if (refused.length) {
-    throw createError(
-      422,
-      `Not an open retex: ${refused.join(
-        ', '
-      )}. Cite only open retex, as list_retex gives them.`
-    );
-  }
-}
-
 // The open draft, or a new one the versioning service starts, written on the
-// condition that it did not change since it was read (ADR 0014). The draft
-// cites what it addresses, from every proposal written into it (ADR 0021).
+// condition that it did not change since it was read (ADR 0014). The retex it
+// addresses are checked before, so a refusal leaves no draft behind, and
+// cited after, on the document read again, added to those of the proposals
+// before it (ADR 0021).
 async function writeDraft(
   entity,
   id,
@@ -150,20 +137,15 @@ async function writeDraft(
     userId: user.id,
   });
   const ref = { major: version.versionMajor, minor: version.versionMinor };
-  const retexIds = addressesRetex
-    ? [...new Set([...(version.retexIds || []), ...addressesRetex])]
-    : undefined;
   const saved = await service.writeDraftIfUnchanged(
     doc,
     version,
-    {
-      ...patch,
-      changelog: changelogAfter(version, patch.changelog),
-      retexIds,
-    },
+    { ...patch, changelog: changelogAfter(version, patch.changelog) },
     user.id
   );
-  return answerOf(entity, saved, findVersion(saved, ref.major, ref.minor));
+  const draft = findVersion(saved, ref.major, ref.minor);
+  const cited = await citeIn(service, id, draft, addressesRetex, user.id);
+  return answerOf(entity, saved, draft, cited);
 }
 
 // The services rely on the unique index to refuse a duplicate; say it first.
@@ -191,12 +173,19 @@ async function createDraft(
   const { service, idField } = ENTITIES[entity];
   await assertNew(entity, data[idField]);
   await assertCitable(addressesRetex);
-  const version = { ...firstVersion, retexIds: addressesRetex };
   const created =
     entity === 'skill'
-      ? await service.createSkill(data, user.id, version)
-      : await service.createExpertise(data, user.id, version);
-  return answerOf(entity, created, created.versions[0]);
+      ? await service.createSkill(data, user.id, firstVersion)
+      : await service.createExpertise(data, user.id, firstVersion);
+  const [draft] = created.versions;
+  const cited = await citeIn(
+    service,
+    data[idField],
+    draft,
+    addressesRetex,
+    user.id
+  );
+  return answerOf(entity, created, draft, cited);
 }
 
 // Runs a write for an author, who calls checked first (`withIdentity`), and

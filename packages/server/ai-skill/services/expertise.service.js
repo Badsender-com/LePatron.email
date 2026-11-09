@@ -269,6 +269,7 @@ module.exports = {
   createVersionAt,
   updateVersion,
   deleteVersion,
+  citeRetex: versioned.citeRetex,
   activateVersion,
   archiveExpertise,
   getActivationImpact,
