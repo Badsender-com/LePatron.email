@@ -20,7 +20,9 @@
  *
  * `createApp` mounts the authorization server and the MCP endpoint on an
  * Express app, as index.js does, with the app's session reduced to the user
- * `signIn` names; the app's `provider` is the authorization server. Requiring
+ * `signIn` names; the app's `provider` is the authorization server. It keeps
+ * what it issues through the app's own adapter, in the fake database of
+ * fake-mongo-collection.js, which `oauthStore()` answers. Requiring
  * this file replaces the models with the stand-ins of `mcp-fake-models.js` for
  * the whole test file, and quiets the logger. `signInBeforeCode` is written
  * with the check of the verification code before the consent (ADR 0008).
@@ -28,8 +30,10 @@
 
 const crypto = require('crypto');
 const express = require('express');
+const mongoose = require('mongoose');
 const request = require('./local-request');
 const { createMcpStore } = require('./mcp-fake-models');
+const { createFakeDb } = require('./fake-mongo-collection');
 const f = require('./mcp-fixtures');
 
 const store = createMcpStore();
@@ -84,6 +88,7 @@ const NOT_YET =
  */
 function createApp() {
   store.seed(f.SEED);
+  mongoose.connection.db = createFakeDb();
   documents = new Map([[CIMD_CLIENT.client_id, CIMD_CLIENT]]);
   require('../../packages/server/mcp/mcp-rate-limit.js').forgetCounts();
 
@@ -111,11 +116,16 @@ function createApp() {
   });
   // Required here: the server reads the models, which must be the stand-ins.
   const { mountMcp } = require('../../packages/server/mcp/mcp-http.js');
+  const {
+    McpOAuthAdapter,
+  } = require('../../packages/server/mcp/mcp-oauth-adapter.js');
   // The authorization server, for what no HTTP client can do (a token issued
-  // for another resource).
+  // for another resource). The adapter as a factory: the provider, in Node's
+  // realm, does not tell the test's class from a function.
   app.provider = mountMcp(app, {
     origin: BASE,
     cookieKeys: ['a-test-cookie-key'],
+    adapter: (name) => new McpOAuthAdapter(name),
     fetch: fetchDocument,
   });
   return app;
@@ -141,6 +151,14 @@ function signInBeforeCode() {
 /** Changes a seeded record, the way the app would (MCP access turned off). */
 function update(_app, collection, id, changes) {
   store.update(collection, id, changes);
+}
+
+/**
+ * What the authorization server keeps, as stored: the fake collection of a
+ * model of `oidc-provider` (`AccessToken`, `Grant`…).
+ */
+function oauthStore(model) {
+  return mongoose.connection.db.collection(`mcp_oauth_${model.toLowerCase()}`);
 }
 
 /** Answers `document` when the authorization server fetches `url`. */
@@ -241,6 +259,7 @@ module.exports = {
   signIn,
   signInBeforeCode,
   update,
+  oauthStore,
   serveClientMetadata,
   pkce,
   authorizeQuery,
