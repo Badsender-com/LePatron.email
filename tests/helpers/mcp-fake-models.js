@@ -33,8 +33,8 @@
  *   fake-mongo-aggregate.js reads.
  * - Each collection the seed names is a model; the others are empty.
  * - `paginate` answers like mongoose-paginate-v2, as fake-listing-models.js
- *   does, and counts a page as it does: through the caller's
- *   `useCustomCountFn`, or else `countDocuments`. The schema's own
+ *   does, and counts as it does, with or without pagination: through the
+ *   caller's `useCustomCountFn`, or else `countDocuments`. The schema's own
  *   `findForApiWithPagination` runs over it: the search across workspaces
  *   (ADR 0007) runs as in the app.
  * - A query takes `maxTimeMS`, and never runs out of its time.
@@ -307,16 +307,15 @@ function model(records) {
       query(matching(filter), (docs) => docs.length),
     // A boolean, as Mongoose 5 answers it.
     exists: (filter = {}) => Promise.resolve(matching(filter)().length > 0),
-    // What mongoose-paginate-v2 answers, with the options the search passes:
-    // a page is counted, through the caller's count when it gives one.
+    // What mongoose-paginate-v2 answers, with the options the search passes,
+    // counted through the caller's count when it gives one.
     async paginate(filter, options = {}) {
       const all = sortedBy(options.sort, matching(filter)());
       const paginated = options.pagination !== false;
-      const totalDocs = paginated
-        ? await (typeof options.useCustomCountFn === 'function'
-            ? options.useCustomCountFn()
-            : this.countDocuments(filter).exec())
-        : all.length;
+      // mongoose-paginate-v2 1.5 counts every time, a page or not.
+      const totalDocs = await (typeof options.useCustomCountFn === 'function'
+        ? options.useCustomCountFn()
+        : this.countDocuments(filter).exec());
       const limit = paginated ? options.limit ?? 10 : all.length;
       const page = paginated ? options.page ?? 1 : 1;
       const start = (page - 1) * limit;

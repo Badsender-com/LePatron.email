@@ -4,14 +4,15 @@
 'use strict';
 
 // The MCP fakes keep an ObjectId an ObjectId, and an aggregation finds a
-// reference stored as one by an ObjectId only, as MongoDB does.
+// reference stored as one by an ObjectId only, as MongoDB does; `paginate`
+// counts as mongoose-paginate-v2 does.
 
 const mongoose = require('mongoose');
 const { createMcpStore } = require('./mcp-fake-models.js');
 
 const MAILING = '507f1f77bcf86cd799439401';
 
-describe('the MCP fakes and ObjectIds', () => {
+describe('the MCP fakes', () => {
   const store = createMcpStore();
   beforeEach(() =>
     store.seed({
@@ -49,5 +50,18 @@ describe('the MCP fakes and ObjectIds', () => {
 
     expect(docs[0]._id).toBeInstanceOf(mongoose.Types.ObjectId);
     expect(String(docs[0]._id)).toBe(MAILING);
+  });
+
+  it.each([
+    ['a page', {}],
+    ['every document at once', { pagination: false }],
+  ])('counts %s, as mongoose-paginate-v2 does', async (_, options) => {
+    store.seed({ mailings: [{ _id: MAILING, name: 'A' }] });
+    const counts = jest.spyOn(store.models.Mailings, 'countDocuments');
+
+    await store.models.Mailings.paginate({}, options);
+
+    expect(counts).toHaveBeenCalledTimes(1);
+    counts.mockRestore();
   });
 });
