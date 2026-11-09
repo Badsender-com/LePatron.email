@@ -56,7 +56,6 @@ jest.mock('../../../packages/server/utils/logger.js', () => ({
 const {
   searchMailings,
   findReadableMailings,
-  findReadableMailing,
   locateReadableMailing,
 } = require('../../../packages/server/mailing/mailing-search.service');
 
@@ -193,36 +192,21 @@ describe('a mailing the user may read', () => {
 
   const idOf = (name) => MAILINGS.find((m) => m.name === name)._id;
 
-  it.each([
-    ['at the root of a workspace', 'Weekly news'],
-    ['in a folder', 'Spring sale'],
-    ['in a subfolder', 'Spring teaser'],
-  ])('finds one %s of an accessible workspace', async (_where, name) => {
-    expect(await findReadableMailing(frank, idOf(name), { name: 1 })).toEqual({
-      _id: idOf(name),
-      name,
-    });
-  });
+  it('finds those of an accessible workspace, and none of another', async () => {
+    const found = await findReadableMailings(frank, [
+      idOf('Weekly news'),
+      idOf('Spring promo'),
+      idOf('Spring old'),
+    ]);
 
-  it('finds none of a workspace the user cannot access', async () => {
-    expect(await findReadableMailing(frank, idOf('Spring promo'))).toBeNull();
-    expect(await findReadableMailing(frank, idOf('Spring old'))).toBeNull();
-  });
-
-  it('keeps a super admin to the selected group', async () => {
-    const admin = superAdmin(CLIENT_GROUP);
-
-    expect(await findReadableMailing(admin, idOf('Spring old'))).not.toBeNull();
-    expect(
-      await findReadableMailing(admin, idOf('Spring elsewhere'))
-    ).toBeNull();
+    expect(found).toEqual([{ _id: idOf('Weekly news') }]);
   });
 
   // A check of a right never reads an email's content.
   it('reads the id alone unless told what to read', async () => {
-    expect(await findReadableMailing(frank, idOf('Weekly news'))).toEqual({
-      _id: idOf('Weekly news'),
-    });
+    expect(await findReadableMailings(frank, [idOf('Weekly news')])).toEqual([
+      { _id: idOf('Weekly news') },
+    ]);
   });
 
   it('reads many at once, each once, and takes text that is no id as none', async () => {
@@ -246,6 +230,11 @@ describe('a mailing the user may read, and where it sits', () => {
 
   it.each([
     ['at the root of a workspace', 'Weekly news', { workspace: newsletters }],
+    [
+      'in a folder',
+      'Spring sale',
+      { workspace: newsletters, folder: { id: YEAR_2026, name: '2026' } },
+    ],
     [
       'in a subfolder',
       'Spring teaser',
@@ -279,8 +268,20 @@ describe('a mailing the user may read, and where it sits', () => {
     expect(left.mailing).toHaveProperty('author');
   });
 
+  it('keeps a super admin to the selected group', async () => {
+    const admin = superAdmin(CLIENT_GROUP);
+
+    expect(
+      await locateReadableMailing(admin, idOf('Spring old'), 'name')
+    ).not.toBeNull();
+    expect(
+      await locateReadableMailing(admin, idOf('Spring elsewhere'), 'name')
+    ).toBeNull();
+  });
+
   it.each([
     ['a workspace the user cannot access', () => idOf('Spring promo')],
+    ['a subfolder of such a workspace', () => idOf('Spring old')],
     ['another group', () => idOf('Spring elsewhere')],
     ['text that is no id', () => ({ $ne: null })],
   ])('finds none in %s', async (_case, id) => {

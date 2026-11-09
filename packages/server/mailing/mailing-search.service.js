@@ -47,7 +47,6 @@ module.exports = {
   searchMailings,
   findMailingsByWords,
   findReadableMailings,
-  findReadableMailing,
   locateReadableMailing,
 };
 
@@ -156,19 +155,6 @@ async function findReadableMailings(user, ids, projection = ID_ONLY) {
     { ...readable, _id: { $in: wanted } },
     projection
   ).lean();
-}
-
-/**
- * A mailing the user may read (`findReadableMailings`), or null.
- *
- * @param {Object} user the request user
- * @param {string} id
- * @param {Object|string} [projection]
- * @returns {Promise<Object|null>}
- */
-async function findReadableMailing(user, id, projection) {
-  const [found] = await findReadableMailings(user, [id], projection);
-  return found || null;
 }
 
 /**
