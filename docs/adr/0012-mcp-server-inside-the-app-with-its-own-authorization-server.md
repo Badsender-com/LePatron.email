@@ -5,6 +5,7 @@
 - Epic: #1290
 - Supersedes the approach of issue #955 (standalone server, API key per company)
 - Amended by ADR 0014 (drafts of the platform company's skills and expertises written from an assistant)
+- Amended by ADR 0017 (the MCP module, sold apart from MCP access)
 
 LePatron exposes an MCP server so that the AI assistants its users already work with (Claude, ChatGPT, Microsoft Copilot) can read LePatron on their behalf: the expertises and skills the platform company writes, and the user's own mailings. A company's users connect an assistant once the company's MCP access is on. MCP access is the company's switch: off unless its tech admin, as part of its AI features, or a super admin turns it on (`group.manage-tech`, ADR 0004). Turning it on or off is recorded as a security event, as switching two-factor authentication is (ADR 0008). It is not what is sold: selling MCP, to the platform company and to client companies alike, goes through the MCP module of ADR 0017, which a super admin opens and without which MCP access opens nothing. The first version only read. ADR 0014 adds the first writes, drafts of the platform company's own skills and expertises; writing mailings still waits for the server to enforce what a writer may touch (#1103, ADR 0004).
 
