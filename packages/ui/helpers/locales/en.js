@@ -405,7 +405,7 @@ export default {
         closeTitle: 'Close the MCP module?',
         close: 'Close the module',
         closeConfirm:
-          ' | The connection of {group} will be ended at once. Its user will connect their assistant again if the module reopens. | The {count} connections of {group} will be ended at once. Each user will connect their assistant again if the module reopens.',
+          ' | The only connection of {group} will be ended at once. Its user will connect their assistant again if the module reopens. | The {count} connections of {group} will be ended at once. Each user will connect their assistant again if the module reopens.',
         closeConfirmUnknown:
           'The connections of {group} will be ended at once. Each user will connect their assistant again if the module reopens.',
       },

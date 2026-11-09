@@ -28,3 +28,37 @@ describe.each([
     expect(messages.connectedApplications.accessOff).toMatch(ended);
   });
 });
+
+// A company's name is any name: the French texts name it after « l'entreprise »,
+// which reads right before a vowel as before a consonant.
+describe('a company named in the French MCP texts', () => {
+  const NAME = 'Entreprise test';
+  const sections = [
+    fr.groups.modules.mcp,
+    fr.mcpAccess,
+    fr.connectedApplications,
+    fr.oauthConsent,
+  ];
+  const forms = sections
+    .flatMap((section) => stringsOf(section))
+    .filter((text) => text.includes('{group}'))
+    .flatMap((text) => text.split(' | '))
+    .map((form) => form.replace(/\{group\}/g, NAME))
+    .filter((form) => form.includes(NAME));
+
+  it('is found', () => {
+    expect(forms.length).toBeGreaterThan(5);
+  });
+
+  it.each(forms)('reads right in « %s »', (form) => {
+    expect(form).not.toMatch(
+      new RegExp(`\\b(de|à|le|la|du|des|pour|dans|au) ${NAME}`)
+    );
+  });
+
+  it('says the single connection the closing ends', () => {
+    const [, one] = fr.groups.modules.mcp.closeConfirm.split(' | ');
+
+    expect(one).toMatch(/^La seule connexion de l'entreprise \{group\}/);
+  });
+});

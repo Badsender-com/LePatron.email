@@ -411,9 +411,9 @@ export default {
         closeTitle: 'Fermer le module MCP\u00a0?',
         close: 'Fermer le module',
         closeConfirm:
-          ' | La connexion de {group} sera coupée tout de suite. Son utilisateur devra reconnecter son assistant si le module rouvre. | Les {count} connexions de {group} seront coupées tout de suite. Chaque utilisateur devra reconnecter son assistant si le module rouvre.',
+          ' | La seule connexion de l\'entreprise {group} sera coupée tout de suite. Son utilisateur devra reconnecter son assistant si le module rouvre. | Les {count} connexions de l\'entreprise {group} seront coupées tout de suite. Chaque utilisateur devra reconnecter son assistant si le module rouvre.',
         closeConfirmUnknown:
-          'Les connexions de {group} seront coupées tout de suite. Chaque utilisateur devra reconnecter son assistant si le module rouvre.',
+          'Les connexions de l\'entreprise {group} seront coupées tout de suite. Chaque utilisateur devra reconnecter son assistant si le module rouvre.',
       },
     },
     mailingTab: {
@@ -1130,7 +1130,7 @@ export default {
     footnote:
       'Valable 90 jours, révocable à tout moment depuis Applications connectées. Après accord, vous serez renvoyé vers {host}.',
     allow: 'Autoriser',
-    allowIn: 'Autoriser dans {group}',
+    allowIn: 'Autoriser dans l\'entreprise {group}',
     deny: 'Refuser',
     expired:
       'Cette demande de connexion a expiré, ou a été lancée depuis un autre navigateur. Relancez la connexion depuis votre assistant.',
@@ -1149,11 +1149,11 @@ export default {
     noModuleCanOpen:
       'Le module MCP n\'est pas inclus dans l\'abonnement de l\'entreprise. En tant que super admin, vous pouvez l\'ouvrir dans ses Modules, puis activer son accès MCP.',
     noModuleCanOpenIn:
-      'Le module MCP n\'est pas inclus dans l\'abonnement de {group}. En tant que super admin, vous pouvez l\'ouvrir dans ses Modules, puis activer son accès MCP.',
+      'Le module MCP n\'est pas inclus dans l\'abonnement de l\'entreprise {group}. En tant que super admin, vous pouvez l\'ouvrir dans ses Modules, puis activer son accès MCP.',
     noAccessCanOpen:
       'L\'accès MCP de l\'entreprise est désactivé. En tant que super admin, vous pouvez l\'activer dans ses Fonctionnalités IA.',
     noAccessCanOpenIn:
-      'L\'accès MCP de {group} est désactivé. En tant que super admin, vous pouvez l\'activer dans ses Fonctionnalités IA.',
+      'L\'accès MCP de l\'entreprise {group} est désactivé. En tant que super admin, vous pouvez l\'activer dans ses Fonctionnalités IA.',
   },
   mcpClients: {
     pageTitle: 'Clients MCP',
@@ -1262,9 +1262,9 @@ export default {
     groupRevoked: 'Connexions d\'assistants IA révoquées',
     allGroups: 'Toutes',
     noModule:
-      'Le module MCP n\'est pas inclus dans l\'abonnement de {group} : aucun assistant ne peut s\'y connecter.',
+      'Le module MCP n\'est pas inclus dans l\'abonnement de l\'entreprise {group} : aucun assistant ne peut s\'y connecter.',
     accessOff:
-      'L\'accès MCP est désactivé pour {group} : aucun assistant ne peut s\'y connecter, et ses connexions ont été coupées à sa désactivation.',
+      'L\'accès MCP est désactivé pour l\'entreprise {group} : aucun assistant ne peut s\'y connecter, et ses connexions ont été coupées à sa désactivation.',
     errors: {
       MCP_CONNECTION_NOT_FOUND:
         'Cette connexion n\'existe plus : elle a déjà été révoquée.',
@@ -1288,13 +1288,13 @@ export default {
     turnOff: 'Couper l\'accès',
     notIncluded: 'Non inclus',
     noModule:
-      'Le module MCP n\'est pas inclus dans l\'abonnement de {group}. Contactez l\'entreprise plateforme pour l\'ajouter.',
+      'Le module MCP n\'est pas inclus dans l\'abonnement de l\'entreprise {group}. Contactez l\'entreprise plateforme pour l\'ajouter.',
     moduleMissing:
-      'Le module MCP n\'est pas inclus dans l\'abonnement de {group}.',
+      'Le module MCP n\'est pas inclus dans l\'abonnement de l\'entreprise {group}.',
     openModule: 'Ouvrir le module',
     offTitle: 'Couper l\'accès MCP ?',
     offConfirm:
-      'Tous les assistants connectés aux comptes de {group} seront déconnectés tout de suite. Le réactiver ne les reconnectera pas : chaque utilisateur devra connecter le sien à nouveau.',
+      'Tous les assistants connectés aux comptes de l\'entreprise {group} seront déconnectés tout de suite. Le réactiver ne les reconnectera pas : chaque utilisateur devra connecter le sien à nouveau.',
     updated: 'Accès MCP mis à jour',
   },
   crmIntelligence: {
