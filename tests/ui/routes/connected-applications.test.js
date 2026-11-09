@@ -58,11 +58,12 @@ function importsOf({
   };
 }
 
-function mountPage(user) {
+function mountPage(user, $axios) {
   return mountSfc('packages/ui/routes/connected-applications/index.vue', {
     mocks: {
       $t: (key, params = {}) => [key, ...Object.values(params)].join(' | '),
       $i18n: { locale: 'fr' },
+      $axios,
     },
     imports: importsOf(user),
   });
@@ -154,7 +155,14 @@ const noticeOf = (vm) => {
 };
 
 async function platformPage(applications, modulesGroup = SELECTED) {
-  const vm = mountPage({ canManagePlatform: true, modulesGroup });
+  const vm = mountPage(
+    {
+      canManagePlatform: true,
+      modulesGroup,
+      apiRoutes: { connectedApplicationsItem: ({ id }) => `/c/${id}` },
+    },
+    { $delete: jest.fn().mockResolvedValue() }
+  );
   vm.applications = applications;
   await settle(vm);
   return vm;
@@ -188,6 +196,25 @@ describe('the company filter', () => {
     expect(rowsOf(vm)).toEqual(['c1', 'c2']);
     expect(noticeOf(vm)).toBeNull();
   });
+
+  // Its company's last connection revoked, the filter shows them all rather
+  // than none; the selected company stays, with what the page says of it.
+  it.each([
+    ['another company', 'all', IN_OTHER, 'g2'],
+    ['the selected company', 'g1', IN_SELECTED, 'g1'],
+  ])(
+    'once the last connection of %s is revoked, filters on %s',
+    async (_name, after, connection, filter) => {
+      const vm = await platformPage([IN_SELECTED, IN_OTHER]);
+      vm.groupFilter = filter;
+      vm.toRevoke = connection;
+
+      await vm.revoke();
+      await settle(vm);
+
+      expect(vm.groupFilter).toBe(after);
+    }
+  );
 
   it('is not offered to anyone else, whose connections are all shown', async () => {
     const vm = mountPage({ modulesGroup: SELECTED });

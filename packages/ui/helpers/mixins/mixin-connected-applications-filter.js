@@ -69,6 +69,16 @@ export default {
       return this.$t(key, { group: group.name });
     },
   },
+  watch: {
+    // The last connection of the company filtered on revoked, the company
+    // leaves the filter: every connection is shown rather than none. The
+    // selected company stays, with what the page says of it.
+    groupItems(items) {
+      if (!items.some(({ value }) => value === this.groupFilter)) {
+        this.groupFilter = ALL_GROUPS;
+      }
+    },
+  },
   created() {
     // Whoever manages the platform starts on the selected company.
     if (this.canManagePlatform && this.modulesGroup) {
