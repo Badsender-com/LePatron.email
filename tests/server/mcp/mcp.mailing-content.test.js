@@ -16,6 +16,9 @@ const {
 const {
   MAX_PREVIEW_LENGTH,
 } = require('../../../packages/server/mcp/mcp-mailing-read.js');
+const {
+  PREVIEW_CACHE_MAX_ENTRY,
+} = require('../../../packages/server/mailing/mailing.service.js');
 
 // A subfolder of FOLDER_ARCHIVE, known by its parent, as the app files it.
 const SUBFOLDER = {
@@ -139,6 +142,16 @@ describe('mailing content', () => {
     it('gives no content for a preview too large to read, and says so', async () => {
       harness.update('mailings', f.M_NEWSLETTER, {
         previewHtml: `<p>${'x'.repeat(MAX_PREVIEW_LENGTH)}</p>`,
+      });
+
+      const answer = await getMailing(client, { mailingId: f.M_NEWSLETTER });
+
+      expect(answer).toMatchObject({ text: null, contentMissing: 'too-large' });
+    });
+
+    it('gives no content for a preview larger than the app keeps sanitised', async () => {
+      harness.update('mailings', f.M_NEWSLETTER, {
+        previewHtml: `<p>${'x'.repeat(PREVIEW_CACHE_MAX_ENTRY)}</p>`,
       });
 
       const answer = await getMailing(client, { mailingId: f.M_NEWSLETTER });

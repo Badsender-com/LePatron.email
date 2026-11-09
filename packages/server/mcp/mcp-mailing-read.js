@@ -8,7 +8,10 @@ const {
 const {
   locateReadableMailing,
 } = require('../mailing/mailing-search.service.js');
-const { sanitizePreviewCached } = require('../mailing/mailing.service.js');
+const {
+  sanitizePreviewCached,
+  PREVIEW_CACHE_MAX_ENTRY,
+} = require('../mailing/mailing.service.js');
 const { withIdentity, failure } = require('./mcp-identity.js');
 const { approvedMailingIds } = require('./mcp-mailing-status.js');
 const { mailingText, variablesOf } = require('./mcp-mailing-text.js');
@@ -27,7 +30,9 @@ const MAX_ID_LENGTH = 100;
 
 // Sanitising and parsing are synchronous, about a second per megabyte: past
 // this, a preview is not read for an assistant. Real ones weigh 50 to 120 KB.
-const MAX_PREVIEW_LENGTH = 1000 * 1000;
+// The bound is the app's own for a sanitised preview it caches: what is read
+// here is not sanitised again at every read.
+const MAX_PREVIEW_LENGTH = PREVIEW_CACHE_MAX_ENTRY;
 
 // Why a mailing comes without content.
 const NO_CONTENT = {

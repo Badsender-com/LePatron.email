@@ -1490,6 +1490,8 @@ async function deleteOne(mailing) {
 // them; a preview larger than a tenth of it is sanitized every time instead.
 const PREVIEW_CACHE_BUDGET = 8 * 1024 * 1024; // characters
 const PREVIEW_CACHE_MAX_ENTRY = PREVIEW_CACHE_BUDGET / 10;
+// The largest sanitized preview kept: MCP reads no larger one (ADR 0012).
+module.exports.PREVIEW_CACHE_MAX_ENTRY = PREVIEW_CACHE_MAX_ENTRY;
 const sanitizedPreviews = new Map();
 let sanitizedPreviewsSize = 0;
 
