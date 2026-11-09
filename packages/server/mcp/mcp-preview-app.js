@@ -91,11 +91,4 @@ function withPreview(result, { answer, html }) {
   return { ...result, _meta: { [PREVIEW_META_KEY]: html } };
 }
 
-module.exports = {
-  registerPreviewApp,
-  withPreview,
-  PREVIEW_TOOL_META,
-  PREVIEW_META_KEY,
-  PREVIEW_APP_URI,
-  APP_HTML,
-};
+module.exports = { registerPreviewApp, withPreview, PREVIEW_TOOL_META };
