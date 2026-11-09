@@ -179,8 +179,8 @@ describe('token and refresh', () => {
     expect(response.headers['www-authenticate']).toBeUndefined();
   });
 
-  // A failure of the server is not a refusal: the error handler answers it,
-  // without the server's own words, and the client is not told to give up.
+  // A failure of the server is not a refusal: the error handler answers it
+  // with a 500, without an OAuth error code nor a challenge.
   it('answers a failure while reading who calls as a failure of the server', async () => {
     const { body } = await exchange(await codeFor());
     const {
