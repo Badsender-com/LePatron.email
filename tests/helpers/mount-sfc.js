@@ -32,6 +32,15 @@ Vue.config.devtools = false;
 // Vuetify and the components a test leaves out render as plain elements.
 Vue.config.ignoredElements = [/^v-/, /^lucide-/, /^bs-/];
 
+// Babel loads the UI's configuration and its presets at its first transform,
+// most of what a mount costs: done here, when the test file loads, rather
+// than inside the 5 seconds of its first test, which the full suite's
+// parallel load made it exceed.
+babel.transformSync('', {
+  filename: path.join(ROOT, 'packages/ui/component.js'),
+  root: ROOT,
+});
+
 function optionsOf(file, imports) {
   const { script, template } = parseComponent(fs.readFileSync(file, 'utf8'));
   const { code } = babel.transformSync(script.content, {
