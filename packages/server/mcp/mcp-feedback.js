@@ -7,8 +7,8 @@ const {
   MAX_COMMENT_WITHOUT_RETEX,
 } = require('./mcp-access-option.js');
 const { versionLabel } = require('../ai-skill/services/version-helpers.js');
-const { withIdentity, success } = require('./mcp-identity.js');
-const { failure, ADDITIVE } = require('./mcp-tool-grammar.js');
+const { withIdentity, success, failure } = require('./mcp-identity.js');
+const { ADDITIVE } = require('./mcp-tool-grammar.js');
 const { namedExpertises } = require('./mcp-expertises.js');
 const { namedSkills } = require('./mcp-skill-catalog.js');
 const {

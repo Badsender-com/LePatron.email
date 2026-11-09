@@ -4,9 +4,9 @@ const { z } = require('zod');
 const { versionLabel } = require('../ai-skill/services/version-helpers.js');
 const permissions = require('../account/permissions.js');
 const { CAPABILITIES } = require('../../shared/access/roles.js');
-const { withIdentity, success } = require('./mcp-identity.js');
+const { withIdentity, success, failure } = require('./mcp-identity.js');
 const { setDraftsMode } = require('./mcp-connections.js');
-const { failure, SETTING } = require('./mcp-tool-grammar.js');
+const { SETTING } = require('./mcp-tool-grammar.js');
 
 // How long the drafts mode stays on: an afternoon of tries, not a habit.
 const DRAFTS_TTL = 4 * 3600 * 1000;

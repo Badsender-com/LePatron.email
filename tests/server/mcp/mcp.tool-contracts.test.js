@@ -13,6 +13,7 @@
 
 const harness = require('../../helpers/mcp-harness');
 const f = require('../../helpers/mcp-fixtures');
+const grammar = require('../../../packages/server/mcp/mcp-tool-grammar.js');
 
 const WRITING_TOOLS = ['submit_feedback'];
 
@@ -106,6 +107,17 @@ describe('the grammar of every tool', () => {
     ({ prompts } = await client.listPrompts());
   });
   afterEach(() => harness.disconnect());
+
+  // How a tool fails is said with the identity (mcp-identity.js): the
+  // presets hold what a tool may do, and nothing else.
+  it('keeps the four presets of annotations, and only them', () => {
+    expect(Object.keys(grammar)).toEqual([
+      'READ_ONLY',
+      'ADDITIVE',
+      'OVERWRITING',
+      'SETTING',
+    ]);
+  });
 
   const each = (check) =>
     tools.map((tool) => ({ tool: tool.name, ...check(tool) }));

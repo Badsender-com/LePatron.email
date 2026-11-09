@@ -14,11 +14,11 @@ const {
   PREVIEW_CACHE_MAX_ENTRY,
 } = require('../mailing/mailing.service.js');
 const { Mailings } = require('../common/models.common.js');
-const { withIdentity } = require('./mcp-identity.js');
+const { withIdentity, failure } = require('./mcp-identity.js');
 const { approvedMailingIds } = require('./mcp-mailing-status.js');
 const { mailingText, variablesOf } = require('./mcp-mailing-text.js');
 const { MAILING, asItem } = require('./mcp-mailings.js');
-const { failure, READ_ONLY } = require('./mcp-tool-grammar.js');
+const { READ_ONLY } = require('./mcp-tool-grammar.js');
 const { PREVIEW_TOOL_META, withPreview } = require('./mcp-preview-app.js');
 
 // Reading one mailing (#1304, ADR 0012): its facts and derived status, and its

@@ -8,8 +8,8 @@ const {
   searchMailings,
 } = require('../mailing/mailing-search.service.js');
 const { accessibleLocations } = require('../mailing/mailing-locations.js');
-const { withIdentity, tooLongSearch } = require('./mcp-identity.js');
-const { failure, READ_ONLY } = require('./mcp-tool-grammar.js');
+const { withIdentity, failure, tooLongSearch } = require('./mcp-identity.js');
+const { READ_ONLY } = require('./mcp-tool-grammar.js');
 const {
   MAILING_STATUSES,
   statusOf,

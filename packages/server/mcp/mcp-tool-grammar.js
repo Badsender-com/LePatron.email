@@ -1,15 +1,10 @@
 'use strict';
 
-// What every LePatron tool says the same way: how it fails, and what it may
-// do. The annotations are written out in full, since a client that misses one
+// What every LePatron tool says the same way: what it may do, in four
+// presets. They are written out in full, since a client that misses one
 // assumes the worst (a destructive write reaching the open world), and the
-// ChatGPT review asks for the three of them on every tool.
-
-/**
- * A tool that could not do what was asked: the model reads why. The one
- * helper, written with the identity (mcp-identity.js), as a tool's answers are.
- */
-const { failure } = require('./mcp-identity.js');
+// ChatGPT review asks for the three of them on every tool. How a tool fails is
+// said with the identity (`failure`, mcp-identity.js), as its answers are.
 
 /** Reads LePatron, changes nothing. */
 const READ_ONLY = Object.freeze({
@@ -42,4 +37,4 @@ const SETTING = Object.freeze({
   openWorldHint: false,
 });
 
-module.exports = { failure, READ_ONLY, ADDITIVE, OVERWRITING, SETTING };
+module.exports = { READ_ONLY, ADDITIVE, OVERWRITING, SETTING };
