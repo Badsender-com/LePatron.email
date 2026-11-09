@@ -68,6 +68,11 @@ const {
   invocationsRouter: aiInvocationsRouter,
 } = require('./ai-skill/ai-skill.routes');
 const mcpFeedbackRouter = require('./mcp/mcp-feedback.routes.js');
+const mcpClientRouter = require('./mcp/mcp-client.routes.js');
+const {
+  connectedApplicationsRouter,
+  groupConnectedApplicationsRouter,
+} = require('./mcp/connected-application.routes.js');
 const { mountMcp } = require('./mcp/mcp-http.js');
 const { oauthBodyParsers, jwksOf } = require('./mcp/mcp-oauth.js');
 const { McpOAuthAdapter } = require('./mcp/mcp-oauth-adapter.js');
@@ -380,6 +385,13 @@ if (cluster.isMaster) {
   app.use('/api/profiles', profileRouter);
   app.use('/api/workspaces', workspaceRouter);
   app.use('/api/personalized-blocks', personalizedBlockRouter);
+  // A company's MCP settings MUST be before groups routes (groups has a
+  // catch-all)
+  app.use('/api/groups/:groupId/mcp-clients', mcpClientRouter);
+  app.use(
+    '/api/groups/:groupId/connected-applications',
+    groupConnectedApplicationsRouter
+  );
   app.use('/api/groups', groupRouter);
   // Comments routes MUST be before mailings routes (mailing has a catch-all)
   app.use('/api/mailings/:mailingId/comments', mailingCommentsRouter);
@@ -396,6 +408,7 @@ if (cluster.isMaster) {
   app.use('/api/ai-skills', aiSkillsRouter);
   app.use('/api/ai-expertise', aiExpertiseRouter);
   app.use('/api/mcp-feedbacks', mcpFeedbackRouter);
+  app.use('/api/connected-applications', connectedApplicationsRouter);
   app.use('/api/ai-invocations', aiInvocationsRouter);
   app.use('/api/ai-playground', aiPlaygroundRouter);
   app.use('/api/translation', translationRouter);

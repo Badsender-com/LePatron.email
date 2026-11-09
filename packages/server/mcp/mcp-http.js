@@ -15,12 +15,8 @@ const {
   compareClientSecretsByDigest,
 } = require('./mcp-oauth-adapter.js');
 const { createInteractionsRouter } = require('./mcp-oauth-interactions.js');
-const { createClientsRouter, isClientAllowed } = require('./mcp-clients.js');
-const {
-  useConnection,
-  createConnectionsRouter,
-  createGroupConnectionsRouter,
-} = require('./mcp-connections.js');
+const { isClientAllowed } = require('./mcp-clients.js');
+const { useConnection } = require('./mcp-connections.js');
 
 const MINUTE = 60 * 1000;
 const HOUR = 60 * MINUTE;
@@ -68,12 +64,11 @@ async function authInfoOf(provider, header, resource) {
  * Mounts the MCP endpoint and LePatron's authorization server on the app
  * (ADR 0012): the metadata a connected application discovers them by
  * (RFC 9728, RFC 8414), the authorization server under `/oauth`, the consent
- * API the consent page reads (`/oauth/consent/:uid/…`), the clients a super
- * company registers (`/api/groups/:groupId/mcp-clients`), the connected applications a user or a
- * group's admin revokes (`/api/connected-applications`,
- * `/api/groups/:groupId/connected-applications`), and `/mcp`, which
+ * API the consent page reads (`/oauth/consent/:uid/…`), and `/mcp`, which
  * takes only the access tokens issued for it. The consent page itself,
- * `/oauth/consent/:uid`, is the UI's.
+ * `/oauth/consent/:uid`, is the UI's. The clients a company registers by
+ * hand and the connected applications are the app's API routes
+ * (`mcp-client.routes.js`, `connected-application.routes.js`).
  *
  * Mount after the session and passport: the consent API reads the app's user.
  *
@@ -102,6 +97,8 @@ function mountMcp(
   });
   // The adapter keeps a client's secret as its digest.
   compareClientSecretsByDigest(provider);
+  // What checks a client registered by hand (mcp-client.controller.js).
+  app.locals.mcpAuthorizationServer = provider;
   // The provider builds the URLs it publishes from the request: it is handed
   // the site's public origin, never what a Host header claims.
   provider.proxy = true;
@@ -156,15 +153,6 @@ function mountMcp(
   app.use(
     `${ISSUER_PATH}/consent`,
     createInteractionsRouter(provider, resource)
-  );
-
-  // The clients a company registers, kept by the authorization server.
-  app.use('/api/groups/:groupId/mcp-clients', createClientsRouter(provider));
-  // The applications a user connected, and a group's, which they revoke.
-  app.use('/api/connected-applications', createConnectionsRouter(provider));
-  app.use(
-    '/api/groups/:groupId/connected-applications',
-    createGroupConnectionsRouter(provider)
   );
 
   // Everything else under /oauth is the provider's; the consent page itself

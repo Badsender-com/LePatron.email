@@ -23,6 +23,9 @@ const { mailingCommentsRouter, commentsRouter } = load(
 const { skillsRouter, expertiseRouter, invocationsRouter } = load(
   'ai-skill/ai-skill.routes'
 );
+const { connectedApplicationsRouter, groupConnectedApplicationsRouter } = load(
+  'mcp/connected-application.routes.js'
+);
 
 // As index.js mounts them.
 const ROUTERS = {
@@ -32,6 +35,8 @@ const ROUTERS = {
   '/api/personalized-blocks': load(
     'personalized-blocks/personalized-block-routes.js'
   ),
+  '/api/groups/:groupId/mcp-clients': load('mcp/mcp-client.routes.js'),
+  '/api/groups/:groupId/connected-applications': groupConnectedApplicationsRouter,
   '/api/groups': load('group/group.routes'),
   '/api/mailings/:mailingId/comments': mailingCommentsRouter,
   '/api/mailings': load('mailing/mailing.routes'),
@@ -55,6 +60,7 @@ const ROUTERS = {
   '/api/crm-intelligence': load('crm-intelligence/crm-intelligence.routes.js'),
   '/api/dashboards': load('dashboard/dashboard.routes.js'),
   '/api/mcp-feedbacks': load('mcp/mcp-feedback.routes.js'),
+  '/api/connected-applications': connectedApplicationsRouter,
 };
 
 // Open to anyone, or to any signed-in user, on purpose.
@@ -74,6 +80,8 @@ const EXEMPTIONS = {
   'PUT /api/users/me/storage/:key': "the user's own interface preferences",
   'PUT /api/users/me/selected-group/':
     "a super admin's own selected group, refused to anyone else by its controller",
+  'DELETE /api/connected-applications/:id':
+    "the user's own connection to an assistant, found among theirs alone by its controller (ADR 0012)",
 };
 
 // The routes the roles below the company admin reach, and what each needs:
@@ -111,6 +119,14 @@ const ROLE_ROUTES = {
   'PATCH /api/images/gallery/:mongoId/:imageName/label': C.GALLERY_MANAGE,
   'DELETE /api/images/:imageName': C.GALLERY_MANAGE,
   'POST /api/personalized-blocks/': C.BLOCK_LIBRARY_ADD,
+};
+
+// A company's MCP settings, its tech admin's or a super admin's (ADR 0012):
+// not its company admin's.
+const MCP_ROUTES = {
+  'POST /api/groups/:groupId/mcp-clients/': C.GROUP_MANAGE_TECH,
+  'DELETE /api/groups/:groupId/mcp-clients/:clientId': C.GROUP_MANAGE_TECH,
+  'DELETE /api/groups/:groupId/connected-applications/': C.GROUP_MANAGE_TECH,
 };
 
 const WRITES = ['post', 'put', 'patch', 'delete'];
@@ -182,12 +198,15 @@ describe('every route that writes', () => {
     expect(stale).toEqual([]);
   });
 
-  it.each(Object.entries(ROLE_ROUTES))('%s needs %s', (key, capability) => {
-    const route = ROUTES.find((candidate) => candidate.key === key);
+  it.each(Object.entries({ ...ROLE_ROUTES, ...MCP_ROUTES }))(
+    '%s needs %s',
+    (key, capability) => {
+      const route = ROUTES.find((candidate) => candidate.key === key);
 
-    expect(route).toBeDefined();
-    expect(route.capabilities).toContain(capability);
-  });
+      expect(route).toBeDefined();
+      expect(route.capabilities).toContain(capability);
+    }
+  );
 
   it('are all mounted here, as index.js mounts them', () => {
     const index = fs.readFileSync(path.join(SERVER, 'index.js'), 'utf8');

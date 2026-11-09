@@ -133,16 +133,7 @@ describe('connected applications', () => {
     expect((await oauth.callMcp(app, otto.access_token)).status).toBe(200);
   });
 
-  it.each([
-    ['a regular user', 'FRANK'],
-    ['a company admin', 'ERIN'],
-  ])('refuses %s counting or revoking a whole group', async (_case, key) => {
-    const agent = oauth.signIn(app, f[key]);
-    const path = `/api/groups/${f.CLIENT_GROUP}/connected-applications`;
-
-    expect((await agent.get(path)).status).toBe(403);
-    expect((await agent.delete(path)).status).toBe(403);
-  });
+  // Every role's rights: tests/server/mcp/connected-application.routes.test.js.
 });
 
 describe("a group's connected applications", () => {
@@ -182,7 +173,7 @@ describe("a group's connected applications", () => {
   });
 
   it('refuses a group named by something else than its id', async () => {
-    expect((await countAs(f.TESS, 'not-an-id')).status).toBe(403);
+    expect((await countAs(f.TESS, 'not-an-id')).status).toBe(400);
   });
 });
 

@@ -1,10 +1,7 @@
 'use strict';
 
 const crypto = require('crypto');
-const express = require('express');
 const { McpClients, Groups } = require('../common/models.common.js');
-const permissions = require('../account/permissions.js');
-const { CAPABILITIES } = require('../../shared/access/roles.js');
 const { isObjectIdString } = require('../utils/model.js');
 const { revokeConnections } = require('./mcp-connections.js');
 const { secretDigest } = require('./mcp-oauth-store.js');
@@ -15,10 +12,6 @@ const CLIENT_ID_PREFIX = 'lepatron-';
 const AUTH_METHODS = ['client_secret_post', 'client_secret_basic'];
 const MAX_NAME = 100;
 const MAX_REDIRECT_URIS = 10;
-
-// `code` is what the back office translates.
-const refuse = (res, status, message, code) =>
-  res.status(status).json({ message, ...(code && { code }) });
 
 // The new client's fields, or why they are refused.
 function clientFieldsOf(body = {}) {
@@ -52,14 +45,6 @@ function clientFieldsOf(body = {}) {
   }
   return { fields: { name, redirectUris, tokenEndpointAuthMethod } };
 }
-
-const listed = (client) => ({
-  clientId: client.clientId,
-  name: client.name,
-  redirectUris: client.redirectUris,
-  tokenEndpointAuthMethod: client.tokenEndpointAuthMethod,
-  createdAt: client.createdAt,
-});
 
 // Whether a client id is one given here, to a client registered by hand.
 const isRegisteredByHand = (clientId) =>
@@ -161,87 +146,6 @@ async function deleteClient({ clientId, groupId }) {
 }
 
 /**
- * The clients a company registers by hand (ADR 0012), for the assistants
- * that cannot register themselves (Copilot Studio in manual mode):
- * `/api/groups/:groupId/mcp-clients`, for the company's tech admin or a super
- * admin. A client belongs to its company: its users alone connect through it.
- * The secret is answered once, at creation, and kept as its digest: the list
- * never shows it. Deleting a client stops it at once, its access tokens
- * included (see mcp-http.js).
- *
- * @param {import('oidc-provider').default} provider
- * @returns {express.Router}
- */
-function createClientsRouter(provider) {
-  const router = express.Router({ mergeParams: true });
-
-  // As the app's guards: the session's user, the configuration's admin too.
-  router.use((req, res, next) => {
-    if (!req.user) return refuse(res, 401, 'Log in to LePatron first.');
-    const { groupId } = req.params;
-    if (
-      !isObjectIdString(groupId) ||
-      !permissions.can(req.user, CAPABILITIES.GROUP_MANAGE_TECH) ||
-      !permissions.canAccessGroup(req.user, groupId)
-    ) {
-      return refuse(
-        res,
-        403,
-        "Only the company's tech admin manages its MCP clients."
-      );
-    }
-    return next();
-  });
-
-  router.get('/', async (req, res, next) => {
-    try {
-      const clients = await McpClients.find({ _company: req.params.groupId })
-        .sort({ createdAt: -1 })
-        .lean();
-      res.json({ items: clients.map(listed) });
-    } catch (err) {
-      next(err);
-    }
-  });
-
-  router.post('/', async (req, res, next) => {
-    try {
-      const { fields, error, code } = clientFieldsOf(req.body);
-      if (error) return refuse(res, 400, error, code);
-      const registered = await registerClient(provider, {
-        fields,
-        groupId: req.params.groupId,
-        userId: req.user.id,
-      });
-      if (registered.error) {
-        return refuse(res, 400, registered.error, registered.code);
-      }
-      return res.status(201).json({
-        ...listed(registered.client),
-        clientSecret: registered.clientSecret,
-      });
-    } catch (err) {
-      return next(err);
-    }
-  });
-
-  router.delete('/:clientId', async (req, res, next) => {
-    try {
-      const { clientId, groupId } = req.params;
-      // Another company's is answered as unknown.
-      if (!(await deleteClient({ clientId, groupId }))) {
-        return refuse(res, 404, 'No such client.', 'not_found');
-      }
-      return res.status(204).end();
-    } catch (err) {
-      return next(err);
-    }
-  });
-
-  return router;
-}
-
-/**
  * The company a client registered by hand belongs to, or null for a client
  * that registered itself or publishes its metadata document.
  *
@@ -293,11 +197,12 @@ async function forgetCompanyClients(groupId) {
 }
 
 module.exports = {
-  createClientsRouter,
   registerClient,
   deleteClient,
   registeredClientMetadata,
   isRegisteredByHand,
+  CLIENT_ID_PREFIX,
+  clientFieldsOf,
   isClientAllowed,
   companyOfClient,
   forgetCompanyClients,

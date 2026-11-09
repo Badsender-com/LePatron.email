@@ -152,7 +152,31 @@ function createApp() {
     // Every host of the tests is a public one.
     lookup: async () => [{ address: '198.51.100.7', family: 4 }],
   });
+  mountMcpRoutes(app);
   return app;
+}
+
+// The app's API routes of MCP, mounted as index.js mounts them, and its error
+// handler's answer: the status, and the error code as the message.
+function mountMcpRoutes(app) {
+  const {
+    connectedApplicationsRouter,
+    groupConnectedApplicationsRouter,
+  } = require('../../packages/server/mcp/connected-application.routes.js');
+  app.use(
+    '/api/groups/:groupId/mcp-clients',
+    require('../../packages/server/mcp/mcp-client.routes.js')
+  );
+  app.use(
+    '/api/groups/:groupId/connected-applications',
+    groupConnectedApplicationsRouter
+  );
+  app.use('/api/connected-applications', connectedApplicationsRouter);
+  // eslint-disable-next-line no-unused-vars
+  app.use((err, req, res, next) => {
+    const status = err.status || err.statusCode || 500;
+    res.status(status).json({ ...err, status, message: err.message });
+  });
 }
 
 /**
