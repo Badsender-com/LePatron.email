@@ -115,4 +115,26 @@ describe('mailing variables', () => {
       variablesOf({}, page('<p>{{#if vip}}VIP{{else}}All{{/if}}</p>'))
     ).toEqual([]);
   });
+
+  describe('in linear time', () => {
+    const BLANKS = ' \n'.repeat(25 * 1000);
+    const elapsed = (html) => {
+      const started = performance.now();
+      variablesOf({}, html);
+      return performance.now() - started;
+    };
+
+    it.each(['{{', '{{{', '[[', '%%'])(
+      'after %s never closed, and a long run of blanks',
+      (opening) => {
+        expect(elapsed(page(`<p>${opening}${BLANKS}x</p>`))).toBeLessThan(200);
+      }
+    );
+
+    it.each(['{{', '[['])('after %s opened again and again', (opening) => {
+      expect(elapsed(page(`<p>${opening.repeat(25 * 1000)}</p>`))).toBeLessThan(
+        200
+      );
+    });
+  });
 });

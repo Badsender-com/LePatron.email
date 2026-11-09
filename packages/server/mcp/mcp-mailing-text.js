@@ -167,11 +167,12 @@ function mailingText(mailing, html) {
 }
 
 // The syntaxes of the ESPs, as written in a template: `{{firstname}}` or
-// `{{{firstname}}}`, `%%FirstName%%`, `[[firstname]]`.
+// `{{{firstname}}}`, `%%FirstName%%`, `[[firstname]]`. A name is at most 100
+// characters, its blanks trimmed once found: each is found in linear time.
 const VARIABLES = [
-  /\{\{\{?\s*([^{}]+?)\s*\}?\}\}/g,
-  /%%([A-Za-z][A-Za-z0-9_]*)%%/g,
-  /\[\[\s*([^[\]]+?)\s*\]\]/g,
+  /\{\{\{?([^{}]{1,100})\}?\}\}/g,
+  /%%([A-Za-z][A-Za-z0-9_]{0,99})%%/g,
+  /\[\[([^[\]]{1,100})\]\]/g,
 ];
 // The control words of a template language, not variables.
 const CONTROL = /^[#/^!>]|^else\b/;
