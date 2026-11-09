@@ -185,7 +185,7 @@ function toRequestUser(record, groupId) {
  *   `extra.userId` and `extra.groupId`
  * @returns {Promise<{ user: Object, group: Object, drafts: boolean }>} the
  *   request user, the company the call reads, with the fields of `GROUP_FIELDS`
- *   only,, and whether it reads the drafts
+ *   only, and whether it reads the drafts
  *   of skills and expertises: a token that may draft, held by someone who
  *   still may, on a connection in drafts mode (#1385, ADR 0014)
  * @throws {ProtocolError} when any of it no longer holds
