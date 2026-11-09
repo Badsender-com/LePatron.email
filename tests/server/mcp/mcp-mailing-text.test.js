@@ -7,6 +7,9 @@ const {
   mailingText,
   variablesOf,
 } = require('../../../packages/server/mcp/mcp-mailing-text.js');
+const {
+  protectVariables,
+} = require('../../../packages/server/translation/variable-placeholder.utils.js');
 
 const PREHEADER_STYLE =
   'display: none !important; visibility: hidden; mso-hide: all; font-size: 1px; line-height: 1px; max-height: 0px; opacity: 0; overflow: hidden;';
@@ -101,7 +104,16 @@ describe('mailing variables', () => {
           '<p>%%FirstName%% [[city]] {{{raw}}}</p><a href="{{ unsubscribe }}">x</a><img alt="[[city]]">'
         )
       )
-    ).toEqual(['firstname', 'raw', 'unsubscribe', 'FirstName', 'city']);
+    ).toEqual(['firstname', 'FirstName', 'city', 'raw', 'unsubscribe']);
+  });
+
+  it('finds the variables a translation keeps intact', () => {
+    const html = page('<p>%%FIRSTNAME%% {{city}} [[zip]]</p>');
+
+    const kept = Object.values(protectVariables(html).placeholderMap);
+
+    expect(kept).toEqual(['%%FIRSTNAME%%', '{{city}}', '[[zip]]']);
+    expect(variablesOf({}, html)).toEqual(['FIRSTNAME', 'city', 'zip']);
   });
 
   it('never takes a link label for a variable', () => {

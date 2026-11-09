@@ -1,6 +1,9 @@
 'use strict';
 
 const cheerio = require('cheerio');
+const {
+  VARIABLE_NAME_PATTERNS,
+} = require('../translation/variable-placeholder.utils.js');
 
 // What an assistant reads of a mailing (#1304): its words in reading order,
 // headings and links kept as Markdown, never a tag nor a style. Read from the
@@ -166,20 +169,15 @@ function mailingText(mailing, html) {
     .join('\n\n');
 }
 
-// The syntaxes of the ESPs, as written in a template: `{{firstname}}` or
-// `{{{firstname}}}`, `%%FirstName%%`, `[[firstname]]`. A name is at most 100
-// characters, its blanks trimmed once found: each is found in linear time.
-const VARIABLES = [
-  /\{\{\{?([^{}]{1,100})\}?\}\}/g,
-  /%%([A-Za-z][A-Za-z0-9_]{0,99})%%/g,
-  /\[\[([^[\]]{1,100})\]\]/g,
-];
 // The control words of a template language, not variables.
 const CONTROL = /^[#/^!>]|^else\b/;
 
 /**
- * The personalization variables of a mailing, by name, each once: in its
- * subject and its HTML, text and attributes alike, whatever format is read.
+ * The personalization variables of a mailing, by name, each once, in the
+ * order they appear: in its subject and its HTML, text and attributes alike,
+ * whatever format is read. Their syntaxes are the ones a translation keeps
+ * intact: `{{firstname}}` or `{{{firstname}}}`, `%%FirstName%%`,
+ * `[[firstname]]`.
  *
  * @param {{ subject?: string|null }} mailing
  * @param {string|null} html its sanitised preview
@@ -187,9 +185,11 @@ const CONTROL = /^[#/^!>]|^else\b/;
  */
 function variablesOf(mailing, html) {
   const content = `${mailing.subject || ''}\n${html || ''}`;
-  const found = VARIABLES.flatMap((pattern) =>
-    [...content.matchAll(pattern)].map((match) => match[1].trim())
-  );
+  const found = VARIABLE_NAME_PATTERNS.flatMap((pattern) => [
+    ...content.matchAll(pattern),
+  ])
+    .sort((a, b) => a.index - b.index)
+    .map((match) => match[1].trim());
   return [...new Set(found.filter((name) => name && !CONTROL.test(name)))];
 }
 
