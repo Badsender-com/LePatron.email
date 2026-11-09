@@ -405,9 +405,9 @@ export default {
         closeTitle: 'Close the MCP module?',
         close: 'Close the module',
         closeConfirm:
-          ' | The connected application of {group} will be revoked at once. Its user will connect it again if the module reopens. | The {count} connected applications of {group} will be revoked at once. Each user will connect theirs again if the module reopens.',
+          ' | The connection of {group} will be ended at once. Its user will connect their assistant again if the module reopens. | The {count} connections of {group} will be ended at once. Each user will connect their assistant again if the module reopens.',
         closeConfirmUnknown:
-          'The connected applications of {group} will be revoked at once. Each user will connect theirs again if the module reopens.',
+          'The connections of {group} will be ended at once. Each user will connect their assistant again if the module reopens.',
       },
     },
     mailingTab: {

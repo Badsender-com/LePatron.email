@@ -285,3 +285,18 @@ describe.each([
     });
   }
 );
+
+// Closing the MCP module ends connections, which its question counts.
+it.each([
+  ['fr', fr.groups.modules.mcp, /connexion/i],
+  ['en', en.groups.modules.mcp, /connection/i],
+])('the closing of the MCP module says connections in %s', (_l, mcp, term) => {
+  const forms = `${mcp.closeConfirm} | ${mcp.closeConfirmUnknown}`;
+  forms
+    .split(' | ')
+    .filter(Boolean)
+    .forEach((form) => {
+      expect(form).toMatch(term);
+      expect(form).not.toMatch(/application/i);
+    });
+});

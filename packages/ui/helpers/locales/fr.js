@@ -411,9 +411,9 @@ export default {
         closeTitle: 'Fermer le module MCP\u00a0?',
         close: 'Fermer le module',
         closeConfirm:
-          ' | L\'application connectée de {group} sera révoquée tout de suite. Son utilisateur devra la reconnecter si le module rouvre. | Les {count} applications connectées de {group} seront révoquées tout de suite. Chaque utilisateur devra reconnecter la sienne si le module rouvre.',
+          ' | La connexion de {group} sera coupée tout de suite. Son utilisateur devra reconnecter son assistant si le module rouvre. | Les {count} connexions de {group} seront coupées tout de suite. Chaque utilisateur devra reconnecter son assistant si le module rouvre.',
         closeConfirmUnknown:
-          'Les applications connectées de {group} seront révoquées tout de suite. Chaque utilisateur devra reconnecter la sienne si le module rouvre.',
+          'Les connexions de {group} seront coupées tout de suite. Chaque utilisateur devra reconnecter son assistant si le module rouvre.',
       },
     },
     mailingTab: {
