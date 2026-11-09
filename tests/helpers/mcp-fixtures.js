@@ -13,6 +13,7 @@
  * in its stand-ins for the models (`tests/helpers/mcp-harness.js`).
  */
 
+const mongoose = require('mongoose');
 const { NOW, daysFrom } = require('./mcp-clock');
 
 const PLATFORM_GROUP = '507f1f77bcf86cd799439a01';
@@ -182,18 +183,22 @@ const MAILINGS = [
 ];
 
 // The last top-level comment decides whether a mailing is approved.
-const COMMENTS = [M_NEWSLETTER, M_SCHEDULED, M_APPROVED].map((_mailing, i) => ({
-  _id: `507f1f77bcf86cd79943970${i}`,
-  _mailing,
-  _company: CLIENT_GROUP,
-  _author: REX,
-  authorName: 'Rex',
-  text: 'Good to go',
-  decision: 'approved',
-  // As the schema stores it: the approval rule matches `false` alone.
-  isDeleted: false,
-  createdAt: daysFrom(-3),
-}));
+const COMMENTS = [M_NEWSLETTER, M_SCHEDULED, M_APPROVED].map(
+  (mailingId, i) => ({
+    _id: `507f1f77bcf86cd79943970${i}`,
+    // An ObjectId, as MongoDB stores it: the approval rule is an aggregation,
+    // which never finds it by its hex string.
+    _mailing: mongoose.Types.ObjectId(mailingId),
+    _company: CLIENT_GROUP,
+    _author: REX,
+    authorName: 'Rex',
+    text: 'Good to go',
+    decision: 'approved',
+    // As the schema stores it: the approval rule matches `false` alone.
+    isDeleted: false,
+    createdAt: daysFrom(-3),
+  })
+);
 
 const { EXPERTISES, SKILLS } = require('./mcp-ai-fixtures');
 

@@ -41,7 +41,13 @@
  * - `Comments.findApprovedMailingIds` is the schema's own static, an
  *   aggregation over the fake comments, and the fake `Comments` is the
  *   `Comment` model Mongoose knows: the listing reads the approval of each
- *   mailing by the app's own rule, as in the app.
+ *   mailing by the app's own rule. An aggregation casts nothing, as in
+ *   MongoDB: a string never finds a reference stored as an ObjectId, as the
+ *   fixtures store a comment's mailing, so the ids it is given must be
+ *   ObjectIds. Most other ids are stored as their hex string, which a find
+ *   matches as Mongoose casts it; only a lean page of `paginate` answers its
+ *   `_id` as an ObjectId.
+ * - A copy keeps an ObjectId an ObjectId.
  */
 
 const { isDeepStrictEqual } = require('util');
@@ -74,9 +80,42 @@ const MODELS = {
   taxonomyItems: 'TaxonomyItems',
 };
 
+// An ObjectId once `structuredClone` copied it: its fields, not its class.
+const isClonedObjectId = (value) =>
+  !!value &&
+  typeof value === 'object' &&
+  !(value instanceof mongoose.Types.ObjectId) &&
+  /^ObjectI[dD]$/.test(value._bsontype || '') &&
+  !!value.id;
+
+// The ObjectIds of a fresh copy made ObjectIds again, in place: a stored
+// reference keeps its hex, and its comparison with an id. Plain objects and
+// arrays are walked, whatever realm built them.
+function revived(value) {
+  if (isClonedObjectId(value)) {
+    return mongoose.Types.ObjectId(Buffer.from(value.id).toString('hex'));
+  }
+  if (Array.isArray(value)) {
+    value.forEach((element, index) => {
+      value[index] = revived(element);
+    });
+  } else if (Object.prototype.toString.call(value) === '[object Object]') {
+    Object.keys(value).forEach((key) => {
+      value[key] = revived(value[key]);
+    });
+  }
+  return value;
+}
+
 // Node 17+, given to the test files by node-globals-environment.js.
 /* global structuredClone */
-const copy = (record) => structuredClone(record);
+const copy = (record) => revived(structuredClone(record));
+
+// What Mongoose answers of an id stored as an ObjectId; the fixtures store
+// most ids as their hex string.
+const HEX_ID = /^[0-9a-f]{24}$/i;
+const asObjectId = (id) =>
+  typeof id === 'string' && HEX_ID.test(id) ? mongoose.Types.ObjectId(id) : id;
 
 // The fields of a document, without what the fakes add to it.
 function fieldsOf(doc) {
@@ -287,10 +326,12 @@ function model(records) {
       );
       const totalPages = limit ? Math.max(1, Math.ceil(all.length / limit)) : 1;
       return {
-        // A document read with a projection has only some of its fields: it
-        // is not saved back.
+        // A lean document's `_id` is an ObjectId, as Mongoose answers it,
+        // whatever the fixtures stored: the listing's aggregations match it
+        // against the references the comments store. A document read with a
+        // projection has only some of its fields: it is not saved back.
         docs: options.lean
-          ? docs
+          ? docs.map((doc) => ({ ...doc, _id: asObjectId(doc._id) }))
           : docs.map((doc, index) =>
               toDocument(doc, options.projection ? undefined : records[index])
             ),

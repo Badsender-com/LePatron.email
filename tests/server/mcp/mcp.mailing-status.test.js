@@ -8,6 +8,7 @@
 // is the app's own rule (`Comment.findApprovedMailingIds`), which the fakes
 // run as an aggregation over the stored comments.
 
+const mongoose = require('mongoose');
 const harness = require('../../helpers/mcp-harness');
 const f = require('../../helpers/mcp-fixtures');
 const {
@@ -132,7 +133,8 @@ describe('mailing status', () => {
       nextComment += 1;
       return {
         _id: `507f1f77bcf86cd7994398${String(nextComment).padStart(2, '0')}`,
-        _mailing: f.M_APPROVED,
+        // As MongoDB stores it, and as the fixtures do.
+        _mailing: mongoose.Types.ObjectId(f.M_APPROVED),
         _company: f.CLIENT_GROUP,
         _author: f.ERIN,
         authorName: 'Erin',
@@ -144,6 +146,20 @@ describe('mailing status', () => {
     };
     const withComments = (...comments) =>
       harness.seed({ ...f.SEED, comments: [...f.COMMENTS, ...comments] });
+
+    // An aggregation casts nothing: the ids it is given must be ObjectIds,
+    // as the comments store their mailing.
+    it('reads one mailing approved, as the listing does', async () => {
+      const client = await harness.connectAs(f.FRANK);
+      const read = harness.answerOf(
+        await client.callTool({
+          name: 'get_mailing',
+          arguments: { mailingId: f.M_APPROVED },
+        })
+      );
+
+      expect(read).toMatchObject({ approved: true, status: 'approved' });
+    });
 
     it('lists an approved mailing as approved', async () => {
       expect(await listed(f.M_APPROVED)).toMatchObject({
@@ -162,7 +178,9 @@ describe('mailing status', () => {
     });
 
     it('keeps the approval when only a reply follows it', async () => {
-      const [approval] = f.COMMENTS.filter((c) => c._mailing === f.M_APPROVED);
+      const [approval] = f.COMMENTS.filter(
+        (c) => String(c._mailing) === f.M_APPROVED
+      );
       withComments(
         comment({ _parentComment: approval._id, createdAt: f.daysFrom(-1) })
       );
