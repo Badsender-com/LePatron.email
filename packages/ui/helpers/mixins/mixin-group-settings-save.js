@@ -1,24 +1,19 @@
 import { mapGetters, mapMutations } from 'vuex';
 import cloneDeep from 'lodash/cloneDeep';
-import isEqual from 'lodash/isEqual';
 import { PAGE, SHOW_SNACKBAR } from '~/store/page.js';
 import { CAN, USER } from '~/store/user.js';
 import * as apiRoutes from '~/helpers/api-routes.js';
+import { changedGroupFields } from '~/helpers/group-changes.js';
 import { CAPABILITIES } from '../../../shared/access/roles.js';
 
-// Each saved on its own, by its switch (mixin-group-switch.js): never part of
-// a save of the settings, even once the page has learnt their new value.
-const SWITCHES_SAVED_APART = ['requireTwoFactor', 'enableMcp', 'allowRetex'];
 // What the server lets a company admin change in its own company.
 const COMPANY_ADMIN_FIELDS = ['name', 'colorScheme'];
 
 /**
  * What a save of the company's settings sends: the fields changed on the page
- * since it was loaded, and only those. A page left open in a tab never sends
- * back what it read, so it never undoes a change made elsewhere since: a
- * module opened, a flag set by another page. Whoever does not manage the
- * platform sends its company's name and colours at most, the fields the
- * server lets it change.
+ * since it was loaded, and only those (changedGroupFields). Whoever does not
+ * manage the platform sends its company's name and colours at most, the
+ * fields the server lets it change.
  *
  * @param {Object} group the edited company
  * @param {Object} loaded the company as the page loaded or last saved it
@@ -32,15 +27,12 @@ export function groupSettingsPayload(
   loaded,
   { canManagePlatform, fields }
 ) {
-  const sendable = (key) =>
-    !SWITCHES_SAVED_APART.includes(key) &&
-    (!fields || fields.includes(key)) &&
-    (canManagePlatform || COMPANY_ADMIN_FIELDS.includes(key));
-  return Object.fromEntries(
-    Object.keys(group)
-      .filter((key) => sendable(key) && !isEqual(group[key], loaded?.[key]))
-      .map((key) => [key, group[key]])
-  );
+  const allowed = canManagePlatform
+    ? fields
+    : (fields || COMPANY_ADMIN_FIELDS).filter((key) =>
+        COMPANY_ADMIN_FIELDS.includes(key)
+      );
+  return changedGroupFields(group, loaded, allowed);
 }
 
 /**
