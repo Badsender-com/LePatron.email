@@ -71,7 +71,7 @@ const mcpFeedbackRouter = require('./mcp/mcp-feedback.routes.js');
 const { mountMcp } = require('./mcp/mcp-http.js');
 const { oauthBodyParsers, jwksOf } = require('./mcp/mcp-oauth.js');
 const { McpOAuthAdapter } = require('./mcp/mcp-oauth-adapter.js');
-const { siteOrigin } = require('./email-templates/email-template.js');
+const { siteOrigin } = require('./utils/site-origin.js');
 const aiPlaygroundRouter = require('./ai-playground/ai-playground.routes');
 const translationRouter = require('./translation/translation.routes');
 

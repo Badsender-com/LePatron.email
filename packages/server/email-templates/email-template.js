@@ -4,7 +4,8 @@ const fs = require('fs');
 const path = require('path');
 const tmpl = require('blueimp-tmpl');
 
-const config = require('../node.config.js');
+// The links in the emails are built on it.
+const { siteOrigin } = require('../utils/site-origin.js');
 
 // The emails the application sends about an account (password, two-factor
 // authentication): one HTML template, filled with the texts of each email in
@@ -79,14 +80,6 @@ const PASSWORD_TEXTS = {
     },
   },
 };
-
-// The links in the emails use the scheme the site is served with: https
-// everywhere but in development, as the FORCE HTTPS middleware of index.js
-// decides (`forcessl` arrives as a string from the environment, "false"
-// included, so it cannot tell).
-function siteOrigin() {
-  return `http${config.isDev ? '' : 's'}://${config.host}`;
-}
 
 /**
  * @param {Object} texts the email's texts by language: `{ fr, en }`, each
