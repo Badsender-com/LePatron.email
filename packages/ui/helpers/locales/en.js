@@ -1562,7 +1562,7 @@ export default {
     },
     skill: {
       title: 'Skills engine',
-      description: 'The model that runs the skills, in the editor as from a connected assistant.',
+      description: 'The model that runs the skills in LePatron (editor, Playground). A connected assistant uses its own model.',
       enableLabel: 'Enable the Skills engine',
       on: 'On',
       off: 'Off',

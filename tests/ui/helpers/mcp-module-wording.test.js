@@ -62,3 +62,17 @@ describe('a company named in the French MCP texts', () => {
     expect(one).toMatch(/^La seule connexion de l'entreprise \{group\}/);
   });
 });
+
+// Through the MCP, a skill is served as a prompt and the assistant's own model
+// runs it: the Skills engine only runs the skills inside the app.
+describe.each([
+  ['fr', fr, /Playground/, /assistant connecté utilise son propre modèle/],
+  ['en', en, /Playground/, /connected assistant uses its own model/],
+])('the Skills engine in %s', (_lang, messages, inApp, ownModel) => {
+  it('runs the skills inside the app, not a connected assistant', () => {
+    const { description } = messages.aiFeatures.skill;
+
+    expect(description).toMatch(inApp);
+    expect(description).toMatch(ownModel);
+  });
+});

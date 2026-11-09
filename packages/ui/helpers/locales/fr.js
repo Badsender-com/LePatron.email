@@ -1586,7 +1586,7 @@ export default {
     },
     skill: {
       title: 'Moteur Skills',
-      description: 'Le modèle qui exécute les skills, dans l\'éditeur comme depuis un assistant connecté.',
+      description: 'Le modèle qui exécute les skills dans LePatron (éditeur, Playground). Un assistant connecté utilise son propre modèle.',
       enableLabel: 'Activer le moteur Skills',
       on: 'Activé',
       off: 'Désactivé',
