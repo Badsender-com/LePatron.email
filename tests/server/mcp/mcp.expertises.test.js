@@ -219,6 +219,8 @@ describe('expertises', () => {
 
     it.each([
       ['a blank scope', { scope: ['  '], categories: ['redaction'] }],
+      // One type a field, which Copilot Studio reads: a list, never a string.
+      ['a scope given as a string', { scope: 'subject', categories: ['qc'] }],
       ['no category', { scope: ['subject'], categories: [] }],
       [
         'too many scopes',

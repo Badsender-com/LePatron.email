@@ -5,12 +5,15 @@
 
 // What every tool tells a client about itself (ADR 0012): an output schema,
 // since every answer is structured, and whether it only reads. A read-only tool
-// runs without a confirmation in the clients that honour the hint; the one tool
-// that writes (`submit_feedback`) says it destroys nothing, which ChatGPT checks.
+// runs without a confirmation in the clients that honour the hint. A reader
+// is offered one tool that writes (`submit_feedback`), which says it destroys
+// nothing, as ChatGPT checks; the tools a token that may draft is offered
+// say what they may do in the grammar below.
 // Written over whatever tools exist, so it holds as each ticket adds its own.
 // What the server tells an assistant speaks the glossary's words: a company,
 // the platform company, never a group nor the name of the platform's owner.
 
+const { isDeepStrictEqual } = require('util');
 const harness = require('../../helpers/mcp-harness');
 const f = require('../../helpers/mcp-fixtures');
 const grammar = require('../../../packages/server/mcp/mcp-tool-grammar.js');
@@ -147,6 +150,28 @@ describe('the grammar of every tool', () => {
   const each = (check) =>
     tools.map((tool) => ({ tool: tool.name, ...check(tool) }));
 
+  // Every parameter, down to the properties of a list of objects
+  // (`submit_feedback.references[].kind`), with where it sits.
+  const parametersOf = (where, schema) =>
+    Object.entries(schema.properties || {}).flatMap(([name, property]) => {
+      const path = `${where}.${name}`;
+      const nested = property.items?.properties
+        ? parametersOf(`${path}[]`, property.items)
+        : parametersOf(path, property);
+      return [[path, property], ...nested];
+    });
+  const parameters = () =>
+    tools.flatMap((tool) => parametersOf(tool.name, tool.inputSchema));
+
+  it('walks the properties of a list of objects', () => {
+    expect(parameters().map(([path]) => path)).toEqual(
+      expect.arrayContaining([
+        'submit_feedback.references[].kind',
+        'submit_feedback.references[].id',
+      ])
+    );
+  });
+
   // No dot, which the Claude and OpenAI APIs refuse, and short enough to stay
   // under 64 once a client prefixes it (mcp__lepatron__…).
   it('names every tool in snake_case, 40 characters at most', () => {
@@ -181,6 +206,33 @@ describe('the grammar of every tool', () => {
     });
   });
 
+  // As its preset declares it: said of a tool that writes only, and true
+  // for a setting alone, which the same call leaves the same.
+  it('says whether calling a tool that writes again changes anything', () => {
+    const presets = Object.values(grammar);
+    const idempotent = (value) =>
+      tools
+        .filter((tool) => tool.annotations.idempotentHint === value)
+        .map((tool) => tool.name)
+        .sort();
+
+    tools.forEach((tool) => {
+      expect({
+        tool: tool.name,
+        preset: presets.some((preset) =>
+          isDeepStrictEqual(preset, tool.annotations)
+        ),
+      }).toEqual({ tool: tool.name, preset: true });
+    });
+    expect(idempotent(true)).toEqual(['use_drafts']);
+    expect(idempotent(undefined)).toEqual(
+      tools
+        .filter((tool) => tool.annotations.readOnlyHint)
+        .map((tool) => tool.name)
+        .sort()
+    );
+  });
+
   // They rewrite the open draft.
   it('says the tools that rewrite a draft are destructive', () => {
     const destructive = tools
@@ -195,11 +247,9 @@ describe('the grammar of every tool', () => {
   });
 
   it('describes every parameter of every tool', () => {
-    const undescribed = tools.flatMap((tool) =>
-      Object.entries(tool.inputSchema.properties || {})
-        .filter(([, schema]) => !schema.description)
-        .map(([name]) => `${tool.name}.${name}`)
-    );
+    const undescribed = parameters()
+      .filter(([, schema]) => !schema.description)
+      .map(([path]) => path);
 
     expect(undescribed).toEqual([]);
   });
@@ -217,11 +267,7 @@ describe('the grammar of every tool', () => {
         unnamed.push(where);
       }
     };
-    tools.forEach((tool) =>
-      Object.entries(
-        tool.inputSchema.properties || {}
-      ).forEach(([name, schema]) => walk(`${tool.name}.${name}`, schema))
-    );
+    parameters().forEach(([path, schema]) => walk(path, schema));
 
     expect({ unions, unnamed }).toEqual({ unions: [], unnamed: [] });
   });
