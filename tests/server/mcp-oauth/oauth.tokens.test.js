@@ -62,6 +62,22 @@ describe('token and refresh', () => {
     expect(response.body.expires_in).toBeLessThanOrEqual(3600);
   });
 
+  it('keeps neither the code nor the tokens it issued as they are', async () => {
+    const grant = await codeFor();
+    const { body } = await exchange(grant);
+
+    const kept = JSON.stringify(
+      ['AuthorizationCode', 'AccessToken', 'RefreshToken'].map(
+        (model) => oauth.oauthStore(model).records
+      )
+    );
+
+    expect(kept).not.toContain(grant.code);
+    expect(kept).not.toContain(body.access_token);
+    expect(kept).not.toContain(body.refresh_token);
+    expect((await oauth.callMcp(app, body.access_token)).status).toBe(200);
+  });
+
   it('refuses a code with the wrong verifier', async () => {
     const { code } = await codeFor();
 

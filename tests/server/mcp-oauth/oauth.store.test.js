@@ -57,6 +57,28 @@ describe('the adapter of the authorization server', () => {
     expect(await adapter.find('an-access-token')).toEqual(accessToken());
   });
 
+  it.each(['AccessToken', 'RefreshToken', 'AuthorizationCode'])(
+    'keeps a %s under its digest, and finds it by its value',
+    async (model) => {
+      const adapter = new McpOAuthAdapter(model);
+      const payload = accessToken({ kind: model });
+
+      await adapter.upsert('an-access-token', payload, 3600);
+
+      expect(JSON.stringify(stored(model))).not.toContain('an-access-token');
+      expect(await adapter.find('an-access-token')).toEqual(payload);
+      expect(await adapter.find(stored(model)[0]._id)).toBeUndefined();
+    }
+  );
+
+  it('keeps the id of a grant as it is, for the tokens it issued to name it', async () => {
+    const adapter = new McpOAuthAdapter('Grant');
+
+    await adapter.upsert('grant-1', { jti: 'grant-1', kind: 'Grant' }, 60);
+
+    expect(stored('Grant')[0]._id).toBe('grant-1');
+  });
+
   it('answers nothing for a record it does not have', async () => {
     const adapter = new McpOAuthAdapter('AccessToken');
 
@@ -112,11 +134,15 @@ describe('the adapter of the authorization server', () => {
 
   it('marks a code consumed', async () => {
     const adapter = new McpOAuthAdapter('AuthorizationCode');
-    await adapter.upsert('a-code', accessToken({ kind: 'AuthorizationCode' }));
+    await adapter.upsert(
+      'a-code',
+      accessToken({ jti: 'a-code', kind: 'AuthorizationCode' })
+    );
 
     await adapter.consume('a-code');
 
     expect(await adapter.find('a-code')).toMatchObject({
+      jti: 'a-code',
       consumed: expect.any(Number),
     });
   });

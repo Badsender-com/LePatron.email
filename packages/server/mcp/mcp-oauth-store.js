@@ -1,5 +1,6 @@
 'use strict';
 
+const crypto = require('crypto');
 const mongoose = require('mongoose');
 const logger = require('../utils/logger.js');
 
@@ -16,12 +17,39 @@ const logger = require('../utils/logger.js');
  *   them, and indexed.
  * - `consumed`, when a code or a refresh token was used.
  * - `expiresAt`, when it expires: a TTL index removes it then.
+ *
+ * What a client presents as its credential, the access token, the refresh
+ * token and the authorization code, is kept under its digest, and its
+ * payload without it: the store alone gives none of them.
  */
 
 const COLLECTION_PREFIX = 'mcp_oauth_';
 
 // What a grant issues: revoked with it.
 const ISSUED_BY_GRANT = ['AccessToken', 'RefreshToken', 'AuthorizationCode'];
+// What a client presents as its credential: kept under its digest. The
+// others are no credential: a grant is used through the tokens it issued,
+// and a login or a pending consent through a cookie the provider signs.
+const HASHED = new Set(ISSUED_BY_GRANT);
+
+/**
+ * The SHA-256 digest of a value, in base64url.
+ *
+ * @param {string} value
+ * @returns {string}
+ */
+const digest = (value) =>
+  crypto.createHash('sha256').update(String(value)).digest('base64url');
+
+/**
+ * The `_id` a model's record is kept under: the digest of a credential
+ * (`HASHED`), any other id as it is.
+ *
+ * @param {string} model a model of `oidc-provider`
+ * @param {string} id
+ * @returns {string}
+ */
+const storedId = (model, id) => (HASHED.has(model) ? digest(id) : id);
 
 // The indexes of each collection, by database: marked once created, so a
 // failure is tried again at the next use.
@@ -69,4 +97,4 @@ async function collectionOf(model) {
   return collection;
 }
 
-module.exports = { collectionOf, ISSUED_BY_GRANT };
+module.exports = { collectionOf, storedId, digest, HASHED, ISSUED_BY_GRANT };
