@@ -132,6 +132,8 @@ function createApp() {
     cookieKeys: ['a-test-cookie-key'],
     adapter: (name) => new McpOAuthAdapter(name),
     fetch: fetchDocument,
+    // Every host of the tests is a public one.
+    lookup: async () => [{ address: '198.51.100.7', family: 4 }],
   });
   return app;
 }

@@ -6,7 +6,11 @@ const { McpClients } = require('../common/models.common.js');
 const logger = require('../utils/logger.js');
 const { attachAuthorizationServer } = require('./mcp-connections.js');
 const { SCOPES } = require('./mcp-identity.js');
-const { EXTRA_CLIENT_METADATA } = require('./mcp-client-metadata.js');
+const {
+  EXTRA_CLIENT_METADATA,
+  allowFetch,
+  providerFetch,
+} = require('./mcp-client-metadata.js');
 
 // Short-lived access tokens, rotating refresh tokens (ADR 0012).
 const TTL = {
@@ -68,7 +72,10 @@ async function keepRegisteredClient(provider, clientId, seconds = TTL.Grant) {
  * @param {Function} [options.adapter] the storage of grants, codes and
  *   tokens; in memory when not given (the tests)
  * @param {Object} [options.jwks] the signing keys; generated when not given
- * @param {Function} [options.fetch] what fetches a client's metadata document
+ * @param {Function} [options.fetch] what sends the provider's requests (a
+ *   client's metadata document); the global `fetch` when not given
+ * @param {Function} [options.lookup] what resolves a host's name, as
+ *   `dns.promises.lookup`
  * @returns {Provider}
  */
 function createAuthorizationServer({
@@ -78,11 +85,13 @@ function createAuthorizationServer({
   adapter,
   jwks,
   fetch,
+  lookup,
 }) {
   const provider = new Provider(issuer, {
     ...(adapter && { adapter }),
     ...(jwks && { jwks }),
-    ...(fetch && { fetch }),
+    // Every fetch of the provider: client documents, on public hosts only.
+    fetch: providerFetch({ fetch, lookup }),
     // The redirect URIs every client is kept to (mcp-client-metadata.js).
     extraClientMetadata: EXTRA_CLIENT_METADATA,
     scopes: SCOPES,
@@ -103,7 +112,7 @@ function createAuthorizationServer({
     ttl: TTL,
     features: {
       devInteractions: { enabled: false },
-      clientIdMetadataDocument: { enabled: true, ack: 'draft-02' },
+      clientIdMetadataDocument: { enabled: true, ack: 'draft-02', allowFetch },
       // No registration access token: clients do not manage their
       // registration, and each token would be kept forever.
       registration: { enabled: true, issueRegistrationAccessToken: false },
