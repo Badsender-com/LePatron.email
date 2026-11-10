@@ -119,9 +119,9 @@ const decodedAttribute = (value) =>
   value.replace(/&(amp|quot|#39|lt|gt);/g, (_entity, name) => ENTITIES[name]);
 const asIs = (value) => value;
 
-// Whether an image is hosted outside the instance, over the web.
+// Whether an image is hosted outside the instance, over https.
 function isExternal(url) {
-  if (!/^https?:\/\//i.test(url)) return false;
+  if (!/^https:\/\//i.test(url)) return false;
   const origin = siteOrigin();
   return url !== origin && !url.startsWith(`${origin}/`);
 }
@@ -140,8 +140,12 @@ const ATTRIBUTE = /(\s)([^\s"'<>/=]{1,64})(\s*=\s*)"([^"]*)"/g;
 // parenthesis, space nor angle bracket.
 const CSS_URL = /url\(\s*(&quot;|["']?)([^"'()<>\s]{1,2048})\1\s*\)/gi;
 
+// The relayed address of an image, or null to leave it as it is. An address
+// without a scheme (`//cdn…`) is read as https, as the email reads it in an
+// https page; an http one is left as it is, and shows as its alternative text.
 const relayed = (raw) => {
-  const url = raw.trim();
+  const written = raw.trim();
+  const url = written.startsWith('//') ? `https:${written}` : written;
   return url.length <= MAX_URL_LENGTH && isExternal(url)
     ? relayedUrlOf(url)
     : null;

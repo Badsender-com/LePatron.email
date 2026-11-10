@@ -51,6 +51,29 @@ describe('the rewriting of a preview', () => {
     expect(relayPreviewImagesCached(undefined, '<p>Hi</p>')).toBe('<p>Hi</p>');
   });
 
+  describe('the images it relays', () => {
+    it('relays an address without a scheme, read as https', () => {
+      const html = relayPreviewImages(
+        '<img src="//cdn.example.test/logo.png">'
+      );
+
+      expect(html).toBe(
+        `<img src="${relayedUrlOf('https://cdn.example.test/logo.png')}">`
+      );
+    });
+
+    it.each([
+      ['an <img>', '<img src="http://cdn.example.test/logo.png">'],
+      ['a background', '<td background="http://cdn.example.test/bg.png"></td>'],
+      [
+        'a style',
+        "<style>.a { background: url('http://cdn.example.test/bg.png'); }</style>",
+      ],
+    ])('leaves an http address of %s as it is', (_where, html) => {
+      expect(relayPreviewImages(html)).toBe(html);
+    });
+  });
+
   describe('what it writes is inert wherever it lands', () => {
     const QUOTED = "https://cdn.example.test/brand/l'o(g)o.png";
 
