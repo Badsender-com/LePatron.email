@@ -1737,6 +1737,8 @@ export default {
       title: 'Read tokens',
       description:
         'A copy (staging, development) follows the skills and expertises of this instance with a read token. A token reads nothing else.',
+      descriptionOnCopy:
+        'This instance is a copy: read tokens are created on production. Revoke here the ones left.',
       listLabel: 'Active read tokens',
       add: 'Create a token',
       addDescription:
@@ -1750,6 +1752,7 @@ export default {
       empty: 'No read token.',
       emptyHint:
         'Create one for each copy that follows the skills and expertises of this instance.',
+      emptyOnCopy: 'A copy is the source of no other instance.',
       footnote:
         'The token is shown at creation only. If it is lost, revoke it and create another one.',
       createdBadge: 'Token created',
@@ -1759,7 +1762,9 @@ export default {
       copied: 'Copied',
       copyToken: 'Copy the token',
       once: 'This token will not be shown again: copy it now into the configuration of the copy.',
-      copyFirst: 'Copy the token before closing.',
+      copyFirst: 'Copy the token, or tick the box, to finish.',
+      copyFailed: 'The copy failed: select the token and copy it by hand.',
+      savedConfirm: 'I have saved this token',
       saved: 'I saved the token',
       revoke: 'Revoke',
       revokeNamed: 'Revoke the "{name}" token',

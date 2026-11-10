@@ -9,10 +9,12 @@ import {
   followOutcomes,
   followStatusColor,
 } from '~/helpers/skills-follow.js';
+import { copyStateOf } from '~/helpers/skills-copy.js';
 
 // A copy following production (ADR 0019): shown only on a copy, configured
 // with production's address and a read token. A super admin follows it now
-// and reads how the last follow went. Emits `followed` so the lists reload.
+// and reads how the last follow went. Emits `followed` so the lists reload,
+// and `state` once it knows whether this instance is a copy.
 export default {
   name: 'BsAiFollowProduction',
   components: { LucideRefreshCw: RefreshCw },
@@ -49,9 +51,11 @@ export default {
         this.production = answer.production;
         this.last = answer.last;
         this.loadError = false;
+        this.$emit('state', copyStateOf(answer));
       } catch (error) {
         console.error(error);
         this.loadError = true;
+        this.$emit('state', copyStateOf(null));
       } finally {
         this.loading = false;
       }

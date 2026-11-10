@@ -1761,6 +1761,8 @@ export default {
       title: 'Jetons de lecture',
       description:
         'Une copie (recette, développement) suit les skills et expertises de cette instance avec un jeton de lecture. Un jeton ne lit rien d\'autre.',
+      descriptionOnCopy:
+        'Cette instance est une copie : les jetons de lecture se créent sur la production. Révoquez ici ceux qui restent.',
       listLabel: 'Jetons de lecture actifs',
       add: 'Créer un jeton',
       addDescription:
@@ -1774,6 +1776,7 @@ export default {
       empty: 'Aucun jeton de lecture.',
       emptyHint:
         'Créez-en un pour chaque copie qui suit les skills et expertises de cette instance.',
+      emptyOnCopy: 'Une copie ne sert de source à aucune autre instance.',
       footnote:
         'Le jeton n\'est montré qu\'à la création. S\'il est perdu, révoquez-le et créez-en un autre.',
       createdBadge: 'Jeton créé',
@@ -1783,7 +1786,10 @@ export default {
       copied: 'Copié',
       copyToken: 'Copier le jeton',
       once: 'Ce jeton ne sera plus affiché : copiez-le maintenant dans la configuration de la copie.',
-      copyFirst: 'Copiez le jeton avant de fermer.',
+      copyFirst: 'Copiez le jeton, ou cochez la case, pour terminer.',
+      copyFailed:
+        'La copie a échoué : sélectionnez le jeton et copiez-le à la main.',
+      savedConfirm: 'J\'ai enregistré ce jeton',
       saved: 'J\'ai enregistré le jeton',
       revoke: 'Révoquer',
       revokeNamed: 'Révoquer le jeton « {name} »',
