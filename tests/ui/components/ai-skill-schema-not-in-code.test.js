@@ -156,6 +156,7 @@ describe('a draft naming a schema the code lacks', () => {
         '~/helpers/mixins/mixin-schema-descriptors.js': schemaDescriptors,
         '~/components/ai-skill/bs-ai-skill-feature-version-fields.vue': {},
         '~/components/ai-skill/bs-ai-skill-task-version-fields.vue': {},
+        '~/components/ai-skill/bs-ai-skill-test-cases.vue': {},
         '~/helpers/ai-skill-categories.js': categories,
       },
     });
