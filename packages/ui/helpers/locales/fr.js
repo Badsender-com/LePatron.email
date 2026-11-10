@@ -1829,6 +1829,14 @@ export default {
         'Le template référence des champs absents du schéma d\'entrée « {schemaId} » : {fields}. Corrigez le template ou changez le schéma d\'entrée de la version.',
       SKILL_VERSION_CHANGED:
         'Ce brouillon a été modifié entre-temps, par exemple par un assistant. Rechargez-le pour voir la nouvelle version avant d\'enregistrer ou de publier.',
+      SKILLS_IMPORT_ARCHIVED:
+        '{id} est archivé ici : la version {version} n\'a pas été importée.',
+      SKILLS_IMPORT_DRAFT_OPEN:
+        'Un brouillon est ouvert sur {id} : publiez-le ou supprimez-le, puis importez de nouveau la version {version}.',
+      SKILLS_IMPORT_VERSION_NOT_AHEAD:
+        'La version {version} de {id} n\'est pas plus récente que celles d\'ici : elle n\'a pas été importée.',
+      SKILLS_IMPORT_CHANGED:
+        '{id} a été modifié pendant l\'import : importez de nouveau la version {version}.',
     },
     warnings: {
       TEMPLATE_UNKNOWN_FIELDS:

@@ -207,6 +207,13 @@ module.exports = {
   // A feature skill still meant for the platform company, invoked on behalf
   // of a user of another company (ADR 0013).
   SKILL_NOT_AVAILABLE_TO_COMPANY: 'SKILL_NOT_AVAILABLE_TO_COMPANY',
+  // Why an imported version cannot be written as a draft (ADR 0018), each
+  // with the `id` of the item and the `version` imported.
+  SKILLS_IMPORT_ARCHIVED: 'SKILLS_IMPORT_ARCHIVED',
+  SKILLS_IMPORT_DRAFT_OPEN: 'SKILLS_IMPORT_DRAFT_OPEN',
+  SKILLS_IMPORT_VERSION_NOT_AHEAD: 'SKILLS_IMPORT_VERSION_NOT_AHEAD',
+  // Another write came between the reading and the writing.
+  SKILLS_IMPORT_CHANGED: 'SKILLS_IMPORT_CHANGED',
   EXPERTISE_LIST_FILTER_INVALID: 'EXPERTISE_LIST_FILTER_INVALID',
   UNAUTHORIZED_INTEGRATION_PROVIDER: 'UNAUTHORIZED_INTEGRATION_PROVIDER',
   FORBIDDEN_INTEGRATION_ACCESS: 'FORBIDDEN_INTEGRATION_ACCESS',

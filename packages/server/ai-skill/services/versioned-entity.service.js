@@ -27,6 +27,7 @@
  */
 
 const createError = require('http-errors');
+const ERROR_CODES = require('../../constant/error-codes.js');
 const {
   SkillStatuses,
   MinorVersionDefaults,
@@ -204,22 +205,18 @@ function createVersionedEntityService({
     };
   }
 
-  /**
-   * New draft at a number given rather than the next one: an imported version
-   * keeps the number it has on the instance it comes from (ADR 0018). Only
-   * ahead of the active version, and never beside an open draft, which an
-   * import does not overwrite.
-   */
-  async function createVersionAt(id, { major, minor }, content, userId) {
-    const doc = await getDoc(id);
-    const wanted = { versionMajor: major, versionMinor: minor };
-    const open = openDraftOf(doc);
-    if (open) {
-      throw createError(
-        409,
-        `The draft ${versionLabel(open)} is open on this ${entityNoun}`
-      );
+  // Why a draft cannot be written at `wanted` on the document, as read: it is
+  // archived, a draft is open, which an import does not overwrite, or the
+  // number is not ahead of the active version, or exists already.
+  function assertDraftAt(doc, id, wanted) {
+    const params = { id, version: versionLabel(wanted) };
+    if (doc.status === SkillStatuses.ARCHIVED) {
+      throw createError(409, ERROR_CODES.SKILLS_IMPORT_ARCHIVED, params);
     }
+    if (openDraftOf(doc)) {
+      throw createError(409, ERROR_CODES.SKILLS_IMPORT_DRAFT_OPEN, params);
+    }
+    const { versionMajor: major, versionMinor: minor } = wanted;
     const active = findActiveVersion(doc);
     const ahead =
       !active ||
@@ -228,25 +225,42 @@ function createVersionedEntityService({
     if (!ahead || findVersion(doc, major, minor)) {
       throw createError(
         409,
-        `Version ${versionLabel(
-          wanted
-        )} is not ahead of this ${entityNoun}'s versions`
+        ERROR_CODES.SKILLS_IMPORT_VERSION_NOT_AHEAD,
+        params
       );
     }
-    const now = new Date();
-    doc.versions.push({
-      ...wanted,
-      status: 'DRAFT',
-      ...cloneVersionContent(content),
-      changelog: content.changelog || '',
-      releaseNotes: content.releaseNotes || '',
-      createdBy: userId,
-      createdAt: now,
-      updatedBy: userId,
-      updatedAt: now,
+  }
+
+  /**
+   * New draft at a number given rather than the next one: an imported version
+   * keeps the number it has on the instance it comes from (ADR 0018). Only
+   * ahead of the active version, and never beside an open draft, which an
+   * import does not overwrite. Written, as an assistant's draft is
+   * (versioned-draft.js), on the condition that the versions did not change
+   * since they were read: of two drafts started at once, one is written.
+   *
+   * @throws {HttpError} 404, or 409 with an ERROR_CODES `SKILLS_IMPORT_*`
+   */
+  async function createVersionAt(id, { major, minor }, content, userId) {
+    const wanted = { versionMajor: major, versionMinor: minor };
+    const doc = await getDoc(id);
+    assertDraftAt(doc, id, wanted);
+    const written = await model.findOneAndUpdate(
+      {
+        [idField]: id,
+        status: { $ne: SkillStatuses.ARCHIVED },
+        versions: { $size: (doc.versions || []).length },
+      },
+      { $push: { versions: importedDraft({ ...content, ...wanted }, userId) } },
+      { new: true }
+    );
+    if (written) return written;
+    // Another write came first: why it leaves no room, when it says.
+    assertDraftAt(await getDoc(id), id, wanted);
+    throw createError(409, ERROR_CODES.SKILLS_IMPORT_CHANGED, {
+      id,
+      version: versionLabel(wanted),
     });
-    await doc.save();
-    return doc;
   }
 
   /**

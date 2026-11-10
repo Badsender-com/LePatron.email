@@ -1804,6 +1804,14 @@ export default {
         'The template references fields absent from input schema "{schemaId}": {fields}. Fix the template or change the version input schema.',
       SKILL_VERSION_CHANGED:
         'This draft was changed meanwhile, by an assistant for instance. Reload it to see the new version before saving or publishing.',
+      SKILLS_IMPORT_ARCHIVED:
+        '{id} is archived here: version {version} was not imported.',
+      SKILLS_IMPORT_DRAFT_OPEN:
+        'A draft is open on {id}: publish or delete it, then import version {version} again.',
+      SKILLS_IMPORT_VERSION_NOT_AHEAD:
+        'Version {version} of {id} is not newer than the versions here: it was not imported.',
+      SKILLS_IMPORT_CHANGED:
+        '{id} changed during the import: import version {version} again.',
     },
     warnings: {
       TEMPLATE_UNKNOWN_FIELDS:
