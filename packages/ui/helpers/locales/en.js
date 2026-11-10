@@ -2024,8 +2024,6 @@ export default {
         '{id} does not exist on this copy: reload the list.',
       SKILLS_COPY_VERSION_NOT_FOUND:
         'Version {version} of {id} does not exist on this copy.',
-      SKILLS_COPY_NOT_FOLLOWED:
-        '{id} was written on this copy: no follow touches it, so there is nothing to keep.',
       SKILLS_COPY_ID_TAKEN:
         'Too many items already hold the copy\'s work on {id}: delete some before creating another.',
     },

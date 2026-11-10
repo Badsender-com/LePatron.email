@@ -2054,8 +2054,6 @@ export default {
         '{id} n\'existe pas sur cette copie : rechargez la liste.',
       SKILLS_COPY_VERSION_NOT_FOUND:
         'La version {version} de {id} n\'existe pas sur cette copie.',
-      SKILLS_COPY_NOT_FOLLOWED:
-        '{id} a été écrit sur cette copie : aucun suivi n\'y touche, il n\'y a rien à garder.',
       SKILLS_COPY_ID_TAKEN:
         'Trop d\'éléments portent déjà le travail de la copie de {id} : supprimez-en avant d\'en créer un autre.',
     },

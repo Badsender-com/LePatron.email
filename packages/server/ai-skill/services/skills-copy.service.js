@@ -76,21 +76,19 @@ async function setKept(kind, id, kept) {
 }
 
 /**
- * Keeps an item that follows production on the copy: the follow no longer
- * touches it, and says only whether production changed.
+ * Keeps an item on the copy: the follow no longer touches it, and says only
+ * whether production changed. Any item of the copy may be kept, one never
+ * followed yet included: an item imported before the copy followed
+ * production is taken over by the first follow that finds it there.
  *
  * @param {'skill'|'expertise'} kind
  * @param {string} id
  * @param {*} userId who decides it
  * @returns {Promise<Object>} the item
- * @throws {HttpError} 404, or 409 SKILLS_COPY_NOT_FOLLOWED for an item
- *   written on the copy, which no follow touches anyway
+ * @throws {HttpError} 404
  */
 async function keepOnCopy(kind, id, userId) {
-  const doc = await itemOf(kind, id);
-  if (!doc.followedAt) {
-    throw createError(409, ERROR_CODES.SKILLS_COPY_NOT_FOLLOWED, { id });
-  }
+  await itemOf(kind, id);
   return setKept(kind, id, {
     keptOnCopy: true,
     keptOnCopyAt: new Date(),

@@ -335,6 +335,59 @@ describe('a copy following production', () => {
       expect(report.moved).toHaveLength(1);
     });
 
+    // An item imported before the copy followed production: the first
+    // follow takes it over, unless a person kept it on the copy.
+    describe('an item imported before the copy followed production', () => {
+      const imported = (extra = {}) => ({
+        ...EMPTY_COPY,
+        expertises: [
+          subjectLinesWith(
+            [
+              version(1, 0, 'ACTIVE', '## Imported\n\nPublished by hand.', {
+                activatedAt: new Date(),
+              }),
+            ],
+            { major: 1, minor: 0 },
+            extra
+          ),
+        ],
+      });
+
+      it('has its version that differs from production moved out', async () => {
+        const report = await follow(imported());
+
+        expect(expertiseOf(SUBJECT_LINES).activeVersion).toEqual({
+          major: 2,
+          minor: 1,
+        });
+        expect(versionOf(expertiseOf(SUBJECT_LINES), 1, 0)).toBeUndefined();
+        expect(
+          versionOf(expertiseOf(COPY_OF_SUBJECT_LINES), 1, 0)
+        ).toMatchObject({
+          status: 'DRAFT',
+          body: '## Imported\n\nPublished by hand.',
+        });
+        expect(report.moved).toHaveLength(1);
+      });
+
+      it('is left as it is when kept on the copy', async () => {
+        const report = await follow(imported({ keptOnCopy: true }));
+
+        expect(expertiseOf(SUBJECT_LINES).activeVersion).toEqual({
+          major: 1,
+          minor: 0,
+        });
+        expect(expertiseOf(COPY_OF_SUBJECT_LINES)).toBeUndefined();
+        expect(report.kept).toContainEqual(
+          expect.objectContaining({
+            id: SUBJECT_LINES,
+            reason: 'kept_on_copy',
+            productionChanged: true,
+          })
+        );
+      });
+    });
+
     it('keeps a draft of the copy ahead of production when production brings none', async () => {
       const withoutDraft = answerWith(SUBJECT_LINES, (item) => {
         delete item.draft;

@@ -237,15 +237,37 @@ describe("a copy's follow of production", () => {
       });
     });
 
-    it('is not kept when it never came from production', async () => {
+    // An item imported before the copy followed production is taken over
+    // by the first follow: it may be kept before, and followed again.
+    it('is kept on the copy and followed again before any follow', async () => {
       store.seed({ ...f.SEED });
+      const app = makeApp(SUPER_ADMIN);
 
-      const res = await request(makeApp(SUPER_ADMIN)).post(
+      const kept = await request(app).post(
         `/api/ai-expertise/${SUBJECT_LINES}/keep-on-copy`
       );
+      expect(kept.status).toBe(200);
+      expect(expertiseOf(SUBJECT_LINES).keptOnCopy).toBe(true);
 
-      expect(res.status).toBe(409);
-      expect(res.body.message).toBe('SKILLS_COPY_NOT_FOLLOWED');
+      const attached = await request(app).delete(
+        `/api/ai-expertise/${SUBJECT_LINES}/keep-on-copy`
+      );
+      expect(attached.status).toBe(200);
+      expect(expertiseOf(SUBJECT_LINES).keptOnCopy).toBe(false);
+    });
+
+    it('is kept on the copy by its publication before any follow', async () => {
+      store.seed({ ...f.SEED });
+
+      const res = await request(makeApp(SUPER_ADMIN))
+        .post(`/api/ai-expertise/${SUBJECT_LINES}/versions/3.0/activate`)
+        .send({ changelog: 'c', releaseNotes: 'r', keepOnCopy: true });
+
+      expect(res.status).toBe(200);
+      expect(expertiseOf(SUBJECT_LINES)).toMatchObject({
+        keptOnCopy: true,
+        activeVersion: { major: 3, minor: 0 },
+      });
     });
 
     it('has a version duplicated into a new item of the copy', async () => {

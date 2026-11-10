@@ -264,10 +264,9 @@ module.exports = {
   SKILLS_FOLLOW_ITEM_FAILED: 'SKILLS_FOLLOW_ITEM_FAILED',
   // Keeping an item on the copy, following production again, or
   // duplicating a version (`id`, `version`): the item or version is not
-  // here, the item never came from production, or no free id is left.
+  // here, or no free id is left.
   SKILLS_COPY_ITEM_NOT_FOUND: 'SKILLS_COPY_ITEM_NOT_FOUND',
   SKILLS_COPY_VERSION_NOT_FOUND: 'SKILLS_COPY_VERSION_NOT_FOUND',
-  SKILLS_COPY_NOT_FOLLOWED: 'SKILLS_COPY_NOT_FOLLOWED',
   SKILLS_COPY_ID_TAKEN: 'SKILLS_COPY_ID_TAKEN',
   UNAUTHORIZED_INTEGRATION_PROVIDER: 'UNAUTHORIZED_INTEGRATION_PROVIDER',
   FORBIDDEN_INTEGRATION_ACCESS: 'FORBIDDEN_INTEGRATION_ACCESS',
