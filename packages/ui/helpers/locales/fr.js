@@ -1751,6 +1751,7 @@ export default {
         updated: '{count} élément mis à jour | {count} éléments mis à jour',
         moved:
           '{count} travail de la copie mis de côté | {count} travaux de la copie mis de côté',
+        removedDrafts: '{count} brouillon supprimé | {count} brouillons supprimés',
         removed: '{count} élément supprimé | {count} éléments supprimés',
         upToDate: '{count} élément déjà à jour | {count} éléments déjà à jour',
         kept:
@@ -1762,6 +1763,8 @@ export default {
       keptLabel: 'Gardés sur cette copie',
       productionChanged: 'la production a changé',
       removedLabel: 'Supprimés : la production ne les a plus',
+      removedDraft: 'brouillon {version} de « {id} » supprimé',
+      removedItem: '« {id} » supprimé',
       warningsLabel: 'À vérifier',
       warnings: {
         missing_expertises:

@@ -122,7 +122,9 @@ describe("a copy's follows of production", () => {
         to: '/ai-skills/redaction.copie',
       },
     ]);
-    expect(details.removed).toEqual([{ kind: 'expertise', id: 'old' }]);
+    expect(details.removed).toEqual([
+      { kind: 'expertise', id: 'old', version: null, key: 'expertise:old:' },
+    ]);
     expect(details.kept).toEqual([
       { kind: 'expertise', id: 'brand', to: '/ai-expertise/brand' },
     ]);
@@ -135,6 +137,34 @@ describe("a copy's follows of production", () => {
         to: '/ai-skills/qc.review',
       },
     ]);
+  });
+
+  it('counts a removed draft apart from a removed item, and keys each removal apart', () => {
+    const report = {
+      removed: [
+        { kind: 'skill', id: 'a', version: '3.0' },
+        { kind: 'skill', id: 'a', version: '2.1' },
+        { kind: 'skill', id: 'b' },
+      ],
+    };
+    expect(followOutcomes(report)).toEqual([
+      { outcome: 'removedDrafts', count: 2 },
+      { outcome: 'removed', count: 1 },
+    ]);
+    const keys = followDetails(report).removed.map(({ key }) => key);
+    expect(new Set(keys).size).toBe(3);
+  });
+
+  it('says a warning once, though its item stands in several lists', () => {
+    const warnings = [{ code: 'missing_expertises', expertiseIds: ['tone'] }];
+    const entry = { kind: 'skill', id: 'a', warnings };
+    expect(
+      followDetails({
+        updated: [entry],
+        moved: [{ ...entry, copyId: 'a.copie' }],
+        removed: [{ ...entry, version: '2.0' }],
+      }).warnings
+    ).toHaveLength(1);
   });
 
   it('names nothing when the last follow holds only counts', () => {
@@ -206,6 +236,8 @@ describe("a copy's follows of production", () => {
       'keptLabel',
       'productionChanged',
       'removedLabel',
+      'removedDraft',
+      'removedItem',
       'missing_expertises',
       'succeeded',
       'partial',

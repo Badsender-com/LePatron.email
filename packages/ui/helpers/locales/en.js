@@ -1726,6 +1726,7 @@ export default {
         updated: '{count} item updated | {count} items updated',
         moved:
           '{count} piece of the copy\'s work set aside | {count} pieces of the copy\'s work set aside',
+        removedDrafts: '{count} draft removed | {count} drafts removed',
         removed: '{count} item removed | {count} items removed',
         upToDate: '{count} item already up to date | {count} items already up to date',
         kept: '{count} item kept on this copy | {count} items kept on this copy',
@@ -1736,6 +1737,8 @@ export default {
       keptLabel: 'Kept on this copy',
       productionChanged: 'production changed',
       removedLabel: 'Removed: production no longer has them',
+      removedDraft: 'draft {version} of "{id}" removed',
+      removedItem: '"{id}" removed',
       warningsLabel: 'To check',
       warnings: {
         missing_expertises:

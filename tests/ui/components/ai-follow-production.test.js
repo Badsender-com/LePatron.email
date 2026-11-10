@@ -272,7 +272,83 @@ describe('the follow of production on a copy', () => {
     expect(texts(vm, '.bs-ai-follow__kept')).toEqual([
       'brand — la production a changé',
     ]);
-    expect(texts(vm, '.bs-ai-follow__removed')).toEqual(['old']);
+    expect(texts(vm, '.bs-ai-follow__removed')).toEqual(['« old » supprimé']);
+    expect(texts(vm, '.bs-ai-follow__warning')).toEqual([
+      '« qc.review » consomme des expertises absentes de cette copie : tone.',
+    ]);
+  });
+
+  // As the server writes it: one item with two drafts removed, a whole item
+  // removed, and an item whose warning stands in each list it is in.
+  const SHARED = {
+    kind: 'skill',
+    id: 'qc.review',
+    version: '2.0',
+    warnings: [{ code: 'missing_expertises', expertiseIds: ['tone'] }],
+  };
+  const REMOVALS = {
+    status: 'succeeded',
+    trigger: 'manual',
+    by: 'Alice',
+    at: '2026-11-10T08:00:00Z',
+    created: [],
+    updated: [SHARED, { kind: 'skill', id: 'redaction', version: '1.0' }],
+    upToDate: [],
+    kept: [],
+    moved: [{ ...SHARED, copyId: 'qc.review.copie' }],
+    removed: [
+      { kind: 'skill', id: 'redaction', version: '3.0' },
+      { kind: 'skill', id: 'redaction', version: '2.1' },
+      { ...SHARED, version: '2.1' },
+      { kind: 'expertise', id: 'old' },
+    ],
+    failed: [],
+  };
+
+  it.each([
+    [
+      'fr',
+      [
+        'brouillon 3.0 de « redaction » supprimé',
+        'brouillon 2.1 de « redaction » supprimé',
+        'brouillon 2.1 de « qc.review » supprimé',
+        '« old » supprimé',
+      ],
+      ['3 brouillons supprimés', '1 élément supprimé'],
+    ],
+    [
+      'en',
+      [
+        'draft 3.0 of "redaction" removed',
+        'draft 2.1 of "redaction" removed',
+        'draft 2.1 of "qc.review" removed',
+        '"old" removed',
+      ],
+      ['3 drafts removed', '1 item removed'],
+    ],
+  ])(
+    'tells in %s a removed draft from a removed item, and counts them apart',
+    async (locale, removed, counts) => {
+      jest.spyOn(console, 'error').mockImplementation(() => {});
+      const { vm } = mountFollow({
+        locale,
+        answer: { ...ANSWER, last: REMOVALS },
+      });
+      await settle(vm);
+
+      expect(texts(vm, '.bs-ai-follow__removed')).toEqual(removed);
+      expect([
+        text(vm.$el.querySelector('.bs-ai-follow__outcome--removedDrafts')),
+        text(vm.$el.querySelector('.bs-ai-follow__outcome--removed')),
+      ]).toEqual(counts);
+      // Vue says so of a key met twice in a list.
+      expect(console.error).not.toHaveBeenCalled();
+    }
+  );
+
+  it('says a warning once, though its item stands in several lists', async () => {
+    const { vm } = mountFollow({ answer: { ...ANSWER, last: REMOVALS } });
+    await settle(vm);
     expect(texts(vm, '.bs-ai-follow__warning')).toEqual([
       '« qc.review » consomme des expertises absentes de cette copie : tone.',
     ]);

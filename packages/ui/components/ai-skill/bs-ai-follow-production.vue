@@ -277,10 +277,14 @@ export default {
         <ul>
           <li
             v-for="item in details.removed"
-            :key="`${item.kind}:${item.id}`"
+            :key="item.key"
             class="bs-ai-follow__removed"
           >
-            <code>{{ item.id }}</code>
+            {{
+              item.version
+                ? $t('aiSkills.follow.removedDraft', item)
+                : $t('aiSkills.follow.removedItem', item)
+            }}
           </li>
         </ul>
       </div>
