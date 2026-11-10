@@ -3,48 +3,35 @@
 /**
  * How MongoDB reads a query, for the in-memory fake models: which records a
  * filter matches, in which order a sort puts them, what a projection keeps.
- * Where the fakes would answer something MongoDB would not, these throw.
+ * Where the fakes would answer something MongoDB
+ * would not, these throw.
  *
  * - **Filters**: equality (an array field matches one of its elements, or the
  *   same array), `$in`, `$nin`, `$ne`, `$exists` (a stored `null` exists),
  *   `$gt`, `$gte`, `$lt`, `$lte`, `$regex` (a string with `$options`, or a
- *   RegExp with its own flags), a bare RegExp, `$or`, `$and`, `$nor`. Any other
- *   operator, a dotted path or an embedded document throws.
- * - **Sort and projection**: objects or strings, as Mongoose takes them.
+ *   RegExp with its own flags), a bare RegExp, `$size` (an array of that
+ *   length), `$or`, `$and`, `$nor`, and `$expr` of the expressions below. A
+ *   dotted path reads an embedded document,
+ *   and each element of an array on its way. Any other operator, a positional
+ *   path (`versions.0`) or an embedded document as a value throws.
+ * - **Expressions** (`$expr`): a field path (`'$field'`, dotted or not), a
+ *   value, `$literal`, `$or`, `$and`, `$gte` (a missing value or null below
+ *   any other), `$ifNull`, and `$indexOfCP` (in code points; null of a
+ *   missing or null string, an error for anything else but strings). Any
+ *   other operator throws.
+ * - **Sort and projection**: objects or strings, as Mongoose takes them. A
+ *   projection keeps or drops dotted paths, and `$elemMatch` keeps the first
+ *   element of an array that matches.
+ * - **Aggregation**: in fake-mongo-aggregate.js, through these: its `$match`
+ *   does not cast a string to an id, and its `$project` refuses `$elemMatch`.
  */
 
-const isPlainObject = (value) =>
-  !!value &&
-  typeof value === 'object' &&
-  !Array.isArray(value) &&
-  !(value instanceof Date) &&
-  !(value instanceof RegExp) &&
-  !value._bsontype;
-
-// What a stored value compares as: a date by its time, an id by its hex.
-function comparable(value) {
-  if (value instanceof Date) return value.getTime();
-  if (value === undefined || value === null) return value;
-  if (typeof value === 'number') return value;
-  return String(value);
-}
-
-function equals(actual, expected) {
-  if (Array.isArray(expected)) {
-    return (
-      Array.isArray(actual) &&
-      actual.length === expected.length &&
-      actual.every((element, index) => equals(element, expected[index]))
-    );
-  }
-  if (Array.isArray(actual)) {
-    return actual.some((element) => equals(element, expected));
-  }
-  if (actual === undefined || actual === null) {
-    return expected === undefined || expected === null;
-  }
-  return comparable(actual) === comparable(expected);
-}
+const {
+  isPlainObject,
+  comparable,
+  equals,
+  equalityOf,
+} = require('./fake-mongo-equality.js');
 
 function regexOf(pattern, options = '') {
   if (pattern instanceof RegExp) {
@@ -66,25 +53,32 @@ const ORDER = {
   $lte: (a, b) => a <= b,
 };
 
-function matchesCondition(actual, condition) {
+function matchesCondition(actual, condition, how) {
+  const same = equalityOf(how);
   if (condition instanceof RegExp) return testsString(actual, condition);
-  if (!isPlainObject(condition)) return equals(actual, condition);
+  if (!isPlainObject(condition)) return same(actual, condition);
   return Object.entries(condition).every(([operator, operand]) => {
     switch (operator) {
       case '$in':
         return operand.some((value) =>
           value instanceof RegExp
             ? testsString(actual, value)
-            : equals(actual, value)
+            : same(actual, value)
         );
       case '$nin':
-        return !operand.some((value) => equals(actual, value));
+        return !operand.some((value) => same(actual, value));
       case '$ne':
-        return !equals(actual, operand);
+        return !same(actual, operand);
       case '$exists':
         return operand ? actual !== undefined : actual === undefined;
       case '$regex':
         return testsString(actual, regexOf(operand, condition.$options));
+      case '$elemMatch':
+        return (
+          Array.isArray(actual) && actual.some((item) => matches(item, operand))
+        );
+      case '$size':
+        return Array.isArray(actual) && actual.length === operand;
       case '$options':
         if (!('$regex' in condition)) {
           throw new Error('fake models: $options without $regex');
@@ -107,15 +101,88 @@ function matchesCondition(actual, condition) {
   });
 }
 
-function matches(record, filter = {}) {
+// What a dotted path reaches, as MongoDB walks it: into an embedded document,
+// and through an array into each of its elements.
+function valueAt(record, path) {
+  return path.split('.').reduce((value, key) => {
+    if (/^\d+$/.test(key)) {
+      throw new Error(
+        `fake models: the positional path ${path} is not supported`
+      );
+    }
+    if (Array.isArray(value)) {
+      const reached = value
+        .map((element) => (isPlainObject(element) ? element[key] : undefined))
+        .filter((element) => element !== undefined);
+      return reached.length ? reached.flat() : undefined;
+    }
+    return isPlainObject(value) ? value[key] : undefined;
+  }, record);
+}
+
+// The value of an aggregation expression for a record, as `$expr` reads it.
+function expressed(record, expression) {
+  if (typeof expression === 'string' && expression.startsWith('$')) {
+    return valueAt(record, expression.slice(1));
+  }
+  if (!isPlainObject(expression)) return expression;
+  const [[name, argument], ...others] = Object.entries(expression);
+  if (others.length || !EXPRESSIONS[name]) {
+    throw new Error(`fake models: the expression ${name} is not supported`);
+  }
+  return EXPRESSIONS[name](record, argument);
+}
+
+const isNullish = (value) => value === undefined || value === null;
+
+const EXPRESSIONS = {
+  $literal: (record, value) => value,
+  $or: (record, list) => list.some((e) => Boolean(expressed(record, e))),
+  $and: (record, list) => list.every((e) => Boolean(expressed(record, e))),
+  $gte: (record, [a, b]) => {
+    const [left, right] = [expressed(record, a), expressed(record, b)];
+    if (isNullish(left)) return isNullish(right);
+    return isNullish(right) || comparable(left) >= comparable(right);
+  },
+  $ifNull: (record, [value, replacement]) =>
+    expressed(record, value) ?? expressed(record, replacement),
+  $indexOfCP: (record, [string, substring]) => {
+    const [text, part] = [
+      expressed(record, string),
+      expressed(record, substring),
+    ];
+    if (isNullish(text)) return null;
+    if (typeof text !== 'string' || typeof part !== 'string') {
+      throw new Error('$indexOfCP requires strings');
+    }
+    const index = text.indexOf(part);
+    return index === -1 ? -1 : [...text.slice(0, index)].length;
+  },
+};
+
+/**
+ * @param {Object} record
+ * @param {Object} [filter]
+ * @param {Object} [options]
+ * @param {boolean} [options.castsIds=true] whether a string finds an id, as
+ *   through Mongoose; an aggregation's `$match` does not cast
+ * @returns {boolean}
+ */
+function matches(record, filter = {}, { castsIds = true } = {}) {
+  const part = (sub) => matches(record, sub, { castsIds });
   return Object.entries(filter).every(([key, condition]) => {
-    if (key === '$or') return condition.some((part) => matches(record, part));
-    if (key === '$and') return condition.every((part) => matches(record, part));
-    if (key === '$nor') return !condition.some((part) => matches(record, part));
-    if (key.startsWith('$') || key.includes('.')) {
+    if (key === '$or') return condition.some(part);
+    if (key === '$and') return condition.every(part);
+    if (key === '$nor') return !condition.some(part);
+    if (key === '$expr') return Boolean(expressed(record, condition));
+    if (key.startsWith('$')) {
       throw new Error(`fake models: ${key} is not supported`);
     }
-    return matchesCondition(record[key], condition);
+    return matchesCondition(
+      key.includes('.') ? valueAt(record, key) : record[key],
+      condition,
+      { key, castsIds }
+    );
   });
 }
 
@@ -158,28 +225,102 @@ function sortedBy(spec, list) {
   });
 }
 
-// `{ name: 1 }`, `{ id: '$_id' }`, `{ data: 0 }` or `'name -data'`. `_id` is
-// kept unless excluded.
-function projected(record, projection) {
+const entriesOf = (projection) =>
+  typeof projection === 'string'
+    ? projection
+        .split(/\s+/)
+        .filter(Boolean)
+        .map((key) => (key.startsWith('-') ? [key.slice(1), 0] : [key, 1]))
+    : Object.entries(projection);
+
+// A copy of a value without a dotted path, through the arrays on its way.
+function withoutPath(value, [key, ...rest]) {
+  if (Array.isArray(value)) {
+    return value.map((element) => withoutPath(element, [key, ...rest]));
+  }
+  if (!isPlainObject(value) || !(key in value)) return value;
+  const { [key]: dropped, ...others } = value;
+  return rest.length ? { ...value, [key]: withoutPath(dropped, rest) } : others;
+}
+
+// `{ versions: { status: true } }` for `'versions.status'`: what an inclusion
+// keeps, as a tree.
+function inclusionTree(keys) {
+  const tree = {};
+  keys.forEach((key) => {
+    const segments = key.split('.');
+    const last = segments.pop();
+    const node = segments.reduce((parent, segment) => {
+      if (parent[segment] === true) return {};
+      parent[segment] = parent[segment] || {};
+      return parent[segment];
+    }, tree);
+    node[last] = true;
+  });
+  return tree;
+}
+
+// An embedded document keeps the included paths, an array keeps its embedded
+// documents so reduced, and a scalar on the way is dropped.
+function picked(value, tree) {
+  if (Array.isArray(value)) {
+    return value.filter(isPlainObject).map((element) => picked(element, tree));
+  }
+  const copy = {};
+  Object.entries(tree).forEach(([key, node]) => {
+    const field = value[key];
+    if (field === undefined) return;
+    if (node === true) copy[key] = field;
+    else if (Array.isArray(field) || isPlainObject(field)) {
+      copy[key] = picked(field, node);
+    }
+  });
+  return copy;
+}
+
+function elemMatched(record, key, condition) {
+  if (key.includes('.')) {
+    throw new Error(`fake models: $elemMatch on ${key} is not supported`);
+  }
+  const list = record[key];
+  const element = Array.isArray(list)
+    ? list.find((candidate) => matches(candidate, condition))
+    : undefined;
+  return element === undefined ? undefined : [element];
+}
+
+// `{ name: 1 }`, `{ id: '$_id' }`, `{ data: 0 }`, `'name -data'`,
+// `{ 'versions.body': 1 }` or `{ versions: { $elemMatch: { status: 'ACTIVE' } } }`.
+// `_id` is kept unless excluded. An aggregation's `$project` refuses
+// `$elemMatch`, as MongoDB does.
+function projected(record, projection, { aggregation = false } = {}) {
   if (!projection) return { ...record };
-  const entries =
-    typeof projection === 'string'
-      ? projection
-          .split(/\s+/)
-          .filter(Boolean)
-          .map((key) => (key.startsWith('-') ? [key.slice(1), 0] : [key, 1]))
-      : Object.entries(projection);
+  const entries = entriesOf(projection);
   if (entries.every(([, value]) => value === 0)) {
-    const copy = { ...record };
-    entries.forEach(([key]) => delete copy[key]);
-    return copy;
+    return entries.reduce((copy, [key]) => withoutPath(copy, key.split('.')), {
+      ...record,
+    });
   }
   const excludesId = entries.some(([key, value]) => key === '_id' && !value);
-  const copy = excludesId ? {} : { _id: record._id };
+  const included = entries
+    .filter(([key, value]) => value === 1 && key !== '_id')
+    .map(([key]) => key);
+  const copy = {
+    ...(excludesId || record._id === undefined ? {} : { _id: record._id }),
+    ...picked(record, inclusionTree(included)),
+  };
   entries.forEach(([key, value]) => {
-    if (value === 1 && record[key] !== undefined) copy[key] = record[key];
     if (typeof value === 'string' && value.startsWith('$')) {
       copy[key] = record[value.slice(1)];
+    }
+    if (isPlainObject(value) && '$elemMatch' in value) {
+      if (aggregation) {
+        throw new Error(
+          'fake models: $elemMatch is not supported in an aggregation $project'
+        );
+      }
+      const element = elemMatched(record, key, value.$elemMatch);
+      if (element) copy[key] = element;
     }
   });
   return copy;

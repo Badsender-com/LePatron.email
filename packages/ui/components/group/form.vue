@@ -11,6 +11,7 @@ import BsTextField from '~/components/form/bs-text-field';
 import BsTextarea from '~/components/form/bs-textarea.vue';
 import BsSelect from '~/components/form/bs-select';
 import BsFormSection from '~/components/layout/bs-form-section.vue';
+import BsGroupMcpModuleOption from '~/components/group/mcp-module-option.vue';
 import { escapeHtml } from '~/helpers/escape-html';
 import {
   Palette,
@@ -32,6 +33,7 @@ export default {
     BsTextarea,
     BsSelect,
     BsFormSection,
+    BsGroupMcpModuleOption,
     LucidePalette: Palette,
     LucideLineChart: LineChart,
     LucideArrowRight: ArrowRight,
@@ -53,6 +55,8 @@ export default {
   data() {
     return {
       useSamlAuthentication: null,
+      // The MCP module's card counts the connections a closing would end.
+      checkingMcp: false,
     };
   },
   computed: {
@@ -124,9 +128,21 @@ export default {
       }
       return errors;
     },
-    onSubmit() {
+    async onSubmit() {
       this.$v.$touch();
-      if (this.$v.$invalid) return;
+      if (this.$v.$invalid || this.checkingMcp) return;
+      // Closing an open MCP module revokes the company's connections
+      // (ADR 0017): its card asks first, then lets the save go on (`save`).
+      const mcpModule = this.$refs.mcpModule;
+      if (!mcpModule) return this.save();
+      this.checkingMcp = true;
+      try {
+        await mcpModule.requestSave();
+      } finally {
+        this.checkingMcp = false;
+      }
+    },
+    save() {
       const currentGroup = this.group;
       if (!this.useSamlAuthentication) {
         currentGroup.entryPoint = '';
@@ -273,6 +289,14 @@ export default {
               class="module-card__switch"
             />
           </div>
+
+          <bs-group-mcp-module-option
+            ref="mcpModule"
+            :group="group"
+            :disabled="disabled"
+            @change="$set(localModel, 'enableMcpModule', $event)"
+            @save="save"
+          />
         </bs-form-section>
 
         <!-- ==================== SECTION 3: PERMISSIONS ==================== -->
@@ -359,8 +383,8 @@ export default {
           <v-btn
             elevation="0"
             color="accent"
-            :loading="loading"
-            :disabled="disabled || loading"
+            :loading="loading || checkingMcp"
+            :disabled="disabled || loading || checkingMcp"
             @click="onSubmit"
           >
             {{ $t('global.save') }}

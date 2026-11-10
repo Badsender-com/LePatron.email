@@ -168,6 +168,27 @@ const GroupSchema = Schema(
       type: Boolean,
       default: false,
     },
+    // The MCP module (ADR 0017): what is sold to the company, opened by a
+    // super admin like the modules above. MCP access works only while it is open.
+    enableMcpModule: {
+      type: Boolean,
+      default: false,
+    },
+    // MCP access (ADR 0012): the company's switch that lets its users connect
+    // an AI assistant, once the company has the MCP module. Off until a super
+    // admin or the company's tech admin turns it on; the update keeps it out of
+    // a company admin's reach.
+    enableMcp: {
+      type: Boolean,
+      default: false,
+    },
+    // Retex (ADR 0012): whether a session summary sent with a feedback may be
+    // kept for the platform company. Off unless the company admin allows it; each user is
+    // still asked for each feedback.
+    allowRetex: {
+      type: Boolean,
+      default: false,
+    },
     // Platform group: an internal Badsender-owned group that holds the AI
     // engine used by the super-admin AI Playground (R&D / benchmark), instead
     // of borrowing a client group's integration. Excluded from client-facing

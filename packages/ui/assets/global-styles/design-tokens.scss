@@ -47,13 +47,15 @@
   // Accent (LePatron azure) translucent tints for row hover/selection states.
   // We can't use rgba() with a CSS variable color in Vuetify 2 (no
   // color-mix() at the SCSS-compile target), so the alpha tints stay frozen
-  // here. White-label that wants to retheme the accent must override these
-  // three tokens too.
+  // here. White-label that wants to retheme the accent must override every
+  // --accent-tint-* token too.
   --accent-tint-hover: rgba(0, 172, 220, 0.05);
   --accent-tint-selected: rgba(0, 172, 220, 0.06);
   --accent-tint-selected-hover: rgba(0, 172, 220, 0.1);
   --accent-tint-resize: rgba(0, 172, 220, 0.3);
   --accent-tint-resize-active: rgba(0, 172, 220, 0.5);
+  // The ground of an icon tile while what it heads is on (BsFormSection card).
+  --accent-tint-tile: rgba(0, 172, 220, 0.12);
 
   // Surface backgrounds
   --surface: #ffffff;

@@ -26,6 +26,12 @@ export function aiSkillActivate(skillId, major, minor) {
     minor
   )}/activate`;
 }
+export function aiSkillPlatformOnlyExpertises(skillId, major, minor) {
+  return `/ai-skills/${skillId}/versions/${versionLabel(
+    major,
+    minor
+  )}/platform-only-expertises`;
+}
 export function aiSkillArchive(skillId) {
   return `/ai-skills/${skillId}/archive`;
 }
@@ -44,6 +50,9 @@ export function aiExpertise(expertiseId) {
 }
 export function aiExpertiseActivationImpact(expertiseId) {
   return `/ai-expertise/${expertiseId}/activation-impact`;
+}
+export function aiExpertiseOpenTaskSkills(expertiseId) {
+  return `/ai-expertise/${expertiseId}/open-task-skills`;
 }
 export function aiExpertiseFacets() {
   return '/ai-expertise/facets';
@@ -72,4 +81,64 @@ export function aiInvocations() {
 }
 export function aiInvocation(id) {
   return `/ai-invocations/${id}`;
+}
+
+// The skills export (ADR 0018).
+export function aiSkillsExport() {
+  return '/ai-skills/export';
+}
+export function aiSkillsImportPreview() {
+  return '/ai-skills/import/preview';
+}
+export function aiSkillsImport() {
+  return '/ai-skills/import';
+}
+
+// Production's read tokens, for the copies that follow it (ADR 0019).
+export function aiSkillsReadTokens() {
+  return '/ai-skills/read-tokens';
+}
+export function aiSkillsReadToken(tokenId) {
+  return `/ai-skills/read-tokens/${tokenId}`;
+}
+
+// A copy following production, on demand (ADR 0019).
+export function aiSkillsFollow() {
+  return '/ai-skills/follow';
+}
+
+// A copy keeps an item of production, or follows it again, and duplicates a
+// version of one in an item of its own (ADR 0019).
+export function aiSkillKeepOnCopy(skillId) {
+  return `/ai-skills/${skillId}/keep-on-copy`;
+}
+export function aiSkillDuplicateOnCopy(skillId) {
+  return `/ai-skills/${skillId}/duplicate-on-copy`;
+}
+export function aiExpertiseKeepOnCopy(expertiseId) {
+  return `/ai-expertise/${expertiseId}/keep-on-copy`;
+}
+export function aiExpertiseDuplicateOnCopy(expertiseId) {
+  return `/ai-expertise/${expertiseId}/duplicate-on-copy`;
+}
+
+// The publication guard (ADR 0019) on a version of a skill or an expertise:
+// `publication` (what it would replay), `guard`, `cancel-publication`, and
+// `activate`, which publishes with the guard that ran.
+export function aiVersionAction(kind, id, major, minor, action) {
+  const base = kind === 'skill' ? aiSkill(id) : aiExpertise(id);
+  return `${base}/versions/${versionLabel(major, minor)}/${action}`;
+}
+
+// Several drafts published at once (ADR 0019): `plan`, `guard`, `cancel`, or
+// the publication itself without an action.
+export function aiSkillsPublications(action) {
+  return action
+    ? `/ai-skills/publications/${action}`
+    : '/ai-skills/publications';
+}
+
+// A run of the publication guard, of one version or of a batch (ADR 0019).
+export function aiSkillsGuardRun(id) {
+  return `/ai-skills/publications/guards/${encodeURIComponent(id)}`;
 }

@@ -29,10 +29,18 @@ const FeedMappingSchema = require('../feed-mapping/feed-mapping.schema.js');
 const LePatronSkillSchema = require('../ai-skill/models/le-patron-skill.schema.js');
 const ExpertiseSchema = require('../ai-skill/models/expertise.schema.js');
 const AISkillInvocationSchema = require('../ai-skill/models/ai-skill-invocation.schema.js');
+const SkillsReadTokenSchema = require('../ai-skill/models/skills-read-token.schema.js');
+const SkillsFollowSchema = require('../ai-skill/models/skills-follow.schema.js');
+const PublicationGuardRunSchema = require('../ai-skill/models/publication-guard-run.schema.js');
 const AIPlaygroundScenarioSchema = require('../ai-playground/models/ai-playground-scenario.schema.js');
 const AIPlaygroundRunSchema = require('../ai-playground/models/ai-playground-run.schema.js');
 const TaxonomyItemSchema = require('../taxonomy/taxonomy.schema.js');
-const SecurityEventSchema = require('../two-factor/security-event.schema.js');
+const SecurityEventSchema = require('../security-event/security-event.schema.js');
+const McpFeedbackSchema = require('../mcp/mcp-feedback.schema.js');
+const McpCallLogSchema = require('../mcp/mcp-call-log.schema.js');
+const McpClientSchema = require('../mcp/mcp-client.schema.js');
+const McpConnectionSchema = require('../mcp/mcp-connection.schema.js');
+const McpRetexSchema = require('../mcp/mcp-retex.schema.js');
 
 /// ///
 // EXPORTS
@@ -92,6 +100,18 @@ const AISkillInvocations = mongoose.model(
   modelNames.AISkillInvocationModel,
   AISkillInvocationSchema
 );
+const SkillsReadTokens = mongoose.model(
+  modelNames.SkillsReadTokenModel,
+  SkillsReadTokenSchema
+);
+const SkillsFollows = mongoose.model(
+  modelNames.SkillsFollowModel,
+  SkillsFollowSchema
+);
+const PublicationGuardRuns = mongoose.model(
+  modelNames.PublicationGuardRunModel,
+  PublicationGuardRunSchema
+);
 const AIPlaygroundScenarios = mongoose.model(
   modelNames.AIPlaygroundScenarioModel,
   AIPlaygroundScenarioSchema
@@ -108,6 +128,20 @@ const SecurityEvents = mongoose.model(
   modelNames.SecurityEventModel,
   SecurityEventSchema
 );
+const McpFeedbacks = mongoose.model(
+  modelNames.McpFeedbackModel,
+  McpFeedbackSchema
+);
+const McpCallLogs = mongoose.model(
+  modelNames.McpCallLogModel,
+  McpCallLogSchema
+);
+const McpClients = mongoose.model(modelNames.McpClientModel, McpClientSchema);
+const McpConnections = mongoose.model(
+  modelNames.McpConnectionModel,
+  McpConnectionSchema
+);
+const McpRetexes = mongoose.model(modelNames.McpRetexModel, McpRetexSchema);
 
 module.exports = {
   mongoose,
@@ -135,8 +169,16 @@ module.exports = {
   LePatronSkills,
   Expertises,
   AISkillInvocations,
+  SkillsReadTokens,
+  SkillsFollows,
+  PublicationGuardRuns,
   AIPlaygroundScenarios,
   AIPlaygroundRuns,
   TaxonomyItems,
   SecurityEvents,
+  McpFeedbacks,
+  McpCallLogs,
+  McpClients,
+  McpConnections,
+  McpRetexes,
 };

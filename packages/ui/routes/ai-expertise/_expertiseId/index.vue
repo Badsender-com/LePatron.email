@@ -1,32 +1,73 @@
 <script>
-import { mapMutations } from 'vuex';
-import { skillErrorMessage } from '~/helpers/ai-skill-errors.js';
-import { PAGE, SHOW_SNACKBAR } from '~/store/page.js';
 import * as acls from '~/helpers/pages-acls.js';
 import * as api from '~/helpers/ai-skill-routes.js';
 import mixinPageTitle from '~/helpers/mixins/mixin-page-title.js';
+import mixinAiVersionedItem from '~/helpers/mixins/mixin-ai-versioned-item.js';
+import BsAiFeedbackTab from '~/components/ai-skill/bs-ai-feedback-tab.vue';
 import BsAiDetailHeader from '~/components/ai-skill/bs-ai-detail-header.vue';
 import BsAiExpertiseDetailsForm from '~/components/ai-skill/bs-ai-expertise-details-form.vue';
 import BsAiExpertiseVersionsPanel from '~/components/ai-skill/bs-ai-expertise-versions-panel.vue';
 import BsAiActivateModal from '~/components/ai-skill/bs-ai-activate-modal.vue';
+import BsAiPublicationGuardModal from '~/components/ai-skill/bs-ai-publication-guard-modal.vue';
+import { guardRequired } from '~/helpers/publication-guard.js';
 import BsAiArchiveModal from '~/components/ai-skill/bs-ai-archive-modal.vue';
-import { skillCategoryLabel } from '~/helpers/ai-skill-categories.js';
+import BsAiDraftChangedAlert from '~/components/ai-skill/bs-ai-draft-changed-alert.vue';
+import BsAiExpertiseCloseModal from '~/components/ai-skill/bs-ai-expertise-close-modal.vue';
+import {
+  skillCategoryLabel,
+  AUDIENCES,
+} from '~/helpers/ai-skill-categories.js';
+import BsAiCopyPanel from '~/components/ai-skill/bs-ai-copy-panel.vue';
+import mixinAiExpertiseDetails from '~/helpers/mixins/mixin-ai-expertise-details.js';
+import { fetchCopyState, copyActionsOf } from '~/helpers/skills-copy.js';
+import BsAiUsedByFeatures from '~/components/ai-skill/bs-ai-used-by-features.vue';
+import { usedByOf } from '~/helpers/used-by-feature.js';
 
 export default {
   name: 'PageAiExpertiseDetail',
   components: {
     BsAiDetailHeader,
+    BsAiUsedByFeatures,
+    BsAiFeedbackTab,
     BsAiExpertiseDetailsForm,
     BsAiExpertiseVersionsPanel,
     BsAiActivateModal,
+    BsAiPublicationGuardModal,
     BsAiArchiveModal,
+    BsAiDraftChangedAlert,
+    BsAiExpertiseCloseModal,
+    BsAiCopyPanel,
   },
-  mixins: [mixinPageTitle],
+  mixins: [
+    mixinPageTitle,
+    mixinAiVersionedItem({
+      key: 'exp',
+      idField: 'expertiseId',
+      routes: {
+        item: api.aiExpertise,
+        versionMinor: api.aiExpertiseVersionMinor,
+        versionMajor: api.aiExpertiseVersionMajor,
+        version: api.aiExpertiseVersion,
+        archive: api.aiExpertiseArchive,
+      },
+      archivedKey: 'aiSkills.expertise.archived',
+    }),
+    mixinAiExpertiseDetails,
+  ],
   meta: { acl: acls.ACL_PLATFORM_MANAGE, sidebarModule: 'settings' },
   async asyncData({ $axios, params, error }) {
     try {
-      const exp = await $axios.$get(api.aiExpertise(params.expertiseId));
-      return { exp };
+      const [exp, copyState] = await Promise.all([
+        $axios.$get(api.aiExpertise(params.expertiseId)),
+        fetchCopyState($axios, api.aiSkillsFollow),
+      ]);
+      return {
+        exp,
+        savedAudience: exp.audience,
+        usedBy: usedByOf(exp),
+        isCopy: copyState.isCopy,
+        followedOnce: copyState.followedOnce,
+      };
     } catch (err) {
       return error({ statusCode: 404, message: 'Expertise not found' });
     }
@@ -34,6 +75,15 @@ export default {
   data() {
     return {
       exp: null,
+      // The audience stored: keeping it to the platform company again is
+      // confirmed first.
+      savedAudience: null,
+      // On a copy, the page says where the expertise comes from (ADR 0019).
+      isCopy: false,
+      followedOnce: false,
+      // Kept apart from the expertise: only the detail and the details save
+      // carry it, and a change of scope or category can change it.
+      usedBy: [],
       // Landing tab / auto-expanded version come from the query — the create
       // flow redirects here with ?tab=versions&expand=1.0 (§4).
       tab: this.$route.query.tab === 'versions' ? 'versions' : 'details',
@@ -55,6 +105,16 @@ export default {
       if (!av || av.major == null) return null;
       return `${av.major}.${av.minor || 0}`;
     },
+    // On a copy, publishing an item not kept on it offers to keep it there,
+    // so no follow takes it over (ADR 0019).
+    offerKeepOnCopy() {
+      return copyActionsOf(this.exp, this.isCopy).keep;
+    },
+    // Still kept to the platform company, or not opened yet, as stored: the
+    // publication reminds it (ADR 0013).
+    platformOnly() {
+      return !!this.exp && this.savedAudience !== AUDIENCES.ALL;
+    },
     activeVersion() {
       const av = this.exp && this.exp.activeVersion;
       if (!av || av.major == null) return null;
@@ -67,81 +127,8 @@ export default {
     },
   },
   methods: {
-    ...mapMutations(PAGE, { showSnackbar: SHOW_SNACKBAR }),
     categoryLabel(value) {
       return skillCategoryLabel(this, value);
-    },
-    handleError(err) {
-      const msg = skillErrorMessage(this, err);
-      this.showSnackbar({ text: msg, color: 'error' });
-    },
-    async saveDetails() {
-      if (document.activeElement && document.activeElement.blur) {
-        document.activeElement.blur();
-      }
-      await this.$nextTick();
-      this.saving = true;
-      try {
-        this.exp = await this.$axios.$patch(
-          api.aiExpertise(this.exp.expertiseId),
-          {
-            title: this.exp.title,
-            description: this.exp.description,
-            category: this.exp.category,
-            scope: this.exp.scope,
-            isTransversal: this.exp.isTransversal,
-            appliesToEmailTypes: this.exp.appliesToEmailTypes,
-            appliesToLanguages: this.exp.appliesToLanguages,
-          }
-        );
-        this.showSnackbar({
-          text: this.$t('global.savedSuccessfully'),
-          color: 'success',
-        });
-      } catch (err) {
-        this.handleError(err);
-      } finally {
-        this.saving = false;
-      }
-    },
-    async createMinorVersion() {
-      this.saving = true;
-      try {
-        this.exp = await this.$axios.$post(
-          api.aiExpertiseVersionMinor(this.exp.expertiseId)
-        );
-        this.showSnackbar({
-          text: this.$t('aiSkills.version.versionCreated'),
-          color: 'success',
-        });
-      } catch (err) {
-        this.handleError(err);
-      } finally {
-        this.saving = false;
-      }
-    },
-    async createMajorVersion(source) {
-      this.saving = true;
-      try {
-        const body = source
-          ? {
-              sourceMajor: source.versionMajor,
-              sourceMinor: source.versionMinor,
-            }
-          : {};
-        this.exp = await this.$axios.$post(
-          api.aiExpertiseVersionMajor(this.exp.expertiseId),
-          body
-        );
-        this.showSnackbar({
-          text: this.$t('aiSkills.version.versionCreated'),
-          color: 'success',
-        });
-      } catch (err) {
-        this.handleError(err);
-      } finally {
-        this.saving = false;
-      }
     },
     // `silent` skips the snackbar: publishing an edited draft saves it first
     // (see askActivate) and only the activation is worth announcing.
@@ -161,6 +148,8 @@ export default {
             examplesBad: version.examplesBad,
             changelog: version.changelog,
             releaseNotes: version.releaseNotes,
+            // The draft as the page read it: one written since is refused.
+            updatedAt: this.readAtOf(version),
           }
         );
         if (!silent) {
@@ -173,23 +162,6 @@ export default {
       } catch (err) {
         this.handleError(err);
         return false;
-      } finally {
-        this.saving = false;
-      }
-    },
-    async deleteVersion(version) {
-      if (!confirm(this.$t('aiSkills.version.deleteDraftConfirm'))) return;
-      this.saving = true;
-      try {
-        this.exp = await this.$axios.$delete(
-          api.aiExpertiseVersion(
-            this.exp.expertiseId,
-            version.versionMajor,
-            version.versionMinor
-          )
-        );
-      } catch (err) {
-        this.handleError(err);
       } finally {
         this.saving = false;
       }
@@ -209,55 +181,67 @@ export default {
       // must show either way. Informed consent: surface which features will
       // load this expertise. Changelog/notes required for major only.
       this.activationImpact = [];
+      this.saving = true;
       try {
         const res = await this.$axios.$get(
           api.aiExpertiseActivationImpact(this.exp.expertiseId)
         );
         this.activationImpact = res.matches || [];
       } catch (err) {
-        this.activationImpact = [];
+        this.tellWarningUnchecked();
+      } finally {
+        this.saving = false;
       }
       // Pre-fill changelog / release notes from the draft, shared modal.
       this.$refs.activateModal.open(version);
     },
+    // Published, and opened to all when the modal says so, in one request.
+    // A version a feature uses goes through its guard first (ADR 0019), with
+    // the same payload.
     async activateVersion(payload) {
       this.saving = true;
+      // The update date of the draft the page read goes with the
+      // publication, through the guard too (ADR 0014).
+      const sent = {
+        ...payload,
+        updatedAt: this.readAtOf(this.activatingVersion),
+      };
       try {
-        this.exp = await this.$axios.$post(
+        const { versionMajor, versionMinor } = this.activatingVersion;
+        const exp = await this.$axios.$post(
           api.aiExpertiseActivate(
             this.exp.expertiseId,
-            this.activatingVersion.versionMajor,
-            this.activatingVersion.versionMinor
+            versionMajor,
+            versionMinor
           ),
-          payload
+          sent
         );
-        if (this.$refs.activateModal) this.$refs.activateModal.close();
-        this.showSnackbar({
-          text: this.$t('aiSkills.version.activated'),
-          color: 'success',
-        });
+        this.onGuardDone(exp, true);
       } catch (err) {
-        this.handleError(err);
+        const plan = guardRequired(err);
+        if (!plan) return this.handleError(err);
+        this.$refs.activateModal.close();
+        this.$refs.guardModal.open({
+          version: this.activatingVersion,
+          payload: sent,
+          plan,
+        });
       } finally {
         this.saving = false;
       }
     },
-    async archive() {
-      this.saving = true;
-      try {
-        this.exp = await this.$axios.$post(
-          api.aiExpertiseArchive(this.exp.expertiseId)
-        );
-        this.$refs.archiveModal.close();
-        this.showSnackbar({
-          text: this.$t('aiSkills.expertise.archived'),
-          color: 'success',
-        });
-      } catch (err) {
-        this.handleError(err);
-      } finally {
-        this.saving = false;
+    onGuardDone(doc, published) {
+      this.exp = doc;
+      if (published) {
+        this.savedAudience = doc.audience;
+        if (this.$refs.activateModal) this.$refs.activateModal.close();
       }
+      this.showSnackbar({
+        text: published
+          ? this.$t('aiSkills.version.activated')
+          : this.$t('aiSkills.publicationGuard.cancelled'),
+        color: published ? 'success' : 'info',
+      });
     },
   },
 };
@@ -269,7 +253,14 @@ export default {
       :title="exp.title"
       :status="exp.status"
       back-to="/ai-skills?tab=expertise"
+      :used-by-feature="usedBy.length > 0"
       @archive="$refs.archiveModal.open()"
+    />
+
+    <bs-ai-draft-changed-alert
+      v-if="draftChanged"
+      :loading="saving"
+      @reload="reloadItem"
     />
 
     <p class="text-caption text--secondary detail-meta">
@@ -283,6 +274,15 @@ export default {
         $t('aiSkills.skill.noActiveVersion')
       }}</span>
     </p>
+    <bs-ai-used-by-features :used-by="usedBy" />
+
+    <bs-ai-copy-panel
+      kind="expertise"
+      :item="exp"
+      :is-copy="isCopy"
+      :followed-once="followedOnce"
+      @changed="reloadItem"
+    />
 
     <v-tabs v-model="tab" class="detail-tabs">
       <v-tab href="#details">
@@ -293,6 +293,9 @@ export default {
       </v-tab>
       <v-tab href="#sections">
         {{ $t('aiSkills.expertise.sectionsTab') }}
+      </v-tab>
+      <v-tab href="#feedback">
+        {{ $t('aiSkills.feedback.tab') }}
       </v-tab>
     </v-tabs>
     <v-divider />
@@ -343,6 +346,13 @@ export default {
             </p>
           </v-card>
         </v-tab-item>
+        <v-tab-item value="feedback">
+          <bs-ai-feedback-tab
+            v-if="tab === 'feedback'"
+            kind="expertise"
+            :reference-id="exp.expertiseId"
+          />
+        </v-tab-item>
       </v-tabs-items>
     </v-container>
 
@@ -352,15 +362,27 @@ export default {
       :show-impact="true"
       :impact="activationImpact"
       :is-major="!!activatingVersion && activatingVersion.versionMinor === 0"
+      :platform-only="platformOnly"
+      :offer-keep-on-copy="offerKeepOnCopy"
+      :item-followed="!!exp.followedAt"
       @confirm="activateVersion"
+    />
+    <bs-ai-publication-guard-modal
+      ref="guardModal"
+      kind="expertise"
+      :entity-id="exp.expertiseId || ''"
+      @published="onGuardDone($event, true)"
+      @cancelled="onGuardDone($event, false)"
     />
     <bs-ai-archive-modal
       ref="archiveModal"
       :title="$t('aiSkills.expertise.archiveTitle')"
       :body="$t('aiSkills.expertise.archiveBody')"
       :loading="saving"
+      :used-by="usedBy"
       @confirm="archive"
     />
+    <bs-ai-expertise-close-modal ref="closeModal" @confirm="patchDetails()" />
   </div>
 </template>
 
@@ -373,6 +395,6 @@ export default {
   padding: 0 1.5rem;
 }
 .section-row {
-  border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+  border-bottom: 1px solid var(--gray-100);
 }
 </style>

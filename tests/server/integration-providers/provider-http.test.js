@@ -170,6 +170,37 @@ describe('provider-http', () => {
       expect(mockFetch).toHaveBeenCalledTimes(1);
     });
 
+    // A relayed image (ADR 0022) stays on https at every hop.
+    it('refuses a hop to plain http when asked for https only', async () => {
+      const mockFetch = jest
+        .fn()
+        .mockResolvedValueOnce(redirect('http://1.1.1.1/logo.png'));
+      const { guardedFetch } = loadWithRealGuard(mockFetch);
+
+      await expect(
+        guardedFetch('https://8.8.8.8/logo.png', {
+          maxRedirects: 3,
+          httpsOnly: true,
+        })
+      ).rejects.toMatchObject({ name: 'ProviderError' });
+      expect(mockFetch).toHaveBeenCalledTimes(1);
+    });
+
+    it('refuses a hop its caller does not allow', async () => {
+      const mockFetch = jest
+        .fn()
+        .mockResolvedValueOnce(redirect('https://1.1.1.1/logo.png'));
+      const { guardedFetch } = loadWithRealGuard(mockFetch);
+
+      await expect(
+        guardedFetch('https://8.8.8.8/logo.png', {
+          maxRedirects: 3,
+          allowsHop: (hop) => new URL(hop).hostname !== '1.1.1.1',
+        })
+      ).rejects.toMatchObject({ name: 'ProviderError' });
+      expect(mockFetch).toHaveBeenCalledTimes(1);
+    });
+
     // One budget for the whole chain, not one per hop.
     it('shares the timeout across hops', async () => {
       const mockFetch = jest.fn().mockImplementation(async () => {

@@ -108,11 +108,13 @@ function discardBody(response) {
   }
 }
 
-async function fetchOnce(url, options, label) {
+async function fetchOnce(url, options, label, httpsOnly) {
   try {
     // Still needed alongside guardedLookup: a literal IP host never goes
     // through a DNS lookup.
-    await assertOutboundHostAllowed(url);
+    await (httpsOnly
+      ? assertOutboundHostAllowed(url, { httpsOnly })
+      : assertOutboundHostAllowed(url));
     return await fetch(url, {
       ...options,
       agent: agentFor,
@@ -133,6 +135,11 @@ async function fetchOnce(url, options, label) {
  * @param {number} [options.maxBytes] ceiling on the body size
  * @param {AbortSignal} [options.signal] caller-owned signal, honoured as well
  * @param {string} [options.label='provider'] names the call in errors
+ * @param {boolean} [options.httpsOnly=false] refuse any hop that is not
+ *   https (a relayed image, ADR 0022)
+ * @param {Function} [options.allowsHop] whether the caller allows a hop, its
+ *   address given, on top of the guard's own checks (a relayed image never
+ *   reaches the instance itself, ADR 0022)
  * @param {number} [options.maxRedirects=0] redirects to follow, each hop
  *   re-checked. Only for a plain GET carrying no header at all — a public
  *   RSS feed moving to https. Anything with a key refuses them: see above.
@@ -150,6 +157,8 @@ async function guardedFetch(
     signal,
     label = 'provider',
     maxRedirects = 0,
+    httpsOnly = false,
+    allowsHop = () => true,
   } = {}
 ) {
   const carriesSomething =
@@ -168,10 +177,14 @@ async function guardedFetch(
   let currentUrl = url;
   for (let hop = 0; ; hop += 1) {
     const timeout = deadline ? Math.max(1, deadline - Date.now()) : 0;
+    if (!allowsHop(currentUrl)) {
+      throw new ProviderError(`${label}: host refused`, CODES.CONFIG_ERROR);
+    }
     const response = await fetchOnce(
       currentUrl,
       { ...options, timeout },
-      label
+      label,
+      httpsOnly
     );
     if (!isRedirect(response)) return response;
 

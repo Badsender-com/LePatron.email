@@ -63,7 +63,55 @@ function assertDraft(version) {
   }
 }
 
+/**
+ * -1, 0 or 1 as version `a` stands to version `b`, both numbered as stored
+ * (`versionMajor`, `versionMinor`).
+ *
+ * @returns {-1|0|1}
+ */
+function compareVersions(a, b) {
+  if (a.versionMajor !== b.versionMajor) {
+    return a.versionMajor > b.versionMajor ? 1 : -1;
+  }
+  if (a.versionMinor === b.versionMinor) return 0;
+  return a.versionMinor > b.versionMinor ? 1 : -1;
+}
+
+const isAfter = (a, b) => compareVersions(a, b) > 0;
+
+/**
+ * The draft being written: the latest DRAFT version, provided it is newer
+ * than the active one. A draft left behind by a later publication is not
+ * open any more: publishing archives only the previous active version.
+ *
+ * @param {Object} doc a skill or an expertise
+ * @returns {Object|null} the version
+ */
+function openDraftOf(doc) {
+  const active = findActiveVersion(doc);
+  return (doc.versions || [])
+    .filter((v) => v.status === 'DRAFT' && (!active || isAfter(v, active)))
+    .reduce((latest, v) => (!latest || isAfter(v, latest) ? v : latest), null);
+}
+
+/**
+ * A version's new update date: now, and always later than the one it had, so
+ * that a write conditioned on the date read (versioned-draft.js) never
+ * mistakes a version written since for the one read, even within the same
+ * millisecond.
+ *
+ * @param {Date} [previous]
+ * @param {Date|number} [now] the time it is, for a caller that reads it once
+ * @returns {Date}
+ */
+function laterThan(previous, now = Date.now()) {
+  const before = previous ? new Date(previous).getTime() : 0;
+  return new Date(Math.max(new Date(now).getTime(), before + 1));
+}
+
 module.exports = {
+  compareVersions,
+  laterThan,
   parseVersionParam,
   versionLabel,
   findVersion,
@@ -71,4 +119,5 @@ module.exports = {
   maxMajor,
   maxMinorFor,
   assertDraft,
+  openDraftOf,
 };

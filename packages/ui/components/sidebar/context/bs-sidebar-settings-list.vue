@@ -187,6 +187,11 @@ export default {
             label: this.$t('aiFeatures.title'),
             icon: 'mdi-robot-outline',
             route: `${this.settingsBasePath}/ai-features`,
+            // The MCP clients are reached from its MCP access section.
+            activePatterns: [
+              `${this.settingsBasePath}/ai-features`,
+              `${this.settingsBasePath}/mcp-clients`,
+            ],
           }
         );
       }

@@ -1,8 +1,7 @@
 <script>
-import { mapGetters, mapMutations } from 'vuex';
+import { mapGetters } from 'vuex';
 
-import { groupsItem } from '~/helpers/api-routes.js';
-import { PAGE, SHOW_SNACKBAR } from '~/store/page.js';
+import mixinGroupSwitch from '~/helpers/mixins/mixin-group-switch.js';
 import { CAN, USER } from '~/store/user';
 import { CAPABILITIES } from '../../../shared/access/roles.js';
 
@@ -11,12 +10,12 @@ import { CAPABILITIES } from '../../../shared/access/roles.js';
 // technical setting: a company admin reads it, a tech admin switches it.
 export default {
   name: 'BsGroupTwoFactorOption',
-  props: {
-    group: { type: Object, required: true },
-  },
-  data() {
-    return { loading: false };
-  },
+  mixins: [
+    mixinGroupSwitch({
+      field: 'requireTwoFactor',
+      updatedKey: 'twoFactor.group.updated',
+    }),
+  ],
   computed: {
     ...mapGetters(USER, { can: CAN }),
     canSwitch() {
@@ -27,30 +26,6 @@ export default {
     isSaml() {
       const { entryPoint, issuer, idpCert } = this.group;
       return Boolean(entryPoint && issuer && idpCert);
-    },
-  },
-  methods: {
-    ...mapMutations(PAGE, { showSnackbar: SHOW_SNACKBAR }),
-    async save(value) {
-      this.loading = true;
-      try {
-        const group = await this.$axios.$put(
-          groupsItem({ groupId: this.group.id }),
-          { requireTwoFactor: Boolean(value) }
-        );
-        this.$emit('update', group);
-        this.showSnackbar({
-          text: this.$t('twoFactor.group.updated'),
-          color: 'success',
-        });
-      } catch (error) {
-        this.showSnackbar({
-          text: this.$t('global.errors.errorOccured'),
-          color: 'error',
-        });
-      } finally {
-        this.loading = false;
-      }
     },
   },
 };
@@ -70,7 +45,7 @@ export default {
       </p>
       <v-switch
         v-if="canSwitch"
-        :input-value="group.requireTwoFactor === true"
+        :input-value="switchValue"
         :label="$t('twoFactor.group.switch')"
         :loading="loading"
         :disabled="loading"

@@ -1,0 +1,189 @@
+'use strict';
+
+const { z } = require('zod');
+const { findMailingsByWords } = require('../mailing/mailing-search.service.js');
+const { siteOrigin } = require('../utils/site-origin.js');
+const { versionLabel } = require('../ai-skill/services/version-helpers.js');
+const { containingRegExp } = require('../utils/text-search.js');
+const {
+  withIdentity,
+  success,
+  failure,
+  tooLongSearch,
+} = require('./mcp-identity.js');
+const { mailingOf, asPlainText } = require('./mcp-mailing-read.js');
+const expertises = require('./mcp-expertises.js');
+const { MAILING_KIND } = require('./mcp-mailings.js');
+const { READ_ONLY } = require('./mcp-tool-grammar.js');
+
+// `search` and `fetch` in the shape ChatGPT expects for deep research and
+// company knowledge (ADR 0012): a result is an id, a title and a URL, and
+// `fetch` reads one back. Over the mailings the user may read, by what
+// describes them, and the expertises served, by their title and sections.
+
+// Enough for an assistant to pick from; it narrows its words otherwise.
+const MAX_MAILINGS = 20;
+// What an assistant may send: bounded, like every input of this server.
+const MAX_ID_LENGTH = 200;
+
+// A few words, as a person types them; the search tries each one in every
+// field it covers.
+const MAX_QUERY_LENGTH = 200;
+const MAX_WORDS = 10;
+
+// The kinds of result, the first part of their id, are declared with what
+// reads them: get_mailing and submit_feedback read these ids too.
+const { EXPERTISE_KIND } = expertises;
+
+const editorUrlOf = (mailingId) => `${siteOrigin()}/editor/${mailingId}`;
+
+const queryWords = (query) =>
+  String(query).split(/\s+/).filter(Boolean).slice(0, MAX_WORDS);
+
+// What an expertise is searched by: its title, its description and the
+// headings of its sections.
+function describes({ doc, version }) {
+  const headings = String(version.body || '')
+    .split('\n')
+    .filter((line) => /^#+\s/.test(line))
+    .join(' ');
+  return `${doc.title} ${doc.description || ''} ${headings}`;
+}
+
+async function search({ user, group, drafts }, { query }) {
+  const words = queryWords(query);
+  if (words.length === 0) return success({ results: [] });
+  let found;
+  try {
+    found = await Promise.all([
+      findMailingsByWords(user, words, MAX_MAILINGS),
+      expertises.searchableExpertises(group, drafts),
+    ]);
+  } catch (error) {
+    return tooLongSearch(error);
+  }
+  const [mailings, served] = found;
+  const patterns = words.map(containingRegExp);
+  const results = [
+    ...mailings.map((mailing) => ({
+      id: `${MAILING_KIND}:${mailing._id}`,
+      title: mailing.name,
+      url: editorUrlOf(mailing._id),
+    })),
+    ...served
+      .filter((expertise) =>
+        patterns.every((pattern) => pattern.test(describes(expertise)))
+      )
+      .map(({ doc }) => ({
+        id: `${EXPERTISE_KIND}:${doc.expertiseId}`,
+        title: doc.title,
+        url: expertises.uriOf(doc.expertiseId),
+      })),
+  ];
+  return success({ results });
+}
+
+// A search result read back as a document, or null when the user may not
+// read it.
+async function documentOf(id, identity) {
+  const [kind, key] = String(id).split(/:(.*)/s);
+  if (kind === MAILING_KIND && key) {
+    const mailing = await mailingOf(key, identity);
+    return (
+      mailing && {
+        id,
+        title: mailing.name,
+        text: asPlainText(mailing),
+        url: editorUrlOf(mailing.id),
+        metadata: {
+          status: mailing.status,
+          subject: mailing.subject,
+          tags: mailing.tags,
+          workspace: mailing.workspace.name,
+          updatedAt: mailing.updatedAt,
+        },
+      }
+    );
+  }
+  if (kind === EXPERTISE_KIND && key) {
+    const found = await expertises.readableExpertise(
+      key,
+      identity.group,
+      identity.drafts
+    );
+    return (
+      found && {
+        id,
+        title: found.doc.title,
+        text: expertises.asMarkdown(found),
+        url: expertises.uriOf(found.doc.expertiseId),
+        metadata: {
+          version: versionLabel(found.version),
+          ...(found.draft && { draft: true }),
+        },
+      }
+    );
+  }
+  return null;
+}
+
+async function fetchDocument(identity, { id }) {
+  const document = await documentOf(id, identity);
+  if (!document) {
+    return failure(
+      'Not found: no such document, or this user may not read it.'
+    );
+  }
+  return success(document);
+}
+
+const RESULT = z.object({ id: z.string(), title: z.string(), url: z.string() });
+const SEARCH_INPUT = z.object({
+  query: z
+    .string()
+    .max(MAX_QUERY_LENGTH)
+    .describe(
+      `A few words, as a person types them; only the first ${MAX_WORDS} are used. French words for the expertises.`
+    ),
+});
+const SEARCH_OUTPUT = z.object({ results: z.array(RESULT) });
+const FETCH_INPUT = z.object({
+  id: z
+    .string()
+    .max(MAX_ID_LENGTH)
+    .describe(
+      'The id of a search result, as search gave it (mailing:… or expertise:…).'
+    ),
+});
+const FETCH_OUTPUT = RESULT.extend({
+  text: z.string(),
+  metadata: z.record(z.string(), z.unknown()),
+});
+
+function registerSearchAndFetch(server) {
+  server.registerTool(
+    'search',
+    {
+      title: 'Search LePatron',
+      description: `Searches the mailings the user may read, by words of their name, subject, tags or email type (not their content), and the expertises, by words of their title or section headings. Every word must match, whatever its case and accents; a word may be a part of a longer one. The expertises are written in French: search them with French words. At most ${MAX_MAILINGS} mailings are returned, the most recently updated first: narrow the words to find an older one. Read a result with fetch.`,
+      inputSchema: SEARCH_INPUT,
+      outputSchema: SEARCH_OUTPUT,
+      annotations: READ_ONLY,
+    },
+    withIdentity(search)
+  );
+  server.registerTool(
+    'fetch',
+    {
+      title: 'Read a search result',
+      description:
+        'Reads a result of search by its id: a mailing as text (its facts, then its content), an expertise as Markdown.',
+      inputSchema: FETCH_INPUT,
+      outputSchema: FETCH_OUTPUT,
+      annotations: READ_ONLY,
+    },
+    withIdentity(fetchDocument)
+  );
+}
+
+module.exports = { registerSearchAndFetch };

@@ -23,6 +23,9 @@ jest.mock('../../../packages/server/account/selected-group.js', () => ({
   resolveSelectedGroup: jest.fn().mockResolvedValue(null),
   forgetSessionSelection: jest.fn(),
 }));
+jest.mock('../../../packages/server/mcp/mcp-connections.js', () => ({
+  revokeConnections: jest.fn(),
+}));
 jest.mock('../../../packages/server/utils/logger.js', () => ({
   log: jest.fn(),
   info: jest.fn(),
@@ -32,6 +35,9 @@ jest.mock('../../../packages/server/utils/logger.js', () => ({
 
 const passport = require('passport');
 const users = require('../../../packages/server/user/user.controller.js');
+const {
+  revokeConnections,
+} = require('../../../packages/server/mcp/mcp-connections.js');
 
 const { RFC_CODE, RFC_TIME } = harness;
 
@@ -92,6 +98,19 @@ describe('the password link of a member who needs two-factor authentication', ()
 });
 
 describe('the password link and the trusted devices', () => {
+  // Whoever held the old password connected no assistant that lives on.
+  it('ends the assistants the account connected', async () => {
+    harness.addGroup({ requireTwoFactor: false });
+    const user = harness.addTotpUser();
+    user.token = 'emailed-token';
+    user.tokenExpire = RFC_TIME + 60 * 1000;
+    revokeConnections.mockClear();
+
+    await followLink();
+
+    expect(revokeConnections).toHaveBeenCalledWith({ _user: user._id });
+  });
+
   it('forgets the trusted devices of the account', async () => {
     harness.addGroup({ requireTwoFactor: true });
     const twoFactor = require('../../../packages/server/two-factor/two-factor.controller.js');

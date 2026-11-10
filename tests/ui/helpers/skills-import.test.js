@@ -1,0 +1,198 @@
+'use strict';
+
+// What the import modal of the skills export shows (ADR 0018): which items
+// are checked at first, which can be checked at all, how many will be
+// imported, and the words for each state, reason and outcome, in both
+// languages. The project has no @vue/test-utils: the modal's rules live in this
+// helper, and the modal reads them.
+
+const fs = require('fs');
+const path = require('path');
+
+const ITEMS = [
+  {
+    kind: 'expertise',
+    id: 'redaction.subject-line',
+    version: '2.1',
+    state: 'new',
+  },
+  {
+    kind: 'expertise',
+    id: 'deliverability.spam-words',
+    version: '1.0',
+    state: 'update',
+  },
+  {
+    kind: 'expertise',
+    id: 'design.dark-mode',
+    version: '1.0',
+    state: 'up_to_date',
+  },
+  {
+    kind: 'skill',
+    id: 'redaction.subject-ideas',
+    version: '1.2',
+    state: 'blocked',
+    reason: 'missing_schema',
+  },
+  {
+    kind: 'skill',
+    id: 'redaction.write-subject',
+    version: '1.0',
+    state: 'new',
+    warnings: [{ code: 'missing_expertises', expertiseIds: ['a.b'] }],
+  },
+];
+
+describe('the preview of an import', () => {
+  let helper;
+  beforeAll(() => {
+    // Required here: the helper does not exist until #1410 ships it.
+    helper = require('~/helpers/skills-import.js');
+  });
+
+  it('checks the new items and the updates at first', () => {
+    expect(helper.defaultSelection(ITEMS)).toEqual([
+      'expertise:redaction.subject-line',
+      'expertise:deliverability.spam-words',
+      'skill:redaction.write-subject',
+    ]);
+  });
+
+  it('lets no blocked or up to date item be checked', () => {
+    expect(ITEMS.filter(helper.isSelectable).map((item) => item.id)).toEqual([
+      'redaction.subject-line',
+      'deliverability.spam-words',
+      'redaction.write-subject',
+    ]);
+  });
+
+  it('turns a selection into what the import route takes', () => {
+    expect(
+      helper.importPayload([
+        'expertise:redaction.subject-line',
+        'skill:redaction.write-subject',
+      ])
+    ).toEqual({
+      expertiseIds: ['redaction.subject-line'],
+      skillIds: ['redaction.write-subject'],
+    });
+  });
+
+  it.each(['en', 'fr'])(
+    'has the words of every state and reason in %s',
+    (l) => {
+      const locale = fs.readFileSync(
+        path.join(__dirname, `../../../packages/ui/helpers/locales/${l}.js`),
+        'utf8'
+      );
+      // Within the import's own words, not anywhere in the file.
+      const start = locale.indexOf('skillsImport: {');
+      expect(start).toBeGreaterThan(-1);
+      // The block ends where the next top-level key starts.
+      const section = locale.slice(start, locale.indexOf('\n  },', start));
+      [
+        'new',
+        'update',
+        'up_to_date',
+        'blocked',
+        'diverged',
+        'target_newer',
+        'draft_open',
+        'archived',
+        'missing_schema',
+        'not_in_file',
+        'missing_expertises',
+        'nature_differs',
+      ].forEach((key) => expect(section).toMatch(new RegExp(`\\b${key}:`)));
+    }
+  );
+
+  it('fills a warning with the expertises it names, or the nature it brings', () => {
+    const t = (key) => `t(${key})`;
+
+    expect(
+      helper.warningValues(
+        { code: 'missing_expertises', expertiseIds: ['a.b', 'c.d'] },
+        t
+      )
+    ).toEqual({ ids: 'a.b, c.d', nature: '' });
+    expect(
+      helper.warningValues(
+        { code: 'nature_differs', nature: 'task', current: 'feature' },
+        t
+      )
+    ).toEqual({ ids: '', nature: 't(aiSkills.natures.task)' });
+  });
+});
+
+describe('the report of an import', () => {
+  let helper;
+  beforeAll(() => {
+    helper = require('~/helpers/skills-import.js');
+  });
+
+  it('counts each outcome', () => {
+    expect(
+      helper.reportCounts({
+        created: [{}, {}],
+        updated: [{}],
+        skipped: [],
+        failed: [{}],
+      })
+    ).toEqual({ created: 2, updated: 1, skipped: 0, failed: 1 });
+  });
+
+  it('links each draft to publish to its page in the back office, with its warnings', () => {
+    const warning = { code: 'missing_expertises', expertiseIds: ['e.f'] };
+    expect(
+      helper.draftLinks({
+        created: [{ kind: 'expertise', id: 'a.b', version: '1.0' }],
+        updated: [
+          { kind: 'skill', id: 'c.d', version: '2.1', warnings: [warning] },
+        ],
+      })
+    ).toEqual([
+      { id: 'a.b', version: '1.0', to: '/ai-expertise/a.b', warnings: [] },
+      {
+        id: 'c.d',
+        version: '2.1',
+        to: '/ai-skills/c.d',
+        warnings: [warning],
+      },
+    ]);
+  });
+});
+
+// The words of the import are those its screens say: none left behind, and
+// the platform company named as everywhere else in the application.
+describe.each(['en', 'fr'])('the words of the import in %s', (l) => {
+  const messages = require(`~/helpers/locales/${l}.js`).default.skillsImport;
+  const screens = [
+    'components/ai-skill/bs-ai-skills-import-modal.vue',
+    'components/ai-skill/bs-ai-skills-import-report.vue',
+    'routes/ai-skills/index.vue',
+  ]
+    .map((file) =>
+      fs.readFileSync(
+        path.join(__dirname, '../../../packages/ui', file),
+        'utf8'
+      )
+    )
+    .join('\n');
+
+  it('are all said by a screen', () => {
+    const unused = Object.keys(messages).filter(
+      (key) =>
+        typeof messages[key] === 'string' &&
+        !screens.includes(`skillsImport.${key}'`)
+    );
+    expect(unused).toEqual([]);
+  });
+
+  it('never say the platform company is a group', () => {
+    expect(JSON.stringify(messages)).not.toMatch(
+      /groupe plateforme|platform group/i
+    );
+  });
+});

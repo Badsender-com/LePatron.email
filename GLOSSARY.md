@@ -95,7 +95,7 @@ _UI_: Réinitialiser la double authentification
 _Avoid_: Disable two-factor, remove two-factor
 
 **Security event**:
-A record, kept a year, of an action on an account's two-factor authentication: who did it, to whom, when.
+A record, kept a year, of an action on an account's two-factor authentication, or of a company's MCP module opened or closed, its MCP access turned on or off, its retex allowed or stopped, a client registered by hand or deleted, named by its id and its name, or all its connections revoked: who did it, to whom, when.
 _Avoid_: Audit log, activity log
 
 ### Image gallery
@@ -152,3 +152,162 @@ _Avoid_: Allowed workspace, my workspace
 What the email search looks through: the emails sitting directly in the current location, or every email of the user's accessible workspaces, in any folder.
 _UI_: Dossier courant, Tous mes espaces de travail
 _Avoid_: Search mode, global search (in UI text)
+
+### Mailings
+
+**Mailing status**:
+A label derived from a mailing's facts (approval, planned send date, ESP push), recomputed on every read and never stored: the first that applies of pushed to ESP, scheduled, approved and draft. Only a person changes it, by approving, planning or pushing; the planned day passing changes nothing. LePatron never knows that a mailing was sent, so no status says so.
+_UI_: Statut
+_Avoid_: Workflow state, sent
+
+**Pushed to ESP**:
+A mailing from which a campaign or a template was created in at least one ESP profile. It says nothing about delivery.
+_UI_: Poussé vers l'ESP
+_Avoid_: Sent, exported (a ZIP download is also called an export)
+
+**Scheduled**:
+An approved mailing with a planned send date, whichever day it is, not pushed to an ESP. It says nothing about delivery either.
+_Avoid_: Planned (a draft may be planned too), sent
+
+**Approved**:
+A mailing whose latest top-level comment, not deleted, is an approval: any comment posted after it withdraws it, a reply does not. As a status, an approved mailing with no planned send date, not pushed to an ESP.
+_UI_: Approuvé
+_Avoid_: Validated
+
+**Draft mailing**:
+A mailing not approved yet, with a planned send date or not, and not pushed to an ESP. Draft is a status of the mailing itself, whereas a draft version is a version of a skill or an expertise kept apart from the one in use.
+_Avoid_: Unapproved, pending
+
+**Planned send date**:
+The day a mailing is planned to be sent, without a time, the same day in every time zone. The editor stores it at noon UTC, and an assistant reads it as the day alone.
+_UI_: Date d'envoi prévue
+_Avoid_: Send time, scheduled date
+
+### Skills and expertises
+
+**Expertise**:
+A piece of email know-how the platform company writes, in Markdown and versioned, that a feature, a skill or an assistant reads before acting.
+_UI_: Expertise
+_Avoid_: Doctrine, knowledge base, guideline (a client's writing guidelines belong to its CRM governance)
+
+**Feature skill**:
+A skill a LePatron feature calls as a function: its input fills a template, its output follows a contract LePatron checks.
+_UI_: Skill de fonctionnalité
+
+**Task skill**:
+A skill written as a procedure for an assistant, with the expertises it consumes in order, and no template or contract.
+_UI_: Skill de tâche
+_Avoid_: Workflow, playbook, recipe
+
+**Audience**:
+The companies that may use a skill or an expertise, in the editor as through an assistant: the platform company alone, while it is tried, or every company. A new one starts with the platform company.
+_UI_: Audience
+_Avoid_: Visibility, exposure, subscribers, scope (an expertise's scope is the part of an email it covers)
+
+**Draft version**:
+The open draft of a skill or an expertise: its latest version newer than the active one, not published yet, which no client is served outside the drafts mode and only a person publishes. It is a version kept apart from the one in use, whereas a draft mailing is a status of the mailing itself.
+_UI_: Brouillon
+_Avoid_: Pending version, unpublished version
+
+**Drafts mode**:
+A connection's mode in which an assistant is served the draft version of every skill and expertise that has one, and those never published, so that whoever may manage the platform tries them before publishing. It ends after four hours and at every new connection.
+_Avoid_: Preview mode, test mode, sandbox
+
+**CRM governance**:
+A company's own rules for its emails, such as its brand charter and its writing guidelines, kept by the company rather than written as skills or expertises. A module to come.
+_Avoid_: Client expertise, brand skill
+
+**Skills export**:
+A file that carries the active version of chosen skills and expertises from one LePatron instance to another, where each arrives as a draft to publish.
+_UI_: Export de skills
+_Avoid_: Backup (it holds no history), sync (nothing happens on its own), package
+
+**Copy**:
+A LePatron instance (staging, development) whose skills and expertises follow production's, which is their only source. An item that came from production follows it in everything, its versions, audience and state, unless it is kept on the copy. What the copy wrote itself is never lost: the follow leaves an item written on the copy alone as long as production has none with its identifier, and sets the copy's work aside in a new item rather than overwrite it.
+_UI_: Copie
+_Avoid_: Mirror (a copy keeps its own items), replica, sync target, sync (the concept is the copy, the act is following)
+
+**Kept on this copy**:
+Said of an item of a copy that a super admin detached from production: the follow no longer touches it and only reports that production changed it. Following production again attaches it back.
+_UI_: Gardé sur cette copie
+_Avoid_: Frozen, pinned, local override
+
+**Copy's work**:
+An item of a copy holding, as a draft, what was written on the copy that the follow had to replace, or a version duplicated there to be tried. Its identifier is the original's with a suffix, its title the original's followed by "(travail de la copie)", and the follow never touches it.
+_UI_: Travail de la copie
+_Avoid_: Fork, backup, conflict copy
+
+**Used by a feature**:
+Said of an active skill or expertise that a LePatron feature calls or loads, as worked out from the features' own declarations, never set by hand. Publishing a new version of one replays its test cases first.
+_UI_: Utilisé par une fonctionnalité
+_Avoid_: Production-grade, locked, frozen
+
+**Test case**:
+An input a feature skill is checked against, kept with the skill's version, replayed before a change it depends on is published.
+_UI_: Cas de test
+_Avoid_: Golden run (the playground run that proves a case), unit test
+
+### AI assistants
+
+**Connected application**:
+An AI assistant outside LePatron (Claude, ChatGPT, Copilot…) that a user has allowed to read LePatron on their behalf, with that user's rights, in one company. The user revokes it at any time; the company's tech admin or a super admin revokes all of the company's at once. A change of the user's credentials revokes all of theirs: the account deactivated, a new password, a two-factor reset.
+_UI_: Application connectée
+_Avoid_: Integration (the AI provider settings of a company), connector, client
+
+**MCP module**:
+What is sold to a company so that its users may connect applications: opened or closed by a super admin, like the other modules. Closed, the company's MCP access cannot be used, and its connected applications are revoked.
+_UI_: Module MCP
+_Avoid_: MCP subscription, MCP licence
+
+**MCP access**:
+The company's switch that lets its users connect applications, once the company has the MCP module. Off unless the company's tech admin or a super admin turns it on; opening the module does not turn it on.
+_UI_: Accès MCP
+_Avoid_: MCP subscription (MCP access is not what is sold)
+
+**Connection**:
+One consent of one user, in one company, through one connected application: what an access token opens, and what the rate limit counts first, before the user across their applications and the company. Connecting again opens another one, so two machines with the same application make two connections; past 10 of them for one application in one company, the oldest is revoked.
+_UI_: Connexion d'assistant IA
+_Avoid_: Session, link, integration
+
+**Call log**:
+The record of each call a connected application makes to LePatron: who, in which company, from which application, which tool, prompt or resource, the ids it named, how long it took and how it ended. Never what was typed nor what LePatron answered. Kept for the company's log retention.
+_Avoid_: Audit log, activity log, trace (the security events are another record)
+
+**Relayed image**:
+An image of a mailing hosted outside the instance over https, that the instance fetches and serves itself so that the preview in an assistant shows it, through a signed address for that image only.
+_UI_: Image relayée
+_Avoid_: Proxied image, cached image (the instance keeps it a few minutes only, to spare a second fetch)
+
+**Feedback**:
+A rating and a comment a user sends from a connected application about what LePatron gave them. Both reach the platform company whatever the retex; it is kept for the company's log retention.
+_UI_: Avis
+
+**Retex**:
+What a user's work taught about a skill or an expertise, recorded on its own from a connected application: a divergence or a complement. Never a summary of the session: no divergence and nothing brought, no retex. A super admin's is recorded as soon as it occurs, and belongs to the platform company whatever company they connected to, which is kept as context; another user's needs the company's permission, which its tech admin or a super admin gives, and the user's approval of that retex.
+_UI_: Retour d'expérience
+_Avoid_: Feedback (a rating and a comment), telemetry, session log, session summary
+
+**Divergence**:
+A retex where the user decided otherwise than a passage of a skill or an expertise recommended: what it recommended, what the user decided, and why.
+_UI_: Divergence
+_Avoid_: Disagreement, error, bug
+
+**Complement**:
+A retex where the user brought what a skill or an expertise lacked for the case at hand, with where it comes from (experience, a source, a test). It may concern no existing skill or expertise, then a kind of know-how and a part of the email.
+_UI_: Complément
+_Avoid_: Suggestion, wish, request
+
+**Passage**:
+The part of a skill or an expertise a retex is about: a section of an expertise, by its anchor, or a short quotation of a skill.
+_UI_: Passage
+_Avoid_: Paragraph, rule (a rule belongs to the quality control)
+
+**Addressed retex**:
+A retex a published version took into account: the draft cites it, and it is marked addressed, with that skill or expertise and its version, when the version is published. A retex on one skill may be addressed by another, or by an expertise. A draft deleted before leaves it open.
+_UI_: Pris en compte en <version>
+_Avoid_: Done, fixed, applied
+
+**Dismissed retex**:
+A retex a super admin decided not to act on, with the reason. It stays readable and no longer counts towards a convergence.
+_UI_: Écarté
+_Avoid_: Rejected, closed, deleted

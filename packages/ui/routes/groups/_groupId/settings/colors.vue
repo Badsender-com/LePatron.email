@@ -13,6 +13,8 @@ export default {
     BsGroupColorsTab,
   },
   mixins: [mixinSettingsTitle, mixinGroupSettingsSave],
+  // The page edits the colours: a save sends nothing else.
+  groupSettingsFields: ['colorScheme'],
   meta: {
     acl: acls.ACL_GROUP_MANAGE,
   },

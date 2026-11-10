@@ -10,21 +10,50 @@
  * may inadvertently modify or translate variable syntax.
  */
 
-// Patterns of variables to protect
+// The syntaxes of the variables, each once: `protect` is what a translation
+// keeps intact, `read` the name an assistant is told about (MCP, ADR 0012),
+// in group 1, its blanks to trim. A name read is at most 100 characters, so
+// that it is found in linear time.
 // Order matters: more specific patterns should come first
-const VARIABLE_PATTERNS = [
-  // ESP/CRM variables: %%FIRSTNAME%%, %%UNSUBSCRIBE_LINK%%
-  { regex: /%%[A-Z0-9_]+%%/g, name: 'esp' },
-  // Handlebars/Mustache: {{variable}}, {{#if}}, {{/if}}
-  { regex: /\{\{[^}]+\}\}/g, name: 'handlebars' },
-  // Double bracket: [[variable]]
-  { regex: /\[\[[^\]]+\]\]/g, name: 'bracket' },
-  // Badsender custom tags: <badsender-unsubscribe>, <badsender-mirror>
+const VARIABLE_SYNTAXES = [
+  // ESP/CRM variables: %%FIRSTNAME%%, %%UNSUBSCRIBE_LINK%%. An ESP reads
+  // %%FirstName%% too: a name is read whatever its case.
   {
-    regex: /<badsender-[a-z-]+(?:\s[^>]*)?(?:\/>|>[^<]*<\/badsender-[a-z-]+>|>)/gi,
+    name: 'esp',
+    protect: /%%[A-Z0-9_]+%%/g,
+    read: /%%([A-Za-z][A-Za-z0-9_]{0,99})%%/g,
+  },
+  // Handlebars/Mustache: {{variable}}, {{{variable}}}, {{#if}}, {{/if}}
+  {
+    name: 'handlebars',
+    protect: /\{\{[^}]+\}\}/g,
+    read: /\{\{\{?([^{}]{1,100})\}?\}\}/g,
+  },
+  // Double bracket: [[variable]]
+  {
+    name: 'bracket',
+    protect: /\[\[[^\]]+\]\]/g,
+    read: /\[\[([^[\]]{1,100})\]\]/g,
+  },
+  // Badsender custom tags: <badsender-unsubscribe>, <badsender-mirror>. The
+  // app fills them, never an ESP, and a sanitised preview no longer holds
+  // them: none is read.
+  {
     name: 'badsender',
+    protect: /<badsender-[a-z-]+(?:\s[^>]*)?(?:\/>|>[^<]*<\/badsender-[a-z-]+>|>)/gi,
   },
 ];
+
+// Patterns of variables to protect
+const VARIABLE_PATTERNS = VARIABLE_SYNTAXES.map(({ name, protect }) => ({
+  regex: protect,
+  name,
+}));
+
+// Patterns of the variables to name, the name in group 1
+const VARIABLE_NAME_PATTERNS = VARIABLE_SYNTAXES.filter(({ read }) => read).map(
+  ({ read }) => read
+);
 
 // Placeholder format: __LPVAR_{index}__ (LP = LePatron)
 // Using uppercase and underscores to minimize translation interference
@@ -111,6 +140,7 @@ module.exports = {
   restoreVariables,
   containsVariables,
   VARIABLE_PATTERNS,
+  VARIABLE_NAME_PATTERNS,
   PLACEHOLDER_PREFIX,
   PLACEHOLDER_SUFFIX,
 };

@@ -17,7 +17,7 @@ const { CAPABILITIES } = require('../../shared/access/roles.js');
 // Read as documents, not lean: a group stored before a flag existed has no
 // such field, and only the document gets the default of group.schema.js.
 const SUMMARY_FIELDS =
-  'name enableEmailBuilder enableCrmIntelligence downloadMailingWithFtpImages';
+  'name enableEmailBuilder enableCrmIntelligence downloadMailingWithFtpImages enableMcpModule enableMcp';
 
 function summaryOf(group) {
   return group
@@ -27,6 +27,9 @@ function summaryOf(group) {
         enableEmailBuilder: group.enableEmailBuilder,
         enableCrmIntelligence: group.enableCrmIntelligence,
         downloadMailingWithFtpImages: group.downloadMailingWithFtpImages,
+        // What the connected applications link reads (ADR 0017).
+        enableMcpModule: group.enableMcpModule,
+        enableMcp: group.enableMcp,
       }
     : null;
 }

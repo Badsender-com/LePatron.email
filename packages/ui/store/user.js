@@ -81,6 +81,13 @@ export const mutations = {
 
 export const USER_SET = 'USER_SET';
 export const SELECT_GROUP = 'SELECT_GROUP';
+// A company's settings were saved: the store's copies of it follow.
+export const GROUP_CHANGED = 'GROUP_CHANGED';
+
+const idOf = (group) => {
+  const id = group && (group.id || group._id);
+  return id ? String(id) : null;
+};
 
 export const actions = {
   async [USER_SET](vuexCtx, user) {
@@ -118,6 +125,19 @@ export const actions = {
       groupId,
     });
     commit(M_USER_SET, { selectedGroup: group });
+  },
+  // The sidebar reads the user's group, or a super admin's selected one
+  // (MODULES_GROUP): whichever is the company saved takes its changes, so
+  // what the sidebar offers follows without a reload.
+  [GROUP_CHANGED]({ commit, state }, { group, changes }) {
+    const id = idOf(group);
+    if (!id || !state.info) return;
+    ['group', 'selectedGroup'].forEach((key) => {
+      const held = state.info[key];
+      if (idOf(held) === id) {
+        commit(M_USER_SET, { [key]: { ...held, ...changes } });
+      }
+    });
   },
   // async [SET_LANG](vuexCtx, lang) {
   //     if (!SUPPORTED_LOCALES.includes(lang)) return

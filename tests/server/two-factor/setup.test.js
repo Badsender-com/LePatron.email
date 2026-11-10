@@ -22,14 +22,46 @@ jest.mock('../../../packages/server/account/selected-group.js', () => ({
   resolveSelectedGroup: jest.fn().mockResolvedValue(null),
   forgetSessionSelection: jest.fn(),
 }));
+// The password link ends the assistants connected with the old one.
+jest.mock('../../../packages/server/mcp/mcp-connections.js', () => ({
+  revokeConnections: jest.fn(),
+}));
 jest.mock('../../../packages/server/utils/logger.js', () => ({
   log: jest.fn(),
   info: jest.fn(),
   warn: jest.fn(),
   error: jest.fn(),
 }));
+// The QR code, as Node's own `require` loads it. In Jest's sandbox each
+// `Math.abs` of its PNG encoder is a lookup on the sandbox's global object:
+// 150 ms a code instead of 5, several seconds on a loaded machine.
+jest.mock('qrcode', () =>
+  process.getBuiltinModule('module').createRequire(__filename)(
+    require.resolve('qrcode')
+  )
+);
+// Each confirmed setup hashes ten recovery codes: at the app's cost, 170 ms
+// of bcryptjs a test. These tests prove what is kept, not how hard it is to
+// reverse: the harness's lowest cost does.
+jest.mock(
+  '../../../packages/server/two-factor/two-factor.constants.js',
+  () => ({
+    ...jest.requireActual(
+      '../../../packages/server/two-factor/two-factor.constants.js'
+    ),
+    RECOVERY_CODE_BCRYPT_ROUNDS: 4,
+  })
+);
 
 const passport = require('passport');
+
+// The controllers, and all they require, loaded with the test file rather
+// than inside the 5 seconds of its first test: the harness's signIn requires
+// the user controller at its first call (the harness, which the models' mock
+// requires, cannot load it sooner), and the full suite's parallel load once
+// made that first load exceed them.
+require('../../../packages/server/user/user.controller.js');
+require('../../../packages/server/two-factor/two-factor.controller.js');
 
 const { SecurityEvents } = harness.models;
 

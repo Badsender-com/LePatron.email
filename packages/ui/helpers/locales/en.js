@@ -398,6 +398,17 @@ export default {
         configHint: 'Advanced configuration in dedicated tab',
         toggleMovedHint: 'Module activation is in the General tab',
       },
+      mcp: {
+        name: 'MCP',
+        description: 'Claude, ChatGPT and Copilot connected to LePatron',
+        configHint: 'The tech admin then turns access on in the AI features',
+        closeTitle: 'Close the MCP module?',
+        close: 'Close the module',
+        closeConfirm:
+          ' | The only connection of {group} will be ended at once. Its user will connect their assistant again if the module reopens. | The {count} connections of {group} will be ended at once. Each user will connect their assistant again if the module reopens.',
+        closeConfirmUnknown:
+          'The connections of {group} will be ended at once. Each user will connect their assistant again if the module reopens.',
+      },
     },
     mailingTab: {
       confirmationField: 'Type the email name to confirm',
@@ -680,6 +691,7 @@ export default {
       status: 'Status',
       esp: 'ESP',
       ai: 'AI',
+      mcp: 'MCP',
     },
     users: {
       passwordMail: 'Password\' email',
@@ -793,6 +805,218 @@ export default {
     },
     cdnEndpointHint: 'Base URL of your CDN (without protocol)',
     cdnButtonLabelHint: 'Label displayed in the editor',
+  },
+  retex: {
+    title: 'Retex',
+    description:
+      'From their assistant, the company\'s users may report a retex: a divergence or a complement on an expertise or a skill, which the platform company reads to improve them. It is sent only if the company allows it here, and the user approves each retex before it is sent.',
+    alwaysShared:
+      'The rating and the comment of a feedback are always shared with the platform company, whether the retex is allowed or not.',
+    offForgets:
+      'Turning it off erases the retex the company\'s users already sent, open or closed, and the session summaries kept with older feedback. Those a consultant of the platform company writes while working for it stay: they belong to the platform company.',
+    updated: 'Retex updated',
+  },
+  oauthConsent: {
+    claimedName: '"{client}"',
+    title: 'Connect {client} to LePatron',
+    pageTitle: 'Connect an assistant to LePatron',
+    loginHint: 'Log in to let your AI assistant access LePatron.',
+    heading: '{client} asks to access your LePatron account',
+    errorTitle: 'Cannot connect',
+    changeAccount: 'Change account',
+    switchAccount: 'Use another account',
+    closeHint: 'You can close this window and start the connection again from your assistant.',
+    canDo: 'This application will be able to',
+    rights: {
+      read: 'Read the expertises, the skills and your mailings',
+      readHint: 'With your rights, exactly as in the app.',
+      readOnly: 'Change, publish or delete nothing',
+      readOnlyHint: 'It can only send your feedback on what LePatron gave you.',
+    },
+    registration: {
+      dynamicTitle: 'Unverified application',
+      dynamic:
+        'It registered itself: LePatron cannot vouch for its name. Only go on if you just started the connection from it.',
+      dynamicBadge: 'Name given by the application',
+      metadataDocument: 'Identity verified by {host}',
+      preRegistered: 'Declared by the company {company}',
+    },
+    allowWrite: 'Also write, publish and open skills and expertises',
+    allowWriteHint:
+      'Super admins only. The assistant may write drafts, publish them and open an item to clients, each publication and each opening after your confirmation in the conversation. Tick it only for an assistant of the platform company.',
+    group: 'Company',
+    groupHint:
+      'The assistant will only see this company. To read another one, connect it again.',
+    pickGroup: 'Pick a company',
+    footnote:
+      'Valid for 90 days, revocable at any time from Connected applications. Once allowed, you will be sent back to {host}.',
+    allow: 'Allow',
+    allowIn: 'Allow in {group}',
+    deny: 'Deny',
+    expired:
+      'This connection request has expired, or was started in another browser. Start the connection again from your assistant.',
+    clientOfAnotherCompany:
+      'This application is reserved for the users of the company that declared it.',
+    accountCannotConnect:
+      'This account cannot connect an assistant: log in with your user account.',
+    noAccess:
+      'Your company has no MCP access: ask its administrator to turn it on.',
+    signInRequired:
+      'Your session has expired: log in to LePatron again, then start the connection again from your assistant.',
+    readScopeRequired:
+      'The assistant must at least be able to read LePatron: start the connection again from your assistant.',
+    noModule:
+      'The MCP module is not included in your company\'s subscription: contact the platform company to add it.',
+    noModuleCanOpen:
+      'The MCP module is not included in the company\'s subscription. As a super admin, you can open it in its Modules, then turn its MCP access on.',
+    noModuleCanOpenIn:
+      'The MCP module is not included in the subscription of {group}. As a super admin, you can open it in its Modules, then turn its MCP access on.',
+    noAccessCanOpen:
+      'The company\'s MCP access is off. As a super admin, you can turn it on in its AI Features.',
+    noAccessCanOpenIn:
+      'The MCP access of {group} is off. As a super admin, you can turn it on in its AI Features.',
+  },
+  mcpClients: {
+    pageTitle: 'MCP clients',
+    description:
+      'For an assistant that asks for a client ID and a secret, such as Copilot Studio in manual mode. Only the company\'s users can connect with them. Claude, ChatGPT and Microsoft 365 Copilot register themselves: they have nothing to do here.',
+    listLabel: 'Registered clients',
+    clientMeta: 'Created on {date} · secret sent: {authMethod}',
+    clientIdLine: 'Client ID: {id}',
+    secretFootnote:
+      'The secret is only shown at creation. If it is lost, delete the client and create another one.',
+    mcpOff:
+      'The company\'s MCP access is off: these clients cannot connect. It is turned on in',
+    add: 'Add a client',
+    addDescription:
+      'Copy the redirect URL the assistant shows on its set-up screen.',
+    name: 'Name',
+    nameHint: 'Shown to the user on the consent screen.',
+    redirectUris: 'Redirect URLs',
+    redirectUrisHint: 'One per line, over HTTPS, or over HTTP to localhost.',
+    authMethod: 'Secret sent',
+    authMethodHint:
+      'Where the assistant sends the secret to LePatron. If unsure, keep “In the request body”.',
+    advanced: 'Advanced setting: how the secret is sent',
+    authMethods: {
+      client_secret_post: 'In the request body',
+      client_secret_basic: 'In the header (Basic)',
+    },
+    empty: 'No client registered',
+    emptyHint:
+      'That is the usual case: only a manual set-up of Copilot Studio asks for one.',
+    loadError: 'The MCP clients could not be loaded.',
+    createdBadge: 'Client created',
+    createdTitle: 'Copy these values into “{name}”',
+    secretOnce: 'The secret will never be shown again.',
+    serverOnPage: 'The server addresses remain available on this page.',
+    copySecretFirst: 'Copy the secret, or tick the box, to finish',
+    secretSavedConfirm: 'I have saved this secret',
+    secretDone: 'Done',
+    copyFailed: 'The copy failed: select the value and copy it by hand.',
+    copyField: 'Copy: {field}',
+    deleteNamed: 'Delete {name}',
+    copy: 'Copy',
+    copied: 'Copied',
+    deleteTitle: 'Delete this client?',
+    deleteConfirm:
+      'The assistant “{name}” will no longer be able to connect or renew its connections. Those under way stop at once.',
+    deleted: 'Client deleted',
+    serverTitle: 'Server settings',
+    serverDescription:
+      'What the assistant\'s set-up screen asks for, besides the client ID and the secret.',
+    settings: {
+      clientId: 'Client ID',
+      clientSecret: 'Client secret',
+      mcpUrl: 'MCP server URL',
+      authorizationUrl: 'Authorization URL',
+      tokenUrl: 'Token and refresh URL',
+      scope: 'Scope',
+      scopeHint:
+        'Read, and send the user\'s feedback. Proposing drafts of skills and expertises (skills:write) is only granted to super admins, when they ask for it at connection.',
+    },
+    errors: {
+      // The codes the API answers (ERROR_CODES.MCP_CLIENT_…).
+      MCP_CLIENT_INVALID_NAME: 'Give a name of 1 to 100 characters.',
+      MCP_CLIENT_INVALID_REDIRECT_URIS:
+        'Give 1 to 10 redirect addresses, in HTTPS or to the user\'s own machine.',
+      MCP_CLIENT_INVALID_AUTH_METHOD: 'Pick how the assistant sends the secret.',
+      MCP_CLIENT_INVALID_METADATA:
+        'LePatron would refuse this client when it connects: check its redirect addresses.',
+      MCP_CLIENT_NOT_FOUND: 'This client no longer exists.',
+      MCP_FORBIDDEN_COMPANY: 'You do not manage the MCP clients of this company.',
+      nameTooLong: 'The name is at most 100 characters long.',
+      redirectUrisRequired: 'At least one redirect URL is required.',
+      redirectUrisInvalid:
+        'Up to 10 URLs, over HTTPS (HTTP only to localhost), without a # fragment.',
+      redirectUriRefused:
+        '“{uri}” is refused: a redirect URL is over HTTPS, or over HTTP to localhost, without a # fragment.',
+    },
+  },
+  connectedApplications: {
+    pageTitle: 'Connected applications',
+    description:
+      'The AI assistants you connected to LePatron. Each reads LePatron with your rights, in the company chosen when connecting. One row per connection: an assistant connected from two machines shows twice. Revoke the ones you no longer use.',
+    name: 'Application',
+    group: 'Company',
+    connectedAt: 'Connected on',
+    lastUsedAt: 'Last used',
+    neverUsed: 'Never used',
+    empty: 'No connected applications.',
+    loadError: 'Your connected applications could not be loaded.',
+    revoke: 'Revoke',
+    revokeOne: 'Revoke {name}, connected on {date}',
+    revokeTitle: 'Revoke this connection?',
+    revokeConfirm:
+      'The connection of “{name}” made on {date} will lose its access to LePatron for the company {group} at once. Your other connections of this application stay. To use it here again, connect it again.',
+    revoked: 'Connection revoked',
+    groupCount:
+      'No AI assistant connections | 1 AI assistant connection | {count} AI assistant connections',
+    groupRevoke: 'Revoke all',
+    groupRevokeTitle: 'Revoke every AI assistant connection?',
+    groupRevokeConfirm:
+      'Every AI assistant connection of the company {group} loses its access at once. Each user will have to connect their assistant again. | The AI assistant connection of the company {group} loses its access at once. Its user will have to connect it again. | The {count} AI assistant connections of the company {group} lose their access at once. Each user will have to connect theirs again.',
+    groupCountError: 'The number of AI assistant connections is unavailable.',
+    groupRevoked: 'AI assistant connections revoked',
+    allGroups: 'All',
+    noModule:
+      'The MCP module is not included in the subscription of {group}: no assistant can connect to it.',
+    accessOff:
+      'MCP access is off for {group}: no assistant can connect to it, and its connections were ended when it was turned off.',
+    errors: {
+      MCP_CONNECTION_NOT_FOUND:
+        'This connection no longer exists: it was already revoked.',
+    },
+  },
+  mcpAccess: {
+    title: 'MCP access',
+    description:
+      'Your users connect Claude, ChatGPT or Copilot to LePatron. The assistant reads with their rights, in this company only.',
+    switch: 'Allow AI assistants to connect',
+    on: 'On',
+    off: 'Off',
+    address: 'Address to give your users',
+    addressHint:
+      'They paste it in their assistant\'s connectors, then sign in with their LePatron account.',
+    step1: 'You turn the access on for the company.',
+    step2: 'Each user connects their assistant, with their own account.',
+    step3: 'The assistant reads expertises, skills and mailings, and never changes your mailings.',
+    copyAddress: 'Copy the MCP server address',
+    clientsTitle: 'Clients registered by hand',
+    clientsDescription:
+      'Only Copilot Studio in manual mode needs one: Claude, ChatGPT and Microsoft 365 Copilot register themselves.',
+    manageClients: 'Manage',
+    turnOff: 'Turn off access',
+    notIncluded: 'Not included',
+    noModule:
+      'The MCP module is not included in the subscription of {group}. Contact the platform company to add it.',
+    moduleMissing:
+      'The MCP module is not included in the subscription of {group}.',
+    openModule: 'Open the module',
+    offTitle: 'Turn MCP access off?',
+    offConfirm:
+      'Every assistant connected to the accounts of {group} will be disconnected at once. Turning it back on reconnects none: each user will connect theirs again.',
+    updated: 'MCP access updated',
   },
   crmIntelligence: {
     title: 'CRM Intelligence',
@@ -970,6 +1194,7 @@ export default {
     },
     system: {
       settings: 'Settings',
+      connectedApplications: 'Connected applications',
       help: 'Help',
       logout: 'Sign out',
     },
@@ -1321,10 +1546,13 @@ export default {
       title: 'Translation',
       description: 'Automatically translate your emails into different languages using AI.',
       enableLabel: 'Enable translation',
+      on: 'On',
+      off: 'Off',
       model: 'AI Model',
       modelHint: 'More powerful models are more accurate but slower and more expensive',
       availableLanguages: 'Available languages',
       languagesHint: 'Select at least 2 languages (source and target)',
+      languagesSelected: '{count} language selected | {count} languages selected',
       minLanguagesError: 'Select at least 2 languages (one source and one target)',
       formality: 'Formality level',
       formalityHint: 'Applied to target languages that distinguish formal and informal address. Other languages keep a neutral tone.',
@@ -1334,8 +1562,10 @@ export default {
     },
     skill: {
       title: 'Skills engine',
-      description: 'Generic AI engine powering every skill invocation for this company (and Playground tests via the platform company).',
+      description: 'The model that runs the skills in LePatron (editor, Playground). A connected assistant uses its own model.',
       enableLabel: 'Enable the Skills engine',
+      on: 'On',
+      off: 'Off',
       model: 'AI model',
       modelHint: 'More powerful models are more accurate but slower and more expensive',
     },
@@ -1403,12 +1633,298 @@ export default {
       hint: 'The block will show up at the end of the editor palette.',
     },
   },
+  skillsImport: {
+    open: 'Import',
+    title: 'Import skills and expertises',
+    file: 'Skills export (.json)',
+    fileHint: 'A file exported from another LePatron instance, 5 MB at most.',
+    preview: 'See the preview',
+    from: 'Exported from {origin} by {by}, on {date}.',
+    counter: '{count} item to import | {count} items to import',
+    nothing: 'Nothing to import: everything is up to date or blocked.',
+    otherFile: 'Choose another file',
+    current: 'here: {version}',
+    notJson: 'This file is not JSON.',
+    tooLarge: 'This file is over 5 MB.',
+    unreadable: 'This file is not a readable skills export: {message}',
+    run: 'Import the selection',
+    report: {
+      created: '{count} created | {count} created',
+      updated: '{count} updated | {count} updated',
+      skipped: '{count} skipped | {count} skipped',
+      failed: '{count} failed | {count} failed',
+      publish: 'These drafts wait to be reviewed and published:',
+      nothing: 'No draft was written.',
+      failedItem: '{id}: {message}',
+      skippedItem: '{id}: {reason}',
+    },
+    importFailed: 'The import failed: {message}',
+    kinds: {
+      expertise: 'Expertise',
+      skill: 'Skill',
+    },
+    states: {
+      new: 'New',
+      update: 'Update',
+      up_to_date: 'Up to date',
+      blocked: 'Blocked',
+    },
+    reasons: {
+      diverged: 'Same version, different content: the two instances diverged.',
+      target_newer: 'A newer version exists here.',
+      draft_open: 'A draft is open here: publish or delete it first.',
+      archived: 'Archived here.',
+      version_exists: 'This version already exists here, without being the active one.',
+      missing_schema: 'Its schema does not exist on this instance: it is not up to date.',
+      not_in_file: 'Not in the imported file.',
+    },
+    warnings: {
+      missing_expertises: 'Expertises missing here and from the file: {ids}',
+      nature_differs: 'Another nature here: the imported version will be a "{nature}" draft, and publishing it will change this skill\'s nature.',
+    },
+  },
   aiSkills: {
+    export: {
+      all: 'Export all',
+      selection: 'Export the selection',
+      selected: '{count} item selected | {count} items selected',
+      consumed: 'With the expertises these skills consume:',
+      remove: 'Remove {id} from the export',
+      done: 'Export downloaded.',
+      failed: 'The export failed.',
+      failedBecause: 'The export failed: {reason}',
+    },
+    follow: {
+      title: 'Origin on this copy',
+      description:
+        'This instance is a copy: it follows production\'s skills and expertises, as clients live them. The work done here is never lost: when the follow has to replace it, it puts it in a draft of a new item of the copy.',
+      production: 'Production: {origin}',
+      now: 'Follow now',
+      running: 'Following…',
+      never: 'Production has never been followed yet.',
+      last: 'Last followed on {date} by {by}',
+      lastNight: 'Last followed on {date}, by the nightly follow',
+      nightlyOn: 'The nightly follow is on for this instance.',
+      nightlyOff:
+        'The nightly follow is off for this instance: only the button follows production.',
+      lock: 'A follow has been running since {date}, started by {by}.',
+      lockNight: 'The nightly follow has been running since {date}.',
+      alreadyRunning:
+        'A follow is already running: wait for it to end before starting another.',
+      loadError: 'The follow of production could not be loaded.',
+      done: 'Production followed.',
+      donePartial: 'Production partly followed: some items failed.',
+      partialHint:
+        'Some items could not be written; the others followed production.',
+      statuses: {
+        succeeded: 'Succeeded',
+        partial: 'Partly succeeded',
+        failed: 'Failed',
+      },
+      outcomes: {
+        created: '{count} item added | {count} items added',
+        updated: '{count} item updated | {count} items updated',
+        moved:
+          '{count} piece of the copy\'s work set aside | {count} pieces of the copy\'s work set aside',
+        removedDrafts: '{count} draft removed | {count} drafts removed',
+        removed: '{count} item removed | {count} items removed',
+        upToDate: '{count} item already up to date | {count} items already up to date',
+        kept: '{count} item kept on this copy | {count} items kept on this copy',
+        failed: '{count} item failed | {count} items failed',
+      },
+      movedLabel: 'Copy\'s work set aside',
+      moved: '"{id}": the work done on the copy is a draft in',
+      keptLabel: 'Kept on this copy',
+      productionChanged: 'production changed',
+      removedLabel: 'Removed: production no longer has them',
+      removedDraft: 'draft {version} of "{id}" removed',
+      removedItem: '"{id}" removed',
+      warningsLabel: 'To check',
+      warnings: {
+        missing_expertises:
+          '"{id}" consumes expertises this copy lacks: {ids}.',
+        other: '"{id}" is to check.',
+      },
+      itemFailed: 'This item could not be written.',
+      failuresLabel: 'Failed items',
+      nothingWritten: 'Nothing was written.',
+      reasons: {
+        not_configured:
+          'This instance is configured to follow no production.',
+        invalid_address:
+          'Production\'s address is not a valid https address.',
+        unreachable: 'Production could not be reached.',
+        token_refused:
+          'Production refused the read token: it may have been revoked.',
+        production_error: 'Production answered with an error.',
+        unreadable:
+          'Production\'s answer could not be read: the two instances may not run the same version of LePatron.',
+      },
+    },
+    readTokens: {
+      title: 'Read tokens',
+      description:
+        'A copy (staging, development) follows the skills and expertises of this instance with a read token. A token reads nothing else.',
+      descriptionOnCopy:
+        'This instance is a copy: read tokens are created on production. Revoke here the ones left.',
+      listLabel: 'Active read tokens',
+      add: 'Create a token',
+      addDescription:
+        'One token per copy: you can revoke the one you retire without touching the others.',
+      name: 'Name',
+      nameHint: 'The copy it serves, for example "Staging".',
+      nameTooLong: 'The name is 100 characters at most.',
+      meta: 'Created on {date} · {lastUse}',
+      lastUsed: 'last used on {date}',
+      neverUsed: 'never used',
+      empty: 'No read token.',
+      emptyHint:
+        'Create one for each copy that follows the skills and expertises of this instance.',
+      emptyOnCopy: 'A copy is the source of no other instance.',
+      footnote:
+        'The token is shown at creation only. If it is lost, revoke it and create another one.',
+      createdBadge: 'Token created',
+      createdTitle: 'The "{name}" token',
+      token: 'Token',
+      copy: 'Copy',
+      copied: 'Copied',
+      copyToken: 'Copy the token',
+      once: 'This token will not be shown again: copy it now into the configuration of the copy.',
+      copyFirst: 'Copy the token, or tick the box, to finish.',
+      copyFailed: 'The copy failed: select the token and copy it by hand.',
+      savedConfirm: 'I have saved this token',
+      saved: 'I saved the token',
+      revoke: 'Revoke',
+      revokeNamed: 'Revoke the "{name}" token',
+      revokeTitle: 'Revoke this token?',
+      revokeConfirm:
+        'The copy using "{name}" will no longer read this instance. A revoked token cannot be restored.',
+      revoked: 'Token revoked.',
+      loadError: 'The read tokens could not be loaded.',
+    },
+    copy: {
+      panelLabel: 'Origin on this copy',
+      origins: {
+        followed: 'Follows production',
+        followedHint: 'The follow keeps it equal to production.',
+        kept: 'Kept on this copy',
+        keptHint:
+          'The follow no longer touches it: it only says that production changed.',
+        local: 'Written on this copy',
+        localHint:
+          'The follow leaves it as it is, unless production has an item of the same id: it then takes it over, and the copy\'s work moves to a separate item.',
+        notFollowed: 'Not followed yet',
+        notFollowedHint:
+          'This copy has not followed production yet: at the first follow, an item of the same id on production will take it over.',
+        copied: 'Copy\'s work',
+        copiedHint:
+          'The work done on this copy, set aside from another item: the follow leaves it as it is.',
+      },
+      openOrigin: 'Open the original item "{id}"',
+      explain: {
+        followed:
+          'The follow keeps it equal to production. What is written here goes, at the next follow, into a new "(travail de la copie)" item.',
+        kept: 'The follow no longer touches it: it only says that production changed.',
+        local:
+          'The follow leaves it as it is, unless production has an item of the same id: it then takes it over, and the copy\'s work moves to a separate "(travail de la copie)" item.',
+        notFollowed:
+          'This copy has not followed production yet. At the first follow, if production has an item of the same id, the follow takes it over, and the copy\'s work moves to a separate "(travail de la copie)" item.',
+        copied:
+          'The work done on this copy, from the linked item. The follow leaves it as it is.',
+      },
+      keep: 'Keep on this copy',
+      keptDone: 'Kept on this copy: the follow no longer touches it.',
+      publishKept:
+        'Ticked, the follow will no longer touch this item: it will only say that production changed.',
+      publishFollowed:
+        'Unticked, the item still follows production: at the next follow, the version published here moves to a new "(travail de la copie)" item, as a draft, unless production publishes the same one.',
+      publishLocal:
+        'Unticked, the follow leaves this item as it is while production has no item of the same id; if it has one, the version published here moves to a new "(travail de la copie)" item, as a draft.',
+      follow: 'Follow production',
+      followTitle: 'Follow production again?',
+      followConfirm:
+        'At the next follow, this item becomes production\'s again. What was written here, draft or published version, goes into a draft of a new item of the copy: nothing is lost.',
+      followDone: 'This item will follow production at the next follow.',
+      duplicate: 'Duplicate on this copy',
+      duplicateHint:
+        'Creates an item of this copy, with the content of the chosen version as a draft, kept to the platform company and not served to assistants. The follow leaves it as it is.',
+      duplicateVersion: 'Version',
+      duplicateSubmit: 'Duplicate',
+      duplicateDone: 'Item duplicated on this copy.',
+    },
+    feedback: {
+      tab: 'Feedback',
+      caption:
+        'Feedback sent from connected AI assistants, with the version read and, when the company and the user agreed, the summary of the session.',
+      empty: 'No feedback yet.',
+      up: 'Positive feedback',
+      down: 'Negative feedback',
+      noComment: 'No comment',
+      shown: '{shown} of {total}',
+      more: 'Show more',
+      retex: 'Session summary',
+    },
+    nature: 'Nature',
+    natureHint:
+      'A feature skill is called by LePatron (template, schemas, output contract). A task skill is a procedure an AI assistant follows. The skill has the nature of its published version: to change it, publish a version of the other nature.',
+    natures: {
+      feature: 'Feature skill',
+      task: 'Task skill',
+    },
+    servedToAssistants: 'Offered to AI assistants',
+    servedToAssistantsHint:
+      'Served through MCP to connected assistants, without its output contract. Leave unchecked for a skill whose input the editor builds.',
+    audience: 'Audience',
+    audienceHint:
+      'Who may use it. A new one stays with the platform company while it is proven: then open it to all companies.',
+    audiences: {
+      expertise: {
+        platform: 'Platform company only (testing)',
+        all:
+          'All companies: in the editor, and in their assistant if they have MCP access',
+      },
+      featureSkill: {
+        platform:
+          'Platform company only (testing): the button is hidden for clients',
+        all:
+          'All companies: in the editor, and in their assistant if the box is checked and they have MCP access',
+      },
+      taskSkill: {
+        platform: 'Platform company only (testing)',
+        all: 'All companies that have MCP access',
+      },
+    },
+    platformOnly: 'Platform company only',
+    warningUnchecked: 'The warning about this change could not be checked.',
+    savedWarningUnchecked:
+      'Saved, but the warning about this change could not be checked.',
+    openExpertises: {
+      skillTitle: 'Open this skill to all companies',
+      intro:
+        'This skill consumes expertises kept to the platform company: the assistants of the other companies will follow it without them.',
+      openToo: 'Open it to all companies too',
+      openTooNamed: 'Open it to all companies too: {title}',
+      appliesAtOnce:
+        'Opening an expertise also applies it, at once, to the editor features of every company. With none checked, the skill opens without them.',
+    },
+    closeExpertise: {
+      title: 'Keep this expertise to the platform company',
+      intro:
+        'These task skills, open to all companies, consume it: they will no longer receive it at the clients.',
+    },
+    usedByFeature: {
+      badge: 'Used by a feature',
+      filter: 'Used by a feature',
+      features: 'Used by the features',
+      none: 'No feature uses it.',
+      hint: 'Worked out from what the features declare, never set by hand.',
+    },
     pageTitle: 'Skills & Expertise',
     tabs: {
       skills: 'Skills',
       expertise: 'Expertise',
       invocations: 'Invocations',
+      sync: 'Production and copies',
       details: 'Details',
       versions: 'Versions',
     },
@@ -1433,18 +1949,244 @@ export default {
       other: 'Other',
     },
     errors: {
+      EXPERTISE_LIST_FILTER_INVALID:
+        'The "{filter}" filter of the expertise list is not valid.',
+      SKILL_CONSUMED_EXPERTISES_INVALID:
+        'The expertises consumed must be a list of expertise ids.',
+      SKILL_CONSUMED_EXPERTISES_TOO_MANY:
+        'A version consumes {max} expertises at most.',
+      SKILL_CONSUMED_EXPERTISES_DUPLICATED:
+        'These expertises are consumed more than once: {expertiseIds}. Keep each of them once.',
+      SKILL_CONSUMED_EXPERTISES_NOT_FOUND:
+        'These expertises consumed do not exist: {expertiseIds}. Remove them from the version.',
+      SKILL_OPEN_EXPERTISES_INVALID:
+        'Only the published expertises this version consumes that are kept to the platform company open with the skill, and only when the skill opens to all companies.',
+      SKILL_NOT_AVAILABLE_TO_COMPANY:
+        'This feature is not available to your company yet.',
+      SKILL_PROCEDURE_REQUIRED_TO_PUBLISH:
+        'A task skill\'s procedure must be written before publishing this version.',
       SKILL_SCHEMAS_REQUIRED_TO_PUBLISH:
         'The input and output schemas must be set before publishing this version.',
       SKILL_TEMPLATE_UNKNOWN_FIELDS:
         'The template references fields absent from input schema "{schemaId}": {fields}. Fix the template or change the version input schema.',
+      SKILL_VERSION_CHANGED:
+        'This draft was changed meanwhile, by an assistant for instance. Reload it to see the new version before saving or publishing.',
+      SKILLS_EXPORT_NOT_FOUND:
+        '{id} does not exist: reload the list, then export again.',
+      SKILLS_EXPORT_ARCHIVED:
+        '{id} is archived: it is no longer exported. Reload the list, then export again.',
+      SKILLS_EXPORT_NOT_PUBLISHED:
+        '{id} has no published version: only a published version is exported.',
+      SKILLS_EXPORT_FORMAT_UNKNOWN:
+        'This file is not a skills export this instance reads: it reads format {expected}.',
+      SKILLS_EXPORT_INVALID:
+        'This file is not a readable skills export: the field "{field}" is refused.',
+      SKILLS_EXPORT_FIELD_MISSING:
+        'This file is not a readable skills export: the field "{field}" is missing.',
+      SKILLS_EXPORT_FIELD_WRONG_TYPE:
+        'This file is not a readable skills export: the field "{field}" has the wrong type.',
+      SKILLS_EXPORT_FIELD_NOT_ALLOWED:
+        'This file is not a readable skills export: the value of the field "{field}" is not allowed.',
+      SKILLS_EXPORT_FIELD_TOO_BIG:
+        'This file is not a readable skills export: the field "{field}" is over the size allowed.',
+      SKILLS_EXPORT_FIELD_TOO_SMALL:
+        'This file is not a readable skills export: the field "{field}" is empty or too small.',
+      SKILLS_EXPORT_FIELD_DUPLICATE:
+        'This file is not a readable skills export: the field "{field}" repeats an item already there.',
+      SKILLS_SELECTION_INVALID:
+        'The selection is not a list of ids: "{field}".',
+      SKILLS_IMPORT_ARCHIVED:
+        '{id} is archived here: version {version} was not imported.',
+      SKILLS_IMPORT_DRAFT_OPEN:
+        'A draft is open on {id}: publish or delete it, then import version {version} again.',
+      SKILLS_IMPORT_VERSION_NOT_AHEAD:
+        'Version {version} of {id} is not newer than the versions here: it was not imported.',
+      SKILLS_IMPORT_CHANGED:
+        '{id} changed during the import: import version {version} again.',
+      SKILL_SCHEMA_NOT_IN_CODE:
+        'The schema “{schemaId}” is not in this instance\'s code yet: the version can be published once that code is deployed.',
+      SKILLS_READ_TOKEN_NAME_INVALID:
+        'A token\'s name has 1 to {max} characters.',
+      SKILLS_READ_TOKEN_NOT_FOUND:
+        'This read token does not exist or was already revoked: reload the list.',
+      SKILLS_READ_TOKEN_REQUIRED:
+        'A valid read token is required.',
+      SKILLS_READ_TOKEN_ON_COPY:
+        'This instance is a copy: it follows production and gives no read token.',
+      SKILLS_NOT_A_COPY:
+        'This instance is not a copy: it follows no production.',
+      SKILLS_FOLLOW_RUNNING:
+        'A follow of production is already running: wait for it to end.',
+      SKILLS_FOLLOW_NOT_CONFIGURED:
+        'This instance is not set up to follow any production.',
+      SKILLS_FOLLOW_INVALID_ADDRESS:
+        'Production\'s address is not a valid https address.',
+      SKILLS_FOLLOW_UNREACHABLE:
+        'Production could not be reached.',
+      SKILLS_FOLLOW_TOKEN_REFUSED:
+        'Production refused the read token: it may have been revoked.',
+      SKILLS_FOLLOW_PRODUCTION_ERROR:
+        'Production answered with an error.',
+      SKILLS_FOLLOW_UNREADABLE:
+        'Production\'s answer could not be read: the two instances may not run the same version of LePatron.',
+      SKILLS_FOLLOW_INTERRUPTED:
+        'The follow was interrupted before it ended.',
+      SKILLS_FOLLOW_FAILED:
+        'The follow stopped on an unexpected error: what it already wrote stays, follow production again.',
+      SKILLS_FOLLOW_ITEM_UNREADABLE:
+        'Production sent this item in a form this copy does not read (field “{field}”).',
+      SKILLS_FOLLOW_ITEM_CHANGED:
+        'This item changed on the copy during the follow: it was not overwritten. Follow production again.',
+      SKILLS_FOLLOW_ITEM_INVALID:
+        'This copy refuses what production holds for this item, such as a schema missing from its code.',
+      SKILLS_FOLLOW_ITEM_FAILED:
+        'This item could not be followed.',
+      SKILLS_COPY_ITEM_NOT_FOUND:
+        '{id} does not exist on this copy: reload the list.',
+      SKILLS_COPY_VERSION_NOT_FOUND:
+        'Version {version} of {id} does not exist on this copy.',
+      SKILLS_COPY_ID_TAKEN:
+        'Too many items already hold the copy\'s work on {id}: delete some before creating another.',
+      SKILL_ARCHIVE_CONFIRMATION_REQUIRED:
+        'A feature calls this skill: confirm before archiving it.',
+      SKILL_TEST_CASES_ON_TASK:
+        'A task skill has no test case: no feature calls it.',
+      SKILL_TEST_CASE_INVALID:
+        'A test case is incomplete: each case needs a name and an input.',
+      SKILL_PUBLICATION_GUARD_REQUIRED:
+        'A feature uses this version: check it before publishing it.',
+      SKILL_PUBLICATION_KIND_INVALID:
+        'Only a skill or an expertise is published.',
+      SKILL_PUBLICATION_ITEM_NOT_FOUND:
+        '{id} does not exist here: reload the list.',
+      SKILL_PUBLICATION_VERSION_NOT_FOUND:
+        'Version {version} of {id} does not exist here.',
+      SKILL_PUBLICATION_VERSION_INVALID:
+        'The version is not written as major.minor.',
+      SKILL_PUBLICATION_GUARD_INVALID:
+        'This check does not hold for this version any more: check it again.',
+      SKILL_PUBLICATION_GUARD_NOT_FOUND:
+        'This check is no longer kept: run it again.',
+      SKILL_PUBLICATION_GUARDS_BUSY:
+        'You already have {max} checks running: wait for one to end.',
+      SKILL_PUBLICATION_GUARD_FAILED:
+        'The check could not end: run it again.',
+      SKILL_PUBLICATION_GUARD_INTERRUPTED:
+        'The check was interrupted on the server: run it again.',
+      SKILLS_PUBLICATION_SELECTION_EMPTY:
+        'Select at least one skill or expertise.',
+      SKILLS_PUBLICATION_SELECTION_TOO_BIG:
+        'Select {max} items at most.',
+      SKILLS_PUBLICATION_SELECTION_INVALID:
+        'The selection names an item without its kind or its identifier.',
+    },
+    archiveUsedBy: 'Used by: {features}. Archived, these features will neither load nor call it any more.',
+    archiveConfirmUsedBy: 'I confirm that these features will no longer call this skill.',
+    publishDrafts: {
+      action: 'Publish the drafts',
+      title: 'Publish the selected drafts',
+      intro: 'Each item publishes its draft. One check covers everything these drafts touch, then they are published one by one.',
+      targets: '{count} draft(s) to publish:',
+      nothing: 'No draft to publish in this selection.',
+      skippedLabel: 'Left out:',
+      noGuard: 'No feature uses these drafts: they publish without a check.',
+      publish: 'Publish',
+      published: '{count} draft(s) published.',
+      report: 'Publication report',
+      publishedLabel: 'Published:',
+      warnedLabel: 'Published, with a warning:',
+      failedLabel: 'Not published:',
+      close: 'Close',
+      cancelled: 'Publication cancelled: the drafts stay drafts.',
+      keepKept: 'Ticked, the follow will no longer touch the items published: it will only say that production changed them.',
+      keepFollowed: 'Unticked, each followed item still follows production: at the next follow, the version published here moves to a new "(travail de la copie)" item, as a draft, unless production publishes the same one. An item written on the copy stays as it is while production has no item of the same id.',
+      skipped: {
+        not_found: 'not found',
+        archived: 'archived: reactivate it from its page',
+        no_draft: 'no draft',
+        several_drafts: 'several drafts: publish the one you choose from its page',
+      },
+      failures: {
+        guard_required: 'used by a feature, to check before publishing',
+        not_found: 'version not found',
+        draft_changed: 'changed since it was read: reload its page before publishing it',
+        not_draft: 'no longer a draft',
+        release_notes_required: 'major version: fill in the changelog and release notes on its page',
+        failed: 'the publication failed',
+      },
+    },
+    publicationGuard: {
+      title: 'Check before publishing',
+      intro: 'LePatron replays the test cases of the feature skills concerned, with the active version and then with this one. A difference warns you without blocking: you decide.',
+      usedBy: 'Used by: {features}.',
+      calls: '{calls} AI call(s), {max} at most, with the AI engine of the platform group.',
+      notReplayed: '{count} test case(s) past that cap will not be replayed: reread them.',
+      missing: 'No test case, so not checked: {skills}.',
+      noCase: 'No test case to replay: read the version again before publishing it.',
+      run: 'Run the check',
+      running: 'Checking on the server, three calls at a time at most: this takes a minute or more…',
+      summary: '{cases} case(s) replayed, {failed} with a difference.',
+      expected: 'What a good output should hold',
+      before: 'Active version',
+      after: 'This version',
+      noBefore: 'Not published yet',
+      same: 'Same output',
+      publish: 'Publish',
+      publishAnyway: 'Publish despite the differences',
+      cancel: 'Cancel the publication',
+      cancelled: 'Publication cancelled: the version stays a draft.',
+      errors: {
+        OUTPUT_CONTRACT: 'The answer does not follow the output contract.',
+        INPUT_INVALID: 'The case input no longer follows the input schema.',
+        CALL_FAILED: 'The AI call failed.',
+      },
+    },
+    testCases: {
+      title: 'Test cases',
+      help: 'The inputs this skill is checked against before a change it depends on is published.',
+      empty: 'No test case on this version.',
+      add: 'Add a test case',
+      edit: 'Edit the test case',
+      view: 'View the test case',
+      delete: 'Delete the test case',
+      deleteConfirm: 'Delete this test case from the draft?',
+      save: 'Confirm the case',
+      name: 'Name',
+      input: 'Input (JSON)',
+      inputHint: 'A JSON object with the fields of the version\'s input schema.',
+      expectedOutput: 'What a good output must contain',
+      expectedOutputHint: 'What the person reading the comparison should find in the answer.',
+      notes: 'Notes',
+      fromRunNotes: 'From a playground run of {date}. Expected output to be reviewed.',
+      errors: {
+        required: 'This field is required.',
+        invalidJson: 'This is not valid JSON.',
+        notObject: 'The input must be a JSON object, between braces.',
+      },
+      fromRun: {
+        added: 'Test case added to draft v{version}. Review its expected output on the skill\'s page.',
+        noDraft: 'This skill has no open draft: a published version does not change. Create a new version from the skill\'s page, then try again.',
+        taskSkill: 'A task skill has no test case.',
+        runFailed: 'Only a successful run can become a test case.',
+      },
     },
     warnings: {
+      USED_BY_FEATURES_LOST: 'No longer used by: {features}.',
+      USED_BY_FEATURES_GAINED: 'Now used by: {features}.',
+      SCHEMA_NOT_IN_CODE:
+        'The schema "{schemaId}" is not in the code of this instance: the publication waits for its release.',
       TEMPLATE_UNKNOWN_FIELDS:
         'The template references fields absent from input schema "{schemaId}": {fields}. They will interpolate empty at runtime — publication will be blocked.',
       TEMPLATE_MISSING_REQUIRED:
         'Required field(s) of schema "{schemaId}" not referenced in the template: {fields}.',
       TEMPLATE_MISSING_EXPERTISE:
         'The schema accepts expertises but the template does not insert them: they would be ignored at invocation.',
+      CONSUMED_EXPERTISES_NOT_PUBLISHED:
+        'These expertises consumed are not published: {expertiseIds}. The assistant does not receive them until they are.',
+      CONSUMED_EXPERTISES_PLATFORM_ONLY:
+        'These expertises consumed are kept to the platform company: {expertiseIds}. The assistants of the other companies follow this skill without them.',
+      OPEN_EXPERTISES_FAILED:
+        'The skill is saved, but these expertises could not be opened to all companies: {expertiseIds}. Open them from their details.',
     },
     emailTypes: {
       editorial: 'Editorial',
@@ -1552,6 +2294,31 @@ export default {
       detailResolvedConfig: 'Resolved config',
     },
     version: {
+      reload: 'Reload',
+      procedure: 'Procedure',
+      procedureHint: 'What the assistant does, step by step, in Markdown.',
+      consumedExpertises: 'Expertises consumed',
+      consumedExpertisesHint:
+        'In the order the assistant reads them. Their active version is attached to the skill.',
+      consumedExpertisesEmpty: 'No expertise consumed.',
+      consumedExpertisesAdd: 'Add an expertise',
+      consumedExpertisesSearch: 'Search a published expertise by title or id',
+      consumedExpertisesNoResult: 'No published expertise found.',
+      consumedExpertisesSearchError: 'The search failed. Type again to retry.',
+      consumedExpertisesMax: 'A version consumes {max} expertises at most.',
+      consumedExpertisesLoadError: 'The expertises could not be loaded.',
+      consumedExpertisesRetry: 'Retry',
+      consumedExpertiseNotFound: 'Not found',
+      consumedExpertiseNotFoundHint:
+        'No expertise has this id: the assistant does not receive it. Remove it.',
+      consumedExpertiseNotPublished: 'Not published',
+      consumedExpertiseNotPublishedHint:
+        'A draft, or archived: the assistant does not receive it until a version of it is published. Publish it, or remove it.',
+      consumedExpertisePlatformOnlyHint:
+        'Only the platform company\'s assistants receive it: open it to all companies for their assistants to receive it too.',
+      consumedExpertiseUp: 'Move up',
+      consumedExpertiseDown: 'Move down',
+      consumedExpertiseRemove: 'Remove',
       systemPrompt: 'System prompt',
       skillBody: 'Skill body',
       inputTemplate: 'Input template (uses {input.*} placeholders)',
@@ -1559,10 +2326,22 @@ export default {
       newVersionShort: 'New version',
       versionCreated: 'Version created',
       draftSaved: 'Draft saved',
+      draftSavedSchemaNotInCode:
+        'Draft saved. The schema {ids} is not in the code of this instance: the publication waits for its release. | Draft saved. The schemas {ids} are not in the code of this instance: the publication waits for their release.',
+      schemaNotInCode:
+        'The schema {ids} is not in the code of this instance: the draft is saved, the publication waits for its release. | The schemas {ids} are not in the code of this instance: the draft is saved, the publication waits for their release.',
+      schemaMissing: 'Schema not in the code',
+      schemaMissingHint:
+        'This draft names a schema the code of this instance does not have yet: it is published only once that code is released.',
       unsavedChanges: 'Unsaved changes',
       activate: 'Activate',
       activateTitle: 'Activate this version',
       activateBody: 'Activating a version makes it immutable. Changelog and release notes are required.',
+      platformOnlyReminder:
+        'This item stays visible to the platform company only.',
+      openToAll: 'Open it to all companies',
+      openToAllNotice:
+        'This item opens to all companies as soon as it is published.',
       activateBodyMinor: 'Activating this minor version makes it immutable and immediately changes the doctrine features consume. Changelog and notes are pre-filled from the draft (optional for a minor).',
       changelog: 'Changelog',
       changelogPlaceholder:
@@ -1618,6 +2397,8 @@ export default {
       markGolden: 'Mark as reference',
       unmarkGolden: 'Remove reference',
       compare: 'Compare with reference',
+      makeTestCase: 'Make it a test case',
+      makeTestCaseHint: 'Adds this run\'s input, and its output as the expected output, to the test cases of the skill\'s open draft',
     },
     list: {
       empty: 'Create a scenario to test a skill with your expertise modules. No technical knowledge required.',

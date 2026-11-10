@@ -4,6 +4,10 @@ const asyncHandler = require('express-async-handler');
 const createError = require('http-errors');
 const expertiseService = require('../services/expertise.service.js');
 const { parseVersionParam } = require('../services/version-helpers.js');
+const { openTaskSkillsConsuming } = require('../services/audience-opening.js');
+const { assertCopy } = require('../services/skills-copy.service.js');
+const { withUsedBy } = require('../services/feature-use.js');
+const { expertisePublication } = require('./publication.controller.js');
 
 /**
  * Who is acting, for the `owner` / `createdBy` / `updatedBy` audit fields.
@@ -25,11 +29,21 @@ function versionFromParam(req) {
 
 module.exports = {
   listExpertise: asyncHandler(async (req, res) => {
-    res.json(await expertiseService.listExpertise(req.query));
+    const data = await expertiseService.listExpertise(req.query);
+    // Worked out from the features' declarations, never stored (ADR 0019).
+    res.json({
+      ...data,
+      items: (data.items || []).map((item) => withUsedBy('expertise', item)),
+    });
   }),
 
   getExpertise: asyncHandler(async (req, res) => {
-    res.json(await expertiseService.getExpertise(req.params.expertiseId));
+    res.json(
+      withUsedBy(
+        'expertise',
+        await expertiseService.getExpertise(req.params.expertiseId)
+      )
+    );
   }),
 
   getActivationImpact: asyncHandler(async (req, res) => {
@@ -37,6 +51,12 @@ module.exports = {
       matches: await expertiseService.getActivationImpact(
         req.params.expertiseId
       ),
+    });
+  }),
+
+  getOpenTaskSkills: asyncHandler(async (req, res) => {
+    res.json({
+      skills: await openTaskSkillsConsuming(req.params.expertiseId),
     });
   }),
 
@@ -50,9 +70,14 @@ module.exports = {
   }),
 
   updateExpertise: asyncHandler(async (req, res) => {
-    res.json(
-      await expertiseService.updateExpertise(req.params.expertiseId, req.body)
+    // The scope and the category decide which features load it: what that
+    // changes warns, without a replay (ADR 0019).
+    const { expertise, warnings } = await expertiseService.updateExpertise(
+      req.params.expertiseId,
+      req.body,
+      { userId: userIdOf(req) }
     );
+    res.json({ ...withUsedBy('expertise', expertise), warnings });
   }),
 
   createMinorVersion: asyncHandler(async (req, res) => {
@@ -101,18 +126,20 @@ module.exports = {
     );
   }),
 
+  // Through the publication guard when a feature uses the version (ADR 0019).
   activateVersion: asyncHandler(async (req, res) => {
-    res.json(
-      await expertiseService.activateVersion(
-        req.params.expertiseId,
-        versionFromParam(req),
-        req.body,
-        userIdOf(req)
-      )
-    );
+    // Keeping on the copy what is published is a copy's (ADR 0019).
+    if ((req.body || {}).keepOnCopy === true) assertCopy();
+    const { doc } = await expertisePublication.publish(req);
+    res.json(doc);
   }),
 
+  // A feature that loads it stops: that warns, and is kept (ADR 0019).
   archiveExpertise: asyncHandler(async (req, res) => {
-    res.json(await expertiseService.archiveExpertise(req.params.expertiseId));
+    const { expertise, warnings } = await expertiseService.archiveExpertise(
+      req.params.expertiseId,
+      { userId: userIdOf(req) }
+    );
+    res.json({ ...withUsedBy('expertise', expertise), warnings });
   }),
 };

@@ -1,6 +1,7 @@
 <script>
 import { mapMutations } from 'vuex';
 import { groupsItem } from '~/helpers/api-routes.js';
+import { changedGroupFields } from '~/helpers/group-changes.js';
 import { PAGE, SHOW_SNACKBAR } from '~/store/page.js';
 import BsTextField from '~/components/form/bs-text-field.vue';
 import { Trash2 } from 'lucide-vue';
@@ -130,12 +131,18 @@ export default {
     },
     async onSubmit() {
       if (!this.canSave) return;
+      // The tracking alone, when it changed since the company was loaded.
+      const changes = changedGroupFields(this.localGroup, this.group, [
+        'trackingConfig',
+      ]);
       this.loading = true;
       try {
-        await this.$axios.$put(
-          groupsItem({ groupId: this.localGroup.id }),
-          this.localGroup
-        );
+        if (Object.keys(changes).length > 0) {
+          await this.$axios.$put(
+            groupsItem({ groupId: this.localGroup.id }),
+            changes
+          );
+        }
         this.showSnackbar({
           text: this.$t('trackingConfig.snackbars.updated'),
           color: 'success',

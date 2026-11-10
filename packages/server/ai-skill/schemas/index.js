@@ -77,10 +77,24 @@ function hasSchema(schemaId) {
   return Object.prototype.hasOwnProperty.call(schemas, schemaId);
 }
 
+/**
+ * The schemas a skill's version names that this code does not hold: a draft
+ * written in production before its feature's code ships (ADR 0019).
+ *
+ * @param {{ inputSchemaId?: string, outputSchemaId?: string }} version
+ * @returns {string[]}
+ */
+function missingSchemaIds(version) {
+  return [version.inputSchemaId, version.outputSchemaId].filter(
+    (id) => id && !hasSchema(id)
+  );
+}
+
 module.exports = {
   schemas,
   getSchema,
   listSchemaIds,
   hasSchema,
+  missingSchemaIds,
   expertiseArraySchema,
 };

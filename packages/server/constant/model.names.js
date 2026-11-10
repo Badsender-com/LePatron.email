@@ -30,6 +30,11 @@ module.exports = Object.freeze({
   LePatronSkillModel: 'LePatronSkill',
   ExpertiseModel: 'Expertise',
   AISkillInvocationModel: 'AISkillInvocation',
+  // A copy following production (ADR 0019)
+  SkillsReadTokenModel: 'SkillsReadToken',
+  SkillsFollowModel: 'SkillsFollow',
+  // A run of the publication guard, as a task of the server (ADR 0019)
+  PublicationGuardRunModel: 'PublicationGuardRun',
   // AI Playground
   AIPlaygroundScenarioModel: 'AIPlaygroundScenario',
   AIPlaygroundRunModel: 'AIPlaygroundRun',
@@ -37,4 +42,10 @@ module.exports = Object.freeze({
   TaxonomyItemModel: 'TaxonomyItem',
   // Two-factor authentication (ADR 0008)
   SecurityEventModel: 'SecurityEvent',
+  McpFeedbackModel: 'McpFeedback',
+  McpCallLogModel: 'McpCallLog',
+  McpClientModel: 'McpClient',
+  McpConnectionModel: 'McpConnection',
+  // The retex loop (ADR 0021)
+  McpRetexModel: 'McpRetex',
 });

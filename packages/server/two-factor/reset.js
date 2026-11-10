@@ -6,9 +6,11 @@ const ERROR_CODES = require('../constant/error-codes.js');
 const { Users } = require('../common/models.common.js');
 const permissions = require('../account/permissions.js');
 const { CAPABILITIES } = require('../../shared/access/roles.js');
-const { endSessions } = require('../account/sign-in.js');
+const { endAccess } = require('../account/sign-in.js');
 const { normalizeString } = require('../utils/model.js');
-const { recordSecurityEvent } = require('./security-event.service.js');
+const {
+  recordSecurityEvent,
+} = require('../security-event/security-event.service.js');
 const { sendTwoFactorEmail } = require('./two-factor.emails.js');
 const { METHODS, SECURITY_ACTIONS } = require('./two-factor.constants.js');
 
@@ -18,7 +20,8 @@ const { METHODS, SECURITY_ACTIONS } = require('./two-factor.constants.js');
 
 /**
  * Erases the member's setup and trusted devices, ends their sessions and
- * records who did it. The member sets it up again at their next sign-in.
+ * their connected assistants (ADR 0012), and records who did it. The member
+ * sets it up again at their next sign-in.
  *
  * @param {Object} actor the request user
  * @param {Object} user the member
@@ -31,7 +34,7 @@ async function eraseSetup(actor, user) {
     { _id: user._id },
     { $unset: { twoFactor: 1, twoFactorMethod: 1 } }
   );
-  await endSessions(user.id);
+  await endAccess(user.id);
   await recordSecurityEvent({
     action: SECURITY_ACTIONS.RESET,
     user: user.id,

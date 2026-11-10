@@ -2,12 +2,17 @@
 
 const asyncHandler = require('express-async-handler');
 const createError = require('http-errors');
+const logger = require('../../utils/logger.js');
 
 const skillService = require('../services/skill.service.js');
 const { parseVersionParam } = require('../services/version-helpers.js');
-const { listSchemaIds } = require('../schemas');
+const { listSchemaIds, missingSchemaIds } = require('../schemas');
 const { describeSchema } = require('../schemas/describe-schema.js');
 const { templateWarnings } = require('../services/template-coherence.js');
+const { SkillNatures } = require('../constant/skill-constants.js');
+const { assertCopy } = require('../services/skills-copy.service.js');
+const { withUsedBy } = require('../services/feature-use.js');
+const { skillPublication } = require('./publication.controller.js');
 
 /**
  * Who is acting, for the `owner` / `createdBy` / `updatedBy` audit fields.
@@ -20,18 +25,66 @@ function userIdOf(req) {
   return req.user ? req.user.id : null;
 }
 
+// The warning of a version naming a schema this instance's code lacks,
+// worded by the interface under `aiSkills.warnings`.
+const SCHEMA_NOT_IN_CODE = 'SCHEMA_NOT_IN_CODE';
+
+// A skill as answered, each version naming the schemas this instance's code
+// does not hold (`missingSchemaIds`), for the badge on such a draft.
+function withMissingSchemas(skill) {
+  const payload = typeof skill.toJSON === 'function' ? skill.toJSON() : skill;
+  payload.versions = (payload.versions || []).map((version) => {
+    const missing = missingSchemaIds(version);
+    return missing.length ? { ...version, missingSchemaIds: missing } : version;
+  });
+  return payload;
+}
+
 // Serialize a skill and append non-blocking template↔schema coherence warnings
-// for the given version (DRAFT save AND activation surface them). Tolerant of a
-// plain object so the service layer can be mocked in routing tests.
+// for the given version (DRAFT save AND activation surface them). A task
+// skill's version has neither template nor schema: nothing to warn about.
+// Tolerant of a plain object so the service layer can be mocked in routing
+// tests.
 function withVersionWarnings(skill, major, minor) {
   const version = (skill.versions || []).find(
     (v) => v.versionMajor === major && v.versionMinor === minor
   );
-  const payload = typeof skill.toJSON === 'function' ? skill.toJSON() : skill;
-  payload.warnings = templateWarnings(
-    version ? version.inputTemplate : '',
-    version ? version.inputSchemaId : ''
+  const payload = withMissingSchemas(skill);
+  payload.warnings = [
+    // A schema the code does not hold yet: the draft is saved, its
+    // publication refused until the code ships (ADR 0019).
+    ...(version ? missingSchemaIds(version) : []).map((schemaId) => ({
+      code: SCHEMA_NOT_IN_CODE,
+      schemaId,
+    })),
+    ...(version && version.nature === SkillNatures.TASK
+      ? []
+      : templateWarnings(
+          version ? version.inputTemplate : '',
+          version ? version.inputSchemaId : ''
+        )),
+  ];
+  return payload;
+}
+
+// At publication, what the version's consumed expertises warn of too, with
+// the audience the skill has now, and those of its opening. The publication
+// is done: reading what it warns of never turns it into an error.
+async function withPublicationWarnings(skill, major, minor, opening) {
+  const payload = withVersionWarnings(skill, major, minor);
+  const version = (skill.versions || []).find(
+    (v) => v.versionMajor === major && v.versionMinor === minor
   );
+  let consumed = [];
+  try {
+    consumed = await skillService.consumedExpertiseWarnings(skill, version);
+  } catch (error) {
+    logger.error(
+      `[ai-skill] the warnings of ${skill.skillId} ${major}.${minor} could not be read`,
+      error
+    );
+  }
+  payload.warnings = [...payload.warnings, ...consumed, ...opening];
   return payload;
 }
 
@@ -45,12 +98,16 @@ function versionFromParam(req) {
 module.exports = {
   listSkills: asyncHandler(async (req, res) => {
     const data = await skillService.listSkills(req.query);
-    res.json(data);
+    // Worked out from the features' declarations, never stored (ADR 0019).
+    res.json({
+      ...data,
+      items: (data.items || []).map((item) => withUsedBy('skill', item)),
+    });
   }),
 
   getSkill: asyncHandler(async (req, res) => {
     const skill = await skillService.getSkill(req.params.skillId);
-    res.json(skill);
+    res.json(withUsedBy('skill', withMissingSchemas(skill)));
   }),
 
   createSkill: asyncHandler(async (req, res) => {
@@ -58,9 +115,16 @@ module.exports = {
     res.status(201).json(skill);
   }),
 
+  // The skill saved, and what its opening warns of (ADR 0013).
   updateSkill: asyncHandler(async (req, res) => {
-    const skill = await skillService.updateSkill(req.params.skillId, req.body);
-    res.json(skill);
+    const { skill, warnings } = await skillService.updateSkill(
+      req.params.skillId,
+      req.body
+    );
+    res.json({
+      ...(typeof skill.toJSON === 'function' ? skill.toJSON() : skill),
+      warnings,
+    });
   }),
 
   createMinorVersion: asyncHandler(async (req, res) => {
@@ -112,20 +176,37 @@ module.exports = {
 
   activateVersion: asyncHandler(async (req, res) => {
     const { major, minor } = versionFromParam(req);
-    const skill = await skillService.activateVersion(
-      req.params.skillId,
-      { major, minor },
-      req.body,
-      userIdOf(req)
-    );
+    // Keeping on the copy what is published is a copy's (ADR 0019).
+    if ((req.body || {}).keepOnCopy === true) assertCopy();
+    // Through the publication guard when a feature uses the version (ADR 0019),
+    // with the opening the request asks for (ADR 0013).
+    const { doc: skill, warnings } = await skillPublication.publish(req);
     // Non-blocking coherence warnings surface post-activation too (e.g. a
-    // schema that accepts expertises but a template that never inserts them).
-    res.json(withVersionWarnings(skill, major, minor));
+    // schema that accepts expertises but a template that never inserts them),
+    // with those of the expertises a task version consumes and of its opening.
+    res.json(await withPublicationWarnings(skill, major, minor, warnings));
   }),
 
+  getPlatformOnlyExpertises: asyncHandler(async (req, res) => {
+    res.json({
+      expertises: await skillService.versionPlatformOnlyExpertises(
+        req.params.skillId,
+        versionFromParam(req)
+      ),
+    });
+  }),
+
+  // A skill a feature calls is archived once confirmed (`confirmUsedBy`),
+  // and warns that the feature stops calling it (ADR 0019).
   archiveSkill: asyncHandler(async (req, res) => {
-    const skill = await skillService.archiveSkill(req.params.skillId);
-    res.json(skill);
+    const { skill, warnings } = await skillService.archiveSkill(
+      req.params.skillId,
+      {
+        confirmUsedBy: (req.body || {}).confirmUsedBy === true,
+        userId: userIdOf(req),
+      }
+    );
+    res.json({ ...withUsedBy('skill', skill), warnings });
   }),
 
   listSchemas: asyncHandler(async (_req, res) => {

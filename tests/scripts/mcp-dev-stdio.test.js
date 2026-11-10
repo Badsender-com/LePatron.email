@@ -1,0 +1,138 @@
+'use strict';
+
+// The stdio bridge reads as whichever account its command line names, so it
+// runs only when NODE_ENV says development explicitly, and against a database
+// on this machine only, unless told otherwise on purpose. It never prints the
+// database's URI, which may carry credentials.
+
+const {
+  isLocalDatabase,
+  assertMayRun,
+  stopper,
+} = require('../../scripts/mcp-dev-stdio.js');
+
+const REMOTE = 'mongodb://admin:s3cret@db.example.test:27017/lepatron';
+const LOCAL = 'mongodb://localhost/lepatron';
+const DEV = { isDev: true };
+const DEV_ENV = { NODE_ENV: 'development' };
+
+describe('mcp-dev-stdio', () => {
+  it.each([
+    'mongodb://localhost:27017/lepatron',
+    'mongodb://127.0.0.1/lepatron',
+    'mongodb://user:pass@[::1]:27017/lepatron?authSource=admin',
+    'mongodb://localhost:27017,127.0.0.1:27018/lepatron',
+  ])('takes %s for a local database', (uri) => {
+    expect(isLocalDatabase(uri)).toBe(true);
+  });
+
+  it.each([
+    REMOTE,
+    'mongodb://localhost:27017,db.example.test:27017/lepatron',
+    'mongodb+srv://cluster.example.test/lepatron',
+    'mongodb://localhost.example.test/lepatron',
+    undefined,
+  ])('does not take %s for a local database', (uri) => {
+    expect(isLocalDatabase(uri)).toBe(false);
+  });
+
+  it('runs against a local database', () => {
+    expect(() =>
+      assertMayRun({ ...DEV, database: LOCAL }, [], DEV_ENV)
+    ).not.toThrow();
+  });
+
+  it('refuses a remote database without saying so on purpose, and never names it', () => {
+    const run = () => assertMayRun({ ...DEV, database: REMOTE }, [], DEV_ENV);
+
+    expect(run).toThrow(/local database only/);
+    expect(run).not.toThrow(/s3cret|example\.test/);
+  });
+
+  it('runs against a remote database when told so on purpose', () => {
+    expect(() =>
+      assertMayRun(
+        { ...DEV, database: REMOTE },
+        ['--allow-remote-database'],
+        DEV_ENV
+      )
+    ).not.toThrow();
+  });
+
+  it.each([
+    ['NODE_ENV left unset', {}],
+    ['NODE_ENV set to production', { NODE_ENV: 'production' }],
+    ['NODE_ENV set to test', { NODE_ENV: 'test' }],
+  ])('never runs with %s', (_case, env) => {
+    expect(() =>
+      assertMayRun(
+        { ...DEV, database: LOCAL },
+        ['--allow-remote-database'],
+        env
+      )
+    ).toThrow(/development only/);
+  });
+
+  it('never runs when the configuration is not development', () => {
+    expect(() =>
+      assertMayRun({ isDev: false, database: LOCAL }, [], DEV_ENV)
+    ).toThrow(/development only/);
+  });
+
+  // The server writes the call log in the background: a client that stops
+  // the bridge right after its last call still finds that call logged.
+  describe('stopping', () => {
+    it('lets the database go and exits once the call logs are written', async () => {
+      const steps = [];
+      let written;
+      const stop = stopper({
+        flush: () =>
+          new Promise((resolve) => {
+            written = () => {
+              steps.push('written');
+              resolve();
+            };
+          }),
+        disconnect: async () => steps.push('disconnected'),
+        exit: (code) => steps.push(`exit ${code}`),
+      });
+
+      const stopped = stop();
+      await new Promise(setImmediate);
+      expect(steps).toEqual([]);
+      written();
+      await stopped;
+
+      expect(steps).toEqual(['written', 'disconnected', 'exit 0']);
+    });
+
+    it('stops all the same, with an error code, when the calls do not end in time', async () => {
+      const exit = jest.fn();
+      const disconnect = jest.fn();
+      const stop = stopper({
+        flush: () => new Promise(() => {}),
+        disconnect,
+        exit,
+        timeoutMs: 20,
+      });
+
+      await stop();
+
+      expect(exit).toHaveBeenCalledWith(1);
+      expect(disconnect).not.toHaveBeenCalled();
+    });
+
+    it('stops once, however often it is asked', async () => {
+      const exit = jest.fn();
+      const stop = stopper({
+        flush: async () => undefined,
+        disconnect: async () => undefined,
+        exit,
+      });
+
+      await Promise.all([stop(), stop()]);
+
+      expect(exit).toHaveBeenCalledTimes(1);
+    });
+  });
+});

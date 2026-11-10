@@ -5,9 +5,19 @@ import BsPageHeader from '~/components/layout/bs-page-header.vue';
 import BsAiSkillsTab from '~/components/ai-skill/bs-ai-skills-tab.vue';
 import BsAiExpertiseTab from '~/components/ai-skill/bs-ai-expertise-tab.vue';
 import BsAiInvocationsTab from '~/components/ai-skill/bs-ai-invocations-tab.vue';
-import { Plus } from 'lucide-vue';
+import BsAiSyncTab from '~/components/ai-skill/bs-ai-sync-tab.vue';
+import BsAiSkillsImportModal from '~/components/ai-skill/bs-ai-skills-import-modal.vue';
+import { mapMutations } from 'vuex';
+import * as api from '~/helpers/ai-skill-routes.js';
+import { fetchCopyState } from '~/helpers/skills-copy.js';
+import { Plus, Download, Upload } from 'lucide-vue';
+import { PAGE, SHOW_SNACKBAR } from '~/store/page.js';
+import {
+  downloadSkillsExport,
+  exportFailureMessage,
+} from '~/helpers/skills-export-download.js';
 
-const VALID_TABS = ['skills', 'expertise', 'invocations'];
+const VALID_TABS = ['skills', 'expertise', 'invocations', 'sync'];
 
 export default {
   name: 'PageAiSkillsHub',
@@ -16,7 +26,11 @@ export default {
     BsAiSkillsTab,
     BsAiExpertiseTab,
     BsAiInvocationsTab,
+    BsAiSyncTab,
+    BsAiSkillsImportModal,
     LucidePlus: Plus,
+    LucideDownload: Download,
+    LucideUpload: Upload,
   },
   mixins: [mixinPageTitle],
   meta: {
@@ -26,6 +40,10 @@ export default {
   data() {
     return {
       tab: this.resolveInitialTab(),
+      exportingAll: false,
+      // On a copy, the lists say where each item comes from (ADR 0019).
+      isCopy: false,
+      followedOnce: false,
     };
   },
   head() {
@@ -58,7 +76,43 @@ export default {
       }
     },
   },
+  mounted() {
+    this.loadCopyState();
+  },
   methods: {
+    ...mapMutations(PAGE, { showSnackbar: SHOW_SNACKBAR }),
+    async loadCopyState() {
+      const { isCopy, followedOnce } = await fetchCopyState(
+        this.$axios,
+        api.aiSkillsFollow
+      );
+      this.isCopy = isCopy;
+      this.followedOnce = followedOnce;
+    },
+    // Every active skill and expertise, in one file (ADR 0018).
+    async exportAll() {
+      this.exportingAll = true;
+      try {
+        await downloadSkillsExport(this.$axios, { all: true });
+        this.showSnackbar({
+          text: this.$t('aiSkills.export.done'),
+          color: 'success',
+        });
+      } catch (err) {
+        this.showSnackbar({
+          text: exportFailureMessage(this, err),
+          color: 'error',
+        });
+      } finally {
+        this.exportingAll = false;
+      }
+    },
+    // The lists show the new drafts, or what a follow of production brought.
+    onImported() {
+      this.loadCopyState();
+      if (this.$refs.skillsTab) this.$refs.skillsTab.fetchData();
+      if (this.$refs.expertiseTab) this.$refs.expertiseTab.fetchData();
+    },
     resolveInitialTab() {
       const q = this.$route && this.$route.query && this.$route.query.tab;
       return VALID_TABS.includes(q) ? q : 'skills';
@@ -84,6 +138,25 @@ export default {
         {{ pageTitle }}
       </template>
       <template v-if="showAddButton" #actions>
+        <v-btn
+          outlined
+          color="accent"
+          class="mr-2"
+          @click="$refs.importModal.open()"
+        >
+          <lucide-upload :size="18" class="mr-2" />
+          {{ $t('skillsImport.open') }}
+        </v-btn>
+        <v-btn
+          outlined
+          color="accent"
+          class="mr-2"
+          :loading="exportingAll"
+          @click="exportAll"
+        >
+          <lucide-download :size="18" class="mr-2" />
+          {{ $t('aiSkills.export.all') }}
+        </v-btn>
         <v-btn color="accent" elevation="0" @click="onAdd">
           <lucide-plus :size="18" class="mr-2" />
           {{ addButtonLabel }}
@@ -101,6 +174,9 @@ export default {
       <v-tab href="#invocations">
         {{ $t('aiSkills.tabs.invocations') }}
       </v-tab>
+      <v-tab href="#sync">
+        {{ $t('aiSkills.tabs.sync') }}
+      </v-tab>
     </v-tabs>
     <v-divider />
 
@@ -108,17 +184,30 @@ export default {
       <div class="hub-content">
         <v-tabs-items v-model="tab" class="transparent">
           <v-tab-item value="skills">
-            <bs-ai-skills-tab ref="skillsTab" />
+            <bs-ai-skills-tab
+              ref="skillsTab"
+              :is-copy="isCopy"
+              :followed-once="followedOnce"
+            />
           </v-tab-item>
           <v-tab-item value="expertise">
-            <bs-ai-expertise-tab ref="expertiseTab" />
+            <bs-ai-expertise-tab
+              ref="expertiseTab"
+              :is-copy="isCopy"
+              :followed-once="followedOnce"
+            />
           </v-tab-item>
           <v-tab-item value="invocations">
             <bs-ai-invocations-tab />
           </v-tab-item>
+          <v-tab-item value="sync">
+            <bs-ai-sync-tab @followed="onImported" />
+          </v-tab-item>
         </v-tabs-items>
       </div>
     </v-container>
+
+    <bs-ai-skills-import-modal ref="importModal" @imported="onImported" />
   </div>
 </template>
 

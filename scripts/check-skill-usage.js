@@ -20,6 +20,9 @@ const path = require('path');
 
 const ROOT = path.resolve(__dirname, '..');
 const SERVER_DIR = path.join(ROOT, 'packages', 'server');
+const {
+  usedSkillIds,
+} = require('../packages/server/ai-skill/services/feature-use.js');
 const INVOKE_REGEX = /skillInvocation\.invoke\s*\(\s*\{[^}]*skillId\s*:\s*['"]([^'"]+)['"]/g;
 
 function walk(dir, files = []) {
@@ -148,6 +151,24 @@ async function checkDB(declaredSkillIds, declaredExpertiseIds, allowDraft) {
   return errors;
 }
 
+/**
+ * The skills and expertises the manifests declare. A manifest names a skill
+ * by its id or as an object carrying it, as the feature use reads it.
+ *
+ * @param {{ manifest: Object }[]} manifests
+ * @returns {{ skillIds: Set<string>, expertiseIds: Set<string> }}
+ */
+function declaredIdsOf(manifests) {
+  const skillIds = new Set();
+  const expertiseIds = new Set();
+  for (const { manifest } of manifests) {
+    usedSkillIds(manifest).forEach((id) => skillIds.add(id));
+    for (const e of manifest.usedExpertise || [])
+      expertiseIds.add(e.expertiseId);
+  }
+  return { skillIds, expertiseIds };
+}
+
 async function main() {
   const args = new Set(process.argv.slice(2));
   const dry = args.has('--dry');
@@ -156,13 +177,10 @@ async function main() {
 
   const invocations = scanInvocations();
   const manifests = loadManifests();
-  const declaredSkillIds = new Set();
-  const declaredExpertiseIds = new Set();
-  for (const { manifest } of manifests) {
-    for (const s of manifest.usedSkills || []) declaredSkillIds.add(s.skillId);
-    for (const e of manifest.usedExpertise || [])
-      declaredExpertiseIds.add(e.expertiseId);
-  }
+  const {
+    skillIds: declaredSkillIds,
+    expertiseIds: declaredExpertiseIds,
+  } = declaredIdsOf(manifests);
 
   const undeclared = [];
   for (const [id, files] of invocations.entries()) {
@@ -230,4 +248,9 @@ if (require.main === module) {
   });
 }
 
-module.exports = { scanInvocations, loadManifests, validateExpertiseFilters };
+module.exports = {
+  scanInvocations,
+  loadManifests,
+  validateExpertiseFilters,
+  declaredIdsOf,
+};

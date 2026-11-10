@@ -17,6 +17,7 @@ const configured = (overrides = {}) => ({
   NODE_ENV: 'production',
   sessionSecret: 'a-secret-of-the-deployment',
   admin: { password: 'a-password-of-the-deployment' },
+  mcpOauthJwks: '{"keys":[]}',
   ...overrides,
 });
 
@@ -37,6 +38,12 @@ describe('starting outside development', () => {
     expect(() =>
       assertProductionSecrets(configured({ admin: { password: 'admin' } }))
     ).toThrow(/lepatron_admin__password/);
+  });
+
+  it('refuses to leave the MCP authorization server on the public development keys', () => {
+    expect(() =>
+      assertProductionSecrets(configured({ mcpOauthJwks: undefined }))
+    ).toThrow(/lepatron_mcpOauthJwks/);
   });
 
   it('refuses a secret left empty', () => {

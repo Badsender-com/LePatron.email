@@ -3,9 +3,12 @@
 // POST /groups seeds the default email types. Only a super admin creates a
 // company, and their session carries no `lang`: the language has to come from the
 // interface, and must not be stored on the company as if it were one of its fields.
+// A company starts with its switches off: they are turned on from its settings,
+// where each one is a security event.
 
 jest.mock('../../../packages/server/common/models.common.js', () => ({
   Groups: {},
+  SecurityEvents: { create: jest.fn() },
   Profiles: {},
   Templates: {},
   Mailings: {},
@@ -36,16 +39,20 @@ jest.mock(
 );
 jest.mock('../../../packages/server/utils/logger.js', () => ({
   log: jest.fn(),
+  info: jest.fn(),
   warn: jest.fn(),
   error: jest.fn(),
 }));
 
 const groupService = require('../../../packages/server/group/group.service.js');
+const {
+  SecurityEvents,
+} = require('../../../packages/server/common/models.common.js');
 const taxonomyDefaultsService = require('../../../packages/server/taxonomy/taxonomy-defaults.service.js');
 const groupController = require('../../../packages/server/group/group.controller.js');
 
 const GROUP_ID = '507f1f77bcf86cd799439001';
-const superAdmin = { id: 'admin', name: 'admin' };
+const superAdmin = { id: 'admin', name: 'admin', role: 'super_admin' };
 
 async function create(body, user = superAdmin) {
   const res = { json: jest.fn() };
@@ -107,4 +114,73 @@ describe('POST /groups — default email types language', () => {
       expect.objectContaining({ id: GROUP_ID })
     );
   });
+});
+
+describe('POST /groups — the company switches', () => {
+  it.each([
+    ['requireTwoFactor', true],
+    ['requireTwoFactor', 'yes'],
+    ['enableMcp', true],
+    ['enableMcp', { $ne: false }],
+    ['allowRetex', true],
+  ])('creates the company without %s, sent as %p', async (field, value) => {
+    await create({ name: 'Acme', [field]: value });
+
+    expect(groupService.createGroup.mock.calls[0][0]).toEqual({
+      name: 'Acme',
+    });
+  });
+
+  it('records no security event for a company created with its switches off', async () => {
+    await create({ name: 'Acme', enableMcp: true, enableMcpModule: false });
+
+    expect(SecurityEvents.create).not.toHaveBeenCalled();
+  });
+});
+
+// The MCP module may be opened at creation, as the other modules (ADR 0017),
+// under the rule of the switches: a strict boolean, and its opening recorded.
+describe('POST /groups — the MCP module', () => {
+  it('creates the company with the module open, and records its opening', async () => {
+    await create({ name: 'Acme', enableMcpModule: true });
+
+    expect(groupService.createGroup.mock.calls[0][0]).toEqual({
+      name: 'Acme',
+      enableMcpModule: true,
+    });
+    expect(SecurityEvents.create).toHaveBeenCalledTimes(1);
+    expect(SecurityEvents.create).toHaveBeenCalledWith({
+      action: 'mcp-module.opened',
+      actor: 'admin',
+      group: GROUP_ID,
+    });
+  });
+
+  it.each([['yes'], ['true'], [1], [{ $ne: false }], [false]])(
+    'creates it closed, recording nothing, when the request carries %p',
+    async (value) => {
+      await create({ name: 'Acme', enableMcpModule: value });
+
+      expect(groupService.createGroup.mock.calls[0][0]).toEqual({
+        name: 'Acme',
+      });
+      expect(SecurityEvents.create).not.toHaveBeenCalled();
+    }
+  );
+});
+
+// A company is created from its named fields only: a key that starts with `$`
+// is not one of them.
+describe('POST /groups — named fields only', () => {
+  it.each(['enableMcpModule', 'enableMcp', 'allowRetex', 'requireTwoFactor'])(
+    'creates the company without %s sent as an operator',
+    async (field) => {
+      await create({ name: 'Acme', $set: { [field]: true } });
+
+      expect(groupService.createGroup.mock.calls[0][0]).toEqual({
+        name: 'Acme',
+      });
+      expect(SecurityEvents.create).not.toHaveBeenCalled();
+    }
+  );
 });

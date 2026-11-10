@@ -12,15 +12,18 @@ const groupService = require('../group/group.service.js');
 const superAdminPolicy = require('../user/super-admin-policy.js');
 const permissions = require('../account/permissions.js');
 const {
-  requirementChangeOf,
-  recordRequirementChange,
-} = require('../two-factor/group-option.js');
+  takeSwitches,
+  writeSwitches,
+  recordSwitches,
+  forgetSwitchedOff,
+} = require('./group-switch.js');
 const { CAPABILITIES } = require('../../shared/access/roles.js');
 const profileService = require('../profile/profile.service.js');
 const emailsGroupService = require('../emails-group/emails-group.service.js');
 const personalizedVariableService = require('../personalized-variables/personalized-variable.service.js');
 const groupFtpService = require('../group/group-ftp.service.js');
-const invocationLogService = require('../ai-skill/services/invocation-log.service.js');
+const { restampLogs } = require('./log-retention.js');
+const { forgetRetention } = require('../mcp/mcp-call-log.js');
 const taxonomyDefaultsService = require('../taxonomy/taxonomy-defaults.service.js');
 const { pickSeedLang } = require('../taxonomy/default-email-types.js');
 const logger = require('../utils/logger.js');
@@ -41,6 +44,22 @@ const {
 const {
   sanitizeEmailMetadata,
 } = require('../utils/sanitize-email-metadata.js');
+
+/**
+ * The company fields a request names: its own keys, but those that start
+ * with `$`, which the database would read as an update operator rather than
+ * a field. A company is written by its named fields only, each one through
+ * the rule it answers to (the switches through group-switch.js).
+ *
+ * @param {Object} body the request body
+ * @returns {Object} a copy, with the named fields only
+ */
+function namedFieldsOf(body) {
+  if (!body || typeof body !== 'object' || Array.isArray(body)) return {};
+  return Object.fromEntries(
+    Object.entries(body).filter(([key]) => !key.startsWith('$'))
+  );
+}
 
 module.exports = {
   list: asyncHandler(list),
@@ -180,7 +199,13 @@ async function create(req, res) {
   }
 
   // Not a company field: the language the default email types are seeded in.
-  const { defaultEmailTypesLang, ...groupToCreate } = req.body;
+  const { defaultEmailTypesLang, ...groupToCreate } = namedFieldsOf(req.body);
+  // A company starts with its switches off: they are turned on from its
+  // settings, where each one is recorded as a security event. The MCP module
+  // alone may be opened at creation, as the other modules, by the super admin
+  // who creates the company (ADR 0017): recorded as its opening.
+  const { enableMcpModule } = takeSwitches(groupToCreate);
+  if (enableMcpModule) groupToCreate.enableMcpModule = true;
 
   if ('idpCert' in groupToCreate) {
     groupToCreate.idpCert = normalizeIdpCert(groupToCreate.idpCert);
@@ -196,6 +221,11 @@ async function create(req, res) {
 
   const defaultWorkspaceName = req.body.defaultWorkspaceName || 'Workspace';
   const newGroup = await groupService.createGroup(groupToCreate);
+  await recordSwitches(
+    req.user,
+    newGroup.id,
+    enableMcpModule ? { enableMcpModule } : {}
+  );
   const workspaceParams = { name: defaultWorkspaceName, groupId: newGroup.id };
   await createWorkspace(workspaceParams);
 
@@ -515,7 +545,9 @@ async function update(req, res) {
   const { user } = req;
 
   // Process credentials (handle masking and deletion)
-  const processedBody = groupFtpService.processCredentialsForUpdate(req.body);
+  const processedBody = groupFtpService.processCredentialsForUpdate(
+    namedFieldsOf(req.body)
+  );
   // The platform flag has its own endpoint and its own guardrail (ADR 0002).
   delete processedBody.isPlatform;
 
@@ -575,8 +607,11 @@ async function update(req, res) {
       // The company's tracking belongs to its technical settings (ADR 0004),
       // and so does two-factor authentication for every member (ADR 0008):
       // dropped for a company admin, as the other fields it cannot set.
+      // MCP access too: a tech admin connects the company's AI assistants
+      // to LePatron, as it sets up its AI features, and decides whether their
+      // session summaries may reach the platform company (ADR 0012).
       ...(permissions.can(user, CAPABILITIES.GROUP_MANAGE_TECH)
-        ? ['trackingConfig', 'requireTwoFactor']
+        ? ['trackingConfig', 'requireTwoFactor', 'enableMcp', 'allowRetex']
         : []),
     ]);
     // Reinstated after the pick, from the URL, so the whitelist never has to
@@ -595,24 +630,29 @@ async function update(req, res) {
       )?.logRetentionDays
     : undefined;
 
-  const twoFactorChange = await requirementChangeOf(
-    req.params.groupId,
-    groupToUpdate
-  );
-
+  // The company's switches are written apart, after the rest, in the one
+  // operation that tells what they were: a security event is recorded for a
+  // switch this request changed, and for it only.
+  const switches = takeSwitches(groupToUpdate);
   await groupService.updateGroup(groupToUpdate);
-  await recordRequirementChange(user, req.params.groupId, twoFactorChange);
+  const switched = await writeSwitches(req.params.groupId, switches);
+  await recordSwitches(user, req.params.groupId, switched);
+  await forgetSwitchedOff(req.params.groupId, switches);
 
-  // AISkillInvocation.expiresAt is stamped at write time, so a retention change
-  // has to be propagated to the invocations already logged — otherwise lowering
-  // it would only apply to future ones, and the RGPD promise would be weaker
-  // than the nightly purge this replaced.
+  // A log's end of retention is stamped at write time, so a retention change
+  // has to reach the logs already kept: lowering it would otherwise apply to
+  // future ones only, and the RGPD promise would be weaker than the nightly
+  // purge this replaced. Done after the answer, which does not wait for it.
   const nextRetention = Number(groupToUpdate.logRetentionDays);
   if (carriesRetention && nextRetention !== previousRetention) {
-    await invocationLogService.restampRetention({
-      groupId: req.params.groupId,
-      retentionDays: nextRetention,
-    });
+    // The MCP call logs written from now on take the new retention at once.
+    forgetRetention(req.params.groupId);
+    restampLogs(req.params.groupId).catch((error) =>
+      logger.error(
+        `[group] the logs of group=${req.params.groupId} did not take the new retention`,
+        error
+      )
+    );
   }
 
   // Fetch the updated group to return with masked credentials

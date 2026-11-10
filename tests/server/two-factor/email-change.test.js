@@ -31,6 +31,9 @@ jest.mock('../../../packages/server/account/selected-group.js', () => ({
   resolveSelectedGroup: jest.fn().mockResolvedValue(null),
   forgetSessionSelection: jest.fn(),
 }));
+jest.mock('../../../packages/server/mcp/mcp-connections.js', () => ({
+  revokeConnections: jest.fn(),
+}));
 jest.mock('../../../packages/server/utils/logger.js', () => ({
   log: jest.fn(),
   info: jest.fn(),

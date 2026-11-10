@@ -41,15 +41,31 @@ describe('LePatronSkill model', () => {
     await expect(skill.validate()).rejects.toThrow(/skillId/);
   });
 
-  it('rejects unknown inputSchemaId on a version', async () => {
-    const skill = buildSkill({}, { inputSchemaId: 'nope' });
+  it('rejects unknown inputSchemaId on a published version', async () => {
+    const skill = buildSkill({}, { inputSchemaId: 'nope', status: 'ACTIVE' });
     await expect(skill.validate()).rejects.toThrow(/inputSchemaId/);
   });
 
-  it('rejects unknown outputSchemaId on a version', async () => {
-    const skill = buildSkill({}, { outputSchemaId: 'nope' });
+  it('rejects unknown outputSchemaId on a published version', async () => {
+    const skill = buildSkill(
+      {},
+      { outputSchemaId: 'nope', status: 'ARCHIVED' }
+    );
     await expect(skill.validate()).rejects.toThrow(/outputSchemaId/);
   });
+
+  // Production writes a feature skill before the code that calls it ships
+  // (ADR 0019): its draft may name a schema this code does not hold yet.
+  it.each(['inputSchemaId', 'outputSchemaId'])(
+    'saves a draft whose %s the code does not hold yet',
+    async (field) => {
+      const skill = buildSkill(
+        {},
+        { [field]: 'notShippedYet', status: 'DRAFT' }
+      );
+      await expect(skill.validate()).resolves.toBeUndefined();
+    }
+  );
 
   it('rejects {{input.*}} in systemPrompt', async () => {
     const skill = buildSkill({
@@ -79,6 +95,37 @@ describe('LePatronSkill model', () => {
       ],
     });
     await expect(skill.validate()).rejects.toThrow(/skillBody/);
+  });
+
+  // Refused as a request error with a message meant to be shown, which the
+  // back office and an assistant read, rather than as a failure of the server.
+  it.each([
+    ['systemPrompt', { systemPrompt: 'Hello {{input.name}}' }],
+    ['skillBody', { skillBody: 'Use {{input.prompt}}' }],
+  ])(
+    'refuses {{input.*}} in %s as a request error, naming the template',
+    async (_field, content) => {
+      const skill = buildSkill({
+        versions: [
+          {
+            versionMajor: 1,
+            versionMinor: 0,
+            inputTemplate: '{{input.prompt}}',
+            ...content,
+          },
+        ],
+      });
+      const refusal = await skill.validate().catch((error) => error);
+
+      expect(refusal).toMatchObject({ status: 400, expose: true });
+      expect(refusal.message).toContain('inputTemplate');
+    }
+  );
+
+  it('refuses an unknown schema as a request error', async () => {
+    const skill = buildSkill({}, { inputSchemaId: 'nope', status: 'ACTIVE' });
+
+    await expect(skill.validate()).rejects.toMatchObject({ status: 400 });
   });
 
   it('allows {{input.*}} inside inputTemplate', async () => {

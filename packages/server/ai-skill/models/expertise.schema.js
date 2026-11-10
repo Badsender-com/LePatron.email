@@ -1,16 +1,22 @@
 'use strict';
 
 const { Schema } = require('mongoose');
+const createError = require('http-errors');
 const { ObjectId } = Schema.Types;
 const { UserModel } = require('../../constant/model.names.js');
+const { GuardRecordSchema } = require('./guard-record.schema.js');
+const { UsageChangeSchema } = require('./usage-change.schema.js');
 const { parseSections } = require('../services/expertise-parser.service.js');
 const {
   SkillCategoryValues,
   SkillStatuses,
   SkillStatusValues,
+  AudienceValues,
   SkillIdRegex,
   MaxSkillIdLength,
 } = require('../constant/skill-constants.js');
+const { newItemAudience } = require('../services/audience.js');
+const { followFields } = require('./follow-fields.js');
 
 const SectionSchema = new Schema(
   {
@@ -43,6 +49,12 @@ const ExpertiseVersionSchema = new Schema(
     updatedAt: { type: Date, default: Date.now },
     updatedBy: { type: ObjectId, ref: UserModel },
     activatedAt: { type: Date, default: null },
+    // When a follow of production brought it (ADR 0019): unset on a version
+    // written on this instance.
+    followedAt: { type: Date },
+    guardHistory: { type: [GuardRecordSchema], default: [] },
+    // The retex this draft addresses (ADR 0021), closed when it is published.
+    retexIds: { type: [String], default: [] },
   },
   { _id: false }
 );
@@ -88,11 +100,21 @@ const ExpertiseSchema = new Schema(
       enum: SkillStatusValues,
       default: SkillStatuses.DRAFT,
     },
+    // No audience on a document written before audiences: it waits for the
+    // migration, closed to the clients (services/audience.js).
+    audience: {
+      type: String,
+      enum: AudienceValues,
+      default: newItemAudience,
+    },
+    ...followFields(),
     activeVersion: {
       type: ActiveVersionSchema,
       default: () => ({ major: null, minor: 0 }),
     },
     versions: { type: [ExpertiseVersionSchema], default: [] },
+    // What changed a feature's use of it without a new version (ADR 0019).
+    usageHistory: { type: [UsageChangeSchema], default: [] },
   },
   {
     timestamps: true,
@@ -108,9 +130,15 @@ ExpertiseSchema.index({ isTransversal: 1 });
 ExpertiseSchema.index({ appliesToEmailTypes: 1 });
 ExpertiseSchema.index({ status: 1 });
 
+// How a section is written, said with a refusal so that whoever wrote the
+// body, a person or an assistant, can fix it.
+const SECTION_CONVENTION =
+  'Each section is a level-2 heading "## [section-id] Title", its id in lowercase letters, digits and hyphens, once per expertise.';
+
 /**
  * Auto-derive the `sections[]` index from the Markdown body on each save.
- * Hard errors (invalid slug, duplicates) abort the save.
+ * Hard errors (invalid slug, duplicates) abort the save, as a request error
+ * whose message is meant to be shown (400).
  */
 ExpertiseSchema.pre('validate', function preValidate(next) {
   for (const version of this.versions || []) {
@@ -118,7 +146,12 @@ ExpertiseSchema.pre('validate', function preValidate(next) {
     const { sections, errors } = parseSections(version.body || '');
     if (errors.length > 0) {
       return next(
-        new Error(`Expertise version ${label}: ${errors.join('; ')}`)
+        createError(
+          400,
+          `Expertise version ${label}: ${errors.join(
+            '; '
+          )}. ${SECTION_CONVENTION}`
+        )
       );
     }
     version.sections = sections;

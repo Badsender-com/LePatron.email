@@ -403,6 +403,18 @@ export default {
         toggleMovedHint:
           'L\'activation du module se fait depuis l\'onglet Général',
       },
+      mcp: {
+        name: 'MCP',
+        description: 'Connexion de Claude, ChatGPT et Copilot à LePatron',
+        configHint:
+          'L\'admin technique active ensuite l\'accès dans Fonctionnalités IA',
+        closeTitle: 'Fermer le module MCP\u00a0?',
+        close: 'Fermer le module',
+        closeConfirm:
+          ' | La seule connexion de l\'entreprise {group} sera coupée tout de suite. Son utilisateur devra reconnecter son assistant si le module rouvre. | Les {count} connexions de l\'entreprise {group} seront coupées tout de suite. Chaque utilisateur devra reconnecter son assistant si le module rouvre.',
+        closeConfirmUnknown:
+          'Les connexions de l\'entreprise {group} seront coupées tout de suite. Chaque utilisateur devra reconnecter son assistant si le module rouvre.',
+      },
     },
     mailingTab: {
       confirmationField: 'Veuillez saisir le nom de l\'email pour confirmer',
@@ -691,6 +703,7 @@ export default {
       status: 'Statut',
       esp: 'ESP',
       ai: 'IA',
+      mcp: 'MCP',
     },
     users: {
       passwordMail: 'Email de mot de passe',
@@ -1071,6 +1084,222 @@ export default {
     cdnEndpointHint: 'URL de base de votre CDN (sans protocole)',
     cdnButtonLabelHint: 'Libellé affiché dans l\'éditeur',
   },
+  retex: {
+    title: 'Retours d\'expérience',
+    description:
+      'Depuis leur assistant, les utilisateurs de l\'entreprise peuvent signaler un retour d\'expérience : une divergence ou un complément sur une expertise ou une skill, que l\'entreprise plateforme lit pour les améliorer. Il n\'est envoyé que si l\'entreprise l\'autorise ici, et que l\'utilisateur approuve chaque retour avant son envoi.',
+    alwaysShared:
+      'La note et le commentaire des avis sont toujours partagés avec l\'entreprise plateforme, que le retour d\'expérience soit autorisé ou non.',
+    offForgets:
+      'Le désactiver efface les retours d\'expérience déjà envoyés par les utilisateurs de l\'entreprise, ouverts ou clos, et les résumés de session gardés avec les anciens avis. Ceux qu\'un consultant de l\'entreprise plateforme écrit en travaillant pour elle restent : ils appartiennent à l\'entreprise plateforme.',
+    updated: 'Retours d\'expérience mis à jour',
+  },
+  oauthConsent: {
+    claimedName: '« {client} »',
+    title: 'Connecter {client} à LePatron',
+    pageTitle: 'Connecter un assistant à LePatron',
+    loginHint: 'Connectez-vous pour autoriser votre assistant IA à accéder à LePatron.',
+    heading: '{client} demande l\'accès à votre compte LePatron',
+    errorTitle: 'Connexion impossible',
+    changeAccount: 'Changer de compte',
+    switchAccount: 'Utiliser un autre compte',
+    closeHint: 'Vous pouvez fermer cette fenêtre et relancer la connexion depuis votre assistant.',
+    canDo: 'Cette application pourra',
+    rights: {
+      read: 'Lire les expertises, les skills et vos mailings',
+      readHint: 'Avec vos droits, exactement comme dans l\'application.',
+      readOnly: 'Rien modifier, publier ni supprimer',
+      readOnlyHint:
+        'Il peut seulement envoyer vos avis sur ce que LePatron vous a donné.',
+    },
+    registration: {
+      dynamicTitle: 'Application non vérifiée',
+      dynamic:
+        'Elle s\'est enregistrée elle-même : LePatron ne peut pas garantir son nom. Ne continuez que si vous venez de lancer la connexion depuis elle.',
+      dynamicBadge: 'Nom déclaré par l\'application',
+      metadataDocument: 'Identité vérifiée par {host}',
+      preRegistered: 'Déclarée par l\'entreprise {company}',
+    },
+    allowWrite: 'Écrire aussi, publier et ouvrir les skills et expertises',
+    allowWriteHint:
+      'Réservé aux super admins. L\'assistant pourra rédiger des brouillons, les publier et ouvrir une fiche aux clients, chaque publication et chaque ouverture après votre confirmation dans la conversation. À ne cocher que pour un assistant de l\'entreprise plateforme.',
+    group: 'Entreprise',
+    groupHint:
+      'L\'assistant ne verra que cette entreprise. Pour en lire une autre, connectez-le à nouveau.',
+    pickGroup: 'Choisissez une entreprise',
+    footnote:
+      'Valable 90 jours, révocable à tout moment depuis Applications connectées. Après accord, vous serez renvoyé vers {host}.',
+    allow: 'Autoriser',
+    allowIn: 'Autoriser dans l\'entreprise {group}',
+    deny: 'Refuser',
+    expired:
+      'Cette demande de connexion a expiré, ou a été lancée depuis un autre navigateur. Relancez la connexion depuis votre assistant.',
+    clientOfAnotherCompany:
+      'Cette application est réservée aux utilisateurs de l\'entreprise qui l\'a déclarée.',
+    accountCannotConnect:
+      'Ce compte ne peut pas connecter d\'assistant : connectez-vous avec votre compte utilisateur.',
+    noAccess:
+      'Votre entreprise n\'a pas l\'accès MCP : demandez à son administrateur de l\'activer.',
+    signInRequired:
+      'Votre session a expiré : reconnectez-vous à LePatron, puis relancez la connexion depuis votre assistant.',
+    readScopeRequired:
+      'L\'assistant doit au moins pouvoir lire LePatron : relancez la connexion depuis votre assistant.',
+    noModule:
+      'Le module MCP n\'est pas inclus dans l\'abonnement de votre entreprise : contactez l\'entreprise plateforme pour l\'ajouter.',
+    noModuleCanOpen:
+      'Le module MCP n\'est pas inclus dans l\'abonnement de l\'entreprise. En tant que super admin, vous pouvez l\'ouvrir dans ses Modules, puis activer son accès MCP.',
+    noModuleCanOpenIn:
+      'Le module MCP n\'est pas inclus dans l\'abonnement de l\'entreprise {group}. En tant que super admin, vous pouvez l\'ouvrir dans ses Modules, puis activer son accès MCP.',
+    noAccessCanOpen:
+      'L\'accès MCP de l\'entreprise est désactivé. En tant que super admin, vous pouvez l\'activer dans ses Fonctionnalités IA.',
+    noAccessCanOpenIn:
+      'L\'accès MCP de l\'entreprise {group} est désactivé. En tant que super admin, vous pouvez l\'activer dans ses Fonctionnalités IA.',
+  },
+  mcpClients: {
+    pageTitle: 'Clients MCP',
+    description:
+      'Pour un assistant qui demande un identifiant et un secret, comme Copilot Studio en mode manuel. Seuls les utilisateurs de l\'entreprise peuvent se connecter avec. Claude, ChatGPT et Microsoft 365 Copilot s\'enregistrent seuls : ils n\'ont rien à faire ici.',
+    listLabel: 'Clients enregistrés',
+    clientMeta: 'Créé le {date} · envoi du secret : {authMethod}',
+    clientIdLine: 'Identifiant : {id}',
+    secretFootnote:
+      'Le secret n\'est montré qu\'à la création. S\'il est perdu, supprimez le client et créez-en un autre.',
+    mcpOff:
+      'L\'accès MCP de l\'entreprise est coupé : ces clients ne peuvent pas se connecter. Il s\'active dans',
+    add: 'Ajouter un client',
+    addDescription:
+      'Recopiez l\'URL de redirection que l\'assistant affiche dans son écran de configuration.',
+    name: 'Nom',
+    nameHint: 'Montré à l\'utilisateur sur l\'écran de consentement.',
+    redirectUris: 'URL de redirection',
+    redirectUrisHint: 'Une par ligne, en HTTPS, ou en HTTP vers localhost.',
+    authMethod: 'Envoi du secret',
+    authMethodHint:
+      'Où l\'assistant envoie le secret à LePatron. Dans le doute, gardez « Dans le corps de la requête ».',
+    advanced: 'Réglage avancé : envoi du secret',
+    authMethods: {
+      client_secret_post: 'Dans le corps de la requête',
+      client_secret_basic: 'Dans l\'en-tête (Basic)',
+    },
+    empty: 'Aucun client enregistré',
+    emptyHint:
+      'C\'est le cas normal : seule une configuration manuelle de Copilot Studio en demande un.',
+    loadError: 'Impossible de charger les clients MCP.',
+    createdBadge: 'Client créé',
+    createdTitle: 'Copiez ces valeurs dans « {name} »',
+    secretOnce: 'Le secret ne sera plus jamais affiché.',
+    serverOnPage: 'Les adresses du serveur restent disponibles sur cette page.',
+    copySecretFirst: 'Copiez le secret, ou cochez la case, pour terminer',
+    secretSavedConfirm: 'J\'ai enregistré ce secret',
+    secretDone: 'Terminer',
+    copyFailed:
+      'La copie a échoué : sélectionnez la valeur et copiez-la à la main.',
+    copyField: 'Copier : {field}',
+    deleteNamed: 'Supprimer {name}',
+    copy: 'Copier',
+    copied: 'Copié',
+    deleteTitle: 'Supprimer ce client ?',
+    deleteConfirm:
+      'L\'assistant « {name} » ne pourra plus se connecter ni renouveler ses connexions. Celles en cours s\'arrêtent aussitôt.',
+    deleted: 'Client supprimé',
+    serverTitle: 'Paramètres du serveur',
+    serverDescription:
+      'Ce que l\'écran de configuration de l\'assistant demande, en plus de l\'identifiant et du secret.',
+    settings: {
+      clientId: 'Identifiant client (client ID)',
+      clientSecret: 'Secret client (client secret)',
+      mcpUrl: 'URL du serveur MCP',
+      authorizationUrl: 'URL d\'autorisation',
+      tokenUrl: 'URL du token et de renouvellement',
+      scope: 'Scope',
+      scopeHint:
+        'Lire, et envoyer les avis de l\'utilisateur. Proposer des brouillons de skills et d\'expertises (skills:write) n\'est accordé qu\'aux super admins, sur leur demande à la connexion.',
+    },
+    errors: {
+      // The codes the API answers (ERROR_CODES.MCP_CLIENT_…).
+      MCP_CLIENT_INVALID_NAME: 'Donnez un nom de 1 à 100 caractères.',
+      MCP_CLIENT_INVALID_REDIRECT_URIS:
+        'Indiquez de 1 à 10 adresses de redirection, en HTTPS ou vers la machine de l\'utilisateur.',
+      MCP_CLIENT_INVALID_AUTH_METHOD:
+        'Choisissez comment l\'assistant envoie le secret.',
+      MCP_CLIENT_INVALID_METADATA:
+        'LePatron refuserait ce client à sa connexion : vérifiez ses adresses de redirection.',
+      MCP_CLIENT_NOT_FOUND: 'Ce client n\'existe plus.',
+      MCP_FORBIDDEN_COMPANY:
+        'Vous ne gérez pas les clients MCP de cette entreprise.',
+      nameTooLong: 'Le nom fait au plus 100 caractères.',
+      redirectUrisRequired: 'Au moins une URL de redirection est requise.',
+      redirectUrisInvalid:
+        'Jusqu\'à 10 URL, en HTTPS (HTTP seulement vers localhost), sans fragment #.',
+      redirectUriRefused:
+        '« {uri} » est refusée : une URL de redirection est en HTTPS, ou en HTTP vers localhost, sans fragment #.',
+    },
+  },
+  connectedApplications: {
+    pageTitle: 'Applications connectées',
+    description:
+      'Les assistants IA que vous avez connectés à LePatron. Chacun lit LePatron avec vos droits, dans l\'entreprise choisie à la connexion. Une ligne par connexion : un assistant connecté depuis deux machines apparaît deux fois. Révoquez celles que vous n\'utilisez plus.',
+    name: 'Application',
+    group: 'Entreprise',
+    connectedAt: 'Connectée le',
+    lastUsedAt: 'Dernière utilisation',
+    neverUsed: 'Jamais utilisée',
+    empty: 'Aucune application connectée.',
+    loadError: 'Impossible de charger vos applications connectées.',
+    revoke: 'Révoquer',
+    revokeOne: 'Révoquer {name}, connectée le {date}',
+    revokeTitle: 'Révoquer cette connexion\u00a0?',
+    revokeConfirm:
+      'La connexion de « {name} » du {date} perdra aussitôt son accès à LePatron pour l\'entreprise {group}. Vos autres connexions de cette application restent. Pour l\'utiliser à nouveau ici, il faudra la reconnecter.',
+    revoked: 'Connexion révoquée',
+    groupCount:
+      'Aucune connexion d\'assistant IA | 1 connexion d\'assistant IA | {count} connexions d\'assistants IA',
+    groupRevoke: 'Tout révoquer',
+    groupRevokeTitle: 'Révoquer toutes les connexions d\'assistants IA\u00a0?',
+    groupRevokeConfirm:
+      'Les connexions d\'assistants IA de l\'entreprise {group} perdent aussitôt leur accès. Chaque utilisateur devra reconnecter son assistant. | La connexion d\'assistant IA de l\'entreprise {group} perd aussitôt son accès. Son utilisateur devra la reconnecter. | Les {count} connexions d\'assistants IA de l\'entreprise {group} perdent aussitôt leur accès. Chaque utilisateur devra reconnecter les siennes.',
+    groupCountError: 'Nombre de connexions d\'assistants IA indisponible.',
+    groupRevoked: 'Connexions d\'assistants IA révoquées',
+    allGroups: 'Toutes',
+    noModule:
+      'Le module MCP n\'est pas inclus dans l\'abonnement de l\'entreprise {group} : aucun assistant ne peut s\'y connecter.',
+    accessOff:
+      'L\'accès MCP est désactivé pour l\'entreprise {group} : aucun assistant ne peut s\'y connecter, et ses connexions ont été coupées à sa désactivation.',
+    errors: {
+      MCP_CONNECTION_NOT_FOUND:
+        'Cette connexion n\'existe plus : elle a déjà été révoquée.',
+    },
+  },
+  mcpAccess: {
+    title: 'Accès MCP',
+    description:
+      'Vos utilisateurs connectent Claude, ChatGPT ou Copilot à LePatron. L\'assistant lit avec leurs droits, dans cette entreprise seulement.',
+    switch: 'Autoriser la connexion des assistants IA',
+    on: 'Activé',
+    off: 'Désactivé',
+    address: 'Adresse à donner à vos utilisateurs',
+    addressHint:
+      'Ils la collent dans les connecteurs de leur assistant, puis se connectent avec leur compte LePatron.',
+    step1: 'Vous activez l\'accès pour l\'entreprise.',
+    step2: 'Chaque utilisateur connecte son assistant, avec son propre compte.',
+    step3: 'L\'assistant lit expertises, skills et mailings, sans modifier vos mailings.',
+    copyAddress: 'Copier l\'adresse du serveur MCP',
+    clientsTitle: 'Clients enregistrés à la main',
+    clientsDescription:
+      'Seul Copilot Studio en mode manuel en a besoin : Claude, ChatGPT et Microsoft 365 Copilot s\'enregistrent seuls.',
+    manageClients: 'Gérer',
+    turnOff: 'Couper l\'accès',
+    notIncluded: 'Non inclus',
+    noModule:
+      'Le module MCP n\'est pas inclus dans l\'abonnement de l\'entreprise {group}. Contactez l\'entreprise plateforme pour l\'ajouter.',
+    moduleMissing:
+      'Le module MCP n\'est pas inclus dans l\'abonnement de l\'entreprise {group}.',
+    openModule: 'Ouvrir le module',
+    offTitle: 'Couper l\'accès MCP ?',
+    offConfirm:
+      'Tous les assistants connectés aux comptes de l\'entreprise {group} seront déconnectés tout de suite. Le réactiver ne les reconnectera pas : chaque utilisateur devra connecter le sien à nouveau.',
+    updated: 'Accès MCP mis à jour',
+  },
   crmIntelligence: {
     title: 'CRM Intelligence',
     subtitle: 'Tableaux de bord analytiques',
@@ -1247,6 +1476,7 @@ export default {
     },
     system: {
       settings: 'Paramètres',
+      connectedApplications: 'Applications connectées',
       help: 'Aide',
       logout: 'Se déconnecter',
     },
@@ -1340,10 +1570,13 @@ export default {
       title: 'Traduction',
       description: 'Traduisez automatiquement vos emails dans différentes langues grâce à l\'IA.',
       enableLabel: 'Activer la traduction',
+      on: 'Activée',
+      off: 'Désactivée',
       model: 'Modèle IA',
       modelHint: 'Les modèles plus puissants sont plus précis mais plus lents et coûteux',
       availableLanguages: 'Langues disponibles',
       languagesHint: 'Sélectionnez au moins 2 langues (source et cible)',
+      languagesSelected: '{count} langue sélectionnée | {count} langues sélectionnées',
       minLanguagesError: 'Sélectionnez au moins 2 langues (une source et une cible)',
       formality: 'Niveau de formalité',
       formalityHint: 'Appliqué aux langues cibles qui distinguent les registres (vouvoiement, tutoiement…). Les autres restent en ton neutre.',
@@ -1353,8 +1586,10 @@ export default {
     },
     skill: {
       title: 'Moteur Skills',
-      description: 'Moteur IA générique qui alimente toutes les invocations de skills de cette company (et les tests du Playground via la company plateforme).',
+      description: 'Le modèle qui exécute les skills dans LePatron (éditeur, Playground). Un assistant connecté utilise son propre modèle.',
       enableLabel: 'Activer le moteur Skills',
+      on: 'Activé',
+      off: 'Désactivé',
       model: 'Modèle IA',
       modelHint: 'Les modèles plus puissants sont plus précis mais plus lents et coûteux',
     },
@@ -1422,12 +1657,302 @@ export default {
       hint: 'Le bloc apparaîtra en fin de palette dans l\'éditeur.',
     },
   },
+  skillsImport: {
+    open: 'Importer',
+    title: 'Importer des skills et expertises',
+    file: 'Export de skills (.json)',
+    fileHint: 'Un fichier exporté d\'une autre instance LePatron, 5 Mo au plus.',
+    preview: 'Voir l\'aperçu',
+    from: 'Exporté de {origin} par {by}, le {date}.',
+    counter: '{count} élément à importer | {count} éléments à importer',
+    nothing: 'Rien à importer : tout est à jour ou bloqué.',
+    otherFile: 'Choisir un autre fichier',
+    current: 'ici : {version}',
+    notJson: 'Ce fichier n\'est pas du JSON.',
+    tooLarge: 'Ce fichier dépasse 5 Mo.',
+    unreadable: 'Ce fichier n\'est pas un export de skills lisible : {message}',
+    run: 'Importer la sélection',
+    report: {
+      created: '{count} créé | {count} créés',
+      updated: '{count} mis à jour | {count} mis à jour',
+      skipped: '{count} ignoré | {count} ignorés',
+      failed: '{count} en échec | {count} en échec',
+      publish: 'Ces brouillons attendent d\'être relus et publiés :',
+      nothing: 'Aucun brouillon n\'a été écrit.',
+      failedItem: '{id} : {message}',
+      skippedItem: '{id} : {reason}',
+    },
+    importFailed: 'L\'import a échoué : {message}',
+    kinds: {
+      expertise: 'Expertise',
+      skill: 'Skill',
+    },
+    states: {
+      new: 'Nouveau',
+      update: 'Mise à jour',
+      up_to_date: 'À jour',
+      blocked: 'Bloqué',
+    },
+    reasons: {
+      diverged: 'Même version, contenu différent : les deux instances ont divergé.',
+      target_newer: 'Une version plus récente existe ici.',
+      draft_open: 'Un brouillon est ouvert ici : publiez-le ou supprimez-le d\'abord.',
+      archived: 'Archivé ici.',
+      version_exists: 'Cette version existe déjà ici, sans être la version active.',
+      missing_schema: 'Son schéma n\'existe pas sur cette instance : elle n\'est pas à jour.',
+      not_in_file: 'Absent du fichier importé.',
+    },
+    warnings: {
+      missing_expertises: 'Expertises absentes ici et du fichier : {ids}',
+      nature_differs: 'Autre nature ici : la version importée sera un brouillon « {nature} », et la publier changera la nature de ce skill.',
+    },
+  },
   aiSkills: {
+    export: {
+      all: 'Tout exporter',
+      selection: 'Exporter la sélection',
+      selected: '{count} élément sélectionné | {count} éléments sélectionnés',
+      consumed: 'Avec les expertises que consomment ces skills :',
+      remove: 'Retirer {id} de l\'export',
+      done: 'Export téléchargé.',
+      failed: 'L\'export a échoué.',
+      failedBecause: 'L\'export a échoué : {reason}',
+    },
+    follow: {
+      title: 'Origine sur cette copie',
+      description:
+        'Cette instance est une copie : elle suit les skills et expertises de la production, telles que les clients les vivent. Le travail fait ici n\'est jamais perdu : quand le suivi doit le remplacer, il le met en brouillon dans un nouvel élément de la copie.',
+      production: 'Production : {origin}',
+      now: 'Suivre maintenant',
+      running: 'Suivi en cours…',
+      never: 'La production n\'a encore jamais été suivie.',
+      last: 'Dernier suivi le {date} par {by}',
+      lastNight: 'Dernier suivi le {date}, par le suivi de nuit',
+      nightlyOn: 'Le suivi de nuit est actif sur cette instance.',
+      nightlyOff:
+        'Le suivi de nuit n\'est pas actif sur cette instance : seul le bouton suit la production.',
+      lock: 'Un suivi est en cours depuis le {date}, lancé par {by}.',
+      lockNight: 'Le suivi de nuit est en cours depuis le {date}.',
+      alreadyRunning:
+        'Un suivi est déjà en cours : attendez qu\'il se termine pour en lancer un autre.',
+      loadError: 'Le suivi de la production n\'a pas pu être chargé.',
+      done: 'Production suivie.',
+      donePartial:
+        'Production suivie en partie : certains éléments sont en échec.',
+      partialHint:
+        'Certains éléments n\'ont pas pu être écrits ; les autres ont suivi la production.',
+      statuses: {
+        succeeded: 'Réussi',
+        partial: 'Réussi en partie',
+        failed: 'Échoué',
+      },
+      outcomes: {
+        created: '{count} élément ajouté | {count} éléments ajoutés',
+        updated: '{count} élément mis à jour | {count} éléments mis à jour',
+        moved:
+          '{count} travail de la copie mis de côté | {count} travaux de la copie mis de côté',
+        removedDrafts: '{count} brouillon supprimé | {count} brouillons supprimés',
+        removed: '{count} élément supprimé | {count} éléments supprimés',
+        upToDate: '{count} élément déjà à jour | {count} éléments déjà à jour',
+        kept:
+          '{count} élément gardé sur cette copie | {count} éléments gardés sur cette copie',
+        failed: '{count} élément en échec | {count} éléments en échec',
+      },
+      movedLabel: 'Travail de la copie mis de côté',
+      moved: '« {id} » : le travail fait sur la copie est en brouillon dans',
+      keptLabel: 'Gardés sur cette copie',
+      productionChanged: 'la production a changé',
+      removedLabel: 'Supprimés : la production ne les a plus',
+      removedDraft: 'brouillon {version} de « {id} » supprimé',
+      removedItem: '« {id} » supprimé',
+      warningsLabel: 'À vérifier',
+      warnings: {
+        missing_expertises:
+          '« {id} » consomme des expertises absentes de cette copie : {ids}.',
+        other: '« {id} » est à vérifier.',
+      },
+      itemFailed: 'Cet élément n\'a pas pu être écrit.',
+      failuresLabel: 'Éléments en échec',
+      nothingWritten: 'Rien n\'a été écrit.',
+      reasons: {
+        not_configured:
+          'Cette instance n\'est configurée pour suivre aucune production.',
+        invalid_address:
+          'L\'adresse de la production n\'est pas une adresse https valide.',
+        unreachable: 'La production n\'a pas pu être jointe.',
+        token_refused:
+          'La production a refusé le jeton de lecture : il a peut-être été révoqué.',
+        production_error: 'La production a répondu par une erreur.',
+        unreadable:
+          'La réponse de la production n\'a pas pu être lue : les deux instances n\'ont peut-être pas la même version de LePatron.',
+      },
+    },
+    readTokens: {
+      title: 'Jetons de lecture',
+      description:
+        'Une copie (recette, développement) suit les skills et expertises de cette instance avec un jeton de lecture. Un jeton ne lit rien d\'autre.',
+      descriptionOnCopy:
+        'Cette instance est une copie : les jetons de lecture se créent sur la production. Révoquez ici ceux qui restent.',
+      listLabel: 'Jetons de lecture actifs',
+      add: 'Créer un jeton',
+      addDescription:
+        'Un jeton par copie : vous pourrez révoquer celle que vous retirez sans toucher aux autres.',
+      name: 'Nom',
+      nameHint: 'La copie qu\'il sert, par exemple « Recette ».',
+      nameTooLong: 'Le nom compte 100 caractères au plus.',
+      meta: 'Créé le {date} · {lastUse}',
+      lastUsed: 'dernière utilisation le {date}',
+      neverUsed: 'jamais utilisé',
+      empty: 'Aucun jeton de lecture.',
+      emptyHint:
+        'Créez-en un pour chaque copie qui suit les skills et expertises de cette instance.',
+      emptyOnCopy: 'Une copie ne sert de source à aucune autre instance.',
+      footnote:
+        'Le jeton n\'est montré qu\'à la création. S\'il est perdu, révoquez-le et créez-en un autre.',
+      createdBadge: 'Jeton créé',
+      createdTitle: 'Le jeton « {name} »',
+      token: 'Jeton',
+      copy: 'Copier',
+      copied: 'Copié',
+      copyToken: 'Copier le jeton',
+      once: 'Ce jeton ne sera plus affiché : copiez-le maintenant dans la configuration de la copie.',
+      copyFirst: 'Copiez le jeton, ou cochez la case, pour terminer.',
+      copyFailed:
+        'La copie a échoué : sélectionnez le jeton et copiez-le à la main.',
+      savedConfirm: 'J\'ai enregistré ce jeton',
+      saved: 'J\'ai enregistré le jeton',
+      revoke: 'Révoquer',
+      revokeNamed: 'Révoquer le jeton « {name} »',
+      revokeTitle: 'Révoquer ce jeton ?',
+      revokeConfirm:
+        'La copie qui utilise « {name} » ne pourra plus lire cette instance. Un jeton révoqué ne se rétablit pas.',
+      revoked: 'Jeton révoqué.',
+      loadError: 'Les jetons de lecture n\'ont pas pu être chargés.',
+    },
+    copy: {
+      panelLabel: 'Origine sur cette copie',
+      origins: {
+        followed: 'Suit la production',
+        followedHint: 'Le suivi de la production le garde égal à la production.',
+        kept: 'Gardé sur cette copie',
+        keptHint:
+          'Le suivi ne le touche plus : il signale seulement que la production a changé.',
+        local: 'Écrit sur cette copie',
+        localHint:
+          'Le suivi le laisse tel quel, sauf si la production a un élément du même identifiant : il le reprend alors, et le travail de la copie part dans un élément à part.',
+        notFollowed: 'Pas encore suivi',
+        notFollowedHint:
+          'Cette copie n\'a pas encore suivi la production : au premier suivi, un élément du même identifiant en production le reprendra.',
+        copied: 'Travail de la copie',
+        copiedHint:
+          'Le travail fait sur cette copie, mis de côté d\'un autre élément : le suivi le laisse tel quel.',
+      },
+      openOrigin: 'Ouvrir l\'élément d\'origine « {id} »',
+      explain: {
+        followed:
+          'Le suivi le garde égal à la production. Ce qui est écrit ici part, au suivi suivant, dans un nouvel élément « (travail de la copie) ».',
+        kept: 'Le suivi ne le touche plus : il signale seulement que la production a changé.',
+        local:
+          'Le suivi le laisse tel quel, sauf si la production a un élément du même identifiant : il le reprend alors, et le travail de la copie part dans un élément à part, « (travail de la copie) ».',
+        notFollowed:
+          'Cette copie n\'a pas encore suivi la production. Au premier suivi, si la production a un élément du même identifiant, le suivi le reprend, et le travail de la copie part dans un élément à part, « (travail de la copie) ».',
+        copied:
+          'Le travail fait sur cette copie, d\'après l\'élément lié. Le suivi le laisse tel quel.',
+      },
+      keep: 'Garder sur cette copie',
+      keptDone: 'Gardé sur cette copie : le suivi ne le touche plus.',
+      publishKept:
+        'Cochée, le suivi ne touchera plus cet élément : il signalera seulement que la production a changé.',
+      publishFollowed:
+        'Décochée, l\'élément suit toujours la production : au prochain suivi, la version publiée ici part dans un nouvel élément « (travail de la copie) », en brouillon, sauf si la production publie la même.',
+      publishLocal:
+        'Décochée, le suivi laisse cet élément tel quel tant que la production n\'a pas d\'élément du même identifiant ; si elle en a un, la version publiée ici part dans un nouvel élément « (travail de la copie) », en brouillon.',
+      follow: 'Suivre la production',
+      followTitle: 'Suivre de nouveau la production ?',
+      followConfirm:
+        'Au prochain suivi, cet élément redevient celui de la production. Ce qui a été écrit ici, brouillon ou version publiée, part en brouillon dans un nouvel élément de la copie : rien n\'est perdu.',
+      followDone: 'Cet élément suivra la production au prochain suivi.',
+      duplicate: 'Dupliquer sur cette copie',
+      duplicateHint:
+        'Crée un élément de cette copie, avec le contenu de la version choisie en brouillon, réservé à l\'entreprise plateforme et non servi aux assistants. Le suivi le laisse tel quel.',
+      duplicateVersion: 'Version',
+      duplicateSubmit: 'Dupliquer',
+      duplicateDone: 'Élément dupliqué sur cette copie.',
+    },
+    feedback: {
+      tab: 'Avis',
+      caption:
+        'Les avis envoyés depuis les assistants IA connectés, avec la version lue et, quand l\'entreprise et l\'utilisateur l\'ont accepté, le retour d\'expérience de la session.',
+      empty: 'Aucun avis pour l\'instant.',
+      up: 'Avis positif',
+      down: 'Avis négatif',
+      noComment: 'Sans commentaire',
+      shown: '{shown} sur {total}',
+      more: 'Afficher plus',
+      retex: 'Retour d\'expérience',
+    },
+    nature: 'Nature',
+    natureHint:
+      'Un Skill de fonctionnalité est appelé par LePatron (modèle, schémas, contrat de sortie). Un Skill de tâche est une procédure qu\'un assistant IA suit. Le Skill a la nature de sa version publiée : pour en changer, publiez une version de l\'autre nature.',
+    natures: {
+      feature: 'Skill de fonctionnalité',
+      task: 'Skill de tâche',
+    },
+    servedToAssistants: 'Proposé aux assistants IA',
+    servedToAssistantsHint:
+      'Servi via MCP aux assistants connectés, sans son contrat de sortie. À laisser décoché pour un Skill dont l\'entrée est construite par l\'éditeur.',
+    audience: 'Audience',
+    audienceHint:
+      'Qui peut s\'en servir. Une nouvelle fiche reste réservée à l\'entreprise plateforme le temps de l\'éprouver : ouvrez-la ensuite à toutes les entreprises.',
+    audiences: {
+      expertise: {
+        platform: 'Entreprise plateforme uniquement (en test)',
+        all:
+          'Toutes les entreprises : dans l\'éditeur, et dans leur assistant si elles ont l\'accès MCP',
+      },
+      featureSkill: {
+        platform:
+          'Entreprise plateforme uniquement (en test) : le bouton est masqué chez les clients',
+        all:
+          'Toutes les entreprises : dans l\'éditeur, et dans leur assistant si la case est cochée et qu\'elles ont l\'accès MCP',
+      },
+      taskSkill: {
+        platform: 'Entreprise plateforme uniquement (en test)',
+        all: 'Toutes les entreprises qui ont l\'accès MCP',
+      },
+    },
+    platformOnly: 'Entreprise plateforme uniquement',
+    warningUnchecked:
+      'L\'avertissement lié à ce changement n\'a pas pu être vérifié.',
+    savedWarningUnchecked:
+      'Enregistré, mais l\'avertissement lié à ce changement n\'a pas pu être vérifié.',
+    openExpertises: {
+      skillTitle: 'Ouvrir ce Skill à toutes les entreprises',
+      intro:
+        'Ce Skill consomme des Expertises réservées à l\'entreprise plateforme : les assistants des autres entreprises le suivront sans elles.',
+      openToo: 'L\'ouvrir aussi à toutes les entreprises',
+      openTooNamed: 'L\'ouvrir aussi à toutes les entreprises : {title}',
+      appliesAtOnce:
+        'Ouvrir une Expertise l\'applique aussi, tout de suite, aux fonctionnalités de l\'éditeur de toutes les entreprises. Sans case cochée, le Skill s\'ouvre sans elles.',
+    },
+    closeExpertise: {
+      title: 'Réserver cette Expertise à l\'entreprise plateforme',
+      intro:
+        'Ces Skills de tâche, ouverts à toutes les entreprises, la consomment : ils ne la recevront plus chez les clients.',
+    },
+    usedByFeature: {
+      badge: 'Utilisé par une fonctionnalité',
+      filter: 'Utilisé par une fonctionnalité',
+      features: 'Utilisé par les fonctionnalités',
+      none: 'Aucune fonctionnalité ne l\'utilise.',
+      hint: 'Déduit des déclarations des fonctionnalités, jamais saisi à la main.',
+    },
     pageTitle: 'Skills & Expertise',
     tabs: {
       skills: 'Skills',
       expertise: 'Expertise',
       invocations: 'Invocations',
+      sync: 'Production et copies',
       details: 'Détails',
       versions: 'Versions',
     },
@@ -1452,18 +1977,244 @@ export default {
       other: 'Autre',
     },
     errors: {
+      EXPERTISE_LIST_FILTER_INVALID:
+        'Le filtre « {filter} » de la liste des Expertises n\'est pas valide.',
+      SKILL_CONSUMED_EXPERTISES_INVALID:
+        'Les Expertises consommées doivent être une liste d\'identifiants d\'Expertise.',
+      SKILL_CONSUMED_EXPERTISES_TOO_MANY:
+        'Une version consomme au plus {max} Expertises.',
+      SKILL_CONSUMED_EXPERTISES_DUPLICATED:
+        'Ces Expertises sont consommées plusieurs fois : {expertiseIds}. Gardez-en une seule fois chacune.',
+      SKILL_CONSUMED_EXPERTISES_NOT_FOUND:
+        'Ces Expertises consommées n\'existent pas : {expertiseIds}. Retirez-les de la version.',
+      SKILL_OPEN_EXPERTISES_INVALID:
+        'Seules les Expertises publiées que cette version consomme et qui sont réservées à l\'entreprise plateforme s\'ouvrent avec le Skill, et seulement quand le Skill s\'ouvre à toutes les entreprises.',
+      SKILL_NOT_AVAILABLE_TO_COMPANY:
+        'Cette fonctionnalité n\'est pas encore disponible pour votre entreprise.',
+      SKILL_PROCEDURE_REQUIRED_TO_PUBLISH:
+        'La procédure d\'un Skill de tâche doit être rédigée avant de publier cette version.',
       SKILL_SCHEMAS_REQUIRED_TO_PUBLISH:
         'Les schémas d\'entrée et de sortie doivent être renseignés avant de publier cette version.',
       SKILL_TEMPLATE_UNKNOWN_FIELDS:
         'Le template référence des champs absents du schéma d\'entrée « {schemaId} » : {fields}. Corrigez le template ou changez le schéma d\'entrée de la version.',
+      SKILL_VERSION_CHANGED:
+        'Ce brouillon a été modifié entre-temps, par exemple par un assistant. Rechargez-le pour voir la nouvelle version avant d\'enregistrer ou de publier.',
+      SKILLS_EXPORT_NOT_FOUND:
+        '{id} n\'existe pas : rechargez la liste, puis exportez de nouveau.',
+      SKILLS_EXPORT_ARCHIVED:
+        '{id} est archivé : il ne s\'exporte plus. Rechargez la liste, puis exportez de nouveau.',
+      SKILLS_EXPORT_NOT_PUBLISHED:
+        '{id} n\'a aucune version publiée : seule une version publiée s\'exporte.',
+      SKILLS_EXPORT_FORMAT_UNKNOWN:
+        'Ce fichier n\'est pas un export de skills que cette instance lit : elle lit le format {expected}.',
+      SKILLS_EXPORT_INVALID:
+        'Ce fichier n\'est pas un export de skills lisible : le champ « {field} » est refusé.',
+      SKILLS_EXPORT_FIELD_MISSING:
+        'Ce fichier n\'est pas un export de skills lisible : le champ « {field} » manque.',
+      SKILLS_EXPORT_FIELD_WRONG_TYPE:
+        'Ce fichier n\'est pas un export de skills lisible : le champ « {field} » n\'a pas le bon type.',
+      SKILLS_EXPORT_FIELD_NOT_ALLOWED:
+        'Ce fichier n\'est pas un export de skills lisible : la valeur du champ « {field} » n\'est pas permise.',
+      SKILLS_EXPORT_FIELD_TOO_BIG:
+        'Ce fichier n\'est pas un export de skills lisible : le champ « {field} » dépasse la taille permise.',
+      SKILLS_EXPORT_FIELD_TOO_SMALL:
+        'Ce fichier n\'est pas un export de skills lisible : le champ « {field} » est vide ou trop petit.',
+      SKILLS_EXPORT_FIELD_DUPLICATE:
+        'Ce fichier n\'est pas un export de skills lisible : le champ « {field} » répète un élément déjà présent.',
+      SKILLS_SELECTION_INVALID:
+        'La sélection n\'est pas une liste d\'identifiants : « {field} ».',
+      SKILLS_IMPORT_ARCHIVED:
+        '{id} est archivé ici : la version {version} n\'a pas été importée.',
+      SKILLS_IMPORT_DRAFT_OPEN:
+        'Un brouillon est ouvert sur {id} : publiez-le ou supprimez-le, puis importez de nouveau la version {version}.',
+      SKILLS_IMPORT_VERSION_NOT_AHEAD:
+        'La version {version} de {id} n\'est pas plus récente que celles d\'ici : elle n\'a pas été importée.',
+      SKILLS_IMPORT_CHANGED:
+        '{id} a été modifié pendant l\'import : importez de nouveau la version {version}.',
+      SKILL_SCHEMA_NOT_IN_CODE:
+        'Le schéma « {schemaId} » n\'existe pas encore dans le code de cette instance : la version se publiera quand ce code sera déployé.',
+      SKILLS_READ_TOKEN_NAME_INVALID:
+        'Le nom du jeton compte de 1 à {max} caractères.',
+      SKILLS_READ_TOKEN_NOT_FOUND:
+        'Ce jeton de lecture n\'existe pas ou a déjà été révoqué : rechargez la liste.',
+      SKILLS_READ_TOKEN_REQUIRED:
+        'Un jeton de lecture valide est nécessaire.',
+      SKILLS_READ_TOKEN_ON_COPY:
+        'Cette instance est une copie : elle suit la production et ne donne pas de jeton de lecture.',
+      SKILLS_NOT_A_COPY:
+        'Cette instance n\'est pas une copie : elle ne suit aucune production.',
+      SKILLS_FOLLOW_RUNNING:
+        'Un suivi de la production est déjà en cours : attendez qu\'il se termine.',
+      SKILLS_FOLLOW_NOT_CONFIGURED:
+        'Cette instance n\'est configurée pour suivre aucune production.',
+      SKILLS_FOLLOW_INVALID_ADDRESS:
+        'L\'adresse de la production n\'est pas une adresse https valide.',
+      SKILLS_FOLLOW_UNREACHABLE:
+        'La production n\'a pas pu être jointe.',
+      SKILLS_FOLLOW_TOKEN_REFUSED:
+        'La production a refusé le jeton de lecture : il a peut-être été révoqué.',
+      SKILLS_FOLLOW_PRODUCTION_ERROR:
+        'La production a répondu par une erreur.',
+      SKILLS_FOLLOW_UNREADABLE:
+        'La réponse de la production n\'a pas pu être lue : les deux instances n\'ont peut-être pas la même version de LePatron.',
+      SKILLS_FOLLOW_INTERRUPTED:
+        'Le suivi a été interrompu avant sa fin.',
+      SKILLS_FOLLOW_FAILED:
+        'Le suivi s\'est arrêté sur une erreur inattendue : ce qu\'il a déjà écrit reste, suivez de nouveau la production.',
+      SKILLS_FOLLOW_ITEM_UNREADABLE:
+        'La production a envoyé cet élément sous une forme que cette copie ne lit pas (champ « {field} »).',
+      SKILLS_FOLLOW_ITEM_CHANGED:
+        'Cet élément a été modifié sur la copie pendant le suivi : il n\'a pas été écrasé. Suivez de nouveau la production.',
+      SKILLS_FOLLOW_ITEM_INVALID:
+        'Cette copie refuse ce que la production tient pour cet élément, par exemple un schéma absent de son code.',
+      SKILLS_FOLLOW_ITEM_FAILED:
+        'Cet élément n\'a pas pu être suivi.',
+      SKILLS_COPY_ITEM_NOT_FOUND:
+        '{id} n\'existe pas sur cette copie : rechargez la liste.',
+      SKILLS_COPY_VERSION_NOT_FOUND:
+        'La version {version} de {id} n\'existe pas sur cette copie.',
+      SKILLS_COPY_ID_TAKEN:
+        'Trop d\'éléments portent déjà le travail de la copie de {id} : supprimez-en avant d\'en créer un autre.',
+      SKILL_ARCHIVE_CONFIRMATION_REQUIRED:
+        'Une fonctionnalité appelle cette skill : confirmez avant de l\'archiver.',
+      SKILL_TEST_CASES_ON_TASK:
+        'Une skill de tâche n\'a pas de cas de test : aucune fonctionnalité ne l\'appelle.',
+      SKILL_TEST_CASE_INVALID:
+        'Un cas de test est incomplet : chaque cas a besoin d\'un nom et d\'une entrée.',
+      SKILL_PUBLICATION_GUARD_REQUIRED:
+        'Une fonctionnalité utilise cette version : vérifiez-la avant de la publier.',
+      SKILL_PUBLICATION_KIND_INVALID:
+        'Seule une skill ou une expertise se publie.',
+      SKILL_PUBLICATION_ITEM_NOT_FOUND:
+        '{id} n\'existe pas ici : rechargez la liste.',
+      SKILL_PUBLICATION_VERSION_NOT_FOUND:
+        'La version {version} de {id} n\'existe pas ici.',
+      SKILL_PUBLICATION_VERSION_INVALID:
+        'La version n\'est pas écrite sous la forme majeure.mineure.',
+      SKILL_PUBLICATION_GUARD_INVALID:
+        'Cette vérification ne vaut plus pour cette version : relancez-la.',
+      SKILL_PUBLICATION_GUARD_NOT_FOUND:
+        'Cette vérification n\'est plus conservée : relancez-la.',
+      SKILL_PUBLICATION_GUARDS_BUSY:
+        'Vous avez déjà {max} vérifications en cours : attendez qu\'une se termine.',
+      SKILL_PUBLICATION_GUARD_FAILED:
+        'La vérification n\'a pas pu aboutir : relancez-la.',
+      SKILL_PUBLICATION_GUARD_INTERRUPTED:
+        'La vérification a été interrompue sur le serveur : relancez-la.',
+      SKILLS_PUBLICATION_SELECTION_EMPTY:
+        'Sélectionnez au moins une skill ou une expertise.',
+      SKILLS_PUBLICATION_SELECTION_TOO_BIG:
+        'Sélectionnez {max} éléments au plus.',
+      SKILLS_PUBLICATION_SELECTION_INVALID:
+        'La sélection nomme un élément sans son type ou son identifiant.',
+    },
+    archiveUsedBy: 'Utilisé par : {features}. Archivé, il ne sera plus ni chargé ni appelé par ces fonctionnalités.',
+    archiveConfirmUsedBy: 'Je confirme que ces fonctionnalités n\'appelleront plus cette skill.',
+    publishDrafts: {
+      action: 'Publier les brouillons',
+      title: 'Publier les brouillons sélectionnés',
+      intro: 'Chaque élément publie son brouillon. Une seule vérification couvre tout ce que ces brouillons touchent, puis ils sont publiés un par un.',
+      targets: '{count} brouillon(s) à publier :',
+      nothing: 'Aucun brouillon à publier dans cette sélection.',
+      skippedLabel: 'Laissés de côté :',
+      noGuard: 'Aucune fonctionnalité n\'utilise ces brouillons : ils se publient sans vérification.',
+      publish: 'Publier',
+      published: '{count} brouillon(s) publié(s).',
+      report: 'Résultat de la publication',
+      publishedLabel: 'Publiés :',
+      warnedLabel: 'Publiés, avec un avertissement\u00a0:',
+      failedLabel: 'Non publiés :',
+      close: 'Fermer',
+      cancelled: 'Publication annulée : les brouillons restent des brouillons.',
+      keepKept: 'Cochée, le suivi ne touchera plus les éléments publiés : il signalera seulement que la production les a changés.',
+      keepFollowed: 'Décochée, chaque élément suivi suit toujours la production : au prochain suivi, la version publiée ici part dans un nouvel élément « (travail de la copie) », en brouillon, sauf si la production publie la même. Un élément écrit sur la copie reste tel quel tant que la production n\'a pas d\'élément du même identifiant.',
+      skipped: {
+        not_found: 'introuvable',
+        archived: 'archivé : réactivez-le depuis sa page',
+        no_draft: 'aucun brouillon',
+        several_drafts: 'plusieurs brouillons : publiez celui de votre choix depuis sa page',
+      },
+      failures: {
+        guard_required: 'utilisé par une fonctionnalité, à vérifier avant de publier',
+        not_found: 'version introuvable',
+        draft_changed: 'modifié depuis sa lecture : rechargez sa page avant de le publier',
+        not_draft: 'n\'est plus un brouillon',
+        release_notes_required: 'version majeure : renseignez le changelog et les notes de version sur sa page',
+        failed: 'la publication a échoué',
+      },
+    },
+    publicationGuard: {
+      title: 'Vérifier avant de publier',
+      intro: 'LePatron rejoue les cas de test des skills de fonctionnalité concernées, avec la version active puis avec cette version. Un écart vous avertit sans bloquer : vous décidez.',
+      usedBy: 'Utilisée par : {features}.',
+      calls: '{calls} appel(s) à l\'IA, {max} au plus, avec le moteur IA du groupe plateforme.',
+      notReplayed: '{count} cas de test au-delà de ce plafond ne seront pas rejoués : relisez-les.',
+      missing: 'Sans cas de test, donc non vérifiée(s) : {skills}.',
+      noCase: 'Aucun cas de test à rejouer : relisez la version avant de la publier.',
+      run: 'Lancer la vérification',
+      running: 'Vérification en cours sur le serveur, trois appels à la fois au plus : comptez une minute ou plus…',
+      summary: '{cases} cas rejoué(s), {failed} en écart.',
+      expected: 'Ce qu\'une bonne sortie doit contenir',
+      before: 'Version active',
+      after: 'Cette version',
+      noBefore: 'Pas encore publiée',
+      same: 'Sortie identique',
+      publish: 'Publier',
+      publishAnyway: 'Publier malgré les écarts',
+      cancel: 'Annuler la publication',
+      cancelled: 'Publication annulée : la version reste un brouillon.',
+      errors: {
+        OUTPUT_CONTRACT: 'La réponse ne respecte pas le contrat de sortie.',
+        INPUT_INVALID: 'L\'entrée du cas ne respecte plus le schéma d\'entrée.',
+        CALL_FAILED: 'L\'appel à l\'IA a échoué.',
+      },
+    },
+    testCases: {
+      title: 'Cas de test',
+      help: 'Les entrées sur lesquelles cette skill est vérifiée avant la publication d\'un changement dont elle dépend.',
+      empty: 'Aucun cas de test sur cette version.',
+      add: 'Ajouter un cas de test',
+      edit: 'Modifier le cas de test',
+      view: 'Voir le cas de test',
+      delete: 'Supprimer le cas de test',
+      deleteConfirm: 'Supprimer ce cas de test du brouillon ?',
+      save: 'Valider le cas',
+      name: 'Nom',
+      input: 'Entrée (JSON)',
+      inputHint: 'Un objet JSON avec les champs du schéma d\'entrée de la version.',
+      expectedOutput: 'Ce qu\'une bonne sortie doit contenir',
+      expectedOutputHint: 'Ce que la personne qui relit la comparaison doit retrouver dans la réponse.',
+      notes: 'Notes',
+      fromRunNotes: 'Depuis un run du playground du {date}. Sortie attendue à relire.',
+      errors: {
+        required: 'Ce champ est obligatoire.',
+        invalidJson: 'Ce n\'est pas du JSON valide.',
+        notObject: 'L\'entrée doit être un objet JSON, entre accolades.',
+      },
+      fromRun: {
+        added: 'Cas de test ajouté au brouillon v{version}. Relisez sa sortie attendue dans la page de la skill.',
+        noDraft: 'Cette skill n\'a pas de brouillon ouvert : une version publiée ne se modifie pas. Créez une nouvelle version depuis la page de la skill, puis recommencez.',
+        taskSkill: 'Une skill de tâche n\'a pas de cas de test.',
+        runFailed: 'Seul un run réussi peut devenir un cas de test.',
+      },
     },
     warnings: {
+      USED_BY_FEATURES_LOST: 'Ne l\'utilisent plus : {features}.',
+      USED_BY_FEATURES_GAINED: 'L\'utilisent désormais : {features}.',
+      SCHEMA_NOT_IN_CODE:
+        'Le schéma « {schemaId} » n\'existe pas dans le code de cette instance : la publication attendra son déploiement.',
       TEMPLATE_UNKNOWN_FIELDS:
         'Le template référence des champs absents du schéma d\'entrée « {schemaId} » : {fields}. Ils seront interpolés vides à l\'exécution — la publication sera bloquée.',
       TEMPLATE_MISSING_REQUIRED:
         'Champ(s) requis du schéma « {schemaId} » non référencé(s) dans le template : {fields}.',
       TEMPLATE_MISSING_EXPERTISE:
         'Le schéma accepte des expertises mais le template ne les insère pas : elles seraient ignorées à l\'invocation.',
+      CONSUMED_EXPERTISES_NOT_PUBLISHED:
+        'Ces Expertises consommées ne sont pas publiées : {expertiseIds}. L\'assistant ne les reçoit pas tant qu\'elles ne le sont pas.',
+      CONSUMED_EXPERTISES_PLATFORM_ONLY:
+        'Ces Expertises consommées sont réservées à l\'entreprise plateforme : {expertiseIds}. Les assistants des autres entreprises suivent ce Skill sans elles.',
+      OPEN_EXPERTISES_FAILED:
+        'Le Skill est enregistré, mais ces Expertises n\'ont pas pu être ouvertes à toutes les entreprises : {expertiseIds}. Ouvrez-les depuis leurs détails.',
     },
     emailTypes: {
       editorial: 'Éditorial',
@@ -1571,6 +2322,34 @@ export default {
       detailResolvedConfig: 'Configuration résolue',
     },
     version: {
+      reload: 'Recharger',
+      procedure: 'Procédure',
+      procedureHint: 'Ce que l\'assistant fait, étape par étape, en Markdown.',
+      consumedExpertises: 'Expertises consommées',
+      consumedExpertisesHint:
+        'Dans l\'ordre où l\'assistant les lit. Leur version active est jointe au Skill.',
+      consumedExpertisesEmpty: 'Aucune Expertise consommée.',
+      consumedExpertisesAdd: 'Ajouter une Expertise',
+      consumedExpertisesSearch:
+        'Chercher une Expertise publiée par son titre ou son identifiant',
+      consumedExpertisesNoResult: 'Aucune Expertise publiée trouvée.',
+      consumedExpertisesSearchError:
+        'La recherche a échoué. Tapez de nouveau pour réessayer.',
+      consumedExpertisesMax: 'Une version consomme au plus {max} Expertises.',
+      consumedExpertisesLoadError:
+        'Les Expertises n\'ont pas pu être chargées.',
+      consumedExpertisesRetry: 'Réessayer',
+      consumedExpertiseNotFound: 'Introuvable',
+      consumedExpertiseNotFoundHint:
+        'Aucune Expertise ne porte cet identifiant : l\'assistant ne la reçoit pas. Retirez-la.',
+      consumedExpertiseNotPublished: 'Non publiée',
+      consumedExpertiseNotPublishedHint:
+        'Brouillon ou archivée : l\'assistant ne la reçoit pas tant qu\'aucune de ses versions n\'est publiée. Publiez-la, ou retirez-la.',
+      consumedExpertisePlatformOnlyHint:
+        'Seuls les assistants de l\'entreprise plateforme la reçoivent : ouvrez-la à toutes les entreprises pour que leurs assistants la reçoivent aussi.',
+      consumedExpertiseUp: 'Monter',
+      consumedExpertiseDown: 'Descendre',
+      consumedExpertiseRemove: 'Retirer',
       systemPrompt: 'System prompt',
       skillBody: 'Corps de la skill',
       inputTemplate: 'Modèle d\'entrée (utilise les placeholders {input.*})',
@@ -1578,10 +2357,22 @@ export default {
       newVersionShort: 'Nouvelle version',
       versionCreated: 'Version créée',
       draftSaved: 'Brouillon enregistré',
+      draftSavedSchemaNotInCode:
+        'Brouillon enregistré. Le schéma {ids} n\'existe pas dans le code de cette instance : la publication attendra son déploiement. | Brouillon enregistré. Les schémas {ids} n\'existent pas dans le code de cette instance : la publication attendra leur déploiement.',
+      schemaNotInCode:
+        'Le schéma {ids} n\'existe pas dans le code de cette instance : le brouillon s\'enregistre, la publication attendra son déploiement. | Les schémas {ids} n\'existent pas dans le code de cette instance : le brouillon s\'enregistre, la publication attendra leur déploiement.',
+      schemaMissing: 'Schéma absent du code',
+      schemaMissingHint:
+        'Ce brouillon nomme un schéma que le code de cette instance n\'a pas encore : il ne se publie qu\'une fois ce code déployé.',
       unsavedChanges: 'Modifications non enregistrées',
       activate: 'Activer',
       activateTitle: 'Activer cette version',
       activateBody: 'Activer une version la rend immuable. Le changelog et les notes de version sont obligatoires.',
+      platformOnlyReminder:
+        'Cette fiche reste visible par l\'entreprise plateforme uniquement.',
+      openToAll: 'L\'ouvrir à toutes les entreprises',
+      openToAllNotice:
+        'Cette fiche sera ouverte à toutes les entreprises dès sa publication.',
       activateBodyMinor: 'Activer cette version mineure la rend immuable et change immédiatement la doctrine consommée par les fonctionnalités. Changelog et notes pré-remplis depuis le brouillon (facultatifs pour une mineure).',
       changelog: 'Changelog',
       changelogPlaceholder:
@@ -1637,6 +2428,8 @@ export default {
       markGolden: 'Marquer comme référence',
       unmarkGolden: 'Démarquer la référence',
       compare: 'Comparer avec la référence',
+      makeTestCase: 'En faire un cas de test',
+      makeTestCaseHint: 'Ajoute l\'entrée de ce run, et sa sortie comme sortie attendue, aux cas de test du brouillon ouvert de la skill',
     },
     list: {
       empty: 'Créez un scénario pour tester une skill avec vos expertises. Aucune connaissance technique requise.',

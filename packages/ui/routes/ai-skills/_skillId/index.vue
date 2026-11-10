@@ -1,37 +1,81 @@
 <script>
-import { mapMutations } from 'vuex';
-import { skillErrorMessage } from '~/helpers/ai-skill-errors.js';
-import { PAGE, SHOW_SNACKBAR } from '~/store/page.js';
 import * as acls from '~/helpers/pages-acls.js';
 import * as api from '~/helpers/ai-skill-routes.js';
 import mixinPageTitle from '~/helpers/mixins/mixin-page-title.js';
+import mixinAiVersionedItem from '~/helpers/mixins/mixin-ai-versioned-item.js';
+import BsAiFeedbackTab from '~/components/ai-skill/bs-ai-feedback-tab.vue';
 import BsAiDetailHeader from '~/components/ai-skill/bs-ai-detail-header.vue';
 import BsAiActivateModal from '~/components/ai-skill/bs-ai-activate-modal.vue';
+import BsAiPublicationGuardModal from '~/components/ai-skill/bs-ai-publication-guard-modal.vue';
+import { guardRequired } from '~/helpers/publication-guard.js';
 import BsAiArchiveModal from '~/components/ai-skill/bs-ai-archive-modal.vue';
+import BsAiDraftChangedAlert from '~/components/ai-skill/bs-ai-draft-changed-alert.vue';
 import BsAiSkillVersionsPanel from '~/components/ai-skill/bs-ai-skill-versions-panel.vue';
 import BsAiSkillDetailsForm from '~/components/ai-skill/bs-ai-skill-details-form.vue';
 import BsAiSkillLogsPanel from '~/components/ai-skill/bs-ai-skill-logs-panel.vue';
-import { skillCategoryLabel } from '~/helpers/ai-skill-categories.js';
+import BsAiSkillOpenModal from '~/components/ai-skill/bs-ai-skill-open-modal.vue';
+import BsAiCopyPanel from '~/components/ai-skill/bs-ai-copy-panel.vue';
+import mixinAiSkillDetails from '~/helpers/mixins/mixin-ai-skill-details.js';
+import { fetchCopyState, copyActionsOf } from '~/helpers/skills-copy.js';
+import {
+  SCHEMA_NOT_IN_CODE,
+  withMissingSchemaWarnings,
+} from '~/helpers/ai-skill-schemas.js';
+import {
+  skillCategoryLabel,
+  AUDIENCES,
+} from '~/helpers/ai-skill-categories.js';
+import BsAiUsedByFeatures from '~/components/ai-skill/bs-ai-used-by-features.vue';
+import { usedByOf } from '~/helpers/used-by-feature.js';
 
 export default {
   name: 'PageAiSkillDetail',
   components: {
+    BsAiDraftChangedAlert,
     BsAiDetailHeader,
+    BsAiUsedByFeatures,
+    BsAiFeedbackTab,
     BsAiActivateModal,
+    BsAiPublicationGuardModal,
     BsAiArchiveModal,
     BsAiSkillVersionsPanel,
     BsAiSkillDetailsForm,
     BsAiSkillLogsPanel,
+    BsAiSkillOpenModal,
+    BsAiCopyPanel,
   },
-  mixins: [mixinPageTitle],
+  mixins: [
+    mixinPageTitle,
+    mixinAiVersionedItem({
+      key: 'skill',
+      idField: 'skillId',
+      routes: {
+        item: api.aiSkill,
+        versionMinor: api.aiSkillVersionMinor,
+        versionMajor: api.aiSkillVersionMajor,
+        version: api.aiSkillVersion,
+        archive: api.aiSkillArchive,
+      },
+      archivedKey: 'aiSkills.skill.archived',
+    }),
+    mixinAiSkillDetails,
+  ],
   meta: { acl: acls.ACL_PLATFORM_MANAGE, sidebarModule: 'settings' },
   async asyncData({ $axios, params, error }) {
     try {
-      const [skill, schemasRes] = await Promise.all([
+      const [skill, schemasRes, copyState] = await Promise.all([
         $axios.$get(api.aiSkill(params.skillId)),
         $axios.$get(api.aiSkillSchemas()),
+        fetchCopyState($axios, api.aiSkillsFollow),
       ]);
-      return { skill, schemas: schemasRes.schemas || [] };
+      return {
+        skill,
+        savedAudience: skill.audience,
+        usedBy: usedByOf(skill),
+        schemas: schemasRes.schemas || [],
+        isCopy: copyState.isCopy,
+        followedOnce: copyState.followedOnce,
+      };
     } catch (err) {
       return error({ statusCode: 404, message: 'Skill not found' });
     }
@@ -39,12 +83,21 @@ export default {
   data() {
     return {
       skill: null,
+      // The audience stored: opening the skill to all is confirmed first.
+      savedAudience: null,
+      // Kept apart from the skill: only the detail answers carry it.
+      usedBy: [],
       schemas: [],
+      // On a copy, the page says where the skill comes from (ADR 0019).
+      isCopy: false,
+      followedOnce: false,
       // Landing tab / auto-expanded version come from the query — the create
       // flow redirects here with `?tab=versions&expand=1.0` (§B2).
       tab: this.$route.query.tab === 'versions' ? 'versions' : 'details',
       autoExpandVersion: this.$route.query.expand || null,
       activatingVersion: null,
+      // What the version published consumes kept to the platform company.
+      platformOnlyExpertises: [],
       saving: false,
       versionWarnings: [],
       // "major.minor" of the version the warnings belong to, so the panel can
@@ -64,79 +117,28 @@ export default {
       if (!av || av.major == null) return null;
       return `${av.major}.${av.minor || 0}`;
     },
+    // On a copy, publishing an item not kept on it offers to keep it there,
+    // so no follow takes it over (ADR 0019).
+    offerKeepOnCopy() {
+      return copyActionsOf(this.skill, this.isCopy).keep;
+    },
+    // Still kept to the platform company, or not opened yet, as stored: the
+    // publication reminds it (ADR 0013).
+    platformOnly() {
+      return !!this.skill && this.savedAudience !== AUDIENCES.ALL;
+    },
   },
   methods: {
-    ...mapMutations(PAGE, { showSnackbar: SHOW_SNACKBAR }),
     categoryLabel(value) {
       return skillCategoryLabel(this, value);
     },
 
-    async saveDetails() {
-      if (document.activeElement && document.activeElement.blur) {
-        document.activeElement.blur();
-      }
-      await this.$nextTick();
-      this.saving = true;
-      try {
-        const patch = {
-          title: this.skill.title,
-          description: this.skill.description,
-          category: this.skill.category,
-        };
-        this.skill = await this.$axios.$patch(
-          api.aiSkill(this.skill.skillId),
-          patch
-        );
-        this.showSnackbar({
-          text: this.$t('global.savedSuccessfully'),
-          color: 'success',
-        });
-      } catch (err) {
-        this.handleError(err);
-      } finally {
-        this.saving = false;
-      }
-    },
-
-    async createMinorVersion() {
-      this.saving = true;
-      try {
-        this.skill = await this.$axios.$post(
-          api.aiSkillVersionMinor(this.skill.skillId)
-        );
-        this.showSnackbar({
-          text: this.$t('aiSkills.version.versionCreated'),
-          color: 'success',
-        });
-      } catch (err) {
-        this.handleError(err);
-      } finally {
-        this.saving = false;
-      }
-    },
-
-    async createMajorVersion(source) {
-      this.saving = true;
-      try {
-        const body = source
-          ? {
-              sourceMajor: source.versionMajor,
-              sourceMinor: source.versionMinor,
-            }
-          : {};
-        this.skill = await this.$axios.$post(
-          api.aiSkillVersionMajor(this.skill.skillId),
-          body
-        );
-        this.showSnackbar({
-          text: this.$t('aiSkills.version.versionCreated'),
-          color: 'success',
-        });
-      } catch (err) {
-        this.handleError(err);
-      } finally {
-        this.saving = false;
-      }
+    activeVersion() {
+      const av = this.skill.activeVersion;
+      if (!av || av.major == null) return null;
+      return (this.skill.versions || []).find(
+        (v) => v.versionMajor === av.major && v.versionMinor === (av.minor || 0)
+      );
     },
 
     // `silent` skips the snackbar: publishing an edited draft saves it first
@@ -146,14 +148,20 @@ export default {
       this.saving = true;
       try {
         const payload = {
+          nature: version.nature,
           systemPrompt: version.systemPrompt,
           skillBody: version.skillBody,
           inputTemplate: version.inputTemplate,
           inputSchemaId: version.inputSchemaId,
           outputSchemaId: version.outputSchemaId,
           modelHints: version.modelHints,
+          procedure: version.procedure,
+          consumedExpertiseIds: version.consumedExpertiseIds,
+          testCases: version.testCases,
           changelog: version.changelog,
           releaseNotes: version.releaseNotes,
+          // The draft as the page read it: one written since is refused.
+          updatedAt: this.readAtOf(version),
         };
         const res = await this.$axios.$patch(
           api.aiSkillVersion(
@@ -164,17 +172,17 @@ export default {
           payload
         );
         // Template ↔ input-schema coherence warnings (non-blocking on DRAFT
-        // save; out-of-schema placeholders block at activation).
-        this.versionWarnings = res.warnings || [];
+        // save; out-of-schema placeholders block at activation), and a schema
+        // the code of this instance lacks, which blocks the publication only.
+        this.versionWarnings = withMissingSchemaWarnings(
+          res.warnings,
+          version,
+          this.schemas
+        );
         this.warningsVersionKey = `${version.versionMajor}.${version.versionMinor}`;
         delete res.warnings;
         this.skill = res;
-        if (!silent) {
-          this.showSnackbar({
-            text: this.$t('aiSkills.version.draftSaved'),
-            color: 'success',
-          });
-        }
+        if (!silent) this.tellDraftSaved();
         return true;
       } catch (err) {
         this.handleError(err);
@@ -184,22 +192,23 @@ export default {
       }
     },
 
-    async deleteVersion(version) {
-      if (!confirm(this.$t('aiSkills.version.deleteDraftConfirm'))) return;
-      this.saving = true;
-      try {
-        this.skill = await this.$axios.$delete(
-          api.aiSkillVersion(
-            this.skill.skillId,
-            version.versionMajor,
-            version.versionMinor
-          )
-        );
-      } catch (err) {
-        this.handleError(err);
-      } finally {
-        this.saving = false;
-      }
+    // Saved; a draft naming a schema the code lacks says so.
+    tellDraftSaved() {
+      const lacking = this.versionWarnings.filter(
+        ({ code }) => code === SCHEMA_NOT_IN_CODE
+      );
+      this.showSnackbar(
+        lacking.length
+          ? {
+              text: this.$tc(
+                'aiSkills.version.draftSavedSchemaNotInCode',
+                lacking.length,
+                { ids: lacking.map(({ schemaId }) => schemaId).join(', ') }
+              ),
+              color: 'warning',
+            }
+          : { text: this.$t('aiSkills.version.draftSaved'), color: 'success' }
+      );
     },
 
     async askActivate({ version, dirty }) {
@@ -212,60 +221,68 @@ export default {
         return;
       }
       this.activatingVersion = version;
+      const expertises = this.platformOnly
+        ? await this.readPlatformOnlyExpertises(version)
+        : [];
+      if (expertises === null) this.tellWarningUnchecked();
+      this.platformOnlyExpertises = expertises || [];
       // Both major AND minor go through the modal: activating any version
       // instantly changes the doctrine features consume. Pre-filled from the
       // draft (one click). Only difference: changelog/notes are required for a
       // major (versionMinor === 0), optional for a minor.
       this.$refs.activateModal.open(version);
     },
+    // Published, and opened to all with the expertises chosen when the
+    // modal says so, in one request. A version a feature uses goes through
+    // its guard first (ADR 0019), with the same payload.
     async activateVersion(payload) {
       this.saving = true;
+      // The update date of the draft the page read goes with the
+      // publication, through the guard too (ADR 0014).
+      const sent = {
+        ...payload,
+        updatedAt: this.readAtOf(this.activatingVersion),
+      };
       try {
+        const { versionMajor, versionMinor } = this.activatingVersion;
         const res = await this.$axios.$post(
-          api.aiSkillActivate(
-            this.skill.skillId,
-            this.activatingVersion.versionMajor,
-            this.activatingVersion.versionMinor
-          ),
-          payload
+          api.aiSkillActivate(this.skill.skillId, versionMajor, versionMinor),
+          sent
         );
-        // Non-blocking coherence warnings surface post-activation too (§3).
-        this.versionWarnings = res.warnings || [];
-        this.warningsVersionKey = `${this.activatingVersion.versionMajor}.${this.activatingVersion.versionMinor}`;
-        delete res.warnings;
-        this.skill = res;
-        if (this.$refs.activateModal) this.$refs.activateModal.close();
-        this.showSnackbar({
-          text: this.$t('aiSkills.version.activated'),
-          color: 'success',
-        });
+        this.onPublished(res);
       } catch (err) {
-        this.handleError(err);
+        const plan = guardRequired(err);
+        if (!plan) return this.handleError(err);
+        this.$refs.activateModal.close();
+        this.$refs.guardModal.open({
+          version: this.activatingVersion,
+          payload: sent,
+          plan,
+        });
       } finally {
         this.saving = false;
       }
     },
-
-    async archive() {
-      this.saving = true;
-      try {
-        this.skill = await this.$axios.$post(
-          api.aiSkillArchive(this.skill.skillId)
-        );
-        this.$refs.archiveModal.close();
-        this.showSnackbar({
-          text: this.$t('aiSkills.skill.archived'),
-          color: 'success',
-        });
-      } catch (err) {
-        this.handleError(err);
-      } finally {
-        this.saving = false;
-      }
+    onPublished(res) {
+      const { versionMajor, versionMinor } = this.activatingVersion;
+      // Non-blocking coherence warnings surface post-activation too (§3).
+      this.versionWarnings = res.warnings || [];
+      this.warningsVersionKey = `${versionMajor}.${versionMinor}`;
+      delete res.warnings;
+      this.skill = res;
+      this.savedAudience = res.audience;
+      if (this.$refs.activateModal) this.$refs.activateModal.close();
+      this.showSnackbar({
+        text: this.$t('aiSkills.version.activated'),
+        color: 'success',
+      });
     },
-    handleError(err) {
-      const msg = skillErrorMessage(this, err);
-      this.showSnackbar({ text: msg, color: 'error' });
+    onGuardCancelled(doc) {
+      this.skill = doc;
+      this.showSnackbar({
+        text: this.$t('aiSkills.publicationGuard.cancelled'),
+        color: 'info',
+      });
     },
   },
 };
@@ -278,7 +295,14 @@ export default {
       :status="skill.status"
       back-to="/ai-skills?tab=skills"
       :playground-to="`/ai-playground/new?skillId=${skill.skillId}`"
+      :used-by-feature="usedBy.length > 0"
       @archive="$refs.archiveModal.open()"
+    />
+
+    <bs-ai-draft-changed-alert
+      v-if="draftChanged"
+      :loading="saving"
+      @reload="reloadItem"
     />
 
     <p class="text-caption text--secondary detail-meta">
@@ -292,6 +316,15 @@ export default {
         $t('aiSkills.skill.noActiveVersion')
       }}</span>
     </p>
+    <bs-ai-used-by-features :used-by="usedBy" />
+
+    <bs-ai-copy-panel
+      kind="skill"
+      :item="skill"
+      :is-copy="isCopy"
+      :followed-once="followedOnce"
+      @changed="reloadItem"
+    />
 
     <v-tabs v-model="tab" class="detail-tabs">
       <v-tab href="#details">
@@ -302,6 +335,9 @@ export default {
       </v-tab>
       <v-tab href="#logs">
         {{ $t('aiSkills.logs.tabLabel') }}
+      </v-tab>
+      <v-tab href="#feedback">
+        {{ $t('aiSkills.feedback.tab') }}
       </v-tab>
     </v-tabs>
     <v-divider />
@@ -339,6 +375,13 @@ export default {
             :skill-id="skill.skillId"
           />
         </v-tab-item>
+        <v-tab-item value="feedback">
+          <bs-ai-feedback-tab
+            v-if="tab === 'feedback'"
+            kind="skill"
+            :reference-id="skill.skillId"
+          />
+        </v-tab-item>
       </v-tabs-items>
     </v-container>
 
@@ -346,13 +389,30 @@ export default {
       ref="activateModal"
       :loading="saving"
       :is-major="!!activatingVersion && activatingVersion.versionMinor === 0"
+      :platform-only="platformOnly"
+      :offer-keep-on-copy="offerKeepOnCopy"
+      :item-followed="!!skill.followedAt"
+      :platform-only-expertises="platformOnlyExpertises"
       @confirm="activateVersion"
+    />
+    <bs-ai-skill-open-modal
+      ref="openModal"
+      @confirm="(ids) => patchDetails(ids)"
+    />
+    <bs-ai-publication-guard-modal
+      ref="guardModal"
+      kind="skill"
+      :entity-id="skill.skillId || ''"
+      @published="onPublished"
+      @cancelled="onGuardCancelled"
     />
     <bs-ai-archive-modal
       ref="archiveModal"
       :title="$t('aiSkills.skill.archiveTitle')"
       :body="$t('aiSkills.skill.archiveBody')"
       :loading="saving"
+      :used-by="usedBy"
+      confirm-used-by
       @confirm="archive"
     />
   </div>

@@ -8,7 +8,6 @@ jest.mock('../../../../packages/server/common/models.common.js', () => ({
 }));
 
 const {
-  computeExpiresAt,
   logInvocation,
 } = require('../../../../packages/server/ai-skill/services/invocation-logger.service');
 const {
@@ -37,20 +36,6 @@ function baseParams(overrides = {}) {
 beforeEach(() => {
   jest.clearAllMocks();
   AISkillInvocations.create.mockResolvedValue({ _id: new Types.ObjectId() });
-});
-
-describe('computeExpiresAt', () => {
-  it('adds the retention window to startedAt', () => {
-    expect(computeExpiresAt(STARTED_AT, 7).toISOString()).toBe(
-      '2026-08-27T12:00:00.000Z'
-    );
-  });
-
-  it('falls back to the default retention when none is given', () => {
-    expect(computeExpiresAt(STARTED_AT, undefined).getTime()).toBe(
-      STARTED_AT.getTime() + DefaultLogRetentionDays * MS_PER_DAY
-    );
-  });
 });
 
 describe('logInvocation retention stamping', () => {

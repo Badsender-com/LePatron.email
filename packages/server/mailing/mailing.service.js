@@ -88,6 +88,7 @@ module.exports = {
   listMailingForWorkspaceOrFolder,
   listTagsForWorkspaceOrFolder,
   previewMail,
+  sanitizePreviewCached,
   downloadZip,
   downloadMultipleZip,
   validateMailExist,
@@ -1489,6 +1490,8 @@ async function deleteOne(mailing) {
 // them; a preview larger than a tenth of it is sanitized every time instead.
 const PREVIEW_CACHE_BUDGET = 8 * 1024 * 1024; // characters
 const PREVIEW_CACHE_MAX_ENTRY = PREVIEW_CACHE_BUDGET / 10;
+// The largest sanitized preview kept: MCP reads no larger one (ADR 0012).
+module.exports.PREVIEW_CACHE_MAX_ENTRY = PREVIEW_CACHE_MAX_ENTRY;
 const sanitizedPreviews = new Map();
 let sanitizedPreviewsSize = 0;
 
@@ -1498,11 +1501,18 @@ function evictOldestPreview() {
   sanitizedPreviewsSize -= oldestHtml.length;
 }
 
-function sanitizePreviewCached(mailing) {
+// What tells one saved preview of a mailing from another: its last write, and
+// its length should two writes share a millisecond.
+function previewCacheKeyOf(mailing) {
   const updatedAt = mailing.updatedAt
     ? new Date(mailing.updatedAt).getTime()
     : 0;
-  const key = `${mailing._id}:${updatedAt}:${mailing.previewHtml.length}`;
+  return `${mailing._id}:${updatedAt}:${mailing.previewHtml.length}`;
+}
+module.exports.previewCacheKeyOf = previewCacheKeyOf;
+
+function sanitizePreviewCached(mailing) {
+  const key = previewCacheKeyOf(mailing);
 
   if (sanitizedPreviews.has(key)) {
     const html = sanitizedPreviews.get(key);

@@ -8,6 +8,7 @@ import BsSelect from '~/components/form/bs-select.vue';
 import BsAiModelPicker from '~/components/group/bs-ai-model-picker.vue';
 import BsFormSection from '~/components/layout/bs-form-section.vue';
 import BsAiFeatureSkillEngineSection from '~/components/group/BsAiFeatureSkillEngineSection.vue';
+import BsGroupFeatureSwitch from '~/components/group/feature-switch.vue';
 import { Languages, FileText, BadgeCheck, Sparkles } from 'lucide-vue';
 
 // Three levels, mirroring packages/server/constant/translation-formality.js:
@@ -26,6 +27,7 @@ export default {
     BsAiModelPicker,
     BsFormSection,
     BsAiFeatureSkillEngineSection,
+    BsGroupFeatureSwitch,
     LucideLanguages: Languages,
     LucideFileText: FileText,
     LucideBadgeCheck: BadgeCheck,
@@ -98,6 +100,11 @@ export default {
       set(value) {
         this.updateFeature('translation', { isActive: value });
       },
+    },
+    // Switched off, the settings fold under the header, unless they are
+    // what it takes to switch it on: no active integration chosen yet.
+    translationFolded() {
+      return !this.translationIsActive && Boolean(this.hasActiveIntegration);
     },
     selectedLanguages: {
       get() {
@@ -209,8 +216,8 @@ export default {
 </script>
 
 <template>
-  <v-card flat tile>
-    <v-card-text>
+  <v-card flat tile class="ai-features">
+    <v-card-text class="ai-features__cards">
       <v-skeleton-loader v-if="loading" type="article" />
 
       <template v-else>
@@ -225,7 +232,11 @@ export default {
         </v-alert>
 
         <!-- Section: Translation Feature -->
-        <bs-form-section>
+        <bs-form-section
+          card
+          :active="translationIsActive"
+          :folded="translationFolded"
+        >
           <template #icon>
             <lucide-languages :size="20" />
           </template>
@@ -235,19 +246,16 @@ export default {
           <template #description>
             {{ $t('aiFeatures.translation.description') }}
           </template>
-
-          <!-- Activation switch -->
-          <div class="activation-row mb-4">
-            <v-switch
+          <template #header-actions>
+            <bs-group-feature-switch
               v-model="translationIsActive"
               :label="$t('aiFeatures.translation.enableLabel')"
+              :on-text="$t('aiFeatures.translation.on')"
+              :off-text="$t('aiFeatures.translation.off')"
               :disabled="saving || !hasActiveIntegration"
               :loading="saving"
-              color="accent"
-              hide-details
-              class="mt-0"
             />
-          </div>
+          </template>
 
           <!-- Warning if no active integration selected -->
           <v-alert
@@ -304,7 +312,20 @@ export default {
                 :error-messages="languagesError"
                 :disabled="saving || !selectedIntegrationId"
                 multiple
-              />
+              >
+                <!-- One line, not a chip per language: the list is long. -->
+                <template #selection="{ index }">
+                  <span v-if="index === 0">
+                    {{
+                      $tc(
+                        'aiFeatures.translation.languagesSelected',
+                        selectedLanguages.length,
+                        { count: selectedLanguages.length }
+                      )
+                    }}
+                  </span>
+                </template>
+              </bs-select>
             </v-col>
           </v-row>
         </bs-form-section>
@@ -319,8 +340,11 @@ export default {
           :group-id="groupId"
         />
 
+        <!-- The page's own sections (MCP access), before what is coming. -->
+        <slot />
+
         <!-- Section: Coming Soon Features -->
-        <bs-form-section last>
+        <bs-form-section card last :active="false">
           <template #icon>
             <lucide-sparkles :size="20" />
           </template>
@@ -369,9 +393,10 @@ export default {
 </template>
 
 <style lang="scss" scoped>
-.activation-row {
-  display: flex;
-  align-items: center;
+// The features stack as cards (the AI features mockup), on the settings
+// page's own ground: a grey of their own would stop at the content's edge.
+.ai-features__cards {
+  max-width: 880px;
 }
 
 .upcoming-features {
@@ -385,12 +410,12 @@ export default {
   align-items: flex-start;
   gap: 0.75rem;
   padding: 0.75rem 1rem;
-  background: rgba(0, 0, 0, 0.02);
+  background: var(--surface-muted);
   border-radius: 8px;
 
   &__icon {
     flex-shrink: 0;
-    color: rgba(0, 0, 0, 0.4);
+    color: var(--gray-500);
     margin-top: 2px;
   }
 
@@ -404,12 +429,12 @@ export default {
   &__title {
     font-weight: 500;
     font-size: 0.875rem;
-    color: rgba(0, 0, 0, 0.87);
+    color: var(--gray-900);
   }
 
   &__description {
     font-size: 0.75rem;
-    color: rgba(0, 0, 0, 0.6);
+    color: var(--gray-700);
     margin-top: 0.125rem;
   }
 }

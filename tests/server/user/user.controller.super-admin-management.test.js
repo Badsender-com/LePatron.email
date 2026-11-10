@@ -5,6 +5,9 @@
 // who sees them listed. Same seams and same store as
 // user.controller.super-admin-role.test.js.
 
+jest.mock('../../../packages/server/mcp/mcp-connections.js', () => ({
+  revokeConnections: jest.fn(),
+}));
 jest.mock('../../../packages/server/common/models.common.js', () => {
   const { createStore } = require('../../helpers/fake-user-models.js');
   const store = createStore();

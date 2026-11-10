@@ -1,11 +1,16 @@
 'use strict';
 
 const createError = require('http-errors');
+const { pick } = require('lodash');
 const { Expertises } = require('../../common/models.common.js');
-const { SkillStatuses } = require('../constant/skill-constants.js');
+const { SkillStatuses, Audiences } = require('../constant/skill-constants.js');
+const { listFilter } = require('./expertise-list-filter.js');
 const { versionLabel } = require('./version-helpers.js');
 const manifestRegistry = require('./manifest-registry.js');
 const { normalizeScopes } = require('./expertise-scope.js');
+const { idsUsedByFeatures } = require('./feature-use.js');
+const { archiveUsage, watchUsage } = require('./usage-change.js');
+const { saveItem } = require('./item-save.js');
 const {
   createVersionedEntityService,
 } = require('./versioned-entity.service.js');
@@ -20,21 +25,51 @@ const LIST_PROJECTION = {
   appliesToEmailTypes: 1,
   appliesToLanguages: 1,
   status: 1,
+  audience: 1,
   activeVersion: 1,
+  // Where it comes from, on a copy (ADR 0019).
+  followedAt: 1,
+  keptOnCopy: 1,
+  copiedFrom: 1,
   owner: 1,
   createdAt: 1,
   updatedAt: 1,
 };
 
+/**
+ * The expertises of the back office, newest first, a page at a time.
+ *
+ * @param {Object} [filters] as the query string gives them
+ * @param {string} [filters.category]
+ * @param {string} [filters.status]
+ * @param {string} [filters.search] found in the title or the expertiseId
+ * @param {string|string[]} [filters.ids] these expertises exactly
+ * @param {string} [filters.usedByFeature] `true`: only those a feature uses
+ * @param {number|string} [filters.page]
+ * @param {number|string} [filters.pageSize] 200 at most
+ * @returns {Promise<{items: Object[], total: number, page: number, pageSize: number}>}
+ * @throws {HttpError} 400, as listFilter (expertise-list-filter.js) refuses
+ */
 async function listExpertise({
   category,
   status,
+  search,
+  ids,
+  usedByFeature,
   page = 1,
   pageSize = 50,
 } = {}) {
-  const query = {};
-  if (category) query.category = category;
-  if (status) query.status = status;
+  let query = listFilter({ category, status, search, ids });
+  // Worked out from the features' declarations (ADR 0019), before paging;
+  // with `ids`, the expertises named that a feature uses.
+  if (String(usedByFeature) === 'true') {
+    const used = {
+      expertiseId: { $in: await idsUsedByFeatures('expertise') },
+    };
+    query = query.expertiseId
+      ? { $and: [query, used] }
+      : Object.assign(query, used);
+  }
   const limit = Math.min(Math.max(parseInt(pageSize, 10) || 50, 1), 200);
   const skip = Math.max((parseInt(page, 10) || 1) - 1, 0) * limit;
   const [items, total] = await Promise.all([
@@ -68,7 +103,29 @@ async function getFacets() {
   return { scopes: clean(scopes), emailTypes: clean(emailTypes) };
 }
 
-async function createExpertise(data, userId) {
+/**
+ * A new expertise, with its v1.0 draft, in one write: nothing is stored when
+ * the schema refuses the version (its sections).
+ *
+ * @param {Object} data the expertise's fields; never its audience, which is
+ *   the platform company's
+ * @param {*} userId
+ * @param {Object} [firstVersion] what the v1.0 draft holds, among its
+ *   patchable fields (the body, the examples, the changelog…)
+ * @param {Object} [options]
+ * @param {Object} [options.initialVersion] replaces the v1.0 draft: an
+ *   imported version, at its own number, written with the document in one
+ *   go (ADR 0018)
+ * @returns {Promise<Object>} the expertise
+ * @throws {HttpError} 409 when the expertiseId exists, 400 when the version
+ *   is refused
+ */
+async function createExpertise(
+  data,
+  userId,
+  firstVersion = {},
+  { initialVersion } = {}
+) {
   const now = new Date();
   const payload = {
     expertiseId: data.expertiseId,
@@ -81,24 +138,31 @@ async function createExpertise(data, userId) {
     isTransversal: !!data.isTransversal,
     appliesToEmailTypes: data.appliesToEmailTypes || [],
     appliesToLanguages: data.appliesToLanguages || [],
+    // Explicit rather than left to the schema, and never taken from the
+    // request: a new expertise reaches the platform company only, until it is
+    // opened, an act of its own (ADR 0013).
+    audience: Audiences.PLATFORM,
     owner: userId,
     status: SkillStatuses.DRAFT,
     activeVersion: { major: null, minor: 0 },
     // Seed a v1.0 DRAFT (empty content — expertise has no schemas) so the
     // author lands straight in the version editor, parity with skills (§4).
     versions: [
-      {
-        versionMajor: 1,
-        versionMinor: 0,
-        status: 'DRAFT',
-        ...blankVersionContent(),
-        changelog: '',
-        releaseNotes: '',
-        createdBy: userId,
-        createdAt: now,
-        updatedBy: userId,
-        updatedAt: now,
-      },
+      initialVersion
+        ? versioned.importedDraft(initialVersion, userId)
+        : {
+            versionMajor: 1,
+            versionMinor: 0,
+            status: 'DRAFT',
+            ...blankVersionContent(),
+            changelog: '',
+            releaseNotes: '',
+            ...pick(firstVersion, versioned.PATCHABLE_VERSION_FIELDS),
+            createdBy: userId,
+            createdAt: now,
+            updatedBy: userId,
+            updatedAt: now,
+          },
     ],
   };
   try {
@@ -122,16 +186,22 @@ const PATCHABLE_FIELDS = [
   'isTransversal',
   'appliesToEmailTypes',
   'appliesToLanguages',
+  'audience',
 ];
 
-async function updateExpertise(expertiseId, patch) {
+// `options`: who changes it (`userId`), on the condition that it is as read
+// (`readAt`), and kept on a copy (item-save.js).
+async function updateExpertise(expertiseId, patch, options = {}) {
   const exp = await getExpertise(expertiseId);
+  // Its scope and its category decide which features load it (ADR 0019).
+  const settle = watchUsage('expertise', exp);
   for (const key of PATCHABLE_FIELDS) {
     if (patch[key] === undefined) continue;
     exp[key] = key === 'scope' ? normalizeScopes(patch[key]) : patch[key];
   }
-  await exp.save();
-  return exp;
+  const warnings = settle(exp, options.userId);
+  await saveItem(exp, options);
+  return { expertise: exp, warnings };
 }
 
 // ─── Versioning ────────────────────────────────────────────────────────────
@@ -164,12 +234,28 @@ const {
   blankVersionContent,
   createMinorVersion,
   createMajorVersion,
+  openOrStartDraft,
+  writeDraftIfUnchanged,
+  createVersionAt,
   updateVersion,
   deleteVersion,
   activateVersion,
+  checkPublishable,
 } = versioned;
 
-const archiveExpertise = versioned.archive;
+/**
+ * Archive an expertise. One a feature loads warns that it stops, and the
+ * change is kept on it (ADR 0019).
+ *
+ * @returns {Promise<{ expertise: Object, warnings: Object[] }>}
+ */
+async function archiveExpertise(expertiseId, { userId } = {}) {
+  let warnings = [];
+  const expertise = await versioned.archive(expertiseId, (doc) => {
+    warnings = archiveUsage('expertise', doc, { userId });
+  });
+  return { expertise, warnings };
+}
 
 /**
  * Activation-impact preview: which declared features would load this
@@ -198,9 +284,14 @@ module.exports = {
   updateExpertise,
   createMinorVersion,
   createMajorVersion,
+  openOrStartDraft,
+  writeDraftIfUnchanged,
+  createVersionAt,
   updateVersion,
   deleteVersion,
+  citeRetex: versioned.citeRetex,
   activateVersion,
+  checkPublishable,
   archiveExpertise,
   getActivationImpact,
   getFacets,

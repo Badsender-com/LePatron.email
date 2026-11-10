@@ -6,7 +6,18 @@ import * as api from '~/helpers/ai-skill-routes.js';
 import BsDataTable from '~/components/data-table/bs-data-table.vue';
 import BsAiSkillCreateModal from '~/components/ai-skill/bs-ai-skill-create-modal.vue';
 import BsTimestamp from '~/components/bs-timestamp.vue';
+import BsAiPlatformOnlyChip from '~/components/ai-skill/bs-ai-platform-only-chip.vue';
+import BsAiCopyOriginChip from '~/components/ai-skill/bs-ai-copy-origin-chip.vue';
+import BsAiSkillsExportBar from '~/components/ai-skill/bs-ai-skills-export-bar.vue';
+import BsAiPublishDrafts from '~/components/ai-skill/bs-ai-publish-drafts.vue';
+import {
+  batchItems,
+  exportableOf,
+  isSelectable,
+} from '~/helpers/publish-drafts.js';
+import { isExportable } from '~/helpers/skills-export-download.js';
 import { Sparkles } from 'lucide-vue';
+import { isUsedByFeature } from '~/helpers/used-by-feature.js';
 import {
   skillCategoryOptions,
   skillCategoryLabel,
@@ -19,8 +30,18 @@ export default {
   components: {
     BsDataTable,
     BsAiSkillCreateModal,
+    BsAiSkillsExportBar,
+    BsAiPublishDrafts,
     BsTimestamp,
+    BsAiPlatformOnlyChip,
+    BsAiCopyOriginChip,
     LucideSparkles: Sparkles,
+  },
+  props: {
+    // On a copy, each item says where it comes from (ADR 0019).
+    isCopy: { type: Boolean, default: false },
+    // Whether the copy has completed a follow of production.
+    followedOnce: { type: Boolean, default: false },
   },
   data() {
     return {
@@ -30,10 +51,18 @@ export default {
       search: '',
       filterCategory: null,
       filterStatus: null,
+      onlyUsedByFeature: false,
       saving: false,
+      selected: [],
     };
   },
   computed: {
+    exportSelection() {
+      return exportableOf(this.selected);
+    },
+    publishItems() {
+      return batchItems('skill', this.selected, 'skillId');
+    },
     categoryOptions() {
       return skillCategoryOptions(this);
     },
@@ -47,10 +76,20 @@ export default {
       // Client-side text search over title + identifier (parity with the
       // expertise list). `clearable` sets search to null on clear — guard it.
       const q = (this.search || '').trim().toLowerCase();
-      if (!q) return this.items;
-      return this.items.filter((s) =>
+      const items = this.items;
+      if (!q) return items;
+      return items.filter((s) =>
         `${s.title || ''} ${s.skillId || ''}`.toLowerCase().includes(q)
       );
+    },
+    // Only what has an active version can be exported (ADR 0018).
+    tableItems() {
+      return this.filteredItems.map((item) => ({
+        ...item,
+        exportable: isExportable(item),
+        // A draft never published can be selected to publish, not exported.
+        selectable: isSelectable(item),
+      }));
     },
     tableHeaders() {
       return [
@@ -72,6 +111,12 @@ export default {
   },
   methods: {
     ...mapMutations(PAGE, { showSnackbar: SHOW_SNACKBAR }),
+    // The lists reload: what was published is no longer a draft.
+    onPublished() {
+      this.selected = [];
+      this.fetchData();
+    },
+    isUsedByFeature,
     statusColor(status) {
       return (
         { ACTIVE: 'success', DRAFT: 'warning', ARCHIVED: 'grey' }[status] ||
@@ -99,6 +144,8 @@ export default {
         const params = {};
         if (this.filterCategory) params.category = this.filterCategory;
         if (this.filterStatus) params.status = this.filterStatus;
+        // On the server, so the filter reaches past the first page.
+        if (this.onlyUsedByFeature) params.usedByFeature = true;
         const list = await this.$axios.$get(api.aiSkills(), { params });
         this.items = list.items || [];
         this.total = list.total || 0;
@@ -180,18 +227,52 @@ export default {
         class="filter-field"
         @change="fetchData"
       />
+      <v-checkbox
+        v-model="onlyUsedByFeature"
+        :label="$t('aiSkills.usedByFeature.filter')"
+        dense
+        hide-details
+        class="filter-checkbox"
+        @change="fetchData"
+      />
     </div>
 
+    <bs-ai-skills-export-bar :skills="exportSelection" />
+    <bs-ai-publish-drafts
+      :items="publishItems"
+      :is-copy="isCopy"
+      @published="onPublished"
+    />
+
     <bs-data-table
+      v-model="selected"
       :headers="tableHeaders"
-      :items="filteredItems"
+      :items="tableItems"
       :loading="loading"
+      show-select
+      selectable-key="selectable"
       item-key="skillId"
       clickable
       @click:row="openSkill"
     >
       <template #item.title="{ item }">
         <span class="font-weight-medium">{{ item.title }}</span>
+        <bs-ai-platform-only-chip :audience="item.audience" />
+        <bs-ai-copy-origin-chip
+          kind="skill"
+          :item="item"
+          :is-copy="isCopy"
+          :followed-once="followedOnce"
+        />
+        <v-chip
+          v-if="isUsedByFeature(item)"
+          x-small
+          outlined
+          color="primary"
+          class="ml-2"
+        >
+          {{ $t('aiSkills.usedByFeature.badge') }}
+        </v-chip>
       </template>
       <template #item.skillId="{ item }">
         <span class="text-caption text--secondary">{{ item.skillId }}</span>
@@ -241,7 +322,7 @@ export default {
 <style lang="scss" scoped>
 .tab-intro {
   font-size: 0.875rem;
-  color: rgba(0, 0, 0, 0.6);
+  color: var(--gray-700);
   max-width: 760px;
   margin-bottom: 1.25rem;
   line-height: 1.5;
@@ -254,6 +335,9 @@ export default {
 }
 .filter-field {
   max-width: 220px;
+}
+.filter-checkbox {
+  margin-top: 0;
 }
 .filter-field--search {
   max-width: 280px;

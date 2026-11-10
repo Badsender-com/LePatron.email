@@ -1,0 +1,1 @@
+["0 3 * * * /bin/bash -l -c 'cd $ROOT && node scripts/follow-production.js'"]

@@ -1,0 +1,62 @@
+'use strict';
+
+const mongoose = require('mongoose');
+const { Comments } = require('../common/models.common.js');
+
+// From the most advanced to the least (GLOSSARY.md, "Mailing status").
+const MAILING_STATUSES = ['pushed-to-esp', 'scheduled', 'approved', 'draft'];
+
+/**
+ * The ids of the mailings whose latest root comment is an approval, by the
+ * app's own rule (`Comment.findApprovedMailingIds`, which the listing reads):
+ * a comment posted after it, whatever it says, lifts it.
+ *
+ * @param {Array<string|Object>} mailingIds
+ * @returns {Promise<Set<string>>}
+ */
+async function approvedMailingIds(mailingIds) {
+  if (mailingIds.length === 0) return new Set();
+  // An aggregation casts nothing: ids as the documents hold them.
+  const ids = mailingIds.map((id) => mongoose.Types.ObjectId(String(id)));
+  return new Set((await Comments.findApprovedMailingIds(ids)).map(String));
+}
+
+/**
+ * A mailing's status, derived from its facts and never stored (ADR 0012,
+ * GLOSSARY.md "Mailing status"): pushed to an ESP, else scheduled (approved,
+ * with a planned send date, whichever day it is), else approved, else draft.
+ * Only a person changes it, by approving, planning or pushing: no clock does.
+ * LePatron never knows that a mailing was sent, so no status says so.
+ *
+ * @param {Object} facts
+ * @param {number} facts.espProfileCount the ESP profiles it was pushed to
+ * @param {boolean} facts.approved
+ * @param {Date|string|null} [facts.plannedSendDate]
+ * @returns {string} one of MAILING_STATUSES
+ */
+function statusOf({ espProfileCount, approved, plannedSendDate }) {
+  if (espProfileCount > 0) return 'pushed-to-esp';
+  if (!approved) return 'draft';
+  if (plannedSendDate) return 'scheduled';
+  return 'approved';
+}
+
+/**
+ * The day a mailing is planned to be sent, as an assistant reads it: a day
+ * without a time, which the editor stores at 12:00 UTC so that it is the same
+ * day in every time zone, read back in UTC.
+ *
+ * @param {Date|string|null} [plannedSendDate]
+ * @returns {string|null} `YYYY-MM-DD`, or null when none is planned
+ */
+function plannedDayOf(plannedSendDate) {
+  if (!plannedSendDate) return null;
+  return new Date(plannedSendDate).toISOString().slice(0, 10);
+}
+
+module.exports = {
+  MAILING_STATUSES,
+  approvedMailingIds,
+  statusOf,
+  plannedDayOf,
+};

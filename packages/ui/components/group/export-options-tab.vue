@@ -3,12 +3,35 @@ import { validationMixin } from 'vuelidate';
 import { required } from 'vuelidate/lib/validators';
 import { mapMutations } from 'vuex';
 import { groupsItem } from '~/helpers/api-routes.js';
+import { changedGroupFields } from '~/helpers/group-changes.js';
 import { PAGE, SHOW_SNACKBAR } from '~/store/page';
 import BsFtpSettings from '~/components/group/ftp-settings';
 import BsTextField from '~/components/form/bs-text-field';
 import BsSelect from '~/components/form/bs-select';
 import BsFormSection from '~/components/layout/bs-form-section.vue';
 import { Package, Server, Cloud } from 'lucide-vue';
+
+// What this tab edits, and so all it may send: the ZIP format, the FTP and
+// the CDN of the exports (ftp-settings.vue edits the FTP ones).
+const EXPORT_FIELDS = [
+  'downloadMailingWithoutEnclosingFolder',
+  'downloadMailingWithFtpImages',
+  'ftpProtocol',
+  'ftpHost',
+  'ftpPort',
+  'ftpUsername',
+  'ftpAuthType',
+  'ftpPassword',
+  'ftpSshKey',
+  'ftpPathOnServer',
+  'ftpEndPointProtocol',
+  'ftpEndPoint',
+  'ftpButtonLabel',
+  'downloadMailingWithCdnImages',
+  'cdnProtocol',
+  'cdnEndPoint',
+  'cdnButtonLabel',
+];
 
 export default {
   name: 'BsExportOptionsTab',
@@ -89,12 +112,20 @@ export default {
       }
       if (this.$v.$invalid || !ftpValid) return;
 
+      // The export settings changed since the company was loaded, alone.
+      const changes = changedGroupFields(
+        this.localGroup,
+        this.group,
+        EXPORT_FIELDS
+      );
       this.loading = true;
       try {
-        await this.$axios.$put(
-          groupsItem({ groupId: this.localGroup.id }),
-          this.localGroup
-        );
+        if (Object.keys(changes).length > 0) {
+          await this.$axios.$put(
+            groupsItem({ groupId: this.localGroup.id }),
+            changes
+          );
+        }
         this.showSnackbar({
           text: this.$t('global.saved'),
           color: 'success',
