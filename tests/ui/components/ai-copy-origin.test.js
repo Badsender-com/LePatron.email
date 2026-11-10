@@ -18,6 +18,7 @@ const errors = require('~/helpers/ai-skill-errors.js');
 const skillsCopy = require('~/helpers/skills-copy.js');
 const skillsFollow = require('~/helpers/skills-follow.js');
 const categories = require('~/helpers/ai-skill-categories.js');
+const usedByFeature = require('~/helpers/used-by-feature.js');
 const fr = require('~/helpers/locales/fr.js').default;
 const en = require('~/helpers/locales/en.js').default;
 
@@ -193,6 +194,7 @@ describe.each([
         '~/components/ai-skill/bs-ai-copy-origin-chip.vue': chip('fr'),
         '~/helpers/skills-export-download.js': { isExportable: () => true },
         '~/helpers/ai-skill-categories.js': categories,
+        '~/helpers/used-by-feature.js': usedByFeature,
       },
     });
   }
