@@ -81,7 +81,7 @@ An item that changed on the copy during the follow (in the back office, or throu
 
 ### An item that came from production follows it in everything
 
-Its active version, its draft, its audience, its archived state, whether it is offered to assistants, its title, category and scope are production's, with the same version numbers. A copy opens or closes nothing on its own: it shows what clients live on production. Each version received is marked as coming from production.
+Its active version, its draft, its audience, its archived state, whether it is offered to assistants, its title, description, category and scope are production's, with the same version numbers. One of these fields emptied on production is emptied on the copy too. A copy opens or closes nothing on its own: it shows what clients live on production. Each version received is marked as coming from production.
 
 ### The work done on the copy is never lost
 

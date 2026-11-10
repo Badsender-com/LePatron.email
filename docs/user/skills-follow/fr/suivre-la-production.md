@@ -81,7 +81,7 @@ Un élément qui a changé sur la copie pendant le suivi (dans le back-office, o
 
 ### Un élément venu de la production la suit en tout
 
-Sa version active, son brouillon, son audience, son archivage, le fait d'être proposé aux assistants, son titre, sa catégorie et sa portée sont ceux de la production, avec les mêmes numéros de version. Une copie n'ouvre ni ne ferme rien d'elle-même : elle montre ce que les clients vivent en production. Chaque version reçue est marquée comme venant de la production.
+Sa version active, son brouillon, son audience, son archivage, le fait d'être proposé aux assistants, son titre, sa description, sa catégorie et sa portée sont ceux de la production, avec les mêmes numéros de version. Un de ces champs vidé en production est vidé sur la copie aussi. Une copie n'ouvre ni ne ferme rien d'elle-même : elle montre ce que les clients vivent en production. Chaque version reçue est marquée comme venant de la production.
 
 ### Le travail fait sur la copie n'est jamais perdu
 

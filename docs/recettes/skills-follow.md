@@ -56,6 +56,7 @@ C joue une recette qui existait avant le suivi. Sur C, aucune variable `SKILLS_S
 1. Sur P, fermer F à l'entreprise plateforme et décocher **proposé aux assistants**. Sur C, suivre : F n'est plus ouvert qu'à l'entreprise plateforme, ni proposé aux assistants.
 2. Sur P, rouvrir F aux groupes abonnés et le proposer aux assistants. Sur C, suivre : F l'est de nouveau.
 3. Sur P, archiver une version ou un élément suivi ; sur C, suivre : il est archivé aussi.
+4. Sur P, vider la description de X. Sur C, suivre : la description de X est vide sur C aussi.
 
 ## 6. Le travail de la copie n'est jamais perdu
 
