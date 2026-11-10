@@ -114,14 +114,24 @@ async function recordCancel(params, shown, user) {
 
 // The retex the published draft cites are addressed by this version (ADR
 // 0021), wherever it was published from.
+// Never in the way of the publication, which already stands: a retex left
+// open is dismissed later, or closed by the next version that cites it.
 async function closeAddressedRetex(doc, { major, minor }) {
   const published = findVersion(doc, major, minor);
   const ids = (published && published.retexIds) || [];
   if (!ids.length) return;
-  await closeRetex(ids, {
-    status: 'addressed',
-    addressedIn: versionLabel(published),
-  });
+  try {
+    await closeRetex(ids, {
+      status: 'addressed',
+      addressedIn: versionLabel(published),
+    });
+  } catch (err) {
+    logger.error(
+      `[skills] retex addressed by ${
+        doc.skillId || doc.expertiseId
+      } ${versionLabel(published)} left open: ${err.message}`
+    );
+  }
 }
 
 /**

@@ -669,6 +669,54 @@ describe('the retex loop', () => {
         );
     });
 
+    it('still publishes when closing the retex fails', async () => {
+      const {
+        McpRetexes,
+      } = require('../../../packages/server/common/models.common.js');
+      const find = jest.spyOn(McpRetexes, 'find').mockImplementationOnce(() => {
+        throw new Error('The database is away');
+      });
+
+      const { doc } = await publication.publishVersion(
+        {
+          kind: 'expertise',
+          id: SUBJECT_LINES,
+          version: { major: 3, minor: 0 },
+          payload: { changelog: 'B2B', releaseNotes: 'B2B subjects' },
+        },
+        { id: f.ALICE }
+      );
+      find.mockRestore();
+
+      expect(doc.activeVersion).toEqual({ major: 3, minor: 0 });
+      expect(await listOpen()).toHaveLength(2);
+    });
+
+    it('takes no citation from the back office’s update of a draft', async () => {
+      const { retexId } = await call(await asConsultant(), REPORT, {
+        ...LENGTH_DIVERGENCE,
+        decided: 'A 75-character subject',
+      });
+      await expertiseService.updateVersion(
+        SUBJECT_LINES,
+        { major: 3, minor: 0 },
+        { retexIds: [retexId] },
+        f.ALICE
+      );
+
+      await publication.publishVersion(
+        {
+          kind: 'expertise',
+          id: SUBJECT_LINES,
+          version: { major: 3, minor: 0 },
+          payload: { changelog: 'B2B', releaseNotes: 'B2B subjects' },
+        },
+        { id: f.ALICE }
+      );
+
+      expect((await listOpen()).map((item) => item.retexId)).toEqual([retexId]);
+    });
+
     it('leaves them open when the draft is deleted', async () => {
       await expertiseService.deleteVersion(SUBJECT_LINES, {
         major: 3,

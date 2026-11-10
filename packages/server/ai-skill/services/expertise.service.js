@@ -286,6 +286,7 @@ module.exports = {
   createVersionAt,
   updateVersion,
   deleteVersion,
+  citeRetex: versioned.citeRetex,
   activateVersion,
   checkPublishable,
   archiveExpertise,

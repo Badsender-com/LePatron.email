@@ -9,6 +9,7 @@ const {
   SkillIdRegex,
   MaxConsumedExpertises,
 } = require('../ai-skill/constant/skill-constants.js');
+const { addressesRetex, addressedRetex } = require('./mcp-authoring-retex.js');
 
 const MAX_ID_LENGTH = 100;
 const MAX_TITLE_LENGTH = 200;
@@ -19,7 +20,6 @@ const MAX_EXAMPLE_LENGTH = 2000;
 const MAX_CHANGELOG_LENGTH = 2000;
 const MAX_SCOPES = 20;
 const MAX_SCOPE_LENGTH = 50;
-const MAX_CITED_RETEX = 50;
 
 const ID = z.string().min(1).max(MAX_ID_LENGTH);
 const NEW_ID = ID.regex(SkillIdRegex);
@@ -42,17 +42,8 @@ const ANSWER = z.object({
   version: z.string(),
   status: z.enum(['draft']),
   audience: z.string().optional(),
-  addressesRetex: z
-    .array(z.string())
-    .describe('The retex the draft addresses, closed when it is published.'),
+  addressesRetex: addressedRetex,
 });
-const addressesRetex = z
-  .array(z.string().max(MAX_ID_LENGTH))
-  .max(MAX_CITED_RETEX)
-  .optional()
-  .describe(
-    'The open retex this change addresses, as list_retex gives them: they are closed when the version is published.'
-  );
 const major = z
   .boolean()
   .optional()
