@@ -44,7 +44,7 @@ Click **Follow now**. The follow first reads production's whole answer, then app
 
 ### Every night
 
-On an instance where `SKILLS_SOURCE_NIGHTLY` is `true`, the copy follows production on its own every night, around 3:00 (UTC), as if the button had been clicked. The last follow then reads "by the nightly follow". Without this variable, the copy follows production on demand only, and the tab says so.
+On an instance where `SKILLS_SOURCE_NIGHTLY` is `true`, the copy follows production on its own every night, around 3:00 (UTC), as if the button had been clicked. The last follow then reads "by the nightly follow". When the application runs on several instances, each one starts the nightly follow: a nightly follow is skipped if another one started less than 60 minutes ago, so the copy follows once a night. Without this variable, the copy follows production on demand only, and the tab says so.
 
 ### One follow at a time
 

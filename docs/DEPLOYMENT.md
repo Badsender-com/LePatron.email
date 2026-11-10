@@ -68,6 +68,8 @@ The web server runs no timer. The hosting platform's scheduler runs `node script
 - **Scalingo**, which hosts a test instance, reads `cron.json` at the root of the repository.
 - Elsewhere, schedule the same command with the platform's own scheduler.
 
-**One follow at a time.** A follow records itself in the database as running when it starts, with an expiry, so that a process that dies does not hold it for ever. While it runs, any other follow, from the button, another process or another instance, is refused and writes nothing. That is what keeps the instances of a Clever Cloud app from following twice. The record is also the follow's trace.
+**One follow at a time.** A follow records itself in the database as running when it starts, with an expiry, so that a process that dies does not hold it for ever. While it runs, any other follow, from the button, another process or another instance, is refused and writes nothing. The record is also the follow's trace.
+
+**One nightly follow a night.** The lock alone only keeps two follows from running at the same time: the instances of a Clever Cloud app may start the command one after the other. A nightly follow is skipped when another nightly follow started less than 60 minutes ago, so the night follows once whatever the number of instances.
 
 The command records the follow like the button does, as the nightly follow, and the copy's **Production and copies** tab shows the last one. It exits 1 when the follow failed or when some items failed, so the scheduler's logs show it.

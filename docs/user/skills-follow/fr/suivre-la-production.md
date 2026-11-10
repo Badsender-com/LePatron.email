@@ -44,7 +44,7 @@ Cliquer sur **Suivre maintenant**. Le suivi lit d'abord toute la réponse de la 
 
 ### Chaque nuit
 
-Sur une instance où `SKILLS_SOURCE_NIGHTLY` vaut `true`, la copie suit la production toute seule chaque nuit, vers 3 h (UTC), comme si l'on avait cliqué sur le bouton. Le dernier suivi indique alors « par le suivi de nuit ». Sans cette variable, la copie ne suit la production qu'à la demande, et l'onglet l'indique.
+Sur une instance où `SKILLS_SOURCE_NIGHTLY` vaut `true`, la copie suit la production toute seule chaque nuit, vers 3 h (UTC), comme si l'on avait cliqué sur le bouton. Le dernier suivi indique alors « par le suivi de nuit ». Quand l'application tourne sur plusieurs instances, chacune lance le suivi de nuit : un suivi de nuit est sauté si un autre a commencé il y a moins de 60 minutes, si bien que la copie ne suit qu'une fois par nuit. Sans cette variable, la copie ne suit la production qu'à la demande, et l'onglet l'indique.
 
 ### Un seul suivi à la fois
 

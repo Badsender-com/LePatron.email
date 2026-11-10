@@ -95,8 +95,9 @@ C joue une recette qui existait avant le suivi. Sur C, aucune variable `SKILLS_S
 1. Sur C, sans `SKILLS_SOURCE_NIGHTLY`, lancer la commande à la main (`yarn follow-production`, ou une tâche ponctuelle de l'hébergeur) : elle ne suit rien et sort en 0.
 2. Sur C, mettre `SKILLS_SOURCE_NIGHTLY` à `true` et redémarrer : l'onglet dit que le suivi de nuit est actif sur cette instance.
 3. Relancer la commande : elle sort en 0, et l'onglet indique « Dernier suivi le …, par le suivi de nuit ».
-4. Sur P, la même commande dit qu'il n'y a rien à suivre et sort en 0.
-5. Le lendemain, vérifier dans les logs de l'hébergeur que la tâche de 3 h (UTC) a tourné sur C : `clevercloud/cron.json` sur Clever Cloud, `cron.json` sur Scalingo. Si C tourne sur plusieurs instances, un seul suivi a écrit, les autres ont trouvé un suivi en cours.
+4. La relancer aussitôt : elle dit qu'un suivi de nuit a commencé il y a moins de 60 minutes et ne suit pas. Le dernier suivi de l'onglet n'a pas changé. **Suivre maintenant** suit toujours.
+5. Sur P, la même commande dit qu'il n'y a rien à suivre et sort en 0.
+6. Le lendemain, vérifier dans les logs de l'hébergeur que la tâche de 3 h (UTC) a tourné sur C : `clevercloud/cron.json` sur Clever Cloud, `cron.json` sur Scalingo. Si C tourne sur plusieurs instances, un seul suivi de nuit est enregistré : les autres instances ont trouvé un suivi en cours, ou un suivi de nuit commencé il y a moins de 60 minutes, et n'ont rien écrit.
 
 ## 12. Un seul suivi à la fois
 
