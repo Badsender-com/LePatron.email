@@ -48,6 +48,18 @@ export function readItems(targets) {
   }));
 }
 
+// What the batch left out: the plan's, with those the publication left out
+// in turn, the later word on an item replacing the earlier.
+export function skippedOf(plan, report) {
+  const byItem = new Map();
+  [plan, report].forEach((answer) =>
+    ((answer && answer.skipped) || []).forEach((s) =>
+      byItem.set(`${s.kind}:${s.id}`, s)
+    )
+  );
+  return [...byItem.values()];
+}
+
 // A guard runs when a feature uses one of the drafts.
 export function batchNeedsGuard(plan) {
   return !!plan && Array.isArray(plan.usedBy) && plan.usedBy.length > 0;

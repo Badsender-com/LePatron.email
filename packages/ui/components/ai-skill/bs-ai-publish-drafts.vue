@@ -16,6 +16,7 @@ import {
   itemLabel,
   readItems,
   skipReasonKey,
+  skippedOf,
 } from '~/helpers/publish-drafts.js';
 
 // Several drafts published at once from a list (ADR 0019): the server finds
@@ -48,7 +49,7 @@ export default {
       return (this.plan && this.plan.targets) || [];
     },
     skipped() {
-      return (this.report || this.plan || {}).skipped || [];
+      return skippedOf(this.plan, this.report);
     },
     needsGuard() {
       return batchNeedsGuard(this.plan);

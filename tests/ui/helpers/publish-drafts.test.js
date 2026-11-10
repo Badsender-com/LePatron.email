@@ -16,6 +16,7 @@ const {
   batchItems,
   batchNeedsGuard,
   skipReasonKey,
+  skippedOf,
   failureReasonKey,
   itemLabel,
   readItems,
@@ -92,6 +93,30 @@ describe('publishing several drafts at once', () => {
     expect(failureReasonKey('draft_changed')).toBe(
       'aiSkills.publishDrafts.failures.draft_changed'
     );
+  });
+
+  // The report keeps what the plan left out (recette 6.6).
+  it('reports what the plan left out, with what the publication left out', () => {
+    const plan = {
+      skipped: [
+        { kind: 'skill', id: 'qc.other', reason: 'no_draft' },
+        { kind: 'expertise', id: 'redaction.tone', reason: 'archived' },
+      ],
+    };
+    const report = {
+      skipped: [
+        { kind: 'expertise', id: 'redaction.tone', reason: 'not_found' },
+        { kind: 'skill', id: 'qc.late', reason: 'draft_changed' },
+      ],
+    };
+
+    expect(skippedOf(plan, report)).toEqual([
+      { kind: 'skill', id: 'qc.other', reason: 'no_draft' },
+      { kind: 'expertise', id: 'redaction.tone', reason: 'not_found' },
+      { kind: 'skill', id: 'qc.late', reason: 'draft_changed' },
+    ]);
+    expect(skippedOf(plan, null)).toEqual(plan.skipped);
+    expect(skippedOf(null, null)).toEqual([]);
   });
 
   // Left out before the guard: a publication that would fail anyway.
