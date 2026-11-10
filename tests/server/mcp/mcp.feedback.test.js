@@ -251,6 +251,14 @@ describe('feedback and retex', () => {
       );
       expect(tool.description).toMatch(/500 characters/);
     });
+
+    it('is said in the schema of the tool, as the server checks it', async () => {
+      const client = await harness.connectAs(f.FRANK);
+      const { tools } = await client.listTools();
+      const tool = tools.find((t) => t.name === 'submit_feedback');
+
+      expect(tool.inputSchema.properties.comment.maxLength).toBe(500);
+    });
   });
 
   // Stopping the retex forgets what it let the feedbacks keep (ADR 0012): the

@@ -91,16 +91,7 @@ async function submitFeedback(identity, args, ctx) {
     );
   }
 
-  // The comment reaches the platform company: a short word on LePatron,
-  // never room for a session summary, which a feedback no longer carries
-  // (ADR 0021): what the work taught is a retex, apart.
   const comment = args.comment || '';
-  if (comment.length > MAX_COMMENT_WITHOUT_RETEX) {
-    return failure(
-      `The comment is limited to ${MAX_COMMENT_WITHOUT_RETEX} characters: say in a few words what the user thinks of LePatron. What the work taught about a skill or an expertise is a retex: report_retex.`
-    );
-  }
-
   await McpFeedbacks.create({
     _company: identity.group._id,
     _user: identity.user._id,
@@ -115,10 +106,13 @@ async function submitFeedback(identity, args, ctx) {
 }
 
 // What one feedback holds at most: a few things it is about, and a comment
-// a person reads, short (ADR 0012), checked with a readable refusal.
+// a person reads, short (ADR 0012). The comment reaches the platform
+// company: a short word on LePatron, never room for a session summary,
+// which a feedback no longer carries (ADR 0021). Its schema says so, and its
+// refusal is readable.
 const MAX_REFERENCES = 20;
-const MAX_COMMENT = 4000;
 const MAX_ID_LENGTH = 200;
+const COMMENT_TOO_LONG = `The comment is limited to ${MAX_COMMENT_WITHOUT_RETEX} characters: say in a few words what the user thinks of LePatron. What the work taught about a skill or an expertise is a retex: report_retex.`;
 
 const FEEDBACK_INPUT = z.object({
   rating: z
@@ -126,7 +120,7 @@ const FEEDBACK_INPUT = z.object({
     .describe('up: the user is satisfied. down: they are not.'),
   comment: z
     .string()
-    .max(MAX_COMMENT)
+    .max(MAX_COMMENT_WITHOUT_RETEX, COMMENT_TOO_LONG)
     .optional()
     .describe('What the user says of LePatron, in their words.'),
   references: z
