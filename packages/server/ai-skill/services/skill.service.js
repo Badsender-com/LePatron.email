@@ -350,6 +350,20 @@ async function activateVersion(skillId, ref, payload = {}, userId) {
 }
 
 /**
+ * What a publication checks before it writes, at no cost
+ * (versioned-entity.service.js), and the expertises it is asked to open with
+ * the skill.
+ */
+async function checkPublishable(skill, ref, payload = {}) {
+  await assertOpenable(
+    versionOf(skill, ref),
+    payload.openExpertiseIds,
+    payload.openToAll === true
+  );
+  return versioned.checkPublishable(skill, ref, payload);
+}
+
+/**
  * What opening the skill to every company would leave out for them, with
  * this version: its consumed expertises kept to the platform company.
  *
@@ -398,6 +412,7 @@ module.exports = {
   updateVersion,
   deleteVersion,
   activateVersion,
+  checkPublishable,
   archiveSkill,
   consumedExpertiseWarnings,
   versionPlatformOnlyExpertises,

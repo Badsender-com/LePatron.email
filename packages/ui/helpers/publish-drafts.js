@@ -56,7 +56,15 @@ export function batchNeedsGuard(plan) {
 const keyIn = (list, reason, fallback, prefix) =>
   `${prefix}.${list.includes(reason) ? reason : fallback}`;
 
+// An item is also left out, before the guard, when its publication would
+// fail anyway: that reason is worded as the failure.
 export function skipReasonKey(reason) {
+  if (
+    !PUBLISH_SKIP_REASONS.includes(reason) &&
+    PUBLISH_FAILURE_REASONS.includes(reason)
+  ) {
+    return failureReasonKey(reason);
+  }
   return keyIn(
     PUBLISH_SKIP_REASONS,
     reason,

@@ -233,6 +233,7 @@ const {
   updateVersion,
   deleteVersion,
   activateVersion,
+  checkPublishable,
 } = versioned;
 
 const archiveExpertise = versioned.archive;
@@ -270,6 +271,7 @@ module.exports = {
   updateVersion,
   deleteVersion,
   activateVersion,
+  checkPublishable,
   archiveExpertise,
   getActivationImpact,
   getFacets,

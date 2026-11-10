@@ -66,12 +66,19 @@ export default {
     },
   },
   methods: {
+    // A draft left out because its publication would fail says why, with
+    // the server's code when it gives one.
+    skipText(item) {
+      if (item.reason === 'failed' && item.message) {
+        return skillErrorMessage(this, { response: { data: item } });
+      }
+      return this.$t(skipReasonKey(item.reason));
+    },
     warningsOf(item) {
       return item.warnings.map((w) => skillWarningMessage(this, w)).join(' ');
     },
     ...mapMutations(PAGE, { showSnackbar: SHOW_SNACKBAR }),
     itemLabel,
-    skipReasonKey,
     failureReasonKey,
     async call(run) {
       this.busy = true;
@@ -207,7 +214,7 @@ export default {
         {{ $t('aiSkills.publishDrafts.skippedLabel') }}
         <ul>
           <li v-for="s in skipped" :key="`${s.kind}:${s.id}`">
-            <code>{{ s.id }}</code> — {{ $t(skipReasonKey(s.reason)) }}
+            <code>{{ s.id }}</code> — {{ skipText(s) }}
           </li>
         </ul>
       </div>

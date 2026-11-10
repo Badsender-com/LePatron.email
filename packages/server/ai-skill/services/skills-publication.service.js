@@ -95,6 +95,21 @@ async function record(
 }
 
 /**
+ * What a publication checks before it writes, at no cost: the version is a
+ * draft as the page read it, passes its gate (a schema missing from the code,
+ * a skill's template), a major has its release notes, a skill's opening is
+ * valid. Read before the guard replays anything (ADR 0019).
+ *
+ * @param {{ kind, version: { major, minor } }} target
+ * @param {Object} doc the stored skill or expertise
+ * @param {Object} [payload] what the publication is asked with
+ * @throws {HttpError} what the publication itself would answer
+ */
+function checkPublication({ kind, version }, doc, payload = {}) {
+  return serviceFor(kind).checkPublishable(doc, version, payload || {});
+}
+
+/**
  * Publish a draft. A version a feature uses is published only once its guard
  * has run, whatever it showed: the guard warns, it never blocks. The decision
  * is recorded with the version.
@@ -112,8 +127,10 @@ async function record(
  */
 async function publishVersion(params, user) {
   const { kind, id, version, guard, payload } = params;
-  const { manifests } = await loadUse({ kind, id, version });
+  const { doc, manifests } = await loadUse({ kind, id, version });
   if (manifests.length && !isGuard(guard)) {
+    // A publication refused anyway is refused before the guard costs a call.
+    await checkPublication(params, doc, payload);
     const plan = await planPublication({ kind, id, version });
     throw createError(409, ERROR_CODES.SKILL_PUBLICATION_GUARD_REQUIRED, plan);
   }
@@ -167,6 +184,7 @@ async function cancelPublication(params, user) {
 
 module.exports = {
   cancelPublication,
+  checkPublication,
   consumedWarningsOf,
   guardPublication,
   planPublication,

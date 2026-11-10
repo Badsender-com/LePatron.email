@@ -313,18 +313,15 @@ function createVersionedEntityService({
   }
 
   /**
-   * Publish a DRAFT: run the entity's own gate, require release notes on a
-   * major, archive the version it replaces, and move the `activeVersion`
-   * pointer. `payload.openToAll` opens the item to every company in the same
-   * write (ADR 0013), so a publication never stands half done.
-   * `payload.updatedAt`, when given, is the update date of the draft the
-   * screen read: a draft written since is not published unread (readAtOf).
-   * `payload.keepOnCopy`, on a copy, keeps the item on the copy in the same
-   * write (ADR 0019), followed yet or not: the next follow leaves the
-   * version published here as it is.
+   * What a publication checks before it writes, at no cost: the version is
+   * a draft, as the screen read it (readAtOf), passes the entity's own gate,
+   * and a major has its changelog and release notes. Read before the
+   * publication guard replays anything (ADR 0019), on a document already
+   * read, stored or plain.
+   *
+   * @returns {Promise<{ version: Object, readAt: Date|null }>}
    */
-  async function activateVersion(id, { major, minor }, payload = {}, userId) {
-    const doc = await getDoc(id);
+  async function checkPublishable(doc, { major, minor }, payload = {}) {
     const version = findVersion(doc, major, minor);
     if (!version) throw createError(404, `Version ${major}.${minor} not found`);
     if (version.status !== 'DRAFT') {
@@ -343,6 +340,27 @@ function createVersionedEntityService({
         'changelog and releaseNotes are required to activate a major version'
       );
     }
+    return { version, readAt };
+  }
+
+  /**
+   * Publish a DRAFT: run the entity's own gate, require release notes on a
+   * major, archive the version it replaces, and move the `activeVersion`
+   * pointer. `payload.openToAll` opens the item to every company in the same
+   * write (ADR 0013), so a publication never stands half done.
+   * `payload.updatedAt`, when given, is the update date of the draft the
+   * screen read: a draft written since is not published unread (readAtOf).
+   * `payload.keepOnCopy`, on a copy, keeps the item on the copy in the same
+   * write (ADR 0019), followed yet or not: the next follow leaves the
+   * version published here as it is.
+   */
+  async function activateVersion(id, { major, minor }, payload = {}, userId) {
+    const doc = await getDoc(id);
+    const { version, readAt } = await checkPublishable(
+      doc,
+      { major, minor },
+      payload
+    );
     if (payload.changelog) version.changelog = payload.changelog;
     if (payload.releaseNotes) version.releaseNotes = payload.releaseNotes;
 
@@ -390,6 +408,7 @@ function createVersionedEntityService({
     importedDraft,
     updateVersion,
     deleteVersion,
+    checkPublishable,
     activateVersion,
     archive,
     PATCHABLE_VERSION_FIELDS,

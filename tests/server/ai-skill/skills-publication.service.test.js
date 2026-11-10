@@ -418,6 +418,62 @@ describe('publishing what a feature uses', () => {
       ).rejects.toMatchObject({ status: 409 });
     });
 
+    // The guard costs AI calls: what the publication would refuse anyway is
+    // refused first.
+    it('refuses, before asking for its guard, a publication refused anyway', async () => {
+      const written = new Date('2026-11-04T11:00:00.000Z');
+      const major = {
+        ...subjectLines.versions[1],
+        versionMajor: 3,
+        versionMinor: 0,
+        releaseNotes: '',
+        updatedAt: written,
+      };
+      store.seed({
+        ...SEED,
+        expertises: [
+          { ...subjectLines, versions: [subjectLines.versions[0], major] },
+          f.EXPERTISES[1],
+        ],
+      });
+      const target = {
+        kind: 'expertise',
+        id: SUBJECT_LINES,
+        version: { major: 3, minor: 0 },
+      };
+
+      await expect(
+        publication.publishVersion(
+          {
+            ...target,
+            payload: {
+              changelog: 'Shorter',
+              releaseNotes: 'Shorter',
+              updatedAt: '2026-11-04T10:00:00.000Z',
+            },
+          },
+          ALICE
+        )
+      ).rejects.toMatchObject({
+        status: 409,
+        message: 'SKILL_VERSION_CHANGED',
+      });
+      await expect(
+        publication.publishVersion({ ...target, payload: {} }, ALICE)
+      ).rejects.toMatchObject({ status: 400 });
+      await expect(
+        publication.publishVersion(
+          {
+            ...target,
+            payload: { changelog: 'Shorter', releaseNotes: 'Shorter' },
+          },
+          ALICE
+        )
+      ).rejects.toMatchObject({
+        message: 'SKILL_PUBLICATION_GUARD_REQUIRED',
+      });
+    });
+
     it('publishes after the guard, and records it with its outcome', async () => {
       const guard = await publication.guardPublication({
         kind: 'expertise',
@@ -778,6 +834,42 @@ describe('publishing what a feature uses', () => {
       // The selection, then the feature skills the replay would run.
       expect(skillsRead).toHaveBeenCalledTimes(3);
       jest.restoreAllMocks();
+    });
+
+    it('leaves out, before the guard, a draft its publication would refuse anyway', async () => {
+      store.seed({
+        ...SEED,
+        expertises: [
+          {
+            ...subjectLines,
+            versions: [
+              subjectLines.versions[0],
+              {
+                ...subjectLines.versions[1],
+                versionMajor: 3,
+                versionMinor: 0,
+                releaseNotes: '',
+              },
+            ],
+          },
+          f.EXPERTISES[1],
+        ],
+      });
+
+      const { targets, skipped } = await batch.draftsToPublish([
+        { kind: 'expertise', id: SUBJECT_LINES },
+        { kind: 'skill', id: SUBJECT_IDEAS },
+      ]);
+
+      expect(targets.map((t) => t.id)).toEqual([SUBJECT_IDEAS]);
+      expect(skipped).toEqual([
+        {
+          kind: 'expertise',
+          id: SUBJECT_LINES,
+          reason: 'release_notes_required',
+          message: expect.any(String),
+        },
+      ]);
     });
 
     it('says what the one guard would replay, without calling the AI', async () => {

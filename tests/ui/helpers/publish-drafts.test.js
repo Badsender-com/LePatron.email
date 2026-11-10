@@ -94,6 +94,16 @@ describe('publishing several drafts at once', () => {
     );
   });
 
+  // Left out before the guard: a publication that would fail anyway.
+  it('words an item left out as its publication would fail', () => {
+    expect(skipReasonKey('release_notes_required')).toBe(
+      'aiSkills.publishDrafts.failures.release_notes_required'
+    );
+    expect(skipReasonKey('not_found')).toBe(
+      'aiSkills.publishDrafts.skipped.not_found'
+    );
+  });
+
   it('names an item with its version', () => {
     expect(
       itemLabel({
