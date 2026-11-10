@@ -1051,6 +1051,59 @@ describe('the retex loop', () => {
       expect((await listOpen()).map((item) => item.retexId)).toEqual([retexId]);
     });
 
+    it('keeps the citations of two proposals written at once', async () => {
+      const cite = async (decided) => {
+        const { retexId } = await call(await asConsultant(), REPORT, {
+          ...LENGTH_DIVERGENCE,
+          decided,
+        });
+        return retexId;
+      };
+      const [first, second] = [
+        await cite('A 75-character subject'),
+        await cite('An 80-character subject'),
+      ];
+
+      await Promise.all([
+        expertiseService.citeRetex(
+          SUBJECT_LINES,
+          { major: 3, minor: 0 },
+          [first],
+          f.ALICE
+        ),
+        expertiseService.citeRetex(
+          SUBJECT_LINES,
+          { major: 3, minor: 0 },
+          [second, ids[0]],
+          f.ALICE
+        ),
+      ]);
+
+      const draft = harness
+        .stored('expertises')
+        .find((e) => e.expertiseId === SUBJECT_LINES)
+        .versions.find((v) => v.versionMajor === 3);
+      expect([...draft.retexIds].sort()).toEqual(
+        [...ids, first, second].sort()
+      );
+    });
+
+    it('cites nothing on a version that is no longer a draft', async () => {
+      const { retexId } = await call(await asConsultant(), REPORT, {
+        ...LENGTH_DIVERGENCE,
+        decided: 'A 75-character subject',
+      });
+
+      await expect(
+        expertiseService.citeRetex(
+          SUBJECT_LINES,
+          { major: 2, minor: 1 },
+          [retexId],
+          f.ALICE
+        )
+      ).rejects.toMatchObject({ status: 409 });
+    });
+
     it('leaves them open when the draft is deleted', async () => {
       await expertiseService.deleteVersion(SUBJECT_LINES, {
         major: 3,

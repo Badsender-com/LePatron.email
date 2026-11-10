@@ -21,12 +21,14 @@
  *   (tests/server/ai-skill/models/).
  * - A query's `cursor()` yields its documents to a `for await`.
  * - `bulkWrite` takes `updateOne` operations of a `$set` only.
- * - `updateMany` takes a `$set` only; `findOneAndUpdate` a `$set` and a
- *   `$push`, and answers the document before the update, or after it with
- *   `{ new: true }`, or null when nothing matches. A `$set` of `array.$`
- *   replaces the first element the filter's `$elemMatch` on that array
- *   matches, each field compared as MongoDB does (a date by its time), as
- *   the positional operator does; any other positional path throws.
+ * - `updateMany` takes a `$set` only; `findOneAndUpdate` a `$set`, a
+ *   `$push` and an `$addToSet` (of `$each`), and answers the document before
+ *   the update, or after it with `{ new: true }`, or null when nothing
+ *   matches. A path through `array.$` reaches the first element the filter's
+ *   `$elemMatch` on that array matches, each field compared as MongoDB does
+ *   (a date by its time), as the positional operator does: `array.$` is the
+ *   element, `array.$.field` one of its fields. Any other positional path
+ *   throws.
  * - `populate` is not supported: it throws, rather than answer a document
  *   MongoDB would have filled.
  * - `aggregate` answers plain copies, as Mongoose does, through the stages
@@ -176,22 +178,44 @@ function toDocument(record, stored) {
   return doc;
 }
 
-// `array.$`: the element of `array` the filter's `$elemMatch` matched.
-function setPositional(record, path, value, filter) {
-  const field = path.slice(0, -2);
+// `array.$` or `array.$.field`: the element of `array` the filter's
+// `$elemMatch` matched, and the field of it the path names, if any.
+function positional(record, path, filter) {
+  const [field, dollar, sub, ...rest] = path.split('.');
   const condition = filter[field] && filter[field].$elemMatch;
-  if (path !== `${field}.$` || field.includes('.') || !condition) {
+  if (dollar !== '$' || rest.length || !condition) {
     throw new Error(`fake MCP models: the positional path ${path}`);
   }
   const index = (record[field] || []).findIndex((element) =>
     matches(element, condition)
   );
-  record[field][index] = copy(value);
+  return { array: record[field], index, sub };
 }
 
-// `{ $set, $push }`, as findOneAndUpdate takes them.
+function setPositional(record, path, value, filter) {
+  const { array, index, sub } = positional(record, path, filter);
+  if (sub) array[index][sub] = copy(value);
+  else array[index] = copy(value);
+}
+
+// `{ 'array.$.field': { $each: [...] } }`: the values the field lacks.
+function addToSetPositional(record, path, { $each }, filter) {
+  const { array, index, sub } = positional(record, path, filter);
+  if (!sub || !Array.isArray($each)) {
+    throw new Error(`fake MCP models: $addToSet of ${path}`);
+  }
+  const values = array[index][sub] || [];
+  $each.forEach((value) => {
+    if (!values.some((held) => isDeepStrictEqual(held, value))) {
+      values.push(copy(value));
+    }
+  });
+  array[index][sub] = values;
+}
+
+// `{ $set, $push, $addToSet }`, as findOneAndUpdate takes them.
 function applyUpdate(record, update, filter) {
-  const { $set = {}, $push = {}, ...others } = update;
+  const { $set = {}, $push = {}, $addToSet = {}, ...others } = update;
   if (Object.keys(others).length) {
     throw new Error(
       `fake MCP models: ${Object.keys(others).join(', ')} is not supported`
@@ -201,6 +225,9 @@ function applyUpdate(record, update, filter) {
     if (path.includes('$')) setPositional(record, path, value, filter);
     else record[path] = copy(value);
   });
+  Object.entries($addToSet).forEach(([path, value]) =>
+    addToSetPositional(record, path, value, filter)
+  );
   Object.entries($push).forEach(([key, value]) => {
     record[key] = [...(record[key] || []), copy(value)];
   });

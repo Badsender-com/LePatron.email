@@ -301,21 +301,40 @@ function createVersionedEntityService({
     patchable: PATCHABLE_VERSION_FIELDS,
   });
   /**
-   * Adds the retex a draft addresses to it (ADR 0021), on the document read
-   * now, so that two proposals citing at once both count. Checked by the
+   * Adds the retex a draft addresses to it (ADR 0021), in one write on the
+   * version while it is a draft, so that two proposals citing at once both
+   * count, and a draft published meanwhile takes no citation. Checked by the
    * caller: only the writing tools of MCP cite, never a version update.
+   *
+   * @returns {Promise<string[]>} the retex the draft cites now
+   * @throws {HttpError} 404 or 409 when the version is no draft
    */
   async function citeRetex(id, { major, minor }, retexIds, userId) {
-    const doc = await getDoc(id);
-    const version = findVersion(doc, major, minor);
-    assertDraft(version);
-    version.retexIds = [
-      ...new Set([...(version.retexIds || []), ...retexIds.map(String)]),
-    ];
-    version.updatedBy = userId;
-    version.updatedAt = new Date();
-    await doc.save();
-    return version.retexIds;
+    const written = await model.findOneAndUpdate(
+      {
+        [idField]: id,
+        versions: {
+          $elemMatch: {
+            versionMajor: major,
+            versionMinor: minor,
+            status: SkillStatuses.DRAFT,
+          },
+        },
+      },
+      {
+        $addToSet: {
+          'versions.$.retexIds': { $each: retexIds.map(String) },
+        },
+        $set: {
+          'versions.$.updatedBy': userId,
+          'versions.$.updatedAt': new Date(),
+        },
+      },
+      { new: true }
+    );
+    // Why nothing was written: no such item, version, or draft.
+    if (!written) assertDraft(findVersion(await getDoc(id), major, minor));
+    return findVersion(written, major, minor).retexIds;
   }
 
   async function deleteVersion(id, { major, minor }) {
