@@ -11,6 +11,7 @@ jest.mock('../../../packages/server/common/models.common.js', () => ({
   AISkillInvocations: { find: jest.fn(), bulkWrite: jest.fn() },
   McpCallLogs: { find: jest.fn(), bulkWrite: jest.fn() },
   McpFeedbacks: { find: jest.fn(), bulkWrite: jest.fn() },
+  McpRetexes: { find: jest.fn(), bulkWrite: jest.fn() },
   Groups: { findById: jest.fn() },
 }));
 jest.mock('../../../packages/server/utils/logger.js', () => ({
@@ -72,6 +73,7 @@ beforeEach(() => {
   holds(models.AISkillInvocations, []);
   holds(models.McpCallLogs, []);
   holds(models.McpFeedbacks, []);
+  holds(models.McpRetexes, []);
 });
 
 describe('computeExpiresAt', () => {
@@ -155,19 +157,49 @@ describe('restamp', () => {
 });
 
 describe('restampLogs', () => {
-  it('reaches the skill invocations, the MCP call logs and the feedbacks', async () => {
+  it('reaches the skill invocations, the MCP call logs, the feedbacks and the retex', async () => {
     holds(models.AISkillInvocations, [{ _id: 1, startedAt: FROM }]);
     holds(models.McpCallLogs, [{ _id: 2, createdAt: FROM }]);
     holds(models.McpFeedbacks, [{ _id: 3, createdAt: FROM }]);
 
     const counts = await restampLogs(GROUP_ID);
 
-    expect(counts).toEqual({ invocations: 1, callLogs: 1, feedbacks: 1 });
+    expect(counts).toEqual({
+      invocations: 1,
+      callLogs: 1,
+      feedbacks: 1,
+      retex: 0,
+    });
     expect(LOGS.map(({ model }) => model)).toEqual([
       models.AISkillInvocations,
       models.McpCallLogs,
       models.McpFeedbacks,
+      models.McpRetexes,
     ]);
+  });
+
+  // An open retex has no expiry (ADR 0021): a closed one's runs from when it
+  // was closed.
+  it('recomputes a closed retex from when it was closed, and never an open one', async () => {
+    holds(models.McpRetexes, [
+      {
+        _id: new Types.ObjectId(),
+        createdAt: new Date('2026-06-01T00:00:00Z'),
+        closedAt: new Date('2026-10-01T00:00:00Z'),
+      },
+    ]);
+    stores(7);
+
+    await restampLogs(GROUP_ID);
+
+    const [filter, projection] = models.McpRetexes.find.mock.calls[0];
+    expect(filter).toMatchObject({ status: { $ne: 'open' } });
+    expect(String(filter._company)).toBe(String(GROUP_ID));
+    expect(projection).toEqual({ closedAt: 1 });
+    const [op] = models.McpRetexes.bulkWrite.mock.calls[0][0];
+    expect(op.updateOne.update.$set.expiresAt.toISOString()).toBe(
+      '2026-10-08T00:00:00.000Z'
+    );
   });
 });
 
@@ -256,6 +288,7 @@ describe('the logs a retention reaches', () => {
     ['ai-skill/models/ai-skill-invocation.schema.js', 'startedAt'],
     ['mcp/mcp-call-log.schema.js', 'createdAt'],
     ['mcp/mcp-feedback.schema.js', 'createdAt'],
+    ['mcp/mcp-retex.schema.js', 'closedAt'],
   ])('%s is indexed by company and date', (schemaPath, dateField) => {
     // eslint-disable-next-line import/no-dynamic-require, global-require
     const schema = require(`../../../packages/server/${schemaPath}`);

@@ -11,13 +11,15 @@ const {
   SkillCategoryValues,
 } = require('../ai-skill/constant/skill-constants.js');
 const { withIdentity, mayWrite, failure } = require('./mcp-identity.js');
-const { READ_ONLY } = require('./mcp-tool-grammar.js');
+const { READ_ONLY, SETTING } = require('./mcp-tool-grammar.js');
+const { closeRetex } = require('./mcp-retex-status.js');
 
 const MAX_ITEMS = 100;
 
 // A part of the email, as stored: trimmed and in lower case (ADR 0021).
 const partOf = (part) => String(part).trim().toLowerCase();
 const MAX_ID_LENGTH = 200;
+const MAX_REASON_LENGTH = 1000;
 
 const NOT_ALLOWED =
   'Not allowed: the retex are read by those who may manage the platform, with the skills:write scope and a connection to the platform company.';
@@ -137,6 +139,39 @@ const LIST_OUTPUT = z.object({
     ),
 });
 
+// Dismisses an open retex, with the reason: it stays readable and no longer
+// counts towards a convergence.
+async function dismissRetex({ retexId, reason }, user) {
+  if (!String(reason || '').trim()) {
+    return failure('A dismissal needs its reason.');
+  }
+  const closed = await closeRetex([String(retexId)], {
+    status: 'dismissed',
+    dismissal: { reason: reason.trim(), _user: user._id || user.id },
+  });
+  if (!closed.length) {
+    return failure(
+      `No open retex ${retexId}: it does not exist, or is closed.`
+    );
+  }
+  return answerOf({ retexId: String(retexId), status: 'dismissed' });
+}
+
+const DISMISS_INPUT = z.object({
+  retexId: z
+    .string()
+    .max(MAX_ID_LENGTH)
+    .describe('The retex, as list_retex gives it.'),
+  reason: z
+    .string()
+    .max(MAX_REASON_LENGTH)
+    .describe('Why no version will act on it, for the others to read.'),
+});
+const DISMISS_OUTPUT = z.object({
+  retexId: z.string(),
+  status: z.literal('dismissed'),
+});
+
 function registerRetexReading(server) {
   server.registerTool(
     'list_retex',
@@ -149,6 +184,18 @@ function registerRetexReading(server) {
       annotations: READ_ONLY,
     },
     forCurator(async (filters) => answerOf({ items: await listRetex(filters) }))
+  );
+  server.registerTool(
+    'dismiss_retex',
+    {
+      title: 'Dismiss a retex',
+      description:
+        'Closes an open retex no version will act on, with the reason. It stays readable and no longer counts towards a convergence.',
+      inputSchema: DISMISS_INPUT,
+      outputSchema: DISMISS_OUTPUT,
+      annotations: SETTING,
+    },
+    forCurator(dismissRetex)
   );
 }
 

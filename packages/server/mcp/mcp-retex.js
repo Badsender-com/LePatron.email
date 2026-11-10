@@ -19,7 +19,7 @@ const { withIdentity, failure } = require('./mcp-identity.js');
 const { readableExpertise } = require('./mcp-expertises.js');
 const { servedSkill } = require('./mcp-skill-catalog.js');
 const { ADDITIVE } = require('./mcp-tool-grammar.js');
-const { partOf } = require('./mcp-retex-read.js');
+const { listRetex, partOf } = require('./mcp-retex-read.js');
 
 const MAX_ID_LENGTH = 200;
 const MAX_ANCHOR_LENGTH = 100;
@@ -134,6 +134,26 @@ function droppedBecause(identity, approvedByUser) {
   return null;
 }
 
+// The open retex that may converge with this one, for a super admin to
+// judge: the same passage when it names one, else the same skill or
+// expertise, or, about none, the same kind of know-how and part of the email.
+async function candidatesOf(retex, retexId) {
+  let filters;
+  if (retex.about && retex.section) {
+    filters = { about: retex.about, section: retex.section };
+  } else if (retex.about) {
+    filters = { about: retex.about };
+  } else {
+    filters = { category: retex.category, part: retex.part };
+  }
+  const found = await listRetex(filters);
+  return found.filter(
+    (other) =>
+      other.retexId !== retexId &&
+      (!retex.quote || !other.quote || other.quote === retex.quote)
+  );
+}
+
 const answerOf = (answer) => ({
   content: [{ type: 'text', text: JSON.stringify(answer) }],
   structuredContent: answer,
@@ -170,7 +190,13 @@ async function reportRetex(identity, args, ctx) {
     status: 'open',
     expiresAt: null,
   });
-  return answerOf({ kept: true, retexId: String(stored._id) });
+  const retexId = String(stored._id);
+  if (!isConsultant(identity.user)) return answerOf({ kept: true, retexId });
+  return answerOf({
+    kept: true,
+    retexId,
+    candidates: await candidatesOf(retex, retexId),
+  });
 }
 
 const text = (max) => z.string().max(max);
@@ -242,6 +268,12 @@ const RETEX_INPUT = z.object({
 const RETEX_OUTPUT = z.object({
   kept: z.boolean(),
   retexId: z.string().optional(),
+  candidates: z
+    .array(z.object({}).passthrough())
+    .optional()
+    .describe(
+      'For a super admin: the open retex that may converge with this one. If one points the same way, propose the change, citing both.'
+    ),
   reason: z
     .enum(['company', 'approval'])
     .optional()

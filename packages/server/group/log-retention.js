@@ -6,6 +6,7 @@ const {
   AISkillInvocations,
   McpCallLogs,
   McpFeedbacks,
+  McpRetexes,
   Groups,
 } = require('../common/models.common.js');
 const {
@@ -28,11 +29,18 @@ const RESTAMP_BATCH_SIZE = 500;
 
 // The logs a company's retention applies to, each with the date it counts
 // from: the skill invocations, the MCP call logs and the feedbacks sent from
-// connected applications (ADR 0012).
+// connected applications (ADR 0012), and the closed retex, from when they
+// were closed: an open one has no expiry (ADR 0021).
 const LOGS = Object.freeze([
   { name: 'invocations', model: AISkillInvocations, dateField: 'startedAt' },
   { name: 'callLogs', model: McpCallLogs, dateField: 'createdAt' },
   { name: 'feedbacks', model: McpFeedbacks, dateField: 'createdAt' },
+  {
+    name: 'retex',
+    model: McpRetexes,
+    dateField: 'closedAt',
+    filter: { status: { $ne: 'open' } },
+  },
 ]);
 
 /**
@@ -57,11 +65,13 @@ function computeExpiresAt(from, retentionDays) {
  * @param {string} dateField the date each log counts from
  * @param {import('mongoose').Types.ObjectId|string} groupId
  * @param {number} [days]
+ * @param {Object} [filter] the logs of the collection the retention reaches,
+ *   when not all of them do
  * @returns {Promise<number>} how many were re-stamped
  */
-async function restamp(model, dateField, groupId, days) {
+async function restamp(model, dateField, groupId, days, filter = {}) {
   const logs = model
-    .find({ _company: Types.ObjectId(groupId) }, { [dateField]: 1 })
+    .find({ ...filter, _company: Types.ObjectId(groupId) }, { [dateField]: 1 })
     .lean()
     .cursor();
   let batch = [];
@@ -107,9 +117,9 @@ async function restampAll(groupId) {
   let days = await storedRetention(groupId);
   for (let round = 0; round < MAX_ROUNDS; round += 1) {
     counts = {};
-    for (const { name, model, dateField } of LOGS) {
+    for (const { name, model, dateField, filter } of LOGS) {
       // eslint-disable-next-line no-await-in-loop
-      counts[name] = await restamp(model, dateField, groupId, days);
+      counts[name] = await restamp(model, dateField, groupId, days, filter);
     }
     // eslint-disable-next-line no-await-in-loop
     const now = await storedRetention(groupId);
