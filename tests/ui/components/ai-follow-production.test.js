@@ -122,6 +122,19 @@ const LAST = {
 };
 
 describe('the follow of production on a copy', () => {
+  it.each([
+    ['fr', 'Origine sur cette copie', 'Suivre la production'],
+    ['en', 'Origin on this copy', 'Follow production'],
+  ])(
+    'is titled in %s apart from the action that follows production again',
+    async (locale, title, action) => {
+      const { vm } = mountFollow({ locale });
+      await settle(vm);
+      expect(text(vm.$el.querySelector('.bs-ai-follow__title'))).toBe(title);
+      expect(LOCALES[locale].aiSkills.copy.follow).toBe(action);
+    }
+  );
+
   it('tells the tab it is a copy', async () => {
     const { vm } = mountFollow();
     const state = jest.fn();

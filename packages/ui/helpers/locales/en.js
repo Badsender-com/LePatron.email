@@ -1695,7 +1695,7 @@ export default {
       failedBecause: 'The export failed: {reason}',
     },
     follow: {
-      title: 'Follow production',
+      title: 'Origin on this copy',
       description:
         'This instance is a copy: it follows production\'s skills and expertises, as clients live them. The work done here is never lost: when the follow has to replace it, it puts it in a draft of a new item of the copy.',
       production: 'Production: {origin}',

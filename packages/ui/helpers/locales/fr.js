@@ -1719,7 +1719,7 @@ export default {
       failedBecause: 'L\'export a échoué : {reason}',
     },
     follow: {
-      title: 'Suivre la production',
+      title: 'Origine sur cette copie',
       description:
         'Cette instance est une copie : elle suit les skills et expertises de la production, telles que les clients les vivent. Le travail fait ici n\'est jamais perdu : quand le suivi doit le remplacer, il le met en brouillon dans un nouvel élément de la copie.',
       production: 'Production : {origin}',
