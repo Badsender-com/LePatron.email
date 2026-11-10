@@ -570,6 +570,23 @@ describe('the skills export', () => {
       ]);
     });
 
+    // Nothing published in between: each item has the draft the first
+    // import opened.
+    it('says a draft is open when the same file is imported again', async () => {
+      await importAll();
+
+      const again = await importAll();
+
+      expect(again.created).toEqual([]);
+      expect(again.updated).toEqual([]);
+      expect(again.skipped.map(({ id, reason }) => [id, reason])).toEqual([
+        [SPAM_WORDS, 'draft_open'],
+        [SUBJECT_LINES, 'draft_open'],
+        [SUBJECT_IDEAS, 'draft_open'],
+        [WRITE_SUBJECT, 'draft_open'],
+      ]);
+    });
+
     it('imports only what was chosen, and nothing blocked', async () => {
       store.seed({
         ...EMPTY_TARGET,

@@ -342,12 +342,14 @@ function stateOf(kind, item, doc) {
         : { state: 'blocked', reason: 'diverged' };
     }
   }
+  // Before the version's number: the same file imported again finds the
+  // draft its first import opened.
+  if (doc && openDraftOf(doc)) {
+    return { state: 'blocked', reason: 'draft_open' };
+  }
   // Archived here, or left behind when an older draft was published.
   if (doc && findVersion(doc, item.version.major, item.version.minor)) {
     return { state: 'blocked', reason: 'version_exists' };
-  }
-  if (doc && openDraftOf(doc)) {
-    return { state: 'blocked', reason: 'draft_open' };
   }
   if (lacksSchema(kind, item)) {
     return { state: 'blocked', reason: 'missing_schema' };
