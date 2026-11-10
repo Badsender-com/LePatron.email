@@ -268,6 +268,20 @@ describe('the scopes a token carries', () => {
     expect(await toolsOf(tokens.access_token)).toContain('create_expertise');
   });
 
+  // The platform company's work is done on a connection to it (ADR 0019).
+  it('keeps a super admin who ticks it on a client company to reading', async () => {
+    const tokens = await oauth.connect(app, f.ALICE, {
+      group: f.CLIENT_GROUP,
+      scope: 'mcp:read skills:write',
+      allowWrite: true,
+    });
+
+    expect(tokens.scope).toBe('mcp:read');
+    expect(await toolsOf(tokens.access_token)).not.toContain(
+      'create_expertise'
+    );
+  });
+
   it('keeps a super admin who does not tick it to reading', async () => {
     const tokens = await oauth.connect(app, f.ALICE, {
       group: f.CLIENT_GROUP,

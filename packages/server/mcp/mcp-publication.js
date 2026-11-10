@@ -18,8 +18,12 @@ const {
   openDraftOf,
   versionLabel: label,
 } = require('../ai-skill/services/version-helpers.js');
-const { withIdentity, isRefusal, failure } = require('./mcp-identity.js');
-const { mayDraft } = require('./mcp-authoring.js');
+const {
+  withIdentity,
+  mayWrite,
+  isRefusal,
+  failure,
+} = require('./mcp-identity.js');
 const { OVERWRITING } = require('./mcp-tool-grammar.js');
 
 // What an assistant may send: bounded, like every input of this server.
@@ -269,9 +273,9 @@ const PUBLISHING_REFUSED =
 
 // Who calls is checked first (`withIdentity`), then whether they may still
 // publish; what the services refuse is answered, anything else is logged.
-async function publishDraft({ user }, args, ctx) {
+async function publishDraft({ user, group }, args, ctx) {
   const authInfo = ctx?.http?.authInfo;
-  if (!mayDraft(user, authInfo)) return failure(PUBLISHING_REFUSED);
+  if (!mayWrite(user, group, authInfo)) return failure(PUBLISHING_REFUSED);
   try {
     const answer = args.confirmation
       ? await publishChecked(args, user, authInfo?.clientId)

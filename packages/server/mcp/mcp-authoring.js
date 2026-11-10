@@ -1,8 +1,6 @@
 'use strict';
 
 const createError = require('http-errors');
-const permissions = require('../account/permissions.js');
-const { CAPABILITIES } = require('../../shared/access/roles.js');
 const expertiseService = require('../ai-skill/services/expertise.service.js');
 const skillService = require('../ai-skill/services/skill.service.js');
 const {
@@ -17,11 +15,10 @@ const {
 } = require('../ai-skill/constant/skill-constants.js');
 const {
   withIdentity,
-  hasScope,
+  mayWrite,
   isRefusal,
   failure,
   refused,
-  WRITE_SCOPE,
 } = require('./mcp-identity.js');
 const { draftDiff, differs } = require('./mcp-draft-diff.js');
 const {
@@ -52,15 +49,6 @@ const ENTITIES = {
     ],
   },
 };
-
-// Whether who calls may write: the capability is asked again on every call,
-// whatever the token says (ADR 0014).
-function mayDraft(user, authInfo) {
-  return (
-    hasScope(authInfo, WRITE_SCOPE) &&
-    permissions.can(user, CAPABILITIES.PLATFORM_MANAGE)
-  );
-}
 
 // What a write answers: the version written, and its difference with the
 // active version, for the person to read before publishing.
@@ -175,10 +163,10 @@ async function createDraft(entity, data, firstVersion, user) {
 // Runs a write for an author, who calls checked first (`withIdentity`), and
 // answers what the services refuse.
 function asAuthor(write) {
-  return withIdentity(async ({ user }, args, ctx) => {
-    if (!mayDraft(user, ctx?.http?.authInfo)) {
+  return withIdentity(async ({ user, group }, args, ctx) => {
+    if (!mayWrite(user, group, ctx?.http?.authInfo)) {
       return failure(
-        'Not allowed: drafting skills and expertises needs the skills:write scope and the right to manage the platform.'
+        'Not allowed: drafting skills and expertises needs the skills:write scope, the right to manage the platform, and a connection to the platform company.'
       );
     }
     try {
@@ -268,4 +256,4 @@ function registerAuthoringTools(server) {
   );
 }
 
-module.exports = { registerAuthoringTools, mayDraft };
+module.exports = { registerAuthoringTools };
