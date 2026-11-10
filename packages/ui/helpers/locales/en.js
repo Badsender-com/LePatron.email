@@ -1697,27 +1697,52 @@ export default {
     follow: {
       title: 'Follow production',
       description:
-        'This instance is a copy: it receives production\'s skills and expertises, as clients live them. What exists only here stays, and a newer local draft is never overwritten.',
+        'This instance is a copy: it follows production\'s skills and expertises, as clients live them. The work done here is never lost: when the follow has to replace it, it puts it in a draft of a new item of the copy.',
       production: 'Production: {origin}',
       now: 'Follow now',
       running: 'Following…',
       never: 'Production has never been followed yet.',
       last: 'Last followed on {date} by {by}',
       lastNight: 'Last followed on {date}, by the nightly follow',
+      nightlyOn: 'The nightly follow is on for this instance.',
+      nightlyOff:
+        'The nightly follow is off for this instance: only the button follows production.',
+      lock: 'A follow has been running since {date}, started by {by}.',
+      lockNight: 'The nightly follow has been running since {date}.',
+      alreadyRunning:
+        'A follow is already running: wait for it to end before starting another.',
       loadError: 'The follow of production could not be loaded.',
       done: 'Production followed.',
+      donePartial: 'Production partly followed: some items failed.',
+      partialHint:
+        'Some items could not be written; the others followed production.',
       statuses: {
         succeeded: 'Succeeded',
         partial: 'Partly succeeded',
         failed: 'Failed',
       },
       outcomes: {
-        created: '{count} added',
-        updated: '{count} updated',
-        upToDate: '{count} already up to date',
-        kept: '{count} kept on the copy',
-        failed: '{count} failed',
+        created: '{count} item added | {count} items added',
+        updated: '{count} item updated | {count} items updated',
+        moved:
+          '{count} piece of the copy\'s work set aside | {count} pieces of the copy\'s work set aside',
+        removed: '{count} item removed | {count} items removed',
+        upToDate: '{count} item already up to date | {count} items already up to date',
+        kept: '{count} item kept on this copy | {count} items kept on this copy',
+        failed: '{count} item failed | {count} items failed',
       },
+      movedLabel: 'Copy\'s work set aside',
+      moved: '"{id}": the work done on the copy is a draft in',
+      keptLabel: 'Kept on this copy',
+      productionChanged: 'production changed',
+      removedLabel: 'Removed: production no longer has them',
+      warningsLabel: 'To check',
+      warnings: {
+        missing_expertises:
+          '"{id}" consumes expertises this copy lacks: {ids}.',
+        other: '"{id}" is to check.',
+      },
+      itemFailed: 'This item could not be written.',
       failuresLabel: 'Failed items',
       nothingWritten: 'Nothing was written.',
       reasons: {

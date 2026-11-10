@@ -1721,27 +1721,54 @@ export default {
     follow: {
       title: 'Suivre la production',
       description:
-        'Cette instance est une copie : elle reçoit les skills et expertises de la production, telles que les clients les vivent. Ce qui n\'existe qu\'ici reste, un brouillon local plus récent n\'est jamais écrasé.',
+        'Cette instance est une copie : elle suit les skills et expertises de la production, telles que les clients les vivent. Le travail fait ici n\'est jamais perdu : quand le suivi doit le remplacer, il le met en brouillon dans un nouvel élément de la copie.',
       production: 'Production : {origin}',
       now: 'Suivre maintenant',
       running: 'Suivi en cours…',
       never: 'La production n\'a encore jamais été suivie.',
       last: 'Dernier suivi le {date} par {by}',
       lastNight: 'Dernier suivi le {date}, par le suivi de nuit',
+      nightlyOn: 'Le suivi de nuit est actif sur cette instance.',
+      nightlyOff:
+        'Le suivi de nuit n\'est pas actif sur cette instance : seul le bouton suit la production.',
+      lock: 'Un suivi est en cours depuis le {date}, lancé par {by}.',
+      lockNight: 'Le suivi de nuit est en cours depuis le {date}.',
+      alreadyRunning:
+        'Un suivi est déjà en cours : attendez qu\'il se termine pour en lancer un autre.',
       loadError: 'Le suivi de la production n\'a pas pu être chargé.',
       done: 'Production suivie.',
+      donePartial:
+        'Production suivie en partie : certains éléments sont en échec.',
+      partialHint:
+        'Certains éléments n\'ont pas pu être écrits ; les autres ont suivi la production.',
       statuses: {
         succeeded: 'Réussi',
         partial: 'Réussi en partie',
         failed: 'Échoué',
       },
       outcomes: {
-        created: '{count} ajoutée(s)',
-        updated: '{count} mise(s) à jour',
-        upToDate: '{count} déjà à jour',
-        kept: '{count} conservée(s) sur la copie',
-        failed: '{count} en échec',
+        created: '{count} élément ajouté | {count} éléments ajoutés',
+        updated: '{count} élément mis à jour | {count} éléments mis à jour',
+        moved:
+          '{count} travail de la copie mis de côté | {count} travaux de la copie mis de côté',
+        removed: '{count} élément supprimé | {count} éléments supprimés',
+        upToDate: '{count} élément déjà à jour | {count} éléments déjà à jour',
+        kept:
+          '{count} élément gardé sur cette copie | {count} éléments gardés sur cette copie',
+        failed: '{count} élément en échec | {count} éléments en échec',
       },
+      movedLabel: 'Travail de la copie mis de côté',
+      moved: '« {id} » : le travail fait sur la copie est en brouillon dans',
+      keptLabel: 'Gardés sur cette copie',
+      productionChanged: 'la production a changé',
+      removedLabel: 'Supprimés : la production ne les a plus',
+      warningsLabel: 'À vérifier',
+      warnings: {
+        missing_expertises:
+          '« {id} » consomme des expertises absentes de cette copie : {ids}.',
+        other: '« {id} » est à vérifier.',
+      },
+      itemFailed: 'Cet élément n\'a pas pu être écrit.',
       failuresLabel: 'Éléments en échec',
       nothingWritten: 'Rien n\'a été écrit.',
       reasons: {
