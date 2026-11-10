@@ -102,7 +102,7 @@ An item created on the copy, a skill being tried out for instance, is left alone
 
 ### Where each item comes from
 
-On a copy, the lists and the page of a skill or an expertise carry a badge:
+On a copy, the lists of skills and expertises carry a badge, and an item's page shows it in the **Origin on this copy** section:
 
 | Badge                    | What it means                                                                                                            |
 | ------------------------ | ------------------------------------------------------------------------------------------------------------------------ |
@@ -116,7 +116,7 @@ These badges and the actions below do not show on production.
 
 ## 6. Keep, follow again, duplicate
 
-On a copy, the page of an item that came from production offers three actions:
+On a copy, the **Origin on this copy** section of an item that came from production offers three actions:
 
 - **Keep on this copy** detaches the item: the follow no longer touches it, and its report only says that production changed it. Useful to keep a version on trial for a few days.
 - **Follow production** attaches it back. At the next follow, what was written on the copy goes into a new item (see above), and the item takes back what production holds.

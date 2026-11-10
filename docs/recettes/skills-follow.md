@@ -69,11 +69,11 @@ C joue une recette qui existait avant le suivi. Sur C, aucune variable `SKILLS_S
 
 1. Sur C, modifier le brouillon 1.2 de X (y écrire « gardé par C ») et le publier : la case **Garder sur cette copie** est proposée, **cochée**. La laisser cochée. X porte le badge **Gardé sur cette copie**.
 2. Sur P, publier le brouillon 1.2 de X. Sur C, suivre : le rapport montre X **gardé sur cette copie**, et dit que la production l'a changé. X garde sur C la version publiée à l'étape 1.
-3. Sur C, sur X, **Suivre la production** : le badge redevient **Suit la production**. Suivre : « gardé par C » est mis de côté dans un nouvel élément (`<id de X>.copie-2`), et X a repris la version active de P.
+3. Sur C, sur la fiche de X, section **Origine sur cette copie**, **Suivre la production** : le badge redevient **Suit la production**. Suivre : « gardé par C » est mis de côté dans un nouvel élément (`<id de X>.copie-2`), et X a repris la version active de P.
 
 ## 8. Dupliquer sur cette copie
 
-1. Sur C, sur F, **Dupliquer sur cette copie**, en choisissant la version active.
+1. Sur C, sur la fiche de F, section **Origine sur cette copie**, **Dupliquer sur cette copie**, en choisissant la version active.
 2. Un nouvel élément de la copie apparaît, intitulé « <titre de F> (travail de la copie) », avec cette version en brouillon, réservé à l'entreprise plateforme et non proposé aux assistants. F n'a pas changé.
 3. Suivre : le nouvel élément n'est pas touché.
 

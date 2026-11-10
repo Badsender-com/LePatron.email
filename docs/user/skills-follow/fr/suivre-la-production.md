@@ -102,7 +102,7 @@ Un élément créé sur la copie, par exemple un skill en cours d'essai, est lai
 
 ### D'où vient chaque élément
 
-Sur une copie, les listes et la fiche d'un skill ou d'une expertise portent un badge :
+Sur une copie, les listes d'un skill ou d'une expertise portent un badge, et sa fiche le montre dans la section **Origine sur cette copie** :
 
 | Badge                     | Ce que ça veut dire                                                                                                           |
 | ------------------------- | ----------------------------------------------------------------------------------------------------------------------------- |
@@ -116,7 +116,7 @@ Ces badges et les actions ci-dessous n'apparaissent pas sur la production.
 
 ## 6. Garder, suivre de nouveau, dupliquer
 
-Sur une copie, la fiche d'un élément venu de la production propose trois actions :
+Sur une copie, la section **Origine sur cette copie** de la fiche d'un élément venu de la production propose trois actions :
 
 - **Garder sur cette copie** détache l'élément : le suivi ne le touche plus, et son rapport signale seulement que la production l'a changé. Utile pour garder une version en essai plusieurs jours.
 - **Suivre la production** le rattache. Au suivi suivant, ce qui a été écrit sur la copie part dans un nouvel élément (voir plus haut), et l'élément reprend ce que tient la production.
