@@ -2,7 +2,7 @@
 
 const asyncHandler = require('express-async-handler');
 const createError = require('http-errors');
-const publication = require('../services/skills-publication.service.js');
+const publication = require('../services/publication-batch.js');
 
 /**
  * Several drafts published at once from the back office lists (ADR 0019,

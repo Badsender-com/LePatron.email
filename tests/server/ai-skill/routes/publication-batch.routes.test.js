@@ -7,11 +7,8 @@
  */
 
 jest.mock(
-  '../../../../packages/server/ai-skill/services/skills-publication.service',
+  '../../../../packages/server/ai-skill/services/publication-batch',
   () => ({
-    ...jest.requireActual(
-      '../../../../packages/server/ai-skill/services/skills-publication.service'
-    ),
     draftsToPublish: jest.fn(),
     planMany: jest.fn(),
     guardMany: jest.fn(),
@@ -33,7 +30,7 @@ jest.mock('../../../../packages/server/account/auth.guard', () => ({
 
 const express = require('express');
 const request = require('../../../helpers/local-request.js');
-const publication = require('../../../../packages/server/ai-skill/services/skills-publication.service');
+const publication = require('../../../../packages/server/ai-skill/services/publication-batch');
 const {
   skillsRouter,
 } = require('../../../../packages/server/ai-skill/ai-skill.routes');

@@ -7,18 +7,13 @@
  * failure stops nothing else; each decision is recorded with its version.
  */
 
-const { Expertises, LePatronSkills } = require('../../common/models.common.js');
 const ERROR_CODES = require('../../constant/error-codes.js');
 const { SkillStatuses } = require('../constant/skill-constants.js');
 const { asList, describeFeature } = require('./feature-use.js');
+const { ID_FIELDS, MODELS, loadUse } = require('./publication-target.js');
 const { planRuns, replay } = require('./publication-guard.js');
 const { findVersion } = require('./version-helpers.js');
-
-const ID_FIELDS = { skill: 'skillId', expertise: 'expertiseId' };
-const MODELS = { skill: LePatronSkills, expertise: Expertises };
-
-// Read when called: this module is itself read by the publication service.
-const publication = () => require('./skills-publication.service.js');
+const publication = require('./skills-publication.service.js');
 
 const summaryOf = ({ kind, id, version }) => ({
   kind,
@@ -78,7 +73,7 @@ async function planOf(targets) {
   const uses = [];
   for (const target of targets) {
     // eslint-disable-next-line no-await-in-loop
-    const { manifests } = await publication().loadUse(target);
+    const { manifests } = await loadUse(target);
     uses.push({ target, manifests });
   }
   const features = new Map();
@@ -147,7 +142,7 @@ function failureReason(err) {
 // A draft is published with the changelog and release notes it holds, on the
 // condition that it was not written since the page read it (ADR 0014).
 async function payloadOf(target) {
-  const { doc } = await publication().loadUse(target);
+  const { doc } = await loadUse(target);
   const draft = findVersion(doc, target.version.major, target.version.minor);
   return {
     changelog: draft.changelog,
@@ -174,7 +169,7 @@ async function publishMany(targets, { guard, application } = {}, user) {
       // eslint-disable-next-line no-await-in-loop
       const payload = await payloadOf(target);
       // eslint-disable-next-line no-await-in-loop
-      const { doc, warnings } = await publication().publishVersion(
+      const { doc, warnings } = await publication.publishVersion(
         { ...target, guard, payload, application },
         user
       );
@@ -182,7 +177,7 @@ async function publishMany(targets, { guard, application } = {}, user) {
       const warned = [
         ...warnings,
         // eslint-disable-next-line no-await-in-loop
-        ...(await publication().consumedWarningsOf(target, doc)),
+        ...(await publication.consumedWarningsOf(target, doc)),
       ];
       report.published.push({
         ...summaryOf(target),
@@ -203,7 +198,7 @@ async function publishMany(targets, { guard, application } = {}, user) {
 async function cancelMany(targets, { guard } = {}, user) {
   for (const target of asList(targets)) {
     // eslint-disable-next-line no-await-in-loop
-    await publication().cancelPublication({ ...target, guard }, user);
+    await publication.cancelPublication({ ...target, guard }, user);
   }
   return { cancelled: asList(targets).map(summaryOf) };
 }

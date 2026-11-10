@@ -1,136 +1,24 @@
 'use strict';
 
 /**
- * Publishing what a feature uses (ADR 0019, epic #1421).
- *
- * "Used by a feature" is worked out, never stored: a feature's skill manifest
- * names the skills it calls (`usedSkills`), the expertises it loads by name
- * (`usedExpertise`) and the filters it loads expertises through
- * (`expertiseFilters`). The manifests are in memory, so the answer costs no
- * more than a loop, and it follows a change of the declarations at once.
+ * Publishing what a feature uses (ADR 0019, epic #1421): the guard that
+ * replays the test cases of the feature skills concerned, the publication
+ * after it, and the cancellation. Which features use an item is worked out
+ * in feature-use.js.
  */
 
 const createError = require('http-errors');
 const logger = require('../../utils/logger.js');
-const { Expertises, LePatronSkills } = require('../../common/models.common.js');
 const ERROR_CODES = require('../../constant/error-codes.js');
-const { SkillStatuses } = require('../constant/skill-constants.js');
-const manifestRegistry = require('./manifest-registry.js');
-const { asList, manifestsUsing, describeFeature } = require('./feature-use.js');
+const { asList, describeFeature } = require('./feature-use.js');
+const { loadUse } = require('./publication-target.js');
 const { planReplay, replay } = require('./publication-guard.js');
 const { findVersion } = require('./version-helpers.js');
+const skillService = require('./skill.service.js');
+const expertiseService = require('./expertise.service.js');
 
-// What an expertise filter is matched against.
-const MATCHED_ATTRIBUTES = {
-  expertiseId: 1,
-  status: 1,
-  category: 1,
-  scope: 1,
-  isTransversal: 1,
-  appliesToEmailTypes: 1,
-};
-const NOT_ARCHIVED = { $ne: SkillStatuses.ARCHIVED };
-
-/**
- * The features that use a skill or an expertise, from their declarations.
- *
- * @param {'skill'|'expertise'} kind
- * @param {Object} entity a skill (`skillId`) or an expertise (`expertiseId`,
- *   and its `category`, `scope`, `isTransversal`, `appliesToEmailTypes`)
- * @returns {Array<{ featureType: string, description: string }>}
- */
-function featuresUsing(kind, entity) {
-  return manifestsUsing(kind, entity).map(describeFeature);
-}
-
-/**
- * The features that use a skill or an expertise, by its identifier. An
- * expertise is read for the attributes its filters are matched against; one
- * that is not stored can still be named by a feature.
- */
-async function usedByFeatures({ kind, id }) {
-  if (kind !== 'expertise') {
-    const skill = await LePatronSkills.findOne(
-      { skillId: id },
-      { skillId: 1, status: 1 }
-    ).lean();
-    return featuresUsing(kind, skill || { skillId: id });
-  }
-  const expertise = await Expertises.findOne(
-    { expertiseId: id },
-    MATCHED_ATTRIBUTES
-  ).lean();
-  return featuresUsing(kind, expertise || { expertiseId: id });
-}
-
-/**
- * The identifiers of every stored skill or expertise a feature uses, for the
- * lists of the back office to filter on before they page.
- *
- * @param {'skill'|'expertise'} kind
- * @returns {Promise<string[]>}
- */
-async function idsUsedByFeatures(kind) {
-  if (kind === 'skill') {
-    const named = [
-      ...new Set(
-        manifestRegistry
-          .listManifests()
-          .flatMap((manifest) => asList(manifest.usedSkills))
-      ),
-    ];
-    const skills = await LePatronSkills.find(
-      { skillId: { $in: named }, status: NOT_ARCHIVED },
-      { skillId: 1 }
-    ).lean();
-    return skills.map((skill) => skill.skillId);
-  }
-  const expertises = await Expertises.find(
-    { status: NOT_ARCHIVED },
-    MATCHED_ATTRIBUTES
-  ).lean();
-  return expertises
-    .filter((expertise) => featuresUsing('expertise', expertise).length)
-    .map((expertise) => expertise.expertiseId);
-}
-
-/**
- * A skill or an expertise as the back office reads it, with the features that
- * use it (`usedBy`). Takes a stored document or a plain record.
- */
-function withUsedBy(kind, entity) {
-  const record =
-    entity && typeof entity.toJSON === 'function' ? entity.toJSON() : entity;
-  return { ...record, usedBy: featuresUsing(kind, record) };
-}
-
-// ── The guard on a publication (#1430) ─────────────────────────────────
-
-const ID_FIELDS = { skill: 'skillId', expertise: 'expertiseId' };
-const MODELS = { skill: LePatronSkills, expertise: Expertises };
-
-// Required where used: the skill and expertise services read this module
-// for their list filter, and a top-level require would be circular.
-function serviceFor(kind) {
-  return kind === 'skill'
-    ? require('./skill.service.js')
-    : require('./expertise.service.js');
-}
-
-// The stored skill or expertise and the features that use it; the version
-// asked for must exist.
-async function loadUse({ kind, id, version }) {
-  if (!ID_FIELDS[kind]) throw createError(400, `Unknown kind "${kind}"`);
-  const doc = await MODELS[kind].findOne({ [ID_FIELDS[kind]]: id }).lean();
-  if (!doc) throw createError(404, `${kind} "${id}" not found`);
-  if (!findVersion(doc, version.major, version.minor)) {
-    throw createError(
-      404,
-      `Version ${version.major}.${version.minor} not found`
-    );
-  }
-  return { doc, manifests: manifestsUsing(kind, doc) };
-}
+const serviceFor = (kind) =>
+  kind === 'skill' ? skillService : expertiseService;
 
 /**
  * What the guard would replay, without calling the AI: the features that use
@@ -278,26 +166,9 @@ async function cancelPublication(params, user) {
 }
 
 module.exports = {
-  loadUse,
   cancelPublication,
   consumedWarningsOf,
   guardPublication,
   planPublication,
   publishVersion,
-  featuresUsing,
-  idsUsedByFeatures,
-  usedByFeatures,
-  withUsedBy,
 };
-
-// Several drafts at once (#1431): read lazily by its own module, which needs
-// `loadUse` and `publishVersion` from this one.
-const batch = require('./publication-batch.js');
-
-Object.assign(module.exports, {
-  cancelMany: batch.cancelMany,
-  draftsToPublish: batch.draftsToPublish,
-  guardMany: batch.guardMany,
-  planMany: batch.planMany,
-  publishMany: batch.publishMany,
-});

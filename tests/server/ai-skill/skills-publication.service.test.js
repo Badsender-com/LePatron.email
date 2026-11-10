@@ -161,10 +161,13 @@ const versionOf = (collection, idField, id, major, minor) =>
 
 describe('publishing what a feature uses', () => {
   let publication;
+  let featureUse;
+  let batch;
 
   beforeAll(() => {
-    // Required here: the module does not exist until #1428 ships it.
     publication = require('../../../packages/server/ai-skill/services/skills-publication.service');
+    featureUse = require('../../../packages/server/ai-skill/services/feature-use');
+    batch = require('../../../packages/server/ai-skill/services/publication-batch');
   });
 
   beforeEach(() => {
@@ -177,7 +180,7 @@ describe('publishing what a feature uses', () => {
   describe('used by a feature', () => {
     it('is said of an expertise a feature loads through its declared filters', async () => {
       expect(
-        await publication.usedByFeatures({
+        await featureUse.usedByFeatures({
           kind: 'expertise',
           id: SUBJECT_LINES,
         })
@@ -191,7 +194,7 @@ describe('publishing what a feature uses', () => {
 
     it('is said of a skill a feature calls', async () => {
       expect(
-        await publication.usedByFeatures({ kind: 'skill', id: PREHEADER_IDEAS })
+        await featureUse.usedByFeatures({ kind: 'skill', id: PREHEADER_IDEAS })
       ).toEqual([
         expect.objectContaining({ featureType: 'subject_generation' }),
       ]);
@@ -199,7 +202,7 @@ describe('publishing what a feature uses', () => {
 
     it('is not said of what no feature uses', async () => {
       expect(
-        await publication.usedByFeatures({ kind: 'expertise', id: SPAM_WORDS })
+        await featureUse.usedByFeatures({ kind: 'expertise', id: SPAM_WORDS })
       ).toEqual([]);
     });
 
@@ -209,7 +212,7 @@ describe('publishing what a feature uses', () => {
       store.seed({ ...SEED, expertises: [...SEED.expertises, oldRules] });
 
       expect(
-        await publication.usedByFeatures({
+        await featureUse.usedByFeatures({
           kind: 'expertise',
           id: oldRules.expertiseId,
         })
@@ -223,7 +226,7 @@ describe('publishing what a feature uses', () => {
       });
 
       expect(
-        await publication.usedByFeatures({ kind: 'skill', id: PREHEADER_IDEAS })
+        await featureUse.usedByFeatures({ kind: 'skill', id: PREHEADER_IDEAS })
       ).toEqual([]);
     });
 
@@ -516,7 +519,7 @@ describe('publishing what a feature uses', () => {
     ];
 
     it('runs one guard over everything they touch', async () => {
-      const guard = await publication.guardMany(BOTH);
+      const guard = await batch.guardMany(BOTH);
 
       expect(guard.cases).toHaveLength(1);
       expect(guard.cases[0].after).toEqual({
@@ -526,9 +529,9 @@ describe('publishing what a feature uses', () => {
     });
 
     it('publishes them all after that guard, and reports each one', async () => {
-      const guard = await publication.guardMany(BOTH);
+      const guard = await batch.guardMany(BOTH);
 
-      const report = await publication.publishMany(BOTH, { guard }, ALICE);
+      const report = await batch.publishMany(BOTH, { guard }, ALICE);
 
       expect(report.published.map((p) => p.id)).toEqual([
         SUBJECT_LINES,
@@ -572,7 +575,7 @@ describe('publishing what a feature uses', () => {
         ],
       });
 
-      const report = await publication.publishMany(
+      const report = await batch.publishMany(
         [
           {
             kind: 'skill',
@@ -598,9 +601,9 @@ describe('publishing what a feature uses', () => {
     });
 
     it('goes on when one fails, and says why', async () => {
-      const guard = await publication.guardMany(BOTH);
+      const guard = await batch.guardMany(BOTH);
 
-      const report = await publication.publishMany(
+      const report = await batch.publishMany(
         [
           ...BOTH,
           {
@@ -624,7 +627,7 @@ describe('publishing what a feature uses', () => {
     });
 
     it('refuses, item by item, a draft a feature uses without the guard', async () => {
-      const report = await publication.publishMany(BOTH, {}, ALICE);
+      const report = await batch.publishMany(BOTH, {}, ALICE);
 
       expect(report.failed.map((f) => f.reason)).toEqual([
         'guard_required',
@@ -653,10 +656,10 @@ describe('publishing what a feature uses', () => {
           f.EXPERTISES[1],
         ],
       });
-      const guard = await publication.guardMany(BOTH);
+      const guard = await batch.guardMany(BOTH);
       const [lines, ideas] = BOTH;
 
-      const report = await publication.publishMany(
+      const report = await batch.publishMany(
         [{ ...lines, readAt: readAt.toISOString() }, ideas],
         { guard },
         ALICE
@@ -672,9 +675,9 @@ describe('publishing what a feature uses', () => {
     });
 
     it('records the decision on each draft', async () => {
-      const guard = await publication.guardMany(BOTH);
+      const guard = await batch.guardMany(BOTH);
 
-      await publication.publishMany(BOTH, { guard }, ALICE);
+      await batch.publishMany(BOTH, { guard }, ALICE);
 
       expect(
         versionOf('skills', 'skillId', SUBJECT_IDEAS, 1, 3).guardHistory
@@ -697,7 +700,7 @@ describe('publishing what a feature uses', () => {
         ],
       });
 
-      const { targets, skipped } = await publication.draftsToPublish([
+      const { targets, skipped } = await batch.draftsToPublish([
         { kind: 'expertise', id: SUBJECT_LINES },
         { kind: 'skill', id: SUBJECT_IDEAS },
         { kind: 'skill', id: PREHEADER_IDEAS },
@@ -708,7 +711,7 @@ describe('publishing what a feature uses', () => {
       expect(targets).toEqual(BOTH);
       expect(
         (
-          await publication.draftsToPublish([
+          await batch.draftsToPublish([
             {
               kind: 'expertise',
               id: SUBJECT_LINES,
@@ -725,7 +728,7 @@ describe('publishing what a feature uses', () => {
     });
 
     it('says what the one guard would replay, without calling the AI', async () => {
-      const plan = await publication.planMany(BOTH);
+      const plan = await batch.planMany(BOTH);
 
       expect(plan).toEqual({
         usedBy: [

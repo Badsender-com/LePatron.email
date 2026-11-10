@@ -6,7 +6,7 @@ const expertiseService = require('../services/expertise.service.js');
 const { parseVersionParam } = require('../services/version-helpers.js');
 const { openTaskSkillsConsuming } = require('../services/audience-opening.js');
 const { assertCopy } = require('../services/skills-copy.service.js');
-const { withUsedBy } = require('../services/skills-publication.service.js');
+const { withUsedBy } = require('../services/feature-use.js');
 const { expertisePublication } = require('./publication.controller.js');
 
 /**

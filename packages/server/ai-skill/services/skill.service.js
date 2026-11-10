@@ -16,7 +16,7 @@ const {
 } = require('./version-helpers.js');
 const { validateTemplateCoherence } = require('./template-coherence.js');
 const { missingSchemaIds } = require('../schemas');
-const { idsUsedByFeatures } = require('./skills-publication.service.js');
+const { idsUsedByFeatures } = require('./feature-use.js');
 const { assertTestCases } = require('./test-cases.js');
 const {
   assertConsumedExpertises,

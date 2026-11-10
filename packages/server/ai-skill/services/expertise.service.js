@@ -8,7 +8,7 @@ const { listFilter } = require('./expertise-list-filter.js');
 const { versionLabel } = require('./version-helpers.js');
 const manifestRegistry = require('./manifest-registry.js');
 const { normalizeScopes } = require('./expertise-scope.js');
-const { idsUsedByFeatures } = require('./skills-publication.service.js');
+const { idsUsedByFeatures } = require('./feature-use.js');
 const {
   createVersionedEntityService,
 } = require('./versioned-entity.service.js');

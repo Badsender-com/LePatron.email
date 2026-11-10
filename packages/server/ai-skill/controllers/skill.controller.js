@@ -11,7 +11,7 @@ const { describeSchema } = require('../schemas/describe-schema.js');
 const { templateWarnings } = require('../services/template-coherence.js');
 const { SkillNatures } = require('../constant/skill-constants.js');
 const { assertCopy } = require('../services/skills-copy.service.js');
-const { withUsedBy } = require('../services/skills-publication.service.js');
+const { withUsedBy } = require('../services/feature-use.js');
 const { skillPublication } = require('./publication.controller.js');
 
 /**
