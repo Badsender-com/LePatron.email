@@ -41,15 +41,31 @@ describe('LePatronSkill model', () => {
     await expect(skill.validate()).rejects.toThrow(/skillId/);
   });
 
-  it('rejects unknown inputSchemaId on a version', async () => {
-    const skill = buildSkill({}, { inputSchemaId: 'nope' });
+  it('rejects unknown inputSchemaId on a published version', async () => {
+    const skill = buildSkill({}, { inputSchemaId: 'nope', status: 'ACTIVE' });
     await expect(skill.validate()).rejects.toThrow(/inputSchemaId/);
   });
 
-  it('rejects unknown outputSchemaId on a version', async () => {
-    const skill = buildSkill({}, { outputSchemaId: 'nope' });
+  it('rejects unknown outputSchemaId on a published version', async () => {
+    const skill = buildSkill(
+      {},
+      { outputSchemaId: 'nope', status: 'ARCHIVED' }
+    );
     await expect(skill.validate()).rejects.toThrow(/outputSchemaId/);
   });
+
+  // Production writes a feature skill before the code that calls it ships
+  // (ADR 0019): its draft may name a schema this code does not hold yet.
+  it.each(['inputSchemaId', 'outputSchemaId'])(
+    'saves a draft whose %s the code does not hold yet',
+    async (field) => {
+      const skill = buildSkill(
+        {},
+        { [field]: 'notShippedYet', status: 'DRAFT' }
+      );
+      await expect(skill.validate()).resolves.toBeUndefined();
+    }
+  );
 
   it('rejects {{input.*}} in systemPrompt', async () => {
     const skill = buildSkill({
@@ -107,7 +123,7 @@ describe('LePatronSkill model', () => {
   );
 
   it('refuses an unknown schema as a request error', async () => {
-    const skill = buildSkill({}, { inputSchemaId: 'nope' });
+    const skill = buildSkill({}, { inputSchemaId: 'nope', status: 'ACTIVE' });
 
     await expect(skill.validate()).rejects.toMatchObject({ status: 400 });
   });

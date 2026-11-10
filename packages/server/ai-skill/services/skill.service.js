@@ -15,6 +15,7 @@ const {
   findActiveVersion,
 } = require('./version-helpers.js');
 const { validateTemplateCoherence } = require('./template-coherence.js');
+const { missingSchemaIds } = require('../schemas');
 const {
   assertConsumedExpertises,
   consumedExpertiseWarnings,
@@ -240,6 +241,14 @@ const VERSION_CONTENT_FIELDS = [
  * exactly why it is injected rather than living in the shared lifecycle.
  */
 async function assertSkillPublishable(version) {
+  // A draft may name a schema this instance's code does not hold yet
+  // (ADR 0019); a published version may not, whatever its nature.
+  const [missing] = missingSchemaIds(version);
+  if (missing) {
+    throw createError(400, ERROR_CODES.SKILL_SCHEMA_NOT_IN_CODE, {
+      schemaId: missing,
+    });
+  }
   // Checked at save too; checked again here, on what is about to be served.
   await assertConsumedExpertises(version.consumedExpertiseIds || []);
   // A task skill's version has no template nor schema: its procedure is what

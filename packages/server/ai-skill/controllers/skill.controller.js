@@ -6,7 +6,7 @@ const logger = require('../../utils/logger.js');
 
 const skillService = require('../services/skill.service.js');
 const { parseVersionParam } = require('../services/version-helpers.js');
-const { listSchemaIds } = require('../schemas');
+const { listSchemaIds, missingSchemaIds } = require('../schemas');
 const { describeSchema } = require('../schemas/describe-schema.js');
 const { templateWarnings } = require('../services/template-coherence.js');
 const { SkillNatures } = require('../constant/skill-constants.js');
@@ -22,6 +22,21 @@ function userIdOf(req) {
   return req.user ? req.user.id : null;
 }
 
+// The warning of a version naming a schema this instance's code lacks,
+// worded by the interface under `aiSkills.warnings`.
+const SCHEMA_NOT_IN_CODE = 'SCHEMA_NOT_IN_CODE';
+
+// A skill as answered, each version naming the schemas this instance's code
+// does not hold (`missingSchemaIds`), for the badge on such a draft.
+function withMissingSchemas(skill) {
+  const payload = typeof skill.toJSON === 'function' ? skill.toJSON() : skill;
+  payload.versions = (payload.versions || []).map((version) => {
+    const missing = missingSchemaIds(version);
+    return missing.length ? { ...version, missingSchemaIds: missing } : version;
+  });
+  return payload;
+}
+
 // Serialize a skill and append non-blocking template↔schema coherence warnings
 // for the given version (DRAFT save AND activation surface them). A task
 // skill's version has neither template nor schema: nothing to warn about.
@@ -31,14 +46,21 @@ function withVersionWarnings(skill, major, minor) {
   const version = (skill.versions || []).find(
     (v) => v.versionMajor === major && v.versionMinor === minor
   );
-  const payload = typeof skill.toJSON === 'function' ? skill.toJSON() : skill;
-  payload.warnings =
-    version && version.nature === SkillNatures.TASK
+  const payload = withMissingSchemas(skill);
+  payload.warnings = [
+    // A schema the code does not hold yet: the draft is saved, its
+    // publication refused until the code ships (ADR 0019).
+    ...(version ? missingSchemaIds(version) : []).map((schemaId) => ({
+      code: SCHEMA_NOT_IN_CODE,
+      schemaId,
+    })),
+    ...(version && version.nature === SkillNatures.TASK
       ? []
       : templateWarnings(
           version ? version.inputTemplate : '',
           version ? version.inputSchemaId : ''
-        );
+        )),
+  ];
   return payload;
 }
 
@@ -78,7 +100,7 @@ module.exports = {
 
   getSkill: asyncHandler(async (req, res) => {
     const skill = await skillService.getSkill(req.params.skillId);
-    res.json(skill);
+    res.json(withMissingSchemas(skill));
   }),
 
   createSkill: asyncHandler(async (req, res) => {

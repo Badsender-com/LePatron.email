@@ -225,6 +225,56 @@ describe('ai-skill HTTP routes', () => {
     }
   );
 
+  // Production writes a feature skill before its code ships (ADR 0019): the
+  // draft naming a schema this code lacks says so, for its badge, and its
+  // save warns that its publication waits for the code.
+  const draftNaming = (inputSchemaId) => ({
+    skillId: 'a',
+    versions: [
+      {
+        versionMajor: 1,
+        versionMinor: 0,
+        status: 'ACTIVE',
+        inputSchemaId: 'genericTextInput',
+        outputSchemaId: 'genericTextOutput',
+      },
+      {
+        versionMajor: 1,
+        versionMinor: 1,
+        status: 'DRAFT',
+        nature: 'feature',
+        inputSchemaId,
+        outputSchemaId: 'genericTextOutput',
+        inputTemplate: '',
+      },
+    ],
+  });
+
+  it('GET a skill says which schema of a version the code lacks', async () => {
+    skillService.getSkill.mockResolvedValue(draftNaming('notShippedYet'));
+
+    const res = await request(makeApp()).get('/api/ai-skills/a');
+
+    expect(res.status).toBe(200);
+    expect(res.body.versions[0]).not.toHaveProperty('missingSchemaIds');
+    expect(res.body.versions[1].missingSchemaIds).toEqual(['notShippedYet']);
+  });
+
+  it('PATCH a draft naming a schema the code lacks warns of it', async () => {
+    skillService.updateVersion.mockResolvedValue(draftNaming('notShippedYet'));
+
+    const res = await request(makeApp())
+      .patch('/api/ai-skills/a/versions/1.1')
+      .send({ inputSchemaId: 'notShippedYet' });
+
+    expect(res.status).toBe(200);
+    expect(res.body.warnings).toContainEqual({
+      code: 'SCHEMA_NOT_IN_CODE',
+      schemaId: 'notShippedYet',
+    });
+    expect(res.body.versions[1].missingSchemaIds).toEqual(['notShippedYet']);
+  });
+
   // What a task version consumes warns at publication, after the template's.
   it('POST a publication answers the warnings of the consumed expertises', async () => {
     const skill = {

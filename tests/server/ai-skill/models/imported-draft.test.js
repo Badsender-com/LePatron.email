@@ -159,7 +159,7 @@ describe('an imported version, on the real schemas', () => {
             versionMajor: 2,
             versionMinor: 1,
             ...FEATURE,
-            inputSchemaId: 'aSchemaFromANewerRelease',
+            systemPrompt: 'Answer {{input.prompt}}',
           },
         }
       )

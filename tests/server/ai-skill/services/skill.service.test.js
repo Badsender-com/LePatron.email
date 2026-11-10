@@ -507,6 +507,40 @@ describe('skill.service', () => {
       });
     });
 
+    // Production writes a feature skill before its code ships (ADR 0019):
+    // the draft is saved, its publication refused until the code holds the
+    // schema, whatever the skill's nature.
+    it.each([
+      ['feature', { inputSchemaId: 'notShippedYet' }],
+      ['feature', { outputSchemaId: 'notShippedYet' }],
+      ['task', { inputSchemaId: 'notShippedYet', procedure: '1. Read.' }],
+    ])(
+      'refuses to publish a %s version naming a schema the code lacks',
+      async (nature, fields) => {
+        const doc = mockSkillDoc({
+          versions: [
+            {
+              versionMajor: 1,
+              versionMinor: 1,
+              status: 'DRAFT',
+              nature,
+              ...SCHEMAS,
+              ...fields,
+            },
+          ],
+        });
+        LePatronSkills.findOne.mockResolvedValue(doc);
+        await expect(
+          skillService.activateVersion('a', { major: 1, minor: 1 }, {}, null)
+        ).rejects.toMatchObject({
+          status: 400,
+          message: 'SKILL_SCHEMA_NOT_IN_CODE',
+          schemaId: 'notShippedYet',
+        });
+        expect(doc.save).not.toHaveBeenCalled();
+      }
+    );
+
     it('requires changelog + releaseNotes for a major release', async () => {
       const doc = mockSkillDoc({
         versions: [

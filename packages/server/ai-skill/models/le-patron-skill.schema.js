@@ -141,8 +141,11 @@ LePatronSkillSchema.index({ status: 1 });
 
 /**
  * Validation hook:
- * - Per version: if schemas are set (they may be empty on a fresh DRAFT),
- *   ensure inputSchemaId / outputSchemaId exist in the zod registry.
+ * - Per version but a draft: if schemas are set, ensure inputSchemaId /
+ *   outputSchemaId exist in the zod registry. A draft may name a schema the
+ *   code does not hold yet: production writes a feature skill before the
+ *   code that calls it ships (ADR 0019), and its publication is refused
+ *   until it does (skill.service.js).
  * - Ensure `{{input.*}}` placeholders never appear outside `inputTemplate`
  *   (prompt-injection guard — see PLAN §4.4).
  * Either refuses the save as a request error whose message is meant to be
@@ -151,7 +154,8 @@ LePatronSkillSchema.index({ status: 1 });
 LePatronSkillSchema.pre('validate', function preValidate(next) {
   for (const version of this.versions || []) {
     const label = `${version.versionMajor}.${version.versionMinor}`;
-    if (version.inputSchemaId && !hasSchema(version.inputSchemaId)) {
+    const draft = version.status === 'DRAFT';
+    if (!draft && version.inputSchemaId && !hasSchema(version.inputSchemaId)) {
       return next(
         createError(
           400,
@@ -159,7 +163,11 @@ LePatronSkillSchema.pre('validate', function preValidate(next) {
         )
       );
     }
-    if (version.outputSchemaId && !hasSchema(version.outputSchemaId)) {
+    if (
+      !draft &&
+      version.outputSchemaId &&
+      !hasSchema(version.outputSchemaId)
+    ) {
       return next(
         createError(
           400,
