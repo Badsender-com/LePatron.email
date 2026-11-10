@@ -116,7 +116,7 @@ describe("production's read tokens and read route", () => {
 
     expect(res.status).toBe(200);
     expect(res.body).toMatchObject({
-      format: 1,
+      followFormat: 2,
       expertises: expect.arrayContaining([
         expect.objectContaining({
           expertiseId: SUBJECT_LINES,

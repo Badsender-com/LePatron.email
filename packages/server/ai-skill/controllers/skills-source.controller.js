@@ -9,7 +9,7 @@ const {
   revokeReadToken,
   useReadToken,
 } = require('../services/skills-read-tokens.service.js');
-const { exportForCopies } = require('../services/skills-follow.service.js');
+const { exportForCopies } = require('../services/skills-follow.format.js');
 const { siteOrigin } = require('../../utils/site-origin.js');
 
 /** GET /api/ai-skills/read-tokens: production's read tokens (ADR 0019). */
