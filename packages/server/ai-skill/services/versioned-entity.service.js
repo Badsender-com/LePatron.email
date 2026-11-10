@@ -352,7 +352,9 @@ function createVersionedEntityService({
    * screen read: a draft written since is not published unread (readAtOf).
    * `payload.keepOnCopy`, on a copy, keeps the item on the copy in the same
    * write (ADR 0019), followed yet or not: the next follow leaves the
-   * version published here as it is.
+   * version published here as it is. `payload.guardRecord`, the decision
+   * taken after the publication guard, is kept with the version in the same
+   * write too.
    */
   async function activateVersion(id, { major, minor }, payload = {}, userId) {
     const doc = await getDoc(id);
@@ -372,6 +374,12 @@ function createVersionedEntityService({
     const now = new Date();
     version.status = 'ACTIVE';
     version.activatedAt = now;
+    if (payload.guardRecord) {
+      version.guardHistory = [
+        ...(version.guardHistory || []),
+        payload.guardRecord,
+      ];
+    }
     version.updatedBy = userId;
     version.updatedAt = laterThan(readAt);
     doc.activeVersion = {

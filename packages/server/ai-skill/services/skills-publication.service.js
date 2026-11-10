@@ -68,27 +68,29 @@ const failedCases = (guard) =>
       !c.after || c.after.error || (c.contract && c.contract.after === false)
   ).length;
 
-async function record(
-  { kind, id, version, guard, application },
-  user,
-  decision
-) {
-  const service = serviceFor(kind);
+// What the guard showed and what the person decided, as kept with the
+// version (guard-record.schema.js).
+function recordOf({ guard, application }, user, decision) {
+  return {
+    decision,
+    by: user ? user.id : null,
+    application: application || null,
+    at: new Date(),
+    cases: guard.cases.length,
+    failed: failedCases(guard),
+    missing: asList(guard.missing),
+  };
+}
+
+async function recordCancel(params, user) {
+  const { kind, id, version } = params;
   const doc = await (kind === 'skill'
-    ? service.getSkill(id)
-    : service.getExpertise(id));
+    ? skillService.getSkill(id)
+    : expertiseService.getExpertise(id));
   const target = findVersion(doc, version.major, version.minor);
   target.guardHistory = [
     ...asList(target.guardHistory),
-    {
-      decision,
-      by: user ? user.id : null,
-      application: application || null,
-      at: new Date(),
-      cases: guard.cases.length,
-      failed: failedCases(guard),
-      missing: asList(guard.missing),
-    },
+    recordOf(params, user, 'cancelled'),
   ];
   await doc.save();
   return doc;
@@ -134,17 +136,22 @@ async function publishVersion(params, user) {
     const plan = await planPublication({ kind, id, version });
     throw createError(409, ERROR_CODES.SKILL_PUBLICATION_GUARD_REQUIRED, plan);
   }
+  // The decision is written with the publication, in the same write.
   const published = await serviceFor(kind).activateVersion(
     id,
     version,
-    payload || {},
+    {
+      ...(payload || {}),
+      guardRecord: isGuard(guard)
+        ? recordOf(params, user, 'published')
+        : undefined,
+    },
     user ? user.id : undefined
   );
   // A skill's publication answers the warnings of its opening too.
   const { skill, warnings = [] } =
     kind === 'skill' ? published : { skill: published };
-  if (!isGuard(guard)) return { doc: skill, warnings };
-  return { doc: await record(params, user, 'published'), warnings };
+  return { doc: skill, warnings };
 }
 
 /**
@@ -179,7 +186,7 @@ async function cancelPublication(params, user) {
   if (!isGuard(params.guard)) {
     throw createError(400, ERROR_CODES.SKILL_PUBLICATION_GUARD_INVALID);
   }
-  return record(params, user, 'cancelled');
+  return recordCancel(params, user);
 }
 
 module.exports = {

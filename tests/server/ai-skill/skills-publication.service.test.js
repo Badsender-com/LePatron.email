@@ -510,6 +510,44 @@ describe('publishing what a feature uses', () => {
       ]);
     });
 
+    // Published and recorded in the same write: nothing is read or written
+    // once the version is online.
+    it('writes the decision with the publication, in one write', async () => {
+      const guard = await publication.guardPublication({
+        kind: 'expertise',
+        id: SUBJECT_LINES,
+        version: { major: 2, minor: 2 },
+      });
+      const read = store.models.Expertises.findOne;
+      const isOnline = () =>
+        versionOf('expertises', 'expertiseId', SUBJECT_LINES, 2, 2).status ===
+        'ACTIVE';
+      const spy = jest
+        .spyOn(store.models.Expertises, 'findOne')
+        .mockImplementation((...args) => {
+          if (isOnline()) throw new Error('read after the publication');
+          return read(...args);
+        });
+
+      try {
+        await publication.publishVersion(
+          {
+            kind: 'expertise',
+            id: SUBJECT_LINES,
+            version: { major: 2, minor: 2 },
+            guard,
+          },
+          ALICE
+        );
+      } finally {
+        spy.mockRestore();
+      }
+
+      expect(
+        versionOf('expertises', 'expertiseId', SUBJECT_LINES, 2, 2).guardHistory
+      ).toEqual([expect.objectContaining({ decision: 'published' })]);
+    });
+
     // The opening a publication asks for (ADR 0013) is the same past the
     // guard.
     it('publishes a skill after its guard with the opening asked for', async () => {
