@@ -2,13 +2,14 @@
 import { mapMutations } from 'vuex';
 import { validationMixin } from 'vuelidate';
 import { required, maxLength } from 'vuelidate/lib/validators';
-import { Plus, Trash2, KeyRound, Check, Copy, AlertTriangle } from 'lucide-vue';
+import { Plus, Trash2, KeyRound, Check, Copy } from 'lucide-vue';
 import { PAGE, SHOW_SNACKBAR } from '~/store/page.js';
 import * as api from '~/helpers/ai-skill-routes.js';
 import copyToClipboard from '~/helpers/copy-to-clipboard.js';
 import BsModalForm from '~/components/modal/bs-modal-form.vue';
 import BsModalConfirm from '~/components/modal-confirm.vue';
 import BsTextField from '~/components/form/bs-text-field';
+import BsSecretOnceDialog from '~/components/modal/bs-secret-once-dialog.vue';
 
 // Production's read tokens (ADR 0019): a copy (staging, development) follows
 // this instance's skills and expertises with one. A token is shown once, at
@@ -21,12 +22,12 @@ export default {
     BsModalForm,
     BsModalConfirm,
     BsTextField,
+    BsSecretOnceDialog,
     LucidePlus: Plus,
     LucideTrash2: Trash2,
     LucideKeyRound: KeyRound,
     LucideCheck: Check,
     LucideCopy: Copy,
-    LucideAlertTriangle: AlertTriangle,
   },
   mixins: [validationMixin],
   props: {
@@ -42,7 +43,6 @@ export default {
       creating: false,
       created: null,
       tokenCopied: false,
-      tokenSaved: false,
       toRevoke: null,
     };
   },
@@ -58,9 +58,6 @@ export default {
         return [this.$t('aiSkills.readTokens.nameTooLong')];
       }
       return [];
-    },
-    canClose() {
-      return this.tokenCopied || this.tokenSaved;
     },
   },
   mounted() {
@@ -114,7 +111,6 @@ export default {
         this.$refs.createModal.close();
         this.created = { ...listed, token };
         this.tokenCopied = false;
-        this.tokenSaved = false;
       } catch (error) {
         this.notifyError(error);
       } finally {
@@ -132,9 +128,6 @@ export default {
           color: 'error',
         });
       }
-    },
-    closeCreated() {
-      if (this.canClose) this.created = null;
     },
     askRevoke(token) {
       this.toRevoke = token;
@@ -281,72 +274,44 @@ export default {
       />
     </bs-modal-form>
 
-    <!-- Closed only by its button: the token is shown this once. -->
-    <v-dialog :value="!!created" width="560" persistent>
-      <v-card v-if="created" flat tile class="bs-ai-read-tokens__created">
-        <v-card-title class="bs-ai-read-tokens__created-title">
-          <v-chip small color="success" dark label>
-            <lucide-check :size="14" class="mr-1" />
-            {{ $t('aiSkills.readTokens.createdBadge') }}
-          </v-chip>
-          <span>{{
-            $t('aiSkills.readTokens.createdTitle', { name: created.name })
-          }}</span>
-        </v-card-title>
-        <v-card-text>
-          <div class="bs-ai-read-tokens__secret">
-            <span class="bs-ai-read-tokens__secret-label">
-              {{ $t('aiSkills.readTokens.token') }}
-            </span>
-            <code>{{ created.token }}</code>
-            <v-btn
-              text
-              small
-              class="text-none bs-ai-read-tokens__copy"
-              :color="tokenCopied ? 'success' : undefined"
-              :aria-label="$t('aiSkills.readTokens.copyToken')"
-              @click="copyToken"
-            >
-              <lucide-check v-if="tokenCopied" :size="14" class="mr-1" />
-              <lucide-copy v-else :size="14" class="mr-1" />
-              {{
-                tokenCopied
-                  ? $t('aiSkills.readTokens.copied')
-                  : $t('aiSkills.readTokens.copy')
-              }}
-            </v-btn>
-          </div>
-          <p class="bs-ai-read-tokens__secret-warning">
-            <lucide-alert-triangle :size="14" />
-            {{ $t('aiSkills.readTokens.once') }}
-          </p>
-          <v-checkbox
-            :input-value="tokenSaved"
-            :label="$t('aiSkills.readTokens.savedConfirm')"
-            color="accent"
-            hide-details
-            class="bs-ai-read-tokens__saved"
-            @change="tokenSaved = $event === true"
-          />
-        </v-card-text>
-        <v-divider />
-        <v-card-actions>
-          <v-spacer />
-          <span v-if="!canClose" class="bs-ai-read-tokens__footnote mr-3">
-            {{ $t('aiSkills.readTokens.copyFirst') }}
-          </span>
-          <v-btn
-            color="accent"
-            elevation="0"
-            class="text-none bs-ai-read-tokens__done"
-            :disabled="!canClose"
-            @click="closeCreated"
-          >
-            {{ $t('aiSkills.readTokens.saved') }}
-          </v-btn>
-        </v-card-actions>
-      </v-card>
-    </v-dialog>
+    <bs-secret-once-dialog
+      :open="!!created"
+      :badge="$t('aiSkills.readTokens.createdBadge')"
+      :title="
+        created
+          ? $t('aiSkills.readTokens.createdTitle', { name: created.name })
+          : ''
+      "
+      :warning="$t('aiSkills.readTokens.once')"
+      :saved-label="$t('aiSkills.readTokens.savedConfirm')"
+      :copy-first-label="$t('aiSkills.readTokens.copyFirst')"
+      :done-label="$t('aiSkills.readTokens.saved')"
+      :copied="tokenCopied"
+      @close="created = null"
+    >
+      <div v-if="created" class="bs-ai-read-tokens__secret">
+        <span class="bs-ai-read-tokens__secret-label">
+          {{ $t('aiSkills.readTokens.token') }}
+        </span>
+        <code>{{ created.token }}</code>
+        <v-btn
+          text
+          small
+          class="text-none bs-ai-read-tokens__copy"
+          :color="tokenCopied ? 'success' : undefined"
+          :aria-label="$t('aiSkills.readTokens.copyToken')"
+          @click="copyToken"
+        >
+          <lucide-check v-if="tokenCopied" :size="14" class="mr-1" />
+          <lucide-copy v-else :size="14" class="mr-1" />
+          {{
+            tokenCopied
+              ? $t('aiSkills.readTokens.copied')
+              : $t('aiSkills.readTokens.copy')
+          }}
+        </v-btn>
+      </div>
+    </bs-secret-once-dialog>
 
     <bs-modal-confirm
       ref="revokeModal"
@@ -486,14 +451,6 @@ export default {
     color: var(--gray-700);
   }
 
-  &__created-title {
-    display: flex;
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 0.5rem;
-    word-break: normal;
-  }
-
   // The one value that is never shown again.
   &__secret {
     display: flex;
@@ -518,20 +475,6 @@ export default {
   &__secret-label {
     font-size: 0.8125rem;
     color: var(--gray-700);
-  }
-
-  &__secret-warning {
-    display: flex;
-    align-items: center;
-    gap: 0.375rem;
-    margin: 0.75rem 0 0.5rem;
-    font-size: 0.75rem;
-    color: var(--v-warning-darken3);
-  }
-
-  &__saved {
-    margin-top: 0.75rem;
-    padding-top: 0;
   }
 }
 </style>

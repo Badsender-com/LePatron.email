@@ -17,6 +17,7 @@ const en = require('../../../packages/ui/helpers/locales/en.js').default;
 
 const DIALOG = 'packages/ui/components/mcp-clients/modal-mcp-client-secret.vue';
 const SETTINGS = 'packages/ui/components/mcp-clients/mcp-client-settings.vue';
+const SECRET_ONCE = 'packages/ui/components/modal/bs-secret-once-dialog.vue';
 
 // What Vuetify's checkbox does: its `change` carries the new value.
 Vue.component('VCheckbox', {
@@ -64,6 +65,9 @@ function mountDialog(copied) {
     imports: {
       'lucide-vue': {},
       '~/components/mcp-clients/mcp-client-settings.vue': settings,
+      '~/components/modal/bs-secret-once-dialog.vue': componentOf(SECRET_ONCE, {
+        'lucide-vue': {},
+      }),
     },
   });
   return { vm, copy };

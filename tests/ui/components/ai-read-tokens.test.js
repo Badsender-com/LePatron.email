@@ -12,7 +12,7 @@ const Vue = require('vue');
 const vuex = require('vuex');
 const vuelidate = require('vuelidate');
 const validators = require('vuelidate/lib/validators');
-const { mountSfc, settle } = require('../../helpers/mount-sfc.js');
+const { mountSfc, componentOf, settle } = require('../../helpers/mount-sfc.js');
 const routes = require('~/helpers/ai-skill-routes.js');
 const fr = require('~/helpers/locales/fr.js').default;
 const en = require('~/helpers/locales/en.js').default;
@@ -87,6 +87,10 @@ function mountTokens({ isCopy = false, items = [], copied = true } = {}) {
       '~/components/modal/bs-modal-form.vue': modalStub,
       '~/components/modal-confirm.vue': modalStub,
       '~/components/form/bs-text-field': {},
+      '~/components/modal/bs-secret-once-dialog.vue': componentOf(
+        'packages/ui/components/modal/bs-secret-once-dialog.vue',
+        { 'lucide-vue': {} }
+      ),
     },
   });
   return { vm, $axios, copy };
@@ -96,7 +100,7 @@ const buttonSaying = (vm, key) =>
   [...vm.$el.querySelectorAll('v-btn')].find((el) =>
     el.textContent.includes(key)
   );
-const doneButton = (vm) => vm.$el.querySelector('.bs-ai-read-tokens__done');
+const doneButton = (vm) => vm.$el.querySelector('.bs-secret-once-dialog__done');
 
 async function created(options) {
   const mounted = mountTokens(options);
