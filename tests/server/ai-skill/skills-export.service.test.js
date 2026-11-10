@@ -760,6 +760,49 @@ describe('the skills export', () => {
       ]);
     });
 
+    // What the preview could not know: an expertise of the file left out of
+    // the choice, or one whose import failed, is missing as much as one the
+    // file does not hold.
+    it('warns about a task skill whose expertise is not here once the import is done', async () => {
+      const create = store.models.Expertises.create;
+      store.models.Expertises.create = async (record) => {
+        if (record.expertiseId === SPAM_WORDS) {
+          throw new Error('Expertise validation failed');
+        }
+        return create(record);
+      };
+
+      const failed = await importAll();
+      store.models.Expertises.create = create;
+      store.seed(EMPTY_TARGET);
+      const unchosen = await importSkills(
+        file,
+        { skillIds: [WRITE_SUBJECT] },
+        { user: ALICE }
+      );
+
+      expect(failed.created.find((i) => i.id === WRITE_SUBJECT)).toEqual({
+        kind: 'skill',
+        id: WRITE_SUBJECT,
+        version: '1.0',
+        warnings: [{ code: 'missing_expertises', expertiseIds: [SPAM_WORDS] }],
+      });
+      expect(unchosen.created[0].warnings).toEqual([
+        {
+          code: 'missing_expertises',
+          expertiseIds: [SUBJECT_LINES, SPAM_WORDS],
+        },
+      ]);
+    });
+
+    it('warns about nothing once every consumed expertise is here', async () => {
+      const report = await importAll();
+
+      report.created.forEach((item) => {
+        expect(item).not.toHaveProperty('warnings');
+      });
+    });
+
     it('imports a version of another nature with its own nature, as a draft', async () => {
       store.seed({ ...EMPTY_TARGET, skills: [featureWriteSubject()] });
 
@@ -771,7 +814,11 @@ describe('the skills export', () => {
 
       const skill = skillOf(WRITE_SUBJECT);
       expect(report.updated).toEqual([
-        { kind: 'skill', id: WRITE_SUBJECT, version: '1.0' },
+        expect.objectContaining({
+          kind: 'skill',
+          id: WRITE_SUBJECT,
+          version: '1.0',
+        }),
       ]);
       expect(skill.activeVersion).toEqual({ major: 0, minor: 1 });
       expect(draftOf(skill)).toMatchObject({ nature: 'task' });

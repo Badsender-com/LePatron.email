@@ -273,6 +273,9 @@ function stateOf(kind, item, doc) {
   return { state: doc ? 'update' : 'new' };
 }
 
+// The expertises an item's version consumes: none for an expertise.
+const consumedOf = (item) => item.version.consumedExpertiseIds || [];
+
 async function docsOf(kind, ids) {
   const { model, idField } = ENTITIES[kind];
   const docs = await model()
@@ -293,9 +296,7 @@ async function previewOf(file) {
     );
   }
   const inFile = new Set(file.expertises.map((item) => item.expertiseId));
-  const consumed = file.skills.flatMap(
-    (item) => item.version.consumedExpertiseIds || []
-  );
+  const consumed = file.skills.flatMap(consumedOf);
   const known = await docsOf('expertise', consumed);
 
   const items = KINDS.flatMap((kind) => {
@@ -312,7 +313,7 @@ async function previewOf(file) {
         current: active ? versionLabel(active) : null,
         ...stateOf(kind, item, doc),
       };
-      const missing = (item.version.consumedExpertiseIds || []).filter(
+      const missing = consumedOf(item).filter(
         (expertiseId) => !inFile.has(expertiseId) && !known.has(expertiseId)
       );
       const warnings = [];
@@ -388,7 +389,9 @@ function create(kind, item, userId) {
  * @param {{ user: { id: string } }} context
  * @returns {Promise<{ created, updated, skipped, failed }>} each a list of
  *   `{ kind, id, version }`, with a `reason` when skipped and a `message`
- *   when failed; a chosen id the file does not hold is skipped as
+ *   when failed, and the `warnings` of a skill whose consumed expertises
+ *   are still missing here once the import is done; a chosen id the file
+ *   does not hold is skipped as
  *   `not_in_file`, without a version
  */
 async function importSkills(
@@ -400,6 +403,11 @@ async function importSkills(
   const { items } = await previewOf(file);
   const chosen = { expertise: expertiseIds, skill: skillIds };
   const report = { created: [], updated: [], skipped: [], failed: [] };
+  // The expertises the skills consume that are here before the import; those
+  // it creates join them as it goes.
+  const available = new Set(
+    (await docsOf('expertise', file.skills.flatMap(consumedOf))).keys()
+  );
 
   for (const kind of KINDS) {
     const { idField } = ENTITIES[kind];
@@ -424,11 +432,22 @@ async function importSkills(
         });
         continue; // eslint-disable-line no-continue
       }
+      // Not chosen, blocked or failed, an expertise of the file is as
+      // missing as one it does not hold: the draft cannot be published until
+      // it is here (ADR 0018).
+      const missing = consumedOf(item).filter((e) => !available.has(e));
+      const done = missing.length
+        ? {
+            ...entry,
+            warnings: [{ code: 'missing_expertises', expertiseIds: missing }],
+          }
+        : entry;
       try {
         if (preview.state === 'new') {
           // eslint-disable-next-line no-await-in-loop
           await create(kind, item, user.id);
-          report.created.push(entry);
+          report.created.push(done);
+          if (kind === 'expertise') available.add(id);
         } else {
           // eslint-disable-next-line no-await-in-loop
           await SERVICES[kind].createVersionAt(
@@ -437,7 +456,7 @@ async function importSkills(
             item.version,
             user.id
           );
-          report.updated.push(entry);
+          report.updated.push(done);
         }
       } catch (err) {
         report.failed.push({ ...entry, message: err.message });
