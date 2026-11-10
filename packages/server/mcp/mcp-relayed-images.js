@@ -78,6 +78,21 @@ function imageTypeOf(bytes) {
   return null;
 }
 
+const parsedUrl = (url) => {
+  try {
+    return new URL(url);
+  } catch (err) {
+    return null;
+  }
+};
+
+// Whether an address names the instance's own host, whatever its port: the
+// instance never fetches from itself, at any hop.
+function isInstanceHost(url) {
+  const parsed = parsedUrl(url);
+  return Boolean(parsed) && parsed.hostname === new URL(siteOrigin()).hostname;
+}
+
 /**
  * The image at this address, fetched under the guard of the outgoing calls:
  * https at every hop, no private or internal address, a few redirects, a
@@ -87,16 +102,14 @@ function imageTypeOf(bytes) {
  * @returns {Promise<{ type: string, bytes: Buffer }|null>}
  */
 async function fetchRelayedImage(url) {
-  let parsed;
-  try {
-    parsed = new URL(url);
-  } catch (err) {
+  const parsed = parsedUrl(url);
+  if (!parsed || parsed.protocol !== 'https:' || isInstanceHost(url)) {
     return null;
   }
-  if (parsed.protocol !== 'https:') return null;
   try {
     const response = await guardedFetch(url, {
       httpsOnly: true,
+      allowsHop: (hop) => !isInstanceHost(hop),
       maxRedirects: MAX_REDIRECTS,
       timeoutMs: TIMEOUT_MS,
       maxBytes: MAX_BYTES,
@@ -119,11 +132,12 @@ const decodedAttribute = (value) =>
   value.replace(/&(amp|quot|#39|lt|gt);/g, (_entity, name) => ENTITIES[name]);
 const asIs = (value) => value;
 
-// Whether an image is hosted outside the instance, over https.
+// Whether an image is hosted outside the instance, over https: its origin
+// compared, so that neither the case nor a default port tells them apart.
 function isExternal(url) {
   if (!/^https:\/\//i.test(url)) return false;
-  const origin = siteOrigin();
-  return url !== origin && !url.startsWith(`${origin}/`);
+  const parsed = parsedUrl(url);
+  return Boolean(parsed) && parsed.origin !== new URL(siteOrigin()).origin;
 }
 
 // The rewriting runs on every preview handed to an app, synchronously: every

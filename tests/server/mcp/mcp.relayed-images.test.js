@@ -159,6 +159,28 @@ describe('relayed images', () => {
       expect(mockGuardedFetch).not.toHaveBeenCalled();
     });
 
+    it('fetches nothing from the instance itself, even signed', async () => {
+      const { host } = require('../../../packages/server/node.config.js');
+
+      const res = await request(app).get(
+        relayedPathOf(`https://${host.split(':')[0]}:8443/api/images/logo.png`)
+      );
+
+      expect(res.status).toBe(404);
+      expect(mockGuardedFetch).not.toHaveBeenCalled();
+    });
+
+    it('refuses a redirect to the instance itself', async () => {
+      answers(PNG);
+      const { host } = require('../../../packages/server/node.config.js');
+
+      await request(app).get(relayedPathOf(LOGO));
+
+      const { allowsHop } = mockGuardedFetch.mock.calls[0][1];
+      expect(allowsHop(`https://${host}/api/relayed-images/x`)).toBe(false);
+      expect(allowsHop('https://cdn.example.test/other.png')).toBe(true);
+    });
+
     it('fetches nothing over plain http, even signed', async () => {
       const res = await request(app).get(
         relayedPathOf('http://cdn.example.test/brand/logo.png')

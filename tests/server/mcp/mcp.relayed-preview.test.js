@@ -4,6 +4,7 @@
 // relayed addresses (ADR 0022). The rewriting runs on every preview,
 // synchronously, on what the mailing's author wrote.
 
+const config = require('../../../packages/server/node.config.js');
 const {
   relayPreviewImages,
   relayPreviewImagesCached,
@@ -70,6 +71,27 @@ describe('the rewriting of a preview', () => {
         "<style>.a { background: url('http://cdn.example.test/bg.png'); }</style>",
       ],
     ])('leaves an http address of %s as it is', (_where, html) => {
+      expect(relayPreviewImages(html)).toBe(html);
+    });
+  });
+
+  describe('the images of the instance', () => {
+    const host = config.host;
+    afterEach(() => {
+      config.host = host;
+    });
+
+    it('leaves an image of the instance as it is, whatever the case of its address', () => {
+      const html = `<img src="HTTPS://${host.toUpperCase()}/api/images/logo.png">`;
+
+      expect(relayPreviewImages(html)).toBe(html);
+    });
+
+    it('leaves an image of the instance as it is, its default port written', () => {
+      config.host = 'app.example.test';
+      const html =
+        '<img src="https://app.example.test:443/api/images/logo.png">';
+
       expect(relayPreviewImages(html)).toBe(html);
     });
   });
