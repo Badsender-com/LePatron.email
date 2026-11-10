@@ -9,6 +9,7 @@ const { ID } = require('./mcp-authoring.schemas.js');
 const MAX_KEY_LENGTH = 4000;
 const MAX_TEXT_LENGTH = 2000;
 const MAX_GUARD_ID_LENGTH = 100;
+const VERSION = /^\d{1,4}\.\d{1,4}$/;
 const GUARD_ID = z
   .string()
   .max(MAX_GUARD_ID_LENGTH)
@@ -19,6 +20,13 @@ const TARGET = {
   id: ID.describe(
     'The skillId or expertiseId, as find_skills or find_applicable_expertises gives it.'
   ),
+  version: z
+    .string()
+    .regex(VERSION)
+    .optional()
+    .describe(
+      'The draft to publish, as "major.minor". Needed only when the item has several drafts: the refusal lists them.'
+    ),
 };
 
 const PUBLISH_INPUT = z.object({

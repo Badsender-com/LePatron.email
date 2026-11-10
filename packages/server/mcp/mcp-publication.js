@@ -15,7 +15,6 @@ const publication = require('../ai-skill/services/skills-publication.service.js'
 const guardRuns = require('../ai-skill/services/guard-runs.js');
 const { readGuardKey, isoOf } = require('../ai-skill/services/guard-key.js');
 const {
-  openDraftOf,
   versionLabel: label,
 } = require('../ai-skill/services/version-helpers.js');
 const {
@@ -47,14 +46,31 @@ const TEXTS_CHANGED =
 const CHECK_NOT_FOUND =
   'No check of yours has this guardId any more: call publish_draft without a confirmation to start one.';
 
-// The draft to publish: the item's open draft.
-async function draftFor({ kind, id }) {
+/**
+ * The draft to publish: the version asked for, or the item's only draft. With
+ * several, publish_draft does not choose, as the back office's batch does
+ * not: it lists them.
+ */
+async function draftFor({ kind, id, version }) {
   const doc = await getters[kind](id);
-  const draft = openDraftOf(doc);
-  if (!draft) {
+  const drafts = (doc.versions || []).filter((v) => v.status === 'DRAFT');
+  const labels = drafts.map(label);
+  const draft = version
+    ? drafts.find((v) => label(v) === version)
+    : drafts.length === 1 && drafts[0];
+  if (!drafts.length) {
     throw createError(
       409,
       `"${id}" has no draft to publish: write one first, or it is already published.`
+    );
+  }
+  if (!draft) {
+    throw createError(
+      409,
+      version
+        ? `"${id}" has no draft ${version}: give one of its drafts.`
+        : `"${id}" has several drafts: give the version to publish.`,
+      { reason: 'several_drafts', versions: labels }
     );
   }
   return {

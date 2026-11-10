@@ -356,6 +356,41 @@ describe('publishing and opening from an assistant', () => {
       expect(subjectLines().activeVersion).toEqual({ major: 2, minor: 1 });
     });
 
+    // It does not choose, as the back office's batch does not (#1431).
+    it('asks which draft to publish when there are several, and publishes the one given', async () => {
+      harness.seed({
+        ...SEED,
+        expertises: SEED.expertises.map((e) =>
+          e.expertiseId === SUBJECT_LINES
+            ? {
+                ...e,
+                versions: [
+                  ...e.versions,
+                  {
+                    ...versionOf(e, 3, 0),
+                    _id: undefined,
+                    versionMajor: 2,
+                    versionMinor: 2,
+                  },
+                ],
+              }
+            : e
+        ),
+      });
+      const client = await asAuthor();
+
+      const several = await check(client);
+      const { confirmation } = await check(client, { version: '2.2' });
+      const answer = await confirm(client, confirmation, { version: '2.2' });
+
+      expect(several.error).toMatch(/several drafts/i);
+      expect(several.error).toMatch(/3\.0/);
+      expect(several.error).toMatch(/2\.2/);
+      expect(answer).toMatchObject({ version: '2.2', published: true });
+      expect(subjectLines().activeVersion).toEqual({ major: 2, minor: 2 });
+      expect(versionOf(subjectLines(), 3, 0).status).toBe('DRAFT');
+    });
+
     it('refuses a key when the draft changed after the check', async () => {
       const client = await asAuthor();
       const { confirmation } = await check(client);
