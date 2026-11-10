@@ -150,4 +150,4 @@ const VERSION_FIELDS = {
   skill: versionFieldsOf(SKILL),
 };
 
-module.exports = { FORMAT, readSkillsExport, VERSION_FIELDS };
+module.exports = { FORMAT, FILE, readSkillsExport, VERSION_FIELDS };

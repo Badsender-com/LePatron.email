@@ -692,6 +692,35 @@ describe('the skills export', () => {
       expect(store.stored('skills')).toEqual([]);
     });
 
+    it('reads the file once', async () => {
+      const {
+        FILE,
+      } = require('../../../packages/server/ai-skill/services/skills-export.format');
+      const safeParse = jest.spyOn(FILE, 'safeParse');
+
+      await importAll();
+
+      expect(safeParse).toHaveBeenCalledTimes(1);
+      safeParse.mockRestore();
+    });
+
+    it('says which chosen item the file does not hold', async () => {
+      const report = await importSkills(
+        file,
+        { expertiseIds: [SUBJECT_LINES, 'redaction.not-exported'] },
+        { user: ALICE }
+      );
+
+      expect(report.created.map((item) => item.id)).toEqual([SUBJECT_LINES]);
+      expect(report.skipped).toEqual([
+        {
+          kind: 'expertise',
+          id: 'redaction.not-exported',
+          reason: 'not_in_file',
+        },
+      ]);
+    });
+
     it('imports the expertises before the skills', async () => {
       const report = await importAll();
 

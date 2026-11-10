@@ -281,18 +281,8 @@ async function docsOf(kind, ids) {
   return new Map(docs.map((doc) => [doc[idField], doc]));
 }
 
-/**
- * What importing a skills export would do here, item by item, writing
- * nothing (ADR 0018): `new`, `update`, `up_to_date`, or `blocked` with its
- * reason. A task skill whose consumed expertise is neither in the file nor
- * here carries a warning, and stays importable; so does a skill whose version
- * has another nature than its active one here.
- *
- * @param {Object} json the file, read again here
- * @returns {Promise<{ origin, exportedAt, exportedBy, items: Object[] }>}
- */
-async function previewImport(json) {
-  const file = readSkillsExport(json);
+// The preview of a file already read.
+async function previewOf(file) {
   const docs = {};
   for (const kind of KINDS) {
     const { idField } = ENTITIES[kind];
@@ -353,6 +343,20 @@ async function previewImport(json) {
   return { origin, exportedAt, exportedBy, items };
 }
 
+/**
+ * What importing a skills export would do here, item by item, writing
+ * nothing (ADR 0018): `new`, `update`, `up_to_date`, or `blocked` with its
+ * reason. A task skill whose consumed expertise is neither in the file nor
+ * here carries a warning, and stays importable; so does a skill whose version
+ * has another nature than its active one here.
+ *
+ * @param {Object} json the file, read again here
+ * @returns {Promise<{ origin, exportedAt, exportedBy, items: Object[] }>}
+ */
+async function previewImport(json) {
+  return previewOf(readSkillsExport(json));
+}
+
 const SERVICES = { expertise: expertiseService, skill: skillService };
 
 // A new item: the document, as the back office creates one, with the
@@ -384,7 +388,8 @@ function create(kind, item, userId) {
  * @param {{ user: { id: string } }} context
  * @returns {Promise<{ created, updated, skipped, failed }>} each a list of
  *   `{ kind, id, version }`, with a `reason` when skipped and a `message`
- *   when failed
+ *   when failed; a chosen id the file does not hold is skipped as
+ *   `not_in_file`, without a version
  */
 async function importSkills(
   json,
@@ -392,12 +397,19 @@ async function importSkills(
   { user }
 ) {
   const file = readSkillsExport(json);
-  const { items } = await previewImport(file);
+  const { items } = await previewOf(file);
   const chosen = { expertise: expertiseIds, skill: skillIds };
   const report = { created: [], updated: [], skipped: [], failed: [] };
 
   for (const kind of KINDS) {
     const { idField } = ENTITIES[kind];
+    // A choice the file does not hold, as from a screen reading another file.
+    const inFile = new Set(file[listOf(kind)].map((item) => item[idField]));
+    [...new Set(chosen[kind])]
+      .filter((id) => !inFile.has(id))
+      .forEach((id) =>
+        report.skipped.push({ kind, id, reason: 'not_in_file' })
+      );
     const wanted = file[listOf(kind)].filter((item) =>
       chosen[kind].includes(item[idField])
     );
