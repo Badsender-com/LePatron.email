@@ -2123,7 +2123,6 @@ export default {
       after: 'This version',
       noBefore: 'Not published yet',
       same: 'Same output',
-      contractOk: 'Follows the output contract',
       publish: 'Publish',
       publishAnyway: 'Publish despite the differences',
       cancel: 'Cancel the publication',

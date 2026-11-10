@@ -12,7 +12,7 @@ LePatron knows which skills and expertises a feature uses: each feature declares
 - The **Used by a feature** box, above the table, keeps only those items.
 - On a skill's or an expertise's page, under the title: **Used by the features**, then their names, or **No feature uses it.**
 
-An expertise is used when a feature names it, or when its filters load it: changing an expertise's category or scope can change what uses it. An **archived** item is never used: a feature loads active versions only.
+An expertise is used when a feature names it, or when its filters load it: changing an expertise's category or scope can change what uses it. An **archived** item is never used: a feature loads active versions only. Publishing it again makes it active: its publication goes through the check, as if it were used.
 
 ## A feature skill's test cases
 
@@ -41,17 +41,19 @@ If the skill has no open draft, nothing is written: create a new version from th
 On the draft, **Publish** first opens the usual confirmation (**Activate this version**). If no feature uses the version, it is published. Otherwise, the **Check before publishing** dialog opens:
 
 - **Used by:** the features concerned;
-- the number of **AI calls**, with the AI engine of the platform group: two per case, one with the active version, one with the new one;
+- the number of **AI calls**, with the AI engine of the platform group: two per case, one with the active version, one with the new one, and only one for a skill that has no active version yet;
+- **60 calls at most:** the cases past that cap are not replayed, and the dialog says how many. Read them again;
 - **No test case, so not checked:** the feature skills concerned that have no case. They will not be checked: read them again.
 
-Click **Run the check**. The calls run one after the other.
+Before this dialog opens, LePatron checks what costs nothing: a draft changed since the page read it, a major version without a changelog and release notes, a schema missing from the code. A publication refused anyway is refused at once, without any AI call.
+
+Click **Run the check**. The calls run three at a time at most.
 
 ### Reading the replay
 
-For each case, its name, the skill, and two answers side by side: **Active version** and **This version**.
+For each case, its name, the skill, **What a good output should hold** when the case says it, and two answers side by side: **Active version** and **This version**.
 
 - **Same output**: the new version answers the same.
-- **Follows the output contract**: the answer has the shape the feature expects.
 - An answer that breaks the contract, an input that no longer follows the input schema, or a failed AI call shows instead of the answer, as a difference.
 - **Not published yet**: the skill has no active version yet, so there is no "before".
 
@@ -62,7 +64,17 @@ The summary says how many cases were replayed, and how many show a difference. A
 - **Publish**, or **Publish despite the differences** if there are some: the version is published.
 - **Cancel the publication**: the version stays a draft.
 
-Either way, the decision is recorded on the version, with the person, the date, the number of cases and of differences, and the skills without a case. Closing the dialog without choosing records nothing.
+Either way, the decision is recorded on the version, with the person, the date, the number of cases, of differences and of cases not replayed, and the skills without a case, as LePatron found them during the check. Closing the dialog without choosing records nothing.
+
+The check holds for the version as it was, for you, for an hour. If the draft changes meanwhile, in another tab or through an assistant, the publication is refused: reload the page and run the check again.
+
+## Changing what a feature uses without publishing
+
+Some changes make a feature stop, or start, using an item without any version being published. They replay nothing, but LePatron says so and keeps them on the item, with the person and the features concerned:
+
+- **Changing the scope or the category of an active expertise**: on saving, the message says which features no longer load it, or now load it.
+- **Archiving an expertise in use**: the archive dialog says which features will no longer load it.
+- **Archiving a skill a feature calls**: the archive dialog says so, and **I confirm that these features will no longer call this skill.** must be ticked before archiving.
 
 ## Publishing several drafts at once
 
@@ -72,8 +84,12 @@ Either way, the decision is recorded on the version, with the person, the date, 
    - **no draft**;
    - **several drafts** (say a 1.3 and a 2.0): publish the one you choose from its page;
    - **archived**: reactivate it from its page;
-   - **not found**.
+   - **not found**;
+   - what would refuse its publication anyway, such as a **major version** without a changelog and release notes, or a draft **changed since it was read**. It is left out before the check, which makes no call for it.
 4. If a feature uses one of the drafts, **one check** covers the whole batch: each case is replayed once, with the active versions, then with every draft of the batch in place. It reads as for one version. Otherwise, the dialog says so: the drafts publish without a check.
-5. The drafts are published **one by one**, each with the changelog and release notes of its draft. The **Publication report** says what was published, what was not and why, and what was left out. One failure does not stop the others.
+5. **On a copy**, the dialog offers **Keep on this copy**, ticked at first, for the whole batch, as the publication of one version does.
+6. The drafts are published **one by one**, each with the changelog and release notes of its draft. The **Publication report** says what was published, what was not and why, and everything that was left out. One failure does not stop the others.
 
 A major version needs a changelog and release notes: without them, it is not published. Fill them in on its page, then try again.
+
+A batch holds only skills, or only expertises: it starts from the tab of one or the other. When a skill and the expertise it reads change together, publish **the expertise first**, then the skill: the skill's check then replays its cases with the expertise already published.

@@ -2151,7 +2151,6 @@ export default {
       after: 'Cette version',
       noBefore: 'Pas encore publiée',
       same: 'Sortie identique',
-      contractOk: 'Respecte le contrat de sortie',
       publish: 'Publier',
       publishAnyway: 'Publier malgré les écarts',
       cancel: 'Annuler la publication',
