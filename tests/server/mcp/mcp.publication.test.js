@@ -17,10 +17,22 @@ const WRITE = ['mcp:read', 'skills:write'];
 const SUBJECT_LINES = 'redaction.subject-line'; // 2.1 active, 3.0 draft
 const DARK_MODE = 'design.dark-mode'; // never published
 const PUBLISH = 'publish_draft';
+const READ_CHECK = 'read_publication_check';
 const AUDIENCE = 'set_audience';
 
+// Another super admin, for a key or a check that is not theirs.
+const OLGA = '507f1f77bcf86cd79943910f';
 const SEED = {
   ...f.SEED,
+  users: [
+    ...f.SEED.users,
+    {
+      ...f.SEED.users.find((u) => u._id === f.ALICE),
+      _id: OLGA,
+      name: 'Olga',
+      email: 'olga@example.test',
+    },
+  ],
   expertises: f.EXPERTISES.map((e) => ({ ...e, audience: 'platform' })),
 };
 
@@ -206,73 +218,154 @@ describe('publishing and opening from an assistant', () => {
 
   // Turned on by #1435 (publishing a draft from an assistant, in two steps)
   describe('publishing a draft', () => {
+    // A major needs its changelog and release notes, as in the back office.
+    const DRAFT = {
+      kind: 'expertise',
+      id: SUBJECT_LINES,
+      changelog: 'Shorter subjects',
+      releaseNotes: 'Subjects get shorter.',
+    };
+    const check = (client, args = {}) =>
+      call(client, PUBLISH, { ...DRAFT, ...args });
+    const confirm = (client, confirmation, args = {}) =>
+      call(client, PUBLISH, { ...DRAFT, confirmation, ...args });
+
     it('is a destructive tool listed only with the skills:write scope', async () => {
       const reader = await harness.connectAs(f.ALICE, {
         group: f.PLATFORM_GROUP,
       });
-      expect((await toolsOf(reader)).map((t) => t.name)).not.toContain(PUBLISH);
+      const names = (await toolsOf(reader)).map((t) => t.name);
+      expect(names).not.toContain(PUBLISH);
+      expect(names).not.toContain(READ_CHECK);
 
-      const tool = (await toolsOf(await asAuthor())).find(
-        (t) => t.name === PUBLISH
-      );
-      expect(tool.annotations).toMatchObject({
+      const tools = await toolsOf(await asAuthor());
+      expect(tools.find((t) => t.name === PUBLISH).annotations).toMatchObject({
         readOnlyHint: false,
         destructiveHint: true,
         idempotentHint: false,
       });
+      expect(
+        tools.find((t) => t.name === READ_CHECK).annotations
+      ).toMatchObject({ readOnlyHint: true, destructiveHint: false });
     });
 
     it('publishes nothing at the first call, and answers the guard with a key', async () => {
-      const answer = await call(await asAuthor(), PUBLISH, {
-        kind: 'expertise',
-        id: SUBJECT_LINES,
-      });
+      const answer = await check(await asAuthor());
 
       expect(answer).toMatchObject({
         id: SUBJECT_LINES,
         version: '3.0',
         published: false,
+        status: 'done',
         guard: { usedBy: [], cases: [], missing: [] },
         confirmation: expect.any(String),
       });
       expect(subjectLines().activeVersion).toEqual({ major: 2, minor: 1 });
     });
 
+    // The guard runs on the server (ADR 0019): no call waits for the AI.
+    it('starts the guard on the server, and answers it once done to whoever reads it', async () => {
+      const publication = require('../../../packages/server/ai-skill/services/skills-publication.service.js');
+      const guardRuns = require('../../../packages/server/ai-skill/services/guard-runs.js');
+      const USED_BY = [{ featureType: 'subject_generation' }];
+      const plan = jest
+        .spyOn(publication, 'planPublication')
+        .mockResolvedValue({ usedBy: USED_BY, calls: 4, missing: [] });
+      const real = publication.guardPublication;
+      let replayed;
+      const replay = jest
+        .spyOn(publication, 'guardPublication')
+        .mockImplementation(
+          (...args) =>
+            new Promise((resolve) => {
+              replayed = () => resolve(real(...args));
+            })
+        );
+      try {
+        const client = await asAuthor();
+
+        const started = await check(client);
+        const { guardId } = started;
+        const stillRunning = await call(client, READ_CHECK, { guardId });
+        replayed();
+        await guardRuns.guardRunsSettled();
+        const done = await call(client, READ_CHECK, { guardId });
+        const someoneElse = await call(
+          await harness.connectAs(OLGA, {
+            group: f.PLATFORM_GROUP,
+            scopes: WRITE,
+          }),
+          READ_CHECK,
+          { guardId }
+        );
+
+        expect(started).toMatchObject({
+          status: 'running',
+          guardId: expect.any(String),
+          guard: { usedBy: USED_BY, calls: 4 },
+          next: expect.stringMatching(/read_publication_check/),
+        });
+        expect(started.confirmation).toBeUndefined();
+        expect(stillRunning.status).toBe('running');
+        expect(done).toMatchObject({
+          status: 'done',
+          confirmation: expect.any(String),
+        });
+        expect(someoneElse.error).toMatch(/no check/i);
+        expect((await confirm(client, done.confirmation)).published).toBe(true);
+      } finally {
+        plan.mockRestore();
+        replay.mockRestore();
+      }
+    });
+
     it('publishes on the key of the draft checked', async () => {
       const client = await asAuthor();
-      const { confirmation } = await call(client, PUBLISH, {
-        kind: 'expertise',
-        id: SUBJECT_LINES,
-      });
+      const { confirmation } = await check(client);
 
-      const answer = await call(client, PUBLISH, {
-        kind: 'expertise',
-        id: SUBJECT_LINES,
-        confirmation,
-      });
+      const answer = await confirm(client, confirmation);
 
       expect(answer).toMatchObject({ version: '3.0', published: true });
       expect(subjectLines().activeVersion).toEqual({ major: 3, minor: 0 });
       expect(versionOf(subjectLines(), 2, 1).status).toBe('ARCHIVED');
+      expect(versionOf(subjectLines(), 3, 0)).toMatchObject({
+        changelog: DRAFT.changelog,
+        releaseNotes: DRAFT.releaseNotes,
+      });
+    });
+
+    it('refuses a major version without its changelog, as the back office does', async () => {
+      const answer = await call(await asAuthor(), PUBLISH, {
+        kind: 'expertise',
+        id: SUBJECT_LINES,
+      });
+
+      expect(answer.error).toMatch(/changelog/i);
+      expect(harness.stored('guardRuns')).toEqual([]);
+    });
+
+    it('refuses other release notes than the ones checked', async () => {
+      const client = await asAuthor();
+      const { confirmation } = await check(client);
+
+      const answer = await confirm(client, confirmation, {
+        releaseNotes: 'Something else.',
+      });
+
+      expect(answer.error).toMatch(/differ/i);
+      expect(subjectLines().activeVersion).toEqual({ major: 2, minor: 1 });
     });
 
     it('refuses a key when the draft changed after the check', async () => {
       const client = await asAuthor();
-      const { confirmation } = await call(client, PUBLISH, {
-        kind: 'expertise',
-        id: SUBJECT_LINES,
-      });
+      const { confirmation } = await check(client);
       await call(client, 'propose_expertise_change', {
         expertiseId: SUBJECT_LINES,
         body: '## [length] Length\n\nChanged after the check.',
         changelog: 'Changed',
       });
 
-      const answer = await call(client, PUBLISH, {
-        kind: 'expertise',
-        id: SUBJECT_LINES,
-        confirmation,
-      });
+      const answer = await confirm(client, confirmation);
 
       expect(answer.error).toMatch(/changed/i);
       expect(subjectLines().activeVersion).toEqual({ major: 2, minor: 1 });
@@ -298,16 +391,9 @@ describe('publishing and opening from an assistant', () => {
         ),
       });
       const client = await asAuthor();
-      const { confirmation } = await call(client, PUBLISH, {
-        kind: 'expertise',
-        id: SUBJECT_LINES,
-      });
+      const { confirmation } = await check(client);
 
-      await call(client, PUBLISH, {
-        kind: 'expertise',
-        id: SUBJECT_LINES,
-        confirmation,
-      });
+      await confirm(client, confirmation);
 
       expect(publish).toHaveBeenCalledWith(
         expect.objectContaining({
@@ -318,31 +404,29 @@ describe('publishing and opening from an assistant', () => {
       publish.mockRestore();
     });
 
-    it('refuses a key made up or given for another draft', async () => {
-      const answer = await call(await asAuthor(), PUBLISH, {
-        kind: 'expertise',
-        id: SUBJECT_LINES,
-        confirmation: 'made-up',
+    it('refuses a key made up, or given to another person', async () => {
+      const { confirmation } = await check(await asAuthor());
+      const other = await harness.connectAs(OLGA, {
+        group: f.PLATFORM_GROUP,
+        scopes: WRITE,
       });
 
-      expect(answer.error).toMatch(/confirmation/i);
+      const madeUp = await confirm(await asAuthor(), 'made-up');
+      const someoneElse = await confirm(other, confirmation);
+
+      expect(madeUp.error).toMatch(/confirmation/i);
+      expect(someoneElse.error).toMatch(/confirmation/i);
+      expect(subjectLines().activeVersion).toEqual({ major: 2, minor: 1 });
     });
 
     it('refuses a key given more than an hour ago', async () => {
       const client = await asAuthor();
-      const { confirmation } = await call(client, PUBLISH, {
-        kind: 'expertise',
-        id: SUBJECT_LINES,
-      });
+      const { confirmation } = await check(client);
       const later = Date.now() + 61 * 60 * 1000;
       const clock = jest.spyOn(Date, 'now').mockReturnValue(later);
 
       try {
-        const answer = await call(client, PUBLISH, {
-          kind: 'expertise',
-          id: SUBJECT_LINES,
-          confirmation,
-        });
+        const answer = await confirm(client, confirmation);
 
         expect(answer.error).toMatch(/expired/i);
         expect(subjectLines().activeVersion).toEqual({ major: 2, minor: 1 });
@@ -362,15 +446,8 @@ describe('publishing and opening from an assistant', () => {
 
     it('records the publication with the user, the application and the guard', async () => {
       const client = await asAuthor();
-      const { confirmation } = await call(client, PUBLISH, {
-        kind: 'expertise',
-        id: SUBJECT_LINES,
-      });
-      await call(client, PUBLISH, {
-        kind: 'expertise',
-        id: SUBJECT_LINES,
-        confirmation,
-      });
+      const { confirmation } = await check(client);
+      await confirm(client, confirmation);
 
       expect(versionOf(subjectLines(), 3, 0).guardHistory).toEqual([
         expect.objectContaining({
@@ -384,10 +461,7 @@ describe('publishing and opening from an assistant', () => {
     it('refuses a user who may not manage the platform, whatever the token says', async () => {
       const client = await harness.connectAs(f.ERIN, { scopes: WRITE });
 
-      const answer = await call(client, PUBLISH, {
-        kind: 'expertise',
-        id: SUBJECT_LINES,
-      });
+      const answer = await check(client);
 
       expect(answer.error).toMatch(/not allowed/i);
     });

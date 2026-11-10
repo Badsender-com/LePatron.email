@@ -127,6 +127,7 @@ const CREATE_TASK_SKILL_INPUT = z.object({
 });
 
 module.exports = {
+  ID,
   ANSWER,
   PROPOSE_EXPERTISE_INPUT,
   PROPOSE_SKILL_INPUT,

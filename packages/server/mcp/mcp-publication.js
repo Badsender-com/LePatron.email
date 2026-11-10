@@ -1,19 +1,19 @@
 'use strict';
 
-// Publishing a draft from an assistant (ADR 0019, amending ADR 0014): two
-// calls. The first runs the publication guard and publishes nothing; it
-// answers the before and after and a confirmation key bound to the draft it
-// checked, to the person and to an hour. The second publishes with that key,
-// only if the draft is still the one checked. The key is signed, so nothing
-// is held between the two calls.
+// Publishing a draft from an assistant (ADR 0019, amending ADR 0014), in two
+// steps. The first starts the publication guard on the server and publishes
+// nothing; the check is read again until it is done, with the before and
+// after and its key (guard-key.js), bound to the draft as it was, to the
+// person, to an hour, and to the changelog and release notes asked for. The
+// second publishes on that key, through the back office's own publication.
 
 const crypto = require('crypto');
-const { z } = require('zod');
 const createError = require('http-errors');
-const config = require('../node.config.js');
 const expertiseService = require('../ai-skill/services/expertise.service.js');
 const skillService = require('../ai-skill/services/skill.service.js');
 const publication = require('../ai-skill/services/skills-publication.service.js');
+const guardRuns = require('../ai-skill/services/guard-runs.js');
+const { readGuardKey, isoOf } = require('../ai-skill/services/guard-key.js');
 const {
   openDraftOf,
   versionLabel: label,
@@ -23,81 +23,32 @@ const {
   mayWrite,
   isRefusal,
   failure,
+  refused,
+  success,
 } = require('./mcp-identity.js');
-const { OVERWRITING } = require('./mcp-tool-grammar.js');
-
-// What an assistant may send: bounded, like every input of this server.
-const MAX_ID_LENGTH = 100;
-const MAX_KEY_LENGTH = 4000;
-const MAX_TEXT_LENGTH = 2000;
-
-const KEY_LIFETIME_MS = 60 * 60 * 1000;
+const {
+  ANSWER,
+  CHECK_INPUT,
+  PUBLISH_INPUT,
+} = require('./mcp-publication.schemas.js');
+const { OVERWRITING, READ_ONLY } = require('./mcp-tool-grammar.js');
 
 const getters = {
   skill: (id) => skillService.getSkill(id),
   expertise: (id) => expertiseService.getExpertise(id),
 };
 
-const success = (answer) => ({
-  content: [{ type: 'text', text: JSON.stringify(answer) }],
-  structuredContent: answer,
-});
+const KEY_REFUSED =
+  'This confirmation key is not valid for this draft, or has expired: call publish_draft without one to check the draft again.';
+const DRAFT_CHANGED =
+  'The draft changed after it was checked: call publish_draft without a confirmation to check it again.';
+const TEXTS_CHANGED =
+  'The changelog or release notes differ from the ones checked: give the same ones, or call publish_draft without a confirmation to check again.';
+const CHECK_NOT_FOUND =
+  'No check of yours has this guardId any more: call publish_draft without a confirmation to start one.';
 
-const plain = (doc) =>
-  doc && typeof doc.toObject === 'function' ? doc.toObject() : doc;
-
-// What the draft holds, as a fingerprint: any change to it changes the key.
-function fingerprintOf(draft) {
-  const { guardHistory: _history, ...content } = plain(draft);
-  return crypto
-    .createHash('sha256')
-    .update(JSON.stringify(content))
-    .digest('base64url');
-}
-
-const sign = (payload) =>
-  crypto
-    .createHmac('sha256', config.sessionSecret)
-    .update(`mcp-publish:${payload}`)
-    .digest('base64url');
-
-function keyOf(claims) {
-  const payload = Buffer.from(JSON.stringify(claims)).toString('base64url');
-  return `${payload}.${sign(payload)}`;
-}
-
-// The claims of a key this server signed, or null.
-function claimsOf(key) {
-  const [payload, signature] = String(key || '').split('.');
-  if (!payload || !signature) return null;
-  const expected = Buffer.from(sign(payload));
-  const given = Buffer.from(signature);
-  if (
-    expected.length !== given.length ||
-    !crypto.timingSafeEqual(expected, given)
-  ) {
-    return null;
-  }
-  try {
-    return JSON.parse(Buffer.from(payload, 'base64url').toString('utf8'));
-  } catch (err) {
-    return null;
-  }
-}
-
-// The guard's outcome, as the key carries it to the second call.
-const failedIn = (guard) =>
-  guard.cases.filter(
-    (c) =>
-      !c.after || c.after.error || (c.contract && c.contract.after === false)
-  ).length;
-const summaryOf = (guard) => ({
-  cases: guard.cases.length,
-  failed: failedIn(guard),
-  missing: guard.missing || [],
-});
-
-async function draftFor(kind, id) {
+// The draft to publish: the item's open draft.
+async function draftFor({ kind, id }) {
   const doc = await getters[kind](id);
   const draft = openDraftOf(doc);
   if (!draft) {
@@ -109,85 +60,114 @@ async function draftFor(kind, id) {
   return {
     doc,
     draft,
-    version: { major: draft.versionMajor, minor: draft.versionMinor },
+    target: {
+      kind,
+      id,
+      version: { major: draft.versionMajor, minor: draft.versionMinor },
+    },
   };
 }
 
-async function checkFirst({ kind, id }, user) {
-  const { doc, draft, version } = await draftFor(kind, id);
-  const guard = await publication.guardPublication({ kind, id, version });
-  // What publishing it would warn of, told before the person agrees.
-  const warnings = await publication.consumedWarningsOf(
-    { kind, id, version },
-    doc
-  );
-  const confirmation = keyOf({
-    kind,
-    id,
-    version: label(draft),
-    draft: fingerprintOf(draft),
-    by: String(user.id),
-    at: Date.now(),
-    guard: summaryOf(guard),
-  });
+// The changelog and release notes the publication takes: the assistant's, or
+// the draft's. A major without them is refused, as in the back office.
+function textsOf(args, draft) {
   return {
-    id,
-    version: label(draft),
-    published: false,
-    guard,
-    warnings,
-    confirmation,
+    changelog: args.changelog || draft.changelog || undefined,
+    releaseNotes: args.releaseNotes || draft.releaseNotes || undefined,
   };
 }
 
-function assertKey(claims, { kind, id }, user, draft) {
-  if (
-    !claims ||
-    claims.kind !== kind ||
-    claims.id !== id ||
-    claims.by !== String(user.id)
-  ) {
-    throw createError(
-      400,
-      'This confirmation key was not given for this draft: call publish_draft without one to check it first.'
-    );
-  }
-  if (Date.now() - claims.at > KEY_LIFETIME_MS) {
-    throw createError(
-      409,
-      'This confirmation key has expired: call publish_draft without one to check the draft again.'
-    );
-  }
-  if (
-    claims.version !== label(draft) ||
-    claims.draft !== fingerprintOf(draft)
-  ) {
+// What the key binds of them, so the second call publishes what was checked.
+const termsOf = ({ changelog, releaseNotes }) =>
+  crypto
+    .createHash('sha256')
+    .update(JSON.stringify([changelog || '', releaseNotes || '']))
+    .digest('base64url');
+
+// A check as the assistant reads it: running, to read again, or done, with
+// its cases and the key. A batch of the back office is not one.
+function answerOf(run) {
+  const [target] = run.targets;
+  if (run.targets.length !== 1) throw createError(404, CHECK_NOT_FOUND);
+  if (run.status === 'failed') {
     throw createError(
       409,
-      'The draft changed after it was checked: call publish_draft without a confirmation to check it again.'
+      `The check did not end (${run.code}): call publish_draft without a confirmation to start it again.`
     );
+  }
+  const { usedBy, calls, maxCalls, notReplayed, missing, cases } = run;
+  const answer = {
+    id: target.id,
+    version: target.version,
+    published: false,
+    status: run.status,
+    guardId: run.id,
+    guard: { usedBy, calls, maxCalls, notReplayed, missing },
+  };
+  if (run.status === 'running') {
+    return {
+      ...answer,
+      next: `The check runs on the server, about ${calls} AI calls: read it again in a minute or two with read_publication_check.`,
+    };
+  }
+  return {
+    ...answer,
+    guard: { ...answer.guard, cases },
+    confirmation: run.key,
+    next:
+      'Show the user each test case before and after, then call publish_draft again with the confirmation once they agree.',
+  };
+}
+
+async function startCheck(args, user) {
+  const { doc, draft, target } = await draftFor(args);
+  const texts = textsOf(args, draft);
+  // What the publication would refuse anyway, before the guard costs a call.
+  await publication.checkPublication(target, doc, texts);
+  const plan = await publication.planPublication(target);
+  const run = await guardRuns.startGuard(
+    {
+      targets: [target],
+      plan,
+      run: () =>
+        publication.guardPublication(target, user, { terms: termsOf(texts) }),
+    },
+    user
+  );
+  // What publishing it would warn of, told before the person agrees.
+  const warnings = await publication.consumedWarningsOf(target, doc);
+  return { ...answerOf(run), warnings };
+}
+
+async function readCheck({ guardId }, user) {
+  try {
+    return answerOf(await guardRuns.readGuard(guardId, user));
+  } catch (err) {
+    if (err.status === 404) throw createError(404, CHECK_NOT_FOUND);
+    throw err;
   }
 }
 
 async function publishChecked(args, user, application) {
-  const { kind, id, confirmation } = args;
-  const { draft, version } = await draftFor(kind, id);
-  const claims = claimsOf(confirmation);
-  assertKey(claims, { kind, id }, user, draft);
-  // A major needs a changelog and release notes: the draft's, unless the
-  // assistant gives them.
-  const fallback = `Publiée depuis un assistant (${application || 'MCP'}).`;
-  const changelog = args.changelog || draft.changelog || fallback;
+  const { draft, target } = await draftFor(args);
+  let ran;
+  try {
+    ran = readGuardKey(args.confirmation, target, user);
+  } catch (err) {
+    throw createError(400, KEY_REFUSED);
+  }
+  if (ran.updatedAt !== isoOf(draft.updatedAt)) {
+    throw createError(409, DRAFT_CHANGED);
+  }
+  const texts = textsOf(args, draft);
+  if (ran.terms !== termsOf(texts)) throw createError(409, TEXTS_CHANGED);
   const { doc, warnings } = await publication.publishVersion(
     {
-      kind,
-      id,
-      version,
-      guard: { summary: claims.guard },
+      ...target,
+      guardKey: args.confirmation,
       application,
       payload: {
-        changelog,
-        releaseNotes: args.releaseNotes || draft.releaseNotes || changelog,
+        ...texts,
         // On the condition that the draft checked is the one written, up to
         // the write itself (ADR 0014).
         updatedAt: draft.updatedAt,
@@ -196,95 +176,34 @@ async function publishChecked(args, user, application) {
     user
   );
   return {
-    id,
+    id: target.id,
     version: label(draft),
     published: true,
-    guard: claims.guard,
+    guard: ran.guard,
     // What a publication warns of, as on the item's page (ADR 0013).
     warnings: [
       ...warnings,
-      ...(await publication.consumedWarningsOf({ kind, id, version }, doc)),
+      ...(await publication.consumedWarningsOf(target, doc)),
     ],
   };
 }
 
-const PUBLISH_ANSWER = z.object({
-  id: z.string(),
-  version: z.string(),
-  published: z.boolean(),
-  guard: z
-    .object({})
-    .passthrough()
-    .describe(
-      'At the first call, the replay: the features that use it, each test case before and after, the feature skills without a case. At the second, the counts recorded.'
-    ),
-  warnings: z
-    .array(
-      z.object({
-        code: z.string(),
-        expertiseIds: z.array(z.string()).optional(),
-      })
-    )
-    .describe(
-      "What the publication warns of, without stopping it: a task skill's consumed expertises that are not published, or kept to the platform company while the skill is open to every company. Tell the user."
-    ),
-  confirmation: z
-    .string()
-    .optional()
-    .describe(
-      'At the first call: the key to give back to publish this exact draft, within an hour.'
-    ),
-});
-
-const PUBLISH_INPUT = z.object({
-  kind: z.enum(['skill', 'expertise']).describe('One of: skill, expertise.'),
-  id: z
-    .string()
-    .min(1)
-    .max(MAX_ID_LENGTH)
-    .describe(
-      'The skillId or expertiseId, as find_skills or find_applicable_expertises gives it.'
-    ),
-  confirmation: z
-    .string()
-    .max(MAX_KEY_LENGTH)
-    .optional()
-    .describe(
-      'The key the first call answered. Leave it out to check the draft; give it back to publish.'
-    ),
-  changelog: z
-    .string()
-    .max(MAX_TEXT_LENGTH)
-    .optional()
-    .describe(
-      "What changes and why, in French. Default: the draft's own changelog."
-    ),
-  releaseNotes: z
-    .string()
-    .max(MAX_TEXT_LENGTH)
-    .optional()
-    .describe(
-      "What users of the features will notice, in French. Default: the draft's own notes."
-    ),
-});
-
-const PUBLISHING_REFUSED =
-  'Not allowed: publishing skills and expertises needs the skills:write scope and the right to manage the platform.';
+const REFUSED =
+  'Not allowed: publishing skills and expertises needs the skills:write scope, the right to manage the platform, and a connection to the platform company.';
 
 // Who calls is checked first (`withIdentity`), then whether they may still
 // publish; what the services refuse is answered, anything else is logged.
-async function publishDraft({ user, group }, args, ctx) {
-  const authInfo = ctx?.http?.authInfo;
-  if (!mayWrite(user, group, authInfo)) return failure(PUBLISHING_REFUSED);
-  try {
-    const answer = args.confirmation
-      ? await publishChecked(args, user, authInfo?.clientId)
-      : await checkFirst(args, user);
-    return success(answer);
-  } catch (err) {
-    if (isRefusal(err)) return failure(err.message);
-    throw err;
-  }
+function asPublisher(step) {
+  return withIdentity(async ({ user, group }, args, ctx) => {
+    const authInfo = ctx?.http?.authInfo;
+    if (!mayWrite(user, group, authInfo)) return failure(REFUSED);
+    try {
+      return success(await step(args, user, authInfo?.clientId));
+    } catch (err) {
+      if (isRefusal(err)) return refused(err);
+      throw err;
+    }
+  });
 }
 
 function registerPublicationTools(server) {
@@ -293,12 +212,28 @@ function registerPublicationTools(server) {
     {
       title: 'Publish a draft',
       description:
-        'Publishes the open draft of a skill or an expertise, in two calls. Without a confirmation, it runs the publication guard and publishes nothing: show the user each test case before and after, and what the publication warns of, then call again with the confirmation key only once they agree. A difference warns, it never blocks. Publishing changes what LePatron features read at once; it does not open the version to every company (set_audience does).',
+        'Publishes a draft of a skill or an expertise, in two steps. Without a confirmation, it starts the publication guard on the server and publishes nothing: the check replays the test cases of the features that use it, which takes a minute or more, so read it again with read_publication_check until it is done. Then show the user each test case before and after, and what the publication warns of, and call again with the confirmation key only once they agree. A difference warns, it never blocks. Publishing changes what LePatron features read at once; it does not open the version to every company.',
       inputSchema: PUBLISH_INPUT,
-      outputSchema: PUBLISH_ANSWER,
+      outputSchema: ANSWER,
       annotations: OVERWRITING,
     },
-    withIdentity(publishDraft)
+    asPublisher((args, user, application) =>
+      args.confirmation
+        ? publishChecked(args, user, application)
+        : startCheck(args, user)
+    )
+  );
+  server.registerTool(
+    'read_publication_check',
+    {
+      title: 'Read a publication check',
+      description:
+        'Reads the check publish_draft started: still running, or done with each test case before and after and the confirmation key to publish.',
+      inputSchema: CHECK_INPUT,
+      outputSchema: ANSWER,
+      annotations: READ_ONLY,
+    },
+    asPublisher((args, user) => readCheck(args, user))
   );
 }
 
