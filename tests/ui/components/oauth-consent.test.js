@@ -39,6 +39,8 @@ const interaction = (scopes) => ({
   client: { name: 'Claude', registration: 'metadataDocument', host: 'a.dev' },
   account: { name: 'Ada', email: 'ada@example.com' },
   groups: [{ id: 'g1', name: 'Company A' }],
+  // Drafting is offered on the platform company only (ADR 0019).
+  writableGroupIds: scopes.includes('skills:write') ? ['g1'] : [],
   scopes,
   redirectHost: 'a.dev',
 });

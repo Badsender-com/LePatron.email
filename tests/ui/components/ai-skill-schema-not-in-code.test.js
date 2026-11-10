@@ -157,6 +157,7 @@ describe('a draft naming a schema the code lacks', () => {
         '~/components/ai-skill/bs-ai-skill-feature-version-fields.vue': {},
         '~/components/ai-skill/bs-ai-skill-task-version-fields.vue': {},
         '~/components/ai-skill/bs-ai-skill-test-cases.vue': {},
+        '~/helpers/ai-skill-test-cases.js': require('~/helpers/ai-skill-test-cases.js'),
         '~/helpers/ai-skill-categories.js': categories,
       },
     });
