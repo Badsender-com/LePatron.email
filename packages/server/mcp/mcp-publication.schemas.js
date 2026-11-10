@@ -93,6 +93,12 @@ const ANSWER = z.object({
     .describe(
       'Once the check is done: the key to give back to publish this exact draft, within an hour.'
     ),
+  keptOnCopy: z
+    .boolean()
+    .optional()
+    .describe(
+      'On a copy of production (staging, development): the item is kept on the copy, so the next follow of production leaves it as published here.'
+    ),
   next: z.string().optional().describe('What to do next.'),
   warnings: WARNINGS.optional(),
 });

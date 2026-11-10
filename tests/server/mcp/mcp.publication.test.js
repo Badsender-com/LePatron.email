@@ -325,7 +325,11 @@ describe('publishing and opening from an assistant', () => {
 
       const answer = await confirm(client, confirmation);
 
-      expect(answer).toMatchObject({ version: '3.0', published: true });
+      expect(answer).toMatchObject({
+        version: '3.0',
+        published: true,
+        keptOnCopy: false,
+      });
       expect(subjectLines().activeVersion).toEqual({ major: 3, minor: 0 });
       expect(versionOf(subjectLines(), 2, 1).status).toBe('ARCHIVED');
       expect(versionOf(subjectLines(), 3, 0)).toMatchObject({
@@ -354,6 +358,23 @@ describe('publishing and opening from an assistant', () => {
 
       expect(answer.error).toMatch(/differ/i);
       expect(subjectLines().activeVersion).toEqual({ major: 2, minor: 1 });
+    });
+
+    // On a copy, what is published there stays there (ADR 0019).
+    it('keeps on a copy what it publishes there, and says so', async () => {
+      const source = require('../../../packages/server/ai-skill/services/skills-source-client.js');
+      const onCopy = jest.spyOn(source, 'isConfigured').mockReturnValue(true);
+      try {
+        const client = await asAuthor();
+        const { confirmation } = await check(client);
+
+        const answer = await confirm(client, confirmation);
+
+        expect(answer).toMatchObject({ published: true, keptOnCopy: true });
+        expect(subjectLines()).toMatchObject({ keptOnCopy: true });
+      } finally {
+        onCopy.mockRestore();
+      }
     });
 
     // It does not choose, as the back office's batch does not (#1431).

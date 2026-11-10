@@ -13,6 +13,7 @@ const expertiseService = require('../ai-skill/services/expertise.service.js');
 const skillService = require('../ai-skill/services/skill.service.js');
 const publication = require('../ai-skill/services/skills-publication.service.js');
 const guardRuns = require('../ai-skill/services/guard-runs.js');
+const source = require('../ai-skill/services/skills-source-client.js');
 const { readGuardKey, isoOf } = require('../ai-skill/services/guard-key.js');
 const {
   versionLabel: label,
@@ -177,6 +178,9 @@ async function publishChecked(args, user, application) {
   }
   const texts = textsOf(args, draft);
   if (ran.terms !== termsOf(texts)) throw createError(409, TEXTS_CHANGED);
+  // On a copy, what is published there stays there, as the back office's
+  // publication offers by default (ADR 0019).
+  const keptOnCopy = source.isConfigured();
   const { doc, warnings } = await publication.publishVersion(
     {
       ...target,
@@ -187,6 +191,7 @@ async function publishChecked(args, user, application) {
         // On the condition that the draft checked is the one written, up to
         // the write itself (ADR 0014).
         updatedAt: draft.updatedAt,
+        ...(keptOnCopy && { keepOnCopy: true }),
       },
     },
     user
@@ -196,6 +201,7 @@ async function publishChecked(args, user, application) {
     version: label(draft),
     published: true,
     guard: ran.guard,
+    keptOnCopy,
     // What a publication warns of, as on the item's page (ADR 0013).
     warnings: [
       ...warnings,
