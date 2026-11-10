@@ -19,7 +19,7 @@ function createSizedCache({
   sizeOf,
   maxEntry = budget,
   ttlMs = Infinity,
-  now = Date.now,
+  now = () => Date.now(),
 }) {
   const entries = new Map();
   let size = 0;

@@ -73,10 +73,14 @@ describe('relayed images', () => {
     let app;
     let relayedPathOf;
 
-    beforeAll(() => {
-      // Required here: the modules do not exist until #1487 ships them.
-      const relay = require('../../../packages/server/mcp/mcp-relayed-image-address.js');
-      const router = require('../../../packages/server/mcp/mcp-relayed-images.routes.js');
+    beforeEach(() => {
+      // Loaded afresh for each test: the instance keeps the images it fetched.
+      let relay;
+      let router;
+      jest.isolateModules(() => {
+        relay = require('../../../packages/server/mcp/mcp-relayed-image-address.js');
+        router = require('../../../packages/server/mcp/mcp-relayed-images.routes.js');
+      });
       app = express();
       app.use('/api/relayed-images', router);
       relayedPathOf = (url) =>

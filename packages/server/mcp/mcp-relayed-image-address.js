@@ -89,4 +89,45 @@ function isSigned(url, signature) {
   );
 }
 
-module.exports = { relayedUrlOf, isSigned, signingKeyOf, ROUTE };
+const parsedUrl = (url) => {
+  try {
+    return new URL(url);
+  } catch (err) {
+    return null;
+  }
+};
+
+/**
+ * Whether an address is the instance's: its origin compared, so that neither
+ * the case nor a default port written tells them apart. Null for an address
+ * that is none.
+ *
+ * @param {string} url
+ * @returns {boolean|null}
+ */
+function isInstanceOrigin(url) {
+  const parsed = parsedUrl(url);
+  return parsed ? parsed.origin === new URL(siteOrigin()).origin : null;
+}
+
+/**
+ * Whether an address names the instance's own host, whatever its port and
+ * scheme: the instance never fetches from itself. Null for an address that is
+ * none.
+ *
+ * @param {string} url
+ * @returns {boolean|null}
+ */
+function isInstanceHost(url) {
+  const parsed = parsedUrl(url);
+  return parsed ? parsed.hostname === new URL(siteOrigin()).hostname : null;
+}
+
+module.exports = {
+  relayedUrlOf,
+  isSigned,
+  signingKeyOf,
+  isInstanceOrigin,
+  isInstanceHost,
+  ROUTE,
+};
