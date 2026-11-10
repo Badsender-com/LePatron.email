@@ -9,7 +9,7 @@ import {
   skillErrorMessage,
   skillWarningMessage,
 } from '~/helpers/ai-skill-errors.js';
-import { failedCount } from '~/helpers/publication-guard.js';
+import { failedCount, notReplayedOf } from '~/helpers/publication-guard.js';
 import {
   batchNeedsGuard,
   failureReasonKey,
@@ -63,6 +63,9 @@ export default {
     },
     failed() {
       return failedCount(this.guard);
+    },
+    notReplayed() {
+      return notReplayedOf(this.guard || this.plan);
     },
   },
   methods: {
@@ -187,8 +190,26 @@ export default {
               }}
             </p>
             <p v-if="!guard" class="text-caption text--secondary mb-1">
-              {{ $t('aiSkills.publicationGuard.calls', { calls: plan.calls }) }}
+              {{
+                $t('aiSkills.publicationGuard.calls', {
+                  calls: plan.calls,
+                  max: plan.maxCalls,
+                })
+              }}
             </p>
+            <v-alert
+              v-if="notReplayed"
+              type="warning"
+              dense
+              outlined
+              class="mt-2"
+            >
+              {{
+                $t('aiSkills.publicationGuard.notReplayed', {
+                  count: notReplayed,
+                })
+              }}
+            </v-alert>
             <v-alert
               v-if="missing.length"
               type="warning"

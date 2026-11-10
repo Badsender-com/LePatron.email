@@ -60,6 +60,7 @@ function issueGuardKey({ targets, guard }, user) {
       cases: guard.cases.length,
       failed: failedCases(guard.cases),
       missing: guard.missing || [],
+      notReplayed: guard.notReplayed || 0,
     },
   };
   const payload = Buffer.from(JSON.stringify(claims)).toString('base64url');

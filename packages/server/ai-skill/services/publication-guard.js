@@ -31,6 +31,10 @@ const NOT_ARCHIVED = { $ne: SkillStatuses.ARCHIVED };
 const isArchived = (doc) => doc.status === SkillStatuses.ARCHIVED;
 const SOURCE = 'publication.guard';
 
+// The replay is bounded: so many AI calls at most, a few at a time.
+const MAX_REPLAY_CALLS = 60;
+const REPLAY_CONCURRENCY = 3;
+
 // Why a replay gave no output, as a code the back office words.
 const REPLAY_ERRORS = Object.freeze({
   CONTRACT: 'OUTPUT_CONTRACT',
@@ -76,11 +80,48 @@ async function planRuns({ skillIds, drafts }) {
     }
     runs.push({ skill, before: active, after, cases });
   });
-  const calls = runs.reduce(
-    (total, run) => total + run.cases.length * (run.before ? 2 : 1),
-    0
+  return { ...withinCap(runs), missing, maxCalls: MAX_REPLAY_CALLS };
+}
+
+// The runs cut to the cases the cap allows, in order, and how many are left
+// out: a case costs two calls with a before, one without.
+function withinCap(runs) {
+  let calls = 0;
+  let notReplayed = 0;
+  const kept = runs
+    .map((run) => {
+      const cost = run.before ? 2 : 1;
+      const cases = run.cases.filter(() => {
+        if (calls + cost > MAX_REPLAY_CALLS) {
+          notReplayed += 1;
+          return false;
+        }
+        calls += cost;
+        return true;
+      });
+      return { ...run, cases };
+    })
+    .filter((run) => run.cases.length);
+  return { runs: kept, calls, notReplayed };
+}
+
+// Runs `task` on each item, `limit` at a time, the results in the items'
+// order.
+async function eachLimited(items, limit, task) {
+  const results = new Array(items.length);
+  let next = 0;
+  const worker = async () => {
+    while (next < items.length) {
+      const index = next;
+      next += 1;
+      // eslint-disable-next-line no-await-in-loop
+      results[index] = await task(items[index]);
+    }
+  };
+  await Promise.all(
+    Array.from({ length: Math.min(limit, items.length) }, worker)
   );
-  return { runs, missing, calls };
+  return results;
 }
 
 /**
@@ -182,7 +223,7 @@ async function runOnce({ skillId, version, input, groupId }) {
 }
 
 /**
- * Replay the cases of a plan, one call after the other. `overrides`: the
+ * Replay the cases of a plan, a few calls at a time. `overrides`: the
  * expertises published, `{ id, version }`, swapped in after.
  *
  * @returns {Promise<Array<{ skillId, name, notes, input,
@@ -202,40 +243,50 @@ async function replay({ runs, overrides = [] }) {
         }).lean()
       : []),
   ];
-  const cases = [];
-  for (const run of runs) {
-    const { skillId } = run.skill;
-    const mix = expertiseMix(skillId, expertises, overrides);
-    for (const testCase of run.cases) {
-      const before = run.before
-        ? await runOnce({
-            skillId,
-            version: run.before,
-            input: compose(testCase.input, mix.before),
-            groupId,
-          })
-        : null;
-      const after = await runOnce({
-        skillId,
-        version: run.after,
-        input: compose(testCase.input, mix.after),
-        groupId,
-      });
-      cases.push({
-        skillId,
-        name: testCase.name,
-        notes: testCase.notes || '',
-        input: testCase.input,
-        before: before ? before.result : null,
-        after: after.result,
-        contract: {
-          before: before ? before.contract : null,
-          after: after.contract,
-        },
-      });
-    }
-  }
-  return cases;
+  const jobs = runs.flatMap((run) => {
+    const mix = expertiseMix(run.skill.skillId, expertises, overrides);
+    return run.cases.map((testCase) => ({ run, mix, testCase }));
+  });
+  return eachLimited(jobs, REPLAY_CONCURRENCY, ({ run, mix, testCase }) =>
+    replayCase({ run, mix, testCase, groupId })
+  );
 }
 
-module.exports = { planReplay, planRuns, replay, REPLAY_ERRORS };
+// One case, before then after.
+async function replayCase({ run, mix, testCase, groupId }) {
+  const { skillId } = run.skill;
+  const before = run.before
+    ? await runOnce({
+        skillId,
+        version: run.before,
+        input: compose(testCase.input, mix.before),
+        groupId,
+      })
+    : null;
+  const after = await runOnce({
+    skillId,
+    version: run.after,
+    input: compose(testCase.input, mix.after),
+    groupId,
+  });
+  return {
+    skillId,
+    name: testCase.name,
+    notes: testCase.notes || '',
+    input: testCase.input,
+    before: before ? before.result : null,
+    after: after.result,
+    contract: {
+      before: before ? before.contract : null,
+      after: after.contract,
+    },
+  };
+}
+
+module.exports = {
+  planReplay,
+  planRuns,
+  replay,
+  MAX_REPLAY_CALLS,
+  REPLAY_ERRORS,
+};

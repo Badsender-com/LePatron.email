@@ -4,7 +4,7 @@ import { CheckCircle2, ShieldCheck } from 'lucide-vue';
 import { aiVersionAction } from '~/helpers/ai-skill-routes.js';
 import { skillErrorMessage } from '~/helpers/ai-skill-errors.js';
 import BsAiGuardCases from '~/components/ai-skill/bs-ai-guard-cases.vue';
-import { failedCount } from '~/helpers/publication-guard.js';
+import { failedCount, notReplayedOf } from '~/helpers/publication-guard.js';
 
 // The publication guard (ADR 0019): opened when the server asks for it on a
 // version a feature uses. Says what it would replay, replays it on demand,
@@ -40,6 +40,9 @@ export default {
     },
     failed() {
       return failedCount(this.guard);
+    },
+    notReplayed() {
+      return notReplayedOf(this.guard || this.plan);
     },
   },
   methods: {
@@ -117,8 +120,16 @@ export default {
       {{ $t('aiSkills.publicationGuard.usedBy', { features: usedByLabel }) }}
     </p>
     <p v-if="!guard" class="text-caption text--secondary mb-1">
-      {{ $t('aiSkills.publicationGuard.calls', { calls: plan.calls }) }}
+      {{
+        $t('aiSkills.publicationGuard.calls', {
+          calls: plan.calls,
+          max: plan.maxCalls,
+        })
+      }}
     </p>
+    <v-alert v-if="notReplayed" type="warning" dense outlined class="mt-2">
+      {{ $t('aiSkills.publicationGuard.notReplayed', { count: notReplayed }) }}
+    </v-alert>
     <v-alert v-if="missing.length" type="warning" dense outlined class="mt-2">
       {{
         $t('aiSkills.publicationGuard.missing', { skills: missing.join(', ') })

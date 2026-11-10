@@ -12,6 +12,7 @@ const {
   caseOutcome,
   failedCount,
   outputText,
+  notReplayedOf,
 } = require('../../../packages/ui/helpers/publication-guard');
 const {
   aiVersionAction,
@@ -40,14 +41,24 @@ describe('the publication guard', () => {
           message: 'SKILL_PUBLICATION_GUARD_REQUIRED',
           usedBy: [SUBJECTS],
           calls: 4,
+          maxCalls: 60,
+          notReplayed: 2,
           missing: ['redaction.preheader-ideas'],
         })
       )
     ).toEqual({
       usedBy: [SUBJECTS],
       calls: 4,
+      maxCalls: 60,
+      notReplayed: 2,
       missing: ['redaction.preheader-ideas'],
     });
+  });
+
+  it('counts the cases left out past the cap of calls', () => {
+    expect(notReplayedOf({ notReplayed: 2 })).toBe(2);
+    expect(notReplayedOf({})).toBe(0);
+    expect(notReplayedOf(null)).toBe(0);
   });
 
   it('is not asked for by any other error', () => {
@@ -108,6 +119,7 @@ describe('the publication guard', () => {
       'title',
       'usedBy',
       'calls',
+      'notReplayed',
       'missing',
       'run',
       'before',

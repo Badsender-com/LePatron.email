@@ -24,6 +24,8 @@ const GuardRecordSchema = new Schema(
     failed: { type: Number, default: 0 },
     // The feature skills concerned that had no test case.
     missing: { type: [String], default: [] },
+    // The cases left out past the cap of AI calls a replay makes.
+    notReplayed: { type: Number, default: 0 },
   },
   { _id: false }
 );

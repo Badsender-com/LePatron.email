@@ -143,7 +143,13 @@ async function planOf(targets) {
  */
 async function planMany(targets) {
   const { usedBy, plan } = await planOf(targets);
-  return { usedBy, calls: plan.calls, missing: plan.missing };
+  return {
+    usedBy,
+    calls: plan.calls,
+    maxCalls: plan.maxCalls,
+    notReplayed: plan.notReplayed,
+    missing: plan.missing,
+  };
 }
 
 /**
@@ -162,7 +168,11 @@ async function guardMany(targets, user) {
     .filter((t) => t.kind === 'expertise')
     .map(({ id, version }) => ({ id, version }));
   const cases = await replay({ runs: plan.runs, overrides });
-  const guard = { cases, missing: plan.missing };
+  const guard = {
+    cases,
+    missing: plan.missing,
+    notReplayed: plan.notReplayed,
+  };
   const read = targets.map((target) => {
     const doc = docs.get(keyOf(target));
     const version =
@@ -172,6 +182,7 @@ async function guardMany(targets, user) {
   return {
     usedBy,
     calls: plan.calls,
+    maxCalls: plan.maxCalls,
     ...guard,
     key: issueGuardKey({ targets: read, guard }, user),
   };

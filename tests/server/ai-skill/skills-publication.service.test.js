@@ -344,6 +344,70 @@ describe('publishing what a feature uses', () => {
       ]);
     });
 
+    // The replay is bounded (ADR 0019): a cap of calls, said in the plan,
+    // and a few calls at a time.
+    describe('bounded', () => {
+      const withCases = (count) => {
+        const cases = Array.from({ length: count }, (_, i) => ({
+          ...CASE,
+          name: `Case ${i + 1}`,
+        }));
+        store.seed({
+          ...SEED,
+          skills: [
+            {
+              ...subjectIdeas,
+              versions: subjectIdeas.versions.map((v) => ({
+                ...v,
+                testCases: cases,
+              })),
+            },
+            preheaderIdeas,
+          ],
+        });
+      };
+      const IDEAS = {
+        kind: 'skill',
+        id: SUBJECT_IDEAS,
+        version: { major: 1, minor: 3 },
+      };
+
+      it('makes so many calls at most, and says in the plan how many cases it leaves out', async () => {
+        withCases(31);
+
+        expect(await publication.planPublication(IDEAS)).toMatchObject({
+          calls: 60,
+          maxCalls: 60,
+          notReplayed: 1,
+        });
+        const guard = await publication.guardPublication(IDEAS, ALICE);
+        expect(guard.cases).toHaveLength(30);
+        expect(guard.notReplayed).toBe(1);
+        expect(provider.chatComplete).toHaveBeenCalledTimes(60);
+      });
+
+      it('makes a few calls at a time', async () => {
+        withCases(6);
+        let running = 0;
+        let most = 0;
+        provider.chatComplete.mockImplementation(async () => {
+          running += 1;
+          most = Math.max(most, running);
+          await new Promise((resolve) => setTimeout(resolve, 5));
+          running -= 1;
+          return { content: JSON.stringify({ text: 'fine' }) };
+        });
+
+        const guard = await publication.guardPublication(IDEAS, ALICE);
+
+        expect(guard.cases.map((c) => c.name)).toEqual(
+          Array.from({ length: 6 }, (_, i) => `Case ${i + 1}`)
+        );
+        expect(most).toBeGreaterThan(1);
+        expect(most).toBeLessThanOrEqual(3);
+      });
+    });
+
     it('names the feature skills concerned that have no test case', async () => {
       const guard = await publication.guardPublication(
         {
@@ -1118,6 +1182,8 @@ describe('publishing what a feature uses', () => {
           },
         ],
         calls: 2,
+        maxCalls: 60,
+        notReplayed: 0,
         missing: [PREHEADER_IDEAS],
       });
       expect(provider.chatComplete).not.toHaveBeenCalled();

@@ -23,8 +23,9 @@ const serviceFor = (kind) =>
 
 /**
  * What the guard would replay, without calling the AI: the features that use
- * what is published, the number of AI calls, the feature skills without a
- * test case. Read before the person starts the replay.
+ * what is published, the number of AI calls and the most it makes, the cases
+ * left out past that cap, the feature skills without a test case. Read
+ * before the person starts the replay.
  */
 async function planPublication({ kind, id, version }) {
   const { manifests } = await loadUse({ kind, id, version });
@@ -33,6 +34,8 @@ async function planPublication({ kind, id, version }) {
   return {
     usedBy: manifests.map(describeFeature),
     calls: plan.calls,
+    maxCalls: plan.maxCalls,
+    notReplayed: plan.notReplayed,
     missing: plan.missing,
   };
 }
@@ -56,10 +59,15 @@ async function guardPublication({ kind, id, version }, user) {
     overrides: kind === 'expertise' ? [{ id, version }] : [],
   });
   const { updatedAt } = findVersion(doc, version.major, version.minor);
-  const guard = { cases, missing: plan.missing };
+  const guard = {
+    cases,
+    missing: plan.missing,
+    notReplayed: plan.notReplayed,
+  };
   return {
     usedBy: manifests.map(describeFeature),
     calls: plan.calls,
+    maxCalls: plan.maxCalls,
     ...guard,
     key: issueGuardKey(
       { targets: [{ kind, id, version, updatedAt }], guard },
@@ -79,6 +87,7 @@ function recordOf(shown, { application }, user, decision) {
     cases: shown.cases,
     failed: shown.failed,
     missing: asList(shown.missing),
+    notReplayed: shown.notReplayed || 0,
   };
 }
 

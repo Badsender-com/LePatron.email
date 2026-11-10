@@ -15,8 +15,15 @@ export function guardRequired(err) {
   return {
     usedBy: Array.isArray(data.usedBy) ? data.usedBy : [],
     calls: Number(data.calls) || 0,
+    maxCalls: Number(data.maxCalls) || 0,
+    notReplayed: Number(data.notReplayed) || 0,
     missing: Array.isArray(data.missing) ? data.missing : [],
   };
+}
+
+// The test cases the replay leaves out past its cap of AI calls.
+export function notReplayedOf(guardOrPlan) {
+  return Number((guardOrPlan || {}).notReplayed) || 0;
 }
 
 /**
