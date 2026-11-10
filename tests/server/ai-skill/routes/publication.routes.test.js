@@ -20,7 +20,14 @@ jest.mock(
   })
 );
 
+// The guard runs as a task of the server (guard-runs.js), tested on its own.
+jest.mock('../../../../packages/server/ai-skill/services/guard-runs', () => ({
+  startGuard: jest.fn(),
+  readGuard: jest.fn(),
+}));
+
 const createError = require('http-errors');
+const guardRuns = require('../../../../packages/server/ai-skill/services/guard-runs');
 const { ROLES } = require('../../../../packages/shared/access/roles.js');
 const express = require('express');
 const request = require('../../../helpers/local-request.js');
@@ -92,22 +99,31 @@ describe('the publication guard on the back office', () => {
     expect(publication.planPublication).not.toHaveBeenCalled();
   });
 
-  it('runs the guard on a version', async () => {
-    publication.guardPublication.mockResolvedValue(GUARD);
+  // No request waits for the AI (ADR 0019): the page reads the run again.
+  it('starts the guard on a version on the server, and answers at once', async () => {
+    const plan = { usedBy: GUARD.usedBy, calls: 2, missing: [] };
+    const RUN = { id: 'run', status: 'running', ...plan };
+    publication.planPublication.mockResolvedValue(plan);
+    guardRuns.startGuard.mockResolvedValue(RUN);
+    const asked = {
+      kind: 'skill',
+      id: 'redaction.subject-ideas',
+      version: { major: 1, minor: 3 },
+    };
 
     const res = await request(makeApp()).post(
       '/api/ai-skills/redaction.subject-ideas/versions/1.3/guard'
     );
 
-    expect(res.body).toEqual(GUARD);
-    expect(publication.guardPublication).toHaveBeenCalledWith(
-      {
-        kind: 'skill',
-        id: 'redaction.subject-ideas',
-        version: { major: 1, minor: 3 },
-      },
+    expect(res.body).toEqual(RUN);
+    expect(guardRuns.startGuard).toHaveBeenCalledWith(
+      { targets: [asked], plan, run: expect.any(Function) },
       ADMIN
     );
+    expect(publication.guardPublication).not.toHaveBeenCalled();
+    publication.guardPublication.mockResolvedValue(GUARD);
+    await guardRuns.startGuard.mock.calls[0][0].run();
+    expect(publication.guardPublication).toHaveBeenCalledWith(asked, ADMIN);
   });
 
   // What the guard showed is the server's (ADR 0019): only its key goes.
@@ -221,7 +237,7 @@ describe('the publication guard on the back office', () => {
   describe.each(Object.values(ROLES))('for a %s', (role) => {
     const ROUTES = [
       ['get', versionRoute('publication'), 'planPublication'],
-      ['post', versionRoute('guard'), 'guardPublication'],
+      ['post', versionRoute('guard'), 'planPublication'],
       ['post', versionRoute('cancel-publication'), 'cancelPublication'],
       ['post', versionRoute('activate'), 'publishVersion'],
       [
@@ -232,7 +248,7 @@ describe('the publication guard on the back office', () => {
       [
         'post',
         '/api/ai-skills/redaction.subject-ideas/versions/1.3/guard',
-        'guardPublication',
+        'planPublication',
       ],
       [
         'post',

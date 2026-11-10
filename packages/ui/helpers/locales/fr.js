@@ -2093,6 +2093,14 @@ export default {
         'La version n\'est pas écrite sous la forme majeure.mineure.',
       SKILL_PUBLICATION_GUARD_INVALID:
         'Cette vérification ne vaut plus pour cette version : relancez-la.',
+      SKILL_PUBLICATION_GUARD_NOT_FOUND:
+        'Cette vérification n\'est plus conservée : relancez-la.',
+      SKILL_PUBLICATION_GUARDS_BUSY:
+        'Vous avez déjà {max} vérifications en cours : attendez qu\'une se termine.',
+      SKILL_PUBLICATION_GUARD_FAILED:
+        'La vérification n\'a pas pu aboutir : relancez-la.',
+      SKILL_PUBLICATION_GUARD_INTERRUPTED:
+        'La vérification a été interrompue sur le serveur : relancez-la.',
       SKILLS_PUBLICATION_SELECTION_EMPTY:
         'Sélectionnez au moins une skill ou une expertise.',
       SKILLS_PUBLICATION_SELECTION_TOO_BIG:
@@ -2144,7 +2152,7 @@ export default {
       missing: 'Sans cas de test, donc non vérifiée(s) : {skills}.',
       noCase: 'Aucun cas de test à rejouer : relisez la version avant de la publier.',
       run: 'Lancer la vérification',
-      running: 'Vérification en cours, trois appels à la fois au plus…',
+      running: 'Vérification en cours sur le serveur, trois appels à la fois au plus : comptez une minute ou plus…',
       summary: '{cases} cas rejoué(s), {failed} en écart.',
       expected: 'Ce qu\'une bonne sortie doit contenir',
       before: 'Version active',

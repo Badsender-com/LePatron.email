@@ -47,7 +47,7 @@ On the draft, **Publish** first opens the usual confirmation (**Activate this ve
 
 Before this dialog opens, LePatron checks what costs nothing: a draft changed since the page read it, a major version without a changelog and release notes, a schema missing from the code. A publication refused anyway is refused at once, without any AI call.
 
-Click **Run the check**. The calls run three at a time at most.
+Click **Run the check**. The check runs on the server, three calls at a time at most, and the window shows it once it is done: count a minute or more. Closing the window stops nothing on the server, but the check is then to run again.
 
 ### Reading the replay
 

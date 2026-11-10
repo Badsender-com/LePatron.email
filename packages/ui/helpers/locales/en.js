@@ -2065,6 +2065,14 @@ export default {
         'The version is not written as major.minor.',
       SKILL_PUBLICATION_GUARD_INVALID:
         'This check does not hold for this version any more: check it again.',
+      SKILL_PUBLICATION_GUARD_NOT_FOUND:
+        'This check is no longer kept: run it again.',
+      SKILL_PUBLICATION_GUARDS_BUSY:
+        'You already have {max} checks running: wait for one to end.',
+      SKILL_PUBLICATION_GUARD_FAILED:
+        'The check could not end: run it again.',
+      SKILL_PUBLICATION_GUARD_INTERRUPTED:
+        'The check was interrupted on the server: run it again.',
       SKILLS_PUBLICATION_SELECTION_EMPTY:
         'Select at least one skill or expertise.',
       SKILLS_PUBLICATION_SELECTION_TOO_BIG:
@@ -2116,7 +2124,7 @@ export default {
       missing: 'No test case, so not checked: {skills}.',
       noCase: 'No test case to replay: read the version again before publishing it.',
       run: 'Run the check',
-      running: 'Checking, three calls at a time at most…',
+      running: 'Checking on the server, three calls at a time at most: this takes a minute or more…',
       summary: '{cases} case(s) replayed, {failed} with a difference.',
       expected: 'What a good output should hold',
       before: 'Active version',

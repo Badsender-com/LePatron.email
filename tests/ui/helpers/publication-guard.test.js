@@ -14,8 +14,12 @@ const {
   outputText,
   notReplayedOf,
   expectedText,
+  followGuard,
+  guardFailure,
+  GUARD_POLL_MS,
 } = require('../../../packages/ui/helpers/publication-guard');
 const {
+  aiSkillsGuardRun,
   aiVersionAction,
 } = require('../../../packages/ui/helpers/ai-skill-routes');
 
@@ -102,6 +106,80 @@ describe('the publication guard', () => {
     );
     expect(outputText({ error: 'CALL_FAILED' })).toBe('');
     expect(outputText(null)).toBe('');
+  });
+
+  // The guard runs on the server (ADR 0019): the page reads it again.
+  describe('a run on the server', () => {
+    const running = { id: 'run', status: 'running' };
+    const done = { id: 'run', status: 'done', cases: [], key: 'k' };
+
+    it('is read again until it is no longer running', async () => {
+      const read = jest
+        .fn()
+        .mockResolvedValueOnce(running)
+        .mockResolvedValueOnce(done);
+      const wait = jest.fn(async () => undefined);
+
+      expect(await followGuard(running, read, { wait })).toEqual(done);
+      expect(read).toHaveBeenCalledTimes(2);
+      expect(read).toHaveBeenCalledWith('run');
+      expect(wait).toHaveBeenCalledWith(GUARD_POLL_MS);
+    });
+
+    it('is answered as it is when it is already done', async () => {
+      const read = jest.fn();
+
+      expect(await followGuard(done, read)).toEqual(done);
+      expect(read).not.toHaveBeenCalled();
+    });
+
+    it('is no longer read once the dialog lets it go', async () => {
+      const read = jest.fn().mockResolvedValue(running);
+      let open = true;
+      const wait = jest.fn(async () => {
+        open = false;
+      });
+
+      const followed = await followGuard(running, read, {
+        wait,
+        stopped: () => !open,
+      });
+
+      expect(followed).toBeNull();
+      expect(read).not.toHaveBeenCalled();
+    });
+
+    it('says why it failed as the server would', () => {
+      expect(
+        guardFailure({
+          status: 'failed',
+          code: 'SKILL_PUBLICATION_GUARD_FAILED',
+        })
+      ).toEqual({
+        response: { data: { message: 'SKILL_PUBLICATION_GUARD_FAILED' } },
+      });
+      expect(guardFailure(done)).toBeNull();
+    });
+
+    it('is read at its own route', () => {
+      expect(aiSkillsGuardRun('6000000001')).toBe(
+        '/ai-skills/publications/guards/6000000001'
+      );
+    });
+
+    it.each([
+      'packages/ui/components/ai-skill/bs-ai-publication-guard-modal.vue',
+      'packages/ui/components/ai-skill/bs-ai-publish-drafts.vue',
+    ])('%s reads the run again until it is done', (file) => {
+      const source = fs.readFileSync(
+        path.join(__dirname, '../../..', file),
+        'utf8'
+      );
+
+      expect(source).toMatch(/followGuard\(/);
+      expect(source).toMatch(/aiSkillsGuardRun\(id\)/);
+      expect(source).toMatch(/@close="letGo"/);
+    });
   });
 
   it('reaches the routes of a skill and of an expertise version', () => {

@@ -4,12 +4,20 @@ import { CheckCircle2, Rocket, ShieldCheck } from 'lucide-vue';
 import BsModalConfirm from '~/components/modal-confirm.vue';
 import BsAiGuardCases from '~/components/ai-skill/bs-ai-guard-cases.vue';
 import { PAGE, SHOW_SNACKBAR } from '~/store/page.js';
-import { aiSkillsPublications } from '~/helpers/ai-skill-routes.js';
+import {
+  aiSkillsGuardRun,
+  aiSkillsPublications,
+} from '~/helpers/ai-skill-routes.js';
 import {
   skillErrorMessage,
   skillWarningMessage,
 } from '~/helpers/ai-skill-errors.js';
-import { failedCount, notReplayedOf } from '~/helpers/publication-guard.js';
+import {
+  failedCount,
+  followGuard,
+  guardFailure,
+  notReplayedOf,
+} from '~/helpers/publication-guard.js';
 import {
   batchNeedsGuard,
   failureReasonKey,
@@ -21,7 +29,8 @@ import {
 
 // Several drafts published at once from a list (ADR 0019): the server finds
 // the draft of each selected item, one guard covers everything they touch
-// when a feature uses one, then each is published and the report says how.
+// when a feature uses one, run on the server and read again until it is
+// done, then each is published and the report says how.
 export default {
   name: 'BsAiPublishDrafts',
   components: {
@@ -46,6 +55,8 @@ export default {
       keepOnCopy: true,
       busy: false,
       error: '',
+      // Which opening of the dialog a run being read belongs to.
+      opening: 0,
     };
   },
   computed: {
@@ -120,12 +131,30 @@ export default {
         guard: null,
         report: null,
         keepOnCopy: true,
+        opening: this.opening + 1,
       });
       this.$refs.modal.open();
       this.plan = await this.post('plan');
     },
+    // Closed, the dialog stops reading the run; the server keeps it.
+    letGo() {
+      this.opening += 1;
+    },
     async runGuard() {
-      this.guard = await this.post('guard');
+      const { opening } = this;
+      const run = await this.call(async () =>
+        followGuard(
+          await this.$axios.$post(aiSkillsPublications('guard'), {
+            items: this.items,
+          }),
+          (id) => this.$axios.$get(aiSkillsGuardRun(id)),
+          { stopped: () => opening !== this.opening }
+        )
+      );
+      if (!run) return;
+      const failure = guardFailure(run);
+      if (failure) this.error = skillErrorMessage(this, failure);
+      else this.guard = run;
     },
     async publish() {
       const report = await this.post(null, {
@@ -161,6 +190,8 @@ export default {
       :title="$t('aiSkills.publishDrafts.title')"
       :is-form="true"
       modal-width="900"
+      @cancel="letGo"
+      @close="letGo"
     >
       <template v-if="report">
         <p class="text-body-2 font-weight-medium mb-2">

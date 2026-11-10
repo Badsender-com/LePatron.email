@@ -47,7 +47,7 @@ Sur le brouillon, **Publier** ouvre d'abord la confirmation habituelle (**Active
 
 Avant d'ouvrir cette fenêtre, LePatron vérifie ce qui ne coûte rien : un brouillon modifié depuis que la page l'a lu, une version majeure sans changelog ni notes de version, un schéma absent du code. Une publication refusée de toute façon l'est tout de suite, sans appel à l'IA.
 
-Cliquer sur **Lancer la vérification**. Les appels se font trois à la fois au plus.
+Cliquer sur **Lancer la vérification**. La vérification tourne sur le serveur, trois appels à la fois au plus, et la fenêtre l'affiche une fois terminée : comptez une minute ou plus. Fermer la fenêtre n'arrête rien sur le serveur, mais la vérification est alors à relancer.
 
 ### Lire le rejeu
 

@@ -38,6 +38,8 @@ skillsRouter.post('/follow', skillsFollow.followNow);
 // Several drafts at once, skills and expertises alike (ADR 0019).
 skillsRouter.post('/publications/plan', publicationBatch.plan);
 skillsRouter.post('/publications/guard', publicationBatch.guard);
+// A run of the guard, of one version or of a batch, read until it is done.
+skillsRouter.get('/publications/guards/:guardId', publicationBatch.readGuard);
 skillsRouter.post('/publications/cancel', publicationBatch.cancel);
 skillsRouter.post('/publications', publicationBatch.publish);
 

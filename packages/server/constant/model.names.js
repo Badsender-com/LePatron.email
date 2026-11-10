@@ -33,6 +33,8 @@ module.exports = Object.freeze({
   // A copy following production (ADR 0019)
   SkillsReadTokenModel: 'SkillsReadToken',
   SkillsFollowModel: 'SkillsFollow',
+  // A run of the publication guard, as a task of the server (ADR 0019)
+  PublicationGuardRunModel: 'PublicationGuardRun',
   // AI Playground
   AIPlaygroundScenarioModel: 'AIPlaygroundScenario',
   AIPlaygroundRunModel: 'AIPlaygroundRun',

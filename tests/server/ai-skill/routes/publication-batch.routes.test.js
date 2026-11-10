@@ -16,6 +16,11 @@ jest.mock(
     cancelMany: jest.fn(),
   })
 );
+// The guard runs as a task of the server (guard-runs.js), tested on its own.
+jest.mock('../../../../packages/server/ai-skill/services/guard-runs', () => ({
+  startGuard: jest.fn(),
+  readGuard: jest.fn(),
+}));
 // Whether this instance is a copy of production (ADR 0019).
 const copy = { configured: true };
 jest.mock(
@@ -27,6 +32,7 @@ const express = require('express');
 const { ROLES } = require('../../../../packages/shared/access/roles.js');
 const request = require('../../../helpers/local-request.js');
 const publication = require('../../../../packages/server/ai-skill/services/publication-batch');
+const guardRuns = require('../../../../packages/server/ai-skill/services/guard-runs');
 const {
   skillsRouter,
 } = require('../../../../packages/server/ai-skill/ai-skill.routes');
@@ -94,15 +100,42 @@ describe('several drafts at once, on the back office', () => {
     expect(publication.draftsToPublish).toHaveBeenCalledWith(ITEMS);
   });
 
-  it('runs one guard over the drafts', async () => {
-    publication.guardMany.mockResolvedValue(GUARD);
+  // No request waits for the AI (ADR 0019): the page reads the run again.
+  it('starts one guard over the drafts on the server, and answers at once', async () => {
+    const plan = { usedBy: [], calls: 2, missing: [] };
+    const RUN = { id: 'run', status: 'running', ...plan };
+    publication.draftsToPublish.mockResolvedValue({
+      targets: TARGETS,
+      skipped: [],
+    });
+    publication.planMany.mockResolvedValue(plan);
+    guardRuns.startGuard.mockResolvedValue(RUN);
 
     const res = await request(makeApp())
       .post('/api/ai-skills/publications/guard')
       .send({ items: ITEMS });
 
-    expect(res.body).toEqual(GUARD);
+    expect(res.body).toEqual(RUN);
+    expect(guardRuns.startGuard).toHaveBeenCalledWith(
+      { targets: TARGETS, plan, run: expect.any(Function) },
+      ADMIN
+    );
+    expect(publication.guardMany).not.toHaveBeenCalled();
+    publication.guardMany.mockResolvedValue(GUARD);
+    await guardRuns.startGuard.mock.calls[0][0].run();
     expect(publication.guardMany).toHaveBeenCalledWith(TARGETS, ADMIN);
+  });
+
+  it('reads a run of the guard for the person who started it', async () => {
+    const RUN = { id: 'run', status: 'done', ...GUARD };
+    guardRuns.readGuard.mockResolvedValue(RUN);
+
+    const res = await request(makeApp()).get(
+      '/api/ai-skills/publications/guards/run'
+    );
+
+    expect(res.body).toEqual(RUN);
+    expect(guardRuns.readGuard).toHaveBeenCalledWith('run', ADMIN);
   });
 
   // What the guard showed is the server's (ADR 0019): only its key goes.
@@ -217,7 +250,7 @@ describe('several drafts at once, on the back office', () => {
 
     it.each([
       ['plan', 'planMany'],
-      ['guard', 'guardMany'],
+      ['guard', 'planMany'],
       ['cancel', 'cancelMany'],
       ['', 'publishMany'],
     ])(
@@ -238,5 +271,18 @@ describe('several drafts at once, on the back office', () => {
         }
       }
     );
+
+    it(`${
+      allowed ? 'reaches' : 'is refused'
+    } the read of a run of the guard`, async () => {
+      guardRuns.readGuard.mockResolvedValue({ id: 'run', status: 'running' });
+
+      const res = await request(makeApp({ id: 'someone', role })).get(
+        '/api/ai-skills/publications/guards/run'
+      );
+
+      expect(res.status).toBe(allowed ? 200 : 401);
+      expect(guardRuns.readGuard).toHaveBeenCalledTimes(allowed ? 1 : 0);
+    });
   });
 });

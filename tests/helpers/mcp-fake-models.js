@@ -81,6 +81,8 @@ const MODELS = {
   // A copy following production (ADR 0019).
   readTokens: 'SkillsReadTokens',
   follows: 'SkillsFollows',
+  // The publication guard, as a task of the server (ADR 0019).
+  guardRuns: 'PublicationGuardRuns',
 };
 
 // An ObjectId once `structuredClone` copied it: its fields, not its class.

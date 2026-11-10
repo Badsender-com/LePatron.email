@@ -4,6 +4,7 @@ const asyncHandler = require('express-async-handler');
 const createError = require('http-errors');
 const ERROR_CODES = require('../../constant/error-codes.js');
 const { guardKeyIn } = require('../services/guard-key.js');
+const guardRuns = require('../services/guard-runs.js');
 const { assertCopy } = require('../services/skills-copy.service.js');
 const publication = require('../services/publication-batch.js');
 
@@ -49,9 +50,22 @@ module.exports = {
     res.json({ targets, skipped, ...plan });
   }),
 
+  // Started on the server, answered at once (guard-runs.js).
   guard: asyncHandler(async (req, res) => {
     const { targets } = await publication.draftsToPublish(itemsOf(req));
-    res.json(await publication.guardMany(targets, req.user));
+    const plan = await publication.planMany(targets);
+    res.json(
+      await guardRuns.startGuard(
+        { targets, plan, run: () => publication.guardMany(targets, req.user) },
+        req.user
+      )
+    );
+  }),
+
+  // A run of the guard, of one version or of a batch, as its person reads
+  // it again until it is done.
+  readGuard: asyncHandler(async (req, res) => {
+    res.json(await guardRuns.readGuard(req.params.guardId, req.user));
   }),
 
   // The key the guard answered rides along, never what it showed: the

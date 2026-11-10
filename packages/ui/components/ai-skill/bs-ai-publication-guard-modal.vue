@@ -1,14 +1,23 @@
 <script>
 import BsModalConfirm from '~/components/modal-confirm.vue';
 import { CheckCircle2, ShieldCheck } from 'lucide-vue';
-import { aiVersionAction } from '~/helpers/ai-skill-routes.js';
+import {
+  aiSkillsGuardRun,
+  aiVersionAction,
+} from '~/helpers/ai-skill-routes.js';
 import { skillErrorMessage } from '~/helpers/ai-skill-errors.js';
 import BsAiGuardCases from '~/components/ai-skill/bs-ai-guard-cases.vue';
-import { failedCount, notReplayedOf } from '~/helpers/publication-guard.js';
+import {
+  failedCount,
+  followGuard,
+  guardFailure,
+  notReplayedOf,
+} from '~/helpers/publication-guard.js';
 
 // The publication guard (ADR 0019): opened when the server asks for it on a
-// version a feature uses. Says what it would replay, replays it on demand,
-// shows each case before and after, then publishes or records the cancel.
+// version a feature uses. Says what it would replay, starts the replay on the
+// server and reads it again until it is done, shows each case before and
+// after, then publishes or records the cancel.
 export default {
   name: 'BsAiPublicationGuardModal',
   components: {
@@ -29,6 +38,8 @@ export default {
       guard: null,
       busy: false,
       error: '',
+      // Which opening of the dialog a run being read belongs to.
+      opening: 0,
     };
   },
   computed: {
@@ -54,8 +65,13 @@ export default {
         guard: null,
         busy: false,
         error: '',
+        opening: this.opening + 1,
       });
       this.$refs.modal.open();
+    },
+    // Closed, the dialog stops reading the run; the server keeps it.
+    letGo() {
+      this.opening += 1;
     },
     route(action) {
       return aiVersionAction(
@@ -79,9 +95,18 @@ export default {
       }
     },
     async runGuard() {
-      this.guard = await this.call(() =>
-        this.$axios.$post(this.route('guard'))
+      const { opening } = this;
+      const run = await this.call(async () =>
+        followGuard(
+          await this.$axios.$post(this.route('guard')),
+          (id) => this.$axios.$get(aiSkillsGuardRun(id)),
+          { stopped: () => opening !== this.opening }
+        )
       );
+      if (!run) return;
+      const failure = guardFailure(run);
+      if (failure) this.error = skillErrorMessage(this, failure);
+      else this.guard = run;
     },
     async publish() {
       const doc = await this.call(() =>
@@ -114,6 +139,8 @@ export default {
     :title="$t('aiSkills.publicationGuard.title')"
     :is-form="true"
     modal-width="900"
+    @cancel="letGo"
+    @close="letGo"
   >
     <p class="text-body-2 mb-2">{{ $t('aiSkills.publicationGuard.intro') }}</p>
     <p class="text-body-2 mb-1">

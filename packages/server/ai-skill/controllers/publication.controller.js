@@ -4,12 +4,14 @@ const asyncHandler = require('express-async-handler');
 const createError = require('http-errors');
 const ERROR_CODES = require('../../constant/error-codes.js');
 const { guardKeyIn } = require('../services/guard-key.js');
+const guardRuns = require('../services/guard-runs.js');
 const publication = require('../services/skills-publication.service.js');
 const { parseVersionParam } = require('../services/version-helpers.js');
 
 /**
  * The publication guard on the back office (ADR 0019, #1430): what it would
- * replay, the replay itself, and a cancellation after it. Publishing goes
+ * replay, the replay itself, started as a task of the server, and a
+ * cancellation after it. Publishing goes
  * through the activate route of each kind, which asks for the guard when a
  * feature uses the version.
  *
@@ -30,8 +32,21 @@ function publicationController(kind, idParam) {
       res.json(await publication.planPublication(target(req)));
     }),
 
+    // Started on the server, answered at once: the page reads it again
+    // until it is done (guard-runs.js).
     guard: asyncHandler(async (req, res) => {
-      res.json(await publication.guardPublication(target(req), req.user));
+      const asked = target(req);
+      const plan = await publication.planPublication(asked);
+      res.json(
+        await guardRuns.startGuard(
+          {
+            targets: [asked],
+            plan,
+            run: () => publication.guardPublication(asked, req.user),
+          },
+          req.user
+        )
+      );
     }),
 
     cancel: asyncHandler(async (req, res) => {

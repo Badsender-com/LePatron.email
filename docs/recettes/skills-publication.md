@@ -41,7 +41,7 @@ Repérer, sur la page **Skills & Expertise** :
 
 1. Sur le brouillon de S, changer le corps de la skill pour qu'elle réponde nettement autrement. Enregistrer, puis **Publier**, puis **Activer**.
 2. La fenêtre **Vérifier avant de publier** s'ouvre : **Utilisée par** nomme la fonctionnalité ; le nombre d'appels est le double du nombre de cas, avec « 60 au plus ».
-3. **Lancer la vérification** : chaque cas montre **Ce qu'une bonne sortie doit contenir** quand le cas le dit, puis **Version active** et **Cette version** côte à côte, et le résumé compte au moins un écart. Le bouton devient **Publier malgré les écarts**.
+3. **Lancer la vérification** : la requête répond tout de suite, la fenêtre relit la vérification toutes les 3 secondes (onglet Réseau : `GET /api/ai-skills/publications/guards/<id>`) jusqu'à ce qu'elle soit terminée ; chaque cas montre **Ce qu'une bonne sortie doit contenir** quand le cas le dit, puis **Version active** et **Cette version** côte à côte, et le résumé compte au moins un écart. Le bouton devient **Publier malgré les écarts**.
 4. **Annuler la publication** : le message dit que la version reste un brouillon ; la version active n'a pas changé.
 5. Recommencer, et cette fois **Publier malgré les écarts** : le brouillon devient la version active.
 6. **Contrat de sortie :** sur un nouveau brouillon de S, changer le corps pour que la réponse ne suive plus le contrat (par exemple demander du texte libre à la place du JSON attendu). Le rejeu affiche **La réponse ne respecte pas le contrat de sortie.** sous **Cette version**, et la publication reste possible.

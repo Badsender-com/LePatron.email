@@ -133,5 +133,12 @@ export function aiVersionAction(kind, id, major, minor, action) {
 // Several drafts published at once (ADR 0019): `plan`, `guard`, `cancel`, or
 // the publication itself without an action.
 export function aiSkillsPublications(action) {
-  return action ? `/ai-skills/publications/${action}` : '/ai-skills/publications';
+  return action
+    ? `/ai-skills/publications/${action}`
+    : '/ai-skills/publications';
+}
+
+// A run of the publication guard, of one version or of a batch (ADR 0019).
+export function aiSkillsGuardRun(id) {
+  return `/ai-skills/publications/guards/${encodeURIComponent(id)}`;
 }

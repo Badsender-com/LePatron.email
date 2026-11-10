@@ -21,6 +21,44 @@ export function guardRequired(err) {
   };
 }
 
+// How often the page reads a running guard again: it runs on the server, a
+// few AI calls at a time, for a minute or more.
+export const GUARD_POLL_MS = 3000;
+
+const delay = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+
+/**
+ * Reads a run of the guard again until it is no longer running.
+ *
+ * @param {{ id: string, status: string }} run as its start answered it
+ * @param {(id: string) => Promise<Object>} read reads the run again
+ * @param {{ wait?: Function, stopped?: () => boolean }} [options]
+ *   `stopped`: whether the page let it go (its dialog closed)
+ * @returns {Promise<Object|null>} the run, done or failed; null once stopped
+ */
+export async function followGuard(
+  run,
+  read,
+  { wait = delay, stopped = () => false } = {}
+) {
+  let current = run;
+  while (current && current.status === 'running') {
+    // eslint-disable-next-line no-await-in-loop
+    await wait(GUARD_POLL_MS);
+    if (stopped()) return null;
+    // eslint-disable-next-line no-await-in-loop
+    current = await read(current.id);
+  }
+  return current;
+}
+
+// Why a run of the guard failed, as the server's error is read.
+export function guardFailure(run) {
+  return run && run.status === 'failed'
+    ? { response: { data: { message: run.code } } }
+    : null;
+}
+
 // The test cases the replay leaves out past its cap of AI calls.
 export function notReplayedOf(guardOrPlan) {
   return Number((guardOrPlan || {}).notReplayed) || 0;
