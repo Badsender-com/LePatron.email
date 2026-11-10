@@ -298,7 +298,7 @@ _UI_: Passage
 _Avoid_: Paragraph, rule (a rule belongs to the quality control)
 
 **Addressed retex**:
-A retex a published version took into account: the draft cites it, and it is marked addressed, with that version, when the version is published. A draft deleted before leaves it open.
+A retex a published version took into account: the draft cites it, and it is marked addressed, with that skill or expertise and its version, when the version is published. A retex on one skill may be addressed by another, or by an expertise. A draft deleted before leaves it open.
 _UI_: Pris en compte en <version>
 _Avoid_: Done, fixed, applied
 

@@ -4,6 +4,8 @@ const { Schema } = require('mongoose');
 const { ObjectId } = Schema.Types;
 const { UserModel, GroupModel } = require('../constant/model.names.js');
 
+// A version of a skill or an expertise: what a retex is about, or the
+// version that addressed it, which may be of another one.
 const AboutSchema = new Schema(
   {
     kind: { type: String, enum: ['skill', 'expertise'], required: true },
@@ -59,7 +61,7 @@ const McpRetexSchema = new Schema(
       enum: ['open', 'addressed', 'dismissed'],
       default: 'open',
     },
-    addressedIn: { type: String, default: null },
+    addressedIn: { type: AboutSchema, default: null },
     dismissal: {
       type: new Schema(
         { reason: { type: String, required: true }, _user: ObjectId },

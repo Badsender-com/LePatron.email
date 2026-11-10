@@ -36,7 +36,7 @@ Your assistant sends your retex as you work, without asking each time, whatever 
 2. LePatron answers the open retex on the same passage (or, for a complement about no expertise, on the same category and part of the email), whatever the company.
 3. **Two retex pointing the same way are enough**: the assistant proposes the change at once, as a draft citing them. For a complement no expertise covers, it proposes a new expertise.
 4. You adjust, the guard replays the test cases if there are any, then you publish.
-5. The retex cited become **addressed** with the published version, whether you publish from the assistant or from the back office. If the draft is deleted before, they are open again.
+5. The retex cited become **addressed** with the published version, named by its skill or expertise (a retex on a skill may be addressed by an expertise), whether you publish from the assistant or from the back office. If the draft is deleted before, they are open again.
 
 ### The tools
 

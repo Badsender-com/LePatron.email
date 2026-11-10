@@ -76,7 +76,7 @@ function readable(retex, companies) {
     ...connectedTo(retex, companies),
     author: retex.author,
     createdAt: retex.createdAt ? new Date(retex.createdAt).toISOString() : null,
-    ...(retex.addressedIn && { addressedIn: { version: retex.addressedIn } }),
+    ...(retex.addressedIn && { addressedIn: retex.addressedIn }),
     ...(retex.dismissal && { dismissal: { reason: retex.dismissal.reason } }),
   };
 }

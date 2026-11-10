@@ -113,17 +113,23 @@ async function recordCancel(params, shown, user) {
 }
 
 // The retex the published draft cites are addressed by this version (ADR
-// 0021), wherever it was published from.
+// 0021), wherever it was published from, named by its kind, its id and its
+// number: a retex on one skill may be addressed by another, or by an
+// expertise.
 // Never in the way of the publication, which already stands: a retex left
 // open is dismissed later, or closed by the next version that cites it.
-async function closeAddressedRetex(doc, { major, minor }) {
+async function closeAddressedRetex(kind, doc, { major, minor }) {
   const published = findVersion(doc, major, minor);
   const ids = (published && published.retexIds) || [];
   if (!ids.length) return;
   try {
     await closeRetex(ids, {
       status: 'addressed',
-      addressedIn: versionLabel(published),
+      addressedIn: {
+        kind,
+        id: kind === 'skill' ? doc.skillId : doc.expertiseId,
+        version: versionLabel(published),
+      },
     });
   } catch (err) {
     logger.error(
@@ -211,7 +217,7 @@ async function publishVersion(params, user) {
   // A skill's publication answers the warnings of its opening too.
   const { skill, warnings = [] } =
     kind === 'skill' ? published : { skill: published };
-  await closeAddressedRetex(skill, version);
+  await closeAddressedRetex(kind, skill, version);
   return { doc: skill, warnings };
 }
 

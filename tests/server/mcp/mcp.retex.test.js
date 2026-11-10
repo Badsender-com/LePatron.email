@@ -750,7 +750,11 @@ describe('the retex loop', () => {
           expect.objectContaining({
             retexId,
             status: 'addressed',
-            addressedIn: { version: '3.0' },
+            addressedIn: {
+              kind: 'expertise',
+              id: SUBJECT_LINES,
+              version: '3.0',
+            },
           })
         )
       );
@@ -802,6 +806,43 @@ describe('the retex loop', () => {
             Date.now()
           )
         );
+    });
+
+    it('names the item and the version that addressed it, another than the retex is about (ADR 0021)', async () => {
+      const { retexId } = await call(await asConsultant(), REPORT, {
+        kind: 'divergence',
+        about: { kind: 'skill', id: SUBJECT_IDEAS },
+        quote: 'each under 50 characters',
+        recommended: 'Three subject lines under 50 characters',
+        decided: 'One of 58 characters',
+        why: 'The brand name is long',
+      });
+      await call(await asConsultant(), 'propose_expertise_change', {
+        expertiseId: SUBJECT_LINES,
+        body: '## [length] Length\n\nUnder 60 characters for a long brand.',
+        changelog: 'A long brand name',
+        addressesRetex: [retexId],
+      });
+
+      await publication.publishVersion(
+        {
+          kind: 'expertise',
+          id: SUBJECT_LINES,
+          version: { major: 3, minor: 0 },
+          payload: { changelog: 'B2B', releaseNotes: 'B2B subjects' },
+        },
+        { id: f.ALICE }
+      );
+
+      const [item] = await listOpen({
+        status: 'addressed',
+        about: { kind: 'skill', id: SUBJECT_IDEAS },
+      });
+      expect(item).toMatchObject({
+        retexId,
+        about: { kind: 'skill', id: SUBJECT_IDEAS },
+        addressedIn: { kind: 'expertise', id: SUBJECT_LINES, version: '3.0' },
+      });
     });
 
     it('still publishes when closing the retex fails', async () => {

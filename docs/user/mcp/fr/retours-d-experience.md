@@ -36,7 +36,7 @@ Votre assistant envoie vos retours d'expérience au fil du travail, sans vous de
 2. LePatron lui répond les retours d'expérience ouverts sur le même passage (ou, pour un complément sans expertise, sur la même catégorie et la même partie de l'email), quelle que soit l'entreprise.
 3. **Deux retours qui vont dans le même sens suffisent** : l'assistant vous propose aussitôt l'évolution, sous forme de brouillon qui les cite. Pour un complément qu'aucune expertise ne couvre, il propose une nouvelle expertise.
 4. Vous ajustez, le garde-fou rejoue les cas de test s'il y en a, puis vous publiez.
-5. Les retours cités passent à **« Pris en compte »** avec la version publiée, que vous la publiiez depuis l'assistant ou depuis le back-office. Si le brouillon est supprimé avant, ils redeviennent ouverts.
+5. Les retours cités passent à **« Pris en compte »** avec la version publiée, nommée par sa skill ou son expertise (un retour sur une skill peut être pris en compte par une expertise), que vous la publiiez depuis l'assistant ou depuis le back-office. Si le brouillon est supprimé avant, ils redeviennent ouverts.
 
 ### Les outils
 
