@@ -3,14 +3,22 @@
 /**
  * Production's read tokens (ADR 0019): what a copy reads production's skills
  * and expertises with, and nothing else. A super admin creates one, named
- * after the copy it serves, and revokes it. The token is answered once, at
- * creation; only its hash is stored, and neither is ever listed.
+ * after the copy it serves, and revokes it; both are security events. The
+ * token is answered once, at creation; only its hash is stored, and neither
+ * is ever listed.
  */
 
 const crypto = require('crypto');
 const createError = require('http-errors');
+const ERROR_CODES = require('../../constant/error-codes.js');
 const { SkillsReadTokens } = require('../../common/models.common.js');
 const { isObjectIdString } = require('../../utils/model.js');
+const {
+  recordSecurityEvent,
+} = require('../../security-event/security-event.service.js');
+const {
+  SKILLS_READ_TOKEN_ACTIONS,
+} = require('../../security-event/security-event.actions.js');
 
 // Says what the token is to whoever finds it, a secret scanner included.
 const TOKEN_PREFIX = 'lpsr_';
@@ -33,14 +41,14 @@ const listed = (doc) => ({
  * @param {{ id: string }} user who creates it
  * @returns {Promise<Object>} the token as listed, with the token itself:
  *   the only time it is answered
+ * @throws {HttpError} 400 SKILLS_READ_TOKEN_NAME_INVALID, with `max`
  */
 async function createReadToken(name, user) {
   const trimmed = typeof name === 'string' ? name.trim() : '';
   if (!trimmed || trimmed.length > MAX_NAME) {
-    throw createError(
-      400,
-      `A name of 1 to ${MAX_NAME} characters is required.`
-    );
+    throw createError(400, ERROR_CODES.SKILLS_READ_TOKEN_NAME_INVALID, {
+      max: MAX_NAME,
+    });
   }
   const token = `${TOKEN_PREFIX}${crypto
     .randomBytes(32)
@@ -52,6 +60,12 @@ async function createReadToken(name, user) {
     createdAt: new Date(),
     lastUsedAt: null,
     revokedAt: null,
+  });
+  await recordSecurityEvent({
+    action: SKILLS_READ_TOKEN_ACTIONS.CREATED,
+    actor: user && user.id,
+    readTokenId: String(doc._id),
+    readTokenName: trimmed,
   });
   return { ...listed(doc), token };
 }
@@ -68,15 +82,28 @@ async function listReadTokens() {
  * Revokes a read token: it reads nothing from now on.
  *
  * @param {string} id
+ * @param {{ id: string }} user who revokes it
+ * @throws {HttpError} 404 SKILLS_READ_TOKEN_NOT_FOUND
  */
-async function revokeReadToken(id) {
-  const { n } = isObjectIdString(id)
-    ? await SkillsReadTokens.updateOne(
+async function revokeReadToken(id, user) {
+  const revoked = isObjectIdString(id)
+    ? await SkillsReadTokens.findOneAndUpdate(
         { _id: id, revokedAt: null },
-        { $set: { revokedAt: new Date() } }
+        {
+          $set: {
+            revokedAt: new Date(),
+            _revokedBy: (user && user.id) || null,
+          },
+        }
       )
-    : { n: 0 };
-  if (!n) throw createError(404, 'No such read token.');
+    : null;
+  if (!revoked) throw createError(404, ERROR_CODES.SKILLS_READ_TOKEN_NOT_FOUND);
+  await recordSecurityEvent({
+    action: SKILLS_READ_TOKEN_ACTIONS.REVOKED,
+    actor: user && user.id,
+    readTokenId: String(revoked._id),
+    readTokenName: revoked.name,
+  });
 }
 
 /**

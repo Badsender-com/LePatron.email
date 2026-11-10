@@ -49,6 +49,13 @@ const CONNECTED_APPLICATION_ACTIONS = Object.freeze({
   ALL_REVOKED: 'connected-applications.all-revoked',
 });
 
+// A read token of production, which a copy reads its skills and expertises
+// with (ADR 0019).
+const SKILLS_READ_TOKEN_ACTIONS = Object.freeze({
+  CREATED: 'skills-read-token.created',
+  REVOKED: 'skills-read-token.revoked',
+});
+
 // How long a security event is kept, then removed by its TTL index.
 const SECURITY_EVENT_TTL_SECONDS = 365 * 24 * 60 * 60;
 
@@ -59,6 +66,7 @@ const SECURITY_EVENT_ACTIONS = Object.freeze([
   ...Object.values(RETEX_ACTIONS),
   ...Object.values(MCP_CLIENT_ACTIONS),
   ...Object.values(CONNECTED_APPLICATION_ACTIONS),
+  ...Object.values(SKILLS_READ_TOKEN_ACTIONS),
 ]);
 
 module.exports = {
@@ -69,6 +77,7 @@ module.exports = {
   RETEX_ACTIONS,
   MCP_CLIENT_ACTIONS,
   CONNECTED_APPLICATION_ACTIONS,
+  SKILLS_READ_TOKEN_ACTIONS,
   SECURITY_EVENT_ACTIONS,
   SECURITY_EVENT_TTL_SECONDS,
 };

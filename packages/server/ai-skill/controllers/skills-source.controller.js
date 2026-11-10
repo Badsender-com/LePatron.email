@@ -2,6 +2,7 @@
 
 const asyncHandler = require('express-async-handler');
 const createError = require('http-errors');
+const ERROR_CODES = require('../../constant/error-codes.js');
 
 const {
   createReadToken,
@@ -10,6 +11,7 @@ const {
   useReadToken,
 } = require('../services/skills-read-tokens.service.js');
 const { exportForCopies } = require('../services/skills-follow.format.js');
+const source = require('../services/skills-source-client.js');
 const { siteOrigin } = require('../../utils/site-origin.js');
 
 /** GET /api/ai-skills/read-tokens: production's read tokens (ADR 0019). */
@@ -19,9 +21,14 @@ const listTokens = asyncHandler(async (_req, res) => {
 
 /**
  * POST /api/ai-skills/read-tokens: a new read token, named after the copy it
- * serves (`name`). The token is in this answer only.
+ * serves (`name`). The token is in this answer only. A copy gives none: it
+ * follows production, which no one follows in its stead (409
+ * SKILLS_READ_TOKEN_ON_COPY).
  */
 const createToken = asyncHandler(async (req, res) => {
+  if (source.isConfigured()) {
+    throw createError(409, ERROR_CODES.SKILLS_READ_TOKEN_ON_COPY);
+  }
   const created = await createReadToken((req.body || {}).name, req.user);
   res.set('Cache-Control', 'no-store');
   res.status(201).json(created);
@@ -29,7 +36,7 @@ const createToken = asyncHandler(async (req, res) => {
 
 /** DELETE /api/ai-skills/read-tokens/:tokenId: revokes a read token. */
 const revokeToken = asyncHandler(async (req, res) => {
-  await revokeReadToken(req.params.tokenId);
+  await revokeReadToken(req.params.tokenId, req.user);
   res.status(204).end();
 });
 
@@ -46,7 +53,9 @@ function bearerOf(req) {
  */
 const requireReadToken = asyncHandler(async (req, _res, next) => {
   const readToken = await useReadToken(bearerOf(req));
-  if (!readToken) throw createError(401, 'A valid read token is required.');
+  if (!readToken) {
+    throw createError(401, ERROR_CODES.SKILLS_READ_TOKEN_REQUIRED);
+  }
   req.readToken = readToken;
   next();
 });

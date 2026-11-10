@@ -35,12 +35,30 @@ jest.doMock('../../../../packages/server/account/auth.guard', () => ({
   },
 }));
 
+// Whether this instance is a copy: production by default.
+const mockInstance = { isCopy: false };
+jest.doMock(
+  '../../../../packages/server/ai-skill/services/skills-source-client.js',
+  () => ({
+    isConfigured: () => mockInstance.isCopy,
+    isNightly: () => false,
+    productionOrigin: () => null,
+    fetchProductionExport: async () => {
+      throw new Error('not a copy');
+    },
+  })
+);
+
 const express = require('express');
 const request = require('../../../helpers/local-request.js');
 const f = require('../../../helpers/mcp-fixtures');
 
+const { ROLES } = require('../../../../packages/shared/access/roles.js');
+
 const SUPER_ADMIN = { id: f.ALICE, name: 'Alice', role: 'super_admin' };
-const COMPANY_ADMIN = { id: f.ERIN, name: 'Erin', role: 'company_admin' };
+const OTHER_ROLES = Object.values(ROLES).filter(
+  (role) => role !== ROLES.SUPER_ADMIN
+);
 const SUBJECT_LINES = 'redaction.subject-line';
 
 // Turned on by #1424 (production's read tokens and read route)
@@ -56,7 +74,10 @@ describe("production's read tokens and read route", () => {
     } = require('../../../../packages/server/ai-skill/ai-skill.routes'));
   });
 
-  beforeEach(() => store.seed(f.SEED));
+  beforeEach(() => {
+    store.seed(f.SEED);
+    mockInstance.isCopy = false;
+  });
 
   // An app as index.js mounts it: the source route outside the session.
   function makeApp(user) {
@@ -131,7 +152,9 @@ describe("production's read tokens and read route", () => {
   });
 
   it('refuses a call without a token, or with an unknown one', async () => {
-    expect((await readExport(null)).status).toBe(401);
+    const refused = await readExport(null);
+    expect(refused.status).toBe(401);
+    expect(refused.body.message).toBe('SKILLS_READ_TOKEN_REQUIRED');
     expect((await readExport('not-a-token')).status).toBe(401);
   });
 
@@ -144,6 +167,79 @@ describe("production's read tokens and read route", () => {
 
     expect(revoked.status).toBe(204);
     expect((await readExport(token)).status).toBe(401);
+    expect(store.stored('readTokens')[0]._revokedBy).toBe(f.ALICE);
+  });
+
+  // Who gave a copy access to production, and who took it back.
+  it('records the creation and the revocation as security events', async () => {
+    const { id } = await createToken('Staging');
+    await request(makeApp(SUPER_ADMIN)).delete(
+      `/api/ai-skills/read-tokens/${id}`
+    );
+
+    expect(
+      store
+        .stored('securityEvents')
+        .map(({ action, actor, readTokenId, readTokenName }) => ({
+          action,
+          actor,
+          readTokenId,
+          readTokenName,
+        }))
+    ).toEqual([
+      {
+        action: 'skills-read-token.created',
+        actor: f.ALICE,
+        readTokenId: id,
+        readTokenName: 'Staging',
+      },
+      {
+        action: 'skills-read-token.revoked',
+        actor: f.ALICE,
+        readTokenId: id,
+        readTokenName: 'Staging',
+      },
+    ]);
+    expect(JSON.stringify(store.stored('securityEvents'))).not.toContain(
+      'lpsr_'
+    );
+  });
+
+  it.each([[''], ['x'.repeat(101)], [undefined]])(
+    'refuses a token without a name of 1 to 100 characters (%s)',
+    async (name) => {
+      const res = await request(makeApp(SUPER_ADMIN))
+        .post('/api/ai-skills/read-tokens')
+        .send({ name });
+
+      expect(res.status).toBe(400);
+      expect(res.body.message).toBe('SKILLS_READ_TOKEN_NAME_INVALID');
+    }
+  );
+
+  it.each([['507f1f77bcf86cd799439fff'], ['not-an-id']])(
+    'answers a token it does not hold as not found (%s)',
+    async (id) => {
+      const res = await request(makeApp(SUPER_ADMIN)).delete(
+        `/api/ai-skills/read-tokens/${id}`
+      );
+
+      expect(res.status).toBe(404);
+      expect(res.body.message).toBe('SKILLS_READ_TOKEN_NOT_FOUND');
+    }
+  );
+
+  // A copy follows production: it gives no token of its own.
+  it('creates no token on a copy', async () => {
+    mockInstance.isCopy = true;
+
+    const res = await request(makeApp(SUPER_ADMIN))
+      .post('/api/ai-skills/read-tokens')
+      .send({ name: 'Development' });
+
+    expect(res.status).toBe(409);
+    expect(res.body.message).toBe('SKILLS_READ_TOKEN_ON_COPY');
+    expect(store.stored('readTokens')).toEqual([]);
   });
 
   it('reads nothing but the export with a token', async () => {
@@ -156,18 +252,33 @@ describe("production's read tokens and read route", () => {
     expect(res.status).toBe(401);
   });
 
-  it('lets no one else manage tokens', async () => {
-    const app = makeApp(COMPANY_ADMIN);
+  // Every role but the super admin's, on every route of the tokens.
+  describe.each(OTHER_ROLES)('a %s', (role) => {
+    const as = () => makeApp({ id: f.ERIN, name: 'Someone', role });
 
-    expect(
-      (
-        await request(app)
-          .post('/api/ai-skills/read-tokens')
-          .send({ name: 'x' })
-      ).status
-    ).toBe(401);
-    expect((await request(app).get('/api/ai-skills/read-tokens')).status).toBe(
-      401
-    );
+    it('can neither list nor create a token', async () => {
+      expect(
+        (await request(as()).get('/api/ai-skills/read-tokens')).status
+      ).toBe(401);
+      expect(
+        (
+          await request(as())
+            .post('/api/ai-skills/read-tokens')
+            .send({ name: 'x' })
+        ).status
+      ).toBe(401);
+      expect(store.stored('readTokens')).toEqual([]);
+    });
+
+    it('cannot revoke a token', async () => {
+      const { id, token } = await createToken();
+
+      const res = await request(as()).delete(
+        `/api/ai-skills/read-tokens/${id}`
+      );
+
+      expect(res.status).toBe(401);
+      expect((await readExport(token)).status).toBe(200);
+    });
   });
 });

@@ -34,6 +34,10 @@ const SecurityEventSchema = Schema(
     // name, never its secret.
     clientId: { type: String },
     clientName: { type: String },
+    // The read token of a `skills-read-token.…` event: its id and its name,
+    // never the token.
+    readTokenId: { type: String },
+    readTokenName: { type: String },
   },
   { timestamps: { createdAt: true, updatedAt: false } }
 );

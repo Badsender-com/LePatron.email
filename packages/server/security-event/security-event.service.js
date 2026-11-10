@@ -4,9 +4,10 @@ const logger = require('../utils/logger.js');
 const { SecurityEvents } = require('../common/models.common.js');
 
 /**
- * Records a security event (ADR 0008): two-factor authentication, or a
- * company's MCP settings (ADR 0012). Never fails the request it records:
- * a record that cannot be written is logged instead.
+ * Records a security event (ADR 0008): two-factor authentication, a
+ * company's MCP settings (ADR 0012), or production's read tokens (ADR
+ * 0019). Never fails the request it records: a record that cannot be
+ * written is logged instead.
  *
  * @param {Object} event
  * @param {string} event.action one of SECURITY_EVENT_ACTIONS
@@ -17,6 +18,9 @@ const { SecurityEvents } = require('../common/models.common.js');
  * @param {string} [event.method] the verification method
  * @param {string} [event.clientId] the MCP client of an `mcp-client.…` event
  * @param {string} [event.clientName] its name
+ * @param {string} [event.readTokenId] the read token of a
+ *   `skills-read-token.…` event
+ * @param {string} [event.readTokenName] its name
  * @returns {Promise<void>}
  */
 async function recordSecurityEvent(event) {

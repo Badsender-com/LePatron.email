@@ -18,6 +18,7 @@ const SkillsReadTokenSchema = new Schema({
   createdAt: { type: Date, default: Date.now },
   lastUsedAt: { type: Date, default: null },
   revokedAt: { type: Date, default: null },
+  _revokedBy: { type: ObjectId, ref: UserModel, default: null },
 });
 
 module.exports = SkillsReadTokenSchema;
