@@ -8,109 +8,19 @@ const { z } = require('zod');
 const { McpRetexes, Groups } = require('../common/models.common.js');
 const { versionLabel } = require('../ai-skill/services/version-helpers.js');
 const {
-  parseSections,
-} = require('../ai-skill/services/expertise-parser.service.js');
-const {
   SkillCategoryValues,
 } = require('../ai-skill/constant/skill-constants.js');
 const { withIdentity, isConsultant, failure } = require('./mcp-identity.js');
-const { readableExpertise } = require('./mcp-expertises.js');
-const { servedSkill } = require('./mcp-skill-catalog.js');
 const { ADDITIVE } = require('./mcp-tool-grammar.js');
 const { partOf } = require('./mcp-retex-read.js');
-const { candidatesOf, flat } = require('./mcp-retex-candidates.js');
+const { candidatesOf } = require('./mcp-retex-candidates.js');
+const { checkedAbout } = require('./mcp-retex-check.js');
 
 const MAX_ID_LENGTH = 200;
 const MAX_ANCHOR_LENGTH = 100;
 const MAX_QUOTE_LENGTH = 500;
 const MAX_TEXT_LENGTH = 2000;
 const MAX_PART_LENGTH = 50;
-
-// The text of a skill's version a quotation is looked for in.
-const skillText = (version) =>
-  [
-    version.procedure,
-    version.systemPrompt,
-    version.skillBody,
-    version.inputTemplate,
-  ].join('\n');
-
-// What the retex is about, as the user may read it, at the version read:
-// throws a message for the assistant when it is not.
-async function aboutOf({ kind, id }, identity) {
-  const found =
-    kind === 'skill'
-      ? await servedSkill(id, identity.group, identity.drafts)
-      : await readableExpertise(id, identity.group, identity.drafts);
-  if (!found) {
-    throw new Error(
-      `Not found: the ${kind} ${id}, or this user may not read it.`
-    );
-  }
-  return found;
-}
-
-// The passage, checked against the version: an expertise's section anchor,
-// or a quotation of a skill.
-function assertPassage(retex, about) {
-  if (retex.section) {
-    if (retex.about.kind !== 'expertise') {
-      throw new Error('A section anchors an expertise: quote a skill instead.');
-    }
-    const { sections } = parseSections(about.version.body);
-    if (!sections.some((section) => section.id === retex.section)) {
-      throw new Error(
-        `This version of ${retex.about.id} has no section [${retex.section}].`
-      );
-    }
-  }
-  if (retex.quote) {
-    if (retex.about.kind !== 'skill') {
-      throw new Error(
-        'A quotation passes for a skill: give an expertise its section.'
-      );
-    }
-    if (!flat(skillText(about.version)).includes(flat(retex.quote))) {
-      throw new Error(
-        `The quotation is not in this version of ${retex.about.id}.`
-      );
-    }
-  }
-}
-
-// What makes a retex, beyond its shape: a divergence diverges, on a passage;
-// a complement brings something, about an element or a kind of know-how.
-function assertRetex(retex) {
-  const passage = Boolean(retex.section || retex.quote);
-  if (retex.kind === 'divergence') {
-    if (!retex.about || !passage) {
-      throw new Error(
-        'A divergence needs its passage: the skill or expertise, and a section of an expertise or a quotation of a skill.'
-      );
-    }
-    ['recommended', 'decided', 'why'].forEach((field) => {
-      if (!flat(retex[field]))
-        throw new Error(`A divergence needs "${field}".`);
-    });
-    if (flat(retex.recommended) === flat(retex.decided)) {
-      throw new Error(
-        'Not a divergence: what was decided is what was recommended.'
-      );
-    }
-    return;
-  }
-  if (!flat(retex.brought)) {
-    throw new Error('A complement needs what the user "brought".');
-  }
-  ['missing', 'source'].forEach((field) => {
-    if (!flat(retex[field])) throw new Error(`A complement needs "${field}".`);
-  });
-  if (!retex.about && (!retex.category || !flat(retex.part))) {
-    throw new Error(
-      'A complement about no skill or expertise needs its category and the part of the email.'
-    );
-  }
-}
 
 // Why a retex is not kept, or null: a client user's needs the company's
 // permission and the user's approval of it.
@@ -134,13 +44,9 @@ const answerOf = (answer) => ({
 
 async function reportRetex(identity, args, ctx) {
   const { approvedByUser, ...retex } = args;
-  let about = null;
+  let about;
   try {
-    assertRetex(retex);
-    if (retex.about) {
-      about = await aboutOf(retex.about, identity);
-      assertPassage(retex, about);
-    }
+    about = await checkedAbout(retex, identity);
   } catch (err) {
     return failure(err.message);
   }
