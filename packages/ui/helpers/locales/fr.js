@@ -1839,7 +1839,19 @@ export default {
       SKILLS_EXPORT_FORMAT_UNKNOWN:
         'Ce fichier n\'est pas un export de skills que cette instance lit : elle lit le format {expected}.',
       SKILLS_EXPORT_INVALID:
-        'Ce fichier n\'est pas un export de skills lisible : le champ « {field} » est refusé ({issue}).',
+        'Ce fichier n\'est pas un export de skills lisible : le champ « {field} » est refusé.',
+      SKILLS_EXPORT_FIELD_MISSING:
+        'Ce fichier n\'est pas un export de skills lisible : le champ « {field} » manque.',
+      SKILLS_EXPORT_FIELD_WRONG_TYPE:
+        'Ce fichier n\'est pas un export de skills lisible : le champ « {field} » n\'a pas le bon type.',
+      SKILLS_EXPORT_FIELD_NOT_ALLOWED:
+        'Ce fichier n\'est pas un export de skills lisible : la valeur du champ « {field} » n\'est pas permise.',
+      SKILLS_EXPORT_FIELD_TOO_BIG:
+        'Ce fichier n\'est pas un export de skills lisible : le champ « {field} » dépasse la taille permise.',
+      SKILLS_EXPORT_FIELD_TOO_SMALL:
+        'Ce fichier n\'est pas un export de skills lisible : le champ « {field} » est vide ou trop petit.',
+      SKILLS_EXPORT_FIELD_DUPLICATE:
+        'Ce fichier n\'est pas un export de skills lisible : le champ « {field} » répète un élément déjà présent.',
       SKILLS_SELECTION_INVALID:
         'La sélection n\'est pas une liste d\'identifiants : « {field} ».',
       SKILLS_IMPORT_ARCHIVED:

@@ -1814,7 +1814,19 @@ export default {
       SKILLS_EXPORT_FORMAT_UNKNOWN:
         'This file is not a skills export this instance reads: it reads format {expected}.',
       SKILLS_EXPORT_INVALID:
-        'This file is not a readable skills export: the field "{field}" is refused ({issue}).',
+        'This file is not a readable skills export: the field "{field}" is refused.',
+      SKILLS_EXPORT_FIELD_MISSING:
+        'This file is not a readable skills export: the field "{field}" is missing.',
+      SKILLS_EXPORT_FIELD_WRONG_TYPE:
+        'This file is not a readable skills export: the field "{field}" has the wrong type.',
+      SKILLS_EXPORT_FIELD_NOT_ALLOWED:
+        'This file is not a readable skills export: the value of the field "{field}" is not allowed.',
+      SKILLS_EXPORT_FIELD_TOO_BIG:
+        'This file is not a readable skills export: the field "{field}" is over the size allowed.',
+      SKILLS_EXPORT_FIELD_TOO_SMALL:
+        'This file is not a readable skills export: the field "{field}" is empty or too small.',
+      SKILLS_EXPORT_FIELD_DUPLICATE:
+        'This file is not a readable skills export: the field "{field}" repeats an item already there.',
       SKILLS_SELECTION_INVALID:
         'The selection is not a list of ids: "{field}".',
       SKILLS_IMPORT_ARCHIVED:

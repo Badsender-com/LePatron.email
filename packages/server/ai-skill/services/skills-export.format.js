@@ -35,9 +35,9 @@ const version = (content) =>
   });
 const TEST_CASE = z.object({
   name: z.string().min(1),
-  input: z
-    .unknown()
-    .refine((value) => value !== undefined && value !== null, 'Required'),
+  input: z.unknown().refine((value) => value !== undefined && value !== null, {
+    params: { reason: 'missing' },
+  }),
   expectedOutput: z.unknown().optional(),
   notes: z.string().optional(),
 });
@@ -82,10 +82,9 @@ const SKILL = z.object({
     consumedExpertiseIds: z
       .array(id)
       .max(MaxConsumedExpertises)
-      .refine(
-        (ids) => new Set(ids).size === ids.length,
-        'names an expertise twice'
-      )
+      .refine((ids) => new Set(ids).size === ids.length, {
+        params: { reason: 'duplicate' },
+      })
       .optional(),
   }),
 });
@@ -97,7 +96,7 @@ const once = (idField) => (items, ctx) => {
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
         path: [index, idField],
-        message: `"${item[idField]}" is in the file twice`,
+        params: { reason: 'duplicate' },
       });
     }
     seen.add(item[idField]);
@@ -114,11 +113,42 @@ const FILE = z
   })
   .passthrough();
 
+// Why a field is refused, as one of the few reasons the interface words,
+// each its error code; a refusal none of them names is SKILLS_EXPORT_INVALID.
+const REFUSALS = {
+  missing: ERROR_CODES.SKILLS_EXPORT_FIELD_MISSING,
+  wrong_type: ERROR_CODES.SKILLS_EXPORT_FIELD_WRONG_TYPE,
+  not_allowed: ERROR_CODES.SKILLS_EXPORT_FIELD_NOT_ALLOWED,
+  too_big: ERROR_CODES.SKILLS_EXPORT_FIELD_TOO_BIG,
+  too_small: ERROR_CODES.SKILLS_EXPORT_FIELD_TOO_SMALL,
+  duplicate: ERROR_CODES.SKILLS_EXPORT_FIELD_DUPLICATE,
+};
+
+const valueAt = (json, path) =>
+  path.reduce((value, key) => (value == null ? undefined : value[key]), json);
+
+function reasonOf(issue, json) {
+  switch (issue.code) {
+    case 'custom':
+      return issue.params && issue.params.reason;
+    case 'invalid_type':
+      return valueAt(json, issue.path) == null ? 'missing' : 'wrong_type';
+    case 'invalid_value':
+    case 'invalid_format':
+      return 'not_allowed';
+    case 'too_big':
+    case 'too_small':
+      return issue.code;
+    default:
+      return undefined;
+  }
+}
+
 /**
  * A skills export read from its JSON, or a 400 saying why it cannot be: an
  * unknown format (SKILLS_EXPORT_FORMAT_UNKNOWN), or a content that fails
- * validation (SKILLS_EXPORT_INVALID). The whole file is
- * refused, before anything is shown.
+ * validation (a SKILLS_EXPORT_FIELD_* code, or SKILLS_EXPORT_INVALID), with
+ * the `field` refused. The whole file is refused, before anything is shown.
  */
 function readSkillsExport(json) {
   if (!json || json.format !== FORMAT) {
@@ -130,10 +160,9 @@ function readSkillsExport(json) {
   const parsed = FILE.safeParse(json);
   if (!parsed.success) {
     const [issue] = parsed.error.issues;
-    throw createError(400, ERROR_CODES.SKILLS_EXPORT_INVALID, {
-      field: issue.path.join('.'),
-      issue: issue.message,
-    });
+    const code =
+      REFUSALS[reasonOf(issue, json)] || ERROR_CODES.SKILLS_EXPORT_INVALID;
+    throw createError(400, code, { field: issue.path.join('.') });
   }
   return parsed.data;
 }

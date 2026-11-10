@@ -315,10 +315,12 @@ describe('the skills export', () => {
         refusalOf(() =>
           readSkillsExport({ format: 1, expertises: [{ title: 'No id' }] })
         )
-      ).toMatchObject({ status: 400, message: 'SKILLS_EXPORT_INVALID' });
+      ).toMatchObject({ status: 400, message: 'SKILLS_EXPORT_FIELD_MISSING' });
     });
 
-    // Refused whole, before the preview, rather than failing item by item.
+    // Refused whole, before the preview, rather than failing item by item,
+    // with the field and a reason the interface words: never the text of
+    // the validator, which is English.
     it('refuses a file whose content has the wrong type, category or nature', async () => {
       const file = await exportOf({ all: true });
       const broken = (change) => {
@@ -331,10 +333,12 @@ describe('the skills export', () => {
         broken((c) => {
           c.skills[1].version.consumedExpertiseIds = SUBJECT_LINES;
         })
-      ).toMatchObject({
-        message: 'SKILLS_EXPORT_INVALID',
-        field: 'skills.1.version.consumedExpertiseIds',
-      });
+      ).toEqual(
+        expect.objectContaining({
+          message: 'SKILLS_EXPORT_FIELD_WRONG_TYPE',
+          field: 'skills.1.version.consumedExpertiseIds',
+        })
+      );
       // As the back office saves them: each once.
       expect(
         broken((c) => {
@@ -344,29 +348,62 @@ describe('the skills export', () => {
           ];
         })
       ).toMatchObject({
+        message: 'SKILLS_EXPORT_FIELD_DUPLICATE',
         field: 'skills.1.version.consumedExpertiseIds',
-        issue: 'names an expertise twice',
       });
       expect(
         broken((c) => {
           c.expertises[0].version.body = {};
         })
-      ).toMatchObject({ field: 'expertises.0.version.body' });
+      ).toMatchObject({
+        message: 'SKILLS_EXPORT_FIELD_WRONG_TYPE',
+        field: 'expertises.0.version.body',
+      });
       expect(
         broken((c) => {
           c.expertises[0].category = 'not-a-category';
         })
-      ).toMatchObject({ field: 'expertises.0.category' });
+      ).toMatchObject({
+        message: 'SKILLS_EXPORT_FIELD_NOT_ALLOWED',
+        field: 'expertises.0.category',
+      });
+      expect(
+        broken((c) => {
+          c.expertises[0].title = '';
+        })
+      ).toMatchObject({
+        message: 'SKILLS_EXPORT_FIELD_TOO_SMALL',
+        field: 'expertises.0.title',
+      });
+      expect(
+        broken((c) => {
+          delete c.expertises[0].title;
+        })
+      ).toMatchObject({
+        message: 'SKILLS_EXPORT_FIELD_MISSING',
+        field: 'expertises.0.title',
+      });
       expect(
         broken((c) => {
           c.skills[0].version.nature = 'not-a-nature';
         })
-      ).toMatchObject({ field: 'skills.0.version.nature' });
+      ).toMatchObject({
+        message: 'SKILLS_EXPORT_FIELD_NOT_ALLOWED',
+        field: 'skills.0.version.nature',
+      });
       expect(
         broken((c) => {
           c.skills[0].version.testCases = [{ name: 'No input' }];
         })
-      ).toMatchObject({ field: 'skills.0.version.testCases.0.input' });
+      ).toMatchObject({
+        message: 'SKILLS_EXPORT_FIELD_MISSING',
+        field: 'skills.0.version.testCases.0.input',
+      });
+      expect(
+        broken((c) => {
+          c.skills[0].version.major = 'two';
+        })
+      ).not.toHaveProperty('issue');
     });
 
     it('refuses a file whose id is longer than an id may be', async () => {
@@ -374,7 +411,7 @@ describe('the skills export', () => {
       file.expertises[0].expertiseId = 'a'.repeat(101);
 
       expect(refusalOf(() => readSkillsExport(file))).toMatchObject({
-        message: 'SKILLS_EXPORT_INVALID',
+        message: 'SKILLS_EXPORT_FIELD_TOO_BIG',
         field: 'expertises.0.expertiseId',
       });
     });
@@ -400,9 +437,8 @@ describe('the skills export', () => {
       file.expertises.push(file.expertises[0]);
 
       expect(refusalOf(() => readSkillsExport(file))).toMatchObject({
-        message: 'SKILLS_EXPORT_INVALID',
+        message: 'SKILLS_EXPORT_FIELD_DUPLICATE',
         field: 'expertises.1.expertiseId',
-        issue: `"${SUBJECT_LINES}" is in the file twice`,
       });
     });
 
