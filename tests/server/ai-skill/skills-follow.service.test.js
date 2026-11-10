@@ -660,6 +660,42 @@ describe('a copy following production', () => {
       });
     });
 
+    it("removes the item of the copy's work when the write after the move fails", async () => {
+      store.seed({
+        ...EMPTY_COPY,
+        expertises: [
+          subjectLinesWith(
+            [version(4, 0, 'ACTIVE', '## Ahead\n\nPublished on the copy.')],
+            { major: 4, minor: 0 }
+          ),
+        ],
+      });
+      const { findOneAndUpdate } = store.models.Expertises;
+      store.models.Expertises.findOneAndUpdate = (...args) => {
+        changeOnCopy(SUBJECT_LINES, () => ({ updatedAt: new Date() }));
+        return findOneAndUpdate(...args);
+      };
+
+      let report;
+      try {
+        report = await followAgain();
+      } finally {
+        store.models.Expertises.findOneAndUpdate = findOneAndUpdate;
+      }
+
+      expect(report.failed).toContainEqual(
+        expect.objectContaining({
+          id: SUBJECT_LINES,
+          code: 'SKILLS_FOLLOW_ITEM_CHANGED',
+        })
+      );
+      expect(report.moved).toEqual([]);
+      expect(expertiseOf(COPY_OF_SUBJECT_LINES)).toBeUndefined();
+      expect(versionOf(expertiseOf(SUBJECT_LINES), 4, 0).body).toBe(
+        '## Ahead\n\nPublished on the copy.'
+      );
+    });
+
     // What production no longer says of an item, the copy no longer says.
     it('unsets on the copy what production emptied', async () => {
       await follow(EMPTY_COPY);
@@ -993,6 +1029,38 @@ describe('a copy following production', () => {
       await expect(followAgain()).resolves.toMatchObject({
         status: 'succeeded',
       });
+    });
+
+    // Two follows asked at once both find no running follow: the database's
+    // index refuses the second record.
+    it('refuses the second of two follows the index tells apart', async () => {
+      store.seed(EMPTY_COPY);
+      const { create } = store.models.SkillsFollows;
+      store.models.SkillsFollows.create = async () => {
+        throw Object.assign(new Error('E11000 duplicate key'), { code: 11000 });
+      };
+
+      try {
+        await expect(followAgain()).rejects.toMatchObject({
+          status: 409,
+          message: 'SKILLS_FOLLOW_RUNNING',
+        });
+      } finally {
+        store.models.SkillsFollows.create = create;
+      }
+      expect(store.stored('expertises')).toEqual([]);
+    });
+
+    it('keeps one running follow at most, by a partial unique index', () => {
+      const SkillsFollowSchema = require('../../../packages/server/ai-skill/models/skills-follow.schema');
+
+      expect(SkillsFollowSchema.indexes()).toContainEqual([
+        { status: 1 },
+        expect.objectContaining({
+          unique: true,
+          partialFilterExpression: { status: 'running' },
+        }),
+      ]);
     });
 
     it('releases the lock when the follow ends', async () => {
