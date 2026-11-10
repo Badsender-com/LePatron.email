@@ -300,7 +300,14 @@ describe('publishing what a feature uses', () => {
         ALICE
       );
 
-      expect(guard).toEqual({ usedBy: [], calls: 0, cases: [], missing: [] });
+      expect(guard).toMatchObject({
+        usedBy: [],
+        calls: 0,
+        cases: [],
+        missing: [],
+      });
+      // The key an assistant's publication rides on (ADR 0019).
+      expect(guard.key).toEqual(expect.any(String));
       expect(provider.chatComplete).not.toHaveBeenCalled();
     });
 
@@ -577,6 +584,61 @@ describe('publishing what a feature uses', () => {
       expect(
         versionOf('expertises', 'expertiseId', SPAM_WORDS, 1, 1).status
       ).toBe('ACTIVE');
+    });
+
+    // An assistant's publication rides on the key of its check, used or not
+    // (ADR 0019): a key given is checked, and its decision recorded.
+    it('checks and records a key given for a version no feature uses', async () => {
+      store.seed({
+        ...SEED,
+        expertises: [
+          subjectLines,
+          {
+            ...f.EXPERTISES[1],
+            versions: [
+              ...f.EXPERTISES[1].versions,
+              {
+                versionMajor: 1,
+                versionMinor: 1,
+                status: 'DRAFT',
+                body: '## [words] Words\n\nNew.',
+                examplesGood: [],
+                examplesBad: [],
+              },
+            ],
+          },
+        ],
+      });
+      const SPAM = {
+        kind: 'expertise',
+        id: SPAM_WORDS,
+        version: { major: 1, minor: 1 },
+      };
+      const { key } = await publication.guardPublication(SPAM, ALICE);
+
+      await expect(
+        publication.publishVersion(
+          { ...SPAM, guardKey: key },
+          { id: 'another-super-admin' }
+        )
+      ).rejects.toMatchObject({
+        status: 400,
+        message: 'SKILL_PUBLICATION_GUARD_INVALID',
+      });
+      await publication.publishVersion(
+        { ...SPAM, guardKey: key, application: 'an-assistant' },
+        ALICE
+      );
+
+      expect(
+        versionOf('expertises', 'expertiseId', SPAM_WORDS, 1, 1).guardHistory
+      ).toEqual([
+        expect.objectContaining({
+          decision: 'published',
+          application: 'an-assistant',
+          cases: 0,
+        }),
+      ]);
     });
 
     it('refuses to publish a version a feature uses before its guard has run', async () => {

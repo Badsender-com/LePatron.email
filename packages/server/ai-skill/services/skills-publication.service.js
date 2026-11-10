@@ -40,20 +40,26 @@ async function planPublication({ kind, id, version }) {
   };
 }
 
+// Nothing to replay for a version no feature uses.
+const NO_REPLAY = { runs: [], calls: 0, missing: [], notReplayed: 0 };
+
 /**
  * Replay the test cases of the feature skills a version reaches, with the
  * active version and with the new one. Publishes nothing. Answers the key
- * its publication, or its cancellation, requires (guard-key.js).
+ * its publication, or its cancellation, requires (guard-key.js), for a
+ * version no feature uses too: an assistant's publication rides on it.
  *
  * @param {{ kind, id, version: { major, minor } }} target
  * @param {{ id: string }} user who runs it
- * @returns {Promise<{ usedBy, calls, cases, missing, key? }>}
+ * @param {{ terms?: string }} [options] what else the key binds
+ *   (guard-key.js)
+ * @returns {Promise<{ usedBy, calls, cases, missing, key }>}
  */
-async function guardPublication({ kind, id, version }, user) {
+async function guardPublication({ kind, id, version }, user, { terms } = {}) {
   const { doc, manifests } = await loadUse({ kind, id, version });
-  if (!manifests.length)
-    return { usedBy: [], calls: 0, cases: [], missing: [] };
-  const plan = await planReplay({ kind, id, version, manifests });
+  const plan = manifests.length
+    ? await planReplay({ kind, id, version, manifests })
+    : NO_REPLAY;
   const cases = await replay({
     runs: plan.runs,
     overrides: kind === 'expertise' ? [{ id, version }] : [],
@@ -70,7 +76,7 @@ async function guardPublication({ kind, id, version }, user) {
     maxCalls: plan.maxCalls,
     ...guard,
     key: issueGuardKey(
-      { targets: [{ kind, id, version, updatedAt }], guard },
+      { targets: [{ kind, id, version, updatedAt }], guard, terms },
       user
     ),
   };
@@ -121,9 +127,9 @@ function checkPublication({ kind, version }, doc, payload = {}) {
 }
 
 /**
- * The guard a publication rides on: none for a version no feature uses; for
- * one a feature uses, the key its guard answered, on the version as it was
- * then.
+ * The guard a publication rides on: the key its guard answered, on the
+ * version as it was then, required for a version a feature uses. A key
+ * given for one no feature uses is checked and recorded all the same.
  *
  * @returns {Promise<{ updatedAt, guard }|null>} what the key carries
  * @throws {HttpError} 409 `SKILL_PUBLICATION_GUARD_REQUIRED`, with what the
@@ -132,7 +138,7 @@ function checkPublication({ kind, version }, doc, payload = {}) {
  */
 async function guardOf(params, user, { doc, manifests }) {
   const { kind, id, version, guardKey, payload } = params;
-  if (!manifests.length) return null;
+  if (!guardKey && !manifests.length) return null;
   if (!guardKey) {
     // A publication refused anyway is refused before the guard costs a call.
     await checkPublication(params, doc, payload);

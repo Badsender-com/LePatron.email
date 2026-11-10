@@ -43,10 +43,12 @@ const failedCases = (cases) =>
  * @param {Array<{ kind, id, version: { major, minor }, updatedAt }>}
  *   params.targets the versions the guard ran on, as they were read
  * @param {{ cases: Object[], missing: string[] }} params.guard what it showed
+ * @param {string} [params.terms] a digest of what else the publication must
+ *   be asked with, as checked: an assistant's changelog and release notes
  * @param {{ id: string }} user who ran it
  * @returns {string}
  */
-function issueGuardKey({ targets, guard }, user) {
+function issueGuardKey({ targets, guard, terms }, user) {
   const claims = {
     targets: targets.map(({ kind, id, version, updatedAt }) => ({
       kind,
@@ -62,6 +64,7 @@ function issueGuardKey({ targets, guard }, user) {
       missing: guard.missing || [],
       notReplayed: guard.notReplayed || 0,
     },
+    ...(terms && { terms }),
   };
   const payload = Buffer.from(JSON.stringify(claims)).toString('base64url');
   return `${payload}.${sign(payload)}`;
@@ -93,8 +96,9 @@ function claimsOf(key) {
  * @param {{ kind, id, version: { major, minor } }} target
  * @param {{ id: string }} user
  * @returns {{ updatedAt: string|null,
- *   guard: { cases: number, failed: number, missing: string[] } }}
- *   `updatedAt`: the version's, when the guard ran
+ *   guard: { cases: number, failed: number, missing: string[] },
+ *   terms?: string }}
+ *   `updatedAt`: the version's, when the guard ran; `terms`: as issued
  * @throws {HttpError} 400 `SKILL_PUBLICATION_GUARD_INVALID`
  */
 function readGuardKey(key, { kind, id, version }, user) {
@@ -111,7 +115,7 @@ function readGuardKey(key, { kind, id, version }, user) {
     (t) => t.kind === kind && t.id === id && t.version === label(version)
   );
   if (!ran) throw invalid();
-  return { updatedAt: ran.updatedAt, guard: claims.guard };
+  return { updatedAt: ran.updatedAt, guard: claims.guard, terms: claims.terms };
 }
 
 // The key a request carries, a string or nothing: never what the guard
