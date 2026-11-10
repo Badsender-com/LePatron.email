@@ -11,6 +11,7 @@ const {
 } = require('../mailing/mailing-search.service.js');
 const {
   sanitizePreviewCached,
+  previewCacheKeyOf,
   PREVIEW_CACHE_MAX_ENTRY,
 } = require('../mailing/mailing.service.js');
 const { Mailings } = require('../common/models.common.js');
@@ -83,7 +84,10 @@ async function contentOf(mailing) {
   if (codePointsOf(read.previewHtml) > MAX_PREVIEW_LENGTH) {
     return { missing: NO_CONTENT.TOO_LARGE };
   }
-  return { html: sanitizePreviewCached(read) };
+  return {
+    html: sanitizePreviewCached(read),
+    previewKey: previewCacheKeyOf(read),
+  };
 }
 
 /**
@@ -91,9 +95,9 @@ async function contentOf(mailing) {
  * content, its text by default and its HTML on request. A mailing never saved
  * in the editor, or too large to read, has none, and says why.
  *
- * @returns {Promise<{ answer: Object, html: string|null }|null>} the answer,
- *   and the sanitised preview it was read from; null when the user may not
- *   read it
+ * @returns {Promise<{ answer: Object, html: string|null, previewKey: string|undefined }|null>}
+ *   the answer, the sanitised preview it was read from and what tells that
+ *   saved preview from another; null when the user may not read it
  */
 async function readMailing(mailingId, { user }, format = 'text') {
   const found = await locateReadableMailing(user, mailingId, READ_FIELDS);
@@ -112,7 +116,7 @@ async function readMailing(mailingId, { user }, format = 'text') {
     },
     { ...mailing, approved }
   );
-  const { html = null, missing } = await contentOf(mailing);
+  const { html = null, previewKey, missing } = await contentOf(mailing);
   const content =
     format === 'html'
       ? { html }
@@ -125,6 +129,7 @@ async function readMailing(mailingId, { user }, format = 'text') {
       variables: html ? variablesOf(mailing, html) : [],
     },
     html,
+    previewKey,
   };
 }
 

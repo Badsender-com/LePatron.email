@@ -9,11 +9,14 @@ const crypto = require('crypto');
 const config = require('../node.config.js');
 const { siteOrigin } = require('../utils/site-origin.js');
 const { guardedFetch } = require('../integration-providers/provider-http.js');
+const { createSizedCache } = require('../utils/sized-cache.js');
 
 const ROUTE = '/api/relayed-images';
 const MAX_BYTES = 5 * 1024 * 1024;
 const TIMEOUT_MS = 10000;
 const MAX_REDIRECTS = 3;
+// Characters, as the cache of the sanitised previews counts them.
+const RELAYED_PREVIEWS_BUDGET = 8 * 1024 * 1024;
 
 // A purpose of its own: no other signature of the instance is a valid one.
 const signatureOf = (url) =>
@@ -116,38 +119,120 @@ function isExternal(url) {
   return url !== origin && !url.startsWith(`${origin}/`);
 }
 
+// The rewriting runs on every preview handed to an app, synchronously: every
+// pattern reads each character a bounded number of times, whatever the
+// mailing's author wrote.
+const MAX_URL_LENGTH = 2048;
+// A tag, its attributes read up to the next `<` or `>`: a scan never runs
+// past the next tag.
+const TAG = /<(\/?)([a-zA-Z][a-zA-Z0-9-]{0,31})([^<>]*)>/g;
+const STYLE_END = /<\/style\s*>/gi;
+// An attribute as the sanitiser writes it, its value in double quotes.
+const ATTRIBUTE = /(\s)([^\s"'<>/=]{1,64})(\s*=\s*)"([^"]*)"/g;
+// A url() of a style, its address in bounded characters that hold no quote,
+// parenthesis, space nor angle bracket.
+const CSS_URL = /url\(\s*(&quot;|["']?)([^"'()<>\s]{1,2048})\1\s*\)/gi;
+
 const relayed = (raw) => {
   const url = decoded(raw.trim());
-  return isExternal(url) ? relayedUrlOf(url) : raw;
+  return url.length <= MAX_URL_LENGTH && isExternal(url)
+    ? relayedUrlOf(url)
+    : null;
 };
+
+const relayStyle = (css) =>
+  css.replace(CSS_URL, (whole, quote, url) => {
+    const relayedUrl = relayed(url);
+    return relayedUrl ? `url(${quote}${relayedUrl}${quote})` : whole;
+  });
+
+// An opening tag, its image attributes relayed: the source of an <img>, the
+// background attribute of any tag, the url() of a style attribute.
+function relayTag(name, attributes) {
+  const isImg = name.toLowerCase() === 'img';
+  const rewritten = attributes.replace(
+    ATTRIBUTE,
+    (whole, space, attribute, equals, value) => {
+      const lower = attribute.toLowerCase();
+      if (lower === 'style') {
+        return `${space}${attribute}${equals}"${relayStyle(value)}"`;
+      }
+      if (lower !== 'background' && !(isImg && lower === 'src')) return whole;
+      const relayedUrl = relayed(value);
+      return relayedUrl
+        ? `${space}${attribute}${equals}"${relayedUrl}"`
+        : whole;
+    }
+  );
+  return `<${name}${rewritten}>`;
+}
 
 /**
  * The preview an app is handed, every image hosted outside the instance
  * rewritten to its relayed address: in an <img>, a background attribute, or a
- * url() of a style. The images of the instance stay as they are.
+ * url() of a style, a <style> element or a style attribute. The images of the
+ * instance stay as they are, and so does the text of the email.
  *
  * @param {string} html the sanitised preview
  * @returns {string}
  */
 function relayPreviewImages(html) {
-  return String(html)
-    .replace(
-      /(<img\b[^>]*?\ssrc\s*=\s*)(["'])(.*?)\2/gi,
-      (_m, before, quote, url) => `${before}${quote}${relayed(url)}${quote}`
-    )
-    .replace(
-      /(\sbackground\s*=\s*)(["'])(.*?)\2/gi,
-      (_m, before, quote, url) => `${before}${quote}${relayed(url)}${quote}`
-    )
-    .replace(
-      /url\(\s*(&quot;|["']?)(.*?)\1\s*\)/gi,
-      (_m, quote, url) => `url(${quote}${relayed(url)}${quote})`
-    );
+  const source = String(html);
+  const tags = new RegExp(TAG.source, 'g');
+  let relayedHtml = '';
+  let copied = 0;
+  let tag = tags.exec(source);
+  while (tag) {
+    const [whole, closing, name, attributes] = tag;
+    relayedHtml += source.slice(copied, tag.index);
+    relayedHtml += closing ? whole : relayTag(name, attributes);
+    copied = tags.lastIndex;
+    if (!closing && name.toLowerCase() === 'style') {
+      // A style sheet is read up to its end tag, never as tags.
+      const styleEnd = new RegExp(STYLE_END.source, 'gi');
+      styleEnd.lastIndex = copied;
+      const end = styleEnd.exec(source);
+      const stop = end ? end.index : source.length;
+      relayedHtml += relayStyle(source.slice(copied, stop));
+      copied = stop;
+      tags.lastIndex = stop;
+    }
+    tag = tags.exec(source);
+  }
+  return relayedHtml + source.slice(copied);
+}
+
+// The rewritten previews, kept like the sanitised ones they come from, under
+// the same key (the mailing and its last write). The signing key and the
+// instance's origin are fixed for a process, so they need no part in it.
+const relayedPreviews = createSizedCache({
+  budget: RELAYED_PREVIEWS_BUDGET,
+  maxEntry: RELAYED_PREVIEWS_BUDGET / 10,
+  sizeOf: (html) => html.length,
+});
+
+/**
+ * The preview an app is handed, as `relayPreviewImages` writes it, rewritten
+ * once for each saved preview of a mailing.
+ *
+ * @param {string|undefined} key what tells a saved preview from another
+ *   (`previewCacheKeyOf`); without one, the preview is rewritten every time
+ * @param {string} html the sanitised preview
+ * @returns {string}
+ */
+function relayPreviewImagesCached(key, html) {
+  if (!key) return relayPreviewImages(html);
+  const cached = relayedPreviews.get(key);
+  if (cached !== undefined) return cached;
+  const relayedHtml = relayPreviewImages(html);
+  relayedPreviews.set(key, relayedHtml);
+  return relayedHtml;
 }
 
 module.exports = {
   relayedUrlOf,
   relayPreviewImages,
+  relayPreviewImagesCached,
   isSigned,
   fetchRelayedImage,
   imageTypeOf,

@@ -1501,11 +1501,18 @@ function evictOldestPreview() {
   sanitizedPreviewsSize -= oldestHtml.length;
 }
 
-function sanitizePreviewCached(mailing) {
+// What tells one saved preview of a mailing from another: its last write, and
+// its length should two writes share a millisecond.
+function previewCacheKeyOf(mailing) {
   const updatedAt = mailing.updatedAt
     ? new Date(mailing.updatedAt).getTime()
     : 0;
-  const key = `${mailing._id}:${updatedAt}:${mailing.previewHtml.length}`;
+  return `${mailing._id}:${updatedAt}:${mailing.previewHtml.length}`;
+}
+module.exports.previewCacheKeyOf = previewCacheKeyOf;
+
+function sanitizePreviewCached(mailing) {
+  const key = previewCacheKeyOf(mailing);
 
   if (sanitizedPreviews.has(key)) {
     const html = sanitizedPreviews.get(key);
