@@ -1085,14 +1085,14 @@ export default {
     cdnButtonLabelHint: 'Libellé affiché dans l\'éditeur',
   },
   retex: {
-    title: 'Retour d\'expérience',
+    title: 'Retours d\'expérience',
     description:
-      'Avec un avis, l\'utilisateur peut joindre le résumé de sa session, pour aider l\'entreprise plateforme à améliorer ses expertises et skills. Il n\'est conservé que si l\'entreprise l\'autorise ici, et que l\'utilisateur l\'accepte à chaque fois.',
+      'Depuis leur assistant, les utilisateurs de l\'entreprise peuvent signaler un retour d\'expérience : une divergence ou un complément sur une expertise ou une skill, que l\'entreprise plateforme lit pour les améliorer. Il n\'est envoyé que si l\'entreprise l\'autorise ici, et que l\'utilisateur approuve chaque retour avant son envoi.',
     alwaysShared:
       'La note et le commentaire des avis sont toujours partagés avec l\'entreprise plateforme, que le retour d\'expérience soit autorisé ou non.',
     offForgets:
-      'Le désactiver efface les résumés de session déjà conservés, et raccourcit les commentaires des avis à 500 caractères, la longueur permise sans eux.',
-    updated: 'Retour d\'expérience mis à jour',
+      'Le désactiver efface les retours d\'expérience déjà envoyés par les utilisateurs de l\'entreprise, ouverts ou clos, et les résumés de session gardés avec les anciens avis. Ceux qu\'un consultant de l\'entreprise plateforme écrit en travaillant pour elle restent : ils appartiennent à l\'entreprise plateforme.',
+    updated: 'Retours d\'expérience mis à jour',
   },
   oauthConsent: {
     claimedName: '« {client} »',

@@ -65,16 +65,25 @@ describe('the retex option of a company', () => {
       'fr',
       fr,
       /note et le commentaire.*entreprise plateforme/,
-      /efface les résumés.*500 caractères/,
+      /efface les retours d'expérience.*utilisateurs.*ouverts ou clos.*consultant.*restent/,
+      /divergence ou un complément.*approuve chaque retour/,
     ],
     [
       'en',
       en,
       /rating and the comment.*platform company/,
-      /erases the session summaries.*500 characters/,
+      /erases the retex.*users.*open or closed.*consultant.*stay/,
+      /divergence or a complement.*approves each retex/,
     ],
-  ])('says it in %s', (_lang, messages, shared, erased) => {
-    expect(messages.retex.alwaysShared).toMatch(shared);
-    expect(messages.retex.offForgets).toMatch(erased);
-  });
+  ])(
+    'says it in %s, as the retex is now (ADR 0021)',
+    (_lang, messages, shared, erased, described) => {
+      expect(messages.retex.alwaysShared).toMatch(shared);
+      expect(messages.retex.offForgets).toMatch(erased);
+      expect(messages.retex.description).toMatch(described);
+      const said = Object.values(messages.retex).join(' ');
+      expect(said).not.toMatch(/résumé de sa session|summary of their session/);
+      expect(said).not.toMatch(/500/);
+    }
+  );
 });

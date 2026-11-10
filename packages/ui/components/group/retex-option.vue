@@ -2,9 +2,9 @@
 import mixinGroupSwitch from '~/helpers/mixins/mixin-group-switch.js';
 import BsSettingsRow from '~/components/layout/bs-settings-row.vue';
 
-// Retex (ADR 0012): whether a summary of an assistant session, sent with a
-// feedback, may be kept for the platform company. Each user is still asked
-// every time. Saved on its own, like the two-factor option.
+// Retex (ADR 0012, ADR 0021): whether the company's users may report a
+// retex, a divergence or a complement, to the platform company. Each user
+// still approves each one. Saved on its own, like the two-factor option.
 export default {
   name: 'BsGroupRetexOption',
   components: { BsSettingsRow },

@@ -807,14 +807,14 @@ export default {
     cdnButtonLabelHint: 'Label displayed in the editor',
   },
   retex: {
-    title: 'Session summaries',
+    title: 'Retex',
     description:
-      'With a feedback, the user may attach a summary of their session, to help the platform company improve its expertises and skills. It is kept only if the company allows it here, and the user agrees to it every time.',
+      'From their assistant, the company\'s users may report a retex: a divergence or a complement on an expertise or a skill, which the platform company reads to improve them. It is sent only if the company allows it here, and the user approves each retex before it is sent.',
     alwaysShared:
-      'The rating and the comment of a feedback are always shared with the platform company, whether session summaries are allowed or not.',
+      'The rating and the comment of a feedback are always shared with the platform company, whether the retex is allowed or not.',
     offForgets:
-      'Turning it off erases the session summaries already kept, and shortens the comments of the feedbacks to 500 characters, the length allowed without them.',
-    updated: 'Session summaries updated',
+      'Turning it off erases the retex the company\'s users already sent, open or closed, and the session summaries kept with older feedback. Those a consultant of the platform company writes while working for it stay: they belong to the platform company.',
+    updated: 'Retex updated',
   },
   oauthConsent: {
     claimedName: '"{client}"',
