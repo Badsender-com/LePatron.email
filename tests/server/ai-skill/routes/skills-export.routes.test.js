@@ -30,21 +30,10 @@ jest.doMock(
     throw new Error('the skills export does not send emails');
   }
 );
-// The real rule: the platform capability.
-jest.doMock('../../../../packages/server/account/auth.guard', () => ({
-  GUARD_ADMIN: (req, res, next) => {
-    const permissions = require('../../../../packages/server/account/permissions.js');
-    const {
-      CAPABILITIES,
-    } = require('../../../../packages/shared/access/roles.js');
-    if (permissions.can(req.user, CAPABILITIES.PLATFORM_MANAGE)) return next();
-    return res.status(401).json({ message: 'Unauthorized' });
-  },
-}));
-
 const express = require('express');
 const request = require('../../../helpers/local-request.js');
 const f = require('../../../helpers/mcp-fixtures');
+const { ROLES } = require('../../../../packages/shared/access/roles.js');
 const {
   skillsRouter,
   skillsImportBodyParser,
@@ -70,7 +59,6 @@ function makeApp(user) {
 }
 
 const SUPER_ADMIN = { id: f.ALICE, name: 'Alice', role: 'super_admin' };
-const COMPANY_ADMIN = { id: f.ERIN, name: 'Erin', role: 'company_admin' };
 
 describe('exporting through the API', () => {
   beforeEach(() => store.seed(f.SEED));
@@ -98,14 +86,6 @@ describe('exporting through the API', () => {
     expect(res.status).toBe(400);
     expect(res.body.message).toBe('SKILLS_SELECTION_INVALID');
   });
-
-  it('refuses anyone else', async () => {
-    const res = await request(makeApp(COMPANY_ADMIN))
-      .post('/api/ai-skills/export')
-      .send({ all: true });
-
-    expect(res.status).toBe(401);
-  });
 });
 
 describe('previewing through the API', () => {
@@ -132,14 +112,6 @@ describe('previewing through the API', () => {
         expect.objectContaining({ id: SUBJECT_LINES, state: 'up_to_date' }),
       ])
     );
-  });
-
-  it('refuses anyone else', async () => {
-    const res = await request(makeApp(COMPANY_ADMIN))
-      .post('/api/ai-skills/import/preview')
-      .send(file);
-
-    expect(res.status).toBe(401);
   });
 
   it('refuses a file of an unknown format before any preview', async () => {
@@ -209,13 +181,64 @@ describe('importing through the API', () => {
     expect(res.body.message).toBe('SKILLS_SELECTION_INVALID');
     expect(store.stored('expertises')).toEqual([]);
   });
+});
 
-  it('refuses anyone else, and writes nothing', async () => {
-    const res = await request(makeApp(COMPANY_ADMIN))
-      .post('/api/ai-skills/import')
-      .send({ file, expertiseIds: [SUBJECT_LINES] });
+// Only a super admin exports, previews or imports, through the guard the
+// routes use (docs/agents/rights-review.md: a right is tested on every
+// role). A refused import writes nothing.
+describe('who may use the skills export', () => {
+  const ROUTES = [
+    ['export', '/api/ai-skills/export'],
+    ['preview', '/api/ai-skills/import/preview'],
+    ['import', '/api/ai-skills/import'],
+  ];
+  const EXPECTED = {
+    [ROLES.SUPER_ADMIN]: 200,
+    [ROLES.GROUP_ADMIN_TECH]: 401,
+    [ROLES.GROUP_ADMIN]: 401,
+    [ROLES.REGULAR_USER]: 401,
+    [ROLES.WRITER]: 401,
+    [ROLES.REVIEWER]: 401,
+  };
+  const CASES = ROUTES.flatMap(([name, path]) =>
+    Object.values(ROLES).map((role) => [name, role, path, EXPECTED[role]])
+  );
 
-    expect(res.status).toBe(401);
-    expect(store.stored('expertises')).toEqual([]);
+  let file;
+  beforeEach(async () => {
+    store.seed(f.SEED);
+    file = JSON.parse(
+      (
+        await request(makeApp(SUPER_ADMIN))
+          .post('/api/ai-skills/export')
+          .send({ expertiseIds: [SUBJECT_LINES] })
+      ).text
+    );
+    store.seed({ ...f.SEED, expertises: [], skills: [] });
   });
+
+  const bodyOf = (name) =>
+    ({
+      export: { all: true },
+      preview: file,
+      import: { file, expertiseIds: [SUBJECT_LINES] },
+    }[name]);
+
+  it('names every role', () => {
+    expect(Object.keys(EXPECTED).sort()).toEqual(Object.values(ROLES).sort());
+  });
+
+  it.each(CASES)(
+    '%s, as %s: %s answers %i',
+    async (name, role, path, status) => {
+      const user = { id: f.ALICE, name: 'Someone', role };
+
+      const res = await request(makeApp(user)).post(path).send(bodyOf(name));
+
+      expect(res.status).toBe(status);
+      if (name === 'import' && status !== 200) {
+        expect(store.stored('expertises')).toEqual([]);
+      }
+    }
+  );
 });
