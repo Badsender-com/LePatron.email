@@ -6,6 +6,7 @@
 // same image, and a process runs a bounded number of fetches at a time.
 
 const { guardedFetch } = require('../integration-providers/provider-http.js');
+const logger = require('../utils/logger.js');
 const { createSizedCache } = require('../utils/sized-cache.js');
 const { isInstanceHost } = require('./mcp-relayed-image-address.js');
 
@@ -37,6 +38,19 @@ function imageTypeOf(bytes) {
   return null;
 }
 
+// Why an image was not relayed, with its host only: its address may carry a
+// token of the host's.
+function notRelayed(url, reason) {
+  let host = '';
+  try {
+    host = new URL(url).hostname;
+  } catch (err) {
+    host = 'no host';
+  }
+  logger.warn(`[relayed image] ${host}: ${reason}`);
+  return null;
+}
+
 /**
  * The image at this address, fetched under the guard of the outgoing calls:
  * https at every hop, no private or internal address nor the instance's own
@@ -47,7 +61,9 @@ function imageTypeOf(bytes) {
  * @returns {Promise<{ type: string, bytes: Buffer }|null>}
  */
 async function fetchRelayedImage(url) {
-  if (!/^https:\/\//i.test(url) || isInstanceHost(url) !== false) return null;
+  if (!/^https:\/\//i.test(url) || isInstanceHost(url) !== false) {
+    return notRelayed(url, 'not an https address outside the instance');
+  }
   try {
     const response = await guardedFetch(url, {
       httpsOnly: true,
@@ -57,12 +73,13 @@ async function fetchRelayedImage(url) {
       maxBytes: MAX_BYTES,
       label: 'relayed image',
     });
-    if (!response.ok) return null;
+    if (!response.ok) return notRelayed(url, `answered ${response.status}`);
     const bytes = await response.buffer();
     const type = imageTypeOf(bytes);
-    return type ? { type, bytes } : null;
+    if (!type) return notRelayed(url, 'not a PNG, a JPEG, a GIF nor a WebP');
+    return { type, bytes };
   } catch (err) {
-    return null;
+    return notRelayed(url, err.message);
   }
 }
 
@@ -86,7 +103,9 @@ function relayedImage(url) {
   const cached = images.get(url);
   if (cached) return Promise.resolve(cached);
   if (fetching.has(url)) return fetching.get(url);
-  if (fetching.size >= MAX_FETCHES_IN_FLIGHT) return Promise.resolve(null);
+  if (fetching.size >= MAX_FETCHES_IN_FLIGHT) {
+    return Promise.resolve(notRelayed(url, 'too many fetches running'));
+  }
   const fetched = fetchRelayedImage(url)
     .then((image) => {
       if (image) images.set(url, image);
@@ -97,8 +116,19 @@ function relayedImage(url) {
   return fetched;
 }
 
+/**
+ * The image at this address when the cache holds it, never fetched.
+ *
+ * @param {string} url
+ * @returns {{ type: string, bytes: Buffer }|null}
+ */
+function cachedRelayedImage(url) {
+  return images.get(url) || null;
+}
+
 module.exports = {
   relayedImage,
+  cachedRelayedImage,
   fetchRelayedImage,
   imageTypeOf,
   MAX_FETCHES_IN_FLIGHT,
