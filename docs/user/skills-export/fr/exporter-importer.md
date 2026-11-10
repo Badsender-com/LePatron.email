@@ -39,11 +39,12 @@ Un élément est bloqué quand :
 - **une version plus récente existe ici :** l'import ne revient jamais en arrière ;
 - **un brouillon est ouvert ici :** publiez-le ou supprimez-le d'abord, l'import ne l'écrase jamais ;
 - **cette version existe déjà ici sans être la version active**, par exemple archivée ;
-- **le skill n'a pas la même nature ici** (tâche ou fonctionnalité) : un import apporte une version, pas un changement de nature ;
 - **il est archivé ici ;**
 - **son schéma n'existe pas sur cette instance :** un skill nomme un schéma qui est dans le code. L'instance n'est pas à jour.
 
 Un skill de tâche dont une expertise manque, à la fois ici et dans le fichier, s'importe quand même, avec un avertissement : il se lit, mais il lui manquera cette expertise.
+
+Un skill dont la version active a une autre nature ici (tâche ou fonctionnalité) s'importe en **mise à jour**, avec un avertissement : le brouillon importé garde la nature de la version du fichier, et le publier change la nature du skill.
 
 3. Les éléments nouveaux et les mises à jour sont cochés. Décochez ceux que vous ne voulez pas, puis cliquez sur **Importer la sélection**.
 

@@ -39,11 +39,12 @@ An item is blocked when:
 - **a newer version exists here:** an import never goes back;
 - **a draft is open here:** publish or delete it first, an import never overwrites it;
 - **this version already exists here without being the active one**, archived for instance;
-- **the skill has another nature here** (task or feature): an import brings a version, not a change of nature;
 - **it is archived here;**
 - **its schema does not exist on this instance:** a skill names a schema that lives in the code. The instance is not up to date.
 
 A task skill missing an expertise, both here and in the file, is imported anyway, with a warning: it reads, but without that expertise.
+
+A skill whose active version has another nature here (task or feature) is imported as an **update**, with a warning: the imported draft keeps the nature of the file's version, and publishing it changes the skill's nature.
 
 3. New items and updates are checked. Uncheck those you do not want, then click **Import the selection**.
 
