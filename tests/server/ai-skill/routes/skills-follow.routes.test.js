@@ -125,6 +125,7 @@ describe("a copy's follow of production", () => {
       isCopy: false,
       configured: false,
       production: null,
+      nightly: { enabled: false },
       lock: null,
       last: null,
     });
@@ -132,6 +133,19 @@ describe("a copy's follow of production", () => {
     expect(followed.status).toBe(409);
     expect(followed.body.message).toBe('SKILLS_NOT_A_COPY');
     expect(store.stored('expertises')).toEqual([]);
+  });
+
+  it('says whether the copy follows production every night', async () => {
+    source.nightly = true;
+
+    const shown = await request(makeApp(SUPER_ADMIN)).get(
+      '/api/ai-skills/follow'
+    );
+
+    expect(shown.body).toMatchObject({
+      isCopy: true,
+      nightly: { enabled: true },
+    });
   });
 
   it('says a follow is running, and refuses a second one', async () => {

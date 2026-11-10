@@ -6,6 +6,8 @@
  * (`SKILLS_SOURCE_URL`, `SKILLS_SOURCE_TOKEN`), never in its database nor in
  * a page. The call goes through the guarded outbound fetch: https only, no
  * private address, no redirect followed, the answer bounded in size and time.
+ * A copy follows production every night only when its configuration says so
+ * (`SKILLS_SOURCE_NIGHTLY`).
  */
 
 const config = require('../../node.config.js');
@@ -31,6 +33,10 @@ function sourceOf() {
 
 /** Whether this instance is a copy that may follow production. */
 const isConfigured = () => !!sourceOf();
+
+/** Whether this copy follows production every night too. */
+const isNightly = () =>
+  isConfigured() && String((config.skillsSource || {}).nightly) === 'true';
 
 /**
  * Production's address, as the page may show it: its origin only.
@@ -59,7 +65,10 @@ function exportUrlOf(source) {
     );
   }
   if (base.protocol !== 'https:') {
-    throw followError('invalid_address', "Production's address must use https.");
+    throw followError(
+      'invalid_address',
+      "Production's address must use https."
+    );
   }
   return new URL(EXPORT_PATH, base.origin).toString();
 }
@@ -109,4 +118,9 @@ async function fetchProductionExport() {
   }
 }
 
-module.exports = { isConfigured, productionOrigin, fetchProductionExport };
+module.exports = {
+  isConfigured,
+  isNightly,
+  productionOrigin,
+  fetchProductionExport,
+};

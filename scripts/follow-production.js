@@ -4,15 +4,18 @@
 /**
  * A copy follows production every night (ADR 0019).
  *
- * The hosting platform's scheduler runs this command on each copy (see
- * `cron.json`); the web server runs no timer. It runs the same follow as the
- * "Follow now" button and records it as the night's. On an instance that
- * follows no production (production itself, a local install), it does
- * nothing and exits 0.
+ * The hosting platform's scheduler runs this command (`clevercloud/cron.json`
+ * on Clever Cloud, `cron.json` on Scalingo); the web server runs no timer. It
+ * runs the same follow as the "Follow now" button and records it as the
+ * night's. It does nothing on an instance that follows no production
+ * (production itself, a local install), nor on a copy whose configuration
+ * does not ask for the night (`SKILLS_SOURCE_NIGHTLY=true`). The scheduler
+ * runs it on every instance of the application: the first one takes the
+ * follow's lock, the others find it taken and write nothing.
  *
- * Exit code: 0 when the follow succeeded or there was nothing to follow, 1
- * when it failed or some items failed (`partial`), so the scheduler's logs
- * show it.
+ * Exit code: 0 when the follow succeeded, there was nothing to follow, or
+ * another follow was running; 1 when it failed or some items failed
+ * (`partial`), so the scheduler's logs show it.
  *
  * Usage:
  *   yarn follow-production
@@ -34,6 +37,7 @@ const source = require(server(
   'services',
   'skills-source-client.js'
 ));
+const ERROR_CODES = require(server('constant', 'error-codes.js'));
 
 // The night follows production: no person, no user id.
 const NIGHT = { id: null, name: '' };
@@ -50,11 +54,26 @@ async function followTonight({ log = console.log } = {}) {
     log('This instance follows no production: nothing to do.');
     return 0;
   }
-  const report = await followProduction({
-    fetchExport: source.fetchProductionExport,
-    actor: NIGHT,
-    trigger: 'night',
-  });
+  if (!source.isNightly()) {
+    log(
+      'This copy does not follow production at night (SKILLS_SOURCE_NIGHTLY): nothing to do.'
+    );
+    return 0;
+  }
+  let report;
+  try {
+    report = await followProduction({
+      fetchExport: source.fetchProductionExport,
+      actor: NIGHT,
+      trigger: 'night',
+    });
+  } catch (err) {
+    if (err && err.message === ERROR_CODES.SKILLS_FOLLOW_RUNNING) {
+      log('Another follow of production is running: nothing to do.');
+      return 0;
+    }
+    throw err;
+  }
   const count = (list) => (list || []).length;
   log(
     `Followed ${source.productionOrigin()}: ${report.status}` +
@@ -64,7 +83,9 @@ async function followTonight({ log = console.log } = {}) {
             report.updated
           )} updated, ${count(report.upToDate)} up to date, ${count(
             report.kept
-          )} kept, ${count(report.failed)} failed`)
+          )} kept, ${count(report.moved)} moved, ${count(
+            report.removed
+          )} removed, ${count(report.failed)} failed`)
   );
   return report.status === 'succeeded' ? 0 : 1;
 }

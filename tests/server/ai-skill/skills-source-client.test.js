@@ -15,8 +15,8 @@ jest.mock(
 
 const source = require('../../../packages/server/ai-skill/services/skills-source-client.js');
 
-const configure = (url, token) => {
-  mockConfig.skillsSource = { url, token };
+const configure = (url, token, nightly) => {
+  mockConfig.skillsSource = { url, token, nightly };
 };
 
 describe('reaching production from a copy', () => {
@@ -29,6 +29,18 @@ describe('reaching production from a copy', () => {
     expect(source.isConfigured()).toBe(false);
     configure('https://production.example', 'lpsr_x');
     expect(source.isConfigured()).toBe(true);
+  });
+
+  // Each copy says whether it follows production at night too (ADR 0019).
+  it('follows at night only when its configuration says so', () => {
+    configure('https://production.example', 'lpsr_x', undefined);
+    expect(source.isNightly()).toBe(false);
+    configure('https://production.example', 'lpsr_x', 'false');
+    expect(source.isNightly()).toBe(false);
+    configure('https://production.example', 'lpsr_x', 'true');
+    expect(source.isNightly()).toBe(true);
+    configure(undefined, 'lpsr_x', 'true');
+    expect(source.isNightly()).toBe(false);
   });
 
   it("shows production's origin only", () => {

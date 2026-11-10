@@ -25,6 +25,7 @@ jest.doMock('../../packages/server/utils/logger.js', () => ({
 }));
 const mockSource = {
   isConfigured: jest.fn(),
+  isNightly: jest.fn(),
   productionOrigin: jest.fn(() => 'https://production.example'),
   fetchProductionExport: jest.fn(),
 };
@@ -36,8 +37,10 @@ jest.doMock(
 const f = require('../helpers/mcp-fixtures');
 const {
   exportForCopies,
+} = require('../../packages/server/ai-skill/services/skills-follow.format.js');
+const {
   lastFollow,
-} = require('../../packages/server/ai-skill/services/skills-follow.service.js');
+} = require('../../packages/server/ai-skill/services/skills-follow-lock.js');
 const { followTonight } = require('../../scripts/follow-production.js');
 
 const SUBJECT_LINES = 'redaction.subject-line';
@@ -55,6 +58,7 @@ describe('the nightly follow', () => {
   beforeEach(() => {
     jest.clearAllMocks();
     mockSource.isConfigured.mockReturnValue(true);
+    mockSource.isNightly.mockReturnValue(true);
   });
 
   it('follows production, and records it as the night', async () => {
@@ -86,6 +90,45 @@ describe('the nightly follow', () => {
     expect(log).toHaveBeenCalledWith(
       expect.stringMatching(/follows no production/i)
     );
+  });
+
+  // Each instance says whether it follows at night (ADR 0019).
+  it('does nothing on a copy that does not follow at night', async () => {
+    store.seed(EMPTY_COPY);
+    mockSource.isNightly.mockReturnValue(false);
+
+    const exitCode = await followTonight({ log });
+
+    expect(exitCode).toBe(0);
+    expect(mockSource.fetchProductionExport).not.toHaveBeenCalled();
+    expect(await lastFollow()).toBeNull();
+    expect(log).toHaveBeenCalledWith(
+      expect.stringMatching(/SKILLS_SOURCE_NIGHTLY/)
+    );
+  });
+
+  // The scheduler runs the command on every instance: one follows, the
+  // others find its lock and write nothing.
+  it('writes nothing and exits 0 while another follow runs', async () => {
+    store.seed({
+      ...EMPTY_COPY,
+      follows: [
+        {
+          status: 'running',
+          trigger: 'night',
+          by: '',
+          startedAt: new Date(),
+          expiresAt: new Date(Date.now() + 60 * 1000),
+        },
+      ],
+    });
+
+    const exitCode = await followTonight({ log });
+
+    expect(exitCode).toBe(0);
+    expect(mockSource.fetchProductionExport).not.toHaveBeenCalled();
+    expect(store.stored('expertises')).toEqual([]);
+    expect(log).toHaveBeenCalledWith(expect.stringMatching(/another follow/i));
   });
 
   it('exits in error when the follow fails, having recorded it', async () => {

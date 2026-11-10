@@ -80,6 +80,8 @@ const config = rc('lepatron', {
   skillsSource: {
     url: process.env.SKILLS_SOURCE_URL,
     token: process.env.SKILLS_SOURCE_TOKEN,
+    // And every night too, when set to `true` on that instance.
+    nightly: process.env.SKILLS_SOURCE_NIGHTLY,
   },
 });
 

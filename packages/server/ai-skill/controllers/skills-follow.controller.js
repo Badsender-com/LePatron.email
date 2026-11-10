@@ -13,8 +13,8 @@ const source = require('../services/skills-source-client.js');
 
 /**
  * GET /api/ai-skills/follow: whether this instance is a copy that follows a
- * production, its origin, the follow running now (`lock`) and the last one
- * (ADR 0019).
+ * production, its origin, whether it follows it every night, the follow
+ * running now (`lock`) and the last one (ADR 0019).
  */
 const showFollow = asyncHandler(async (_req, res) => {
   const isCopy = source.isConfigured();
@@ -22,6 +22,7 @@ const showFollow = asyncHandler(async (_req, res) => {
     isCopy,
     configured: isCopy,
     production: source.productionOrigin(),
+    nightly: { enabled: source.isNightly() },
     lock: isCopy ? await runningFollow() : null,
     last: isCopy ? await lastFollow() : null,
   });
