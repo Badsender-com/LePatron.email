@@ -324,6 +324,8 @@ module.exports = {
   MCP_CONNECTION_NOT_FOUND: 'MCP_CONNECTION_NOT_FOUND',
   // A company the request may not reach: its tech admin's, or a super admin's.
   MCP_FORBIDDEN_COMPANY: 'MCP_FORBIDDEN_COMPANY',
+  // A draft cites only open retex (ADR 0021).
+  MCP_RETEX_NOT_OPEN: 'MCP_RETEX_NOT_OPEN',
 
   // TRANSLATION JOBS
   TRANSLATION_JOB_NOT_FOUND: 'TRANSLATION_JOB_NOT_FOUND',

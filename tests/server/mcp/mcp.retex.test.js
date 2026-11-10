@@ -883,7 +883,9 @@ describe('the retex loop', () => {
 
       const answer = await proposeWith(ids);
 
+      expect(answer.error).toMatch(/^MCP_RETEX_NOT_OPEN /);
       expect(answer.error).toMatch(new RegExp(ids[0]));
+      expect(answer.error).not.toMatch(new RegExp(ids[1]));
     });
 
     it('closes them when the draft is published from an assistant', async () => {

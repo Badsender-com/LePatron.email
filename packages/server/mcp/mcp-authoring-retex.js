@@ -6,6 +6,7 @@
 
 const { z } = require('zod');
 const createError = require('http-errors');
+const ERROR_CODES = require('../constant/error-codes.js');
 const { notOpen } = require('./mcp-retex-status.js');
 
 const MAX_ID_LENGTH = 100;
@@ -31,12 +32,10 @@ async function assertCitable(retexIds) {
   if (!retexIds || !retexIds.length) return;
   const refused = await notOpen(retexIds);
   if (refused.length) {
-    throw createError(
-      422,
-      `Not an open retex: ${refused.join(
-        ', '
-      )}. Cite only open retex, as list_retex gives them.`
-    );
+    throw createError(422, ERROR_CODES.MCP_RETEX_NOT_OPEN, {
+      retexIds: refused,
+      hint: 'Cite only open retex, as list_retex gives them.',
+    });
   }
 }
 
