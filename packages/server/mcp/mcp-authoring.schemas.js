@@ -10,6 +10,7 @@ const {
   SkillIdRegex,
   MaxConsumedExpertises,
 } = require('../ai-skill/constant/skill-constants.js');
+const { MAX_KEY_LENGTH } = require('./mcp-confirmation.js');
 
 const MAX_ID_LENGTH = 100;
 const MAX_TITLE_LENGTH = 200;
@@ -141,6 +142,13 @@ const SET_AUDIENCE_INPUT = z.object({
   openExpertiseIds: CONSUMED.optional().describe(
     'Opening a task skill only: the expertises it consumes that are kept to the platform company, as platformOnlyExpertises listed them, to open to every company with it. Opening an expertise also applies it, at once, to the editor features of every company: ask the user for each one.'
   ),
+  confirmation: z
+    .string()
+    .max(MAX_KEY_LENGTH)
+    .optional()
+    .describe(
+      'The key the first call answered. Leave it out to check the change; give it back, with the same arguments, to apply it.'
+    ),
 });
 const AUDIENCE_ANSWER = z.object({
   id: z.string(),
@@ -149,6 +157,9 @@ const AUDIENCE_ANSWER = z.object({
     .string()
     .nullable()
     .describe('The version clients read, null when none was published.'),
+  changed: z
+    .boolean()
+    .describe('Whether this call changed the audience: false at the check.'),
   platformOnlyExpertises: z
     .array(z.object({ expertiseId: z.string(), title: z.string() }))
     .optional()
@@ -169,6 +180,12 @@ const AUDIENCE_ANSWER = z.object({
       })
     )
     .describe('What the change could not do or check, if anything.'),
+  confirmation: z
+    .string()
+    .optional()
+    .describe(
+      'At the first call: the key to give back to apply this exact change, within an hour.'
+    ),
 });
 
 module.exports = {

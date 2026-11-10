@@ -13,16 +13,8 @@ const {
 const {
   Audiences,
   SkillNatures,
-  SkillStatuses,
   MinorVersionDefaults,
 } = require('../ai-skill/constant/skill-constants.js');
-const {
-  platformOnlyExpertises,
-} = require('../ai-skill/services/consumed-expertises.js');
-const {
-  openTaskSkillsConsuming,
-} = require('../ai-skill/services/audience-opening.js');
-const logger = require('../utils/logger.js');
 const {
   withIdentity,
   hasScope,
@@ -43,24 +35,17 @@ const {
   AUDIENCE_ANSWER,
 } = require('./mcp-authoring.schemas.js');
 const { ADDITIVE, OVERWRITING, SWITCHING } = require('./mcp-tool-grammar.js');
-
-// Said in an answer whose change is saved, when what it leaves behind could
-// not be read.
-const WARNING_UNCHECKED = 'WARNING_UNCHECKED';
+const { setAudience } = require('./mcp-audience.js');
 
 // What an assistant writes of each, and the fields its difference shows.
 const ENTITIES = {
   expertise: {
     service: expertiseService,
-    get: 'getExpertise',
-    update: 'updateExpertise',
     idField: 'expertiseId',
     fields: ['body', 'examplesGood', 'examplesBad'],
   },
   skill: {
     service: skillService,
-    get: 'getSkill',
-    update: 'updateSkill',
     idField: 'skillId',
     fields: [
       'procedure',
@@ -215,76 +200,6 @@ function asAuthor(write, refusal = DRAFTING_REFUSED, present = drafted) {
 const SECTIONS =
   'The body is Markdown; each section is a level-2 heading "## [section-id] Title", its id in lowercase letters, digits and hyphens, once per expertise.';
 
-// What opening or closing leaves behind, read once the audience is saved:
-// a failure to read it is logged and said, never answered as an error.
-async function audienceNotes(kind, id, active, opening) {
-  try {
-    if (kind === 'skill' && opening) {
-      return { platformOnlyExpertises: await platformOnlyExpertises(active) };
-    }
-    if (kind === 'expertise' && !opening) {
-      return { openTaskSkills: await openTaskSkillsConsuming(id) };
-    }
-    return {};
-  } catch (error) {
-    logger.error(
-      `[mcp] what the audience of ${kind} ${id} leaves behind could not be read`,
-      error
-    );
-    return { warnings: [{ code: WARNING_UNCHECKED }] };
-  }
-}
-
-/**
- * Opens an active skill or expertise to every company, or keeps it to the
- * platform company again, through the services the back office uses (ADR
- * 0019, ADR 0013). Clients read the active version only, so a version never
- * published is never opened. A task skill opened may open with it the
- * consumed expertises still kept to the platform company, chosen one by one
- * (`openExpertiseIds`), as the back office's confirmation offers; the answer
- * lists those it leaves kept, and, for an expertise kept again, the open task
- * skills that consume it.
- */
-async function setAudience({ kind, id, audience, openExpertiseIds }) {
-  const { service, get } = ENTITIES[kind];
-  const doc = await service[get](id);
-  const active = findActiveVersion(doc);
-  const opening = audience === Audiences.ALL;
-  if (opening && doc.status === SkillStatuses.ARCHIVED) {
-    throw createError(409, `"${id}" is archived: it is opened to no company.`);
-  }
-  if (opening && !active) {
-    throw createError(
-      409,
-      `"${id}" was never published: a person publishes a version before it is opened.`
-    );
-  }
-  if (openExpertiseIds !== undefined && (kind !== 'skill' || !opening)) {
-    throw createError(
-      400,
-      'openExpertiseIds goes only with opening a skill to every company.'
-    );
-  }
-  let saved;
-  let warnings = [];
-  if (kind === 'skill') {
-    ({ skill: saved, warnings } = await skillService.updateSkill(id, {
-      audience,
-      ...(openExpertiseIds !== undefined && { openExpertiseIds }),
-    }));
-  } else {
-    saved = await expertiseService.updateExpertise(id, { audience });
-  }
-  const notes = await audienceNotes(kind, id, active, opening);
-  return {
-    id,
-    audience: saved.audience,
-    clientsRead: active ? label(active) : null,
-    ...notes,
-    warnings: [...warnings, ...(notes.warnings || [])],
-  };
-}
-
 function registerAuthoringTools(server) {
   server.registerTool(
     'propose_expertise_change',
@@ -361,7 +276,7 @@ function registerAuthoringTools(server) {
     {
       title: 'Open or close a skill or an expertise',
       description:
-        'Opens a published skill or expertise to every company, or keeps it to the platform company again. Only its active version is opened, never a draft: the answer says which version clients read. Opening a task skill answers the expertises it consumes that stay kept to the platform company (platformOnlyExpertises): tell the user, and call again with openExpertiseIds for those they choose to open too. Keeping an expertise to the platform company again answers the open task skills that consume it (openTaskSkills). Ask the user before any change.',
+        'Opens a published skill or expertise to every company, or keeps it to the platform company again, in two calls. Without a confirmation, it changes nothing: it answers which version clients will read and what the change leaves behind, with a confirmation key. Opening a task skill names the expertises it consumes that stay kept to the platform company (platformOnlyExpertises): ask the user which to open too, and check again with openExpertiseIds. Keeping an expertise to the platform company again names the open task skills that consume it (openTaskSkills). Tell the user, then call again with the same arguments and the key only once they agree. Only the active version is ever opened, never a draft.',
       inputSchema: SET_AUDIENCE_INPUT,
       outputSchema: AUDIENCE_ANSWER,
       annotations: SWITCHING,
