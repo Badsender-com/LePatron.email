@@ -73,3 +73,18 @@ The web server runs no timer. The hosting platform's scheduler runs `node script
 **One nightly follow a night.** The lock alone only keeps two follows from running at the same time: the instances of a Clever Cloud app may start the command one after the other. A nightly follow is skipped when another nightly follow started less than 60 minutes ago, so the night follows once whatever the number of instances.
 
 The command records the follow like the button does, as the nightly follow, and the copy's **Production and copies** tab shows the last one. It exits 1 when the follow failed or when some items failed, so the scheduler's logs show it.
+
+### Checking the nightly follow on Clever Cloud
+
+After deploying a copy whose nightly follow is on, check that the scheduled line starts and reads the environment variables. `clevercloud/cron.json` holds:
+
+```text
+0 3 * * * /bin/bash -l -c 'cd $ROOT && node scripts/follow-production.js'
+```
+
+1. Run the same line on the copy, from an SSH session (`clever ssh`): `/bin/bash -l -c 'cd $ROOT && node scripts/follow-production.js'`. It is a real follow, recorded as the nightly one: run it more than an hour before 3:00 UTC, or that night's run is skipped.
+2. Read what it prints:
+   - `Followed https://…: succeeded, …`: the line starts and reads the variables;
+   - `This instance follows no production: nothing to do.`: the command does not see `SKILLS_SOURCE_URL` and `SKILLS_SOURCE_TOKEN`;
+   - `This copy does not follow production at night (SKILLS_SOURCE_NIGHTLY): nothing to do.`: `SKILLS_SOURCE_NIGHTLY` is not `true` on this app.
+3. The next morning, the app's logs show the 3:00 UTC run: one instance follows, and any other instance says it found a follow running or a nightly follow that started less than 60 minutes ago.
