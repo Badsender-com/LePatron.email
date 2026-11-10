@@ -39,25 +39,29 @@ After forking the repo:
 
 ## A copy following production's skills and expertises
 
-Production is the source of skills and expertises (ADR 0019). A copy (staging, development) follows it, on demand from its back office and every night.
+Production is the source of skills and expertises (ADR 0019). A copy (staging, development) follows it, on demand from its back office and, where its instance turns it on, every night.
 
 ### Configuration of a copy
 
-1. In production's back office, a super admin opens **Skills & Expertise → Synchronisation** and creates a read token for this copy. The token is shown once.
-2. On the copy, set two environment variables:
+1. In production's back office, a super admin opens **Skills & Expertise → Production and copies** and creates a read token for this copy. The token is shown once. It reads every skill and expertise production holds, drafts and items kept to the platform company included: give it only to a copy whose super admins may read all of that.
+2. On the copy, set these environment variables:
 
-| Variable              | Value                                                                      |
-| --------------------- | -------------------------------------------------------------------------- |
-| `SKILLS_SOURCE_URL`   | Production's address, in https, for example `https://lepatron.example.com` |
-| `SKILLS_SOURCE_TOKEN` | The read token production gave this copy                                   |
+| Variable                | Value                                                                      |
+| ----------------------- | -------------------------------------------------------------------------- |
+| `SKILLS_SOURCE_URL`     | Production's address, in https, for example `https://lepatron.example.com` |
+| `SKILLS_SOURCE_TOKEN`   | The read token production gave this copy                                   |
+| `SKILLS_SOURCE_NIGHTLY` | `true` for this instance to follow production every night; unset otherwise |
 
-Leave both unset on production itself: it follows nothing. Without both, a copy offers no follow and the nightly command does nothing.
+Leave them all unset on production itself: it follows nothing. Without the first two, a copy offers no follow and the nightly command does nothing. The copy's **Production and copies** tab shows whether the nightly follow is on.
 
 ### The nightly follow
 
-The web server runs no timer. The hosting platform's scheduler runs `node scripts/follow-production.js` (also `yarn follow-production`) every night:
+The web server runs no timer. The hosting platform's scheduler runs `node scripts/follow-production.js` (also `yarn follow-production`) every night at 3:00 UTC, on every app deployed from this repository; the command follows production only where `SKILLS_SOURCE_NIGHTLY` is `true` and `SKILLS_SOURCE_URL` and `SKILLS_SOURCE_TOKEN` are set, and otherwise does nothing and exits 0.
 
-- On Scalingo, `cron.json` at the root of the repository schedules it at 3:00 (the platform's time zone, UTC). Every app deployed from this repository reads it; on an instance that follows no production, the command does nothing and exits 0.
+- **Clever Cloud**, which hosts develop, staging and production, reads `clevercloud/cron.json`. It runs the task on **every instance** of the application: when an app runs several instances, each one starts the command.
+- **Scalingo**, which hosts a test instance, reads `cron.json` at the root of the repository.
 - Elsewhere, schedule the same command with the platform's own scheduler.
 
-The command records the follow like the button does, as the nightly follow, and the copy's Synchronisation tab shows the last one. It exits 1 when the follow failed or when some items failed, so the scheduler's logs show it.
+**One follow at a time.** A follow records itself in the database as running when it starts, with an expiry, so that a process that dies does not hold it for ever. While it runs, any other follow, from the button, another process or another instance, is refused and writes nothing. That is what keeps the instances of a Clever Cloud app from following twice. The record is also the follow's trace.
+
+The command records the follow like the button does, as the nightly follow, and the copy's **Production and copies** tab shows the last one. It exits 1 when the follow failed or when some items failed, so the scheduler's logs show it.
