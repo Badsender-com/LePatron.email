@@ -15,7 +15,9 @@ import {
   skillCategoryLabel,
   AUDIENCES,
 } from '~/helpers/ai-skill-categories.js';
+import BsAiCopyPanel from '~/components/ai-skill/bs-ai-copy-panel.vue';
 import mixinAiExpertiseDetails from '~/helpers/mixins/mixin-ai-expertise-details.js';
+import { fetchCopyState } from '~/helpers/skills-copy.js';
 
 export default {
   name: 'PageAiExpertiseDetail',
@@ -28,6 +30,7 @@ export default {
     BsAiArchiveModal,
     BsAiDraftChangedAlert,
     BsAiExpertiseCloseModal,
+    BsAiCopyPanel,
   },
   mixins: [
     mixinPageTitle,
@@ -48,8 +51,11 @@ export default {
   meta: { acl: acls.ACL_PLATFORM_MANAGE, sidebarModule: 'settings' },
   async asyncData({ $axios, params, error }) {
     try {
-      const exp = await $axios.$get(api.aiExpertise(params.expertiseId));
-      return { exp, savedAudience: exp.audience };
+      const [exp, copyState] = await Promise.all([
+        $axios.$get(api.aiExpertise(params.expertiseId)),
+        fetchCopyState($axios, api.aiSkillsFollow),
+      ]);
+      return { exp, savedAudience: exp.audience, isCopy: copyState.isCopy };
     } catch (err) {
       return error({ statusCode: 404, message: 'Expertise not found' });
     }
@@ -60,6 +66,8 @@ export default {
       // The audience stored: keeping it to the platform company again is
       // confirmed first.
       savedAudience: null,
+      // On a copy, the page says where the expertise comes from (ADR 0019).
+      isCopy: false,
       // Landing tab / auto-expanded version come from the query — the create
       // flow redirects here with ?tab=versions&expand=1.0 (§4).
       tab: this.$route.query.tab === 'versions' ? 'versions' : 'details',
@@ -215,6 +223,13 @@ export default {
         $t('aiSkills.skill.noActiveVersion')
       }}</span>
     </p>
+
+    <bs-ai-copy-panel
+      kind="expertise"
+      :item="exp"
+      :is-copy="isCopy"
+      @changed="reloadItem"
+    />
 
     <v-tabs v-model="tab" class="detail-tabs">
       <v-tab href="#details">

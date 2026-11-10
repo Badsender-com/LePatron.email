@@ -1799,6 +1799,43 @@ export default {
       revoked: 'Token revoked.',
       loadError: 'The read tokens could not be loaded.',
     },
+    copy: {
+      panelLabel: 'Origin on this copy',
+      origins: {
+        followed: 'Follows production',
+        followedHint: 'The follow keeps it equal to production.',
+        kept: 'Kept on this copy',
+        keptHint:
+          'The follow no longer touches it: it only says that production changed.',
+        local: 'Written on this copy',
+        localHint: 'It exists only on this copy: the follow never touches it.',
+        copied: 'Copy\'s work',
+        copiedHint:
+          'The work done on this copy, set aside from another item: the follow never touches it.',
+      },
+      openOrigin: 'Open the original item "{id}"',
+      explain: {
+        followed:
+          'The follow keeps it equal to production. What is written here goes, at the next follow, into a draft of a new item of the copy.',
+        kept: 'The follow no longer touches it: it only says that production changed.',
+        local: 'It exists only on this copy: the follow never touches it.',
+        copied:
+          'The work done on this copy, from the linked item: the follow never touches it.',
+      },
+      keep: 'Keep on this copy',
+      keptDone: 'Kept on this copy: the follow no longer touches it.',
+      follow: 'Follow production',
+      followTitle: 'Follow production again?',
+      followConfirm:
+        'At the next follow, this item becomes production\'s again. What was written here, draft or published version, goes into a draft of a new item of the copy: nothing is lost.',
+      followDone: 'This item will follow production at the next follow.',
+      duplicate: 'Duplicate on this copy',
+      duplicateHint:
+        'Creates an item of this copy, with the content of the chosen version as a draft, kept to the platform company and not served to assistants. The follow never touches it.',
+      duplicateVersion: 'Version',
+      duplicateSubmit: 'Duplicate',
+      duplicateDone: 'Item duplicated on this copy.',
+    },
     feedback: {
       tab: 'Feedback',
       caption:

@@ -106,3 +106,18 @@ export function aiSkillsReadToken(tokenId) {
 export function aiSkillsFollow() {
   return '/ai-skills/follow';
 }
+
+// A copy keeps an item of production, or follows it again, and duplicates a
+// version of one in an item of its own (ADR 0019).
+export function aiSkillKeepOnCopy(skillId) {
+  return `/ai-skills/${skillId}/keep-on-copy`;
+}
+export function aiSkillDuplicateOnCopy(skillId) {
+  return `/ai-skills/${skillId}/duplicate-on-copy`;
+}
+export function aiExpertiseKeepOnCopy(expertiseId) {
+  return `/ai-expertise/${expertiseId}/keep-on-copy`;
+}
+export function aiExpertiseDuplicateOnCopy(expertiseId) {
+  return `/ai-expertise/${expertiseId}/duplicate-on-copy`;
+}

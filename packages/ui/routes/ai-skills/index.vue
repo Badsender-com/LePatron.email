@@ -8,6 +8,8 @@ import BsAiInvocationsTab from '~/components/ai-skill/bs-ai-invocations-tab.vue'
 import BsAiSyncTab from '~/components/ai-skill/bs-ai-sync-tab.vue';
 import BsAiSkillsImportModal from '~/components/ai-skill/bs-ai-skills-import-modal.vue';
 import { mapMutations } from 'vuex';
+import * as api from '~/helpers/ai-skill-routes.js';
+import { fetchCopyState } from '~/helpers/skills-copy.js';
 import { Plus, Download, Upload } from 'lucide-vue';
 import { PAGE, SHOW_SNACKBAR } from '~/store/page.js';
 import {
@@ -39,6 +41,8 @@ export default {
     return {
       tab: this.resolveInitialTab(),
       exportingAll: false,
+      // On a copy, the lists say where each item comes from (ADR 0019).
+      isCopy: false,
     };
   },
   head() {
@@ -70,6 +74,11 @@ export default {
         this.tab = newVal;
       }
     },
+  },
+  async mounted() {
+    this.isCopy = (
+      await fetchCopyState(this.$axios, api.aiSkillsFollow)
+    ).isCopy;
   },
   methods: {
     ...mapMutations(PAGE, { showSnackbar: SHOW_SNACKBAR }),
@@ -167,10 +176,10 @@ export default {
       <div class="hub-content">
         <v-tabs-items v-model="tab" class="transparent">
           <v-tab-item value="skills">
-            <bs-ai-skills-tab ref="skillsTab" />
+            <bs-ai-skills-tab ref="skillsTab" :is-copy="isCopy" />
           </v-tab-item>
           <v-tab-item value="expertise">
-            <bs-ai-expertise-tab ref="expertiseTab" />
+            <bs-ai-expertise-tab ref="expertiseTab" :is-copy="isCopy" />
           </v-tab-item>
           <v-tab-item value="invocations">
             <bs-ai-invocations-tab />

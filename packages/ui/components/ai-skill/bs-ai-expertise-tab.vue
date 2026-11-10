@@ -7,6 +7,7 @@ import BsDataTable from '~/components/data-table/bs-data-table.vue';
 import BsAiExpertiseCreateModal from '~/components/ai-skill/bs-ai-expertise-create-modal.vue';
 import BsTimestamp from '~/components/bs-timestamp.vue';
 import BsAiPlatformOnlyChip from '~/components/ai-skill/bs-ai-platform-only-chip.vue';
+import BsAiCopyOriginChip from '~/components/ai-skill/bs-ai-copy-origin-chip.vue';
 import BsAiSkillsExportBar from '~/components/ai-skill/bs-ai-skills-export-bar.vue';
 import { isExportable } from '~/helpers/skills-export-download.js';
 import { BookOpen } from 'lucide-vue';
@@ -25,7 +26,12 @@ export default {
     BsAiSkillsExportBar,
     BsTimestamp,
     BsAiPlatformOnlyChip,
+    BsAiCopyOriginChip,
     LucideBookOpen: BookOpen,
+  },
+  props: {
+    // On a copy, each item says where it comes from (ADR 0019).
+    isCopy: { type: Boolean, default: false },
   },
   data() {
     return {
@@ -231,6 +237,11 @@ export default {
       <template #item.title="{ item }">
         <span class="font-weight-medium">{{ item.title }}</span>
         <bs-ai-platform-only-chip :audience="item.audience" />
+        <bs-ai-copy-origin-chip
+          kind="expertise"
+          :item="item"
+          :is-copy="isCopy"
+        />
       </template>
       <template #item.expertiseId="{ item }">
         <span class="text-caption text--secondary">{{ item.expertiseId }}</span>

@@ -1826,6 +1826,45 @@ export default {
       revoked: 'Jeton révoqué.',
       loadError: 'Les jetons de lecture n\'ont pas pu être chargés.',
     },
+    copy: {
+      panelLabel: 'Origine sur cette copie',
+      origins: {
+        followed: 'Suit la production',
+        followedHint: 'Le suivi de la production le garde égal à la production.',
+        kept: 'Gardé sur cette copie',
+        keptHint:
+          'Le suivi ne le touche plus : il signale seulement que la production a changé.',
+        local: 'Écrit sur cette copie',
+        localHint:
+          'Il n\'existe que sur cette copie : le suivi n\'y touche jamais.',
+        copied: 'Travail de la copie',
+        copiedHint:
+          'Le travail fait sur cette copie, mis de côté d\'un autre élément : le suivi n\'y touche jamais.',
+      },
+      openOrigin: 'Ouvrir l\'élément d\'origine « {id} »',
+      explain: {
+        followed:
+          'Le suivi le garde égal à la production. Ce qui est écrit ici part, au suivi suivant, en brouillon dans un nouvel élément de la copie.',
+        kept: 'Le suivi ne le touche plus : il signale seulement que la production a changé.',
+        local:
+          'Il n\'existe que sur cette copie : le suivi n\'y touche jamais.',
+        copied:
+          'Le travail fait sur cette copie, d\'après l\'élément lié : le suivi n\'y touche jamais.',
+      },
+      keep: 'Garder sur cette copie',
+      keptDone: 'Gardé sur cette copie : le suivi ne le touche plus.',
+      follow: 'Suivre la production',
+      followTitle: 'Suivre de nouveau la production ?',
+      followConfirm:
+        'Au prochain suivi, cet élément redevient celui de la production. Ce qui a été écrit ici, brouillon ou version publiée, part en brouillon dans un nouvel élément de la copie : rien n\'est perdu.',
+      followDone: 'Cet élément suivra la production au prochain suivi.',
+      duplicate: 'Dupliquer sur cette copie',
+      duplicateHint:
+        'Crée un élément de cette copie, avec le contenu de la version choisie en brouillon, réservé à l\'entreprise plateforme et non servi aux assistants. Le suivi n\'y touche jamais.',
+      duplicateVersion: 'Version',
+      duplicateSubmit: 'Dupliquer',
+      duplicateDone: 'Élément dupliqué sur cette copie.',
+    },
     feedback: {
       tab: 'Avis',
       caption:

@@ -12,7 +12,9 @@ import BsAiSkillVersionsPanel from '~/components/ai-skill/bs-ai-skill-versions-p
 import BsAiSkillDetailsForm from '~/components/ai-skill/bs-ai-skill-details-form.vue';
 import BsAiSkillLogsPanel from '~/components/ai-skill/bs-ai-skill-logs-panel.vue';
 import BsAiSkillOpenModal from '~/components/ai-skill/bs-ai-skill-open-modal.vue';
+import BsAiCopyPanel from '~/components/ai-skill/bs-ai-copy-panel.vue';
 import mixinAiSkillDetails from '~/helpers/mixins/mixin-ai-skill-details.js';
+import { fetchCopyState } from '~/helpers/skills-copy.js';
 import {
   skillCategoryLabel,
   AUDIENCES,
@@ -30,6 +32,7 @@ export default {
     BsAiSkillDetailsForm,
     BsAiSkillLogsPanel,
     BsAiSkillOpenModal,
+    BsAiCopyPanel,
   },
   mixins: [
     mixinPageTitle,
@@ -50,14 +53,16 @@ export default {
   meta: { acl: acls.ACL_PLATFORM_MANAGE, sidebarModule: 'settings' },
   async asyncData({ $axios, params, error }) {
     try {
-      const [skill, schemasRes] = await Promise.all([
+      const [skill, schemasRes, copyState] = await Promise.all([
         $axios.$get(api.aiSkill(params.skillId)),
         $axios.$get(api.aiSkillSchemas()),
+        fetchCopyState($axios, api.aiSkillsFollow),
       ]);
       return {
         skill,
         savedAudience: skill.audience,
         schemas: schemasRes.schemas || [],
+        isCopy: copyState.isCopy,
       };
     } catch (err) {
       return error({ statusCode: 404, message: 'Skill not found' });
@@ -69,6 +74,8 @@ export default {
       // The audience stored: opening the skill to all is confirmed first.
       savedAudience: null,
       schemas: [],
+      // On a copy, the page says where the skill comes from (ADR 0019).
+      isCopy: false,
       // Landing tab / auto-expanded version come from the query — the create
       // flow redirects here with `?tab=versions&expand=1.0` (§B2).
       tab: this.$route.query.tab === 'versions' ? 'versions' : 'details',
@@ -243,6 +250,13 @@ export default {
         $t('aiSkills.skill.noActiveVersion')
       }}</span>
     </p>
+
+    <bs-ai-copy-panel
+      kind="skill"
+      :item="skill"
+      :is-copy="isCopy"
+      @changed="reloadItem"
+    />
 
     <v-tabs v-model="tab" class="detail-tabs">
       <v-tab href="#details">
