@@ -24,6 +24,7 @@ Complete guide to LePatron.email documentation for developers and AI agents.
 | [recettes/skills-follow.md](./recettes/skills-follow.md)           | A copy following production, end to end                      | QA, release managers     |
 | [user/skills-publication/](./user/skills-publication/README.md)    | Publishing what a feature uses, with a check (FR, EN)        | Super admins, support    |
 | [recettes/skills-publication.md](./recettes/skills-publication.md) | Publication guard and bulk publication                       | QA, release managers     |
+| [recettes/retex-loop.md](./recettes/retex-loop.md)                 | Retex loop: reporting, convergence, publication, dismissal   | QA, release managers     |
 | [../.claude/skills/](../.claude/skills/)                           | Agent skills, including the new feature workflow             | AI agents                |
 
 ## 📚 Documentation Structure

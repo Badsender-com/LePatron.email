@@ -10,5 +10,6 @@ User documentation, to be copied into the help site (docs.lepatron.email). One p
 | Copilot Studio, Microsoft 365 Copilot                | [Microsoft](./fr/microsoft.md)                                     | [Microsoft](./en/microsoft.md)                                 |
 | VS Code, GitHub Copilot                              | [VS Code](./fr/vscode.md)                                          | [VS Code](./en/vscode.md)                                      |
 | Platform company's team: write, publish, open skills | [Publier depuis un assistant](./fr/publier-depuis-un-assistant.md) | [Publish from an assistant](./en/publish-from-an-assistant.md) |
+| Retex: divergences and complements on skills         | [Retours d'expérience](./fr/retours-d-experience.md)               | [Retex](./en/retex.md)                                         |
 
 The examples use `https://app.lepatron.email`: replace it with the instance's address. The assistants' own menus change often: each page links to their official documentation, and the release checklist ([docs/recettes/mcp-clients.md](../../recettes/mcp-clients.md)) replays every flow on staging.
