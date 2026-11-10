@@ -866,6 +866,11 @@ describe('the skills export', () => {
       ]);
       expect(skill.activeVersion).toEqual({ major: 0, minor: 1 });
       expect(draftOf(skill)).toMatchObject({ nature: 'task' });
+      expect(report.updated[0].warnings).toContainEqual({
+        code: 'nature_differs',
+        nature: 'task',
+        current: 'feature',
+      });
     });
 
     // A missing consumed expertise warns at the import; the publication still

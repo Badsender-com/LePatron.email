@@ -394,8 +394,9 @@ function create(kind, item, userId) {
  * @param {{ user: { id: string } }} context
  * @returns {Promise<{ created, updated, skipped, failed }>} each a list of
  *   `{ kind, id, version }`, with a `reason` when skipped and a `message`
- *   when failed, and the `warnings` of a skill whose consumed expertises
- *   are still missing here once the import is done; a chosen id the file
+ *   when failed, and, as the preview has them, the `warnings` of a skill
+ *   whose consumed expertises are still missing here once the import is
+ *   done, or whose nature differs from its active version here; a chosen id the file
  *   does not hold is skipped as
  *   `not_in_file`, without a version
  */
@@ -441,12 +442,16 @@ async function importSkills(
       // missing as one it does not hold: the draft cannot be published until
       // it is here (ADR 0018).
       const missing = consumedOf(item).filter((e) => !available.has(e));
-      const done = missing.length
-        ? {
-            ...entry,
-            warnings: [{ code: 'missing_expertises', expertiseIds: missing }],
-          }
-        : entry;
+      const warnings = [
+        ...(missing.length
+          ? [{ code: 'missing_expertises', expertiseIds: missing }]
+          : []),
+        // The preview's, which the import does not change.
+        ...(preview.warnings || []).filter(
+          ({ code }) => code !== 'missing_expertises'
+        ),
+      ];
+      const done = warnings.length ? { ...entry, warnings } : entry;
       try {
         if (preview.state === 'new') {
           // eslint-disable-next-line no-await-in-loop
