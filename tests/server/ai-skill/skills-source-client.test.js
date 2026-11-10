@@ -9,6 +9,9 @@ const mockGuardedFetch = jest.fn();
 jest.mock(
   '../../../packages/server/integration-providers/provider-http.js',
   () => ({
+    ...jest.requireActual(
+      '../../../packages/server/integration-providers/provider-http.js'
+    ),
     guardedFetch: (...args) => mockGuardedFetch(...args),
   })
 );
@@ -18,6 +21,16 @@ const source = require('../../../packages/server/ai-skill/services/skills-source
 const configure = (url, token, nightly) => {
   mockConfig.skillsSource = { url, token, nightly };
 };
+
+// What node-fetch rejects a body with, as guardedFetch bounds it.
+const fetchError = (type) =>
+  Object.assign(new Error(`body ${type}`), { name: 'FetchError', type });
+const answering = (error) => () =>
+  Promise.resolve({
+    ok: true,
+    status: 200,
+    json: () => Promise.reject(error),
+  });
 
 describe('reaching production from a copy', () => {
   beforeEach(() => mockGuardedFetch.mockReset());
@@ -92,12 +105,31 @@ describe('reaching production from a copy', () => {
         }),
       'unreadable',
     ],
-  ])('says why when production %s', async (_case, answer, reason) => {
-    configure('https://production.example', 'lpsr_x');
-    mockGuardedFetch.mockImplementationOnce(answer);
+    // The body bounded by guardedFetch: too big reads as unreadable, too
+    // slow as out of reach, each saying which in the logs.
+    [
+      'answers more than the copy reads',
+      answering(fetchError('max-size')),
+      'unreadable',
+      /max-size/,
+    ],
+    [
+      'answers too slowly',
+      answering(fetchError('body-timeout')),
+      'unreachable',
+      /timed out/,
+    ],
+  ])(
+    'says why when production %s',
+    async (_case, answer, reason, message = /./) => {
+      configure('https://production.example', 'lpsr_x');
+      mockGuardedFetch.mockImplementationOnce(answer);
 
-    await expect(source.fetchProductionExport()).rejects.toMatchObject({
-      reason,
-    });
-  });
+      await expect(source.fetchProductionExport()).rejects.toMatchObject({
+        reason,
+        code: `SKILLS_FOLLOW_${reason.toUpperCase()}`,
+        message: expect.stringMatching(message),
+      });
+    }
+  );
 });

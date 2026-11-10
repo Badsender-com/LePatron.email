@@ -11,19 +11,34 @@
  */
 
 const config = require('../../node.config.js');
+const ERROR_CODES = require('../../constant/error-codes.js');
 const {
   guardedFetch,
+  toProviderError,
 } = require('../../integration-providers/provider-http.js');
+const {
+  PROVIDER_ERROR_CODES,
+} = require('../../integration-providers/provider-error.js');
 
 const EXPORT_PATH = '/api/skills-source/export';
 // Some sixty items weigh well under a megabyte; ten leave room to grow.
 const MAX_BYTES = 10 * 1024 * 1024;
 const TIMEOUT_MS = 30 * 1000;
 
-// An error that says why in a word the page translates (`reason`), and in a
-// sentence the logs keep (`message`): never the token.
+// The code of each reason a follow writes nothing.
+const CODES = {
+  not_configured: ERROR_CODES.SKILLS_FOLLOW_NOT_CONFIGURED,
+  invalid_address: ERROR_CODES.SKILLS_FOLLOW_INVALID_ADDRESS,
+  unreachable: ERROR_CODES.SKILLS_FOLLOW_UNREACHABLE,
+  token_refused: ERROR_CODES.SKILLS_FOLLOW_TOKEN_REFUSED,
+  production_error: ERROR_CODES.SKILLS_FOLLOW_PRODUCTION_ERROR,
+  unreadable: ERROR_CODES.SKILLS_FOLLOW_UNREADABLE,
+};
+
+// An error that says why in a word and a code the page translates (`reason`,
+// `code`), and in a sentence the logs keep (`message`): never the token.
 function followError(reason, message) {
-  return Object.assign(new Error(message), { reason });
+  return Object.assign(new Error(message), { reason, code: CODES[reason] });
 }
 
 function sourceOf() {
@@ -111,9 +126,11 @@ async function fetchProductionExport() {
   try {
     return await response.json();
   } catch (err) {
+    // An answer too big or too slow, as much as one that is not JSON.
+    const { message, code } = toProviderError(err, 'Production');
     throw followError(
-      'unreadable',
-      'Production answered something that is not JSON.'
+      code === PROVIDER_ERROR_CODES.TIMEOUT ? 'unreachable' : 'unreadable',
+      message
     );
   }
 }
