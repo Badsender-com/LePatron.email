@@ -56,6 +56,23 @@ const ENTITIES = {
 const copy = (value) =>
   value === undefined ? undefined : JSON.parse(JSON.stringify(value));
 
+const isPlainObject = (value) =>
+  value !== null && typeof value === 'object' && !Array.isArray(value);
+
+// A field stored as null is a field not set, which a file leaves out: the
+// format reads null nowhere. In an embedded object (the model hints) or each
+// one of a list (the test cases), not inside a test case's own values.
+function withoutNulls(value) {
+  const strip = (object) =>
+    Object.fromEntries(Object.entries(object).filter(([, v]) => v !== null));
+  if (Array.isArray(value)) {
+    return value.map((element) =>
+      isPlainObject(element) ? strip(element) : element
+    );
+  }
+  return isPlainObject(value) ? strip(value) : value;
+}
+
 // What a version says, without the notes that come with its release: every
 // content field, at its empty value when missing, so a file reads the same
 // whatever the age of the version it comes from, and a field a file leaves
@@ -64,7 +81,10 @@ function contentOf(version, contentFields) {
   const out = {};
   contentFields.forEach(({ name, default: empty }) => {
     const value = version[name];
-    out[name] = value === undefined || value === null ? empty() : copy(value);
+    out[name] =
+      value === undefined || value === null
+        ? empty()
+        : withoutNulls(copy(value));
   });
   return out;
 }
@@ -87,7 +107,9 @@ function itemOf(kind, doc) {
   const { idField, fields, contentFields } = ENTITIES[kind];
   const item = { [idField]: doc[idField] };
   fields.forEach((field) => {
-    if (doc[field] !== undefined) item[field] = copy(doc[field]);
+    if (doc[field] !== undefined && doc[field] !== null) {
+      item[field] = copy(doc[field]);
+    }
   });
   item.version = versionOf(findActiveVersion(doc), contentFields);
   return item;
@@ -100,11 +122,23 @@ function refusalOf(doc) {
   return null;
 }
 
+// What an export reads of an item: its fields and its active version, not
+// the history.
+function exportedFields(kind) {
+  const { idField, fields } = ENTITIES[kind];
+  const projection = { [idField]: 1, status: 1, activeVersion: 1 };
+  fields.forEach((field) => {
+    projection[field] = 1;
+  });
+  projection.versions = { $elemMatch: { status: SkillStatuses.ACTIVE } };
+  return projection;
+}
+
 async function exportable(kind, chosen, { strict }) {
   const { model, idField } = ENTITIES[kind];
   const ids = [...new Set(chosen)];
   const docs = await model()
-    .find({ [idField]: { $in: ids } })
+    .find({ [idField]: { $in: ids } }, exportedFields(kind))
     .lean();
   return ids
     .map((id) => {
@@ -119,7 +153,7 @@ async function exportable(kind, chosen, { strict }) {
 async function everyExportable(kind) {
   const docs = await ENTITIES[kind]
     .model()
-    .find({ status: { $ne: SkillStatuses.ARCHIVED } })
+    .find({ status: { $ne: SkillStatuses.ARCHIVED } }, exportedFields(kind))
     .lean();
   return docs.filter((doc) => !refusalOf(doc));
 }
@@ -139,7 +173,7 @@ const byId = (idField) => (a, b) => a[idField].localeCompare(b[idField]);
  * @param {string[]} [selection.withoutExpertiseIds]
  * @param {boolean} [selection.all]
  * @param {Object} context
- * @param {{ name: string }} context.user who exports
+ * @param {{ name?: string, email?: string }} context.user who exports
  * @param {string} context.origin the instance the file comes from
  */
 async function exportSkills(
@@ -174,7 +208,8 @@ async function exportSkills(
     format: FORMAT,
     origin,
     exportedAt: new Date().toISOString(),
-    exportedBy: user.name,
+    // A name is not required on an account; an email is.
+    exportedBy: user.name || user.email || '',
     expertises: expertises
       .map((doc) => itemOf('expertise', doc))
       .sort(byId('expertiseId')),

@@ -229,6 +229,57 @@ describe('the skills export', () => {
       );
     });
 
+    // A field stored as null, and an account without a name: the file the
+    // export writes is one the import reads.
+    it('writes a file the import reads, whatever was left empty', async () => {
+      store.seed({
+        ...SOURCE,
+        expertises: SOURCE.expertises.map((e) => ({ ...e, description: null })),
+        skills: SOURCE.skills.map((skill) =>
+          skill.skillId === SUBJECT_IDEAS
+            ? {
+                ...skill,
+                versions: skill.versions.map((v) => ({
+                  ...v,
+                  modelHints: { temperature: null, maxTokens: 300 },
+                  testCases: [{ name: 'Brief', input: 'Sale', notes: null }],
+                })),
+              }
+            : skill
+        ),
+      });
+
+      const file = await exportSkills(
+        { all: true },
+        { user: { id: f.ALICE, email: 'alice@example.com' }, origin: ORIGIN }
+      );
+
+      expect(file.exportedBy).toBe('alice@example.com');
+      expect(() =>
+        readSkillsExport(JSON.parse(JSON.stringify(file)))
+      ).not.toThrow();
+      expect(
+        file.skills.find((s) => s.skillId === SUBJECT_IDEAS).version.modelHints
+      ).toEqual({ maxTokens: 300 });
+    });
+
+    // The history of an item can be long: an export reads its active
+    // version only.
+    it('reads the active version of each item, not its history', async () => {
+      const find = jest.spyOn(store.models.Expertises, 'find');
+
+      await exportOf({ all: true });
+      await exportOf({ expertiseIds: [SUBJECT_LINES] });
+
+      expect(find).toHaveBeenCalled();
+      find.mock.calls.forEach(([, projection]) => {
+        expect(projection).toMatchObject({
+          versions: { $elemMatch: { status: 'ACTIVE' } },
+        });
+      });
+      find.mockRestore();
+    });
+
     it('refuses a file of an unknown format, or that fails validation', () => {
       expect(() => readSkillsExport({ format: 2 })).toThrow(/format/);
       expect(() =>
