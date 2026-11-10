@@ -203,3 +203,38 @@ describe('the read tokens of production', () => {
     expect(words.emptyOnCopy).toBeTruthy();
   });
 });
+
+describe('the tab of production and its copies', () => {
+  const TAB = 'packages/ui/components/ai-skill/bs-ai-sync-tab.vue';
+  const tokensStub = {
+    props: { isCopy: Boolean },
+    render(h) {
+      return h('div', {
+        class: 'tokens-stub',
+        attrs: { 'data-copy': String(this.isCopy) },
+      });
+    },
+  };
+  const followStub = {
+    render(h) {
+      return h('div', { class: 'follow-stub' });
+    },
+  };
+
+  it('shows the tokens once it knows whether this instance is a copy, and tells them', async () => {
+    const vm = mountSfc(TAB, {
+      imports: {
+        '~/components/ai-skill/bs-ai-follow-production.vue': followStub,
+        '~/components/ai-skill/bs-ai-read-tokens.vue': tokensStub,
+      },
+    });
+    expect(vm.$el.querySelector('.tokens-stub')).toBeNull();
+
+    vm.$children[0].$emit('state', { isCopy: true });
+    await settle(vm);
+
+    expect(vm.$el.querySelector('.tokens-stub').getAttribute('data-copy')).toBe(
+      'true'
+    );
+  });
+});
