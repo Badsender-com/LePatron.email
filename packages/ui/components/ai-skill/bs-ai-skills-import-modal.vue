@@ -3,6 +3,7 @@ import { FileJson } from 'lucide-vue';
 import BsModalConfirm from '~/components/modal-confirm.vue';
 import BsAiSkillsImportReport from '~/components/ai-skill/bs-ai-skills-import-report.vue';
 import * as api from '~/helpers/ai-skill-routes.js';
+import { skillErrorMessage } from '~/helpers/ai-skill-errors.js';
 import {
   keyOf,
   isSelectable,
@@ -46,7 +47,7 @@ export default {
       return this.$t('skillsImport.from', {
         origin,
         by: exportedBy,
-        date: new Date(exportedAt).toLocaleDateString(),
+        date: new Date(exportedAt).toLocaleDateString(this.$i18n.locale),
       });
     },
   },
@@ -80,13 +81,17 @@ export default {
         });
         this.$emit('imported', this.report);
       } catch (err) {
-        const message =
-          (err.response && err.response.data && err.response.data.message) ||
-          err.message;
-        this.error = this.$t('skillsImport.importFailed', { message });
+        this.error = this.$t('skillsImport.importFailed', {
+          message: this.reasonOfError(err),
+        });
       } finally {
         this.importing = false;
       }
+    },
+    // The reason the server gives, in words when it is a known code.
+    reasonOfError(err) {
+      const data = err.response && err.response.data;
+      return data && data.message ? skillErrorMessage(this, err) : err.message;
     },
     // The file is read and checked here first, so a wrong file is said at
     // once; the server reads it again.
@@ -112,10 +117,9 @@ export default {
         );
         this.selected = defaultSelection(this.items);
       } catch (err) {
-        const message =
-          (err.response && err.response.data && err.response.data.message) ||
-          err.message;
-        this.error = this.$t('skillsImport.unreadable', { message });
+        this.error = this.$t('skillsImport.unreadable', {
+          message: this.reasonOfError(err),
+        });
       } finally {
         this.reading = false;
       }
@@ -140,6 +144,7 @@ export default {
     ref="modal"
     :title="$t('skillsImport.title')"
     :display-submit-button="false"
+    :cancel-label="report ? $t('global.close') : ''"
     modal-width="720"
   >
     <div v-if="!preview" class="bs-ai-skills-import__file">
@@ -177,7 +182,7 @@ export default {
       @leave="close"
     />
 
-    <div v-else class="bs-ai-skills-import__preview">
+    <div v-else class="bs-ai-skills-import__preview" aria-live="polite">
       <p class="bs-ai-skills-import__from">{{ fromLine }}</p>
 
       <ul class="bs-ai-skills-import__items">
@@ -238,7 +243,7 @@ export default {
           }}
         </span>
         <div>
-          <v-btn text class="text-none" @click="reset">
+          <v-btn text class="text-none" :disabled="importing" @click="reset">
             {{ $t('skillsImport.otherFile') }}
           </v-btn>
           <v-btn
@@ -253,7 +258,9 @@ export default {
           </v-btn>
         </div>
       </div>
-      <p v-if="error" class="bs-ai-skills-import__reason mt-2">{{ error }}</p>
+      <p v-if="error" class="bs-ai-skills-import__reason mt-2" role="alert">
+        {{ error }}
+      </p>
     </div>
   </bs-modal-confirm>
 </template>

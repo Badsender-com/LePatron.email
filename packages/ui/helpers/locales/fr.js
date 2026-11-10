@@ -1663,7 +1663,6 @@ export default {
     file: 'Export de skills (.json)',
     fileHint: 'Un fichier exporté d\'une autre instance LePatron, 5 Mo au plus.',
     preview: 'Voir l\'aperçu',
-    reading: 'Lecture du fichier…',
     from: 'Exporté de {origin} par {by}, le {date}.',
     counter: '{count} élément à importer | {count} éléments à importer',
     nothing: 'Rien à importer : tout est à jour ou bloqué.',

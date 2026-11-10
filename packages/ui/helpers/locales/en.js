@@ -1639,7 +1639,6 @@ export default {
     file: 'Skills export (.json)',
     fileHint: 'A file exported from another LePatron instance, 5 MB at most.',
     preview: 'See the preview',
-    reading: 'Reading the file…',
     from: 'Exported from {origin} by {by}, on {date}.',
     counter: '{count} item to import | {count} items to import',
     nothing: 'Nothing to import: everything is up to date or blocked.',

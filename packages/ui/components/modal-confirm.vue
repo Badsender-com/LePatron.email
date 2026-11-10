@@ -11,6 +11,8 @@ export default {
     displaySubmitButton: { type: Boolean, default: true },
     actionLabel: { type: String, default: '' },
     actionButtonColor: { type: String, default: 'error' },
+    // "Close" once nothing is left to cancel.
+    cancelLabel: { type: String, default: '' },
   },
   data() {
     return { show: false, confirmed: false };
@@ -66,7 +68,7 @@ export default {
         <v-card-actions>
           <v-spacer />
           <v-btn text color="primary" @click="close">
-            {{ $t('global.cancel') }}
+            {{ cancelLabel || $t('global.cancel') }}
           </v-btn>
           <v-btn
             v-if="displaySubmitButton"

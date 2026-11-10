@@ -163,3 +163,36 @@ describe('the report of an import', () => {
     ]);
   });
 });
+
+// The words of the import are those its screens say: none left behind, and
+// the platform company named as everywhere else in the application.
+describe.each(['en', 'fr'])('the words of the import in %s', (l) => {
+  const messages = require(`~/helpers/locales/${l}.js`).default.skillsImport;
+  const screens = [
+    'components/ai-skill/bs-ai-skills-import-modal.vue',
+    'components/ai-skill/bs-ai-skills-import-report.vue',
+    'routes/ai-skills/index.vue',
+  ]
+    .map((file) =>
+      fs.readFileSync(
+        path.join(__dirname, '../../../packages/ui', file),
+        'utf8'
+      )
+    )
+    .join('\n');
+
+  it('are all said by a screen', () => {
+    const unused = Object.keys(messages).filter(
+      (key) =>
+        typeof messages[key] === 'string' &&
+        !screens.includes(`skillsImport.${key}'`)
+    );
+    expect(unused).toEqual([]);
+  });
+
+  it('never say the platform company is a group', () => {
+    expect(JSON.stringify(messages)).not.toMatch(
+      /groupe plateforme|platform group/i
+    );
+  });
+});
