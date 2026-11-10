@@ -93,6 +93,18 @@ export default {
       const data = err.response && err.response.data;
       return data && data.message ? skillErrorMessage(this, err) : err.message;
     },
+    // Why the file cannot be read. A refusal the server names by a code says
+    // its whole sentence; any other reason follows the words that say the
+    // file is unreadable.
+    unreadableBecause(err) {
+      const data = err.response && err.response.data;
+      if (data && data.message && this.$te(`aiSkills.errors.${data.message}`)) {
+        return skillErrorMessage(this, err);
+      }
+      return this.$t('skillsImport.unreadable', {
+        message: this.reasonOfError(err),
+      });
+    },
     // The file is read and checked here first, so a wrong file is said at
     // once; the server reads it again.
     async readFile() {
@@ -117,9 +129,7 @@ export default {
         );
         this.selected = defaultSelection(this.items);
       } catch (err) {
-        this.error = this.$t('skillsImport.unreadable', {
-          message: this.reasonOfError(err),
-        });
+        this.error = this.unreadableBecause(err);
       } finally {
         this.reading = false;
       }

@@ -53,7 +53,7 @@ const PREVIEW = {
   ],
 };
 
-function mountModal({ locale = 'fr', post } = {}) {
+function mountModal({ locale = 'fr', post, mocks = {} } = {}) {
   const $post =
     post ||
     jest.fn((url) =>
@@ -64,7 +64,7 @@ function mountModal({ locale = 'fr', post } = {}) {
       )
     );
   const vm = mountSfc(FILE, {
-    mocks: { $axios: { $post }, $i18n: { locale } },
+    mocks: { $axios: { $post }, $i18n: { locale }, ...mocks },
     imports: {
       'lucide-vue': {},
       '~/components/modal-confirm.vue': componentOf(
@@ -190,5 +190,78 @@ describe('the footer of the modal', () => {
     await settle(vm);
 
     expect(cancelButton(vm).textContent.trim()).toBe('global.close');
+  });
+});
+
+// A file the server refuses before the preview, in the application's own
+// French words, filled as vue-i18n fills them: a refusal the server names by
+// a code says its whole sentence once; any other reason follows the words
+// that say the file is unreadable.
+describe('a file refused before the preview', () => {
+  const fr = require('~/helpers/locales/fr.js').default;
+  const PREFIX = "Ce fichier n'est pas un export de skills";
+  const frT = (key, params = {}) => {
+    const text = get(fr, key);
+    if (typeof text !== 'string') return key;
+    return text.replace(/\{(\w+)\}/g, (all, name) =>
+      name in params ? String(params[name]) : all
+    );
+  };
+  const frTe = (key) => typeof get(fr, key) === 'string';
+
+  async function refusedWith(response) {
+    const refused = Object.assign(new Error('Request failed'), { response });
+    const { vm } = mountModal({
+      post: jest.fn().mockRejectedValue(refused),
+      mocks: { $t: frT, $te: frTe },
+    });
+    vm.open();
+    vm.file = fileOf({ format: 1 });
+    await vm.readFile();
+    await settle(vm);
+    return vm.$el.querySelector('v-file-input').getAttribute('error-messages');
+  }
+  const times = (text, part) => text.split(part).length - 1;
+
+  it('says an id that is too long once', async () => {
+    const shown = await refusedWith({
+      status: 400,
+      data: {
+        message: 'SKILLS_EXPORT_FIELD_TOO_BIG',
+        field: 'skills.0.skillId',
+      },
+    });
+
+    expect(shown).toBe(
+      "Ce fichier n'est pas un export de skills lisible : le champ « skills.0.skillId » dépasse la taille permise."
+    );
+    expect(times(shown, PREFIX)).toBe(1);
+  });
+
+  it('says an unknown format once', async () => {
+    const shown = await refusedWith({
+      status: 400,
+      data: {
+        message: 'SKILLS_EXPORT_FORMAT_UNKNOWN',
+        format: '2',
+        expected: 1,
+      },
+    });
+
+    expect(shown).toBe(
+      "Ce fichier n'est pas un export de skills que cette instance lit : elle lit le format 1."
+    );
+    expect(times(shown, PREFIX)).toBe(1);
+  });
+
+  it('says a reason the server does not name by a code after the words that say the file is unreadable', async () => {
+    const shown = await refusedWith({
+      status: 502,
+      data: { message: 'Bad gateway' },
+    });
+
+    expect(shown).toBe(
+      "Ce fichier n'est pas un export de skills lisible : Bad gateway"
+    );
   });
 });
