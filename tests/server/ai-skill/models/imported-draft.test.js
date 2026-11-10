@@ -84,7 +84,7 @@ const skillService = require('../../../../packages/server/ai-skill/services/skil
 const expertiseService = require('../../../../packages/server/ai-skill/services/expertise.service');
 const {
   importSkills,
-} = require('../../../../packages/server/ai-skill/services/skills-export.service');
+} = require('../../../../packages/server/ai-skill/services/skills-import.service');
 
 const USER = { id: '507f1f77bcf86cd799439101' };
 const SKILL_ID = 'redaction.write-subject';

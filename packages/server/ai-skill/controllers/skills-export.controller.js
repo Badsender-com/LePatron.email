@@ -5,11 +5,11 @@ const createError = require('http-errors');
 const { z } = require('zod');
 const ERROR_CODES = require('../../constant/error-codes.js');
 
+const { exportSkills } = require('../services/skills-export.service.js');
 const {
-  exportSkills,
   previewImport,
   importSkills,
-} = require('../services/skills-export.service.js');
+} = require('../services/skills-import.service.js');
 const { SkillIdRegex } = require('../constant/skill-constants.js');
 const { siteOrigin } = require('../../utils/site-origin.js');
 

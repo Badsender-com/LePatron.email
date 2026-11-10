@@ -108,14 +108,14 @@ describe('the skills export', () => {
   let readSkillsExport;
 
   beforeAll(() => {
-    // Required here, not at the top of the file: the module does not exist
-    // until #1409 ships it, and a top-level require would break the suite.
     ({
       exportSkills,
-      previewImport,
-      importSkills,
       readSkillsExport,
     } = require('../../../packages/server/ai-skill/services/skills-export.service'));
+    ({
+      previewImport,
+      importSkills,
+    } = require('../../../packages/server/ai-skill/services/skills-import.service'));
   });
 
   beforeEach(() => store.seed(SOURCE));
