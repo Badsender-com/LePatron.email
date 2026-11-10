@@ -128,6 +128,7 @@ describe("a copy's follow of production", () => {
       nightly: { enabled: false },
       lock: null,
       last: null,
+      followedOnce: false,
     });
     const followed = await request(app).post('/api/ai-skills/follow');
     expect(followed.status).toBe(409);
@@ -146,6 +147,28 @@ describe("a copy's follow of production", () => {
       isCopy: true,
       nightly: { enabled: true },
     });
+  });
+
+  // The tab says "not followed yet" until a follow completes, and not
+  // again because the last one failed.
+  it('says whether the copy ever completed a follow', async () => {
+    const app = makeApp(SUPER_ADMIN);
+    const followedOnce = async () =>
+      (await request(app).get('/api/ai-skills/follow')).body.followedOnce;
+    const production = source.answer;
+
+    source.answer = null;
+    await request(app).post('/api/ai-skills/follow');
+    expect(await followedOnce()).toBe(false);
+
+    source.answer = production;
+    await request(app).post('/api/ai-skills/follow');
+    expect(await followedOnce()).toBe(true);
+
+    source.answer = null;
+    const failed = await request(app).post('/api/ai-skills/follow');
+    expect(failed.body.last.status).toBe('failed');
+    expect(await followedOnce()).toBe(true);
   });
 
   it('says a follow is running, and refuses a second one', async () => {

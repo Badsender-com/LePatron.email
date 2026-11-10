@@ -6,6 +6,7 @@ const ERROR_CODES = require('../../constant/error-codes.js');
 
 const { followProduction } = require('../services/skills-follow.service.js');
 const {
+  followedOnce,
   lastFollow,
   runningFollow,
 } = require('../services/skills-follow-lock.js');
@@ -14,7 +15,8 @@ const source = require('../services/skills-source-client.js');
 /**
  * GET /api/ai-skills/follow: whether this instance is a copy that follows a
  * production, its origin, whether it follows it every night, the follow
- * running now (`lock`) and the last one (ADR 0019).
+ * running now (`lock`), the last one, and whether a follow ever completed
+ * (`followedOnce`), which a failed one since does not undo (ADR 0019).
  */
 const showFollow = asyncHandler(async (_req, res) => {
   const isCopy = source.isConfigured();
@@ -25,6 +27,7 @@ const showFollow = asyncHandler(async (_req, res) => {
     nightly: { enabled: source.isNightly() },
     lock: isCopy ? await runningFollow() : null,
     last: isCopy ? await lastFollow() : null,
+    followedOnce: isCopy ? await followedOnce() : false,
   });
 });
 

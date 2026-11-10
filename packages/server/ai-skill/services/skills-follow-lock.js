@@ -136,6 +136,19 @@ async function lastFollow() {
 }
 
 /**
+ * Whether this copy ever completed a follow, all its items followed or
+ * some: until then, it holds nothing of production. A follow that failed
+ * since does not undo it.
+ *
+ * @returns {Promise<boolean>}
+ */
+async function followedOnce() {
+  return !!(await SkillsFollows.exists({
+    status: { $in: ['succeeded', 'partial'] },
+  }));
+}
+
+/**
  * Whether a night's follow started since `since`, running or ended: the
  * scheduler runs the nightly command on every instance, and the one that
  * starts after the first ended must not follow again, nor hide the night's
@@ -156,6 +169,7 @@ module.exports = {
   record,
   runningFollow,
   lastFollow,
+  followedOnce,
   nightFollowedSince,
   LOCK_MS,
 };
