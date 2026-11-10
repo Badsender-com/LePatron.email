@@ -45,6 +45,7 @@ const {
 } = require('./version-helpers.js');
 const {
   createDraftWriter,
+  plain,
   readAtOf,
   saveIfUnchanged,
 } = require('./versioned-draft.js');
@@ -239,19 +240,26 @@ function createVersionedEntityService({
    * (versioned-draft.js), on the condition that the versions did not change
    * since they were read: of two drafts started at once, one is written.
    *
-   * @throws {HttpError} 404, or 409 with an ERROR_CODES `SKILLS_IMPORT_*`
+   * @throws {HttpError} 404, 400 when the model refuses the version, or 409
+   *   with an ERROR_CODES `SKILLS_IMPORT_*`
    */
   async function createVersionAt(id, { major, minor }, content, userId) {
     const wanted = { versionMajor: major, versionMinor: minor };
     const doc = await getDoc(id);
     assertDraftAt(doc, id, wanted);
+    const read = (doc.versions || []).length;
+    // Validated first, as a save would be: the model refuses what it
+    // refuses, and derives what it derives (an expertise's sections), which
+    // a conditioned update does not run.
+    doc.versions.push(importedDraft({ ...content, ...wanted }, userId));
+    await doc.validate();
     const written = await model.findOneAndUpdate(
       {
         [idField]: id,
         status: { $ne: SkillStatuses.ARCHIVED },
-        versions: { $size: (doc.versions || []).length },
+        versions: { $size: read },
       },
-      { $push: { versions: importedDraft({ ...content, ...wanted }, userId) } },
+      { $push: { versions: plain(doc.versions[read]) } },
       { new: true }
     );
     if (written) return written;

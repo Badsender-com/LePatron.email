@@ -244,6 +244,7 @@ function createDraftWriter({
 
 module.exports = {
   createDraftWriter,
+  plain,
   draftToWrite,
   storedUpdatedAt,
   unchangedDraft,
