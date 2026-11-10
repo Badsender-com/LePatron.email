@@ -32,8 +32,8 @@ function hasScope(authInfo, scope) {
 }
 
 /**
- * Whether who calls may write skills and expertises, asked again on every
- * call, whatever the token says: the token was granted the write scope, the
+ * Whether who calls may write skills and expertises, and read their retex
+ * (ADR 0021), asked again on every call, whatever the token says: the token was granted the write scope, the
  * user may still manage the platform (ADR 0014), and the connection is to
  * the platform company, the one the work is done for (ADR 0019).
  *

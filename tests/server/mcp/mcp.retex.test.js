@@ -144,6 +144,17 @@ describe('the retex loop', () => {
       ]);
     });
 
+    it('stores the part of the email trimmed and in lower case, so that two retex meet', async () => {
+      await call(await asConsultant(), REPORT, {
+        ...ORPHAN_COMPLEMENT,
+        part: ' Preheader ',
+      });
+
+      expect(await listOpen({ part: 'PREHEADER' })).toEqual([
+        expect.objectContaining({ part: 'preheader' }),
+      ]);
+    });
+
     it.each([
       [
         'a divergence without a passage',
@@ -297,16 +308,18 @@ describe('the retex loop', () => {
       );
     });
 
-    it('reads the retex of every company, whatever company the super admin connected to', async () => {
-      const { items } = await call(
-        await asConsultant(f.CLIENT_GROUP),
-        LIST,
-        {}
-      );
+    it('reads the retex of every company, on a connection to the platform company', async () => {
+      const { items } = await call(await asConsultant(), LIST, {});
 
       expect(items.map((item) => item.company.id).sort()).toEqual(
         [f.CLIENT_GROUP, f.OTHER_GROUP].sort()
       );
+    });
+
+    it("refuses a super admin connected to a client's company, as writing skills does (ADR 0019)", async () => {
+      const answer = await call(await asConsultant(f.CLIENT_GROUP), LIST, {});
+
+      expect(answer.error).toMatch(/not allowed/i);
     });
 
     it('says the company and the role of the author, never who', async () => {

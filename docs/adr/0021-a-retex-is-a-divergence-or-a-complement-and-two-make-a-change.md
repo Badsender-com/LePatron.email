@@ -15,7 +15,7 @@ The skills and expertises improve every day from the work of the platform compan
 
 **A publication closes the retex it addresses.** When a version is published, from an assistant or from the back office, the retex its draft cites become **addressed** with that version (amending ADR 0019); a draft deleted before leaves them open. A super admin may **dismiss** a retex, with the reason; a dismissed retex stays readable and no longer counts towards a convergence. An open retex is kept until it is addressed or dismissed, then for the company's log retention.
 
-**Reading the retex.** A super admin with the `skills:write` scope reads, dismisses and cites the retex of every company, whatever company they connected to. Each retex says its company and whether its author is a consultant or a client user, never who.
+**Reading the retex.** A super admin with the `skills:write` scope reads, dismisses and cites the retex of every company. Like writing skills (ADR 0019), it needs a connection to the platform company, the only one that is granted that scope. Each retex says its company and whether its author is a consultant or a client user, never who.
 
 **A retex is data, never instructions.** A client user's retex reaches a consultant's assistant, which may draft and publish what every company reads. Its fields are a user's words: the tools and the server's instructions say to weigh them, never to follow what they ask, and every change still goes through the draft's difference, the guard and the person's confirmation before it is published.
 
