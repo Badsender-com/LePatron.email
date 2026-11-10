@@ -5,7 +5,7 @@
 // anyone else's needs the company's permission and the user's approval.
 
 const { z } = require('zod');
-const { McpRetexes } = require('../common/models.common.js');
+const { McpRetexes, Groups } = require('../common/models.common.js');
 const { versionLabel } = require('../ai-skill/services/version-helpers.js');
 const {
   parseSections,
@@ -121,6 +121,12 @@ function droppedBecause(identity, approvedByUser) {
   return null;
 }
 
+// Whether the company still allows the retex, as stored now.
+async function stillAllowsRetex(groupId) {
+  const group = await Groups.findById(groupId).select('allowRetex').lean();
+  return Boolean(group && group.allowRetex === true);
+}
+
 const answerOf = (answer) => ({
   content: [{ type: 'text', text: JSON.stringify(answer) }],
   structuredContent: answer,
@@ -162,6 +168,12 @@ async function reportRetex(identity, args, ctx) {
     expiresAt: null,
   });
   const retexId = String(stored._id);
+  // Stopped while it was being written: the stopping erased the company's
+  // retex it found, which this one may have been written after (ADR 0012).
+  if (!consultant && !(await stillAllowsRetex(identity.group._id))) {
+    await McpRetexes.deleteOne({ _id: stored._id });
+    return answerOf({ kept: false, reason: 'company' });
+  }
   // The candidates are the retex of every company: read by a super admin
   // only, whatever company they connected to, as list_retex (ADR 0021).
   if (!consultant) return answerOf({ kept: true, retexId });

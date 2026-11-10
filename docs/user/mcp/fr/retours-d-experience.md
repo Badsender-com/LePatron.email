@@ -24,7 +24,7 @@ Deux accords sont nécessaires :
 1. **votre entreprise** autorise les retours d'expérience, dans la section Accès MCP de la page Fonctionnalités IA (son admin technique en décide) ;
 2. **vous** approuvez chaque retour d'expérience, quand votre assistant vous le propose.
 
-Sans l'un des deux, rien n'est envoyé, et l'assistant vous dit pourquoi. Ce que vous envoyez est lu par l'équipe de l'entreprise plateforme, qui voit votre entreprise, jamais votre nom.
+Sans l'un des deux, rien n'est envoyé, et l'assistant vous dit pourquoi. Si l'entreprise coupe ensuite les retours d'expérience, ceux de ses utilisateurs sont effacés, ouverts ou clos. Ce que vous envoyez est lu par l'équipe de l'entreprise plateforme, qui voit votre entreprise, jamais votre nom.
 
 ## Pour l'équipe de l'entreprise plateforme
 

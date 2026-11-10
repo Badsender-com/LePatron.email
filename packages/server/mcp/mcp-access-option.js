@@ -1,6 +1,6 @@
 'use strict';
 
-const { McpFeedbacks } = require('../common/models.common.js');
+const { McpFeedbacks, McpRetexes } = require('../common/models.common.js');
 const {
   recordSecurityEvent,
 } = require('../security-event/security-event.service.js');
@@ -117,18 +117,18 @@ async function cutLongComments(filter) {
 }
 
 /**
- * What a company's feedbacks keep once it stops the retex (ADR 0012): the
- * session summaries are forgotten, and the comments cut to what they hold
- * without it. The feedbacks stay, with their rating. It may run again: a
- * second run finds nothing left to change.
+ * What a company keeps once it stops the retex. Its users' retex are erased,
+ * open or closed (ADR 0012, ADR 0021); those of the consultants belong to the
+ * platform company and stay. Its feedbacks forget the session summaries, and
+ * their comments are cut to what they hold without it; they stay, with their
+ * rating. It may run again: a second run finds nothing left to change.
  *
  * @param {string} groupId
- * @param {Object} [only] the filter of the feedbacks to reach among the
- *   company's, all of them unless given (one just written)
  * @returns {Promise<void>}
  */
-async function forgetRetex(groupId, only = {}) {
-  const filter = { ...only, _company: groupId };
+async function forgetRetex(groupId) {
+  await McpRetexes.deleteMany({ _company: groupId, author: 'client' });
+  const filter = { _company: groupId };
   await McpFeedbacks.updateMany(
     { ...filter, retex: { $ne: null } },
     { $set: { retex: null } }

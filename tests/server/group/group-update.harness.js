@@ -19,6 +19,7 @@ jest.mock('../../../packages/server/common/models.common.js', () => ({
     find: jest.fn(() => ({ lean: () => ({ cursor: () => [] }) })),
     bulkWrite: jest.fn(),
   },
+  McpRetexes: { deleteMany: jest.fn() },
   Profiles: {},
   Templates: {},
   Mailings: {},
@@ -62,6 +63,7 @@ const {
   Groups,
   SecurityEvents,
   McpFeedbacks,
+  McpRetexes,
 } = require('../../../packages/server/common/models.common.js');
 const groupService = require('../../../packages/server/group/group.service.js');
 const groupController = require('../../../packages/server/group/group.controller.js');
@@ -159,6 +161,7 @@ module.exports = {
   Groups,
   SecurityEvents,
   McpFeedbacks,
+  McpRetexes,
   groupService,
   groupController,
   GROUP_ID,

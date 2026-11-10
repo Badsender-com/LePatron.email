@@ -24,7 +24,7 @@ Two agreements are needed:
 1. **your company** allows retex, in the MCP access section of the AI features page (its tech admin decides);
 2. **you** approve each retex, when your assistant offers it.
 
-Without either, nothing is sent, and the assistant tells you why. What you send is read by the platform company's team, who see your company, never your name.
+Without either, nothing is sent, and the assistant tells you why. If the company later stops the retex, its users' retex are erased, open or closed. What you send is read by the platform company's team, who see your company, never your name.
 
 ## For the platform company's team
 

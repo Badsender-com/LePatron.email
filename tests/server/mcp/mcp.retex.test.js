@@ -300,6 +300,79 @@ describe('the retex loop', () => {
     });
   });
 
+  // Stopping the retex of a company erases its users' retex, open or closed
+  // (ADR 0012, ADR 0021); the consultants' belong to the platform company.
+  describe('the retex stopped', () => {
+    const models = () =>
+      require('../../../packages/server/common/models.common.js');
+    const stopRetex = () => {
+      harness.update('groups', f.CLIENT_GROUP, { allowRetex: false });
+      return require('../../../packages/server/group/group-switch.js').forgetSwitchedOff(
+        f.CLIENT_GROUP,
+        { allowRetex: false }
+      );
+    };
+
+    it("erases the company's client retex, open or closed, and keeps the consultants' and the other companies'", async () => {
+      allowRetex();
+      await call(await asClient(), REPORT, {
+        ...LENGTH_DIVERGENCE,
+        approvedByUser: true,
+      });
+      const { retexId: closed } = await call(await asClient(), REPORT, {
+        ...B2B_COMPLEMENT,
+        approvedByUser: true,
+      });
+      await call(await asConsultant(), DISMISS, {
+        retexId: closed,
+        reason: 'A one-off brand constraint',
+      });
+      const { retexId: consultant } = await call(
+        await asConsultant(f.CLIENT_GROUP),
+        REPORT,
+        LENGTH_DIVERGENCE
+      );
+      const other = await models().McpRetexes.create({
+        ...ORPHAN_COMPLEMENT,
+        _company: f.OTHER_GROUP,
+        author: 'client',
+        status: 'open',
+      });
+
+      await stopRetex();
+      await stopRetex();
+
+      expect(
+        harness
+          .stored('retex')
+          .map((r) => String(r._id))
+          .sort()
+      ).toEqual([consultant, String(other._id)].sort());
+    });
+
+    it('erases a client retex written while the retex was being stopped', async () => {
+      allowRetex();
+      const { McpRetexes } = models();
+      const create = McpRetexes.create;
+      const racing = jest
+        .spyOn(McpRetexes, 'create')
+        // The stopping runs between the check and the write.
+        .mockImplementationOnce(async (record) => {
+          await stopRetex();
+          return create(record);
+        });
+
+      const answer = await call(await asClient(), REPORT, {
+        ...LENGTH_DIVERGENCE,
+        approvedByUser: true,
+      });
+      racing.mockRestore();
+
+      expect(answer).toEqual({ kept: false, reason: 'company' });
+      expect(harness.stored('retex')).toEqual([]);
+    });
+  });
+
   // Turned on by #1474 (report a retex, and read them)
   describe('a feedback is a rating and a comment', () => {
     it('no longer takes a summary of the session', async () => {

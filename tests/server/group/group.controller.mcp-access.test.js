@@ -13,6 +13,7 @@ const {
   Groups,
   SecurityEvents,
   McpFeedbacks,
+  McpRetexes,
   groupService,
   groupController,
   GROUP_ID,
@@ -360,6 +361,17 @@ describe('PUT /groups/:groupId — retex stopped', () => {
       { _company: GROUP_ID, comment: { $regex: '^[\\s\\S]{251}' } },
       { comment: 1 }
     );
+  });
+
+  it("erases the company's client retex, open or closed, and keeps the consultants' (ADR 0021)", async () => {
+    storedGroup({ allowRetex: true });
+
+    await update(techAdmin, { allowRetex: false });
+
+    expect(McpRetexes.deleteMany).toHaveBeenCalledWith({
+      _company: GROUP_ID,
+      author: 'client',
+    });
   });
 
   it('forgets them again when it is already stopped, recording no event', async () => {
