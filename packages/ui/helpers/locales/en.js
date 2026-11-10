@@ -2030,6 +2030,8 @@ export default {
         'Too many items already hold the copy\'s work on {id}: delete some before creating another.',
     },
     warnings: {
+      SCHEMA_NOT_IN_CODE:
+        'The schema "{schemaId}" is not in the code of this instance: the publication waits for its release.',
       TEMPLATE_UNKNOWN_FIELDS:
         'The template references fields absent from input schema "{schemaId}": {fields}. They will interpolate empty at runtime — publication will be blocked.',
       TEMPLATE_MISSING_REQUIRED:
@@ -2181,6 +2183,13 @@ export default {
       newVersionShort: 'New version',
       versionCreated: 'Version created',
       draftSaved: 'Draft saved',
+      draftSavedSchemaNotInCode:
+        'Draft saved. The schema {ids} is not in the code of this instance: the publication waits for its release. | Draft saved. The schemas {ids} are not in the code of this instance: the publication waits for their release.',
+      schemaNotInCode:
+        'The schema {ids} is not in the code of this instance: the draft is saved, the publication waits for its release. | The schemas {ids} are not in the code of this instance: the draft is saved, the publication waits for their release.',
+      schemaMissing: 'Schema not in the code',
+      schemaMissingHint:
+        'This draft names a schema the code of this instance does not have yet: it is published only once that code is released.',
       unsavedChanges: 'Unsaved changes',
       activate: 'Activate',
       activateTitle: 'Activate this version',

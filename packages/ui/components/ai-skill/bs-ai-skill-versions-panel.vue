@@ -5,6 +5,7 @@ import BsTextarea from '~/components/form/bs-textarea.vue';
 import BsSelect from '~/components/form/bs-select.vue';
 import BsTimestamp from '~/components/bs-timestamp.vue';
 import { skillWarningMessage } from '~/helpers/ai-skill-errors.js';
+import { missingSchemaIds } from '~/helpers/ai-skill-schemas.js';
 import mixinVersionDrafts from '~/helpers/mixins/mixin-version-drafts.js';
 import mixinSchemaDescriptors from '~/helpers/mixins/mixin-schema-descriptors.js';
 import BsAiSkillFeatureVersionFields from '~/components/ai-skill/bs-ai-skill-feature-version-fields.vue';
@@ -93,6 +94,11 @@ export default {
       const draft = this.draftFor(v);
       return ((draft && draft.nature) || v.nature) === SKILL_NATURES.TASK;
     },
+    // A draft naming a schema the code of this instance lacks keeps a badge
+    // until the code has it (ADR 0019).
+    lacksSchema(v) {
+      return missingSchemaIds(this.draftFor(v) || v, this.schemas).length > 0;
+    },
     // The server sends warning codes; the wording lives in the locales.
     warningsFor(v) {
       if (this.versionLabel(v) !== this.warningsVersionKey) return [];
@@ -155,6 +161,16 @@ export default {
                 {{ statusLabel(v) }}
               </v-chip>
               <bs-timestamp :value="v.updatedAt || v.createdAt" />
+              <v-chip
+                v-if="lacksSchema(v)"
+                x-small
+                outlined
+                color="warning"
+                class="version-schema-missing"
+                :title="$t('aiSkills.version.schemaMissingHint')"
+              >
+                {{ $t('aiSkills.version.schemaMissing') }}
+              </v-chip>
               <v-chip
                 v-if="isVersionDirty(v)"
                 x-small

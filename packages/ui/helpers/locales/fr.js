@@ -2060,6 +2060,8 @@ export default {
         'Trop d\'éléments portent déjà le travail de la copie de {id} : supprimez-en avant d\'en créer un autre.',
     },
     warnings: {
+      SCHEMA_NOT_IN_CODE:
+        'Le schéma « {schemaId} » n\'existe pas dans le code de cette instance : la publication attendra son déploiement.',
       TEMPLATE_UNKNOWN_FIELDS:
         'Le template référence des champs absents du schéma d\'entrée « {schemaId} » : {fields}. Ils seront interpolés vides à l\'exécution — la publication sera bloquée.',
       TEMPLATE_MISSING_REQUIRED:
@@ -2214,6 +2216,13 @@ export default {
       newVersionShort: 'Nouvelle version',
       versionCreated: 'Version créée',
       draftSaved: 'Brouillon enregistré',
+      draftSavedSchemaNotInCode:
+        'Brouillon enregistré. Le schéma {ids} n\'existe pas dans le code de cette instance : la publication attendra son déploiement. | Brouillon enregistré. Les schémas {ids} n\'existent pas dans le code de cette instance : la publication attendra leur déploiement.',
+      schemaNotInCode:
+        'Le schéma {ids} n\'existe pas dans le code de cette instance : le brouillon s\'enregistre, la publication attendra son déploiement. | Les schémas {ids} n\'existent pas dans le code de cette instance : le brouillon s\'enregistre, la publication attendra leur déploiement.',
+      schemaMissing: 'Schéma absent du code',
+      schemaMissingHint:
+        'Ce brouillon nomme un schéma que le code de cette instance n\'a pas encore : il ne se publie qu\'une fois ce code déployé.',
       unsavedChanges: 'Modifications non enregistrées',
       activate: 'Activer',
       activateTitle: 'Activer cette version',

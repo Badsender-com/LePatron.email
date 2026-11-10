@@ -3,17 +3,26 @@
 // feature calls it with, its prompts and its input template, with the
 // placeholders the input schema offers. The panel owns the draft and loads
 // the schema descriptors; this component only emits the new values.
+// A draft may name a schema the code of this instance does not have yet
+// (ADR 0019): the field takes it, and says its publication waits for the
+// code.
 import BsTextarea from '~/components/form/bs-textarea.vue';
-import BsSelect from '~/components/form/bs-select.vue';
+import BsCombobox from '~/components/form/bs-combobox.vue';
 import copyToClipboard from '~/helpers/copy-to-clipboard.js';
-import { Check } from 'lucide-vue';
+import { missingSchemaIds } from '~/helpers/ai-skill-schemas.js';
+import { Check, AlertTriangle } from 'lucide-vue';
 
 // How long a copied chip keeps its confirmation mark.
 const COPIED_FEEDBACK_MS = 1500;
 
 export default {
   name: 'BsAiSkillFeatureVersionFields',
-  components: { BsTextarea, BsSelect, LucideCheck: Check },
+  components: {
+    BsTextarea,
+    BsCombobox,
+    LucideCheck: Check,
+    LucideAlertTriangle: AlertTriangle,
+  },
   props: {
     inputSchemaId: { type: String, default: '' },
     outputSchemaId: { type: String, default: '' },
@@ -44,6 +53,15 @@ export default {
     },
     outputSchemas() {
       return this.schemas.filter((s) => /Output$/.test(s));
+    },
+    missingSchemas() {
+      return missingSchemaIds(
+        {
+          inputSchemaId: this.inputSchemaId,
+          outputSchemaId: this.outputSchemaId,
+        },
+        this.schemas
+      );
     },
     // Placeholders usable in the input template, derived from the input
     // schema's descriptor (§C2). Null while the descriptor is loading or
@@ -90,23 +108,33 @@ export default {
 <template>
   <div>
     <div class="schema-row">
-      <bs-select
+      <bs-combobox
         :value="inputSchemaId"
         :items="inputSchemas"
         :label="$t('aiSkills.skill.inputSchemaId')"
         :readonly="readonly"
         :disabled="readonly"
+        class="schema-input"
         @input="$emit('update:inputSchemaId', $event)"
       />
-      <bs-select
+      <bs-combobox
         :value="outputSchemaId"
         :items="outputSchemas"
         :label="$t('aiSkills.skill.outputSchemaId')"
         :readonly="readonly"
         :disabled="readonly"
+        class="schema-output"
         @input="$emit('update:outputSchemaId', $event)"
       />
     </div>
+    <p v-if="missingSchemas.length" class="schema-missing" role="status">
+      <lucide-alert-triangle :size="14" aria-hidden="true" />
+      {{
+        $tc('aiSkills.version.schemaNotInCode', missingSchemas.length, {
+          ids: missingSchemas.join(', '),
+        })
+      }}
+    </p>
     <p class="text-caption text--secondary schema-help">
       {{ $t('aiSkills.version.schemasHelp') }}
     </p>
@@ -195,6 +223,14 @@ export default {
 }
 .schema-help {
   margin: -0.25rem 0 0.75rem;
+}
+.schema-missing {
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+  margin: -0.25rem 0 0.75rem;
+  font-size: 0.75rem;
+  color: var(--v-warning-darken3);
 }
 .placeholder-help {
   margin-top: -0.25rem;

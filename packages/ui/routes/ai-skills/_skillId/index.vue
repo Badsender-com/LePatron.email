@@ -16,6 +16,10 @@ import BsAiCopyPanel from '~/components/ai-skill/bs-ai-copy-panel.vue';
 import mixinAiSkillDetails from '~/helpers/mixins/mixin-ai-skill-details.js';
 import { fetchCopyState, copyActionsOf } from '~/helpers/skills-copy.js';
 import {
+  SCHEMA_NOT_IN_CODE,
+  withMissingSchemaWarnings,
+} from '~/helpers/ai-skill-schemas.js';
+import {
   skillCategoryLabel,
   AUDIENCES,
 } from '~/helpers/ai-skill-categories.js';
@@ -156,17 +160,17 @@ export default {
           payload
         );
         // Template ↔ input-schema coherence warnings (non-blocking on DRAFT
-        // save; out-of-schema placeholders block at activation).
-        this.versionWarnings = res.warnings || [];
+        // save; out-of-schema placeholders block at activation), and a schema
+        // the code of this instance lacks, which blocks the publication only.
+        this.versionWarnings = withMissingSchemaWarnings(
+          res.warnings,
+          version,
+          this.schemas
+        );
         this.warningsVersionKey = `${version.versionMajor}.${version.versionMinor}`;
         delete res.warnings;
         this.skill = res;
-        if (!silent) {
-          this.showSnackbar({
-            text: this.$t('aiSkills.version.draftSaved'),
-            color: 'success',
-          });
-        }
+        if (!silent) this.tellDraftSaved();
         return true;
       } catch (err) {
         this.handleError(err);
@@ -174,6 +178,25 @@ export default {
       } finally {
         this.saving = false;
       }
+    },
+
+    // Saved; a draft naming a schema the code lacks says so.
+    tellDraftSaved() {
+      const lacking = this.versionWarnings.filter(
+        ({ code }) => code === SCHEMA_NOT_IN_CODE
+      );
+      this.showSnackbar(
+        lacking.length
+          ? {
+              text: this.$tc(
+                'aiSkills.version.draftSavedSchemaNotInCode',
+                lacking.length,
+                { ids: lacking.map(({ schemaId }) => schemaId).join(', ') }
+              ),
+              color: 'warning',
+            }
+          : { text: this.$t('aiSkills.version.draftSaved'), color: 'success' }
+      );
     },
 
     async askActivate({ version, dirty }) {
