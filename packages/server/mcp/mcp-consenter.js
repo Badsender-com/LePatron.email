@@ -40,6 +40,8 @@ async function refusalWithoutGroups(consenter, company) {
   return (await lackOfCompany(companyId)) || ERROR_CODES.MCP_CONSENT_NO_ACCESS;
 }
 
+const idOf = (group) => String(group._id);
+
 // The account behind the app's session, read as the MCP server reads it, and
 // the groups a connection may be bound to: the user's own, or, for a super
 // admin, every group with MCP access. Either way, only a group that has the
@@ -59,20 +61,21 @@ async function consenterOf(req) {
   const groups = await Groups.find(
     isPlatform ? open : { _id: record._company, ...open }
   )
-    .select('_id name')
+    .select('_id name isPlatform')
     .sort({ name: 1 })
     .lean();
   return {
     user,
     isPlatform,
     ownId: String(record._company),
-    groups: groups.map((group) => ({
-      id: String(group._id),
-      name: group.name,
-    })),
-    // Drafting skills and expertises is offered to whoever may manage the
-    // platform (ADR 0014).
+    groups: groups.map((group) => ({ id: idOf(group), name: group.name })),
+    // Writing skills and expertises is offered to whoever may manage the
+    // platform (ADR 0014), on a connection to the platform company only
+    // (ADR 0019): the company the work is done for.
     scopes: isPlatform ? [READ_SCOPE, WRITE_SCOPE] : [READ_SCOPE],
+    writableGroupIds: isPlatform
+      ? groups.filter((group) => group.isPlatform === true).map(idOf)
+      : [],
   };
 }
 

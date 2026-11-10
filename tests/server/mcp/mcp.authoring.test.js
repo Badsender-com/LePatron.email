@@ -130,6 +130,24 @@ describe('authoring', () => {
       }
     );
 
+    // A token granted before writing was kept to the platform company, or a
+    // company that stopped being it: refused at the call (ADR 0019).
+    it('refuses a super admin connected to a client company, whatever the token says', async () => {
+      const client = await harness.connectAs(f.ALICE, {
+        group: f.CLIENT_GROUP,
+        scopes: WRITE,
+      });
+
+      const answer = await call(client, 'propose_expertise_change', {
+        expertiseId: SUBJECT_LINES,
+        body: NEW_BODY,
+        changelog: 'Shorter subjects',
+      });
+
+      expect(answer.error).toMatch(/not allowed/i);
+      expect(harness.stored('expertises')).toEqual(f.SEED.expertises);
+    });
+
     it('lets a super admin write', async () => {
       const answer = await call(await asAuthor(), 'propose_expertise_change', {
         expertiseId: SUBJECT_LINES,

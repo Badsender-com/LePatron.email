@@ -31,6 +31,25 @@ function hasScope(authInfo, scope) {
   return (authInfo?.scopes || []).includes(scope);
 }
 
+/**
+ * Whether who calls may write skills and expertises, asked again on every
+ * call, whatever the token says: the token was granted the write scope, the
+ * user may still manage the platform (ADR 0014), and the connection is to
+ * the platform company, the one the work is done for (ADR 0019).
+ *
+ * @param {Object} user the request user
+ * @param {Object} [group] the company the token is bound to, with `isPlatform`
+ * @param {Object} [authInfo] the validated access token
+ * @returns {boolean}
+ */
+function mayWrite(user, group, authInfo) {
+  return (
+    hasScope(authInfo, WRITE_SCOPE) &&
+    permissions.can(user, CAPABILITIES.PLATFORM_MANAGE) &&
+    group?.isPlatform === true
+  );
+}
+
 // What the request user may carry: never a password or a token.
 const USER_FIELDS = '_id name email lang role _company isDeactivated';
 // What the handlers read of the company: never its secrets. Whether it
@@ -238,8 +257,7 @@ async function resolveIdentity(authInfo) {
   if (!group || group.enableMcpModule !== true) refuse(NO_MCP_MODULE);
   if (group.enableMcp !== true) refuse(NO_MCP_ACCESS);
   const drafts =
-    hasScope(authInfo, WRITE_SCOPE) &&
-    permissions.can(user, CAPABILITIES.PLATFORM_MANAGE) &&
+    mayWrite(user, group, authInfo) &&
     (await isDraftsModeOn(authInfo.extra?.grantId));
   return { user, group, drafts };
 }
@@ -324,6 +342,7 @@ module.exports = {
   identify,
   withIdentity,
   hasScope,
+  mayWrite,
   isRefusal,
   failure,
   refused,

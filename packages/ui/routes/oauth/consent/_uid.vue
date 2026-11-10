@@ -148,8 +148,13 @@ export default {
     accountInitials() {
       return initialsOf(this.account.name || this.account.email);
     },
+    // Writing is offered on a connection to the platform company only
+    // (ADR 0019): the box shows once that company is picked.
     canWrite() {
-      return (this.interaction?.scopes || []).includes(WRITE_SCOPE);
+      return (
+        (this.interaction?.scopes || []).includes(WRITE_SCOPE) &&
+        (this.interaction?.writableGroupIds || []).includes(this.groupId)
+      );
     },
     // Whoever cannot connect still sends the application its answer, while
     // the request stands.

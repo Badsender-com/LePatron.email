@@ -158,6 +158,8 @@ function createInteractionsRouter(provider, resource) {
         redirectHost: new URL(params.redirect_uri).host,
         scopes: req.granted,
         groups: req.consenter.groups,
+        // Where writing may be ticked: the platform company (ADR 0019).
+        writableGroupIds: req.consenter.writableGroupIds,
         // Whose rights the application gets, for the user to check.
         account: {
           name: req.consenter.user.name,
@@ -179,12 +181,16 @@ function createInteractionsRouter(provider, resource) {
   router.post('/:uid/consent', async (req, res, next) => {
     try {
       const { interaction, consenter } = req;
-      // Drafting is offered, never assumed (ADR 0014): granted only when the
-      // user ticks it, whatever the application asked for.
-      const granted = req.granted.filter(
-        (scope) => scope !== WRITE_SCOPE || req.body?.allowWrite === true
-      );
       const groupId = String(req.body?.groupId || '');
+      // Writing is offered, never assumed (ADR 0014): granted only when the
+      // user ticks it, whatever the application asked for, and only on a
+      // connection to the platform company (ADR 0019).
+      const granted = req.granted.filter(
+        (scope) =>
+          scope !== WRITE_SCOPE ||
+          (req.body?.allowWrite === true &&
+            consenter.writableGroupIds.includes(groupId))
+      );
       if (!consenter.groups.some((group) => group.id === groupId)) {
         return next(createError(403, ERROR_CODES.MCP_CONSENT_NO_ACCESS));
       }

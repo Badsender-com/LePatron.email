@@ -63,6 +63,7 @@ describe('authorization and consent', () => {
       redirectHost: 'assistant.example.test',
       scopes: ['mcp:read'],
       groups: [{ id: f.CLIENT_GROUP, name: 'A client' }],
+      writableGroupIds: [],
       account: { name: 'Frank', email: 'frank@example.test' },
     });
   });
@@ -75,6 +76,8 @@ describe('authorization and consent', () => {
     expect(body.groups.map((group) => group.id).sort()).toEqual(
       [f.PLATFORM_GROUP, f.CLIENT_GROUP, f.OTHER_GROUP].sort()
     );
+    // Writing is offered on the platform company only (ADR 0019).
+    expect(body.writableGroupIds).toEqual([f.PLATFORM_GROUP]);
   });
 
   it('stops an account LePatron does not know, as the bootstrap account', async () => {
