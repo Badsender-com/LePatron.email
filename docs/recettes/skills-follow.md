@@ -63,7 +63,7 @@ C joue une recette qui existait avant le suivi. Sur C, aucune variable `SKILLS_S
 1. **Un brouillon de la copie, tant que la production n'en a pas :** sur C, ouvrir un brouillon 1.2 de X et y écrire « travail de C ». Suivre : le brouillon reste où il est, intact.
 2. **Puis la production apporte un brouillon :** sur P, ouvrir un brouillon 1.2 de X avec un autre contenu. Sur C, suivre : le rapport montre X en **travail de la copie mis de côté**, avec un lien.
 3. Le lien mène à un nouvel élément `<id de X>.copie`, intitulé « <titre de X> (travail de la copie) », badge **Travail de la copie** avec un lien vers X. Il tient « travail de C » en brouillon, il est réservé à l'entreprise plateforme et n'est pas proposé aux assistants. X porte maintenant le brouillon 1.2 de P.
-4. **Une version publiée sur la copie :** sur C, ouvrir un brouillon de F, le publier en **décochant** **Garder sur cette copie**. Suivre : le rapport montre F en **travail de la copie mis de côté**. La version publiée sur C est en brouillon dans un nouvel élément de la copie, et F a repris la version active de P.
+4. **Une version publiée sur la copie :** sur C, ouvrir un brouillon de F, le publier en **décochant** **Garder sur cette copie** : F garde le badge **Suit la production**, et la version publiée sur C est active jusqu'au suivi. Suivre : le rapport montre F en **travail de la copie mis de côté**. La version publiée sur C est en brouillon dans un nouvel élément de la copie, et F a repris la version active de P.
 5. Suivre encore : les deux éléments du travail de la copie ne sont pas touchés.
 
 ## 7. Garder sur cette copie, puis suivre de nouveau

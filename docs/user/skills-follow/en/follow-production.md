@@ -122,7 +122,7 @@ On a copy, the **Origin on this copy** section of an item that came from product
 - **Follow production** attaches it back. At the next follow, what was written on the copy goes into a new item (see above), and the item takes back what production holds.
 - **Duplicate on this copy** creates an item of the copy holding the chosen version as a draft, to try something without touching the follow.
 
-**Publishing on a copy.** Publishing an item that follows production offers the **Keep on this copy** box, checked by default: the item keeps what you publish. Unchecked, the item keeps following production, and the next follow sets the published version aside in a new item.
+**Publishing on a copy.** Publishing an item that follows production offers the **Keep on this copy** box, checked by default: the item keeps what you publish. Unchecked, the item keeps following production: the version published on the copy serves until the next follow, which sets it aside **as a draft in a new item** of the copy and gives the item production's version back.
 
 ## 7. A feature skill born before its code
 

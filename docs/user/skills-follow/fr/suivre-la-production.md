@@ -122,7 +122,7 @@ Sur une copie, la section **Origine sur cette copie** de la fiche d'un élément
 - **Suivre la production** le rattache. Au suivi suivant, ce qui a été écrit sur la copie part dans un nouvel élément (voir plus haut), et l'élément reprend ce que tient la production.
 - **Dupliquer sur cette copie** crée un élément de la copie qui tient la version choisie en brouillon, pour tester sans toucher au suivi.
 
-**Publier sur une copie.** Publier un élément qui suit la production propose la case **Garder sur cette copie**, cochée par défaut : l'élément garde ce que vous publiez. Décochée, l'élément continue de suivre la production, et le suivi suivant mettra la version publiée de côté dans un nouvel élément.
+**Publier sur une copie.** Publier un élément qui suit la production propose la case **Garder sur cette copie**, cochée par défaut : l'élément garde ce que vous publiez. Décochée, l'élément continue de suivre la production : la version publiée sur la copie sert jusqu'au suivi suivant, qui la met de côté, **en brouillon dans un nouvel élément** de la copie, et rend à l'élément la version de la production.
 
 ## 7. Un skill de fonctionnalité qui naît avant son code
 
