@@ -207,6 +207,16 @@ module.exports = {
   // A feature skill still meant for the platform company, invoked on behalf
   // of a user of another company (ADR 0013).
   SKILL_NOT_AVAILABLE_TO_COMPANY: 'SKILL_NOT_AVAILABLE_TO_COMPANY',
+  // Why a skills export is refused (ADR 0018): an item chosen that cannot be
+  // exported (with its `id`), a file of another `format` than the
+  // `expected` one, or whose content fails validation (the `field` and the
+  // `issue`), a selection that is not a list of ids (the `field`).
+  SKILLS_EXPORT_NOT_FOUND: 'SKILLS_EXPORT_NOT_FOUND',
+  SKILLS_EXPORT_ARCHIVED: 'SKILLS_EXPORT_ARCHIVED',
+  SKILLS_EXPORT_NOT_PUBLISHED: 'SKILLS_EXPORT_NOT_PUBLISHED',
+  SKILLS_EXPORT_FORMAT_UNKNOWN: 'SKILLS_EXPORT_FORMAT_UNKNOWN',
+  SKILLS_EXPORT_INVALID: 'SKILLS_EXPORT_INVALID',
+  SKILLS_SELECTION_INVALID: 'SKILLS_SELECTION_INVALID',
   // Why an imported version cannot be written as a draft (ADR 0018), each
   // with the `id` of the item and the `version` imported.
   SKILLS_IMPORT_ARCHIVED: 'SKILLS_IMPORT_ARCHIVED',

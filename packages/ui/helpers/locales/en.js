@@ -1804,6 +1804,18 @@ export default {
         'The template references fields absent from input schema "{schemaId}": {fields}. Fix the template or change the version input schema.',
       SKILL_VERSION_CHANGED:
         'This draft was changed meanwhile, by an assistant for instance. Reload it to see the new version before saving or publishing.',
+      SKILLS_EXPORT_NOT_FOUND:
+        '{id} does not exist: reload the list, then export again.',
+      SKILLS_EXPORT_ARCHIVED:
+        '{id} is archived: it is no longer exported. Reload the list, then export again.',
+      SKILLS_EXPORT_NOT_PUBLISHED:
+        '{id} has no published version: only a published version is exported.',
+      SKILLS_EXPORT_FORMAT_UNKNOWN:
+        'This file is not a skills export this instance reads: it reads format {expected}.',
+      SKILLS_EXPORT_INVALID:
+        'This file is not a readable skills export: the field "{field}" is refused ({issue}).',
+      SKILLS_SELECTION_INVALID:
+        'The selection is not a list of ids: "{field}".',
       SKILLS_IMPORT_ARCHIVED:
         '{id} is archived here: version {version} was not imported.',
       SKILLS_IMPORT_DRAFT_OPEN:

@@ -12,6 +12,7 @@
 
 const { isDeepStrictEqual } = require('util');
 const createError = require('http-errors');
+const ERROR_CODES = require('../../constant/error-codes.js');
 const { Expertises, LePatronSkills } = require('../../common/models.common.js');
 const {
   SkillStatuses,
@@ -115,10 +116,12 @@ function itemOf(kind, doc) {
   return item;
 }
 
-// Why an item cannot be exported, or null when it can.
+// Why an item cannot be exported, as an ERROR_CODES entry, or null.
 function refusalOf(doc) {
-  if (doc.status === SkillStatuses.ARCHIVED) return 'is archived';
-  if (!findActiveVersion(doc)) return 'has no active version';
+  if (doc.status === SkillStatuses.ARCHIVED) {
+    return ERROR_CODES.SKILLS_EXPORT_ARCHIVED;
+  }
+  if (!findActiveVersion(doc)) return ERROR_CODES.SKILLS_EXPORT_NOT_PUBLISHED;
   return null;
 }
 
@@ -143,8 +146,10 @@ async function exportable(kind, chosen, { strict }) {
   return ids
     .map((id) => {
       const doc = docs.find((candidate) => candidate[idField] === id);
-      const refusal = doc ? refusalOf(doc) : 'does not exist';
-      if (refusal && strict) throw createError(400, `"${id}" ${refusal}.`);
+      const refusal = doc
+        ? refusalOf(doc)
+        : ERROR_CODES.SKILLS_EXPORT_NOT_FOUND;
+      if (refusal && strict) throw createError(400, refusal, { id });
       return refusal ? null : doc;
     })
     .filter(Boolean);

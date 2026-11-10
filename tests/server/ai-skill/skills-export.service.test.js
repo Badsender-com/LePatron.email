@@ -91,6 +91,15 @@ const expertiseOf = (id) =>
 const skillOf = (id) => store.stored('skills').find((s) => s.skillId === id);
 const draftOf = (doc) => doc.versions.find((v) => v.status === 'DRAFT');
 const itemOf = (preview, id) => preview.items.find((item) => item.id === id);
+// The error a call throws, to read its code and what it names.
+const refusalOf = (call) => {
+  try {
+    call();
+  } catch (err) {
+    return err;
+  }
+  throw new Error('nothing was refused');
+};
 
 describe('the skills export', () => {
   let exportSkills;
@@ -213,12 +222,27 @@ describe('the skills export', () => {
     });
 
     it('refuses to export an archived item or one with no active version', async () => {
-      await expect(exportOf({ expertiseIds: [OLD_RULES] })).rejects.toThrow(
-        /archived/
-      );
-      await expect(exportOf({ expertiseIds: [DARK_MODE] })).rejects.toThrow(
-        /no active version/
-      );
+      await expect(
+        exportOf({ expertiseIds: [OLD_RULES] })
+      ).rejects.toMatchObject({
+        status: 400,
+        message: 'SKILLS_EXPORT_ARCHIVED',
+        id: OLD_RULES,
+      });
+      await expect(
+        exportOf({ expertiseIds: [DARK_MODE] })
+      ).rejects.toMatchObject({
+        status: 400,
+        message: 'SKILLS_EXPORT_NOT_PUBLISHED',
+        id: DARK_MODE,
+      });
+      await expect(
+        exportOf({ skillIds: ['redaction.nowhere'] })
+      ).rejects.toMatchObject({
+        status: 400,
+        message: 'SKILLS_EXPORT_NOT_FOUND',
+        id: 'redaction.nowhere',
+      });
     });
 
     it('reads back the file it writes', async () => {
@@ -281,10 +305,17 @@ describe('the skills export', () => {
     });
 
     it('refuses a file of an unknown format, or that fails validation', () => {
-      expect(() => readSkillsExport({ format: 2 })).toThrow(/format/);
-      expect(() =>
-        readSkillsExport({ format: 1, expertises: [{ title: 'No id' }] })
-      ).toThrow();
+      expect(refusalOf(() => readSkillsExport({ format: 2 }))).toMatchObject({
+        status: 400,
+        message: 'SKILLS_EXPORT_FORMAT_UNKNOWN',
+        format: '2',
+        expected: 1,
+      });
+      expect(
+        refusalOf(() =>
+          readSkillsExport({ format: 1, expertises: [{ title: 'No id' }] })
+        )
+      ).toMatchObject({ status: 400, message: 'SKILLS_EXPORT_INVALID' });
     });
 
     // Refused whole, before the preview, rather than failing item by item.
@@ -293,14 +324,17 @@ describe('the skills export', () => {
       const broken = (change) => {
         const copy = JSON.parse(JSON.stringify(file));
         change(copy);
-        return () => readSkillsExport(copy);
+        return refusalOf(() => readSkillsExport(copy));
       };
 
       expect(
         broken((c) => {
           c.skills[1].version.consumedExpertiseIds = SUBJECT_LINES;
         })
-      ).toThrow(/consumedExpertiseIds/);
+      ).toMatchObject({
+        message: 'SKILLS_EXPORT_INVALID',
+        field: 'skills.1.version.consumedExpertiseIds',
+      });
       // As the back office saves them: each once.
       expect(
         broken((c) => {
@@ -309,34 +343,40 @@ describe('the skills export', () => {
             SUBJECT_LINES,
           ];
         })
-      ).toThrow(/consumedExpertiseIds names an expertise twice/);
+      ).toMatchObject({
+        field: 'skills.1.version.consumedExpertiseIds',
+        issue: 'names an expertise twice',
+      });
       expect(
         broken((c) => {
           c.expertises[0].version.body = {};
         })
-      ).toThrow(/body/);
+      ).toMatchObject({ field: 'expertises.0.version.body' });
       expect(
         broken((c) => {
           c.expertises[0].category = 'not-a-category';
         })
-      ).toThrow(/category/);
+      ).toMatchObject({ field: 'expertises.0.category' });
       expect(
         broken((c) => {
           c.skills[0].version.nature = 'not-a-nature';
         })
-      ).toThrow(/nature/);
+      ).toMatchObject({ field: 'skills.0.version.nature' });
       expect(
         broken((c) => {
           c.skills[0].version.testCases = [{ name: 'No input' }];
         })
-      ).toThrow(/testCases/);
+      ).toMatchObject({ field: 'skills.0.version.testCases.0.input' });
     });
 
     it('refuses a file whose id is longer than an id may be', async () => {
       const file = await exportOf({ expertiseIds: [SUBJECT_LINES] });
       file.expertises[0].expertiseId = 'a'.repeat(101);
 
-      expect(() => readSkillsExport(file)).toThrow();
+      expect(refusalOf(() => readSkillsExport(file))).toMatchObject({
+        message: 'SKILLS_EXPORT_INVALID',
+        field: 'expertises.0.expertiseId',
+      });
     });
 
     // zod drops the keys it does not know: a field added to a version and
@@ -359,7 +399,11 @@ describe('the skills export', () => {
       const file = await exportOf({ expertiseIds: [SUBJECT_LINES] });
       file.expertises.push(file.expertises[0]);
 
-      expect(() => readSkillsExport(file)).toThrow(/twice/);
+      expect(refusalOf(() => readSkillsExport(file))).toMatchObject({
+        message: 'SKILLS_EXPORT_INVALID',
+        field: 'expertises.1.expertiseId',
+        issue: `"${SUBJECT_LINES}" is in the file twice`,
+      });
     });
 
     it('exports an item chosen twice once', async () => {

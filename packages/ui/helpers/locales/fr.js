@@ -1829,6 +1829,18 @@ export default {
         'Le template référence des champs absents du schéma d\'entrée « {schemaId} » : {fields}. Corrigez le template ou changez le schéma d\'entrée de la version.',
       SKILL_VERSION_CHANGED:
         'Ce brouillon a été modifié entre-temps, par exemple par un assistant. Rechargez-le pour voir la nouvelle version avant d\'enregistrer ou de publier.',
+      SKILLS_EXPORT_NOT_FOUND:
+        '{id} n\'existe pas : rechargez la liste, puis exportez de nouveau.',
+      SKILLS_EXPORT_ARCHIVED:
+        '{id} est archivé : il ne s\'exporte plus. Rechargez la liste, puis exportez de nouveau.',
+      SKILLS_EXPORT_NOT_PUBLISHED:
+        '{id} n\'a aucune version publiée : seule une version publiée s\'exporte.',
+      SKILLS_EXPORT_FORMAT_UNKNOWN:
+        'Ce fichier n\'est pas un export de skills que cette instance lit : elle lit le format {expected}.',
+      SKILLS_EXPORT_INVALID:
+        'Ce fichier n\'est pas un export de skills lisible : le champ « {field} » est refusé ({issue}).',
+      SKILLS_SELECTION_INVALID:
+        'La sélection n\'est pas une liste d\'identifiants : « {field} ».',
       SKILLS_IMPORT_ARCHIVED:
         '{id} est archivé ici : la version {version} n\'a pas été importée.',
       SKILLS_IMPORT_DRAFT_OPEN:

@@ -3,6 +3,7 @@
 const asyncHandler = require('express-async-handler');
 const createError = require('http-errors');
 const { z } = require('zod');
+const ERROR_CODES = require('../../constant/error-codes.js');
 
 const {
   exportSkills,
@@ -37,7 +38,9 @@ function bodyOf(req, schema) {
   const parsed = schema.safeParse(req.body || {});
   if (!parsed.success) {
     const [issue] = parsed.error.issues;
-    throw createError(400, `${issue.path.join('.')}: ${issue.message}`);
+    throw createError(400, ERROR_CODES.SKILLS_SELECTION_INVALID, {
+      field: issue.path.join('.'),
+    });
   }
   return parsed.data;
 }

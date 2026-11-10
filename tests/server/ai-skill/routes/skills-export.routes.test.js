@@ -88,6 +88,7 @@ describe('exporting through the API', () => {
       .send({ skillIds: 'redaction.subject-ideas' });
 
     expect(res.status).toBe(400);
+    expect(res.body.message).toBe('SKILLS_SELECTION_INVALID');
   });
 
   it('refuses anyone else', async () => {
@@ -139,6 +140,7 @@ describe('previewing through the API', () => {
       .send({ ...file, format: 2 });
 
     expect(res.status).toBe(400);
+    expect(res.body.message).toBe('SKILLS_EXPORT_FORMAT_UNKNOWN');
     expect(res.body.items).toBeUndefined();
   });
 
@@ -196,6 +198,7 @@ describe('importing through the API', () => {
       .send({ file, expertiseIds: SUBJECT_LINES });
 
     expect(res.status).toBe(400);
+    expect(res.body.message).toBe('SKILLS_SELECTION_INVALID');
     expect(store.stored('expertises')).toEqual([]);
   });
 

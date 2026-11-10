@@ -7,6 +7,7 @@
 
 const createError = require('http-errors');
 const { z } = require('zod');
+const ERROR_CODES = require('../../constant/error-codes.js');
 const {
   SkillNatureValues,
   SkillCategoryValues,
@@ -115,25 +116,24 @@ const FILE = z
 
 /**
  * A skills export read from its JSON, or a 400 saying why it cannot be: an
- * unknown format, or a content that fails validation. The whole file is
+ * unknown format (SKILLS_EXPORT_FORMAT_UNKNOWN), or a content that fails
+ * validation (SKILLS_EXPORT_INVALID). The whole file is
  * refused, before anything is shown.
  */
 function readSkillsExport(json) {
   if (!json || json.format !== FORMAT) {
-    throw createError(
-      400,
-      `Unknown skills export format: ${
-        json && json.format
-      }. This instance reads format ${FORMAT}.`
-    );
+    throw createError(400, ERROR_CODES.SKILLS_EXPORT_FORMAT_UNKNOWN, {
+      format: String(json && json.format),
+      expected: FORMAT,
+    });
   }
   const parsed = FILE.safeParse(json);
   if (!parsed.success) {
     const [issue] = parsed.error.issues;
-    throw createError(
-      400,
-      `Invalid skills export: ${issue.path.join('.')} ${issue.message}`
-    );
+    throw createError(400, ERROR_CODES.SKILLS_EXPORT_INVALID, {
+      field: issue.path.join('.'),
+      issue: issue.message,
+    });
   }
   return parsed.data;
 }
