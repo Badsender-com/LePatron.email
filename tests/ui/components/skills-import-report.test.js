@@ -15,19 +15,27 @@ const skillsImport = require('~/helpers/skills-import.js');
 
 const FILE = 'packages/ui/components/ai-skill/bs-ai-skills-import-report.vue';
 
-const KNOWN = {
-  'aiSkills.errors.SKILL_ID_TAKEN': 'Identifier taken',
-  'aiSkills.natures.task': 'Task skill',
-};
+// The words the application has, as `$te` finds them.
+const fr = require('~/helpers/locales/fr.js').default;
+
+const KNOWN = { 'aiSkills.natures.task': 'Task skill' };
+// The words of a failure are the application's own, filled as vue-i18n
+// fills them; any other key shows what it is filled with.
+const REAL = ['aiSkills.errors.', 'skillsImport.report.failedItem'];
+const interpolated = (text, params = {}) =>
+  text.replace(/\{(\w+)\}/g, (all, name) =>
+    name in params ? String(params[name]) : all
+  );
 const t = (key, params) => {
   if (key in KNOWN) return KNOWN[key];
+  if (REAL.some((prefix) => key.startsWith(prefix))) {
+    return interpolated(get(fr, key), params);
+  }
   return params && Object.keys(params).length
     ? `${key} ${JSON.stringify(params)}`
     : key;
 };
-// The words the application has, as `$te` finds them.
-const en = require('~/helpers/locales/en.js').default;
-const te = (key) => key in KNOWN || get(en, key) !== undefined;
+const te = (key) => key in KNOWN || get(fr, key) !== undefined;
 
 Vue.component('NuxtLink', {
   props: { to: { type: String, default: '' } },
@@ -63,9 +71,9 @@ const REPORT = {
   failed: [
     {
       kind: 'skill',
-      id: 'taken',
+      id: 'qc.draft',
       version: '1.0',
-      message: 'SKILL_ID_TAKEN',
+      message: 'SKILLS_IMPORT_DRAFT_OPEN',
     },
     { kind: 'skill', id: 'broken', version: '1.0', message: 'Some error' },
   ],
@@ -137,12 +145,15 @@ describe('the report of an import', () => {
     ]);
   });
 
-  it('says why an item failed, in words when the server gives a code', () => {
+  it('says why an item failed, in words filled with the item when the server gives a code', () => {
     const vm = mountReport();
-    expect(texts(vm, '.bs-ai-skills-import-report__failed')).toEqual([
-      'skillsImport.report.failedItem {"id":"taken","message":"Identifier taken"}',
-      'skillsImport.report.failedItem {"id":"broken","message":"Some error"}',
+    const failed = texts(vm, '.bs-ai-skills-import-report__failed');
+
+    expect(failed).toEqual([
+      'qc.draft : Un brouillon est ouvert sur qc.draft : publiez-le ou supprimez-le, puis importez de nouveau la version 1.0.',
+      'broken : Some error',
     ]);
+    failed.forEach((text) => expect(text).not.toContain('{'));
   });
 
   it('closes the modal when a draft is opened', () => {

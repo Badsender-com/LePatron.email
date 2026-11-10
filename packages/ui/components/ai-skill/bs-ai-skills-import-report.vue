@@ -36,7 +36,9 @@ export default {
     // A failure the server names by its code reads in words.
     messageOf(item) {
       const key = `aiSkills.errors.${item.message}`;
-      return this.$te(key) ? this.$t(key) : item.message;
+      return this.$te(key)
+        ? this.$t(key, { id: item.id, version: item.version })
+        : item.message;
     },
     warningText(warning) {
       return this.$t(
