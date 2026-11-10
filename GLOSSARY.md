@@ -223,9 +223,19 @@ _UI_: Export de skills
 _Avoid_: Backup (it holds no history), sync (nothing happens on its own), package
 
 **Copy**:
-A LePatron instance (staging, development) whose skills and expertises follow production's, which is their only source. A copy keeps what exists only on it.
+A LePatron instance (staging, development) whose skills and expertises follow production's, which is their only source. An item that came from production follows it in everything, its versions, audience and state, unless it is kept on the copy. What the copy wrote itself is never lost: the follow never touches an item that exists only on the copy, and sets the copy's work on a followed item aside in a new item rather than overwrite it.
 _UI_: Copie
-_Avoid_: Mirror (a copy keeps its own items), replica, sync target
+_Avoid_: Mirror (a copy keeps its own items), replica, sync target, sync (the concept is the copy, the act is following)
+
+**Kept on this copy**:
+Said of an item of a copy that a super admin detached from production: the follow no longer touches it and only reports that production changed it. Following production again attaches it back.
+_UI_: Gardé sur cette copie
+_Avoid_: Frozen, pinned, local override
+
+**Copy's work**:
+An item of a copy holding, as a draft, what was written on the copy that the follow had to replace, or a version duplicated there to be tried. Its identifier is the original's with a suffix, its title the original's followed by "(travail de la copie)", and the follow never touches it.
+_UI_: Travail de la copie
+_Avoid_: Fork, backup, conflict copy
 
 **Used by a feature**:
 Said of an active skill or expertise that a LePatron feature calls or loads, as worked out from the features' own declarations, never set by hand. Publishing a new version of one replays its test cases first.
