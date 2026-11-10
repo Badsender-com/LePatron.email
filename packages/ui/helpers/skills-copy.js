@@ -3,18 +3,24 @@
 
 /**
  * What this instance is, from `GET /ai-skills/follow`: a copy or not, whether
- * the nightly follow runs here, and the follow running now, if one is.
+ * it has completed a follow of production, whether the nightly follow runs
+ * here, and the follow running now, if one is.
  *
  * @param {Object} [answer] the server's answer; none, the instance is taken
  *   for production, which shows no copy's controls
- * @returns {{ isCopy: boolean, nightly: boolean, lock: Object|null }}
+ * @returns {{ isCopy: boolean, followedOnce: boolean, nightly: boolean,
+ *   lock: Object|null }}
  */
 export function copyStateOf(answer) {
-  if (!answer) return { isCopy: false, nightly: false, lock: null };
+  if (!answer) {
+    return { isCopy: false, followedOnce: false, nightly: false, lock: null };
+  }
   const isCopy =
     typeof answer.isCopy === 'boolean' ? answer.isCopy : !!answer.configured;
   return {
     isCopy,
+    // A follow that failed wrote nothing: the copy has not followed yet.
+    followedOnce: !!(answer.last && answer.last.status !== 'failed'),
     nightly: !!(answer.nightly && answer.nightly.enabled),
     lock: answer.lock || null,
   };
@@ -42,8 +48,12 @@ export const COPY_ORIGINS = Object.freeze({
   FOLLOWED: 'followed',
   // Production's, kept on the copy: the follow no longer touches it.
   KEPT: 'kept',
-  // Written on the copy: the follow never touches it.
+  // Written on the copy: the follow leaves it alone, unless production has
+  // an item of the same id, which it then takes over.
   LOCAL: 'local',
+  // Written on a copy that has not followed production yet: the first
+  // follow may take it over.
+  NOT_FOLLOWED: 'notFollowed',
   // The copy's work, set aside by a follow or duplicated, from another item.
   COPIED: 'copied',
 });
@@ -51,32 +61,33 @@ export const COPY_ORIGINS = Object.freeze({
 /**
  * @param {Object} item a skill or an expertise, as the server answers it
  * @param {boolean} isCopy whether this instance is a copy
+ * @param {boolean} followedOnce whether the copy has completed a follow
  * @returns {string|null} one of `COPY_ORIGINS`, or null on production
  */
-export function copyOriginOf(item, isCopy) {
+export function copyOriginOf(item, isCopy, followedOnce) {
   if (!isCopy || !item) return null;
   if (item.copiedFrom) return COPY_ORIGINS.COPIED;
   if (item.keptOnCopy) return COPY_ORIGINS.KEPT;
   if (item.followedAt) return COPY_ORIGINS.FOLLOWED;
-  return COPY_ORIGINS.LOCAL;
+  return followedOnce ? COPY_ORIGINS.LOCAL : COPY_ORIGINS.NOT_FOLLOWED;
 }
 
 /**
- * What a copy offers to do with an item that came from production: keep it
- * on the copy, follow production again, or duplicate one of its versions to
- * try something without touching the follow. Nothing on production, nothing
- * on an item written on the copy.
+ * What a copy offers to do with an item: keep it on the copy, whatever its
+ * origin, so no follow takes it over; follow production again once kept;
+ * duplicate one of the versions of an item that came from production, to
+ * try something without touching the follow. Nothing on production.
  *
  * @returns {{ keep: boolean, follow: boolean, duplicate: boolean }}
  */
 export function copyActionsOf(item, isCopy) {
-  const origin = copyOriginOf(item, isCopy);
+  if (!isCopy || !item) return { keep: false, follow: false, duplicate: false };
   const fromProduction =
-    origin === COPY_ORIGINS.FOLLOWED || origin === COPY_ORIGINS.KEPT;
+    !item.copiedFrom && !!(item.followedAt || item.keptOnCopy);
   return {
-    keep: origin === COPY_ORIGINS.FOLLOWED,
-    follow: origin === COPY_ORIGINS.KEPT,
-    duplicate: fromProduction && ((item && item.versions) || []).length > 0,
+    keep: !item.keptOnCopy,
+    follow: !!item.keptOnCopy,
+    duplicate: fromProduction && (item.versions || []).length > 0,
   };
 }
 

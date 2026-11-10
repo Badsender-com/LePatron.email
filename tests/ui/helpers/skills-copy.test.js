@@ -26,7 +26,12 @@ describe('what an instance is', () => {
         nightly: { enabled: true },
         lock: { trigger: 'night' },
       })
-    ).toEqual({ isCopy: true, nightly: true, lock: { trigger: 'night' } });
+    ).toEqual({
+      isCopy: true,
+      followedOnce: false,
+      nightly: true,
+      lock: { trigger: 'night' },
+    });
   });
 
   it('takes an instance that follows a production for a copy, before the server says so', () => {
@@ -34,10 +39,25 @@ describe('what an instance is', () => {
     expect(copyStateOf({ isCopy: false, configured: true }).isCopy).toBe(false);
   });
 
+  it.each([
+    [null, false],
+    [{ status: 'failed' }, false],
+    [{ status: 'partial' }, true],
+    [{ status: 'succeeded' }, true],
+  ])(
+    'reads whether the copy has completed a follow from its last one, %j',
+    (last, followedOnce) => {
+      expect(copyStateOf({ isCopy: true, last }).followedOnce).toBe(
+        followedOnce
+      );
+    }
+  );
+
   it('takes an instance it cannot read for production', async () => {
     const $axios = { $get: jest.fn().mockRejectedValue(new Error('down')) };
     expect(await fetchCopyState($axios, () => '/ai-skills/follow')).toEqual({
       isCopy: false,
+      followedOnce: false,
       nightly: false,
       lock: null,
     });
@@ -51,7 +71,12 @@ describe('where an item of a copy comes from', () => {
     [{}, 'local'],
     [{ copiedFrom: 'redaction', followedAt: '2026-11-10' }, 'copied'],
   ])('%j comes from %s', (item, origin) => {
-    expect(copyOriginOf(item, true)).toBe(origin);
+    expect(copyOriginOf(item, true, true)).toBe(origin);
+  });
+
+  it('is not followed yet while the copy has completed no follow', () => {
+    expect(copyOriginOf({}, true, false)).toBe('notFollowed');
+    expect(copyOriginOf({ keptOnCopy: true }, true, false)).toBe('kept');
   });
 
   it('comes from nowhere on production', () => {
@@ -63,8 +88,14 @@ describe('what a copy does with an item', () => {
   it.each([
     [{ followedAt: 'x', versions: VERSIONS }, true, false, true],
     [{ keptOnCopy: true, versions: VERSIONS }, false, true, true],
-    [{ versions: VERSIONS }, false, false, false],
-    [{ copiedFrom: 'a', versions: VERSIONS }, false, false, false],
+    [{ versions: VERSIONS }, true, false, false],
+    [{ copiedFrom: 'a', versions: VERSIONS }, true, false, false],
+    [
+      { copiedFrom: 'a', keptOnCopy: true, versions: VERSIONS },
+      false,
+      true,
+      false,
+    ],
   ])(
     '%j: keep %s, follow %s, duplicate %s',
     (item, keep, follow, duplicate) => {

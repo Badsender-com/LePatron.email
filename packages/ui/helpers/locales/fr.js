@@ -1836,27 +1836,34 @@ export default {
           'Le suivi ne le touche plus : il signale seulement que la production a changé.',
         local: 'Écrit sur cette copie',
         localHint:
-          'Il n\'existe que sur cette copie : le suivi n\'y touche jamais.',
+          'Le suivi le laisse tel quel, sauf si la production a un élément du même identifiant : il le reprend alors, et le travail de la copie part dans un élément à part.',
+        notFollowed: 'Pas encore suivi',
+        notFollowedHint:
+          'Cette copie n\'a pas encore suivi la production : au premier suivi, un élément du même identifiant en production le reprendra.',
         copied: 'Travail de la copie',
         copiedHint:
-          'Le travail fait sur cette copie, mis de côté d\'un autre élément : le suivi n\'y touche jamais.',
+          'Le travail fait sur cette copie, mis de côté d\'un autre élément : le suivi le laisse tel quel.',
       },
       openOrigin: 'Ouvrir l\'élément d\'origine « {id} »',
       explain: {
         followed:
-          'Le suivi le garde égal à la production. Ce qui est écrit ici part, au suivi suivant, en brouillon dans un nouvel élément de la copie.',
+          'Le suivi le garde égal à la production. Ce qui est écrit ici part, au suivi suivant, dans un nouvel élément « (travail de la copie) ».',
         kept: 'Le suivi ne le touche plus : il signale seulement que la production a changé.',
         local:
-          'Il n\'existe que sur cette copie : le suivi n\'y touche jamais.',
+          'Le suivi le laisse tel quel, sauf si la production a un élément du même identifiant : il le reprend alors, et le travail de la copie part dans un élément à part, « (travail de la copie) ».',
+        notFollowed:
+          'Cette copie n\'a pas encore suivi la production. Au premier suivi, si la production a un élément du même identifiant, le suivi le reprend, et le travail de la copie part dans un élément à part, « (travail de la copie) ».',
         copied:
-          'Le travail fait sur cette copie, d\'après l\'élément lié : le suivi n\'y touche jamais.',
+          'Le travail fait sur cette copie, d\'après l\'élément lié. Le suivi le laisse tel quel.',
       },
       keep: 'Garder sur cette copie',
       keptDone: 'Gardé sur cette copie : le suivi ne le touche plus.',
       publishKept:
-        'Le suivi de la production ne touchera plus cet élément : il signalera seulement que la production a changé.',
+        'Cochée, le suivi ne touchera plus cet élément : il signalera seulement que la production a changé.',
       publishFollowed:
-        'L\'élément suit toujours la production : au prochain suivi, la version publiée ici part en brouillon dans un nouvel élément de la copie.',
+        'Décochée, l\'élément suit toujours la production : au prochain suivi, la version publiée ici part dans un nouvel élément « (travail de la copie) », en brouillon, sauf si la production publie la même.',
+      publishLocal:
+        'Décochée, le suivi laisse cet élément tel quel tant que la production n\'a pas d\'élément du même identifiant ; si elle en a un, la version publiée ici part dans un nouvel élément « (travail de la copie) », en brouillon.',
       follow: 'Suivre la production',
       followTitle: 'Suivre de nouveau la production ?',
       followConfirm:
@@ -1864,7 +1871,7 @@ export default {
       followDone: 'Cet élément suivra la production au prochain suivi.',
       duplicate: 'Dupliquer sur cette copie',
       duplicateHint:
-        'Crée un élément de cette copie, avec le contenu de la version choisie en brouillon, réservé à l\'entreprise plateforme et non servi aux assistants. Le suivi n\'y touche jamais.',
+        'Crée un élément de cette copie, avec le contenu de la version choisie en brouillon, réservé à l\'entreprise plateforme et non servi aux assistants. Le suivi le laisse tel quel.',
       duplicateVersion: 'Version',
       duplicateSubmit: 'Dupliquer',
       duplicateDone: 'Élément dupliqué sur cette copie.',

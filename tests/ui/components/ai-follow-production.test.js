@@ -129,6 +129,7 @@ describe('the follow of production on a copy', () => {
     await settle(vm);
     expect(state).toHaveBeenCalledWith({
       isCopy: true,
+      followedOnce: false,
       nightly: true,
       lock: null,
     });

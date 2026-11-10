@@ -49,13 +49,15 @@ export default {
     kind: { type: String, required: true },
     item: { type: Object, required: true },
     isCopy: { type: Boolean, default: false },
+    // Whether the copy has completed a follow of production.
+    followedOnce: { type: Boolean, default: false },
   },
   data() {
     return { busy: false, duplicateVersion: null };
   },
   computed: {
     origin() {
-      return copyOriginOf(this.item, this.isCopy);
+      return copyOriginOf(this.item, this.isCopy, this.followedOnce);
     },
     actions() {
       return copyActionsOf(this.item, this.isCopy);
@@ -134,7 +136,12 @@ export default {
     :aria-label="$t('aiSkills.copy.panelLabel')"
   >
     <div class="bs-ai-copy-panel__origin">
-      <bs-ai-copy-origin-chip :kind="kind" :item="item" :is-copy="isCopy" />
+      <bs-ai-copy-origin-chip
+        :kind="kind"
+        :item="item"
+        :is-copy="isCopy"
+        :followed-once="followedOnce"
+      />
       <span class="bs-ai-copy-panel__explain">
         {{ $t(`aiSkills.copy.explain.${origin}`) }}
       </span>

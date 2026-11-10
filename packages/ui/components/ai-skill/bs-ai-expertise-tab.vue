@@ -32,6 +32,8 @@ export default {
   props: {
     // On a copy, each item says where it comes from (ADR 0019).
     isCopy: { type: Boolean, default: false },
+    // Whether the copy has completed a follow of production.
+    followedOnce: { type: Boolean, default: false },
   },
   data() {
     return {
@@ -241,6 +243,7 @@ export default {
           kind="expertise"
           :item="item"
           :is-copy="isCopy"
+          :followed-once="followedOnce"
         />
       </template>
       <template #item.expertiseId="{ item }">

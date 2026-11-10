@@ -67,6 +67,7 @@ export default {
         savedAudience: skill.audience,
         schemas: schemasRes.schemas || [],
         isCopy: copyState.isCopy,
+        followedOnce: copyState.followedOnce,
       };
     } catch (err) {
       return error({ statusCode: 404, message: 'Skill not found' });
@@ -80,6 +81,7 @@ export default {
       schemas: [],
       // On a copy, the page says where the skill comes from (ADR 0019).
       isCopy: false,
+      followedOnce: false,
       // Landing tab / auto-expanded version come from the query — the create
       // flow redirects here with `?tab=versions&expand=1.0` (§B2).
       tab: this.$route.query.tab === 'versions' ? 'versions' : 'details',
@@ -106,8 +108,8 @@ export default {
       if (!av || av.major == null) return null;
       return `${av.major}.${av.minor || 0}`;
     },
-    // On a copy, publishing an item that follows production offers to keep
-    // it on the copy (ADR 0019).
+    // On a copy, publishing an item not kept on it offers to keep it there,
+    // so no follow takes it over (ADR 0019).
     offerKeepOnCopy() {
       return copyActionsOf(this.skill, this.isCopy).keep;
     },
@@ -283,6 +285,7 @@ export default {
       kind="skill"
       :item="skill"
       :is-copy="isCopy"
+      :followed-once="followedOnce"
       @changed="reloadItem"
     />
 
@@ -351,6 +354,7 @@ export default {
       :is-major="!!activatingVersion && activatingVersion.versionMinor === 0"
       :platform-only="platformOnly"
       :offer-keep-on-copy="offerKeepOnCopy"
+      :item-followed="!!skill.followedAt"
       :platform-only-expertises="platformOnlyExpertises"
       @confirm="activateVersion"
     />

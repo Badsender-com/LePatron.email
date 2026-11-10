@@ -43,6 +43,7 @@ export default {
       exportingAll: false,
       // On a copy, the lists say where each item comes from (ADR 0019).
       isCopy: false,
+      followedOnce: false,
     };
   },
   head() {
@@ -75,13 +76,19 @@ export default {
       }
     },
   },
-  async mounted() {
-    this.isCopy = (
-      await fetchCopyState(this.$axios, api.aiSkillsFollow)
-    ).isCopy;
+  mounted() {
+    this.loadCopyState();
   },
   methods: {
     ...mapMutations(PAGE, { showSnackbar: SHOW_SNACKBAR }),
+    async loadCopyState() {
+      const { isCopy, followedOnce } = await fetchCopyState(
+        this.$axios,
+        api.aiSkillsFollow
+      );
+      this.isCopy = isCopy;
+      this.followedOnce = followedOnce;
+    },
     // Every active skill and expertise, in one file (ADR 0018).
     async exportAll() {
       this.exportingAll = true;
@@ -102,6 +109,7 @@ export default {
     },
     // The lists show the new drafts, or what a follow of production brought.
     onImported() {
+      this.loadCopyState();
       if (this.$refs.skillsTab) this.$refs.skillsTab.fetchData();
       if (this.$refs.expertiseTab) this.$refs.expertiseTab.fetchData();
     },
@@ -176,10 +184,18 @@ export default {
       <div class="hub-content">
         <v-tabs-items v-model="tab" class="transparent">
           <v-tab-item value="skills">
-            <bs-ai-skills-tab ref="skillsTab" :is-copy="isCopy" />
+            <bs-ai-skills-tab
+              ref="skillsTab"
+              :is-copy="isCopy"
+              :followed-once="followedOnce"
+            />
           </v-tab-item>
           <v-tab-item value="expertise">
-            <bs-ai-expertise-tab ref="expertiseTab" :is-copy="isCopy" />
+            <bs-ai-expertise-tab
+              ref="expertiseTab"
+              :is-copy="isCopy"
+              :followed-once="followedOnce"
+            />
           </v-tab-item>
           <v-tab-item value="invocations">
             <bs-ai-invocations-tab />

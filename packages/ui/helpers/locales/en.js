@@ -1808,26 +1808,35 @@ export default {
         keptHint:
           'The follow no longer touches it: it only says that production changed.',
         local: 'Written on this copy',
-        localHint: 'It exists only on this copy: the follow never touches it.',
+        localHint:
+          'The follow leaves it as it is, unless production has an item of the same id: it then takes it over, and the copy\'s work moves to a separate item.',
+        notFollowed: 'Not followed yet',
+        notFollowedHint:
+          'This copy has not followed production yet: at the first follow, an item of the same id on production will take it over.',
         copied: 'Copy\'s work',
         copiedHint:
-          'The work done on this copy, set aside from another item: the follow never touches it.',
+          'The work done on this copy, set aside from another item: the follow leaves it as it is.',
       },
       openOrigin: 'Open the original item "{id}"',
       explain: {
         followed:
-          'The follow keeps it equal to production. What is written here goes, at the next follow, into a draft of a new item of the copy.',
+          'The follow keeps it equal to production. What is written here goes, at the next follow, into a new "(travail de la copie)" item.',
         kept: 'The follow no longer touches it: it only says that production changed.',
-        local: 'It exists only on this copy: the follow never touches it.',
+        local:
+          'The follow leaves it as it is, unless production has an item of the same id: it then takes it over, and the copy\'s work moves to a separate "(travail de la copie)" item.',
+        notFollowed:
+          'This copy has not followed production yet. At the first follow, if production has an item of the same id, the follow takes it over, and the copy\'s work moves to a separate "(travail de la copie)" item.',
         copied:
-          'The work done on this copy, from the linked item: the follow never touches it.',
+          'The work done on this copy, from the linked item. The follow leaves it as it is.',
       },
       keep: 'Keep on this copy',
       keptDone: 'Kept on this copy: the follow no longer touches it.',
       publishKept:
-        'The follow of production will no longer touch this item: it will only say that production changed.',
+        'Ticked, the follow will no longer touch this item: it will only say that production changed.',
       publishFollowed:
-        'The item still follows production: at the next follow, the version published here goes into a draft of a new item of the copy.',
+        'Unticked, the item still follows production: at the next follow, the version published here moves to a new "(travail de la copie)" item, as a draft, unless production publishes the same one.',
+      publishLocal:
+        'Unticked, the follow leaves this item as it is while production has no item of the same id; if it has one, the version published here moves to a new "(travail de la copie)" item, as a draft.',
       follow: 'Follow production',
       followTitle: 'Follow production again?',
       followConfirm:
@@ -1835,7 +1844,7 @@ export default {
       followDone: 'This item will follow production at the next follow.',
       duplicate: 'Duplicate on this copy',
       duplicateHint:
-        'Creates an item of this copy, with the content of the chosen version as a draft, kept to the platform company and not served to assistants. The follow never touches it.',
+        'Creates an item of this copy, with the content of the chosen version as a draft, kept to the platform company and not served to assistants. The follow leaves it as it is.',
       duplicateVersion: 'Version',
       duplicateSubmit: 'Duplicate',
       duplicateDone: 'Item duplicated on this copy.',

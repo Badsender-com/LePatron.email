@@ -78,12 +78,46 @@ describe('the origin of an item of a copy', () => {
     ['en', { copiedFrom: 'redaction' }, "Copy's work"],
   ])('reads in %s, for %j, %s', (locale, item, words) => {
     const vm = mountSfc(CHIP, {
-      props: { kind: 'skill', item, isCopy: true },
+      props: { kind: 'skill', item, isCopy: true, followedOnce: true },
       mocks: wordsOf(LOCALES[locale]),
       imports: chipImports,
     });
     expect(text(vm.$el.querySelector('v-chip'))).toBe(words);
   });
+
+  it.each([
+    ['fr', 'Pas encore suivi', /premier suivi/],
+    ['en', 'Not followed yet', /first follow/],
+  ])(
+    'reads in %s that an item is not followed yet while the copy has followed nothing',
+    (locale, words, hint) => {
+      const vm = mountSfc(CHIP, {
+        props: { kind: 'skill', item: {}, isCopy: true, followedOnce: false },
+        mocks: wordsOf(LOCALES[locale]),
+        imports: chipImports,
+      });
+      const badge = vm.$el.querySelector('v-chip');
+      expect(text(badge)).toBe(words);
+      expect(badge.getAttribute('title')).toMatch(hint);
+    }
+  );
+
+  it.each([
+    ['fr', /sauf si la production a un élément du même identifiant/],
+    ['en', /unless production has an item of the same id/],
+  ])(
+    'says in %s that a follow takes over an item written on the copy when production has its id',
+    (locale, hint) => {
+      const vm = mountSfc(CHIP, {
+        props: { kind: 'skill', item: {}, isCopy: true, followedOnce: true },
+        mocks: wordsOf(LOCALES[locale]),
+        imports: chipImports,
+      });
+      expect(vm.$el.querySelector('v-chip').getAttribute('title')).toMatch(
+        hint
+      );
+    }
+  );
 
   it('links the copy’s work to the item it comes from', () => {
     const vm = mountSfc(CHIP, {
@@ -137,9 +171,9 @@ describe.each([
     { [idField]: 'a', title: 'A', audience: 'all', followedAt: 'x' },
     { [idField]: 'b', title: 'B', audience: 'all' },
   ];
-  function mountList(isCopy) {
+  function mountList(isCopy, followedOnce = true) {
     return mountSfc(file, {
-      props: { isCopy },
+      props: { isCopy, followedOnce },
       mocks: {
         ...wordsOf(fr),
         $axios: { $get: jest.fn().mockResolvedValue({ items: ITEMS }) },
@@ -172,6 +206,15 @@ describe.each([
     ]);
   });
 
+  it('says an item written on the copy is not followed yet before the first follow', async () => {
+    const vm = mountList(true, false);
+    await settle(vm);
+    expect([...vm.$el.querySelectorAll('.row v-chip')].map(text)).toEqual([
+      'Suit la production',
+      'Pas encore suivi',
+    ]);
+  });
+
   it('says nothing of it on production', async () => {
     const vm = mountList(false);
     await settle(vm);
@@ -195,6 +238,7 @@ function mountPanel({
   locale = 'fr',
   item = SKILL,
   isCopy = true,
+  followedOnce = true,
   kind = 'skill',
 } = {}) {
   const $axios = {
@@ -209,7 +253,7 @@ function mountPanel({
   };
   const $router = { push: jest.fn() };
   const vm = mountSfc(PANEL, {
-    props: { kind, item, isCopy },
+    props: { kind, item, isCopy, followedOnce },
     mocks: { $axios, $router, ...wordsOf(LOCALES[locale]) },
     imports: {
       vuex,
@@ -304,12 +348,62 @@ describe('what a copy does with an item, on its page', () => {
     );
   });
 
-  it('offers nothing on an item written on the copy, and says so', () => {
-    const { vm } = mountPanel({ item: { ...SKILL, followedAt: undefined } });
-    expect(vm.$el.querySelector('.bs-ai-copy-panel__actions')).toBeNull();
-    expect(text(vm.$el.querySelector('.bs-ai-copy-panel__explain'))).toBe(
-      fr.aiSkills.copy.explain.local
-    );
+  it.each([
+    [
+      'fr',
+      'Garder sur cette copie',
+      'Le suivi le laisse tel quel, sauf si la production a un élément du même identifiant : il le reprend alors, et le travail de la copie part dans un élément à part, « (travail de la copie) ».',
+    ],
+    [
+      'en',
+      'Keep on this copy',
+      'The follow leaves it as it is, unless production has an item of the same id: it then takes it over, and the copy\'s work moves to a separate "(travail de la copie)" item.',
+    ],
+  ])(
+    'keeps an item written on the copy too, and says in %s what the follow does to it',
+    async (locale, keep, explain) => {
+      const { vm, $axios } = mountPanel({
+        locale,
+        item: { ...SKILL, followedAt: undefined },
+      });
+      expect(text(vm.$el.querySelector('.bs-ai-copy-panel__explain'))).toBe(
+        explain
+      );
+      expect(text(buttonOf(vm, 'keep'))).toBe(keep);
+      expect(buttonOf(vm, 'duplicate')).toBeNull();
+
+      buttonOf(vm, 'keep').dispatchEvent(new Event('click'));
+      await settle(vm);
+      expect($axios.$post).toHaveBeenCalledWith(
+        '/ai-skills/redaction/keep-on-copy'
+      );
+    }
+  );
+
+  it.each([
+    ['fr', /n'a pas encore suivi la production/],
+    ['en', /has not followed production yet/],
+  ])(
+    'says in %s that the first follow may take over an item while the copy has followed nothing',
+    (locale, explain) => {
+      const { vm } = mountPanel({
+        locale,
+        followedOnce: false,
+        item: { ...SKILL, followedAt: undefined },
+      });
+      expect(text(vm.$el.querySelector('.bs-ai-copy-panel__explain'))).toMatch(
+        explain
+      );
+      expect(buttonOf(vm, 'keep')).toBeTruthy();
+    }
+  );
+
+  it('follows production again for an item written on the copy and kept there', () => {
+    const { vm } = mountPanel({
+      item: { ...SKILL, followedAt: undefined, keptOnCopy: true },
+    });
+    expect(buttonOf(vm, 'follow')).toBeTruthy();
+    expect(buttonOf(vm, 'keep')).toBeNull();
   });
 
   it('is not there on production', () => {

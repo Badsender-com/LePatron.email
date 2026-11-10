@@ -55,7 +55,12 @@ export default {
         $axios.$get(api.aiExpertise(params.expertiseId)),
         fetchCopyState($axios, api.aiSkillsFollow),
       ]);
-      return { exp, savedAudience: exp.audience, isCopy: copyState.isCopy };
+      return {
+        exp,
+        savedAudience: exp.audience,
+        isCopy: copyState.isCopy,
+        followedOnce: copyState.followedOnce,
+      };
     } catch (err) {
       return error({ statusCode: 404, message: 'Expertise not found' });
     }
@@ -68,6 +73,7 @@ export default {
       savedAudience: null,
       // On a copy, the page says where the expertise comes from (ADR 0019).
       isCopy: false,
+      followedOnce: false,
       // Landing tab / auto-expanded version come from the query — the create
       // flow redirects here with ?tab=versions&expand=1.0 (§4).
       tab: this.$route.query.tab === 'versions' ? 'versions' : 'details',
@@ -89,8 +95,8 @@ export default {
       if (!av || av.major == null) return null;
       return `${av.major}.${av.minor || 0}`;
     },
-    // On a copy, publishing an item that follows production offers to keep
-    // it on the copy (ADR 0019).
+    // On a copy, publishing an item not kept on it offers to keep it there,
+    // so no follow takes it over (ADR 0019).
     offerKeepOnCopy() {
       return copyActionsOf(this.exp, this.isCopy).keep;
     },
@@ -233,6 +239,7 @@ export default {
       kind="expertise"
       :item="exp"
       :is-copy="isCopy"
+      :followed-once="followedOnce"
       @changed="reloadItem"
     />
 
@@ -316,6 +323,7 @@ export default {
       :is-major="!!activatingVersion && activatingVersion.versionMinor === 0"
       :platform-only="platformOnly"
       :offer-keep-on-copy="offerKeepOnCopy"
+      :item-followed="!!exp.followedAt"
       @confirm="activateVersion"
     />
     <bs-ai-archive-modal

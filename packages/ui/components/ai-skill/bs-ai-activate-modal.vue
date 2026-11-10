@@ -28,9 +28,13 @@ export default {
     // What the version consumes kept to the platform company, offered to
     // open with the item: [{ expertiseId, title }] (a task skill only).
     platformOnlyExpertises: { type: Array, default: () => [] },
-    // On a copy, an item that follows production (ADR 0019): publishing it
-    // here keeps it on the copy unless the person unticks the box.
+    // On a copy, an item not kept on it (ADR 0019): publishing it here keeps
+    // it on the copy unless the person unticks the box.
     offerKeepOnCopy: { type: Boolean, default: false },
+    // The item came from production: unticked, the next follow takes the
+    // version published here out of it. One written on the copy leaves it
+    // only when production has an item of the same id.
+    itemFollowed: { type: Boolean, default: false },
   },
   data() {
     return {
@@ -41,6 +45,12 @@ export default {
     };
   },
   computed: {
+    keepOnCopyText() {
+      if (this.keepOnCopy) return this.$t('aiSkills.copy.publishKept');
+      return this.itemFollowed
+        ? this.$t('aiSkills.copy.publishFollowed')
+        : this.$t('aiSkills.copy.publishLocal');
+    },
     canSubmit() {
       if (!this.isMajor) return true;
       return !!this.payload.changelog && !!this.payload.releaseNotes;
@@ -186,11 +196,7 @@ export default {
           @change="keepOnCopy = $event === true"
         />
         <p class="mb-0 mt-1 bs-ai-activate-keep__explain">
-          {{
-            keepOnCopy
-              ? $t('aiSkills.copy.publishKept')
-              : $t('aiSkills.copy.publishFollowed')
-          }}
+          {{ keepOnCopyText }}
         </p>
       </v-alert>
 

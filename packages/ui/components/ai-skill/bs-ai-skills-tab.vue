@@ -32,6 +32,8 @@ export default {
   props: {
     // On a copy, each item says where it comes from (ADR 0019).
     isCopy: { type: Boolean, default: false },
+    // Whether the copy has completed a follow of production.
+    followedOnce: { type: Boolean, default: false },
   },
   data() {
     return {
@@ -217,7 +219,12 @@ export default {
       <template #item.title="{ item }">
         <span class="font-weight-medium">{{ item.title }}</span>
         <bs-ai-platform-only-chip :audience="item.audience" />
-        <bs-ai-copy-origin-chip kind="skill" :item="item" :is-copy="isCopy" />
+        <bs-ai-copy-origin-chip
+          kind="skill"
+          :item="item"
+          :is-copy="isCopy"
+          :followed-once="followedOnce"
+        />
       </template>
       <template #item.skillId="{ item }">
         <span class="text-caption text--secondary">{{ item.skillId }}</span>

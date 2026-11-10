@@ -44,9 +44,13 @@ afterEach(() => {
   document.body.innerHTML = '';
 });
 
-function mountModal({ locale = 'fr', offerKeepOnCopy = true } = {}) {
+function mountModal({
+  locale = 'fr',
+  offerKeepOnCopy = true,
+  itemFollowed = true,
+} = {}) {
   const vm = mountSfc(FILE, {
-    props: { offerKeepOnCopy, isMajor: false },
+    props: { offerKeepOnCopy, itemFollowed, isMajor: false },
     mocks: wordsOf(LOCALES[locale]),
     imports: {
       'lucide-vue': {},
@@ -108,6 +112,40 @@ describe('publishing on a copy an item that follows production', () => {
 
       vm.onSubmit();
       expect(confirm.mock.calls[0][0]).toMatchObject({ keepOnCopy: false });
+    }
+  );
+
+  it.each([
+    [
+      'fr',
+      "Décochée, l'élément suit toujours la production : au prochain suivi, la version publiée ici part dans un nouvel élément « (travail de la copie) », en brouillon, sauf si la production publie la même.",
+    ],
+    [
+      'en',
+      'Unticked, the item still follows production: at the next follow, the version published here moves to a new "(travail de la copie)" item, as a draft, unless production publishes the same one.',
+    ],
+  ])(
+    'says in %s, as the follow does it, where the version published on a followed item goes',
+    async (locale, words) => {
+      const vm = mountModal({ locale });
+      await settle(vm);
+      keepBox(vm).click();
+      await settle(vm);
+      expect(explain(vm)).toBe(words);
+    }
+  );
+
+  it.each([
+    ['fr', /tant que la production n'a pas d'élément du même identifiant/],
+    ['en', /while production has no item of the same id/],
+  ])(
+    'says in %s that an item written on the copy stays as it is unless production has its id',
+    async (locale, words) => {
+      const vm = mountModal({ locale, itemFollowed: false });
+      await settle(vm);
+      keepBox(vm).click();
+      await settle(vm);
+      expect(explain(vm)).toMatch(words);
     }
   );
 
