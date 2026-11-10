@@ -15,6 +15,11 @@ const { findVersion } = require('./version-helpers.js');
 const ID_FIELDS = { skill: 'skillId', expertise: 'expertiseId' };
 const MODELS = { skill: LePatronSkills, expertise: Expertises };
 
+const keyOf = ({ kind, id }) => `${kind}:${id}`;
+
+// The features a publication of this item reaches.
+const usesOf = (kind, doc) => manifestsUsing(kind, doc);
+
 /**
  * The stored skill or expertise and the features that use it; the version
  * asked for must exist.
@@ -40,7 +45,34 @@ async function loadUse({ kind, id, version }) {
       version: `${version.major}.${version.minor}`,
     });
   }
-  return { doc, manifests: manifestsUsing(kind, doc) };
+  return { doc, manifests: usesOf(kind, doc) };
 }
 
-module.exports = { ID_FIELDS, MODELS, loadUse };
+/**
+ * The stored items of a selection, read with one query per kind.
+ *
+ * @param {Array<{ kind: string, id: string }>} items
+ * @returns {Promise<Map<string, Object>>} by `kind:id` (keyOf); an item
+ *   not stored, or of an unknown kind, is not in it
+ */
+async function loadMany(items) {
+  const idsByKind = new Map();
+  items
+    .filter(({ kind }) => ID_FIELDS[kind])
+    .forEach(({ kind, id }) =>
+      idsByKind.set(kind, [...(idsByKind.get(kind) || []), id])
+    );
+  const found = new Map();
+  await Promise.all(
+    [...idsByKind].map(async ([kind, ids]) => {
+      const idField = ID_FIELDS[kind];
+      const docs = await MODELS[kind]
+        .find({ [idField]: { $in: [...new Set(ids)] } })
+        .lean();
+      docs.forEach((doc) => found.set(keyOf({ kind, id: doc[idField] }), doc));
+    })
+  );
+  return found;
+}
+
+module.exports = { keyOf, loadMany, loadUse, usesOf };

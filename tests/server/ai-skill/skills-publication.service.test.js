@@ -756,6 +756,30 @@ describe('publishing what a feature uses', () => {
       ]);
     });
 
+    // One query per kind, however many items the selection holds.
+    it('reads the selection, and what the guard would replay, without a query per item', async () => {
+      const findOne = [
+        jest.spyOn(store.models.LePatronSkills, 'findOne'),
+        jest.spyOn(store.models.Expertises, 'findOne'),
+      ];
+      const skillsRead = jest.spyOn(store.models.LePatronSkills, 'find');
+      const items = [
+        { kind: 'expertise', id: SUBJECT_LINES },
+        { kind: 'expertise', id: SPAM_WORDS },
+        { kind: 'skill', id: SUBJECT_IDEAS },
+        { kind: 'skill', id: PREHEADER_IDEAS },
+      ];
+
+      const { targets } = await batch.draftsToPublish(items);
+      expect(skillsRead).toHaveBeenCalledTimes(1);
+      await batch.planMany(targets);
+
+      findOne.forEach((spy) => expect(spy).not.toHaveBeenCalled());
+      // The selection, then the feature skills the replay would run.
+      expect(skillsRead).toHaveBeenCalledTimes(3);
+      jest.restoreAllMocks();
+    });
+
     it('says what the one guard would replay, without calling the AI', async () => {
       const plan = await batch.planMany(BOTH);
 

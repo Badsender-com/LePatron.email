@@ -10,7 +10,7 @@
 const ERROR_CODES = require('../../constant/error-codes.js');
 const { SkillStatuses } = require('../constant/skill-constants.js');
 const { asList, describeFeature } = require('./feature-use.js');
-const { ID_FIELDS, MODELS, loadUse } = require('./publication-target.js');
+const { keyOf, loadMany, usesOf } = require('./publication-target.js');
 const { planRuns, replay } = require('./publication-guard.js');
 const { findVersion } = require('./version-helpers.js');
 const publication = require('./skills-publication.service.js');
@@ -32,16 +32,11 @@ const summaryOf = ({ kind, id, version }) => ({
  *   `archived`, `no_draft` or `several_drafts`
  */
 async function draftsToPublish(items) {
+  const docs = await loadMany(asList(items));
   const targets = [];
   const skipped = [];
-  for (const { kind, id, updatedAt } of asList(items)) {
-    const idField = ID_FIELDS[kind];
-    // eslint-disable-next-line no-await-in-loop
-    const doc = idField
-      ? await MODELS[kind]
-          .findOne({ [idField]: id }, { status: 1, versions: 1 })
-          .lean()
-      : null;
+  asList(items).forEach(({ kind, id, updatedAt }) => {
+    const doc = docs.get(keyOf({ kind, id }));
     const drafts = doc
       ? asList(doc.versions).filter((v) => v.status === 'DRAFT')
       : [];
@@ -52,33 +47,29 @@ async function draftsToPublish(items) {
     else if (drafts.length > 1) reason = 'several_drafts';
     if (reason) {
       skipped.push({ kind, id, reason });
-    } else {
-      const [draft] = drafts;
-      targets.push({
-        kind,
-        id,
-        version: { major: draft.versionMajor, minor: draft.versionMinor },
-        // When the draft was last written, for the page to send back: a
-        // draft written since is not published (ADR 0014).
-        updatedAt: draft.updatedAt,
-        ...(updatedAt && { readAt: updatedAt }),
-      });
+      return;
     }
-  }
+    const [draft] = drafts;
+    targets.push({
+      kind,
+      id,
+      version: { major: draft.versionMajor, minor: draft.versionMinor },
+      // When the draft was last written, for the page to send back: a
+      // draft written since is not published (ADR 0014).
+      updatedAt: draft.updatedAt,
+      ...(updatedAt && { readAt: updatedAt }),
+    });
+  });
   return { targets, skipped };
 }
 
 // The features the drafts reach, and the runs of their one replay.
 async function planOf(targets) {
-  const uses = [];
-  for (const target of targets) {
-    // eslint-disable-next-line no-await-in-loop
-    const { manifests } = await loadUse(target);
-    uses.push({ target, manifests });
-  }
+  const docs = await loadMany(targets);
   const features = new Map();
   const skillIds = new Set();
-  uses.forEach(({ target, manifests }) => {
+  targets.forEach((target) => {
+    const manifests = usesOf(target.kind, docs.get(keyOf(target)));
     manifests.forEach((m) => features.set(m.featureType, describeFeature(m)));
     if (!manifests.length) return;
     if (target.kind === 'skill') skillIds.add(target.id);
@@ -141,12 +132,12 @@ function failureReason(err) {
 
 // A draft is published with the changelog and release notes it holds, on the
 // condition that it was not written since the page read it (ADR 0014).
-async function payloadOf(target) {
-  const { doc } = await loadUse(target);
-  const draft = findVersion(doc, target.version.major, target.version.minor);
+function payloadOf(target, doc) {
+  const draft =
+    doc && findVersion(doc, target.version.major, target.version.minor);
   return {
-    changelog: draft.changelog,
-    releaseNotes: draft.releaseNotes,
+    changelog: draft ? draft.changelog : undefined,
+    releaseNotes: draft ? draft.releaseNotes : undefined,
     updatedAt: target.readAt,
   };
 }
@@ -164,10 +155,10 @@ async function payloadOf(target) {
  */
 async function publishMany(targets, { guard, application } = {}, user) {
   const report = { published: [], failed: [] };
+  const docs = await loadMany(asList(targets));
   for (const target of asList(targets)) {
     try {
-      // eslint-disable-next-line no-await-in-loop
-      const payload = await payloadOf(target);
+      const payload = payloadOf(target, docs.get(keyOf(target)));
       // eslint-disable-next-line no-await-in-loop
       const { doc, warnings } = await publication.publishVersion(
         { ...target, guard, payload, application },
