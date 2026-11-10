@@ -411,6 +411,8 @@ export default {
       :title="$t('aiSkills.skill.archiveTitle')"
       :body="$t('aiSkills.skill.archiveBody')"
       :loading="saving"
+      :used-by="usedBy"
+      confirm-used-by
       @confirm="archive"
     />
   </div>

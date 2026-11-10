@@ -2075,6 +2075,8 @@ export default {
         'La version {version} de {id} n\'existe pas sur cette copie.',
       SKILLS_COPY_ID_TAKEN:
         'Trop d\'éléments portent déjà le travail de la copie de {id} : supprimez-en avant d\'en créer un autre.',
+      SKILL_ARCHIVE_CONFIRMATION_REQUIRED:
+        'Une fonctionnalité appelle cette skill : confirmez avant de l\'archiver.',
       SKILL_TEST_CASES_ON_TASK:
         'Une skill de tâche n\'a pas de cas de test : aucune fonctionnalité ne l\'appelle.',
       SKILL_TEST_CASE_INVALID:
@@ -2098,6 +2100,8 @@ export default {
       SKILLS_PUBLICATION_SELECTION_INVALID:
         'La sélection nomme un élément sans son type ou son identifiant.',
     },
+    archiveUsedBy: 'Utilisé par : {features}. Archivé, il ne sera plus ni chargé ni appelé par ces fonctionnalités.',
+    archiveConfirmUsedBy: 'Je confirme que ces fonctionnalités n\'appelleront plus cette skill.',
     publishDrafts: {
       action: 'Publier les brouillons',
       title: 'Publier les brouillons sélectionnés',
@@ -2188,6 +2192,8 @@ export default {
       },
     },
     warnings: {
+      USED_BY_FEATURES_LOST: 'Ne l\'utilisent plus : {features}.',
+      USED_BY_FEATURES_GAINED: 'L\'utilisent désormais : {features}.',
       SCHEMA_NOT_IN_CODE:
         'Le schéma « {schemaId} » n\'existe pas dans le code de cette instance : la publication attendra son déploiement.',
       TEMPLATE_UNKNOWN_FIELDS:

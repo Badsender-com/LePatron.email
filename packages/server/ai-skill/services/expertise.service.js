@@ -9,6 +9,7 @@ const { versionLabel } = require('./version-helpers.js');
 const manifestRegistry = require('./manifest-registry.js');
 const { normalizeScopes } = require('./expertise-scope.js');
 const { idsUsedByFeatures } = require('./feature-use.js');
+const { archiveUsage, watchUsage } = require('./usage-change.js');
 const {
   createVersionedEntityService,
 } = require('./versioned-entity.service.js');
@@ -187,14 +188,17 @@ const PATCHABLE_FIELDS = [
   'audience',
 ];
 
-async function updateExpertise(expertiseId, patch) {
+async function updateExpertise(expertiseId, patch, userId) {
   const exp = await getExpertise(expertiseId);
+  // Its scope and its category decide which features load it (ADR 0019).
+  const settle = watchUsage('expertise', exp);
   for (const key of PATCHABLE_FIELDS) {
     if (patch[key] === undefined) continue;
     exp[key] = key === 'scope' ? normalizeScopes(patch[key]) : patch[key];
   }
+  const warnings = settle(exp, userId);
   await exp.save();
-  return exp;
+  return { expertise: exp, warnings };
 }
 
 // ─── Versioning ────────────────────────────────────────────────────────────
@@ -236,7 +240,19 @@ const {
   checkPublishable,
 } = versioned;
 
-const archiveExpertise = versioned.archive;
+/**
+ * Archive an expertise. One a feature loads warns that it stops, and the
+ * change is kept on it (ADR 0019).
+ *
+ * @returns {Promise<{ expertise: Object, warnings: Object[] }>}
+ */
+async function archiveExpertise(expertiseId, { userId } = {}) {
+  let warnings = [];
+  const expertise = await versioned.archive(expertiseId, (doc) => {
+    warnings = archiveUsage('expertise', doc, { userId });
+  });
+  return { expertise, warnings };
+}
 
 /**
  * Activation-impact preview: which declared features would load this

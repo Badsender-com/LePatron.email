@@ -70,13 +70,14 @@ module.exports = {
   }),
 
   updateExpertise: asyncHandler(async (req, res) => {
-    // The scope and the category decide which features load it.
-    res.json(
-      withUsedBy(
-        'expertise',
-        await expertiseService.updateExpertise(req.params.expertiseId, req.body)
-      )
+    // The scope and the category decide which features load it: what that
+    // changes warns, without a replay (ADR 0019).
+    const { expertise, warnings } = await expertiseService.updateExpertise(
+      req.params.expertiseId,
+      req.body,
+      userIdOf(req)
     );
+    res.json({ ...withUsedBy('expertise', expertise), warnings });
   }),
 
   createMinorVersion: asyncHandler(async (req, res) => {
@@ -133,7 +134,12 @@ module.exports = {
     res.json(doc);
   }),
 
+  // A feature that loads it stops: that warns, and is kept (ADR 0019).
   archiveExpertise: asyncHandler(async (req, res) => {
-    res.json(await expertiseService.archiveExpertise(req.params.expertiseId));
+    const { expertise, warnings } = await expertiseService.archiveExpertise(
+      req.params.expertiseId,
+      { userId: userIdOf(req) }
+    );
+    res.json({ ...withUsedBy('expertise', expertise), warnings });
   }),
 };

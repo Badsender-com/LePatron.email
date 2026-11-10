@@ -196,9 +196,17 @@ module.exports = {
     });
   }),
 
+  // A skill a feature calls is archived once confirmed (`confirmUsedBy`),
+  // and warns that the feature stops calling it (ADR 0019).
   archiveSkill: asyncHandler(async (req, res) => {
-    const skill = await skillService.archiveSkill(req.params.skillId);
-    res.json(skill);
+    const { skill, warnings } = await skillService.archiveSkill(
+      req.params.skillId,
+      {
+        confirmUsedBy: (req.body || {}).confirmUsedBy === true,
+        userId: userIdOf(req),
+      }
+    );
+    res.json({ ...withUsedBy('skill', skill), warnings });
   }),
 
   listSchemas: asyncHandler(async (_req, res) => {

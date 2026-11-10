@@ -17,6 +17,7 @@ const {
 const { validateTemplateCoherence } = require('./template-coherence.js');
 const { missingSchemaIds } = require('../schemas');
 const { idsUsedByFeatures } = require('./feature-use.js');
+const { archiveUsage } = require('./usage-change.js');
 const { assertTestCases } = require('./test-cases.js');
 const {
   assertConsumedExpertises,
@@ -410,7 +411,21 @@ async function writeDraftIfUnchanged(doc, version, patch, userId) {
   return versioned.writeDraftIfUnchanged(doc, version, patch, userId);
 }
 
-const archiveSkill = versioned.archive;
+/**
+ * Archive a skill. One a feature calls is archived only once confirmed,
+ * warns that the feature stops calling it, and the change is kept on it
+ * (ADR 0019).
+ *
+ * @param {{ confirmUsedBy?: boolean, userId?: string }} [options]
+ * @returns {Promise<{ skill: Object, warnings: Object[] }>}
+ */
+async function archiveSkill(skillId, options = {}) {
+  let warnings = [];
+  const skill = await versioned.archive(skillId, (doc) => {
+    warnings = archiveUsage('skill', doc, options);
+  });
+  return { skill, warnings };
+}
 
 module.exports = {
   VERSION_CONTENT_FIELDS,

@@ -142,12 +142,24 @@ export default function mixinAiVersionedItem({
           )
         );
       },
-      async archive() {
-        const done = await this.replaceItem(
-          () => this.$axios.$post(routes.archive(this.itemId())),
-          archivedKey
+      // `confirmUsedBy`: the person confirmed that a feature stops calling
+      // it (ADR 0019). What the archive warns of follows the word that it is.
+      async archive({ confirmUsedBy = false } = {}) {
+        const done = await this.replaceItem(() =>
+          this.$axios.$post(routes.archive(this.itemId()), { confirmUsedBy })
         );
-        if (done) this.$refs.archiveModal.close();
+        if (!done) return;
+        this.$refs.archiveModal.close();
+        // Archived, it is used by no feature.
+        if ('usedBy' in this.$data) this.usedBy = this[key].usedBy || [];
+        const warnings = this[key].warnings || [];
+        this.showSnackbar({
+          text: [
+            this.$t(archivedKey),
+            ...warnings.map((warning) => skillWarningMessage(this, warning)),
+          ].join(' '),
+          color: warnings.length ? 'warning' : 'success',
+        });
       },
     },
   };

@@ -231,8 +231,8 @@ describe('ai-skill HTTP routes', () => {
       expect(shown.body.usedBy).toEqual(USED_BY_SUBJECT);
 
       expertiseService.updateExpertise.mockResolvedValue({
-        ...SUBJECT_LINES,
-        scope: ['body'],
+        expertise: { ...SUBJECT_LINES, scope: ['body'] },
+        warnings: [],
       });
       const changed = await request(makeApp())
         .patch('/api/ai-expertise/redaction.subject-line')
@@ -293,8 +293,8 @@ describe('ai-skill HTTP routes', () => {
       ],
     });
     skillService.archiveSkill.mockResolvedValue({
-      skillId: 'a',
-      status: 'ARCHIVED',
+      skill: { skillId: 'a', status: 'ARCHIVED' },
+      warnings: [],
     });
 
     const app = makeApp();

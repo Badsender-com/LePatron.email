@@ -397,8 +397,11 @@ function createVersionedEntityService({
     return doc;
   }
 
-  async function archive(id) {
+  // `before`, given the item as read, may refuse or record on it what the
+  // archive does, saved with it.
+  async function archive(id, before) {
     const doc = await getDoc(id);
+    if (before) before(doc);
     doc.status = SkillStatuses.ARCHIVED;
     await doc.save();
     return doc;

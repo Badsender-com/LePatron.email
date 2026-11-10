@@ -56,9 +56,10 @@ export default {
       );
       if (!saved) return;
       this.savedAudience = this.exp.audience;
-      // The scope and the category decide which features load it (ADR 0019).
+      // The scope and the category decide which features load it (ADR 0019):
+      // a change of them warns which features stop or start loading it.
       this.usedBy = usedByOf(this.exp);
-      this.tellSaved({ unchecked });
+      this.tellSaved({ unchecked, warnings: this.exp.warnings || [] });
     },
   },
 };

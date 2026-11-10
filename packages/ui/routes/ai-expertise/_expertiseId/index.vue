@@ -379,6 +379,7 @@ export default {
       :title="$t('aiSkills.expertise.archiveTitle')"
       :body="$t('aiSkills.expertise.archiveBody')"
       :loading="saving"
+      :used-by="usedBy"
       @confirm="archive"
     />
     <bs-ai-expertise-close-modal ref="closeModal" @confirm="patchDetails()" />

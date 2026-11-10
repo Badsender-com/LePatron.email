@@ -273,6 +273,8 @@ module.exports = {
   SKILL_TEST_CASE_INVALID: 'SKILL_TEST_CASE_INVALID',
   // A task skill's version holds no test case: no feature calls it.
   SKILL_TEST_CASES_ON_TASK: 'SKILL_TEST_CASES_ON_TASK',
+  // Archiving a skill a feature calls is confirmed first, with the `usedBy`.
+  SKILL_ARCHIVE_CONFIRMATION_REQUIRED: 'SKILL_ARCHIVE_CONFIRMATION_REQUIRED',
   SKILL_PUBLICATION_GUARD_REQUIRED: 'SKILL_PUBLICATION_GUARD_REQUIRED',
   // What a publication is asked about (ADR 0019): its kind, its item with
   // the `kind` and `id`, its version as `major.minor`, the guard that ran.

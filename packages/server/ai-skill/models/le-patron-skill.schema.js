@@ -5,6 +5,7 @@ const createError = require('http-errors');
 const { ObjectId, Mixed } = Schema.Types;
 const { UserModel } = require('../../constant/model.names.js');
 const { GuardRecordSchema } = require('./guard-record.schema.js');
+const { UsageChangeSchema } = require('./usage-change.schema.js');
 const { hasSchema } = require('../schemas');
 const {
   SkillCategoryValues,
@@ -135,6 +136,8 @@ const LePatronSkillSchema = new Schema(
       default: () => ({ major: null, minor: 0 }),
     },
     versions: { type: [SkillVersionSchema], default: [] },
+    // What changed a feature's use of it without a new version (ADR 0019).
+    usageHistory: { type: [UsageChangeSchema], default: [] },
   },
   {
     timestamps: true,

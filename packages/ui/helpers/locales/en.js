@@ -2047,6 +2047,8 @@ export default {
         'Version {version} of {id} does not exist on this copy.',
       SKILLS_COPY_ID_TAKEN:
         'Too many items already hold the copy\'s work on {id}: delete some before creating another.',
+      SKILL_ARCHIVE_CONFIRMATION_REQUIRED:
+        'A feature calls this skill: confirm before archiving it.',
       SKILL_TEST_CASES_ON_TASK:
         'A task skill has no test case: no feature calls it.',
       SKILL_TEST_CASE_INVALID:
@@ -2070,6 +2072,8 @@ export default {
       SKILLS_PUBLICATION_SELECTION_INVALID:
         'The selection names an item without its kind or its identifier.',
     },
+    archiveUsedBy: 'Used by: {features}. Archived, these features will neither load nor call it any more.',
+    archiveConfirmUsedBy: 'I confirm that these features will no longer call this skill.',
     publishDrafts: {
       action: 'Publish the drafts',
       title: 'Publish the selected drafts',
@@ -2160,6 +2164,8 @@ export default {
       },
     },
     warnings: {
+      USED_BY_FEATURES_LOST: 'No longer used by: {features}.',
+      USED_BY_FEATURES_GAINED: 'Now used by: {features}.',
       SCHEMA_NOT_IN_CODE:
         'The schema "{schemaId}" is not in the code of this instance: the publication waits for its release.',
       TEMPLATE_UNKNOWN_FIELDS:
