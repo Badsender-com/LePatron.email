@@ -14,7 +14,7 @@ import BsAiSkillLogsPanel from '~/components/ai-skill/bs-ai-skill-logs-panel.vue
 import BsAiSkillOpenModal from '~/components/ai-skill/bs-ai-skill-open-modal.vue';
 import BsAiCopyPanel from '~/components/ai-skill/bs-ai-copy-panel.vue';
 import mixinAiSkillDetails from '~/helpers/mixins/mixin-ai-skill-details.js';
-import { fetchCopyState } from '~/helpers/skills-copy.js';
+import { fetchCopyState, copyActionsOf } from '~/helpers/skills-copy.js';
 import {
   skillCategoryLabel,
   AUDIENCES,
@@ -101,6 +101,11 @@ export default {
       const av = this.skill && this.skill.activeVersion;
       if (!av || av.major == null) return null;
       return `${av.major}.${av.minor || 0}`;
+    },
+    // On a copy, publishing an item that follows production offers to keep
+    // it on the copy (ADR 0019).
+    offerKeepOnCopy() {
+      return copyActionsOf(this.skill, this.isCopy).keep;
     },
     // Still kept to the platform company, or not opened yet, as stored: the
     // publication reminds it (ADR 0013).
@@ -322,6 +327,7 @@ export default {
       :loading="saving"
       :is-major="!!activatingVersion && activatingVersion.versionMinor === 0"
       :platform-only="platformOnly"
+      :offer-keep-on-copy="offerKeepOnCopy"
       :platform-only-expertises="platformOnlyExpertises"
       @confirm="activateVersion"
     />

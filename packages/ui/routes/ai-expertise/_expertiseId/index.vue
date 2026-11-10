@@ -17,7 +17,7 @@ import {
 } from '~/helpers/ai-skill-categories.js';
 import BsAiCopyPanel from '~/components/ai-skill/bs-ai-copy-panel.vue';
 import mixinAiExpertiseDetails from '~/helpers/mixins/mixin-ai-expertise-details.js';
-import { fetchCopyState } from '~/helpers/skills-copy.js';
+import { fetchCopyState, copyActionsOf } from '~/helpers/skills-copy.js';
 
 export default {
   name: 'PageAiExpertiseDetail',
@@ -88,6 +88,11 @@ export default {
       const av = this.exp && this.exp.activeVersion;
       if (!av || av.major == null) return null;
       return `${av.major}.${av.minor || 0}`;
+    },
+    // On a copy, publishing an item that follows production offers to keep
+    // it on the copy (ADR 0019).
+    offerKeepOnCopy() {
+      return copyActionsOf(this.exp, this.isCopy).keep;
     },
     // Still kept to the platform company, or not opened yet, as stored: the
     // publication reminds it (ADR 0013).
@@ -310,6 +315,7 @@ export default {
       :impact="activationImpact"
       :is-major="!!activatingVersion && activatingVersion.versionMinor === 0"
       :platform-only="platformOnly"
+      :offer-keep-on-copy="offerKeepOnCopy"
       @confirm="activateVersion"
     />
     <bs-ai-archive-modal

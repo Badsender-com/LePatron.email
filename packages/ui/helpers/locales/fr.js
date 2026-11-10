@@ -1853,6 +1853,10 @@ export default {
       },
       keep: 'Garder sur cette copie',
       keptDone: 'Gardé sur cette copie : le suivi ne le touche plus.',
+      publishKept:
+        'Le suivi de la production ne touchera plus cet élément : il signalera seulement que la production a changé.',
+      publishFollowed:
+        'L\'élément suit toujours la production : au prochain suivi, la version publiée ici part en brouillon dans un nouvel élément de la copie.',
       follow: 'Suivre la production',
       followTitle: 'Suivre de nouveau la production ?',
       followConfirm:

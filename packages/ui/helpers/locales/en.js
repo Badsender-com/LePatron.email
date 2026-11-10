@@ -1824,6 +1824,10 @@ export default {
       },
       keep: 'Keep on this copy',
       keptDone: 'Kept on this copy: the follow no longer touches it.',
+      publishKept:
+        'The follow of production will no longer touch this item: it will only say that production changed.',
+      publishFollowed:
+        'The item still follows production: at the next follow, the version published here goes into a draft of a new item of the copy.',
       follow: 'Follow production',
       followTitle: 'Follow production again?',
       followConfirm:
