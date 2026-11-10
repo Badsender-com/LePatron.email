@@ -38,6 +38,8 @@ const FollowedItemSchema = new Schema(
     field: { type: String },
     // The item of the copy its work went to.
     copyId: { type: String },
+    // What a removal removed: a draft, or the whole item.
+    scope: { type: String, enum: ['draft', 'item'] },
     warnings: { type: [WarningSchema], default: undefined },
   },
   { _id: false }

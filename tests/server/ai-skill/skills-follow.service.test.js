@@ -508,7 +508,11 @@ describe('a copy following production', () => {
 
       expect(versionOf(expertiseOf(SUBJECT_LINES), 3, 0)).toBeUndefined();
       expect(report.removed).toEqual([
-        expect.objectContaining({ id: SUBJECT_LINES, version: '3.0' }),
+        expect.objectContaining({
+          id: SUBJECT_LINES,
+          version: '3.0',
+          scope: 'draft',
+        }),
       ]);
     });
 
@@ -523,7 +527,7 @@ describe('a copy following production', () => {
 
       expect(expertiseOf(DARK_MODE)).toBeUndefined();
       expect(report.removed).toEqual([
-        expect.objectContaining({ id: DARK_MODE, version: null }),
+        expect.objectContaining({ id: DARK_MODE, scope: 'item' }),
       ]);
     });
   });
@@ -692,6 +696,39 @@ describe('a copy following production', () => {
       // Then up to date: nothing more to unset.
       const again = await followAgain(emptied);
       expect(again.updated).toEqual([]);
+    });
+
+    it('says the warnings of an item once', async () => {
+      const report = await follow({
+        ...EMPTY_COPY,
+        skills: [
+          {
+            ...PRODUCTION.skills.find((s) => s.skillId === REVIEW),
+            activeVersion: { major: 2, minor: 0 },
+            versions: [
+              {
+                versionMajor: 2,
+                versionMinor: 0,
+                status: 'ACTIVE',
+                nature: 'task',
+                procedure: '1. Published on the copy.',
+              },
+            ],
+          },
+        ],
+      });
+
+      const withWarnings = [
+        ...report.updated,
+        ...report.moved,
+        ...report.removed,
+      ].filter(({ id, warnings }) => id === REVIEW && warnings);
+      expect(withWarnings).toEqual([
+        expect.objectContaining({ id: REVIEW, version: '1.0' }),
+      ]);
+      expect(report.moved).toEqual([
+        expect.objectContaining({ id: REVIEW, copyId: `${REVIEW}.copie` }),
+      ]);
     });
 
     // A write conditioned on a version's update date never mistakes one

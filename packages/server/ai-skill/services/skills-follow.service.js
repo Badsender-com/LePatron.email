@@ -145,7 +145,9 @@ const emptyReport = () => ({
   failed: [],
 });
 
-// What one item did, into the report.
+// What one item did, into the report. An item's warnings are said once,
+// with its outcome; a removal says whether it is a draft (`scope: 'draft'`,
+// with its `version`) or the whole item (`scope: 'item'`).
 function report(into, entry, result) {
   const { outcome, reason, productionChanged, copyId } = result;
   if (outcome === 'kept') {
@@ -156,10 +158,15 @@ function report(into, entry, result) {
     });
     return;
   }
-  into[outcome].push(entry);
-  if (copyId) into.moved.push({ ...entry, copyId });
+  const { warnings: _said, ...item } = entry;
+  if (outcome === 'removed') {
+    into.removed.push({ ...item, scope: 'item' });
+  } else {
+    into[outcome].push(entry);
+  }
+  if (copyId) into.moved.push({ ...item, copyId });
   (result.removed || []).forEach((version) =>
-    into.removed.push({ ...entry, version })
+    into.removed.push({ ...item, version, scope: 'draft' })
   );
 }
 
@@ -238,7 +245,8 @@ async function applyKind({ kind, list, idField }, answer, into, context) {
  *   `failed`), `origin`, and the lists `created`, `updated`, `upToDate`,
  *   `kept` (with a `reason`, and `productionChanged` for an item kept on the
  *   copy), `moved` (with the `copyId` the copy's work went to), `removed`
- *   (with the `version` removed, or none for the whole item) and `failed`
+ *   (a draft, `scope: 'draft'` with its `version`, or the whole item,
+ *   `scope: 'item'`) and `failed`
  *   (with a `code`), each of `{ kind, id, version }`, a skill's with the
  *   `warnings` of the expertises it consumes and the copy lacks
  * @throws {HttpError} 409 SKILLS_FOLLOW_RUNNING while another follow runs
