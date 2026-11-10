@@ -79,8 +79,8 @@ C joue une recette qui existait avant le suivi. Sur C, aucune variable `SKILLS_S
 
 ## 9. Ce que la production supprime, et ce que la copie a écrit
 
-1. **Brouillon supprimé :** sur P, ouvrir un brouillon de F ; sur C, suivre (le brouillon arrive). Sur P, supprimer ce brouillon ; sur C, suivre : le rapport montre F **supprimé** pour ce brouillon, qui a disparu de C.
-2. **Élément jamais publié supprimé :** sur P, supprimer D. Sur C, suivre : D est **supprimé** de C.
+1. **Brouillon supprimé :** sur P, ouvrir un brouillon de F ; sur C, suivre (le brouillon arrive). Sur P, supprimer ce brouillon ; sur C, suivre : le rapport montre un **brouillon supprimé**, nommé « brouillon <numéro> de F », qui a disparu de C. F reste, avec sa version active.
+2. **Élément jamais publié supprimé :** sur P, supprimer D. Sur C, suivre : le rapport montre D comme **élément supprimé**, distinct d'un brouillon supprimé, et D a disparu de C.
 3. **Ce que la copie a écrit :** sur C, créer une expertise T qui n'existe pas sur P. Elle porte le badge **Écrit sur cette copie**. Suivre : T reste intacte. Les éléments du travail de la copie des étapes 6 à 8 sont toujours là.
 4. **Puis la production prend le même identifiant :** sur P, créer et publier une expertise avec l'identifiant de T. Sur C, suivre : T porte maintenant le badge **Suit la production** et la version de P, et le rapport montre T en **travail de la copie mis de côté** : le contenu écrit sur C est en brouillon dans `<id de T>.copie`.
 

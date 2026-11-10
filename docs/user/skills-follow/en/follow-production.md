@@ -69,7 +69,8 @@ A follow **Succeeded**, **Partly succeeded** (at least one item failed, the othe
 | **already up to date**    | Nothing changed since the last follow.                                                                                                               |
 | **kept on this copy**     | The item is kept on the copy: the follow did not touch it. The report says whether production changed it since.                                      |
 | **copy's work set aside** | What had been written on the copy was moved into a new item of the copy, before the item took production's version. The link leads to that new item. |
-| **removed**               | Production no longer has it, and the copy had received it by a follow.                                                                               |
+| **draft removed**         | The report names it, for instance "draft 3.0 of X": production removed that draft, which the copy had received by a follow. The item itself stays.   |
+| **item removed**          | Production no longer has the item, never published, which the copy had received by a follow: it leaves the copy.                                     |
 | **failed**                | This item could not be written: the reason is given next to it. The other items were written.                                                        |
 
 The report may also carry **warnings**, for instance a task skill whose consumed expertise is missing on the copy.

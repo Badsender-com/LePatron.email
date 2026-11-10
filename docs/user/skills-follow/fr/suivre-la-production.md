@@ -69,7 +69,8 @@ Un suivi est **Réussi**, **Réussi en partie** (au moins un élément en échec
 | **déjà à jour**                     | Rien n'a changé depuis le dernier suivi.                                                                                                                                        |
 | **gardé sur cette copie**           | L'élément est gardé sur la copie : le suivi n'y a pas touché. Le rapport dit si la production l'a changé depuis.                                                                |
 | **travail de la copie mis de côté** | Ce qui avait été écrit sur la copie a été déplacé dans un nouvel élément de la copie, avant que l'élément prenne la version de la production. Le lien mène à ce nouvel élément. |
-| **supprimé**                        | La production ne l'a plus, et la copie l'avait reçu par un suivi.                                                                                                               |
+| **brouillon supprimé**              | Le rapport le nomme, par exemple « brouillon 3.0 de X » : la production a supprimé ce brouillon, que la copie avait reçu par un suivi. L'élément, lui, reste.                   |
+| **élément supprimé**                | La production n'a plus l'élément, jamais publié, que la copie avait reçu par un suivi : il disparaît de la copie.                                                               |
 | **en échec**                        | Cet élément n'a pas pu être écrit : la raison est donnée à côté. Les autres éléments ont été écrits.                                                                            |
 
 Le rapport peut aussi porter des **avertissements**, par exemple un skill de tâche dont une expertise consommée manque sur la copie.
