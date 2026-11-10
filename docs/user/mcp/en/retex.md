@@ -28,7 +28,7 @@ Without either, nothing is sent, and the assistant tells you why. What you send 
 
 ## For the platform company's team
 
-Your assistant sends your retex as you work, without asking each time, whatever company you picked when connecting. With the write permission, on a connection to the platform company (see [Publish from an assistant](./publish-from-an-assistant.md)), you can also read and handle them.
+Your assistant sends your retex as you work, without asking each time, whatever company you picked when connecting. It also reads the retex of every company, and may dismiss them, whatever that company. Only the draft that cites retex needs a connection to the platform company with the write permission (see [Publish from an assistant](./publish-from-an-assistant.md)): it writes a skill.
 
 ### The loop
 

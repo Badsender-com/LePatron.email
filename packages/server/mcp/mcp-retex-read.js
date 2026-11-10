@@ -1,7 +1,8 @@
 'use strict';
 
-// Reading the retex (ADR 0021): a super admin with the skills:write scope,
-// connected to the platform company (ADR 0019), reads those of every company.
+// Reading the retex (ADR 0021): a super admin reads and dismisses those of
+// every company, whatever company they connected to. Citing one in a draft
+// is writing a skill, on a connection to the platform company (ADR 0019).
 // Each says its company and whether its author is a consultant or a client
 // user, never who.
 
@@ -10,7 +11,7 @@ const { McpRetexes, Groups } = require('../common/models.common.js');
 const {
   SkillCategoryValues,
 } = require('../ai-skill/constant/skill-constants.js');
-const { withIdentity, mayWrite, failure } = require('./mcp-identity.js');
+const { withIdentity, isConsultant, failure } = require('./mcp-identity.js');
 const { READ_ONLY, SETTING } = require('./mcp-tool-grammar.js');
 const { closeRetex } = require('./mcp-retex-status.js');
 
@@ -22,7 +23,7 @@ const MAX_ID_LENGTH = 200;
 const MAX_REASON_LENGTH = 1000;
 
 const NOT_ALLOWED =
-  'Not allowed: the retex are read by those who may manage the platform, with the skills:write scope and a connection to the platform company.';
+  'Not allowed: the retex are read by those who may manage the platform.';
 
 // A filter as a value, never as a query: an assistant's arguments are text.
 const asText = (value) => (value == null ? undefined : String(value));
@@ -92,10 +93,8 @@ const answerOf = (answer) => ({
 
 // Runs a handler for whoever may read the retex, checked again on every call.
 function forCurator(handler) {
-  return withIdentity(async ({ user, group }, args, ctx) => {
-    if (!mayWrite(user, group, ctx?.http?.authInfo)) {
-      return failure(NOT_ALLOWED);
-    }
+  return withIdentity(async ({ user }, args) => {
+    if (!isConsultant(user)) return failure(NOT_ALLOWED);
     return handler(args, user);
   });
 }

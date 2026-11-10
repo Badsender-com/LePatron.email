@@ -97,7 +97,7 @@ function noteOn(unmatched, inUse) {
 
 const filled = (value) => (value && value.trim()) || undefined;
 
-async function findExpertises({ user, group, drafts }, args, ctx) {
+async function findExpertises({ user, group, drafts }, args) {
   const scopes = normalizeScopes(args.scope);
   // The features' own lookup, with the scopes in use, both within the
   // audience of the caller's company. Its diagnostic is for a scope written
@@ -127,7 +127,7 @@ async function findExpertises({ user, group, drafts }, args, ctx) {
       uri: uriOf(expertise.expertiseId),
     })),
     'expertiseId',
-    { user, group, authInfo: ctx?.http?.authInfo }
+    { user }
   );
   const answer = {
     expertises,

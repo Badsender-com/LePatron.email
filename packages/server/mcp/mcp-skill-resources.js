@@ -160,7 +160,7 @@ function registerFindSkills(server) {
       outputSchema: FIND_OUTPUT,
       annotations: READ_ONLY,
     },
-    withIdentity(async ({ user, group, drafts }, { query }, ctx) => {
+    withIdentity(async ({ user, group, drafts }, { query }) => {
       const served = await servedSkills(group, drafts);
       // Words of another language than the skills' match nothing: the whole
       // list is then answered, for the assistant to choose from (it is the
@@ -180,7 +180,7 @@ function registerFindSkills(server) {
           })
         ),
         'skillId',
-        { user, group, authInfo: ctx?.http?.authInfo }
+        { user }
       );
       const answer = { skills, matched };
       return {

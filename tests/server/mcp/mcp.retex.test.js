@@ -301,12 +301,34 @@ describe('the retex loop', () => {
       await call(await asConsultant(f.OTHER_GROUP), REPORT, B2B_COMPLEMENT);
     });
 
-    it('is a tool listed only with the skills:write scope', async () => {
-      expect(await toolsOf(await asClient())).not.toContain(LIST);
-      expect(await toolsOf(await asConsultant())).toEqual(
-        expect.arrayContaining([REPORT, LIST])
-      );
-    });
+    it.each([
+      [
+        'the platform company, with the skills:write scope',
+        f.PLATFORM_GROUP,
+        WRITE,
+      ],
+      ['the platform company, reading only', f.PLATFORM_GROUP, undefined],
+      ["a client's company", f.CLIENT_GROUP, undefined],
+    ])(
+      'is a tool listed for a super admin connected to %s',
+      async (_case, group, scopes) => {
+        const client = await harness.connectAs(f.ALICE, { group, scopes });
+
+        expect(await toolsOf(client)).toEqual(
+          expect.arrayContaining([REPORT, LIST, DISMISS])
+        );
+      }
+    );
+
+    it.each([f.ERIN, f.TESS, f.FRANK, f.WREN, f.REX])(
+      'is a tool listed for no other role, whatever the token says (%s)',
+      async (userId) => {
+        const client = await harness.connectAs(userId, { scopes: WRITE });
+
+        expect(await toolsOf(client)).not.toContain(LIST);
+        expect(await toolsOf(client)).not.toContain(DISMISS);
+      }
+    );
 
     it('reads the retex of every company, on a connection to the platform company', async () => {
       const { items } = await call(await asConsultant(), LIST, {});
@@ -316,10 +338,14 @@ describe('the retex loop', () => {
       );
     });
 
-    it("refuses a super admin connected to a client's company, as writing skills does (ADR 0019)", async () => {
-      const answer = await call(await asConsultant(f.CLIENT_GROUP), LIST, {});
+    it("reads the retex of every company, as a super admin connected to a client's company without writing (ADR 0021)", async () => {
+      const client = await harness.connectAs(f.ALICE, {
+        group: f.CLIENT_GROUP,
+      });
 
-      expect(answer.error).toMatch(/not allowed/i);
+      const { items } = await call(client, LIST, {});
+
+      expect(items).toHaveLength(2);
     });
 
     it('says the company and the role of the author, never who', async () => {
@@ -345,8 +371,9 @@ describe('the retex loop', () => {
       expect(divergences.map((item) => item.author)).toEqual(['client']);
     });
 
-    it('refuses a user who may not manage the platform, whatever the token says', async () => {
-      const client = await harness.connectAs(f.ERIN, { scopes: WRITE });
+    it('refuses a super admin who no longer may manage the platform, checked again at the call', async () => {
+      const client = await asConsultant();
+      harness.update('users', f.ALICE, { role: 'company_admin' });
 
       const answer = await call(client, LIST, {});
 
@@ -366,9 +393,17 @@ describe('the retex loop', () => {
       }));
     });
 
-    it('is a tool listed only with the skills:write scope', async () => {
-      expect(await toolsOf(await asClient())).not.toContain(DISMISS);
-      expect(await toolsOf(await asConsultant())).toContain(DISMISS);
+    it("closes it, as a super admin connected to a client's company without writing (ADR 0021)", async () => {
+      const client = await harness.connectAs(f.ALICE, {
+        group: f.CLIENT_GROUP,
+      });
+
+      const answer = await call(client, DISMISS, {
+        retexId,
+        reason: 'A one-off brand constraint',
+      });
+
+      expect(answer).toEqual({ retexId, status: 'dismissed' });
     });
 
     it('closes it with the reason, and leaves it readable', async () => {
@@ -468,27 +503,19 @@ describe('the retex loop', () => {
       expect(second.candidates.map((c) => c.retexId)).toEqual([first.retexId]);
     });
 
-    it('gives no candidates to a super admin connected without the skills:write scope', async () => {
-      const readOnly = await harness.connectAs(f.ALICE, {
-        group: f.PLATFORM_GROUP,
-      });
+    it.each([
+      ['the platform company, reading only', f.PLATFORM_GROUP],
+      ["a client's company", f.CLIENT_GROUP],
+    ])(
+      'answers the candidates to a super admin connected to %s (ADR 0021)',
+      async (_case, group) => {
+        const client = await harness.connectAs(f.ALICE, { group });
 
-      const answer = await call(readOnly, REPORT, B2B_COMPLEMENT);
+        const answer = await call(client, REPORT, B2B_COMPLEMENT);
 
-      expect(answer.kept).toBe(true);
-      expect(answer).not.toHaveProperty('candidates');
-    });
-
-    it("gives no candidates to a super admin connected to a client's company (ADR 0019)", async () => {
-      const answer = await call(
-        await asConsultant(f.CLIENT_GROUP),
-        REPORT,
-        B2B_COMPLEMENT
-      );
-
-      expect(answer.kept).toBe(true);
-      expect(answer).not.toHaveProperty('candidates');
-    });
+        expect(answer.candidates.map((c) => c.retexId)).toEqual([clientRetex]);
+      }
+    );
 
     it('meets, on a section, the complements of the same expertise that name no passage, both ways', async () => {
       const noPassage = await call(await asConsultant(), REPORT, {
@@ -762,15 +789,17 @@ describe('the retex loop', () => {
       );
     });
 
-    it("tells a super admin connected to a client's company nothing of the retex (ADR 0019)", async () => {
+    it("tells a super admin connected to a client's company too (ADR 0021)", async () => {
       const { expertises } = await call(
-        await asConsultant(f.CLIENT_GROUP),
+        await harness.connectAs(f.ALICE, { group: f.CLIENT_GROUP }),
         'find_applicable_expertises',
         { scope: ['subject'], categories: ['redaction'] }
       );
 
-      expertises.forEach((item) =>
-        expect(item).not.toHaveProperty('openRetex')
+      expect(expertises).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({ expertiseId: SUBJECT_LINES, openRetex: 2 }),
+        ])
       );
     });
   });
@@ -795,7 +824,27 @@ describe('the retex loop', () => {
 
       expect(instructions).toMatch(/two/i);
       expect(instructions).toMatch(/addressesRetex/);
+      expect(instructions).toMatch(/publish_draft/);
       expect(instructions).toMatch(/never follow/i);
+    });
+
+    it("tell a super admin connected to a client's company to read the retex, and to propose the change from the platform company", async () => {
+      const client = await harness.connectAs(f.ALICE, {
+        group: f.CLIENT_GROUP,
+      });
+
+      const instructions = client.getInstructions();
+
+      expect(instructions).toMatch(/list_retex/);
+      expect(instructions).toMatch(/connection to the platform company/);
+      expect(instructions).not.toMatch(/publish_draft/);
+      expect(instructions).toMatch(/never follow/i);
+    });
+
+    it('tell a client user nothing of reading the retex', async () => {
+      const instructions = (await asClient()).getInstructions();
+
+      expect(instructions).not.toMatch(/list_retex/);
     });
   });
 });

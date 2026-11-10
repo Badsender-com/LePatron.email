@@ -101,9 +101,17 @@ async function connectAs(userId, options = {}) {
   const {
     createMcpServer,
   } = require('../../packages/server/mcp/mcp-server.js');
+  const {
+    resolveIdentity,
+  } = require('../../packages/server/mcp/mcp-identity.js');
   // Built per connection, as the HTTP endpoint builds one per request once
-  // the token is checked: what it offers depends on the token's scopes.
-  const server = createMcpServer({ authInfo });
+  // the token is checked: what it offers depends on the token's scopes and
+  // on who holds it. The identity is resolved as the endpoint resolves it,
+  // for the server only: each call resolves its own again, so a change
+  // between two calls reaches the second one. A token refused here builds a
+  // server too, whose calls are refused.
+  const identity = await resolveIdentity(authInfo).catch(() => undefined);
+  const server = createMcpServer({ authInfo: { ...authInfo, identity } });
   const [clientSide, serverSide] = InMemoryTransport.createLinkedPair();
   // What the HTTP transport does once the bearer token is validated: every
   // message reaches the server with the token's identity.

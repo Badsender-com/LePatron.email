@@ -28,7 +28,7 @@ Sans l'un des deux, rien n'est envoyé, et l'assistant vous dit pourquoi. Ce que
 
 ## Pour l'équipe de l'entreprise plateforme
 
-Votre assistant envoie vos retours d'expérience au fil du travail, sans vous demander à chaque fois, quelle que soit l'entreprise choisie à la connexion. Avec le droit d'écriture, sur une connexion à l'entreprise plateforme (voir [Publier depuis un assistant](./publier-depuis-un-assistant.md)), vous pouvez aussi les lire et les traiter.
+Votre assistant envoie vos retours d'expérience au fil du travail, sans vous demander à chaque fois, quelle que soit l'entreprise choisie à la connexion. Il lit aussi les retours de toutes les entreprises, et peut en écarter, quelle que soit cette entreprise. Seul le brouillon qui cite des retours demande une connexion à l'entreprise plateforme avec le droit d'écriture (voir [Publier depuis un assistant](./publier-depuis-un-assistant.md)) : c'est une écriture de skill.
 
 ### La boucle
 

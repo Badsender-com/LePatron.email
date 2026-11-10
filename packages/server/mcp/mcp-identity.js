@@ -32,10 +32,11 @@ function hasScope(authInfo, scope) {
 }
 
 /**
- * Whether who calls may write skills and expertises, and read their retex
- * (ADR 0021), asked again on every call, whatever the token says: the token was granted the write scope, the
+ * Whether who calls may write skills and expertises, asked again on every
+ * call, whatever the token says: the token was granted the write scope, the
  * user may still manage the platform (ADR 0014), and the connection is to
- * the platform company, the one the work is done for (ADR 0019).
+ * the platform company, the one the work is done for (ADR 0019). Citing a
+ * retex in a draft is such a write (ADR 0021).
  *
  * @param {Object} user the request user
  * @param {Object} [group] the company the token is bound to, with `isPlatform`
@@ -48,6 +49,20 @@ function mayWrite(user, group, authInfo) {
     permissions.can(user, CAPABILITIES.PLATFORM_MANAGE) &&
     group?.isPlatform === true
   );
+}
+
+/**
+ * Whether who calls is a consultant of the platform company: a super admin,
+ * who may manage the platform, asked again on every call. A consultant reads,
+ * dismisses and matches the retex of every company, whatever company they
+ * connected to and whatever scopes the token holds (ADR 0021): reading them
+ * writes no skill.
+ *
+ * @param {Object} [user] the request user
+ * @returns {boolean}
+ */
+function isConsultant(user) {
+  return Boolean(user) && permissions.can(user, CAPABILITIES.PLATFORM_MANAGE);
 }
 
 // What the request user may carry: never a password or a token.
@@ -343,6 +358,7 @@ module.exports = {
   withIdentity,
   hasScope,
   mayWrite,
+  isConsultant,
   isRefusal,
   failure,
   refused,
