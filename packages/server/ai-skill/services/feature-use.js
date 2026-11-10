@@ -19,9 +19,17 @@ function asList(value) {
   return Array.isArray(value) ? value : [];
 }
 
+// The ids of the skills a feature names: by their id, or as objects carrying
+// it (`{ skillId }`), as the text generation's manifest does.
+function usedSkillIds(manifest) {
+  return asList(manifest && manifest.usedSkills)
+    .map((used) => (used && typeof used === 'object' ? used.skillId : used))
+    .filter((id) => typeof id === 'string' && id);
+}
+
 function declaresUse(manifest, kind, entity) {
   if (kind === 'skill') {
-    return asList(manifest.usedSkills).includes(entity.skillId);
+    return usedSkillIds(manifest).includes(entity.skillId);
   }
   if (asList(manifest.usedExpertise).includes(entity.expertiseId)) {
     return true;
@@ -105,11 +113,7 @@ async function usedByFeatures({ kind, id }) {
 async function idsUsedByFeatures(kind) {
   if (kind === 'skill') {
     const named = [
-      ...new Set(
-        manifestRegistry
-          .listManifests()
-          .flatMap((manifest) => asList(manifest.usedSkills))
-      ),
+      ...new Set(manifestRegistry.listManifests().flatMap(usedSkillIds)),
     ];
     const skills = await LePatronSkills.find(
       { skillId: { $in: named }, status: NOT_ARCHIVED },
@@ -138,6 +142,7 @@ function withUsedBy(kind, entity) {
 
 module.exports = {
   asList,
+  usedSkillIds,
   declaresUse,
   manifestsUsing,
   describeFeature,

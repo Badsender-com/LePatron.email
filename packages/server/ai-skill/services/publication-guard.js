@@ -25,7 +25,7 @@ const manifestRegistry = require('./manifest-registry.js');
 const { projectVersion } = require('../repositories/expertise.repository.js');
 const skillInvocation = require('./skill-invocation.service.js');
 const { findVersion, findActiveVersion } = require('./version-helpers.js');
-const { asList, declaresUse } = require('./feature-use.js');
+const { asList, usedSkillIds, declaresUse } = require('./feature-use.js');
 
 const NOT_ARCHIVED = { $ne: SkillStatuses.ARCHIVED };
 const isArchived = (doc) => doc.status === SkillStatuses.ARCHIVED;
@@ -133,9 +133,7 @@ async function eachLimited(items, limit, task) {
  */
 function planReplay({ kind, id, version, manifests }) {
   const skillIds =
-    kind === 'skill'
-      ? [id]
-      : [...new Set(manifests.flatMap((m) => asList(m.usedSkills)))];
+    kind === 'skill' ? [id] : [...new Set(manifests.flatMap(usedSkillIds))];
   const drafts = new Map(kind === 'skill' ? [[id, version]] : []);
   return planRuns({ skillIds, drafts });
 }
@@ -164,7 +162,7 @@ function asInputEntry(projected) {
 function expertiseMix(skillId, expertises, overrides) {
   const callers = manifestRegistry
     .listManifests()
-    .filter((manifest) => asList(manifest.usedSkills).includes(skillId));
+    .filter((manifest) => usedSkillIds(manifest).includes(skillId));
   const loaded = expertises
     .filter((doc) =>
       callers.some((manifest) => declaresUse(manifest, 'expertise', doc))

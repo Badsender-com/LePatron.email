@@ -9,7 +9,7 @@
 
 const ERROR_CODES = require('../../constant/error-codes.js');
 const { SkillStatuses } = require('../constant/skill-constants.js');
-const { asList, describeFeature } = require('./feature-use.js');
+const { asList, usedSkillIds, describeFeature } = require('./feature-use.js');
 const { keyOf, loadMany, usesOf } = require('./publication-target.js');
 const { planRuns, replay } = require('./publication-guard.js');
 const { findVersion } = require('./version-helpers.js');
@@ -124,9 +124,7 @@ async function planOf(targets) {
     if (!manifests.length) return;
     if (target.kind === 'skill') skillIds.add(target.id);
     else
-      manifests.forEach((m) =>
-        asList(m.usedSkills).forEach((s) => skillIds.add(s))
-      );
+      manifests.forEach((m) => usedSkillIds(m).forEach((s) => skillIds.add(s)));
   });
   const drafts = new Map(
     targets.filter((t) => t.kind === 'skill').map((t) => [t.id, t.version])
