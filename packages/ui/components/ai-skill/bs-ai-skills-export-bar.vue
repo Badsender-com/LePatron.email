@@ -2,7 +2,6 @@
 import { mapMutations } from 'vuex';
 import { Download } from 'lucide-vue';
 import { PAGE, SHOW_SNACKBAR } from '~/store/page.js';
-import * as api from '~/helpers/ai-skill-routes.js';
 import { downloadSkillsExport } from '~/helpers/skills-export-download.js';
 import { SKILL_NATURES } from '../../../shared/ai-skill/constants.js';
 
@@ -17,11 +16,21 @@ export default {
     expertiseIds: { type: Array, default: () => [] },
   },
   data() {
-    return { consumed: [], removed: [], exporting: false, reads: 0 };
+    return { removed: [], exporting: false };
   },
   computed: {
     count() {
       return this.skills.length + this.expertiseIds.length;
+    },
+    // The list gives each skill's active version with its nature and the
+    // expertises it consumes (ADR 0013): only a task skill brings them.
+    consumed() {
+      const ids = this.skills.flatMap(({ activeVersion }) =>
+        activeVersion && activeVersion.nature === SKILL_NATURES.TASK
+          ? activeVersion.consumedExpertiseIds || []
+          : []
+      );
+      return [...new Set(ids)];
     },
     added() {
       return this.consumed.filter(
@@ -30,36 +39,14 @@ export default {
     },
   },
   watch: {
-    skills: { handler: 'readConsumed', immediate: true },
+    // An expertise taken out stays out only while a selected skill brings
+    // it: selected again later, it is back.
+    consumed(ids) {
+      this.removed = this.removed.filter((id) => ids.includes(id));
+    },
   },
   methods: {
     ...mapMutations(PAGE, { showSnackbar: SHOW_SNACKBAR }),
-    // The list does not carry versions: a skill's active version says
-    // whether it is a task skill (ADR 0013), and which expertises it consumes.
-    async readConsumed() {
-      // Answers may come back out of order: only the last read counts.
-      this.reads += 1;
-      const read = this.reads;
-      try {
-        const docs = await Promise.all(
-          this.skills.map((skill) =>
-            this.$axios.$get(api.aiSkill(skill.skillId))
-          )
-        );
-        const ids = docs.flatMap((doc) => {
-          const { major, minor } = doc.activeVersion || {};
-          const active = (doc.versions || []).find(
-            (v) => v.versionMajor === major && v.versionMinor === minor
-          );
-          return active && active.nature === SKILL_NATURES.TASK
-            ? active.consumedExpertiseIds || []
-            : [];
-        });
-        if (read === this.reads) this.consumed = [...new Set(ids)];
-      } catch (err) {
-        if (read === this.reads) this.consumed = [];
-      }
-    },
     async exportSelection() {
       this.exporting = true;
       try {
