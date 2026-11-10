@@ -131,10 +131,17 @@ async function duplicateOnCopy(kind, id, { major, minor }, userId) {
       version: `${major}.${minor}`,
     });
   }
-  const copyId = await createCopyItem(kind, doc, [version], {
-    now: new Date(),
-    owner: userId,
-  });
+  // A duplicate tries something: it addresses none of the retex the
+  // version cites, which its publication would close (ADR 0021).
+  const copyId = await createCopyItem(
+    kind,
+    doc,
+    [{ ...version, retexIds: [] }],
+    {
+      now: new Date(),
+      owner: userId,
+    }
+  );
   const { model, idField } = ENTITIES[kind];
   return model().findOne({ [idField]: copyId });
 }

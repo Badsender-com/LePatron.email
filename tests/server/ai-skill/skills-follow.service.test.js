@@ -284,6 +284,29 @@ describe('a copy following production', () => {
       ]);
     });
 
+    it('moves the retex a draft of the copy cites out with it, and the version production brings cites none (ADR 0021)', async () => {
+      const RETEX = '64b000000000000000000001';
+      await follow({
+        ...EMPTY_COPY,
+        expertises: [
+          subjectLinesWith(
+            [
+              version(2, 1, 'ACTIVE', V2_1.body, V2_1),
+              version(3, 0, 'DRAFT', '## Mine\n\nWritten on the copy.', {
+                retexIds: [RETEX],
+              }),
+            ],
+            { major: 2, minor: 1 }
+          ),
+        ],
+      });
+
+      expect(versionOf(expertiseOf(SUBJECT_LINES), 3, 0).retexIds).toEqual([]);
+      expect(
+        versionOf(expertiseOf(COPY_OF_SUBJECT_LINES), 3, 0).retexIds
+      ).toEqual([RETEX]);
+    });
+
     it('moves a version published on the copy out, and follows production', async () => {
       const report = await follow({
         ...EMPTY_COPY,

@@ -162,6 +162,9 @@ function place(kind, versions, incoming, now) {
     status,
     updatedAt: at,
     followedAt: at,
+    // Production's version addresses no retex of the copy: those a draft of
+    // the copy cited leave with it (ADR 0021), or would stay open for ever.
+    retexIds: [],
   };
   if (status === SkillStatuses.ACTIVE && (!previous || !previous.activatedAt)) {
     version.activatedAt = at;

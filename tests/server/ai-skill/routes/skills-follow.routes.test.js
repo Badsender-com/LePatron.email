@@ -319,6 +319,28 @@ describe("a copy's follow of production", () => {
       expect(expertiseOf(SUBJECT_LINES).versions).toHaveLength(2);
     });
 
+    it('duplicates a draft without the retex it cites, which stay with the original (ADR 0021)', async () => {
+      const app = await followed();
+      const RETEX = '64b000000000000000000001';
+      const doc = expertiseOf(SUBJECT_LINES);
+      store.update('expertises', doc._id, {
+        versions: doc.versions.map((v) =>
+          v.status === 'DRAFT' ? { ...v, retexIds: [RETEX] } : v
+        ),
+      });
+
+      const res = await request(app)
+        .post(`/api/ai-expertise/${SUBJECT_LINES}/duplicate-on-copy`)
+        .send({ version: '3.0' });
+
+      expect(res.status).toBe(201);
+      expect(res.body.versions[0].retexIds).toEqual([]);
+      expect(
+        expertiseOf(SUBJECT_LINES).versions.find((v) => v.status === 'DRAFT')
+          .retexIds
+      ).toEqual([RETEX]);
+    });
+
     it('duplicates a skill into one served to no assistant', async () => {
       const app = await followed();
 
