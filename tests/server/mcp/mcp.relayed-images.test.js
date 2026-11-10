@@ -75,7 +75,7 @@ describe('relayed images', () => {
 
     beforeAll(() => {
       // Required here: the modules do not exist until #1487 ships them.
-      const relay = require('../../../packages/server/mcp/mcp-relayed-images.js');
+      const relay = require('../../../packages/server/mcp/mcp-relayed-image-address.js');
       const router = require('../../../packages/server/mcp/mcp-relayed-images.routes.js');
       app = express();
       app.use('/api/relayed-images', router);
@@ -240,7 +240,7 @@ describe('relayed images', () => {
       });
     };
     const relayedOf = (url) =>
-      require('../../../packages/server/mcp/mcp-relayed-images.js').relayedUrlOf(
+      require('../../../packages/server/mcp/mcp-relayed-image-address.js').relayedUrlOf(
         url
       );
 

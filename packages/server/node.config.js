@@ -72,6 +72,10 @@ const config = rc('lepatron', {
   // the former format, which the previous version of the application reads
   // (with scripts/reencrypt-secrets.js --downgrade, utils/crypto.js).
   encryptionWriteLegacy: process.env.ENCRYPTION_WRITE_LEGACY === 'true',
+  // Signs the addresses of the relayed images (ADR 0022), written
+  // `<version>:<secret>` (lepatron_relayedImagesKey). Unset, a key derived
+  // from sessionSecret signs them (mcp/mcp-relayed-image-address.js).
+  relayedImagesKey: undefined,
   NODE_ENV: process.env.NODE_ENV,
   helpUrl: process.env.HELP_URL || 'https://docs.lepatron.email',
   // A copy (staging, development) follows production's skills and

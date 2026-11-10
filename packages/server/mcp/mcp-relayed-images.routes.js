@@ -2,7 +2,8 @@
 
 const express = require('express');
 const asyncHandler = require('express-async-handler');
-const { isSigned, fetchRelayedImage } = require('./mcp-relayed-images.js');
+const { isSigned } = require('./mcp-relayed-image-address.js');
+const { fetchRelayedImage } = require('./mcp-relayed-images.js');
 
 const ONE_DAY = 86400;
 

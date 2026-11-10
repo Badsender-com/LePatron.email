@@ -37,6 +37,14 @@ After forking the repo:
 4. Add this environment variable `CC_POST_BUILD_HOOK = yarn build`
 5. Deploy the application by running `clever deploy [--alias <alias>]`
 
+## The images of a preview in an assistant
+
+An assistant shows a mailing's preview with its images hosted outside the instance through addresses of the instance, each signed for one image (ADR 0022).
+
+| Variable                    | Value                                                                                                                                                                                                                                                                                                                            |
+| --------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `lepatron_relayedImagesKey` | The key that signs these addresses, written `<version>:<secret>`: a whole number from 1, then 32 random characters at least, for example `1:$(openssl rand -hex 32)`. Replacing it, with the next version, cuts every address signed before and signs nobody out. Unset: a key derived from `lepatron_sessionSecret`, version 0. |
+
 ## A copy following production's skills and expertises
 
 Production is the source of skills and expertises (ADR 0019). A copy (staging, development) follows it, on demand from its back office and, where its instance turns it on, every night.

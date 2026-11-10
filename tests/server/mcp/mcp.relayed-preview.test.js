@@ -8,8 +8,10 @@ const config = require('../../../packages/server/node.config.js');
 const {
   relayPreviewImages,
   relayPreviewImagesCached,
-  relayedUrlOf,
 } = require('../../../packages/server/mcp/mcp-relayed-images.js');
+const {
+  relayedUrlOf,
+} = require('../../../packages/server/mcp/mcp-relayed-image-address.js');
 
 const LOGO = 'https://cdn.example.test/brand/logo.png';
 

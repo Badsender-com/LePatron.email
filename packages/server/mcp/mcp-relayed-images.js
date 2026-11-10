@@ -5,60 +5,16 @@
 // elsewhere is shown through an address of the instance, signed for that
 // image, which fetches it under the guard of the outgoing calls.
 
-const crypto = require('crypto');
-const config = require('../node.config.js');
 const { siteOrigin } = require('../utils/site-origin.js');
+const { relayedUrlOf } = require('./mcp-relayed-image-address.js');
 const { guardedFetch } = require('../integration-providers/provider-http.js');
 const { createSizedCache } = require('../utils/sized-cache.js');
 
-const ROUTE = '/api/relayed-images';
 const MAX_BYTES = 5 * 1024 * 1024;
 const TIMEOUT_MS = 10000;
 const MAX_REDIRECTS = 3;
 // Characters, as the cache of the sanitised previews counts them.
 const RELAYED_PREVIEWS_BUDGET = 8 * 1024 * 1024;
-
-// A purpose of its own: no other signature of the instance is a valid one.
-const signatureOf = (url) =>
-  crypto
-    .createHmac('sha256', config.sessionSecret)
-    .update(`mcp-relayed-image:${url}`)
-    .digest('base64url');
-
-// An address as a query parameter, every character a CSS string or a url()
-// could end on encoded: the rewriting runs after the sanitiser, so what it
-// writes is inert wherever it lands.
-const asParameter = (url) =>
-  encodeURIComponent(url).replace(
-    /[!'()*]/g,
-    (character) => `%${character.charCodeAt(0).toString(16).toUpperCase()}`
-  );
-
-/**
- * The address of the instance that relays this image, signed for it, with
- * no expiry.
- *
- * @param {string} url the image's own address
- * @returns {string}
- */
-function relayedUrlOf(url) {
-  return `${siteOrigin()}${ROUTE}/${signatureOf(url)}?url=${asParameter(url)}`;
-}
-
-/**
- * Whether the instance signed this address.
- *
- * @param {string} url
- * @param {string} signature
- * @returns {boolean}
- */
-function isSigned(url, signature) {
-  const expected = Buffer.from(signatureOf(String(url)));
-  const given = Buffer.from(String(signature || ''));
-  return (
-    expected.length === given.length && crypto.timingSafeEqual(expected, given)
-  );
-}
 
 // The type of an image, read from its first bytes; null for anything else,
 // an SVG included.
@@ -258,11 +214,8 @@ function relayPreviewImagesCached(key, html) {
 }
 
 module.exports = {
-  relayedUrlOf,
   relayPreviewImages,
   relayPreviewImagesCached,
-  isSigned,
   fetchRelayedImage,
   imageTypeOf,
-  ROUTE,
 };
