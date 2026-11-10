@@ -32,6 +32,26 @@ jest.mock('../../../packages/server/utils/logger.js', () => ({
   warn: jest.fn(),
   error: jest.fn(),
 }));
+// The QR code, as Node's own `require` loads it. In Jest's sandbox each
+// `Math.abs` of its PNG encoder is a lookup on the sandbox's global object:
+// 150 ms a code instead of 5, several seconds on a loaded machine.
+jest.mock('qrcode', () =>
+  process.getBuiltinModule('module').createRequire(__filename)(
+    require.resolve('qrcode')
+  )
+);
+// Each confirmed setup hashes ten recovery codes: at the app's cost, 170 ms
+// of bcryptjs a test. These tests prove what is kept, not how hard it is to
+// reverse: the harness's lowest cost does.
+jest.mock(
+  '../../../packages/server/two-factor/two-factor.constants.js',
+  () => ({
+    ...jest.requireActual(
+      '../../../packages/server/two-factor/two-factor.constants.js'
+    ),
+    RECOVERY_CODE_BCRYPT_ROUNDS: 4,
+  })
+);
 
 const passport = require('passport');
 

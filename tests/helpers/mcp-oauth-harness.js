@@ -50,10 +50,26 @@ jest.doMock('../../packages/server/utils/logger.js', () => ({
   debug: jest.fn(),
 }));
 
-// The server, the stand-ins in place, loaded with the test file rather than
-// within its first test's time, which loading it alone can outlast on a
-// loaded machine.
-require('../../packages/server/mcp/mcp-http.js');
+// The server and all `createApp` mounts, the stand-ins in place, loaded with
+// the test file rather than within its first test's five seconds: loading
+// them takes a few hundred milliseconds alone, more with coverage, and
+// several seconds on a loaded machine.
+const { mountMcp } = require('../../packages/server/mcp/mcp-http.js');
+const {
+  McpOAuthAdapter,
+} = require('../../packages/server/mcp/mcp-oauth-adapter.js');
+const { oauthBodyParsers } = require('../../packages/server/mcp/mcp-oauth.js');
+const mcpRateLimit = require('../../packages/server/mcp/mcp-rate-limit.js');
+const permissions = require('../../packages/server/account/permissions.js');
+const pendingStep = require('../../packages/server/two-factor/pending-step.js');
+const {
+  STEPS,
+} = require('../../packages/server/two-factor/two-factor.constants.js');
+const {
+  connectedApplicationsRouter,
+  groupConnectedApplicationsRouter,
+} = require('../../packages/server/mcp/connected-application.routes.js');
+const mcpClientRoutes = require('../../packages/server/mcp/mcp-client.routes.js');
 
 const BASE = 'http://lepatron.test';
 const MCP_RESOURCE = `${BASE}/mcp`;
@@ -94,26 +110,18 @@ function createApp() {
   store.seed(f.SEED);
   mongoose.connection.db = createFakeDb();
   documents = new Map([[CIMD_CLIENT.client_id, CIMD_CLIENT]]);
-  require('../../packages/server/mcp/mcp-rate-limit.js').forgetCounts();
+  mcpRateLimit.forgetCounts();
 
   const app = express();
   // As index.js reads the bodies: the authorization server's first.
-  const {
-    oauthBodyParsers,
-  } = require('../../packages/server/mcp/mcp-oauth.js');
   app.use('/oauth', ...oauthBodyParsers());
   app.use(express.json());
   app.use(express.urlencoded({ extended: false }));
   // What passport leaves of the session (deserializeUser): the user with
   // its capabilities, an id alone for an account with no record (the
   // configuration's admin), or nobody.
-  const permissions = require('../../packages/server/account/permissions.js');
   // Between the password and the verification code (ADR 0008): the session
   // holds the pending step, and no user.
-  const pendingStep = require('../../packages/server/two-factor/pending-step.js');
-  const {
-    STEPS,
-  } = require('../../packages/server/two-factor/two-factor.constants.js');
   app.use((req, res, next) => {
     const userId = req.get(PENDING_USER);
     if (!userId) return next();
@@ -136,11 +144,6 @@ function createApp() {
       : { id: userId };
     return next();
   });
-  // Required here: the server reads the models, which must be the stand-ins.
-  const { mountMcp } = require('../../packages/server/mcp/mcp-http.js');
-  const {
-    McpOAuthAdapter,
-  } = require('../../packages/server/mcp/mcp-oauth-adapter.js');
   // The authorization server, for what no HTTP client can do (a token issued
   // for another resource). The adapter as a factory: the provider, in Node's
   // realm, does not tell the test's class from a function.
@@ -159,14 +162,7 @@ function createApp() {
 // The app's API routes of MCP, mounted as index.js mounts them, and its error
 // handler's answer: the status, and the error code as the message.
 function mountMcpRoutes(app) {
-  const {
-    connectedApplicationsRouter,
-    groupConnectedApplicationsRouter,
-  } = require('../../packages/server/mcp/connected-application.routes.js');
-  app.use(
-    '/api/groups/:groupId/mcp-clients',
-    require('../../packages/server/mcp/mcp-client.routes.js')
-  );
+  app.use('/api/groups/:groupId/mcp-clients', mcpClientRoutes);
   app.use(
     '/api/groups/:groupId/connected-applications',
     groupConnectedApplicationsRouter
