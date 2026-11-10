@@ -2086,6 +2086,8 @@ export default {
       failedLabel: 'Not published:',
       close: 'Close',
       cancelled: 'Publication cancelled: the drafts stay drafts.',
+      keepKept: 'Ticked, the follow will no longer touch the items published: it will only say that production changed them.',
+      keepFollowed: 'Unticked, each followed item still follows production: at the next follow, the version published here moves to a new "(travail de la copie)" item, as a draft, unless production publishes the same one. An item written on the copy stays as it is while production has no item of the same id.',
       skipped: {
         not_found: 'not found',
         archived: 'archived: reactivate it from its page',

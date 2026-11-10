@@ -257,7 +257,11 @@ export default {
     </div>
 
     <bs-ai-skills-export-bar :expertise-ids="selectedIds" />
-    <bs-ai-publish-drafts :items="publishItems" @published="onPublished" />
+    <bs-ai-publish-drafts
+      :items="publishItems"
+      :is-copy="isCopy"
+      @published="onPublished"
+    />
 
     <bs-data-table
       v-model="selected"

@@ -4,6 +4,7 @@ const asyncHandler = require('express-async-handler');
 const createError = require('http-errors');
 const ERROR_CODES = require('../../constant/error-codes.js');
 const { guardKeyIn } = require('../services/guard-key.js');
+const { assertCopy } = require('../services/skills-copy.service.js');
 const publication = require('../services/publication-batch.js');
 
 /**
@@ -54,14 +55,17 @@ module.exports = {
   }),
 
   // The key the guard answered rides along, never what it showed: the
-  // server records what its key carries.
+  // server records what its key carries. On a copy, the whole batch may be
+  // kept on the copy, as one publication is (ADR 0019).
   publish: asyncHandler(async (req, res) => {
+    const keepOnCopy = (req.body || {}).keepOnCopy === true;
+    if (keepOnCopy) assertCopy();
     const { targets, skipped } = await publication.draftsToPublish(
       itemsOf(req)
     );
     const report = await publication.publishMany(
       targets,
-      { guardKey: guardKeyIn(req.body) },
+      { guardKey: guardKeyIn(req.body), keepOnCopy },
       req.user
     );
     res.json({ ...report, skipped });

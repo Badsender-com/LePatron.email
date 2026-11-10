@@ -34,9 +34,19 @@ export default {
   props: {
     // The selection, as `{ kind, id }`.
     items: { type: Array, default: () => [] },
+    // On a copy, the batch offers "Keep on this copy", as one publication
+    // does (ADR 0019).
+    isCopy: { type: Boolean, default: false },
   },
   data() {
-    return { plan: null, guard: null, report: null, busy: false, error: '' };
+    return {
+      plan: null,
+      guard: null,
+      report: null,
+      keepOnCopy: true,
+      busy: false,
+      error: '',
+    };
   },
   computed: {
     // The items published with a warning, as their own page tells it.
@@ -105,7 +115,12 @@ export default {
       );
     },
     async open() {
-      Object.assign(this, { plan: null, guard: null, report: null });
+      Object.assign(this, {
+        plan: null,
+        guard: null,
+        report: null,
+        keepOnCopy: true,
+      });
       this.$refs.modal.open();
       this.plan = await this.post('plan');
     },
@@ -116,6 +131,7 @@ export default {
       const report = await this.post(null, {
         guardKey: this.guard ? this.guard.key : undefined,
         items: readItems(this.targets),
+        ...(this.isCopy && { keepOnCopy: this.keepOnCopy }),
       });
       if (!report) return;
       this.report = report;
@@ -230,6 +246,30 @@ export default {
           </p>
         </template>
         <bs-ai-guard-cases v-if="guard" :guard="guard" />
+        <v-alert
+          v-if="isCopy && targets.length"
+          type="info"
+          dense
+          outlined
+          class="mt-4 mb-0 text-caption bs-ai-publish-keep"
+        >
+          <v-checkbox
+            :input-value="keepOnCopy"
+            :label="$t('aiSkills.copy.keep')"
+            :disabled="busy"
+            dense
+            hide-details
+            class="mt-0"
+            @change="keepOnCopy = $event === true"
+          />
+          <p class="mb-0 mt-1 bs-ai-publish-keep__explain">
+            {{
+              keepOnCopy
+                ? $t('aiSkills.publishDrafts.keepKept')
+                : $t('aiSkills.publishDrafts.keepFollowed')
+            }}
+          </p>
+        </v-alert>
       </template>
 
       <div v-if="skipped.length" class="text-body-2 mt-2">

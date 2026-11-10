@@ -2114,6 +2114,8 @@ export default {
       failedLabel: 'Non publiés :',
       close: 'Fermer',
       cancelled: 'Publication annulée : les brouillons restent des brouillons.',
+      keepKept: 'Cochée, le suivi ne touchera plus les éléments publiés : il signalera seulement que la production les a changés.',
+      keepFollowed: 'Décochée, chaque élément suivi suit toujours la production : au prochain suivi, la version publiée ici part dans un nouvel élément « (travail de la copie) », en brouillon, sauf si la production publie la même. Un élément écrit sur la copie reste tel quel tant que la production n\'a pas d\'élément du même identifiant.',
       skipped: {
         not_found: 'introuvable',
         archived: 'archivé : réactivez-le depuis sa page',

@@ -16,6 +16,12 @@ jest.mock(
     cancelMany: jest.fn(),
   })
 );
+// Whether this instance is a copy of production (ADR 0019).
+const copy = { configured: true };
+jest.mock(
+  '../../../../packages/server/ai-skill/services/skills-source-client',
+  () => ({ isConfigured: () => copy.configured })
+);
 // Stub the auth guard, on the real rule, so the test picks the user.
 jest.mock('../../../../packages/server/account/auth.guard', () => ({
   GUARD_ADMIN: (req, res, next) => {
@@ -128,7 +134,7 @@ describe('several drafts at once, on the back office', () => {
     });
     expect(publication.publishMany).toHaveBeenCalledWith(
       TARGETS,
-      { guardKey: GUARD.key },
+      { guardKey: GUARD.key, keepOnCopy: false },
       ADMIN
     );
   });
@@ -148,6 +154,27 @@ describe('several drafts at once, on the back office', () => {
     expect(refused.body.message).toBe('SKILL_PUBLICATION_GUARD_INVALID');
     expect(cancelled.status).toBe(200);
     expect(publication.cancelMany).toHaveBeenCalledTimes(1);
+  });
+
+  // On a copy, the whole batch is kept on it, or follows production.
+  it('keeps the batch on the copy when asked, and only on a copy', async () => {
+    publication.publishMany.mockResolvedValue({ published: [], failed: [] });
+    const publish = (body) =>
+      request(makeApp())
+        .post('/api/ai-skills/publications')
+        .send({ items: ITEMS, guardKey: GUARD.key, ...body });
+
+    await publish({ keepOnCopy: true });
+    await publish({ keepOnCopy: false });
+    copy.configured = false;
+    const refused = await publish({ keepOnCopy: true });
+    copy.configured = true;
+
+    expect(publication.publishMany.mock.calls.map((c) => c[1])).toEqual([
+      { guardKey: GUARD.key, keepOnCopy: true },
+      { guardKey: GUARD.key, keepOnCopy: false },
+    ]);
+    expect(refused.body.message).toBe('SKILLS_NOT_A_COPY');
   });
 
   // When the page read each draft goes with it (ADR 0014), and nothing else.

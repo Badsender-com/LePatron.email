@@ -1087,6 +1087,26 @@ describe('publishing what a feature uses', () => {
       ).toBe('DRAFT');
     });
 
+    // On a copy, as one publication (ADR 0019).
+    it('keeps each item it publishes on the copy, when asked', async () => {
+      const guard = await batch.guardMany(BOTH, ALICE);
+
+      await batch.publishMany(
+        BOTH,
+        { guardKey: guard.key, keepOnCopy: true },
+        ALICE
+      );
+
+      expect(
+        store.stored('expertises').find((e) => e.expertiseId === SUBJECT_LINES)
+          .keptOnCopy
+      ).toBe(true);
+      expect(
+        store.stored('skills').find((s) => s.skillId === SUBJECT_IDEAS)
+          .keptOnCopy
+      ).toBe(true);
+    });
+
     it('records the decision on each draft', async () => {
       const guard = await batch.guardMany(BOTH, ALICE);
 

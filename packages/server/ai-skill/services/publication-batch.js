@@ -193,18 +193,26 @@ async function guardMany(targets, user) {
  * nothing else.
  *
  * @param {Array<{ kind, id, version }>} targets
- * @param {{ guardKey?: string, application?: string }} options the key of
- *   the guard that ran over all of them
+ * @param {{ guardKey?: string, application?: string,
+ *   keepOnCopy?: boolean }} options the key of the guard that ran over all
+ *   of them; on a copy, whether each item published is kept on it
  * @param {{ id: string }} user
  * @returns {Promise<{ published: Array<{ kind, id, version, warnings? }>,
  *   failed: Array<{ kind, id, version, reason, message }> }>}
  */
-async function publishMany(targets, { guardKey, application } = {}, user) {
+async function publishMany(
+  targets,
+  { guardKey, application, keepOnCopy } = {},
+  user
+) {
   const report = { published: [], failed: [] };
   const docs = await loadMany(asList(targets));
   for (const target of asList(targets)) {
     try {
-      const payload = payloadOf(target, docs.get(keyOf(target)));
+      const payload = {
+        ...payloadOf(target, docs.get(keyOf(target))),
+        ...(keepOnCopy === true && { keepOnCopy }),
+      };
       // eslint-disable-next-line no-await-in-loop
       const { doc, warnings } = await publication.publishVersion(
         { ...target, guardKey, payload, application },
