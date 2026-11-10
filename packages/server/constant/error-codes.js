@@ -255,6 +255,7 @@ module.exports = {
   SKILLS_FOLLOW_PRODUCTION_ERROR: 'SKILLS_FOLLOW_PRODUCTION_ERROR',
   SKILLS_FOLLOW_UNREADABLE: 'SKILLS_FOLLOW_UNREADABLE',
   SKILLS_FOLLOW_INTERRUPTED: 'SKILLS_FOLLOW_INTERRUPTED',
+  SKILLS_FOLLOW_FAILED: 'SKILLS_FOLLOW_FAILED',
   // Why one item of a follow failed, the others followed: production's item
   // cannot be read (`field`), the copy's item was written meanwhile, the
   // model refuses what production holds, or anything else.

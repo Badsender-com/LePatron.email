@@ -2042,6 +2042,8 @@ export default {
         'La réponse de la production n\'a pas pu être lue : les deux instances n\'ont peut-être pas la même version de LePatron.',
       SKILLS_FOLLOW_INTERRUPTED:
         'Le suivi a été interrompu avant sa fin.',
+      SKILLS_FOLLOW_FAILED:
+        'Le suivi s\'est arrêté sur une erreur inattendue : ce qu\'il a déjà écrit reste, suivez de nouveau la production.',
       SKILLS_FOLLOW_ITEM_UNREADABLE:
         'La production a envoyé cet élément sous une forme que cette copie ne lit pas (champ « {field} »).',
       SKILLS_FOLLOW_ITEM_CHANGED:

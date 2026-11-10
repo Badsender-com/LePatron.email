@@ -963,6 +963,38 @@ describe('a copy following production', () => {
       });
     });
 
+    it('releases the lock when an unforeseen error stops the follow', async () => {
+      store.seed(EMPTY_COPY);
+      const { find } = store.models.LePatronSkills;
+      store.models.LePatronSkills.find = () => {
+        throw new Error('connection lost');
+      };
+
+      let report;
+      try {
+        report = await followAgain();
+      } finally {
+        store.models.LePatronSkills.find = find;
+      }
+
+      expect(report).toMatchObject({
+        status: 'failed',
+        reason: 'failed',
+        code: 'SKILLS_FOLLOW_FAILED',
+      });
+      // What it did before stopping stays, and is said.
+      expect(idsOf(report.created)).toContain(SUBJECT_LINES);
+      expect(store.stored('follows')).toEqual([
+        expect.objectContaining({
+          status: 'failed',
+          message: 'connection lost',
+        }),
+      ]);
+      await expect(followAgain()).resolves.toMatchObject({
+        status: 'succeeded',
+      });
+    });
+
     it('releases the lock when the follow ends', async () => {
       await follow(EMPTY_COPY);
 

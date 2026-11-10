@@ -2012,6 +2012,8 @@ export default {
         'Production\'s answer could not be read: the two instances may not run the same version of LePatron.',
       SKILLS_FOLLOW_INTERRUPTED:
         'The follow was interrupted before it ended.',
+      SKILLS_FOLLOW_FAILED:
+        'The follow stopped on an unexpected error: what it already wrote stays, follow production again.',
       SKILLS_FOLLOW_ITEM_UNREADABLE:
         'Production sent this item in a form this copy does not read (field “{field}”).',
       SKILLS_FOLLOW_ITEM_CHANGED:

@@ -235,7 +235,8 @@ async function applyKind({ kind, list, idField }, answer, into, context) {
  * any other sharing its database; reads production's answer, then applies
  * it, expertises first, each item on its own, so one failing stops nothing
  * else. An answer that cannot be fetched or read writes nothing. Each
- * follow is recorded.
+ * follow is recorded, one stopped by an unforeseen error too, which
+ * releases its lock.
  *
  * @param {Object} options
  * @param {() => Promise<Object>} options.fetchExport production's answer
@@ -275,9 +276,22 @@ async function followProduction({ fetchExport, actor, trigger = 'manual' }) {
     into.failed.push({ kind, id, version: null, code, field })
   );
   const context = { actor, now: startedAt };
-  for (const kind of KINDS) {
-    // eslint-disable-next-line no-await-in-loop
-    await applyKind(kind, answer, into, context);
+  try {
+    for (const kind of KINDS) {
+      // eslint-disable-next-line no-await-in-loop
+      await applyKind(kind, answer, into, context);
+    }
+  } catch (err) {
+    // Unforeseen, past any one item: the follow ends, recorded with what it
+    // did, and its lock is released.
+    logger.error('[skills-follow] the follow stopped', err);
+    return record(lock, {
+      ...into,
+      status: 'failed',
+      reason: 'failed',
+      code: ERROR_CODES.SKILLS_FOLLOW_FAILED,
+      message: err.message,
+    });
   }
   into.status = into.failed.length ? 'partial' : 'succeeded';
   return record(lock, into);
