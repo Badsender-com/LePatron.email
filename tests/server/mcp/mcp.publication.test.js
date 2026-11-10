@@ -249,6 +249,33 @@ describe('publishing and opening from an assistant', () => {
       ).toMatchObject({ readOnlyHint: true, destructiveHint: false });
     });
 
+    // What the model reads must not contradict the tool (ADR 0019).
+    it('is named by the writing tools, which no longer keep publishing to a person', async () => {
+      const client = await asAuthor();
+      const writing = (await toolsOf(client)).filter((t) =>
+        /^(propose|create)_/.test(t.name)
+      );
+      const written = await client.callTool({
+        name: 'propose_expertise_change',
+        arguments: {
+          expertiseId: SUBJECT_LINES,
+          body: '## [length] Length\n\nShorter.',
+          changelog: 'Shorter',
+        },
+      });
+
+      expect(writing).toHaveLength(4);
+      [
+        ...writing.map((t) => t.description),
+        written.content.map((part) => part.text).join('\n'),
+      ].forEach((text) => {
+        expect(text).toMatch(/publish_draft/);
+        expect(text).not.toMatch(
+          /never published from here|a person publishes/i
+        );
+      });
+    });
+
     it('publishes nothing at the first call, and answers the guard with a key', async () => {
       const answer = await check(await asAuthor());
 

@@ -5,8 +5,8 @@
 
 // Drafting skills and expertises through MCP (ADR 0014): a token with the
 // skills:write scope, held by someone who may manage the platform, writes
-// drafts and nothing else. Publishing stays in the back office, and a draft is
-// never served to assistants.
+// drafts. Publishing is a step of its own (publish_draft, ADR 0019), and a
+// draft is never served to assistants.
 
 const harness = require('../../helpers/mcp-harness');
 const f = require('../../helpers/mcp-fixtures');

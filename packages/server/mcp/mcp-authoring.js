@@ -90,7 +90,7 @@ function drafted({ answer, diff, differs: changed }) {
     content: [
       {
         type: 'text',
-        text: `Draft ${answer.version} of "${id}" written, ${kept}: a person publishes it in the back office. ${said}`,
+        text: `Draft ${answer.version} of "${id}" written, ${kept}: publish it with publish_draft once the user agrees, or in the back office. ${said}`,
       },
     ],
     structuredContent: answer,
@@ -189,7 +189,7 @@ function registerAuthoringTools(server) {
     'propose_expertise_change',
     {
       title: 'Propose a change to an expertise',
-      description: `Writes a change to an expertise as a draft: the open draft, or a new one from the active version. Never published from here: a person publishes it in the back office. Give a changelog. ${SECTIONS}`,
+      description: `Writes a change to an expertise as a draft: the open draft, or a new one from the active version. Publishing it is a step of its own: publish_draft, or the back office. Give a changelog. ${SECTIONS}`,
       inputSchema: PROPOSE_EXPERTISE_INPUT,
       outputSchema: ANSWER,
       annotations: OVERWRITING,
@@ -204,7 +204,7 @@ function registerAuthoringTools(server) {
     {
       title: 'Propose a change to a skill',
       description:
-        'Writes a change to a skill as a draft: the procedure and consumed expertises of a task skill, or the instructions and template of a feature skill. Never published from here. Give a changelog.',
+        'Writes a change to a skill as a draft: the procedure and consumed expertises of a task skill, or the instructions and template of a feature skill. Publishing it is a step of its own: publish_draft, or the back office. Give a changelog.',
       inputSchema: PROPOSE_SKILL_INPUT,
       outputSchema: ANSWER,
       annotations: OVERWRITING,
@@ -218,7 +218,7 @@ function registerAuthoringTools(server) {
     'create_expertise',
     {
       title: 'Create an expertise',
-      description: `Creates an expertise as a draft, which no assistant reads: a person publishes it in the back office, and it stays with the platform company until a person opens it to every company. ${SECTIONS}`,
+      description: `Creates an expertise as a draft, which no assistant reads until it is published (publish_draft, or the back office), and which stays with the platform company until it is opened to every company. ${SECTIONS}`,
       inputSchema: CREATE_EXPERTISE_INPUT,
       outputSchema: ANSWER,
       annotations: ADDITIVE,
@@ -233,7 +233,7 @@ function registerAuthoringTools(server) {
     {
       title: 'Create a task skill',
       description:
-        'Creates a task skill (a procedure for an assistant, with the expertises it consumes in order) as a draft, which no assistant reads: a person publishes it in the back office, and it stays with the platform company until a person opens it to every company.',
+        'Creates a task skill (a procedure for an assistant, with the expertises it consumes in order) as a draft, which no assistant reads until it is published (publish_draft, or the back office), and which stays with the platform company until it is opened to every company.',
       inputSchema: CREATE_TASK_SKILL_INPUT,
       outputSchema: ANSWER,
       annotations: ADDITIVE,
