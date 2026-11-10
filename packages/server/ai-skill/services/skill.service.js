@@ -25,6 +25,7 @@ const {
   platformOnlyExpertises,
 } = require('./consumed-expertises.js');
 const { assertOpenable, openExpertises } = require('./audience-opening.js');
+const { saveItem } = require('./item-save.js');
 const {
   createVersionedEntityService,
 } = require('./versioned-entity.service.js');
@@ -207,10 +208,12 @@ const PATCHABLE_FIELDS = [
  *   expertises the active version consumes kept to the platform company,
  *   opened to every company with the skill when the patch opens it too
  *   (ADR 0013)
+ * @param {Object} [options] on the condition that it is as read, and kept on
+ *   a copy (item-save.js)
  * @returns {Promise<{skill: Object, warnings: Object[]}>} the skill, and the
  *   warnings of its opening
  */
-async function updateSkill(skillId, patch) {
+async function updateSkill(skillId, patch, options) {
   const skill = await getSkill(skillId);
   const opened = await assertOpenable(
     findActiveVersion(skill),
@@ -220,7 +223,7 @@ async function updateSkill(skillId, patch) {
   for (const key of PATCHABLE_FIELDS) {
     if (patch[key] !== undefined) skill[key] = patch[key];
   }
-  await skill.save();
+  await saveItem(skill, options);
   return { skill, warnings: await openExpertises(opened, skillId) };
 }
 

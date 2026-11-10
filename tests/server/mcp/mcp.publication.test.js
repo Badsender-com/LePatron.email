@@ -147,24 +147,46 @@ describe('publishing and opening from an assistant', () => {
       expect(subjectLines().audience).toBe('platform');
     });
 
-    it('refuses a key when the audience changed after the check', async () => {
+    // Opened then closed again meanwhile, by another conversation: the
+    // audience is back as it was, the item is not.
+    it('refuses a key when the item changed after the check, even back to the same audience', async () => {
       const client = await asAuthor();
-      const { confirmation } = await call(client, AUDIENCE, {
-        kind: 'expertise',
-        id: SUBJECT_LINES,
-        audience: 'all',
-      });
-      // Opened meanwhile, in the back office or by another conversation
-      harness.update('expertises', subjectLines()._id, { audience: 'all' });
+      const opening = { kind: 'expertise', id: SUBJECT_LINES, audience: 'all' };
+      const { confirmation } = await call(client, AUDIENCE, opening);
+      const change = async (audience) => {
+        const args = { ...opening, audience };
+        const check = await call(client, AUDIENCE, args);
+        return call(client, AUDIENCE, {
+          ...args,
+          confirmation: check.confirmation,
+        });
+      };
+      await change('all');
+      await change('platform');
 
       const answer = await call(client, AUDIENCE, {
-        kind: 'expertise',
-        id: SUBJECT_LINES,
-        audience: 'all',
+        ...opening,
         confirmation,
       });
 
-      expect(answer.error).toMatch(/changed/i);
+      expect(answer.error).toMatch(/changed after the check/i);
+      expect(subjectLines().audience).toBe('platform');
+    });
+
+    // Its annotations say the same call leaves the same state (SWITCHING).
+    it('answers changed: false, without an error, once the audience is the one asked', async () => {
+      const client = await asAuthor();
+      const args = { kind: 'expertise', id: SUBJECT_LINES, audience: 'all' };
+      const { confirmation } = await call(client, AUDIENCE, args);
+      await call(client, AUDIENCE, { ...args, confirmation });
+
+      const again = await call(client, AUDIENCE, { ...args, confirmation });
+      const checkedAgain = await call(client, AUDIENCE, args);
+
+      expect(again).toMatchObject({ audience: 'all', changed: false });
+      expect(again.error).toBeUndefined();
+      expect(checkedAgain).toMatchObject({ changed: false });
+      expect(checkedAgain.confirmation).toBeUndefined();
     });
 
     it('refuses a key made up or given for another change', async () => {
@@ -181,15 +203,24 @@ describe('publishing and opening from an assistant', () => {
         audience: 'all',
         confirmation: 'made-up',
       });
-      const otherChange = await call(client, AUDIENCE, {
+      const otherItem = await call(client, AUDIENCE, {
         kind: 'expertise',
-        id: SUBJECT_LINES,
-        audience: 'platform',
+        id: 'deliverability.spam-words',
+        audience: 'all',
         confirmation,
       });
+      const someoneElse = await call(
+        await harness.connectAs(OLGA, {
+          group: f.PLATFORM_GROUP,
+          scopes: WRITE,
+        }),
+        AUDIENCE,
+        { kind: 'expertise', id: SUBJECT_LINES, audience: 'all', confirmation }
+      );
 
       expect(madeUp.error).toMatch(/confirmation/i);
-      expect(otherChange.error).toMatch(/confirmation/i);
+      expect(otherItem.error).toMatch(/confirmation/i);
+      expect(someoneElse.error).toMatch(/confirmation/i);
       expect(subjectLines().audience).toBe('platform');
     });
 

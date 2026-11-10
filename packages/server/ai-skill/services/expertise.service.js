@@ -10,6 +10,7 @@ const manifestRegistry = require('./manifest-registry.js');
 const { normalizeScopes } = require('./expertise-scope.js');
 const { idsUsedByFeatures } = require('./feature-use.js');
 const { archiveUsage, watchUsage } = require('./usage-change.js');
+const { saveItem } = require('./item-save.js');
 const {
   createVersionedEntityService,
 } = require('./versioned-entity.service.js');
@@ -188,7 +189,9 @@ const PATCHABLE_FIELDS = [
   'audience',
 ];
 
-async function updateExpertise(expertiseId, patch, userId) {
+// `options`: who changes it (`userId`), on the condition that it is as read
+// (`readAt`), and kept on a copy (item-save.js).
+async function updateExpertise(expertiseId, patch, options = {}) {
   const exp = await getExpertise(expertiseId);
   // Its scope and its category decide which features load it (ADR 0019).
   const settle = watchUsage('expertise', exp);
@@ -196,8 +199,8 @@ async function updateExpertise(expertiseId, patch, userId) {
     if (patch[key] === undefined) continue;
     exp[key] = key === 'scope' ? normalizeScopes(patch[key]) : patch[key];
   }
-  const warnings = settle(exp, userId);
-  await exp.save();
+  const warnings = settle(exp, options.userId);
+  await saveItem(exp, options);
   return { expertise: exp, warnings };
 }
 

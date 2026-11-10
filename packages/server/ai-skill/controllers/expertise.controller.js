@@ -75,7 +75,7 @@ module.exports = {
     const { expertise, warnings } = await expertiseService.updateExpertise(
       req.params.expertiseId,
       req.body,
-      userIdOf(req)
+      { userId: userIdOf(req) }
     );
     res.json({ ...withUsedBy('expertise', expertise), warnings });
   }),

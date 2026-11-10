@@ -59,7 +59,7 @@ describe('a change of what a feature uses, without a new version', () => {
     const { warnings } = await expertiseService.updateExpertise(
       SUBJECT_LINES,
       { scope: ['body'] },
-      f.ALICE
+      { userId: f.ALICE }
     );
 
     expect(warnings).toEqual([LOST]);
@@ -81,7 +81,7 @@ describe('a change of what a feature uses, without a new version', () => {
     const { warnings } = await expertiseService.updateExpertise(
       SPAM_WORDS,
       { category: 'redaction' },
-      f.ALICE
+      { userId: f.ALICE }
     );
 
     expect(warnings).toEqual([
@@ -96,7 +96,7 @@ describe('a change of what a feature uses, without a new version', () => {
     const { warnings } = await expertiseService.updateExpertise(
       SUBJECT_LINES,
       { title: 'Subject lines' },
-      f.ALICE
+      { userId: f.ALICE }
     );
 
     expect(warnings).toEqual([]);

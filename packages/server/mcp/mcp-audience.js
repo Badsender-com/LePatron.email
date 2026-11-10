@@ -24,6 +24,7 @@ const {
   assertOpenable,
   openTaskSkillsConsuming,
 } = require('../ai-skill/services/audience-opening.js');
+const ERROR_CODES = require('../constant/error-codes.js');
 const logger = require('../utils/logger.js');
 const { keyOf, claimsOf, isExpired } = require('./mcp-confirmation.js');
 
@@ -91,7 +92,11 @@ async function changeOf({ kind, id, audience, openExpertiseIds }) {
   return { doc, active, opening, toOpen: [...toOpen].sort() };
 }
 
-// What the key binds: the change asked, and what it was checked against.
+const isoOf = (date) => (date ? new Date(date).toISOString() : null);
+
+// What the key binds: the change asked, and the item it was checked on, as
+// it was then: any write since, a change of audience undone included, makes
+// the key fail.
 const claimsFor = ({ kind, id, audience }, { doc, active, toOpen }, user) => ({
   kind,
   id,
@@ -99,8 +104,15 @@ const claimsFor = ({ kind, id, audience }, { doc, active, toOpen }, user) => ({
   open: toOpen,
   from: doc.audience,
   reads: active ? label(active) : null,
+  updatedAt: isoOf(doc.updatedAt),
   by: String(user.id),
 });
+
+const changedSince = (id) =>
+  createError(
+    409,
+    `"${id}" changed after the check: call set_audience without a confirmation to check it again.`
+  );
 
 function assertKey(claims, expected) {
   const sameChange =
@@ -121,28 +133,45 @@ function assertKey(claims, expected) {
       'This confirmation key has expired: call set_audience without one to check the change again.'
     );
   }
-  if (claims.from !== expected.from || claims.reads !== expected.reads) {
-    throw createError(
-      409,
-      'The audience or the active version changed after the check: call set_audience without a confirmation to check it again.'
-    );
+  if (
+    ['from', 'reads', 'updatedAt'].some(
+      (field) => claims[field] !== expected[field]
+    )
+  ) {
+    throw changedSince(expected.id);
   }
 }
 
-async function apply({ kind, id, audience }, toOpen, user) {
+// Written on the condition that the item is as checked.
+async function write({ kind, id, audience }, { toOpen }, options) {
   if (kind === 'skill') {
-    const { skill, warnings } = await skillService.updateSkill(id, {
-      audience,
-      ...(toOpen.length && { openExpertiseIds: toOpen }),
-    });
+    const { skill, warnings } = await skillService.updateSkill(
+      id,
+      { audience, ...(toOpen.length && { openExpertiseIds: toOpen }) },
+      options
+    );
     return { saved: skill, warnings };
   }
   const { expertise, warnings } = await expertiseService.updateExpertise(
     id,
     { audience },
-    user.id
+    options
   );
   return { saved: expertise, warnings };
+}
+
+async function apply(args, change, user) {
+  try {
+    return await write(args, change, {
+      readAt: change.doc.updatedAt,
+      userId: user.id,
+    });
+  } catch (err) {
+    if (err && err.message === ERROR_CODES.SKILL_ITEM_CHANGED) {
+      throw changedSince(args.id);
+    }
+    throw err;
+  }
 }
 
 /**
@@ -159,6 +188,19 @@ async function setAudience(args, user) {
   const { kind, id, audience, confirmation } = args;
   const change = await changeOf(args);
   const expected = claimsFor(args, change, user);
+  // Already so, nothing to change, at either call: the same call leaves the
+  // same state.
+  if (change.doc.audience === audience && !change.toOpen.length) {
+    const notes = await audienceNotes({ kind, id, ...change });
+    return {
+      id,
+      audience,
+      clientsRead: expected.reads,
+      changed: false,
+      ...notes,
+      warnings: notes.warnings || [],
+    };
+  }
   if (confirmation === undefined) {
     const notes = await audienceNotes({ kind, id, ...change });
     return {
@@ -172,7 +214,7 @@ async function setAudience(args, user) {
     };
   }
   assertKey(claimsOf(PURPOSE, confirmation), expected);
-  const { saved, warnings } = await apply(args, change.toOpen, user);
+  const { saved, warnings } = await apply(args, change, user);
   const notes = await audienceNotes({ kind, id, ...change });
   return {
     id,

@@ -292,7 +292,7 @@ function registerAuthoringTools(server) {
     {
       title: 'Open or close a skill or an expertise',
       description:
-        'Opens a published skill or expertise to every company, or keeps it to the platform company again, in two calls. Without a confirmation, it changes nothing: it answers which version clients will read and what the change leaves behind, with a confirmation key. Opening a task skill names the expertises it consumes that stay kept to the platform company (platformOnlyExpertises): ask the user which to open too, and check again with openExpertiseIds. Keeping an expertise to the platform company again names the open task skills that consume it (openTaskSkills). Tell the user, then call again with the same arguments and the key only once they agree. Only the active version is ever opened, never a draft.',
+        'Opens a published skill or expertise to every company, or keeps it to the platform company again, in two calls. Without a confirmation, it changes nothing: it answers which version clients will read and what the change leaves behind, with a confirmation key. Opening a task skill names the expertises it consumes that stay kept to the platform company (platformOnlyExpertises): ask the user which to open too, and check again with openExpertiseIds. Keeping an expertise to the platform company again names the open task skills that consume it (openTaskSkills). Tell the user, then call again with the same arguments and the key only once they agree. Only the active version is ever opened, never a draft. An audience already as asked is answered changed: false, with nothing to confirm.',
       inputSchema: SET_AUDIENCE_INPUT,
       outputSchema: AUDIENCE_ANSWER,
       annotations: SWITCHING,

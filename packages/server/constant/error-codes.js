@@ -197,6 +197,8 @@ module.exports = {
   SKILL_TEMPLATE_UNKNOWN_FIELDS: 'SKILL_TEMPLATE_UNKNOWN_FIELDS',
   // A draft written since the screen read it (ADR 0014).
   SKILL_VERSION_CHANGED: 'SKILL_VERSION_CHANGED',
+  // A skill or an expertise written since it was read (ADR 0014).
+  SKILL_ITEM_CHANGED: 'SKILL_ITEM_CHANGED',
   // The expertises a task skill's version consumes: a list of expertise ids,
   // bounded, each naming an expertise that exists, once (ADR 0013).
   SKILL_CONSUMED_EXPERTISES_INVALID: 'SKILL_CONSUMED_EXPERTISES_INVALID',
