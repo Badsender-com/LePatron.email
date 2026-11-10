@@ -67,13 +67,15 @@ const time = (date) => (date ? new Date(date).getTime() : 0);
 
 /**
  * Whether the copy wrote this version: never brought by a follow, or
- * changed on the copy since a follow brought it.
+ * changed or published on the copy since a follow brought it.
  *
  * @param {Object} version as stored
  * @returns {boolean}
  */
 const isCopyWork = (version) =>
-  !version.followedAt || time(version.updatedAt) > time(version.followedAt);
+  !version.followedAt ||
+  time(version.updatedAt) > time(version.followedAt) ||
+  time(version.activatedAt) > time(version.followedAt);
 
 // A JSON with its keys in order, whatever order an object holds them in.
 function canonical(value) {
@@ -114,12 +116,19 @@ const alreadyFollowed = (kind, stored, { answered, status }) =>
   sameContent(kind, stored, answered);
 
 // Whether a version the copy wrote leaves the item: when production would
-// write over it, or leave it behind.
+// write over it, or leave it behind. One the copy published, which
+// production holds as a draft, would go back to a draft: it leaves too.
 function leaves(kind, version, item, { localActive }) {
   const incoming = incomingOf(item).find(({ answered }) =>
     sameNumber(version, numberOf(answered))
   );
-  if (incoming) return !sameContent(kind, version, incoming.answered);
+  if (incoming) {
+    return (
+      !sameContent(kind, version, incoming.answered) ||
+      (version.status !== SkillStatuses.DRAFT &&
+        incoming.status === SkillStatuses.DRAFT)
+    );
+  }
   if (version === localActive) return true;
   if (version.status !== SkillStatuses.DRAFT) return false;
   return (

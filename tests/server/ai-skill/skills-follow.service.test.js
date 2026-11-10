@@ -388,6 +388,40 @@ describe('a copy following production', () => {
       });
     });
 
+    // Published on the copy, unchanged, while production keeps it a draft:
+    // the copy's publication is its work, not a version to take back.
+    it('moves a received draft the copy published, as a draft', async () => {
+      await follow(EMPTY_COPY);
+      changeOnCopy(SUBJECT_LINES, (doc) => {
+        const at = new Date(versionOf(doc, 3, 0).followedAt.getTime() + 1000);
+        return {
+          activeVersion: { major: 3, minor: 0 },
+          versions: doc.versions.map((v) => {
+            if (v.versionMajor === 3) {
+              return { ...v, status: 'ACTIVE', activatedAt: at };
+            }
+            return v.status === 'ACTIVE' ? { ...v, status: 'ARCHIVED' } : v;
+          }),
+        };
+      });
+
+      const report = await followAgain();
+
+      const subjectLines = expertiseOf(SUBJECT_LINES);
+      expect(subjectLines.activeVersion).toEqual({ major: 2, minor: 1 });
+      expect(versionOf(subjectLines, 2, 1).status).toBe('ACTIVE');
+      expect(versionOf(subjectLines, 3, 0).status).toBe('DRAFT');
+      expect(versionOf(expertiseOf(COPY_OF_SUBJECT_LINES), 3, 0)).toMatchObject(
+        {
+          status: 'DRAFT',
+          body: f.EXPERTISES[0].versions[2].body,
+        }
+      );
+      expect(report.moved).toEqual([
+        expect.objectContaining({ id: SUBJECT_LINES }),
+      ]);
+    });
+
     it('keeps a draft of the copy ahead of production when production brings none', async () => {
       const withoutDraft = answerWith(SUBJECT_LINES, (item) => {
         delete item.draft;
