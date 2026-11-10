@@ -53,6 +53,8 @@ const ExpertiseVersionSchema = new Schema(
     // written on this instance.
     followedAt: { type: Date },
     guardHistory: { type: [GuardRecordSchema], default: [] },
+    // The retex this draft addresses (ADR 0021), closed when it is published.
+    retexIds: { type: [String], default: [] },
   },
   { _id: false }
 );

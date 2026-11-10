@@ -14,9 +14,10 @@ const { asList, describeFeature } = require('./feature-use.js');
 const { loadUse } = require('./publication-target.js');
 const { planReplay, replay } = require('./publication-guard.js');
 const { issueGuardKey, readGuardKey, isoOf } = require('./guard-key.js');
-const { findVersion } = require('./version-helpers.js');
+const { findVersion, versionLabel } = require('./version-helpers.js');
 const skillService = require('./skill.service.js');
 const expertiseService = require('./expertise.service.js');
+const { closeRetex } = require('../../mcp/mcp-retex-status.js');
 
 const serviceFor = (kind) =>
   kind === 'skill' ? skillService : expertiseService;
@@ -111,6 +112,18 @@ async function recordCancel(params, shown, user) {
   return doc;
 }
 
+// The retex the published draft cites are addressed by this version (ADR
+// 0021), wherever it was published from.
+async function closeAddressedRetex(doc, { major, minor }) {
+  const published = findVersion(doc, major, minor);
+  const ids = (published && published.retexIds) || [];
+  if (!ids.length) return;
+  await closeRetex(ids, {
+    status: 'addressed',
+    addressedIn: versionLabel(published),
+  });
+}
+
 /**
  * What a publication checks before it writes, at no cost: the version is a
  * draft as the page read it, passes its gate (a schema missing from the code,
@@ -188,6 +201,7 @@ async function publishVersion(params, user) {
   // A skill's publication answers the warnings of its opening too.
   const { skill, warnings = [] } =
     kind === 'skill' ? published : { skill: published };
+  await closeAddressedRetex(skill, version);
   return { doc: skill, warnings };
 }
 

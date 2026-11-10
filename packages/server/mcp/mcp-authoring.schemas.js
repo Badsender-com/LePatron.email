@@ -19,6 +19,7 @@ const MAX_EXAMPLE_LENGTH = 2000;
 const MAX_CHANGELOG_LENGTH = 2000;
 const MAX_SCOPES = 20;
 const MAX_SCOPE_LENGTH = 50;
+const MAX_CITED_RETEX = 50;
 
 const ID = z.string().min(1).max(MAX_ID_LENGTH);
 const NEW_ID = ID.regex(SkillIdRegex);
@@ -41,7 +42,17 @@ const ANSWER = z.object({
   version: z.string(),
   status: z.enum(['draft']),
   audience: z.string().optional(),
+  addressesRetex: z
+    .array(z.string())
+    .describe('The retex the draft addresses, closed when it is published.'),
 });
+const addressesRetex = z
+  .array(z.string().max(MAX_ID_LENGTH))
+  .max(MAX_CITED_RETEX)
+  .optional()
+  .describe(
+    'The open retex this change addresses, as list_retex gives them: they are closed when the version is published.'
+  );
 const major = z
   .boolean()
   .optional()
@@ -73,6 +84,7 @@ const PROPOSE_EXPERTISE_INPUT = z.object({
     'The whole new list of bad examples. Left out: unchanged.'
   ),
   changelog,
+  addressesRetex,
   major,
 });
 const PROPOSE_SKILL_INPUT = z.object({
@@ -89,6 +101,7 @@ const PROPOSE_SKILL_INPUT = z.object({
     'A feature skill: the whole new input template.'
   ),
   changelog,
+  addressesRetex,
   major,
 });
 const CREATE_EXPERTISE_INPUT = z.object({
@@ -111,6 +124,7 @@ const CREATE_EXPERTISE_INPUT = z.object({
     .describe('true if it applies to every part of the email.'),
   body: TEXT.describe('Its text, in Markdown, in French.'),
   changelog,
+  addressesRetex,
 });
 const CREATE_TASK_SKILL_INPUT = z.object({
   skillId: newIdOf('skill'),
@@ -124,6 +138,7 @@ const CREATE_TASK_SKILL_INPUT = z.object({
   ),
   consumedExpertiseIds: expertiseIds,
   changelog,
+  addressesRetex,
 });
 
 module.exports = {

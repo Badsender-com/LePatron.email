@@ -555,7 +555,7 @@ describe('the retex loop', () => {
   });
 
   // Turned on by #1476 (a draft cites the retex, its publication closes them)
-  describe.skip('a draft cites the retex it addresses', () => {
+  describe('a draft cites the retex it addresses', () => {
     let ids;
 
     beforeEach(async () => {
@@ -597,16 +597,17 @@ describe('the retex loop', () => {
     it('closes them when the draft is published from an assistant', async () => {
       await proposeWith(ids);
       const client = await asConsultant();
-      const { confirmation } = await call(client, 'publish_draft', {
+      // A major needs its changelog and release notes, from the check on
+      // (ADR 0019).
+      const draft = {
         kind: 'expertise',
         id: SUBJECT_LINES,
-      });
+        changelog: 'B2B subjects may name the product',
+        releaseNotes: 'A B2B subject may name the product.',
+      };
+      const { confirmation } = await call(client, 'publish_draft', draft);
 
-      await call(client, 'publish_draft', {
-        kind: 'expertise',
-        id: SUBJECT_LINES,
-        confirmation,
-      });
+      await call(client, 'publish_draft', { ...draft, confirmation });
 
       expect(await listOpen()).toEqual([]);
       expect(await listOpen({ status: 'addressed' })).toEqual(
@@ -622,7 +623,7 @@ describe('the retex loop', () => {
   });
 
   // Turned on by #1476 (a draft cites the retex, its publication closes them)
-  describe.skip('a publication closes the retex', () => {
+  describe('a publication closes the retex', () => {
     let ids;
     let publication;
     let expertiseService;
@@ -661,7 +662,11 @@ describe('the retex loop', () => {
       expect(await listOpen({ status: 'addressed' })).toHaveLength(2);
       harness
         .stored('retex')
-        .forEach((retex) => expect(retex.expiresAt).toEqual(expect.any(Date)));
+        .forEach((retex) =>
+          expect(new Date(retex.expiresAt).getTime()).toBeGreaterThan(
+            Date.now()
+          )
+        );
     });
 
     it('leaves them open when the draft is deleted', async () => {

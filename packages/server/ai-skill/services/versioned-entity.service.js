@@ -113,6 +113,8 @@ function createVersionedEntityService({
     ...contentFields.map((f) => f.name),
     'changelog',
     'releaseNotes',
+    // The retex a draft addresses (ADR 0021).
+    'retexIds',
   ];
 
   // A minor draft on top of the active version: a minor release carries no
