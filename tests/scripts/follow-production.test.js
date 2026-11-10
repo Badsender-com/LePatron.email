@@ -107,15 +107,14 @@ describe('the nightly follow', () => {
     );
   });
 
-  // The scheduler runs the command on every instance: one follows, the
-  // others find its lock and write nothing.
+  // A follow running, a person's here, holds the lock.
   it('writes nothing and exits 0 while another follow runs', async () => {
     store.seed({
       ...EMPTY_COPY,
       follows: [
         {
           status: 'running',
-          trigger: 'night',
+          trigger: 'manual',
           by: '',
           startedAt: new Date(),
           expiresAt: new Date(Date.now() + 60 * 1000),
@@ -129,6 +128,45 @@ describe('the nightly follow', () => {
     expect(mockSource.fetchProductionExport).not.toHaveBeenCalled();
     expect(store.stored('expertises')).toEqual([]);
     expect(log).toHaveBeenCalledWith(expect.stringMatching(/another follow/i));
+  });
+
+  // The scheduler runs the command on every instance: the one that starts
+  // after the night's follow ended follows nothing again.
+  const nightFollow = (minutesAgo, status) => ({
+    status,
+    trigger: 'night',
+    by: '',
+    startedAt: new Date(Date.now() - minutesAgo * 60 * 1000),
+    finishedAt: new Date(Date.now() - (minutesAgo - 1) * 60 * 1000),
+    expiresAt: new Date(Date.now() - (minutesAgo - 10) * 60 * 1000),
+  });
+
+  it.each([
+    ['ended', 'succeeded'],
+    ['still running', 'running'],
+  ])(
+    'writes nothing and exits 0 when the night was followed within the hour (%s)',
+    async (_case, status) => {
+      store.seed({ ...EMPTY_COPY, follows: [nightFollow(20, status)] });
+
+      const exitCode = await followTonight({ log });
+
+      expect(exitCode).toBe(0);
+      expect(mockSource.fetchProductionExport).not.toHaveBeenCalled();
+      expect(store.stored('follows')).toHaveLength(1);
+      expect(log).toHaveBeenCalledWith(
+        expect.stringMatching(/already followed tonight/i)
+      );
+    }
+  );
+
+  it('follows when the last night is more than an hour old', async () => {
+    const answer = await productionAnswer();
+    store.seed({ ...EMPTY_COPY, follows: [nightFollow(24 * 60, 'succeeded')] });
+    mockSource.fetchProductionExport.mockResolvedValue(answer);
+
+    expect(await followTonight({ log })).toBe(0);
+    expect(store.stored('follows')).toHaveLength(2);
   });
 
   it('exits in error when the follow fails, having recorded it', async () => {

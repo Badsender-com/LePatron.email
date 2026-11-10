@@ -11,11 +11,13 @@
  * (production itself, a local install), nor on a copy whose configuration
  * does not ask for the night (`SKILLS_SOURCE_NIGHTLY=true`). The scheduler
  * runs it on every instance of the application: the first one takes the
- * follow's lock, the others find it taken and write nothing.
+ * follow's lock, the others find it taken, or find the night's follow
+ * ended within the hour, and write nothing.
  *
- * Exit code: 0 when the follow succeeded, there was nothing to follow, or
- * another follow was running; 1 when it failed or some items failed
- * (`partial`), so the scheduler's logs show it.
+ * Exit code: 0 when the follow succeeded, there was nothing to follow,
+ * another follow was running, or the night was already followed; 1 when
+ * it failed or some items failed (`partial`), so the scheduler's logs show
+ * it.
  *
  * Usage:
  *   yarn follow-production
@@ -37,7 +39,17 @@ const source = require(server(
   'services',
   'skills-source-client.js'
 ));
+const { nightFollowedSince } = require(server(
+  'ai-skill',
+  'services',
+  'skills-follow-lock.js'
+));
 const ERROR_CODES = require(server('constant', 'error-codes.js'));
+
+// The instances of an application start their scheduled command within
+// minutes of each other: a night's follow started within this window is
+// the night's.
+const NIGHT_WINDOW_MS = 60 * 60 * 1000;
 
 // The night follows production: no person, no user id.
 const NIGHT = { id: null, name: '' };
@@ -58,6 +70,10 @@ async function followTonight({ log = console.log } = {}) {
     log(
       'This copy does not follow production at night (SKILLS_SOURCE_NIGHTLY): nothing to do.'
     );
+    return 0;
+  }
+  if (await nightFollowedSince(new Date(Date.now() - NIGHT_WINDOW_MS))) {
+    log('Production was already followed tonight: nothing to do.');
     return 0;
   }
   let report;

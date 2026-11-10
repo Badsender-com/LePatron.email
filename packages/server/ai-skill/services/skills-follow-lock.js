@@ -135,4 +135,27 @@ async function lastFollow() {
   return follow;
 }
 
-module.exports = { takeLock, record, runningFollow, lastFollow, LOCK_MS };
+/**
+ * Whether a night's follow started since `since`, running or ended: the
+ * scheduler runs the nightly command on every instance, and the one that
+ * starts after the first ended must not follow again, nor hide the night's
+ * report under an "all up to date" one.
+ *
+ * @param {Date} since
+ * @returns {Promise<boolean>}
+ */
+async function nightFollowedSince(since) {
+  return !!(await SkillsFollows.exists({
+    trigger: 'night',
+    startedAt: { $gte: since },
+  }));
+}
+
+module.exports = {
+  takeLock,
+  record,
+  runningFollow,
+  lastFollow,
+  nightFollowedSince,
+  LOCK_MS,
+};
