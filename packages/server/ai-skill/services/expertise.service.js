@@ -8,6 +8,7 @@ const { listFilter } = require('./expertise-list-filter.js');
 const { versionLabel } = require('./version-helpers.js');
 const manifestRegistry = require('./manifest-registry.js');
 const { normalizeScopes } = require('./expertise-scope.js');
+const { saveItem } = require('./item-save.js');
 const {
   createVersionedEntityService,
 } = require('./versioned-entity.service.js');
@@ -174,14 +175,15 @@ const PATCHABLE_FIELDS = [
   'audience',
 ];
 
-async function updateExpertise(expertiseId, patch) {
+// `options`: on the condition that it is as read, and kept on a copy
+// (item-save.js).
+async function updateExpertise(expertiseId, patch, options) {
   const exp = await getExpertise(expertiseId);
   for (const key of PATCHABLE_FIELDS) {
     if (patch[key] === undefined) continue;
     exp[key] = key === 'scope' ? normalizeScopes(patch[key]) : patch[key];
   }
-  await exp.save();
-  return exp;
+  return saveItem(exp, options);
 }
 
 // ─── Versioning ────────────────────────────────────────────────────────────

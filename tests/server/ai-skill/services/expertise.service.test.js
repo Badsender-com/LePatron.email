@@ -122,6 +122,45 @@ describe('expertise.service', () => {
     expect(doc.save).toHaveBeenCalled();
   });
 
+  // An assistant's change of audience, applied on the item as it checked it
+  // (ADR 0014): a write made meanwhile is never written over.
+  it('updateExpertise writes on the condition that the item is as read', async () => {
+    const readAt = new Date('2026-11-10T09:00:00.000Z');
+    let condition;
+    const doc = mockExpertiseDoc({
+      audience: 'platform',
+      updatedAt: readAt,
+      save: jest.fn().mockImplementation(async function () {
+        condition = this.$where;
+        throw Object.assign(new Error('No document found'), {
+          name: 'DocumentNotFoundError',
+        });
+      }),
+    });
+    Expertises.findOne.mockResolvedValue(doc);
+
+    await expect(
+      expertiseService.updateExpertise('a', { audience: 'all' }, { readAt })
+    ).rejects.toMatchObject({ status: 409, message: 'SKILL_ITEM_CHANGED' });
+    expect(condition).toEqual({ updatedAt: readAt });
+    expect(doc.$where).toBeUndefined();
+  });
+
+  it('updateExpertise marks the item written, later than it was read', async () => {
+    const readAt = new Date('2026-11-10T09:00:00.000Z');
+    const doc = mockExpertiseDoc({ audience: 'platform', updatedAt: readAt });
+    Expertises.findOne.mockResolvedValue(doc);
+
+    await expertiseService.updateExpertise(
+      'a',
+      { audience: 'all' },
+      { readAt }
+    );
+
+    expect(doc.updatedAt.getTime()).toBeGreaterThan(readAt.getTime());
+    expect(doc.save).toHaveBeenCalled();
+  });
+
   describe('getActivationImpact', () => {
     it('throws 404 when the expertise is missing', async () => {
       Expertises.findOne.mockResolvedValue(null);

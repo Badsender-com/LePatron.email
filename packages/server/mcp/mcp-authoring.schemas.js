@@ -159,7 +159,9 @@ const AUDIENCE_ANSWER = z.object({
     .describe('The version clients read, null when none was published.'),
   changed: z
     .boolean()
-    .describe('Whether this call changed the audience: false at the check.'),
+    .describe(
+      'Whether this call changed the audience: false at the check, and when the audience already was the one asked, at either call.'
+    ),
   platformOnlyExpertises: z
     .array(z.object({ expertiseId: z.string(), title: z.string() }))
     .optional()
