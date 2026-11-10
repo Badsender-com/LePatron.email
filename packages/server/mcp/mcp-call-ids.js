@@ -1,6 +1,7 @@
 'use strict';
 
 const { z } = require('zod');
+const { AudienceValues } = require('../ai-skill/constant/skill-constants.js');
 
 // What the log keeps of what was asked: ids, never the rest of what was
 // typed, each bounded, and a few of them.
@@ -94,15 +95,16 @@ function idsAlong(value, paths) {
   return ids.filter(Boolean);
 }
 
-// The settings a tool sets, recorded as metadata: their value is a choice
-// among a few, never content (ADR 0019).
-const SETTINGS = ['audience'];
-const MAX_CHANGE_LENGTH = 100;
-
-function changeIn(args) {
-  if (!args || typeof args !== 'object') return null;
-  const setting = SETTINGS.find((key) => typeof args[key] === 'string');
-  return setting ? cut(`${setting}:${args[setting]}`, MAX_CHANGE_LENGTH) : null;
+// Which way set_audience was asked to take an audience, as metadata: one of
+// the audiences, never what was typed (ADR 0019); and whether the call only
+// checked it (`:check`) or applied it, on its key. No other tool has one.
+function changeIn(name, args) {
+  if (name !== 'set_audience' || !args || typeof args !== 'object') {
+    return null;
+  }
+  if (!AudienceValues.includes(args.audience)) return null;
+  const step = args.confirmation === undefined ? ':check' : '';
+  return `audience:${args.audience}${step}`;
 }
 
 // What a call asked for, as the log keeps it: the tool or the prompt, the
@@ -113,7 +115,7 @@ function whatWasAsked(method, params = {}, declared) {
     return {
       name,
       objectIds: idsAlong(params.arguments, declared.get(params.name)),
-      change: changeIn(params.arguments),
+      change: changeIn(params.name, params.arguments),
     };
   }
   if (method === 'prompts/get') return { name, objectIds: [] };
