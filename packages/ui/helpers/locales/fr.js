@@ -1701,6 +1701,7 @@ export default {
       archived: 'Archivé ici.',
       version_exists: 'Cette version existe déjà ici, sans être la version active.',
       missing_schema: 'Son schéma n\'existe pas sur cette instance : elle n\'est pas à jour.',
+      not_in_file: 'Absent du fichier importé.',
     },
     warnings: {
       missing_expertises: 'Expertises absentes ici et du fichier : {ids}',

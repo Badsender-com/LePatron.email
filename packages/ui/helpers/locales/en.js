@@ -1677,6 +1677,7 @@ export default {
       archived: 'Archived here.',
       version_exists: 'This version already exists here, without being the active one.',
       missing_schema: 'Its schema does not exist on this instance: it is not up to date.',
+      not_in_file: 'Not in the imported file.',
     },
     warnings: {
       missing_expertises: 'Expertises missing here and from the file: {ids}',

@@ -101,6 +101,7 @@ describe('the preview of an import', () => {
         'draft_open',
         'archived',
         'missing_schema',
+        'not_in_file',
         'missing_expertises',
         'nature_differs',
       ].forEach((key) => expect(section).toMatch(new RegExp(`\\b${key}:`)));
@@ -142,15 +143,23 @@ describe('the report of an import', () => {
     ).toEqual({ created: 2, updated: 1, skipped: 0, failed: 1 });
   });
 
-  it('links each draft to publish to its page in the back office', () => {
+  it('links each draft to publish to its page in the back office, with its warnings', () => {
+    const warning = { code: 'missing_expertises', expertiseIds: ['e.f'] };
     expect(
       helper.draftLinks({
         created: [{ kind: 'expertise', id: 'a.b', version: '1.0' }],
-        updated: [{ kind: 'skill', id: 'c.d', version: '2.1' }],
+        updated: [
+          { kind: 'skill', id: 'c.d', version: '2.1', warnings: [warning] },
+        ],
       })
     ).toEqual([
-      { id: 'a.b', version: '1.0', to: '/ai-expertise/a.b' },
-      { id: 'c.d', version: '2.1', to: '/ai-skills/c.d' },
+      { id: 'a.b', version: '1.0', to: '/ai-expertise/a.b', warnings: [] },
+      {
+        id: 'c.d',
+        version: '2.1',
+        to: '/ai-skills/c.d',
+        warnings: [warning],
+      },
     ]);
   });
 });

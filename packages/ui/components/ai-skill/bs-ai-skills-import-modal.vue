@@ -1,14 +1,13 @@
 <script>
-import { FileJson, ArrowRight } from 'lucide-vue';
+import { FileJson } from 'lucide-vue';
 import BsModalConfirm from '~/components/modal-confirm.vue';
+import BsAiSkillsImportReport from '~/components/ai-skill/bs-ai-skills-import-report.vue';
 import * as api from '~/helpers/ai-skill-routes.js';
 import {
   keyOf,
   isSelectable,
   defaultSelection,
   importPayload,
-  reportCounts,
-  draftLinks,
   warningValues,
 } from '~/helpers/skills-import.js';
 
@@ -20,8 +19,8 @@ export default {
   name: 'BsAiSkillsImportModal',
   components: {
     BsModalConfirm,
+    BsAiSkillsImportReport,
     LucideFileJson: FileJson,
-    LucideArrowRight: ArrowRight,
   },
   data() {
     return {
@@ -41,15 +40,6 @@ export default {
     },
     selectableCount() {
       return this.items.filter(isSelectable).length;
-    },
-    // Only the outcomes that happened: "0 skipped" says nothing.
-    counts() {
-      return Object.fromEntries(
-        Object.entries(reportCounts(this.report)).filter(([, n]) => n > 0)
-      );
-    },
-    drafts() {
-      return draftLinks(this.report);
     },
     fromLine() {
       const { origin, exportedBy, exportedAt } = this.preview;
@@ -97,12 +87,6 @@ export default {
       } finally {
         this.importing = false;
       }
-    },
-    reasonOf(item) {
-      const key = `skillsImport.reasons.${item.reason}`;
-      return this.$te(key)
-        ? this.$t(key)
-        : this.$t(`skillsImport.states.${item.reason}`);
     },
     // The file is read and checked here first, so a wrong file is said at
     // once; the server reads it again.
@@ -187,61 +171,11 @@ export default {
       </v-btn>
     </div>
 
-    <div v-else-if="report" class="bs-ai-skills-import__report">
-      <p class="bs-ai-skills-import__counts">
-        <span
-          v-for="(count, outcome) in counts"
-          :key="outcome"
-          :class="`bs-ai-skills-import__count--${outcome}`"
-        >
-          {{ $tc(`skillsImport.report.${outcome}`, count, { count }) }}
-        </span>
-      </p>
-      <template v-if="drafts.length">
-        <p class="bs-ai-skills-import__from">
-          {{ $t('skillsImport.report.publish') }}
-        </p>
-        <ul class="bs-ai-skills-import__items">
-          <li
-            v-for="draft in drafts"
-            :key="draft.to"
-            class="bs-ai-skills-import__item"
-          >
-            <nuxt-link :to="draft.to" @click.native="close">
-              {{ draft.id }} · v{{ draft.version }}
-              <lucide-arrow-right :size="14" />
-            </nuxt-link>
-          </li>
-        </ul>
-      </template>
-      <p v-else class="bs-ai-skills-import__from">
-        {{ $t('skillsImport.report.nothing') }}
-      </p>
-      <p
-        v-for="item in report.failed"
-        :key="`failed-${item.kind}-${item.id}`"
-        class="bs-ai-skills-import__reason"
-      >
-        {{
-          $t('skillsImport.report.failedItem', {
-            id: item.id,
-            message: item.message,
-          })
-        }}
-      </p>
-      <p
-        v-for="item in report.skipped"
-        :key="`skipped-${item.kind}-${item.id}`"
-        class="bs-ai-skills-import__warning"
-      >
-        {{
-          $t('skillsImport.report.skippedItem', {
-            id: item.id,
-            reason: reasonOf(item),
-          })
-        }}
-      </p>
-    </div>
+    <bs-ai-skills-import-report
+      v-else-if="report"
+      :report="report"
+      @leave="close"
+    />
 
     <div v-else class="bs-ai-skills-import__preview">
       <p class="bs-ai-skills-import__from">{{ fromLine }}</p>
@@ -383,18 +317,6 @@ export default {
 
   &__warning {
     color: var(--gray-800);
-  }
-
-  &__counts {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 1rem;
-    margin: 0 0 0.75rem;
-    font-weight: 500;
-  }
-
-  &__count--failed {
-    color: var(--color-error);
   }
 
   &__footer {

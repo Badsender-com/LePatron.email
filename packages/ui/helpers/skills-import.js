@@ -1,6 +1,5 @@
 // The rules of the import modal of the skills export (ADR 0018), apart from
-// the modal so they are tested on their own: the project mounts no component
-// in its tests.
+// the modal so they are tested on their own.
 
 const IMPORTABLE = ['new', 'update'];
 
@@ -48,13 +47,14 @@ export function reportCounts(report) {
 }
 
 // The drafts the import wrote, each linked to its page in the back office,
-// where a person publishes it.
+// where a person publishes it, with what to know before publishing it.
 export function draftLinks(report) {
   return [...(report.created || []), ...(report.updated || [])].map(
-    ({ kind, id, version }) => ({
+    ({ kind, id, version, warnings }) => ({
       id,
       version,
       to: kind === 'skill' ? `/ai-skills/${id}` : `/ai-expertise/${id}`,
+      warnings: warnings || [],
     })
   );
 }
