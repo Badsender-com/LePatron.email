@@ -438,9 +438,9 @@ async function importSkills(
         });
         continue; // eslint-disable-line no-continue
       }
-      // Not chosen, blocked or failed, an expertise of the file is as
-      // missing as one it does not hold: the draft cannot be published until
-      // it is here (ADR 0018).
+      // Not chosen or failed, an expertise of the file is as missing as one
+      // it does not hold: the draft cannot be published until it is here
+      // (ADR 0018). One blocked is here already.
       const missing = consumedOf(item).filter((e) => !available.has(e));
       const warnings = [
         ...(missing.length
