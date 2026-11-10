@@ -20,10 +20,17 @@ const AboutSchema = new Schema(
  * whether the author was a consultant of the platform company or a client
  * user. Open, it has no expiry; addressed or dismissed, it follows the
  * company's log retention.
+ *
+ * A client user's retex belongs to their company. A consultant's belongs to
+ * the platform company, whatever company they connected to: it is their
+ * know-how, not their client's words, and it outlives the client.
  */
 const McpRetexSchema = new Schema(
   {
     _company: { type: ObjectId, ref: GroupModel, required: true },
+    // The company of the connection it was reported from, as context only:
+    // a consultant's client. Emptied when that company is deleted.
+    _connectedCompany: { type: ObjectId, ref: GroupModel, default: null },
     _user: { type: ObjectId, ref: UserModel, required: true },
     author: { type: String, enum: ['consultant', 'client'], required: true },
     clientId: { type: String, default: '' },

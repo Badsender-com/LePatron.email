@@ -190,6 +190,12 @@ async function deleteGroup(groupId) {
     // and the retex, open ones included (ADR 0012, ADR 0021).
     McpFeedbacks.deleteMany({ _company: mongoose.Types.ObjectId(groupId) }),
     McpRetexes.deleteMany({ _company: mongoose.Types.ObjectId(groupId) }),
+    // A consultant's retex written for it belongs to the platform company:
+    // it stays, without the name of the company it was written for.
+    McpRetexes.updateMany(
+      { _connectedCompany: mongoose.Types.ObjectId(groupId) },
+      { $set: { _connectedCompany: null } }
+    ),
     // And the MCP clients it registered, with their secrets (ADR 0012).
     forgetCompanyClients(mongoose.Types.ObjectId(groupId)),
     Groups.deleteOne({

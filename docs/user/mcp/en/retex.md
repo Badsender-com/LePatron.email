@@ -24,7 +24,7 @@ Two agreements are needed:
 1. **your company** allows retex, in the MCP access section of the AI features page (its tech admin decides);
 2. **you** approve each retex, when your assistant offers it.
 
-Without either, nothing is sent, and the assistant tells you why. What you send is read by the Badsender team, who see your company, never your name.
+Without either, nothing is sent, and the assistant tells you why. What you send is read by the platform company's team, who see your company, never your name.
 
 ## For the platform company's team
 
@@ -56,8 +56,10 @@ What a retex says is a user's words, often another company's. Your assistant wei
 
 ### What you see of a retex
 
-Its company, and whether its author is a Badsender consultant or a company's user. Never who wrote it.
+Its company, and whether its author is a consultant of the platform company or a company's user. Never who wrote it.
+
+A consultant's retex belongs to the platform company, whatever company they picked when connecting: it is their know-how, not their client's words. The company they worked for is shown beside it, as context.
 
 ## How long they are kept
 
-An open retex is kept until it is addressed or dismissed. Once closed, it follows its company's log retention, from the day it was closed. Deleting a company deletes its retex, open or closed.
+An open retex is kept until it is addressed or dismissed. Once closed, it follows its company's log retention, from the day it was closed. A consultant's retex follows the platform company's. Deleting a company deletes its users' retex, open or closed; those consultants wrote while working for it stay, without its name.

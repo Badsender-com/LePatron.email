@@ -278,7 +278,7 @@ A rating and a comment a user sends from a connected application about what LePa
 _UI_: Avis
 
 **Retex**:
-What a user's work taught about a skill or an expertise, recorded on its own from a connected application: a divergence or a complement. Never a summary of the session: no divergence and nothing brought, no retex. A super admin's is recorded as soon as it occurs; another user's needs the company's permission, which its tech admin or a super admin gives, and the user's approval of that retex.
+What a user's work taught about a skill or an expertise, recorded on its own from a connected application: a divergence or a complement. Never a summary of the session: no divergence and nothing brought, no retex. A super admin's is recorded as soon as it occurs, and belongs to the platform company whatever company they connected to, which is kept as context; another user's needs the company's permission, which its tech admin or a super admin gives, and the user's approval of that retex.
 _UI_: Retour d'expérience
 _Avoid_: Feedback (a rating and a comment), telemetry, session log, session summary
 

@@ -142,17 +142,21 @@ async function reportRetex(identity, args, ctx) {
   const reason = droppedBecause(identity, approvedByUser);
   if (reason) return answerOf({ kept: false, reason });
 
+  const consultant = isConsultant(identity.user);
   const stored = await McpRetexes.create({
-    _company: identity.group._id,
+    // A consultant's belongs to the platform company, theirs (ADR 0002),
+    // whatever company they connected to (ADR 0021).
+    _company: consultant ? identity.user._company : identity.group._id,
+    _connectedCompany: identity.group._id,
     _user: identity.user._id,
-    author: isConsultant(identity.user) ? 'consultant' : 'client',
+    author: consultant ? 'consultant' : 'client',
     clientId: ctx.http?.authInfo?.clientId || '',
     ...retex,
     about: about
       ? { ...retex.about, version: versionLabel(about.version) }
       : null,
     part: retex.part ? partOf(retex.part) : null,
-    approvedAt: isConsultant(identity.user) ? null : new Date(),
+    approvedAt: consultant ? null : new Date(),
     // Open: kept until it is addressed or dismissed.
     status: 'open',
     expiresAt: null,
@@ -160,7 +164,7 @@ async function reportRetex(identity, args, ctx) {
   const retexId = String(stored._id);
   // The candidates are the retex of every company: read by a super admin
   // only, whatever company they connected to, as list_retex (ADR 0021).
-  if (!isConsultant(identity.user)) return answerOf({ kept: true, retexId });
+  if (!consultant) return answerOf({ kept: true, retexId });
   return answerOf({
     kept: true,
     retexId,

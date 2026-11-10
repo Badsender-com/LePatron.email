@@ -24,7 +24,7 @@ Deux accords sont nécessaires :
 1. **votre entreprise** autorise les retours d'expérience, dans la section Accès MCP de la page Fonctionnalités IA (son admin technique en décide) ;
 2. **vous** approuvez chaque retour d'expérience, quand votre assistant vous le propose.
 
-Sans l'un des deux, rien n'est envoyé, et l'assistant vous dit pourquoi. Ce que vous envoyez est lu par l'équipe Badsender, qui voit votre entreprise, jamais votre nom.
+Sans l'un des deux, rien n'est envoyé, et l'assistant vous dit pourquoi. Ce que vous envoyez est lu par l'équipe de l'entreprise plateforme, qui voit votre entreprise, jamais votre nom.
 
 ## Pour l'équipe de l'entreprise plateforme
 
@@ -56,8 +56,10 @@ Le texte d'un retour d'expérience est la parole d'un utilisateur, souvent d'une
 
 ### Ce qu'on voit d'un retour d'expérience
 
-Son entreprise, et si son auteur est un consultant Badsender ou un utilisateur d'entreprise. Jamais qui l'a écrit.
+Son entreprise, et si son auteur est un consultant de l'entreprise plateforme ou un utilisateur d'entreprise. Jamais qui l'a écrit.
+
+Le retour d'un consultant appartient à l'entreprise plateforme, quelle que soit l'entreprise choisie à la connexion : c'est son savoir-faire, pas la parole de son client. L'entreprise pour laquelle il travaillait est indiquée à côté, comme contexte.
 
 ## Combien de temps ils sont gardés
 
-Un retour d'expérience ouvert est gardé tant qu'il n'est ni pris en compte ni écarté. Une fois clos, il suit la durée de conservation des journaux de son entreprise, à partir du jour où il a été clos. Supprimer une entreprise supprime ses retours d'expérience, ouverts ou clos.
+Un retour d'expérience ouvert est gardé tant qu'il n'est ni pris en compte ni écarté. Une fois clos, il suit la durée de conservation des journaux de son entreprise, à partir du jour où il a été clos. Le retour d'un consultant suit celle de l'entreprise plateforme. Supprimer une entreprise supprime les retours d'expérience de ses utilisateurs, ouverts ou clos ; ceux que des consultants ont écrits en travaillant pour elle restent, sans son nom.

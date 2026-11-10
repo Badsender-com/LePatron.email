@@ -22,7 +22,10 @@ jest.mock('../../../packages/server/common/models.common.js', () => ({
   AISkillInvocations: { deleteMany: jest.fn().mockResolvedValue({}) },
   AIPlaygroundScenarios: { updateMany: jest.fn().mockResolvedValue({}) },
   McpFeedbacks: { deleteMany: jest.fn().mockResolvedValue({}) },
-  McpRetexes: { deleteMany: jest.fn().mockResolvedValue({}) },
+  McpRetexes: {
+    deleteMany: jest.fn().mockResolvedValue({}),
+    updateMany: jest.fn().mockResolvedValue({}),
+  },
 }));
 jest.mock('../../../packages/server/mcp/mcp-connections.js', () => ({
   revokeConnections: jest.fn().mockResolvedValue({}),
@@ -52,5 +55,17 @@ describe('deleting a company', () => {
       expect(model.deleteMany).toHaveBeenCalledTimes(1);
       expect(String(model.deleteMany.mock.calls[0][0]._company)).toBe(groupId);
     });
+  });
+
+  it('keeps the retex consultants wrote for it, which belong to the platform company, without its name (ADR 0021)', async () => {
+    const groupId = String(new Types.ObjectId());
+    McpRetexes.updateMany.mockClear();
+
+    await groupService.deleteGroup(groupId, {}, jest.fn());
+
+    expect(McpRetexes.updateMany).toHaveBeenCalledTimes(1);
+    const [filter, update] = McpRetexes.updateMany.mock.calls[0];
+    expect(String(filter._connectedCompany)).toBe(groupId);
+    expect(update).toEqual({ $set: { _connectedCompany: null } });
   });
 });

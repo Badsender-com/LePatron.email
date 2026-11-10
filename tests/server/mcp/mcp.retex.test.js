@@ -235,6 +235,41 @@ describe('the retex loop', () => {
       }
     );
 
+    it("attaches a super admin's retex to the platform company, the company they connected to kept as context (ADR 0021)", async () => {
+      const { retexId } = await call(
+        await asConsultant(f.CLIENT_GROUP),
+        REPORT,
+        LENGTH_DIVERGENCE
+      );
+
+      expect(await listOpen()).toEqual([
+        expect.objectContaining({
+          retexId,
+          author: 'consultant',
+          company: { id: f.PLATFORM_GROUP, name: 'Platform' },
+          connectedTo: { id: f.CLIENT_GROUP, name: 'A client' },
+        }),
+      ]);
+    });
+
+    it("follows the platform company's retention once a super admin's retex is closed, not the client's", async () => {
+      harness.update('groups', f.PLATFORM_GROUP, { logRetentionDays: 200 });
+      const { retexId } = await call(
+        await asConsultant(f.CLIENT_GROUP),
+        REPORT,
+        LENGTH_DIVERGENCE
+      );
+
+      await call(await asConsultant(), DISMISS, {
+        retexId,
+        reason: 'A one-off brand constraint',
+      });
+
+      const [stored] = harness.stored('retex');
+      const days = (stored.expiresAt - Date.now()) / 86400000;
+      expect(Math.round(days)).toBe(200);
+    });
+
     it("keeps a client user's retex the company allows and the user approves", async () => {
       allowRetex();
 
@@ -244,12 +279,12 @@ describe('the retex loop', () => {
       });
 
       expect(answer.kept).toBe(true);
-      expect(await listOpen()).toEqual([
-        expect.objectContaining({
-          author: 'client',
-          company: { id: f.CLIENT_GROUP, name: 'A client' },
-        }),
-      ]);
+      const [item] = await listOpen();
+      expect(item).toMatchObject({
+        author: 'client',
+        company: { id: f.CLIENT_GROUP, name: 'A client' },
+      });
+      expect(item).not.toHaveProperty('connectedTo');
     });
 
     it('keeps an open retex with no expiry', async () => {
@@ -334,7 +369,7 @@ describe('the retex loop', () => {
       const { items } = await call(await asConsultant(), LIST, {});
 
       expect(items.map((item) => item.company.id).sort()).toEqual(
-        [f.CLIENT_GROUP, f.OTHER_GROUP].sort()
+        [f.CLIENT_GROUP, f.PLATFORM_GROUP].sort()
       );
     });
 
