@@ -5,6 +5,7 @@ const createError = require('http-errors');
 const expertiseService = require('../services/expertise.service.js');
 const { parseVersionParam } = require('../services/version-helpers.js');
 const { openTaskSkillsConsuming } = require('../services/audience-opening.js');
+const { assertCopy } = require('../services/skills-copy.service.js');
 
 /**
  * Who is acting, for the `owner` / `createdBy` / `updatedBy` audit fields.
@@ -109,6 +110,8 @@ module.exports = {
   }),
 
   activateVersion: asyncHandler(async (req, res) => {
+    // Keeping on the copy what is published is a copy's (ADR 0019).
+    if ((req.body || {}).keepOnCopy === true) assertCopy();
     res.json(
       await expertiseService.activateVersion(
         req.params.expertiseId,

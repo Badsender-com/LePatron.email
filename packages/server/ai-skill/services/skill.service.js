@@ -35,6 +35,10 @@ const LIST_PROJECTION = {
   audience: 1,
   servedToAssistants: 1,
   activeVersion: 1,
+  // Where it comes from, on a copy (ADR 0019).
+  followedAt: 1,
+  keptOnCopy: 1,
+  copiedFrom: 1,
   owner: 1,
   createdAt: 1,
   updatedAt: 1,

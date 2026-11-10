@@ -1,85 +1,30 @@
 'use strict';
 
 /**
- * A copy follows production (ADR 0019): production answers everything it
- * holds, and a copy (staging, development) applies it.
+ * A copy follows production (ADR 0019): it reads production's answer
+ * (skills-follow.format.js), works out what each item becomes
+ * (skills-follow-apply.js), and writes it here, item by item.
  *
- * Production's answer is the skills export (ADR 0018, format 1), extended
- * for a follow: every item, archived ones included, with its state, its
- * audience and its served-to-assistants mark, its active version and its open
- * draft. Still no history and no owner: what a copy lives is what clients
- * live, not who wrote it.
+ * Each write is conditioned on the item as it was read: an item written
+ * meanwhile, from the back office or by an assistant, fails the follow of
+ * that item rather than be written over. The copy's own work leaves for a
+ * new item before the item it leaves is written.
  */
 
-const {
-  FORMAT,
-  identityOf,
-  versionOfKind,
-  everyItem,
-  byId,
-} = require('./skills-export.service.js');
-const {
-  findActiveVersion,
-  openDraftOf,
-  versionLabel,
-} = require('./version-helpers.js');
-const { Audiences } = require('../constant/skill-constants.js');
-const {
-  Expertises,
-  LePatronSkills,
-  SkillsFollows,
-} = require('../../common/models.common.js');
-const { followedItem, signatureOf } = require('./skills-follow-apply.js');
-const { readProductionAnswer } = require('./skills-follow-answer.js');
+const createError = require('http-errors');
+const logger = require('../../utils/logger.js');
+const ERROR_CODES = require('../../constant/error-codes.js');
+const { SkillNatures } = require('../constant/skill-constants.js');
+const { versionLabel } = require('./version-helpers.js');
+const { plain } = require('./versioned-draft.js');
+const { ENTITIES } = require('./skills-export.service.js');
+const { Expertises } = require('../../common/models.common.js');
+const { KINDS, readProductionAnswer } = require('./skills-follow.format.js');
+const { followedItem, withdrawnItem } = require('./skills-follow-apply.js');
+const { createCopyItem } = require('./skills-copy.service.js');
+const { takeLock, record } = require('./skills-follow-lock.js');
 
-// An item as production answers it to a copy, or null when it holds no
-// version at all: there is nothing to follow.
-function itemForCopies(kind, doc) {
-  const active = findActiveVersion(doc);
-  const draft = openDraftOf(doc);
-  if (!active && !draft) return null;
-  const item = {
-    ...identityOf(kind, doc),
-    status: String(doc.status).toLowerCase(),
-    audience: doc.audience || Audiences.PLATFORM,
-  };
-  if (kind === 'skill') item.servedToAssistants = !!doc.servedToAssistants;
-  if (active) item.version = versionOfKind(kind, active);
-  if (draft) item.draft = versionOfKind(kind, draft);
-  return item;
-}
-
-const itemsForCopies = async (kind, idField) =>
-  (await everyItem(kind))
-    .map((doc) => itemForCopies(kind, doc))
-    .filter(Boolean)
-    .sort(byId(idField));
-
-/**
- * Everything production holds, as a copy follows it: the read route's
- * answer to a read token.
- *
- * @param {Object} [context]
- * @param {string} [context.origin] the instance the export comes from
- * @param {string} [context.by] who reads it: the read token's name
- * @returns {Promise<Object>} a skills export, format 1, extended
- */
-async function exportForCopies({ origin = '', by = '' } = {}) {
-  return {
-    format: FORMAT,
-    origin,
-    exportedAt: new Date().toISOString(),
-    exportedBy: by,
-    expertises: await itemsForCopies('expertise', 'expertiseId'),
-    skills: await itemsForCopies('skill', 'skillId'),
-  };
-}
-
-const KINDS = [
-  { kind: 'expertise', list: 'expertises', idField: 'expertiseId' },
-  { kind: 'skill', list: 'skills', idField: 'skillId' },
-];
-const MODELS = { expertise: () => Expertises, skill: () => LePatronSkills };
+const modelOf = (kind) => ENTITIES[kind].model();
 
 // The version an item arrives at, for the report.
 const labelOf = (item) => {
@@ -89,39 +34,97 @@ const labelOf = (item) => {
     : null;
 };
 
-// One item of production, applied on the copy; answers where it goes in the
-// report.
-async function followOne(kind, idField, item, actor, now) {
-  const model = MODELS[kind]();
-  const doc = await model.findOne({ [idField]: item[idField] }).lean();
-  const result = followedItem(kind, item, doc, now);
-  if (result.kept) return { bucket: 'kept', reason: result.kept };
-  const { fields } = result;
-  if (!doc) {
-    await model.create({
-      [idField]: item[idField],
-      ...fields,
-      owner: actor.id,
-    });
-    return { bucket: 'created' };
-  }
-  if (signatureOf(kind, doc) === signatureOf(kind, { ...doc, ...fields })) {
-    return { bucket: 'upToDate' };
-  }
-  // Through the document, so the model's own rules run on what is written.
-  const stored = await model.findOne({ [idField]: item[idField] });
-  Object.assign(stored, fields);
-  await stored.save();
-  return { bucket: 'updated' };
+const changed = (id) =>
+  createError(409, ERROR_CODES.SKILLS_FOLLOW_ITEM_CHANGED, { id });
+
+// The item as it was read: what a write is conditioned on.
+const asRead = (idField, read) => ({
+  [idField]: read[idField],
+  updatedAt: read.updatedAt || null,
+  versions: { $size: (read.versions || []).length },
+});
+
+// Writes the followed fields over the item read, through the model's own
+// rules (an expertise derives its sections), on the condition that it was
+// not written since.
+async function writeIfUnchanged(kind, doc, read, fields) {
+  const { idField } = ENTITIES[kind];
+  Object.assign(doc, fields);
+  await doc.validate();
+  const written = await modelOf(kind).findOneAndUpdate(
+    asRead(idField, read),
+    { $set: { ...fields, versions: doc.versions.map(plain) } },
+    { new: true }
+  );
+  if (!written) throw changed(read[idField]);
 }
 
-// What exists only on the copy stays, and is said to.
-async function localOnly(kind, idField, answered) {
-  const ids = answered.map((item) => item[idField]);
-  const docs = await MODELS[kind]()
-    .find({ [idField]: { $nin: ids } }, { [idField]: 1 })
-    .lean();
-  return docs.map((doc) => ({ kind, id: doc[idField], reason: 'local_only' }));
+/**
+ * One item production answered, followed on the copy.
+ *
+ * @returns {Promise<Object>} what followedItem says, with the `copyId` of
+ *   the item the copy's own work went to
+ */
+async function followOne(kind, item, { actor, now }) {
+  const model = modelOf(kind);
+  const { idField } = ENTITIES[kind];
+  const doc = await model.findOne({ [idField]: item[idField] });
+  const read = doc && doc.toObject({ virtuals: false });
+  const result = followedItem(kind, item, read, now);
+  if (!result.fields) return result;
+  if (!doc) {
+    try {
+      await model.create({
+        [idField]: item[idField],
+        ...result.fields,
+        owner: actor.id,
+      });
+    } catch (err) {
+      if (err && err.code === 11000) throw changed(item[idField]);
+      throw err;
+    }
+    return result;
+  }
+  const copyId = result.moved.length
+    ? await createCopyItem(kind, read, result.moved, { now, owner: actor.id })
+    : null;
+  try {
+    await writeIfUnchanged(kind, doc, read, result.fields);
+  } catch (err) {
+    // The item stays as it was: so does the copy's work, which stays in it.
+    if (copyId) await model.deleteOne({ [idField]: copyId });
+    throw err;
+  }
+  return { ...result, copyId };
+}
+
+// An item production no longer answers: kept, or removed once the copy's
+// own work on it is moved out.
+async function withdrawOne(kind, read, { actor, now }) {
+  const { idField } = ENTITIES[kind];
+  const result = withdrawnItem(read);
+  if (result.outcome !== 'removed') return result;
+  const copyId = result.moved.length
+    ? await createCopyItem(kind, read, result.moved, { now, owner: actor.id })
+    : null;
+  const { deletedCount } = await modelOf(kind).deleteOne(asRead(idField, read));
+  if (!deletedCount) {
+    if (copyId) await modelOf(kind).deleteOne({ [idField]: copyId });
+    throw changed(read[idField]);
+  }
+  return { ...result, copyId };
+}
+
+// Why an item failed, as a code the page translates; the message stays in
+// the logs.
+function codeOf(err) {
+  if (err && Object.values(ERROR_CODES).includes(err.message)) {
+    return err.message;
+  }
+  if (err && (err.status === 400 || err.name === 'ValidationError')) {
+    return ERROR_CODES.SKILLS_FOLLOW_ITEM_INVALID;
+  }
+  return ERROR_CODES.SKILLS_FOLLOW_ITEM_FAILED;
 }
 
 const emptyReport = () => ({
@@ -129,26 +132,95 @@ const emptyReport = () => ({
   updated: [],
   upToDate: [],
   kept: [],
+  moved: [],
+  removed: [],
   failed: [],
 });
 
-async function record(report, { actor, trigger, startedAt }) {
-  await SkillsFollows.create({
-    ...report,
-    trigger,
-    by: actor.name || '',
-    _by: actor.id || null,
-    startedAt,
-    finishedAt: new Date(),
-  });
-  return report;
+// What one item did, into the report.
+function report(into, entry, result) {
+  const { outcome, reason, productionChanged, copyId } = result;
+  if (outcome === 'kept') {
+    into.kept.push({
+      ...entry,
+      reason,
+      ...(productionChanged === undefined ? {} : { productionChanged }),
+    });
+    return;
+  }
+  into[outcome].push(entry);
+  if (copyId) into.moved.push({ ...entry, copyId });
+  (result.removed || []).forEach((version) =>
+    into.removed.push({ ...entry, version })
+  );
+}
+
+// The expertises a skill's versions consume that the copy does not hold.
+function missingExpertises(item, present) {
+  const consumed = [item.version, item.draft]
+    .filter((v) => v && v.nature === SkillNatures.TASK)
+    .flatMap((v) => v.consumedExpertiseIds || []);
+  return [...new Set(consumed)].filter((id) => !present.has(id));
+}
+
+async function applyKind({ kind, list, idField }, answer, into, context) {
+  const present =
+    kind === 'skill'
+      ? new Set(
+          (await Expertises.find({}, { expertiseId: 1 }).lean()).map(
+            (doc) => doc.expertiseId
+          )
+        )
+      : null;
+  for (const item of answer[list]) {
+    const entry = { kind, id: item[idField], version: labelOf(item) };
+    if (present) {
+      const missing = missingExpertises(item, present);
+      if (missing.length) {
+        entry.warnings = [
+          { code: 'missing_expertises', expertiseIds: missing },
+        ];
+      }
+    }
+    try {
+      // eslint-disable-next-line no-await-in-loop
+      report(into, entry, await followOne(kind, item, context));
+    } catch (err) {
+      logger.warn(`[skills-follow] ${kind} ${entry.id}: ${err.message}`);
+      into.failed.push({ ...entry, code: codeOf(err) });
+    }
+  }
+  // An item production answered that this copy could not read is not
+  // withdrawn: it failed. When its id cannot be read either, nothing is.
+  const rejected = answer.rejected.filter((r) => r.kind === kind);
+  if (rejected.some(({ id }) => !id)) return;
+  // Nor is an item this follow just made of the copy's work.
+  const answered = [
+    ...answer[list].map((item) => item[idField]),
+    ...rejected.map(({ id }) => id),
+    ...into.moved.filter((m) => m.kind === kind).map(({ copyId }) => copyId),
+  ];
+  const withdrawn = await modelOf(kind)
+    .find({ [idField]: { $nin: answered } })
+    .lean();
+  for (const read of withdrawn) {
+    const entry = { kind, id: read[idField], version: null };
+    try {
+      // eslint-disable-next-line no-await-in-loop
+      report(into, entry, await withdrawOne(kind, read, context));
+    } catch (err) {
+      logger.warn(`[skills-follow] ${kind} ${entry.id}: ${err.message}`);
+      into.failed.push({ ...entry, code: codeOf(err) });
+    }
+  }
 }
 
 /**
- * Follows production (ADR 0019): reads its answer whole, then applies it,
- * expertises first, each item on its own, so one failing stops nothing else.
- * An answer that cannot be fetched or read writes nothing. Each follow is
- * recorded.
+ * Follows production (ADR 0019): one follow at a time, on this instance and
+ * any other sharing its database; reads production's answer, then applies
+ * it, expertises first, each item on its own, so one failing stops nothing
+ * else. An answer that cannot be fetched or read writes nothing. Each
+ * follow is recorded.
  *
  * @param {Object} options
  * @param {() => Promise<Object>} options.fetchExport production's answer
@@ -156,81 +228,43 @@ async function record(report, { actor, trigger, startedAt }) {
  * @param {'manual'|'night'} [options.trigger] a person's button, or the night
  * @returns {Promise<Object>} the report: `status` (`succeeded`, `partial`,
  *   `failed`), `origin`, and the lists `created`, `updated`, `upToDate`,
- *   `kept` (with a `reason`) and `failed` (with a `message`), each of
- *   `{ kind, id, version }`
+ *   `kept` (with a `reason`, and `productionChanged` for an item kept on the
+ *   copy), `moved` (with the `copyId` the copy's work went to), `removed`
+ *   (with the `version` removed, or none for the whole item) and `failed`
+ *   (with a `code`), each of `{ kind, id, version }`, a skill's with the
+ *   `warnings` of the expertises it consumes and the copy lacks
+ * @throws {HttpError} 409 SKILLS_FOLLOW_RUNNING while another follow runs
  */
 async function followProduction({ fetchExport, actor, trigger = 'manual' }) {
   const startedAt = new Date();
+  const lock = await takeLock({ actor, trigger, startedAt });
   let answer;
   try {
     answer = readProductionAnswer(await fetchExport());
   } catch (err) {
-    return record(
-      {
-        ...emptyReport(),
-        status: 'failed',
-        // A word the page translates; anything unforeseen reads "unreachable".
-        reason: err.reason || 'unreachable',
-        message: err.message,
-      },
-      { actor, trigger, startedAt }
-    );
+    const reason = err.reason || 'unreachable';
+    return record(lock, {
+      ...emptyReport(),
+      status: 'failed',
+      // A word and a code the page translates; anything unforeseen reads
+      // "unreachable".
+      reason,
+      code: err.reason ? err.code : ERROR_CODES.SKILLS_FOLLOW_UNREACHABLE,
+      message: err.message,
+    });
   }
 
-  const report = { ...emptyReport(), origin: answer.origin };
-  for (const { kind, list, idField } of KINDS) {
-    for (const item of answer[list]) {
-      const entry = { kind, id: item[idField], version: labelOf(item) };
-      try {
-        // eslint-disable-next-line no-await-in-loop
-        const { bucket, reason } = await followOne(
-          kind,
-          idField,
-          item,
-          actor,
-          startedAt
-        );
-        report[bucket].push(reason ? { ...entry, reason } : entry);
-      } catch (err) {
-        report.failed.push({ ...entry, message: err.message });
-      }
-    }
+  const into = { ...emptyReport(), origin: answer.origin };
+  answer.rejected.forEach(({ kind, id, code, field }) =>
+    into.failed.push({ kind, id, version: null, code, field })
+  );
+  const context = { actor, now: startedAt };
+  for (const kind of KINDS) {
     // eslint-disable-next-line no-await-in-loop
-    report.kept.push(...(await localOnly(kind, idField, answer[list])));
+    await applyKind(kind, answer, into, context);
   }
-  report.status = report.failed.length ? 'partial' : 'succeeded';
-  return record(report, { actor, trigger, startedAt });
+  into.status = into.failed.length ? 'partial' : 'succeeded';
+  return record(lock, into);
 }
 
-/**
- * The last follow, as the copy's page shows it: how it ended, when, by whom,
- * how many items each outcome holds, and the items that failed.
- *
- * @returns {Promise<Object|null>}
- */
-async function lastFollow() {
-  const last = await SkillsFollows.findOne({}).sort({ startedAt: -1 }).lean();
-  if (!last) return null;
-  const count = (list) => (list || []).length;
-  return {
-    status: last.status,
-    trigger: last.trigger || 'manual',
-    reason: last.reason || null,
-    message: last.message || null,
-    origin: last.origin || '',
-    by: last.by,
-    at: last.finishedAt,
-    created: count(last.created),
-    updated: count(last.updated),
-    upToDate: count(last.upToDate),
-    kept: count(last.kept),
-    failed: count(last.failed),
-    failures: (last.failed || []).map(({ kind, id, message }) => ({
-      kind,
-      id,
-      message,
-    })),
-  };
-}
-
-module.exports = { exportForCopies, followProduction, lastFollow };
+module.exports = { followProduction };

@@ -16,6 +16,7 @@ const {
   MaxSkillIdLength,
 } = require('../constant/skill-constants.js');
 const { newItemAudience } = require('../services/audience.js');
+const { followFields } = require('./follow-fields.js');
 
 const INPUT_PLACEHOLDER_REGEX = /\{\{\s*input\b[^}]*\}\}/;
 
@@ -77,6 +78,9 @@ const SkillVersionSchema = new Schema(
     updatedAt: { type: Date, default: Date.now },
     updatedBy: { type: ObjectId, ref: UserModel },
     activatedAt: { type: Date, default: null },
+    // When a follow of production brought it (ADR 0019): unset on a version
+    // written on this instance.
+    followedAt: { type: Date },
     testCases: { type: [TestCaseSchema], default: [] },
   },
   { _id: false }
@@ -123,6 +127,7 @@ const LePatronSkillSchema = new Schema(
     // task skill always does, within its audience. Read only while the active
     // version is a feature skill's.
     servedToAssistants: { type: Boolean, default: false },
+    ...followFields(),
     activeVersion: {
       type: ActiveVersionSchema,
       default: () => ({ major: null, minor: 0 }),

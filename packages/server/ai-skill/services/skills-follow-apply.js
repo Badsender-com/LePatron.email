@@ -2,26 +2,34 @@
 
 /**
  * What following production does to one skill or expertise of a copy
- * (ADR 0019), worked out without writing: the fields the copy takes, or why
- * it keeps its own.
+ * (ADR 0019), worked out without writing.
  *
- * - Production's active version arrives active, the copy's former one is
- *   archived; production's open draft arrives a draft.
- * - The state, the audience and the served-to-assistants mark are
- *   production's.
- * - No version goes back: an item whose active version is ahead of
- *   production's is kept as it is.
- * - A local draft newer than production's is never overwritten.
+ * - An item that came from production follows it in everything: its active
+ *   version and its open draft at production's numbers, its state, its
+ *   audience, its served-to-assistants mark and what it is. Each version a
+ *   follow brings is marked (`followedAt`).
+ * - What the copy wrote is never lost. A version the copy wrote, or
+ *   received and then changed, leaves the item for a new item of the copy,
+ *   which no follow touches, when production would replace it: its draft,
+ *   when production brings one or publishes at or past its number, a
+ *   version of the number production brings, and the version the copy
+ *   published.
+ * - A draft the copy received, which production no longer has, is removed.
+ * - An item kept on the copy is not touched; the follow says whether
+ *   production changed since the copy last followed it.
  */
 
-const { findActiveVersion, openDraftOf } = require('./version-helpers.js');
-const skillService = require('./skill.service.js');
-const expertiseService = require('./expertise.service.js');
+const crypto = require('crypto');
+const { isDeepStrictEqual } = require('util');
+const {
+  compareVersions,
+  findActiveVersion,
+  laterThan,
+  versionLabel,
+} = require('./version-helpers.js');
+const { ENTITIES, contentOf } = require('./skills-export.service.js');
+const { SkillStatuses } = require('../constant/skill-constants.js');
 
-const CONTENT_FIELDS = {
-  expertise: expertiseService.VERSION_CONTENT_FIELDS,
-  skill: skillService.VERSION_CONTENT_FIELDS,
-};
 const IDENTITY_FIELDS = {
   expertise: [
     'title',
@@ -39,104 +47,113 @@ const IDENTITY_FIELDS = {
 const copy = (value) =>
   value === undefined ? undefined : JSON.parse(JSON.stringify(value));
 
-// -1, 0 or 1 as version `a` stands to version `b`, both stored versions.
-function compare(a, b) {
-  if (a.versionMajor !== b.versionMajor) {
-    return a.versionMajor > b.versionMajor ? 1 : -1;
-  }
-  if (a.versionMinor === b.versionMinor) return 0;
-  return a.versionMinor > b.versionMinor ? 1 : -1;
-}
-
 const numberOf = ({ major, minor }) => ({
   versionMajor: major,
   versionMinor: minor,
 });
-const sameNumber = (a, b) => compare(a, b) === 0;
+const sameNumber = (a, b) => compareVersions(a, b) === 0;
 
-// The content a version holds, as production answered it.
-function contentOf(kind, answered) {
-  const content = {};
-  CONTENT_FIELDS[kind].forEach(({ name, default: empty }) => {
-    const value = answered[name];
-    content[name] = value === undefined || value === null ? empty() : value;
-  });
-  content.changelog = answered.changelog || '';
-  content.releaseNotes = answered.releaseNotes || '';
-  return copy(content);
+// What a version says, its release notes included, whatever its form: as
+// stored, or as production answered it.
+const releasedContentOf = (kind, version) => ({
+  ...contentOf(version, ENTITIES[kind].contentFields),
+  changelog: version.changelog || '',
+  releaseNotes: version.releaseNotes || '',
+});
+const sameContent = (kind, a, b) =>
+  isDeepStrictEqual(releasedContentOf(kind, a), releasedContentOf(kind, b));
+
+const time = (date) => (date ? new Date(date).getTime() : 0);
+
+/**
+ * Whether the copy wrote this version: never brought by a follow, or
+ * changed on the copy since a follow brought it.
+ *
+ * @param {Object} version as stored
+ * @returns {boolean}
+ */
+const isCopyWork = (version) =>
+  !version.followedAt || time(version.updatedAt) > time(version.followedAt);
+
+// A JSON with its keys in order, whatever order an object holds them in.
+function canonical(value) {
+  if (Array.isArray(value)) return `[${value.map(canonical).join(',')}]`;
+  if (value && typeof value === 'object') {
+    return `{${Object.keys(value)
+      .sort()
+      .filter((key) => value[key] !== undefined)
+      .map((key) => `${JSON.stringify(key)}:${canonical(value[key])}`)
+      .join(',')}}`;
+  }
+  return JSON.stringify(value);
+}
+
+/**
+ * Production's item, as a digest: what tells an item kept on the copy
+ * whether production changed since the copy last followed it.
+ *
+ * @param {Object} item as production answered it
+ * @returns {string}
+ */
+const digestOf = (item) =>
+  crypto.createHash('sha256').update(canonical(item)).digest('hex');
+
+// The versions production brings, with the status each arrives at.
+const incomingOf = (item) =>
+  [
+    item.version && { answered: item.version, status: SkillStatuses.ACTIVE },
+    item.draft && { answered: item.draft, status: SkillStatuses.DRAFT },
+  ].filter(Boolean);
+
+// Whether production's version, arriving at `status`, is the stored one as
+// a follow left it.
+const alreadyFollowed = (kind, stored, { answered, status }) =>
+  !!stored &&
+  !isCopyWork(stored) &&
+  stored.status === status &&
+  sameContent(kind, stored, answered);
+
+// Whether a version the copy wrote leaves the item: when production would
+// write over it, or leave it behind.
+function leaves(kind, version, item, { localActive }) {
+  const incoming = incomingOf(item).find(({ answered }) =>
+    sameNumber(version, numberOf(answered))
+  );
+  if (incoming) return !sameContent(kind, version, incoming.answered);
+  if (version === localActive) return true;
+  if (version.status !== SkillStatuses.DRAFT) return false;
+  return (
+    !!item.draft ||
+    (!!item.version && compareVersions(numberOf(item.version), version) >= 0)
+  );
 }
 
 // Production's version, written over the copy's one of the same number, or
-// added; its history on the copy (creation) is kept.
-function place(kind, versions, answered, status, now) {
+// added, marked as followed. Its creation on the copy is kept.
+function place(kind, versions, incoming, now) {
+  const { answered, status } = incoming;
   const number = numberOf(answered);
   const index = versions.findIndex((v) => sameNumber(v, number));
-  const previous = index === -1 ? { createdAt: now } : versions[index];
+  const previous = index === -1 ? null : versions[index];
+  if (alreadyFollowed(kind, previous, incoming)) return;
+  const at = laterThan(previous && previous.updatedAt, now);
   const version = {
-    ...previous,
+    ...(previous || { createdAt: at }),
     ...number,
-    ...contentOf(kind, answered),
+    ...copy(releasedContentOf(kind, answered)),
     status,
-    updatedAt: now,
+    updatedAt: at,
+    followedAt: at,
   };
-  if (status === 'ACTIVE' && !previous.activatedAt) version.activatedAt = now;
+  if (status === SkillStatuses.ACTIVE && (!previous || !previous.activatedAt)) {
+    version.activatedAt = at;
+  }
   if (index === -1) versions.push(version);
   else versions.splice(index, 1, version);
 }
 
-/**
- * The document a copy holds for an item production answered, once followed.
- *
- * @param {'skill'|'expertise'} kind
- * @param {Object} item the item as production answered it
- * @param {Object|null} doc the copy's document, lean, or null
- * @param {Date} now
- * @returns {{ kept: string } | { fields: Object }} `kept` with its reason, or
- *   the fields to write
- */
-function followedItem(kind, item, doc, now) {
-  const versions = copy((doc && doc.versions) || []);
-  const local = doc && findActiveVersion(doc);
-  let activeVersion = (doc && copy(doc.activeVersion)) || {
-    major: null,
-    minor: 0,
-  };
-
-  if (local && (!item.version || compare(local, numberOf(item.version)) > 0)) {
-    return { kept: 'copy_newer' };
-  }
-  if (item.version) {
-    if (local && !sameNumber(local, numberOf(item.version))) {
-      versions.find((v) => sameNumber(v, local)).status = 'ARCHIVED';
-    }
-    place(kind, versions, item.version, 'ACTIVE', now);
-    activeVersion = { major: item.version.major, minor: item.version.minor };
-  }
-  if (item.draft) {
-    const followed = { versions, activeVersion };
-    const active = findActiveVersion(followed);
-    const draft = numberOf(item.draft);
-    const ahead = !active || compare(draft, active) > 0;
-    const open = openDraftOf(followed);
-    if (ahead && (!open || compare(open, draft) <= 0)) {
-      place(kind, versions, item.draft, 'DRAFT', now);
-    }
-  }
-
-  const fields = {
-    status: String(item.status).toUpperCase(),
-    audience: item.audience,
-    activeVersion,
-    versions,
-  };
-  IDENTITY_FIELDS[kind].forEach((field) => {
-    if (item[field] !== undefined) fields[field] = copy(item[field]);
-  });
-  return { fields };
-}
-
-// What a follow compares to tell an item that changed from one already up
-// to date: the fields it writes, without the dates it stamps.
+// What a follow compares to tell an item that changed from one up to date:
+// the fields it writes, not the dates it stamps.
 function signatureOf(kind, fields) {
   const versionFields = [
     'versionMajor',
@@ -144,16 +161,130 @@ function signatureOf(kind, fields) {
     'status',
     'changelog',
     'releaseNotes',
-    ...CONTENT_FIELDS[kind].map(({ name }) => name),
+    ...ENTITIES[kind].contentFields.map(({ name }) => name),
   ];
   return JSON.stringify([
-    ...['status', 'audience', 'activeVersion', ...IDENTITY_FIELDS[kind]].map(
-      (field) => fields[field] ?? null
-    ),
-    (fields.versions || []).map((version) =>
-      versionFields.map((field) => version[field] ?? null)
-    ),
+    ...[
+      'status',
+      'audience',
+      'activeVersion',
+      'followedDigest',
+      ...IDENTITY_FIELDS[kind],
+    ].map((field) => fields[field] ?? null),
+    (fields.versions || []).map((version) => [
+      ...versionFields.map((field) => version[field] ?? null),
+      isCopyWork(version),
+    ]),
   ]);
 }
 
-module.exports = { followedItem, signatureOf };
+/**
+ * What a follow does to an item production answered.
+ *
+ * @param {'skill'|'expertise'} kind
+ * @param {Object} item the item as production answered it
+ * @param {Object|null} doc the copy's item, plain, or null
+ * @param {Date} now
+ * @returns {Object} `outcome`: `kept` (with `reason` and
+ *   `productionChanged`), `upToDate`, or `created` / `updated` with the
+ *   `fields` to write, the versions of the copy's own work that leave it
+ *   (`moved`) and the numbers of the drafts removed (`removed`)
+ */
+function followedItem(kind, item, doc, now) {
+  const followedDigest = digestOf(item);
+  if (doc && doc.keptOnCopy) {
+    return {
+      outcome: 'kept',
+      reason: 'kept_on_copy',
+      productionChanged: doc.followedDigest !== followedDigest,
+    };
+  }
+  const stored = copy((doc && doc.versions) || []);
+  const localActive = doc && findActiveVersion({ ...doc, versions: stored });
+  const moved = [];
+  const removed = [];
+  const versions = stored.filter((version) => {
+    if (isCopyWork(version)) {
+      if (!leaves(kind, version, item, { localActive })) return true;
+      moved.push(version);
+      return false;
+    }
+    const brought = incomingOf(item).some(({ answered }) =>
+      sameNumber(version, numberOf(answered))
+    );
+    if (brought || version.status !== SkillStatuses.DRAFT) return true;
+    removed.push(versionLabel(version));
+    return false;
+  });
+  // The copy's active version, which production does not keep active.
+  versions.forEach((version) => {
+    if (
+      version.status === SkillStatuses.ACTIVE &&
+      !(item.version && sameNumber(version, numberOf(item.version)))
+    ) {
+      // eslint-disable-next-line no-param-reassign
+      version.status = SkillStatuses.ARCHIVED;
+    }
+  });
+  incomingOf(item).forEach((incoming) => place(kind, versions, incoming, now));
+
+  const fields = {
+    status: String(item.status).toUpperCase(),
+    audience: item.audience,
+    activeVersion: item.version
+      ? { major: item.version.major, minor: item.version.minor }
+      : { major: null, minor: 0 },
+    versions,
+    followedDigest,
+  };
+  IDENTITY_FIELDS[kind].forEach((field) => {
+    if (item[field] !== undefined) fields[field] = copy(item[field]);
+  });
+  if (
+    doc &&
+    !moved.length &&
+    !removed.length &&
+    signatureOf(kind, doc) === signatureOf(kind, { ...doc, ...fields })
+  ) {
+    return { outcome: 'upToDate' };
+  }
+  return {
+    outcome: doc ? 'updated' : 'created',
+    fields: { ...fields, followedAt: now },
+    moved,
+    removed,
+  };
+}
+
+/**
+ * What a follow does to an item of the copy production no longer answers.
+ * An item the copy wrote, or kept, stays; one a follow brought and that
+ * production never published is removed, the copy's own work on it leaving
+ * for a new item first.
+ *
+ * @param {Object} doc the copy's item, plain
+ * @returns {Object} `outcome`: `kept` (with `reason`, and
+ *   `productionChanged` for an item kept on the copy), or `removed` with the
+ *   versions of the copy's work that leave it (`moved`)
+ */
+function withdrawnItem(doc) {
+  if (doc.keptOnCopy) {
+    return { outcome: 'kept', reason: 'kept_on_copy', productionChanged: true };
+  }
+  const versions = doc.versions || [];
+  const published = versions.some(
+    (version) => !isCopyWork(version) && version.status !== SkillStatuses.DRAFT
+  );
+  if (!doc.followedAt || published) {
+    return { outcome: 'kept', reason: 'local_only' };
+  }
+  return { outcome: 'removed', moved: copy(versions.filter(isCopyWork)) };
+}
+
+module.exports = {
+  IDENTITY_FIELDS,
+  followedItem,
+  withdrawnItem,
+  isCopyWork,
+  digestOf,
+};

@@ -319,6 +319,9 @@ function createVersionedEntityService({
    * write (ADR 0013), so a publication never stands half done.
    * `payload.updatedAt`, when given, is the update date of the draft the
    * screen read: a draft written since is not published unread (readAtOf).
+   * `payload.keepOnCopy`, on a copy, keeps an item that follows production
+   * on the copy in the same write (ADR 0019): the next follow leaves the
+   * version published here as it is.
    */
   async function activateVersion(id, { major, minor }, payload = {}, userId) {
     const doc = await getDoc(id);
@@ -359,6 +362,11 @@ function createVersionedEntityService({
     };
     doc.status = SkillStatuses.ACTIVE;
     if (payload.openToAll === true) doc.audience = Audiences.ALL;
+    if (payload.keepOnCopy === true && doc.followedAt) {
+      doc.keptOnCopy = true;
+      doc.keptOnCopyAt = now;
+      doc._keptOnCopyBy = userId;
+    }
     await saveIfUnchanged(doc, version, readAt);
     return doc;
   }

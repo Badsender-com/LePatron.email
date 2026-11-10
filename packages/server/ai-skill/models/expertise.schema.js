@@ -14,6 +14,7 @@ const {
   MaxSkillIdLength,
 } = require('../constant/skill-constants.js');
 const { newItemAudience } = require('../services/audience.js');
+const { followFields } = require('./follow-fields.js');
 
 const SectionSchema = new Schema(
   {
@@ -46,6 +47,9 @@ const ExpertiseVersionSchema = new Schema(
     updatedAt: { type: Date, default: Date.now },
     updatedBy: { type: ObjectId, ref: UserModel },
     activatedAt: { type: Date, default: null },
+    // When a follow of production brought it (ADR 0019): unset on a version
+    // written on this instance.
+    followedAt: { type: Date },
   },
   { _id: false }
 );
@@ -98,6 +102,7 @@ const ExpertiseSchema = new Schema(
       enum: AudienceValues,
       default: newItemAudience,
     },
+    ...followFields(),
     activeVersion: {
       type: ActiveVersionSchema,
       default: () => ({ major: null, minor: 0 }),

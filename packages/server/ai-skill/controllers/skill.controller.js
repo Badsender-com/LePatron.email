@@ -10,6 +10,7 @@ const { listSchemaIds, missingSchemaIds } = require('../schemas');
 const { describeSchema } = require('../schemas/describe-schema.js');
 const { templateWarnings } = require('../services/template-coherence.js');
 const { SkillNatures } = require('../constant/skill-constants.js');
+const { assertCopy } = require('../services/skills-copy.service.js');
 
 /**
  * Who is acting, for the `owner` / `createdBy` / `updatedBy` audit fields.
@@ -169,6 +170,8 @@ module.exports = {
 
   activateVersion: asyncHandler(async (req, res) => {
     const { major, minor } = versionFromParam(req);
+    // Keeping on the copy what is published is a copy's (ADR 0019).
+    if ((req.body || {}).keepOnCopy === true) assertCopy();
     const { skill, warnings } = await skillService.activateVersion(
       req.params.skillId,
       { major, minor },

@@ -10,6 +10,10 @@ const invocation = require('./controllers/invocation.controller.js');
 const skillsExport = require('./controllers/skills-export.controller.js');
 const skillsSource = require('./controllers/skills-source.controller.js');
 const skillsFollow = require('./controllers/skills-follow.controller.js');
+const {
+  skillCopies,
+  expertiseCopies,
+} = require('./controllers/skills-copy.controller.js');
 const { createRateLimiter, clientIp } = require('../utils/rate-limit.js');
 
 const skillsRouter = express.Router();
@@ -50,6 +54,10 @@ skillsRouter.post(
   skill.activateVersion
 );
 skillsRouter.post('/:skillId/archive', skill.archiveSkill);
+// On a copy: an item kept on the copy, or a version duplicated (ADR 0019).
+skillsRouter.post('/:skillId/keep-on-copy', skillCopies.keep);
+skillsRouter.delete('/:skillId/keep-on-copy', skillCopies.followAgain);
+skillsRouter.post('/:skillId/duplicate-on-copy', skillCopies.duplicate);
 
 const expertiseRouter = express.Router();
 expertiseRouter.use(GUARD_ADMIN);
@@ -88,6 +96,15 @@ expertiseRouter.post(
   expertise.activateVersion
 );
 expertiseRouter.post('/:expertiseId/archive', expertise.archiveExpertise);
+expertiseRouter.post('/:expertiseId/keep-on-copy', expertiseCopies.keep);
+expertiseRouter.delete(
+  '/:expertiseId/keep-on-copy',
+  expertiseCopies.followAgain
+);
+expertiseRouter.post(
+  '/:expertiseId/duplicate-on-copy',
+  expertiseCopies.duplicate
+);
 
 const invocationsRouter = express.Router();
 invocationsRouter.use(GUARD_ADMIN);
