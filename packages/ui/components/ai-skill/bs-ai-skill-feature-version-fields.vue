@@ -242,17 +242,17 @@ export default {
   }
 }
 .placeholder-required {
-  color: var(--v-error-base, #d32f2f);
+  color: var(--v-error-base);
   font-weight: 600;
 }
 .placeholder-chip {
   cursor: pointer;
 }
 .placeholder-copied {
-  color: var(--v-success-base, #4caf50);
+  color: var(--v-success-base);
 }
 .placeholder-copy-failed {
   display: block;
-  color: var(--v-error-base, #d32f2f);
+  color: var(--v-error-base);
 }
 </style>

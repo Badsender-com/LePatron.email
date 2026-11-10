@@ -338,6 +338,6 @@ export default {
   padding: 0 1.5rem;
 }
 .section-row {
-  border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+  border-bottom: 1px solid var(--gray-100);
 }
 </style>

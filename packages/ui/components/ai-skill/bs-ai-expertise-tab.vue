@@ -299,7 +299,7 @@ export default {
 <style lang="scss" scoped>
 .tab-intro {
   font-size: 0.875rem;
-  color: rgba(0, 0, 0, 0.6);
+  color: var(--gray-700);
   max-width: 760px;
   margin-bottom: 1.25rem;
   line-height: 1.5;
@@ -318,6 +318,6 @@ export default {
   max-width: 280px;
 }
 .category-chip {
-  color: rgba(0, 0, 0, 0.75);
+  color: var(--gray-800);
 }
 </style>
