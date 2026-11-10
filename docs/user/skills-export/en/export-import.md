@@ -42,7 +42,7 @@ An item is blocked when:
 - **it is archived here;**
 - **its schema does not exist on this instance:** a skill names a schema that lives in the code. The instance is not up to date.
 
-A task skill missing an expertise, both here and in the file, is imported anyway, with a warning: it reads, but without that expertise.
+A task skill consuming an expertise missing both here and from the file is imported anyway, with a warning in the preview. The report says it again, and also warns when that expertise was in the file but was not imported, because it was unchecked or failed. Its draft cannot be published while the expertise is missing: import it, or create it with the same id, then publish.
 
 A skill whose active version has another nature here (task or feature) is imported as an **update**, with a warning: the imported draft keeps the nature of the file's version, and publishing it changes the skill's nature.
 

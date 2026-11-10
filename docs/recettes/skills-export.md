@@ -49,6 +49,7 @@ Sur B, publier le brouillon de X importé à l'étape 3 : sans version active ic
 8. **Autre nature :** dans un fichier, passer la `nature` du skill de tâche à `feature`, et son numéro à une version plus haute que toutes celles qu'il a sur B : **Mise à jour**, avec l'avertissement « Autre nature ici : la version importée sera un brouillon « Skill de fonctionnalité », et la publier changera la nature de ce skill ». Après l'import, le brouillon a la nature `feature`, et la version active de B garde la sienne.
 9. **Fichier mal formé :** une catégorie inconnue, un `body` qui n'est pas du texte, un même élément deux fois : le fichier est refusé avant l'aperçu.
 10. **Version refusée par le modèle :** une expertise nouvelle dont deux sections ont le même identifiant (`## [a] Un` et `## [a] Deux`) : l'import la met en échec avec la raison, et elle n'apparaît pas dans la liste.
+11. **Expertise manquante :** sur une instance qui n'a ni le skill de tâche ni ses expertises (une B vide pour les skills, comme avant l'étape 3), importer le fichier de l'étape 1.2 (le skill de tâche et X, sans Y). L'aperçu porte l'avertissement « Expertises absentes ici et du fichier : Y », et le skill de tâche reste coché. Décocher X, puis importer : le compte-rendu porte l'avertissement pour X et Y, et la publication du brouillon est refusée, « Ces Expertises consommées n'existent pas », pour X et Y. Importer X et Y (fichier de l'étape 1.4, elles seules cochées) : la publication passe.
 
 ## 5. Droits
 

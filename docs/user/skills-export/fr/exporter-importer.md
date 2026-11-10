@@ -42,7 +42,7 @@ Un élément est bloqué quand :
 - **il est archivé ici ;**
 - **son schéma n'existe pas sur cette instance :** un skill nomme un schéma qui est dans le code. L'instance n'est pas à jour.
 
-Un skill de tâche dont une expertise manque, à la fois ici et dans le fichier, s'importe quand même, avec un avertissement : il se lit, mais il lui manquera cette expertise.
+Un skill de tâche qui consomme une expertise absente à la fois d'ici et du fichier s'importe quand même, avec un avertissement dans l'aperçu. Le compte-rendu le redit, et prévient aussi quand cette expertise était dans le fichier sans avoir été importée, parce que décochée ou en échec. Son brouillon ne peut pas être publié tant que l'expertise manque : importez-la, ou créez-la avec le même identifiant, puis publiez.
 
 Un skill dont la version active a une autre nature ici (tâche ou fonctionnalité) s'importe en **mise à jour**, avec un avertissement : le brouillon importé garde la nature de la version du fichier, et le publier change la nature du skill.
 
