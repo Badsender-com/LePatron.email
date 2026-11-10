@@ -62,6 +62,69 @@ describe('skill.service', () => {
       expect(result.page).toBe(2);
       expect(result.pageSize).toBe(10);
     });
+
+    // The export bar reads there what a selected task skill brings (ADR
+    // 0018), without reading each skill: the nature and the consumed
+    // expertises of the active version, and never the versions themselves.
+    it('gives the nature and consumed expertises of the active version', async () => {
+      LePatronSkills.find.mockReturnValue(
+        mockChainable([
+          {
+            skillId: 'task',
+            activeVersion: { major: 2, minor: 0 },
+            versions: [
+              {
+                versionMajor: 1,
+                versionMinor: 0,
+                nature: 'FEATURE',
+                consumedExpertiseIds: [],
+              },
+              {
+                versionMajor: 2,
+                versionMinor: 0,
+                nature: 'TASK',
+                consumedExpertiseIds: ['tone', 'brand'],
+              },
+              {
+                versionMajor: 2,
+                versionMinor: 1,
+                nature: 'TASK',
+                consumedExpertiseIds: ['draft-only'],
+              },
+            ],
+          },
+          {
+            skillId: 'draft',
+            activeVersion: { major: null, minor: 0 },
+            versions: [{ versionMajor: 1, versionMinor: 0, nature: 'TASK' }],
+          },
+        ])
+      );
+      LePatronSkills.countDocuments.mockResolvedValue(2);
+
+      const { items } = await skillService.listSkills();
+
+      const projection = LePatronSkills.find.mock.calls[0][1];
+      expect(projection).not.toHaveProperty('versions');
+      expect(projection).toMatchObject({
+        'versions.versionMajor': 1,
+        'versions.versionMinor': 1,
+        'versions.nature': 1,
+        'versions.consumedExpertiseIds': 1,
+      });
+      expect(items).toEqual([
+        {
+          skillId: 'task',
+          activeVersion: {
+            major: 2,
+            minor: 0,
+            nature: 'TASK',
+            consumedExpertiseIds: ['tone', 'brand'],
+          },
+        },
+        { skillId: 'draft', activeVersion: { major: null, minor: 0 } },
+      ]);
+    });
   });
 
   describe('createSkill', () => {

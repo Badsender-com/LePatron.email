@@ -37,7 +37,29 @@ const LIST_PROJECTION = {
   owner: 1,
   createdAt: 1,
   updatedAt: 1,
+  // Only what tells the active version apart and what it consumes, never the
+  // content of the history.
+  'versions.versionMajor': 1,
+  'versions.versionMinor': 1,
+  'versions.nature': 1,
+  'versions.consumedExpertiseIds': 1,
 };
+
+// A skill of the list: its active version carries its nature and the
+// expertises it consumes, which the export bar shows (ADR 0018); the
+// versions stay out.
+function listItemOf({ versions, ...skill }) {
+  const active = findActiveVersion({ ...skill, versions });
+  if (!active) return skill;
+  return {
+    ...skill,
+    activeVersion: {
+      ...skill.activeVersion,
+      nature: active.nature,
+      consumedExpertiseIds: active.consumedExpertiseIds || [],
+    },
+  };
+}
 
 async function listSkills({ category, status, page = 1, pageSize = 50 } = {}) {
   const query = {};
@@ -53,7 +75,12 @@ async function listSkills({ category, status, page = 1, pageSize = 50 } = {}) {
       .lean(),
     LePatronSkills.countDocuments(query),
   ]);
-  return { items, total, page: Math.floor(skip / limit) + 1, pageSize: limit };
+  return {
+    items: items.map(listItemOf),
+    total,
+    page: Math.floor(skip / limit) + 1,
+    pageSize: limit,
+  };
 }
 
 // Delegated to the shared lifecycle (see `versioned` below) so the lookup and
