@@ -3,6 +3,7 @@
 const {
   scanInvocations,
   loadManifests,
+  declaredIdsOf,
 } = require('../../../scripts/check-skill-usage');
 
 describe('check-skill-usage script', () => {
@@ -21,5 +22,14 @@ describe('check-skill-usage script', () => {
     // guards against accidentally regressing the exclusion (which would
     // produce false-positive undeclared invocations on every run).
     expect(map.size).toBe(0);
+  });
+
+  it('declaredIdsOf reads a skill named by its id or as an object', () => {
+    const { skillIds } = declaredIdsOf([
+      { manifest: { usedSkills: ['translate-email'] } },
+      { manifest: { usedSkills: [{ skillId: 'generate-subject' }] } },
+    ]);
+
+    expect([...skillIds]).toEqual(['translate-email', 'generate-subject']);
   });
 });
