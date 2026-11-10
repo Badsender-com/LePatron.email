@@ -30,13 +30,20 @@ Sans l'un des deux, rien n'est envoyé, et l'assistant vous dit pourquoi. Si l'e
 
 Votre assistant envoie vos retours d'expérience au fil du travail, sans vous demander à chaque fois, quelle que soit l'entreprise choisie à la connexion. Il lit aussi les retours de toutes les entreprises, et peut en écarter, quelle que soit cette entreprise. Seul le brouillon qui cite des retours demande une connexion à l'entreprise plateforme avec le droit d'écriture (voir [Publier depuis un assistant](./publier-depuis-un-assistant.md)) : c'est une écriture de skill.
 
+### Quelle entreprise choisir à la connexion
+
+L'écran de connexion propose à un super admin toutes les entreprises qui ont le module MCP et l'accès MCP activé, l'entreprise plateforme comprise si elle les a ; un autre utilisateur n'y trouve que sa propre entreprise. Une application déclarée à la main par une entreprise ne se connecte qu'à elle. La case d'écriture n'apparaît qu'une fois l'entreprise plateforme choisie.
+
+- **Vous travaillez pour un client :** connectez-vous à son entreprise. L'assistant lit ses mailings, vos retours d'expérience vont à l'entreprise plateforme, et vous lisez et écartez les retours de toutes les entreprises.
+- **Vous faites évoluer une skill ou une expertise :** connectez-vous à l'entreprise plateforme, case d'écriture cochée. C'est la seule connexion qui rédige, cite des retours et publie.
+
 ### La boucle
 
 1. Vous contredisez une recommandation, ou vous apportez ce qui manquait : l'assistant enregistre le retour d'expérience.
 2. LePatron lui répond les retours d'expérience ouverts sur le même passage (ou, pour un complément sans expertise, sur la même catégorie et la même partie de l'email), quelle que soit l'entreprise.
 3. **Deux retours qui vont dans le même sens suffisent** : l'assistant vous propose aussitôt l'évolution, sous forme de brouillon qui les cite. Pour un complément qu'aucune expertise ne couvre, il propose une nouvelle expertise.
 4. Vous ajustez, le garde-fou rejoue les cas de test s'il y en a, puis vous publiez.
-5. Les retours cités passent à **« Pris en compte »** avec la version publiée, nommée par sa skill ou son expertise (un retour sur une skill peut être pris en compte par une expertise), que vous la publiiez depuis l'assistant ou depuis le back-office. Si le brouillon est supprimé avant, ils redeviennent ouverts.
+5. Les retours cités passent à **« Pris en compte »** avec la version publiée, nommée par sa skill ou son expertise (un retour sur une skill peut être pris en compte par une expertise), que vous la publiiez depuis l'assistant ou depuis le back-office. Si le brouillon est supprimé avant, ils restent ouverts.
 
 ### Les outils
 

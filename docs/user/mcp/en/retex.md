@@ -30,13 +30,20 @@ Without either, nothing is sent, and the assistant tells you why. If the company
 
 Your assistant sends your retex as you work, without asking each time, whatever company you picked when connecting. It also reads the retex of every company, and may dismiss them, whatever that company. Only the draft that cites retex needs a connection to the platform company with the write permission (see [Publish from an assistant](./publish-from-an-assistant.md)): it writes a skill.
 
+### Which company to pick when connecting
+
+The connection screen offers a super admin every company that has the MCP module and MCP access on, the platform company included if it has them; any other user finds only their own company there. An application a company registered by hand connects to that company only. The write box shows only once the platform company is picked.
+
+- **You work for a client:** connect to their company. The assistant reads their mailings, your retex go to the platform company, and you read and dismiss the retex of every company.
+- **You change a skill or an expertise:** connect to the platform company, with the write box ticked. It is the only connection that drafts, cites retex and publishes.
+
 ### The loop
 
 1. You contradict a recommendation, or bring what was missing: the assistant records the retex.
 2. LePatron answers the open retex on the same passage (or, for a complement about no expertise, on the same category and part of the email), whatever the company.
 3. **Two retex pointing the same way are enough**: the assistant proposes the change at once, as a draft citing them. For a complement no expertise covers, it proposes a new expertise.
 4. You adjust, the guard replays the test cases if there are any, then you publish.
-5. The retex cited become **addressed** with the published version, named by its skill or expertise (a retex on a skill may be addressed by an expertise), whether you publish from the assistant or from the back office. If the draft is deleted before, they are open again.
+5. The retex cited become **addressed** with the published version, named by its skill or expertise (a retex on a skill may be addressed by an expertise), whether you publish from the assistant or from the back office. If the draft is deleted before, they stay open.
 
 ### The tools
 
