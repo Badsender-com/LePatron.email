@@ -40,13 +40,13 @@ Your assistant sends your retex as you work, without asking each time, whatever 
 
 ### The tools
 
-| Tool                                        | What it does                                                                                                                            |
-| ------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------- |
-| `report_retex`                              | records a divergence or a complement; for you, also answers the open retex close to it                                                  |
-| `list_retex`                                | reads the retex of every company, open by default, filtered by skill or expertise, passage, kind, category, part of the email or status |
-| `dismiss_retex`                             | dismisses an open retex, with the reason; it stays readable and no longer counts                                                        |
-| `propose_…_change`, `create_…`              | take `addressesRetex`, the retex the draft addresses                                                                                    |
-| `find_skills`, `find_applicable_expertises` | give the number of open retex of each skill and expertise                                                                               |
+| Tool                                        | What it does                                                                                                                                                                                     |
+| ------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `report_retex`                              | records a divergence or a complement; for you, also answers the 20 latest open retex close to it, and how many more there are                                                                    |
+| `list_retex`                                | reads the retex of every company, 20 a page, open by default, filtered by skill or expertise, passage, kind, category, part of the email or status, or those close to a retex (`convergingWith`) |
+| `dismiss_retex`                             | dismisses an open retex, with the reason; it stays readable and no longer counts                                                                                                                 |
+| `propose_…_change`, `create_…`              | take `addressesRetex`, the retex the draft addresses                                                                                                                                             |
+| `find_skills`, `find_applicable_expertises` | give the number of open retex of each skill and expertise                                                                                                                                        |
 
 The retex of companies' users wait for a team member to come by: when a search shows open retex, ask the assistant to read them.
 

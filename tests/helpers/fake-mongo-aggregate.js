@@ -8,7 +8,7 @@
  * string is not cast to an id, and `$elemMatch` is no projection. A `$project`
  * also computes a field with `$strLenCP` (a string's length in code points,
  * an error for anything else) and `$ifNull`, of a top-level field or a value.
- * A `$group` keys on a top-level field (`'$_mailing'`) and accumulates with
+ * A `$group` keys on a field (`'$_mailing'`, `'$about.id'`) and accumulates with
  * `$first` of a field or `$sum` of a number or a field, its groups in the
  * order their first document came. Any other stage, operator or accumulator
  * throws, rather than answer what MongoDB would not.
@@ -52,18 +52,33 @@ function accumulated(documents, [field, accumulator]) {
   return [field, ACCUMULATORS[name](documents, expression)];
 }
 
+// `'$about.id'`: what a path reaches through embedded documents.
+function keyOf(expression) {
+  if (typeof expression !== 'string' || !/^\$[^$]+$/.test(expression)) {
+    throw new Error(
+      `fake models: $group by ${JSON.stringify(expression)} is not supported`
+    );
+  }
+  const path = expression.slice(1).split('.');
+  return (document) =>
+    path.reduce(
+      (value, key) => (isPlainObject(value) ? value[key] : undefined),
+      document
+    );
+}
+
 // `$group: { _id: '$_mailing', decision: { $first: '$decision' } }`.
 function grouped(documents, { _id: key, ...accumulators }) {
-  const field = fieldOf(key, '$group by');
+  const read = keyOf(key);
   const groups = new Map();
   documents.forEach((document) => {
     // A missing field groups with null, as MongoDB groups it.
-    const value = comparable(document[field] ?? null);
+    const value = comparable(read(document) ?? null);
     if (!groups.has(value)) groups.set(value, []);
     groups.get(value).push(document);
   });
   return [...groups.values()].map((members) => ({
-    _id: members[0][field] ?? null,
+    _id: read(members[0]) ?? null,
     ...Object.fromEntries(
       Object.entries(accumulators).map((entry) => accumulated(members, entry))
     ),

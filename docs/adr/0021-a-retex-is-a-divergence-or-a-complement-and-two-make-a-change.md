@@ -34,5 +34,5 @@ The skills and expertises improve every day from the work of the platform compan
 
 - `submit_feedback` takes a rating and a comment only; the summaries already stored stay readable until their retention ends.
 - New tools: report a retex (everyone, with the company's permission and the user's approval, except a super admin's), read and dismiss the retex (any super admin, whatever company they connected to). The writing tools of ADR 0014 take the retex a draft addresses.
-- A retex is stored with its kind, its passage and its status; an open one has no expiry. A company keeps 200 retex in 24 hours at most, the consultants' counted with the platform company's: past it, the tool answers that the cap is reached.
+- A retex is stored with its kind, its passage and its status; an open one has no expiry. A company keeps 200 retex in 24 hours at most, the consultants' counted with the platform company's: past it, the tool answers that the cap is reached. The retex are read a page at a time, filtered by the database: the candidates of a convergence too, the latest first, the others read with the tool that lists the retex.
 - The two task skills of the method are written as content, through MCP, outside this epic.

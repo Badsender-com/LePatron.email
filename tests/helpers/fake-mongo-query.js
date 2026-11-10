@@ -10,9 +10,15 @@
  *   same array), `$in`, `$nin`, `$ne`, `$exists` (a stored `null` exists),
  *   `$gt`, `$gte`, `$lt`, `$lte`, `$regex` (a string with `$options`, or a
  *   RegExp with its own flags), a bare RegExp, `$size` (an array of that
- *   length), `$or`, `$and`, `$nor`. A dotted path reads an embedded document,
+ *   length), `$or`, `$and`, `$nor`, and `$expr` of the expressions below. A
+ *   dotted path reads an embedded document,
  *   and each element of an array on its way. Any other operator, a positional
  *   path (`versions.0`) or an embedded document as a value throws.
+ * - **Expressions** (`$expr`): a field path (`'$field'`, dotted or not), a
+ *   value, `$literal`, `$or`, `$and`, `$gte` (a missing value or null below
+ *   any other), `$ifNull`, and `$indexOfCP` (in code points; null of a
+ *   missing or null string, an error for anything else but strings). Any
+ *   other operator throws.
  * - **Sort and projection**: objects or strings, as Mongoose takes them. A
  *   projection keeps or drops dotted paths, and `$elemMatch` keeps the first
  *   element of an array that matches.
@@ -114,6 +120,46 @@ function valueAt(record, path) {
   }, record);
 }
 
+// The value of an aggregation expression for a record, as `$expr` reads it.
+function expressed(record, expression) {
+  if (typeof expression === 'string' && expression.startsWith('$')) {
+    return valueAt(record, expression.slice(1));
+  }
+  if (!isPlainObject(expression)) return expression;
+  const [[name, argument], ...others] = Object.entries(expression);
+  if (others.length || !EXPRESSIONS[name]) {
+    throw new Error(`fake models: the expression ${name} is not supported`);
+  }
+  return EXPRESSIONS[name](record, argument);
+}
+
+const isNullish = (value) => value === undefined || value === null;
+
+const EXPRESSIONS = {
+  $literal: (record, value) => value,
+  $or: (record, list) => list.some((e) => Boolean(expressed(record, e))),
+  $and: (record, list) => list.every((e) => Boolean(expressed(record, e))),
+  $gte: (record, [a, b]) => {
+    const [left, right] = [expressed(record, a), expressed(record, b)];
+    if (isNullish(left)) return isNullish(right);
+    return isNullish(right) || comparable(left) >= comparable(right);
+  },
+  $ifNull: (record, [value, replacement]) =>
+    expressed(record, value) ?? expressed(record, replacement),
+  $indexOfCP: (record, [string, substring]) => {
+    const [text, part] = [
+      expressed(record, string),
+      expressed(record, substring),
+    ];
+    if (isNullish(text)) return null;
+    if (typeof text !== 'string' || typeof part !== 'string') {
+      throw new Error('$indexOfCP requires strings');
+    }
+    const index = text.indexOf(part);
+    return index === -1 ? -1 : [...text.slice(0, index)].length;
+  },
+};
+
 /**
  * @param {Object} record
  * @param {Object} [filter]
@@ -128,6 +174,7 @@ function matches(record, filter = {}, { castsIds = true } = {}) {
     if (key === '$or') return condition.some(part);
     if (key === '$and') return condition.every(part);
     if (key === '$nor') return !condition.some(part);
+    if (key === '$expr') return Boolean(expressed(record, condition));
     if (key.startsWith('$')) {
       throw new Error(`fake models: ${key} is not supported`);
     }

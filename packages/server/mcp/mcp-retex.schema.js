@@ -48,6 +48,9 @@ const McpRetexSchema = new Schema(
     // The passage: an expertise's section anchor, or a quotation of a skill.
     section: { type: String, default: null },
     quote: { type: String, default: null },
+    // The quotation whatever its spacing and case, which the candidates of a
+    // convergence are matched on (mcp-retex-candidates.js).
+    flatQuote: { type: String, default: null },
     // A divergence.
     recommended: { type: String, default: null },
     decided: { type: String, default: null },
@@ -76,8 +79,15 @@ const McpRetexSchema = new Schema(
 );
 
 McpRetexSchema.index({ status: 1, createdAt: -1 });
-McpRetexSchema.index({ status: 1, 'about.kind': 1, 'about.id': 1 });
-McpRetexSchema.index({ status: 1, category: 1, part: 1 });
+// What list_retex, the candidates of a convergence and the counts of the
+// searches filter on, the latest first.
+McpRetexSchema.index({
+  status: 1,
+  'about.kind': 1,
+  'about.id': 1,
+  createdAt: -1,
+});
+McpRetexSchema.index({ status: 1, category: 1, part: 1, createdAt: -1 });
 // A change of the company's retention re-stamps its closed retex
 // (group/log-retention.js).
 McpRetexSchema.index({ _company: 1, closedAt: -1 });

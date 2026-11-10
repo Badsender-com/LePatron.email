@@ -52,6 +52,58 @@ describe('the MCP fakes', () => {
     expect(String(docs[0]._id)).toBe(MAILING);
   });
 
+  it('groups an aggregation by an embedded field', async () => {
+    store.seed({
+      retex: [
+        { _id: 'r1', about: { id: 'a' } },
+        { _id: 'r2', about: { id: 'a' } },
+        { _id: 'r3', about: { id: 'b' } },
+      ],
+    });
+
+    const counts = await store.models.McpRetexes.aggregate([
+      { $group: { _id: '$about.id', open: { $sum: 1 } } },
+    ]);
+
+    expect(counts).toEqual([
+      { _id: 'a', open: 2 },
+      { _id: 'b', open: 1 },
+    ]);
+  });
+
+  it('reads $expr as MongoDB does: $indexOfCP in code points, a $literal never a path', async () => {
+    store.seed({
+      retex: [
+        { _id: 'r1', flatQuote: '😀 under 50' },
+        { _id: 'r2', flatQuote: null },
+        { _id: 'r3', flatQuote: '$flatQuote' },
+      ],
+    });
+    const found = async (expression) =>
+      (await store.models.McpRetexes.find({ $expr: expression }).lean()).map(
+        (r) => r._id
+      );
+
+    expect(
+      await found({
+        $gte: [{ $indexOfCP: ['$flatQuote', { $literal: 'under' }] }, 2],
+      })
+    ).toEqual(['r1']);
+    expect(
+      await found({
+        $gte: [
+          {
+            $indexOfCP: [
+              { $ifNull: ['$flatQuote', ''] },
+              { $literal: '$flatQuote' },
+            ],
+          },
+          0,
+        ],
+      })
+    ).toEqual(['r3']);
+  });
+
   it.each([
     ['a page', {}],
     ['every document at once', { pagination: false }],

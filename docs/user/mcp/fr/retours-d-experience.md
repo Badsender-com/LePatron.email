@@ -40,13 +40,13 @@ Votre assistant envoie vos retours d'expérience au fil du travail, sans vous de
 
 ### Les outils
 
-| Outil                                       | Ce qu'il fait                                                                                                                                         |
-| ------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `report_retex`                              | enregistre une divergence ou un complément ; pour vous, répond aussi les retours ouverts proches                                                      |
-| `list_retex`                                | lit les retours de toutes les entreprises, ouverts par défaut, filtrés par skill ou expertise, passage, sorte, catégorie, partie de l'email ou statut |
-| `dismiss_retex`                             | écarte un retour ouvert, avec la raison ; il reste lisible et ne compte plus                                                                          |
-| `propose_…_change`, `create_…`              | prennent `addressesRetex`, les retours que le brouillon traite                                                                                        |
-| `find_skills`, `find_applicable_expertises` | donnent le nombre de retours ouverts de chaque skill et expertise                                                                                     |
+| Outil                                       | Ce qu'il fait                                                                                                                                                                                                      |
+| ------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `report_retex`                              | enregistre une divergence ou un complément ; pour vous, répond aussi les 20 retours ouverts proches les plus récents, et combien il en reste                                                                       |
+| `list_retex`                                | lit les retours de toutes les entreprises, 20 par page, ouverts par défaut, filtrés par skill ou expertise, passage, sorte, catégorie, partie de l'email ou statut, ou ceux proches d'un retour (`convergingWith`) |
+| `dismiss_retex`                             | écarte un retour ouvert, avec la raison ; il reste lisible et ne compte plus                                                                                                                                       |
+| `propose_…_change`, `create_…`              | prennent `addressesRetex`, les retours que le brouillon traite                                                                                                                                                     |
+| `find_skills`, `find_applicable_expertises` | donnent le nombre de retours ouverts de chaque skill et expertise                                                                                                                                                  |
 
 Les retours d'expérience des utilisateurs d'entreprise attendent qu'un membre de l'équipe passe par là : quand une recherche montre des retours ouverts, demandez à l'assistant de les lire.
 

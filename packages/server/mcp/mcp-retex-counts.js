@@ -19,18 +19,18 @@ const { isConsultant } = require('./mcp-identity.js');
  */
 async function withOpenRetex(kind, items, idField, { user }) {
   if (!items.length || !isConsultant(user)) return items;
-  const open = await McpRetexes.find(
+  // Counted by the database, the retex never read.
+  const open = await McpRetexes.aggregate([
     {
-      status: 'open',
-      'about.kind': kind,
-      'about.id': { $in: items.map((item) => item[idField]) },
+      $match: {
+        status: 'open',
+        'about.kind': kind,
+        'about.id': { $in: items.map((item) => String(item[idField])) },
+      },
     },
-    { about: 1 }
-  ).lean();
-  const counts = new Map();
-  open.forEach(({ about }) =>
-    counts.set(about.id, (counts.get(about.id) || 0) + 1)
-  );
+    { $group: { _id: '$about.id', open: { $sum: 1 } } },
+  ]);
+  const counts = new Map(open.map((count) => [count._id, count.open]));
   return items.map((item) => ({
     ...item,
     openRetex: counts.get(item[idField]) || 0,

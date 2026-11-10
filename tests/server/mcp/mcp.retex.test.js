@@ -363,6 +363,100 @@ describe('the retex loop', () => {
     });
   });
 
+  // The retex are read a page at a time, filtered by the database (ADR 0021).
+  describe('reading a page at a time', () => {
+    const MINUTE = 60 * 1000;
+    // `count` open retex of a client, the latest first, `fields` apart.
+    const stored = (count, fields, from = 0) =>
+      Array.from({ length: count }, (_, i) => ({
+        ...LENGTH_DIVERGENCE,
+        about: { ...LENGTH_DIVERGENCE.about, version: '2.1' },
+        _company: f.CLIENT_GROUP,
+        author: 'client',
+        status: 'open',
+        createdAt: new Date(Date.now() - (from + i + 1) * MINUTE),
+        ...fields,
+      }));
+    const seedWith = (...retex) =>
+      harness.seed({ ...SEED, retex: retex.flat() });
+    const models = () =>
+      require('../../../packages/server/common/models.common.js');
+
+    it('lists 20 retex a page, the latest first, with the total', async () => {
+      seedWith(stored(25, {}));
+      const client = await asConsultant();
+
+      const first = await call(client, LIST, {});
+      const second = await call(client, LIST, { page: 2 });
+
+      expect(first).toMatchObject({
+        page: 1,
+        pageSize: 20,
+        total: 25,
+        totalPages: 2,
+      });
+      expect(first.items).toHaveLength(20);
+      expect(second.items).toHaveLength(5);
+      const dates = [...first.items, ...second.items].map((r) => r.createdAt);
+      expect(dates).toEqual([...dates].sort().reverse());
+    });
+
+    it('refuses a page of more than 50 retex', async () => {
+      const answer = await call(await asConsultant(), LIST, { pageSize: 51 });
+
+      expect(answer.error).toBeDefined();
+    });
+
+    it('answers the latest 20 candidates, says how many more, and list_retex reads them all', async () => {
+      seedWith(
+        stored(30, { section: 'tone', recommended: 'One promise' }),
+        stored(25, {}, 30)
+      );
+      const client = await asConsultant();
+
+      const answer = await call(client, REPORT, B2B_COMPLEMENT);
+      const rest = await call(client, LIST, {
+        convergingWith: answer.retexId,
+        page: 2,
+      });
+
+      expect(answer.candidates).toHaveLength(20);
+      expect(answer.moreCandidates).toBe(5);
+      expect(rest).toMatchObject({ total: 25, totalPages: 2 });
+      expect(rest.items).toHaveLength(5);
+      [...answer.candidates, ...rest.items].forEach((candidate) =>
+        expect(candidate.section).toBe('length')
+      );
+    });
+
+    it('refuses to read the candidates of no retex', async () => {
+      const answer = await call(await asConsultant(), LIST, {
+        convergingWith: 'not-an-id',
+      });
+
+      expect(answer.error).toMatch(/no retex/i);
+    });
+
+    it('counts the open retex of the searches in the database, without reading them', async () => {
+      seedWith(stored(3, {}));
+      const find = jest.spyOn(models().McpRetexes, 'find');
+
+      const { expertises } = await call(
+        await asConsultant(),
+        'find_applicable_expertises',
+        { scope: ['subject'], categories: ['redaction'] }
+      );
+      find.mockRestore();
+
+      expect(find).not.toHaveBeenCalled();
+      expect(expertises).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({ expertiseId: SUBJECT_LINES, openRetex: 3 }),
+        ])
+      );
+    });
+  });
+
   // Stopping the retex of a company erases its users' retex, open or closed
   // (ADR 0012, ADR 0021); the consultants' belong to the platform company.
   describe('the retex stopped', () => {
@@ -808,8 +902,9 @@ describe('the retex loop', () => {
       await call(client, 'publish_draft', { ...draft, confirmation });
 
       expect(await listOpen()).toEqual([]);
+      // The latest first.
       expect(await listOpen({ status: 'addressed' })).toEqual(
-        ids.map((retexId) =>
+        [...ids].reverse().map((retexId) =>
           expect.objectContaining({
             retexId,
             status: 'addressed',
