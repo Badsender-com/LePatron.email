@@ -65,6 +65,15 @@ const sameContent = (kind, a, b) =>
 
 const time = (date) => (date ? new Date(date).getTime() : 0);
 
+// A field that says nothing: as production leaves it out of its answer, or
+// as the model gives it by default.
+const isEmpty = (value) =>
+  value === undefined ||
+  value === null ||
+  value === '' ||
+  value === false ||
+  (Array.isArray(value) && !value.length);
+
 /**
  * Whether the copy wrote this version: never brought by a follow, or
  * changed or published on the copy since a follow brought it.
@@ -196,8 +205,9 @@ function signatureOf(kind, fields) {
  * @param {Date} now
  * @returns {Object} `outcome`: `kept` (with `reason` and
  *   `productionChanged`), `upToDate`, or `created` / `updated` with the
- *   `fields` to write, the versions of the copy's own work that leave it
- *   (`moved`) and the numbers of the drafts removed (`removed`)
+ *   `fields` to write, the fields production no longer has (`unset`), the
+ *   versions of the copy's own work that leave it (`moved`) and the numbers
+ *   of the drafts removed (`removed`)
  */
 function followedItem(kind, item, doc, now) {
   const followedDigest = digestOf(item);
@@ -249,17 +259,26 @@ function followedItem(kind, item, doc, now) {
   IDENTITY_FIELDS[kind].forEach((field) => {
     if (item[field] !== undefined) fields[field] = copy(item[field]);
   });
+  // What production no longer says of the item, the copy no longer says.
+  const unset = doc
+    ? IDENTITY_FIELDS[kind].filter(
+        (field) => item[field] === undefined && !isEmpty(doc[field])
+      )
+    : [];
+  const followed = { ...doc, ...fields };
+  unset.forEach((field) => delete followed[field]);
   if (
     doc &&
     !moved.length &&
     !removed.length &&
-    signatureOf(kind, doc) === signatureOf(kind, { ...doc, ...fields })
+    signatureOf(kind, doc) === signatureOf(kind, followed)
   ) {
     return { outcome: 'upToDate' };
   }
   return {
     outcome: doc ? 'updated' : 'created',
     fields: { ...fields, followedAt: now },
+    unset,
     moved,
     removed,
   };

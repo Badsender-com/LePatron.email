@@ -656,6 +656,44 @@ describe('a copy following production', () => {
       });
     });
 
+    // What production no longer says of an item, the copy no longer says.
+    it('unsets on the copy what production emptied', async () => {
+      await follow(EMPTY_COPY);
+      const emptied = answerWith(SUBJECT_LINES, (item) => {
+        delete item.description;
+      });
+      // MongoDB's `$unset`, which the fake models leave to the test.
+      const { findOneAndUpdate } = store.models.Expertises;
+      const unsets = [];
+      store.models.Expertises.findOneAndUpdate = (filter, update, options) => {
+        const { $unset, ...rest } = update;
+        if ($unset) {
+          unsets.push($unset);
+          const doc = store
+            .stored('expertises')
+            .find((e) => e.expertiseId === filter.expertiseId);
+          Object.keys($unset).forEach((field) =>
+            changeOnCopy(doc.expertiseId, () => ({ [field]: undefined }))
+          );
+        }
+        return findOneAndUpdate(filter, rest, options);
+      };
+
+      let report;
+      try {
+        report = await followAgain(emptied);
+      } finally {
+        store.models.Expertises.findOneAndUpdate = findOneAndUpdate;
+      }
+
+      expect(unsets).toEqual([{ description: '' }]);
+      expect(expertiseOf(SUBJECT_LINES).description).toBeUndefined();
+      expect(idsOf(report.updated)).toEqual([SUBJECT_LINES]);
+      // Then up to date: nothing more to unset.
+      const again = await followAgain(emptied);
+      expect(again.updated).toEqual([]);
+    });
+
     // A write conditioned on a version's update date never mistakes one
     // written since for the one read (ADR 0014).
     it('gives a later update date than the one a version had', async () => {

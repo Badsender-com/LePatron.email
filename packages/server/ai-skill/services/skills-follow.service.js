@@ -46,14 +46,22 @@ const asRead = (idField, read) => ({
 
 // Writes the followed fields over the item read, through the model's own
 // rules (an expertise derives its sections), on the condition that it was
-// not written since.
-async function writeIfUnchanged(kind, doc, read, fields) {
+// not written since. The fields production no longer has are unset.
+async function writeIfUnchanged(kind, doc, read, { fields, unset }) {
   const { idField } = ENTITIES[kind];
   Object.assign(doc, fields);
+  unset.forEach((field) => {
+    // eslint-disable-next-line no-param-reassign
+    doc[field] = undefined;
+  });
   await doc.validate();
+  const update = { $set: { ...fields, versions: doc.versions.map(plain) } };
+  if (unset.length) {
+    update.$unset = Object.fromEntries(unset.map((field) => [field, '']));
+  }
   const written = await modelOf(kind).findOneAndUpdate(
     asRead(idField, read),
-    { $set: { ...fields, versions: doc.versions.map(plain) } },
+    update,
     { new: true }
   );
   if (!written) throw changed(read[idField]);
@@ -89,7 +97,7 @@ async function followOne(kind, item, { actor, now }) {
     ? await createCopyItem(kind, read, result.moved, { now, owner: actor.id })
     : null;
   try {
-    await writeIfUnchanged(kind, doc, read, result.fields);
+    await writeIfUnchanged(kind, doc, read, result);
   } catch (err) {
     // The item stays as it was: so does the copy's work, which stays in it.
     if (copyId) await model.deleteOne({ [idField]: copyId });
