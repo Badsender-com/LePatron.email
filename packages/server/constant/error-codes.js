@@ -232,6 +232,43 @@ module.exports = {
   // Another write came between the reading and the writing.
   SKILLS_IMPORT_CHANGED: 'SKILLS_IMPORT_CHANGED',
   EXPERTISE_LIST_FILTER_INVALID: 'EXPERTISE_LIST_FILTER_INVALID',
+  // A publication refused while a version names a schema this instance's
+  // code does not hold (`schemaId`): a draft may, as production writes a
+  // feature skill before its code ships (ADR 0019).
+  SKILL_SCHEMA_NOT_IN_CODE: 'SKILL_SCHEMA_NOT_IN_CODE',
+  // Production's read tokens (ADR 0019): a name of 1 to `max` characters, a
+  // token that exists, a call that carries one, and none made on a copy.
+  SKILLS_READ_TOKEN_NAME_INVALID: 'SKILLS_READ_TOKEN_NAME_INVALID',
+  SKILLS_READ_TOKEN_NOT_FOUND: 'SKILLS_READ_TOKEN_NOT_FOUND',
+  SKILLS_READ_TOKEN_REQUIRED: 'SKILLS_READ_TOKEN_REQUIRED',
+  SKILLS_READ_TOKEN_ON_COPY: 'SKILLS_READ_TOKEN_ON_COPY',
+  // What only a copy does (following production, keeping an item on the
+  // copy, duplicating one), asked of an instance that follows no production.
+  SKILLS_NOT_A_COPY: 'SKILLS_NOT_A_COPY',
+  // A follow while another one runs, on this instance or another.
+  SKILLS_FOLLOW_RUNNING: 'SKILLS_FOLLOW_RUNNING',
+  // Why a follow wrote nothing.
+  SKILLS_FOLLOW_NOT_CONFIGURED: 'SKILLS_FOLLOW_NOT_CONFIGURED',
+  SKILLS_FOLLOW_INVALID_ADDRESS: 'SKILLS_FOLLOW_INVALID_ADDRESS',
+  SKILLS_FOLLOW_UNREACHABLE: 'SKILLS_FOLLOW_UNREACHABLE',
+  SKILLS_FOLLOW_TOKEN_REFUSED: 'SKILLS_FOLLOW_TOKEN_REFUSED',
+  SKILLS_FOLLOW_PRODUCTION_ERROR: 'SKILLS_FOLLOW_PRODUCTION_ERROR',
+  SKILLS_FOLLOW_UNREADABLE: 'SKILLS_FOLLOW_UNREADABLE',
+  SKILLS_FOLLOW_INTERRUPTED: 'SKILLS_FOLLOW_INTERRUPTED',
+  // Why one item of a follow failed, the others followed: production's item
+  // cannot be read (`field`), the copy's item was written meanwhile, the
+  // model refuses what production holds, or anything else.
+  SKILLS_FOLLOW_ITEM_UNREADABLE: 'SKILLS_FOLLOW_ITEM_UNREADABLE',
+  SKILLS_FOLLOW_ITEM_CHANGED: 'SKILLS_FOLLOW_ITEM_CHANGED',
+  SKILLS_FOLLOW_ITEM_INVALID: 'SKILLS_FOLLOW_ITEM_INVALID',
+  SKILLS_FOLLOW_ITEM_FAILED: 'SKILLS_FOLLOW_ITEM_FAILED',
+  // Keeping an item on the copy, following production again, or
+  // duplicating a version (`id`, `version`): the item or version is not
+  // here, the item never came from production, or no free id is left.
+  SKILLS_COPY_ITEM_NOT_FOUND: 'SKILLS_COPY_ITEM_NOT_FOUND',
+  SKILLS_COPY_VERSION_NOT_FOUND: 'SKILLS_COPY_VERSION_NOT_FOUND',
+  SKILLS_COPY_NOT_FOLLOWED: 'SKILLS_COPY_NOT_FOLLOWED',
+  SKILLS_COPY_ID_TAKEN: 'SKILLS_COPY_ID_TAKEN',
   UNAUTHORIZED_INTEGRATION_PROVIDER: 'UNAUTHORIZED_INTEGRATION_PROVIDER',
   FORBIDDEN_INTEGRATION_ACCESS: 'FORBIDDEN_INTEGRATION_ACCESS',
   FAILED_INTEGRATION_DELETE: 'FAILED_INTEGRATION_DELETE',

@@ -1938,6 +1938,50 @@ export default {
         'La version {version} de {id} n\'est pas plus récente que celles d\'ici : elle n\'a pas été importée.',
       SKILLS_IMPORT_CHANGED:
         '{id} a été modifié pendant l\'import : importez de nouveau la version {version}.',
+      SKILL_SCHEMA_NOT_IN_CODE:
+        'Le schéma « {schemaId} » n\'existe pas encore dans le code de cette instance : la version se publiera quand ce code sera déployé.',
+      SKILLS_READ_TOKEN_NAME_INVALID:
+        'Le nom du jeton compte de 1 à {max} caractères.',
+      SKILLS_READ_TOKEN_NOT_FOUND:
+        'Ce jeton de lecture n\'existe pas ou a déjà été révoqué : rechargez la liste.',
+      SKILLS_READ_TOKEN_REQUIRED:
+        'Un jeton de lecture valide est nécessaire.',
+      SKILLS_READ_TOKEN_ON_COPY:
+        'Cette instance est une copie : elle suit la production et ne donne pas de jeton de lecture.',
+      SKILLS_NOT_A_COPY:
+        'Cette instance n\'est pas une copie : elle ne suit aucune production.',
+      SKILLS_FOLLOW_RUNNING:
+        'Un suivi de la production est déjà en cours : attendez qu\'il se termine.',
+      SKILLS_FOLLOW_NOT_CONFIGURED:
+        'Cette instance n\'est configurée pour suivre aucune production.',
+      SKILLS_FOLLOW_INVALID_ADDRESS:
+        'L\'adresse de la production n\'est pas une adresse https valide.',
+      SKILLS_FOLLOW_UNREACHABLE:
+        'La production n\'a pas pu être jointe.',
+      SKILLS_FOLLOW_TOKEN_REFUSED:
+        'La production a refusé le jeton de lecture : il a peut-être été révoqué.',
+      SKILLS_FOLLOW_PRODUCTION_ERROR:
+        'La production a répondu par une erreur.',
+      SKILLS_FOLLOW_UNREADABLE:
+        'La réponse de la production n\'a pas pu être lue : les deux instances n\'ont peut-être pas la même version de LePatron.',
+      SKILLS_FOLLOW_INTERRUPTED:
+        'Le suivi a été interrompu avant sa fin.',
+      SKILLS_FOLLOW_ITEM_UNREADABLE:
+        'La production a envoyé cet élément sous une forme que cette copie ne lit pas (champ « {field} »).',
+      SKILLS_FOLLOW_ITEM_CHANGED:
+        'Cet élément a été modifié sur la copie pendant le suivi : il n\'a pas été écrasé. Suivez de nouveau la production.',
+      SKILLS_FOLLOW_ITEM_INVALID:
+        'Cette copie refuse ce que la production tient pour cet élément, par exemple un schéma absent de son code.',
+      SKILLS_FOLLOW_ITEM_FAILED:
+        'Cet élément n\'a pas pu être suivi.',
+      SKILLS_COPY_ITEM_NOT_FOUND:
+        '{id} n\'existe pas sur cette copie : rechargez la liste.',
+      SKILLS_COPY_VERSION_NOT_FOUND:
+        'La version {version} de {id} n\'existe pas sur cette copie.',
+      SKILLS_COPY_NOT_FOLLOWED:
+        '{id} a été écrit sur cette copie : aucun suivi n\'y touche, il n\'y a rien à garder.',
+      SKILLS_COPY_ID_TAKEN:
+        'Trop d\'éléments portent déjà le travail de la copie de {id} : supprimez-en avant d\'en créer un autre.',
     },
     warnings: {
       TEMPLATE_UNKNOWN_FIELDS:

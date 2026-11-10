@@ -1913,6 +1913,50 @@ export default {
         'Version {version} of {id} is not newer than the versions here: it was not imported.',
       SKILLS_IMPORT_CHANGED:
         '{id} changed during the import: import version {version} again.',
+      SKILL_SCHEMA_NOT_IN_CODE:
+        'The schema “{schemaId}” is not in this instance\'s code yet: the version can be published once that code is deployed.',
+      SKILLS_READ_TOKEN_NAME_INVALID:
+        'A token\'s name has 1 to {max} characters.',
+      SKILLS_READ_TOKEN_NOT_FOUND:
+        'This read token does not exist or was already revoked: reload the list.',
+      SKILLS_READ_TOKEN_REQUIRED:
+        'A valid read token is required.',
+      SKILLS_READ_TOKEN_ON_COPY:
+        'This instance is a copy: it follows production and gives no read token.',
+      SKILLS_NOT_A_COPY:
+        'This instance is not a copy: it follows no production.',
+      SKILLS_FOLLOW_RUNNING:
+        'A follow of production is already running: wait for it to end.',
+      SKILLS_FOLLOW_NOT_CONFIGURED:
+        'This instance is not set up to follow any production.',
+      SKILLS_FOLLOW_INVALID_ADDRESS:
+        'Production\'s address is not a valid https address.',
+      SKILLS_FOLLOW_UNREACHABLE:
+        'Production could not be reached.',
+      SKILLS_FOLLOW_TOKEN_REFUSED:
+        'Production refused the read token: it may have been revoked.',
+      SKILLS_FOLLOW_PRODUCTION_ERROR:
+        'Production answered with an error.',
+      SKILLS_FOLLOW_UNREADABLE:
+        'Production\'s answer could not be read: the two instances may not run the same version of LePatron.',
+      SKILLS_FOLLOW_INTERRUPTED:
+        'The follow was interrupted before it ended.',
+      SKILLS_FOLLOW_ITEM_UNREADABLE:
+        'Production sent this item in a form this copy does not read (field “{field}”).',
+      SKILLS_FOLLOW_ITEM_CHANGED:
+        'This item changed on the copy during the follow: it was not overwritten. Follow production again.',
+      SKILLS_FOLLOW_ITEM_INVALID:
+        'This copy refuses what production holds for this item, such as a schema missing from its code.',
+      SKILLS_FOLLOW_ITEM_FAILED:
+        'This item could not be followed.',
+      SKILLS_COPY_ITEM_NOT_FOUND:
+        '{id} does not exist on this copy: reload the list.',
+      SKILLS_COPY_VERSION_NOT_FOUND:
+        'Version {version} of {id} does not exist on this copy.',
+      SKILLS_COPY_NOT_FOLLOWED:
+        '{id} was written on this copy: no follow touches it, so there is nothing to keep.',
+      SKILLS_COPY_ID_TAKEN:
+        'Too many items already hold the copy\'s work on {id}: delete some before creating another.',
     },
     warnings: {
       TEMPLATE_UNKNOWN_FIELDS:
