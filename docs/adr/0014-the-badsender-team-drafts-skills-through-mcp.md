@@ -4,6 +4,7 @@
 - Date: 2026-10-30
 - Epic: #1290
 - Extends: ADR 0012 (read-only first), ADR 0013
+- Amended by ADR 0019 (an assistant may also publish a draft and change an audience, each in two steps)
 
 The skills and expertises improve with use: the feedback and retex of ADR 0012 tell the platform company what to change, and an assistant is a good place to rewrite a procedure or an expertise from them. MCP gets its first writes for that, ahead of any write on mailings, which still waits for #1103.
 

@@ -4,6 +4,7 @@
 - Date: 2026-10-29
 - Epic: #1290
 - Extends: ADR 0012
+- Amended by ADR 0019 (on a copy, an item has the audience production gives it; a feature skill's draft may name a schema its code does not declare yet)
 
 The expertises and skills the platform company writes are meant to reach the client companies through MCP, and many will have no LePatron feature behind them, at first or ever. The skills written so far show two kinds that the app did not tell apart. **A feature skill** is a pure function a LePatron feature calls: an input template, an input and output schema declared in the code, a JSON output contract the server checks (the subject and preheader generation, the spelling correction). **A task skill**, most of them, is a procedure written for an assistant: read a report the user provides, review an email against a checklist. It takes files, runs steps and a quality check, produces a deliverable, and has neither template nor schema. Both stay one entity, versioned, rated and logged the same way; the nature says how the skill is served.
 
