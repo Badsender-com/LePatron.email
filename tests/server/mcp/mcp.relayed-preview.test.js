@@ -50,4 +50,40 @@ describe('the rewriting of a preview', () => {
 
     expect(relayPreviewImagesCached(undefined, '<p>Hi</p>')).toBe('<p>Hi</p>');
   });
+
+  describe('what it writes is inert wherever it lands', () => {
+    const QUOTED = "https://cdn.example.test/brand/l'o(g)o.png";
+
+    it('encodes in a relayed address every character a CSS string or a url() ends on', () => {
+      const address = relayedUrlOf(QUOTED);
+
+      expect(address).not.toMatch(/['()]/);
+      expect(new URL(address).searchParams.get('url')).toBe(QUOTED);
+    });
+
+    it('reads the entities of an attribute', () => {
+      const html = relayPreviewImages(
+        `<td style="background: url(&quot;${LOGO}?a=1&amp;b=2&quot;)"></td>`
+      );
+
+      expect(html).toBe(
+        `<td style="background: url(&quot;${relayedUrlOf(
+          `${LOGO}?a=1&b=2`
+        )}&quot;)"></td>`
+      );
+    });
+
+    it('reads a style sheet as it is, its entities never decoded', () => {
+      const written = 'https://cdn.example.test/x&#39;';
+
+      const html = relayPreviewImages(
+        `<style>.a { background: url('${written}'); }</style>`
+      );
+
+      expect(html).toBe(
+        `<style>.a { background: url('${relayedUrlOf(written)}'); }</style>`
+      );
+      expect(relayedUrlOf(written)).not.toContain("'");
+    });
+  });
 });

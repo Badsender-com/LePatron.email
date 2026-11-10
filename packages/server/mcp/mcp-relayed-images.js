@@ -25,6 +25,15 @@ const signatureOf = (url) =>
     .update(`mcp-relayed-image:${url}`)
     .digest('base64url');
 
+// An address as a query parameter, every character a CSS string or a url()
+// could end on encoded: the rewriting runs after the sanitiser, so what it
+// writes is inert wherever it lands.
+const asParameter = (url) =>
+  encodeURIComponent(url).replace(
+    /[!'()*]/g,
+    (character) => `%${character.charCodeAt(0).toString(16).toUpperCase()}`
+  );
+
 /**
  * The address of the instance that relays this image, signed for it, with
  * no expiry.
@@ -33,9 +42,7 @@ const signatureOf = (url) =>
  * @returns {string}
  */
 function relayedUrlOf(url) {
-  return `${siteOrigin()}${ROUTE}/${signatureOf(url)}?url=${encodeURIComponent(
-    url
-  )}`;
+  return `${siteOrigin()}${ROUTE}/${signatureOf(url)}?url=${asParameter(url)}`;
 }
 
 /**
@@ -105,12 +112,12 @@ async function fetchRelayedImage(url) {
 }
 
 // An address as an attribute holds it: the entities a sanitised document
-// writes in an attribute, read back.
-const decoded = (value) =>
-  value
-    .replace(/&amp;/g, '&')
-    .replace(/&quot;/g, '"')
-    .replace(/&#39;/g, "'");
+// writes in an attribute, read back in one pass. A <style> element holds its
+// text as it is, and is never decoded.
+const ENTITIES = { amp: '&', quot: '"', '#39': "'", lt: '<', gt: '>' };
+const decodedAttribute = (value) =>
+  value.replace(/&(amp|quot|#39|lt|gt);/g, (_entity, name) => ENTITIES[name]);
+const asIs = (value) => value;
 
 // Whether an image is hosted outside the instance, over the web.
 function isExternal(url) {
@@ -134,15 +141,15 @@ const ATTRIBUTE = /(\s)([^\s"'<>/=]{1,64})(\s*=\s*)"([^"]*)"/g;
 const CSS_URL = /url\(\s*(&quot;|["']?)([^"'()<>\s]{1,2048})\1\s*\)/gi;
 
 const relayed = (raw) => {
-  const url = decoded(raw.trim());
+  const url = raw.trim();
   return url.length <= MAX_URL_LENGTH && isExternal(url)
     ? relayedUrlOf(url)
     : null;
 };
 
-const relayStyle = (css) =>
+const relayStyle = (css, decoded) =>
   css.replace(CSS_URL, (whole, quote, url) => {
-    const relayedUrl = relayed(url);
+    const relayedUrl = relayed(decoded(url));
     return relayedUrl ? `url(${quote}${relayedUrl}${quote})` : whole;
   });
 
@@ -155,10 +162,13 @@ function relayTag(name, attributes) {
     (whole, space, attribute, equals, value) => {
       const lower = attribute.toLowerCase();
       if (lower === 'style') {
-        return `${space}${attribute}${equals}"${relayStyle(value)}"`;
+        return `${space}${attribute}${equals}"${relayStyle(
+          value,
+          decodedAttribute
+        )}"`;
       }
       if (lower !== 'background' && !(isImg && lower === 'src')) return whole;
-      const relayedUrl = relayed(value);
+      const relayedUrl = relayed(decodedAttribute(value));
       return relayedUrl
         ? `${space}${attribute}${equals}"${relayedUrl}"`
         : whole;
@@ -193,7 +203,7 @@ function relayPreviewImages(html) {
       styleEnd.lastIndex = copied;
       const end = styleEnd.exec(source);
       const stop = end ? end.index : source.length;
-      relayedHtml += relayStyle(source.slice(copied, stop));
+      relayedHtml += relayStyle(source.slice(copied, stop), asIs);
       copied = stop;
       tags.lastIndex = stop;
     }

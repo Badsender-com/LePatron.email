@@ -132,6 +132,20 @@ describe('relayed images', () => {
       expect(res.status).toBe(404);
     });
 
+    it('serves an image whose address holds quotes and parentheses', async () => {
+      answers(PNG);
+
+      const res = await request(app).get(
+        relayedPathOf("https://cdn.example.test/l'o(g)o.png")
+      );
+
+      expect(res.status).toBe(200);
+      expect(mockGuardedFetch).toHaveBeenCalledWith(
+        "https://cdn.example.test/l'o(g)o.png",
+        expect.anything()
+      );
+    });
+
     it('fetches nothing for an address it did not sign', async () => {
       const signed = relayedPathOf(LOGO);
       const forged = signed.replace(
