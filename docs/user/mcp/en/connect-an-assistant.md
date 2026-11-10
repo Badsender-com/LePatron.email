@@ -7,7 +7,7 @@ Your AI assistant (Claude, ChatGPT, Copilot…) can read LePatron on your behalf
 
 It does so with **your rights**, in **one company only**, the one you choose when connecting. It changes nothing in your emails, skills or settings: the only thing it sends LePatron is your feedback, when you ask it to.
 
-The one exception is for the Badsender team: a super admin may let their assistant write, publish and open skills and expertises ([Publish from an assistant](./publish-from-an-assistant.md)).
+The one exception is for the platform company's team: a super admin connected to the platform company may let their assistant write, publish and open skills and expertises ([Publish from an assistant](./publish-from-an-assistant.md)).
 
 The connection uses MCP (Model Context Protocol), which all these assistants support.
 

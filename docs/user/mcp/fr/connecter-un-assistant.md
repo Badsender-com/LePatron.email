@@ -7,7 +7,7 @@ Votre assistant IA (Claude, ChatGPT, Copilot…) peut lire LePatron en votre nom
 
 Il le fait avec **vos droits**, dans **une seule entreprise**, celle que vous choisissez au moment de la connexion. Il ne modifie ni vos emails, ni les skills, ni vos réglages : il n'envoie à LePatron que vos avis, quand vous le lui demandez.
 
-Seule exception, réservée à l'équipe Badsender : un super admin peut autoriser son assistant à rédiger, publier et ouvrir les skills et les expertises ([Publier depuis un assistant](./publier-depuis-un-assistant.md)).
+Seule exception, réservée à l'équipe de l'entreprise plateforme : un super admin connecté à l'entreprise plateforme peut autoriser son assistant à rédiger, publier et ouvrir les skills et les expertises ([Publier depuis un assistant](./publier-depuis-un-assistant.md)).
 
 Cette connexion passe par le protocole MCP (Model Context Protocol), que ces assistants savent tous utiliser.
 
