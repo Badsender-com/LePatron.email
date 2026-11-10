@@ -162,6 +162,12 @@ const AUDIENCE_ANSWER = z.object({
     .describe(
       'Whether this call changed the audience: false at the check, and when the audience already was the one asked, at either call.'
     ),
+  keptOnCopy: z
+    .boolean()
+    .optional()
+    .describe(
+      'On a copy of production (staging, development): the item is kept on the copy, so the next follow of production does not undo the change.'
+    ),
   platformOnlyExpertises: z
     .array(z.object({ expertiseId: z.string(), title: z.string() }))
     .optional()

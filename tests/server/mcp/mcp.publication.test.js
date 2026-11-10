@@ -188,6 +188,28 @@ describe('publishing and opening from an assistant', () => {
       expect(checkedAgain.confirmation).toBeUndefined();
     });
 
+    // On a copy, what is changed there stays there (ADR 0019).
+    it('keeps on a copy the item it opens there, and says so', async () => {
+      const source = require('../../../packages/server/ai-skill/services/skills-source-client.js');
+      const onCopy = jest.spyOn(source, 'isConfigured').mockReturnValue(true);
+      try {
+        const client = await asAuthor();
+        const args = { kind: 'expertise', id: SUBJECT_LINES, audience: 'all' };
+        const { confirmation } = await call(client, AUDIENCE, args);
+
+        const answer = await call(client, AUDIENCE, { ...args, confirmation });
+
+        expect(answer).toMatchObject({ changed: true, keptOnCopy: true });
+        expect(subjectLines()).toMatchObject({
+          audience: 'all',
+          keptOnCopy: true,
+          _keptOnCopyBy: f.ALICE,
+        });
+      } finally {
+        onCopy.mockRestore();
+      }
+    });
+
     it('refuses a key made up or given for another change', async () => {
       const client = await asAuthor();
       const { confirmation } = await call(client, AUDIENCE, {

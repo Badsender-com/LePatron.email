@@ -161,6 +161,26 @@ describe('expertise.service', () => {
     expect(doc.save).toHaveBeenCalled();
   });
 
+  // On a copy, what an assistant changes there stays there (ADR 0019).
+  it('updateExpertise keeps the item on a copy in the same write', async () => {
+    const doc = mockExpertiseDoc({ audience: 'platform' });
+    Expertises.findOne.mockResolvedValue(doc);
+
+    await expertiseService.updateExpertise(
+      'a',
+      { audience: 'all' },
+      { keepOnCopy: true, userId: 'alice' }
+    );
+
+    expect(doc).toMatchObject({
+      audience: 'all',
+      keptOnCopy: true,
+      keptOnCopyAt: expect.any(Date),
+      _keptOnCopyBy: 'alice',
+    });
+    expect(doc.save).toHaveBeenCalledTimes(1);
+  });
+
   describe('getActivationImpact', () => {
     it('throws 404 when the expertise is missing', async () => {
       Expertises.findOne.mockResolvedValue(null);
