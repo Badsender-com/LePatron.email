@@ -19,19 +19,9 @@ jest.mock(
     publishVersion: jest.fn(),
   })
 );
-// Stub the auth guard, on the real rule, so the test picks the user.
-jest.mock('../../../../packages/server/account/auth.guard', () => ({
-  GUARD_ADMIN: (req, res, next) => {
-    const permissions = require('../../../../packages/server/account/permissions.js');
-    const {
-      CAPABILITIES,
-    } = require('../../../../packages/shared/access/roles.js');
-    if (permissions.can(req.user, CAPABILITIES.PLATFORM_MANAGE)) return next();
-    return res.status(401).json({ message: 'Unauthorized' });
-  },
-}));
 
 const createError = require('http-errors');
+const { ROLES } = require('../../../../packages/shared/access/roles.js');
 const express = require('express');
 const request = require('../../../helpers/local-request.js');
 const publication = require('../../../../packages/server/ai-skill/services/skills-publication.service');
@@ -227,12 +217,53 @@ describe('the publication guard on the back office', () => {
     );
   });
 
-  it('is for super admins only', async () => {
-    const res = await request(
-      makeApp({ id: 'someone', role: 'regular_user' })
-    ).post(versionRoute('guard'));
+  // The routes' own guard, as each role meets it (AGENTS.md, Rights).
+  describe.each(Object.values(ROLES))('for a %s', (role) => {
+    const ROUTES = [
+      ['get', versionRoute('publication'), 'planPublication'],
+      ['post', versionRoute('guard'), 'guardPublication'],
+      ['post', versionRoute('cancel-publication'), 'cancelPublication'],
+      ['post', versionRoute('activate'), 'publishVersion'],
+      [
+        'get',
+        '/api/ai-skills/redaction.subject-ideas/versions/1.3/publication',
+        'planPublication',
+      ],
+      [
+        'post',
+        '/api/ai-skills/redaction.subject-ideas/versions/1.3/guard',
+        'guardPublication',
+      ],
+      [
+        'post',
+        '/api/ai-skills/redaction.subject-ideas/versions/1.3/cancel-publication',
+        'cancelPublication',
+      ],
+      [
+        'post',
+        '/api/ai-skills/redaction.subject-ideas/versions/1.3/activate',
+        'publishVersion',
+      ],
+    ];
+    const allowed = role === ROLES.SUPER_ADMIN;
 
-    expect(res.status).toBe(401);
-    expect(publication.guardPublication).not.toHaveBeenCalled();
+    it.each(ROUTES)(
+      `${allowed ? 'reaches' : 'is refused'} %s %s`,
+      async (method, path, call) => {
+        publication[call].mockResolvedValue({ doc: {}, warnings: [] });
+
+        const res = await request(makeApp({ id: 'someone', role }))[method](
+          path
+        );
+
+        if (allowed) {
+          expect(res.status).toBe(200);
+          expect(publication[call]).toHaveBeenCalled();
+        } else {
+          expect(res.status).toBe(401);
+          expect(publication[call]).not.toHaveBeenCalled();
+        }
+      }
+    );
   });
 });

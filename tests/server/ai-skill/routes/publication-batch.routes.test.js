@@ -22,19 +22,9 @@ jest.mock(
   '../../../../packages/server/ai-skill/services/skills-source-client',
   () => ({ isConfigured: () => copy.configured })
 );
-// Stub the auth guard, on the real rule, so the test picks the user.
-jest.mock('../../../../packages/server/account/auth.guard', () => ({
-  GUARD_ADMIN: (req, res, next) => {
-    const permissions = require('../../../../packages/server/account/permissions.js');
-    const {
-      CAPABILITIES,
-    } = require('../../../../packages/shared/access/roles.js');
-    if (permissions.can(req.user, CAPABILITIES.PLATFORM_MANAGE)) return next();
-    return res.status(401).json({ message: 'Unauthorized' });
-  },
-}));
 
 const express = require('express');
+const { ROLES } = require('../../../../packages/shared/access/roles.js');
 const request = require('../../../helpers/local-request.js');
 const publication = require('../../../../packages/server/ai-skill/services/publication-batch');
 const {
@@ -42,7 +32,6 @@ const {
 } = require('../../../../packages/server/ai-skill/ai-skill.routes');
 
 const ADMIN = { id: 'admin', role: 'super_admin' };
-const COMPANY_ADMIN = { id: 'erin', role: 'company_admin' };
 const ITEMS = [
   { kind: 'expertise', id: 'redaction.subject-line' },
   { kind: 'skill', id: 'redaction.subject-ideas' },
@@ -222,12 +211,32 @@ describe('several drafts at once, on the back office', () => {
     expect(publication.draftsToPublish).not.toHaveBeenCalled();
   });
 
-  it('lets no one else publish', async () => {
-    const res = await request(makeApp(COMPANY_ADMIN))
-      .post('/api/ai-skills/publications')
-      .send({ items: ITEMS });
+  // The routes' own guard, as each role meets it (AGENTS.md, Rights).
+  describe.each(Object.values(ROLES))('for a %s', (role) => {
+    const allowed = role === ROLES.SUPER_ADMIN;
 
-    expect(res.status).toBe(401);
-    expect(publication.publishMany).not.toHaveBeenCalled();
+    it.each([
+      ['plan', 'planMany'],
+      ['guard', 'guardMany'],
+      ['cancel', 'cancelMany'],
+      ['', 'publishMany'],
+    ])(
+      `${allowed ? 'reaches' : 'is refused'} the batch's %s route`,
+      async (action, call) => {
+        publication[call].mockResolvedValue({ published: [], failed: [] });
+
+        const res = await request(makeApp({ id: 'someone', role }))
+          .post(`/api/ai-skills/publications${action && `/${action}`}`)
+          .send({ items: ITEMS, guardKey: GUARD.key });
+
+        if (allowed) {
+          expect(res.status).toBe(200);
+          expect(publication[call]).toHaveBeenCalled();
+        } else {
+          expect(res.status).toBe(401);
+          expect(publication[call]).not.toHaveBeenCalled();
+        }
+      }
+    );
   });
 });
