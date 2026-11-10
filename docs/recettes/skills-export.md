@@ -40,7 +40,7 @@ Sur B, publier le brouillon de X importé à l'étape 3 : sans version active ic
 
 1. **Mise à jour :** X est **Mise à jour**. Après l'import, la version active de B sert toujours, et un brouillon porte le numéro de A.
 2. **Brouillon ouvert :** sans publier ce brouillon, réimporter le même fichier : X est **Bloqué**, « Un brouillon est ouvert ici ».
-3. **Divergence :** sur B, publier le brouillon, puis modifier le contenu de X sans changer de version côté A ; réimporter l'ancien fichier de A au même numéro : **Bloqué**, « les deux instances ont divergé ».
+3. **Divergence :** sur B, publier le brouillon. Réimporter le même fichier : X est **À jour**. Puis, dans le fichier, modifier le `body` de X sans toucher à son numéro, et le réimporter : **Bloqué**, « les deux instances ont divergé ». Une version active ne se modifie pas : la divergence se fabrique dans le fichier.
 4. **Plus récent ici :** importer un fichier plus ancien que la version active de B : **Bloqué**, « Une version plus récente existe ici ».
 5. **Archivé ici :** archiver X sur B, réimporter : **Bloqué**, « Archivé ici ».
 6. **Schéma manquant :** dans un fichier, remplacer l'`inputSchemaId` du skill de fonctionnalité par un identifiant inconnu : **Bloqué**, « Son schéma n'existe pas sur cette instance ».
