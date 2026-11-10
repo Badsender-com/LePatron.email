@@ -28,6 +28,7 @@ const { findVersion, findActiveVersion } = require('./version-helpers.js');
 const { asList, declaresUse } = require('./feature-use.js');
 
 const NOT_ARCHIVED = { $ne: SkillStatuses.ARCHIVED };
+const isArchived = (doc) => doc.status === SkillStatuses.ARCHIVED;
 const SOURCE = 'publication.guard';
 
 // Why a replay gave no output, as a code the back office words.
@@ -49,15 +50,21 @@ const REPLAY_ERRORS = Object.freeze({
 async function planRuns({ skillIds, drafts }) {
   const skills = await LePatronSkills.find({
     skillId: { $in: skillIds },
-    status: NOT_ARCHIVED,
   }).lean();
-  const byId = new Map(skills.map((skill) => [skill.skillId, skill]));
+  // An archived skill is called by no feature: it is replayed only when it
+  // is published again, with no before.
+  const byId = new Map(
+    skills
+      .filter((skill) => !isArchived(skill) || drafts.has(skill.skillId))
+      .map((skill) => [skill.skillId, skill])
+  );
 
   const runs = [];
   const missing = [];
   skillIds.forEach((skillId) => {
     const skill = byId.get(skillId);
-    const active = skill ? findActiveVersion(skill) : null;
+    const active =
+      skill && !isArchived(skill) ? findActiveVersion(skill) : null;
     const draft = drafts.get(skillId);
     // A skill's own cases travel with the version being published.
     const after =
@@ -122,12 +129,13 @@ function expertiseMix(skillId, expertises, overrides) {
       callers.some((manifest) => declaresUse(manifest, 'expertise', doc))
     )
     .sort(byPromptOrder);
+  // An archived expertise is loaded by no feature, until it is published.
   const versionOf = (doc, swapped) => {
-    const override =
-      swapped && overrides.find((o) => o.id === doc.expertiseId);
-    return override
-      ? findVersion(doc, override.version.major, override.version.minor)
-      : findActiveVersion(doc);
+    const override = swapped && overrides.find((o) => o.id === doc.expertiseId);
+    if (override) {
+      return findVersion(doc, override.version.major, override.version.minor);
+    }
+    return isArchived(doc) ? null : findActiveVersion(doc);
   };
   const project = (swapped) =>
     loaded
@@ -184,7 +192,16 @@ async function runOnce({ skillId, version, input, groupId }) {
 async function replay({ runs, overrides = [] }) {
   if (!runs.length) return [];
   const groupId = await platformGroupId();
-  const expertises = await Expertises.find({ status: NOT_ARCHIVED }).lean();
+  // With the archived ones published again, which load once published.
+  const expertises = [
+    ...(await Expertises.find({ status: NOT_ARCHIVED }).lean()),
+    ...(overrides.length
+      ? await Expertises.find({
+          expertiseId: { $in: overrides.map((o) => o.id) },
+          status: SkillStatuses.ARCHIVED,
+        }).lean()
+      : []),
+  ];
   const cases = [];
   for (const run of runs) {
     const { skillId } = run.skill;

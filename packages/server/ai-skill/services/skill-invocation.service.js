@@ -95,8 +95,8 @@ const DEFAULT_TIMEOUT_MS = 30000;
  * @param {boolean} [params.options.everyAudience=false] — use the skill whatever
  *   its audience, as the platform company does: the super admins' playground
  * @param {boolean} [params.options.unpublished=false] — also reach a skill
- *   never published yet, with a pinned version: the publication guard replays
- *   a feature skill before its first publication (ADR 0019)
+ *   never published yet, or archived, with a pinned version: the publication
+ *   guard replays a feature skill before it is published (ADR 0019)
  * @returns {Promise<{ output: any, invocationId: string, resolvedConfig: Object, tokenUsage: Object, latencyMs: number }>}
  */
 async function invoke({
@@ -115,10 +115,9 @@ async function invoke({
   const skill = await LePatronSkills.findOne(
     {
       skillId,
-      status:
-        options.unpublished && versionRef
-          ? { $ne: SkillStatuses.ARCHIVED }
-          : SkillStatuses.ACTIVE,
+      ...(!(options.unpublished && versionRef) && {
+        status: SkillStatuses.ACTIVE,
+      }),
     },
     {
       skillId: 1,

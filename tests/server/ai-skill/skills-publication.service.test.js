@@ -391,6 +391,69 @@ describe('publishing what a feature uses', () => {
       expect(failing.cases[0].after).toEqual({ error: expect.any(String) });
     });
 
+    // Archived, an item is used by no feature; published again, it is.
+    describe('of an archived item a feature would use once published', () => {
+      const LINES = {
+        kind: 'expertise',
+        id: SUBJECT_LINES,
+        version: { major: 2, minor: 2 },
+      };
+      const IDEAS = {
+        kind: 'skill',
+        id: SUBJECT_IDEAS,
+        version: { major: 1, minor: 3 },
+      };
+
+      it('asks for the guard before an expertise is published again', async () => {
+        store.seed({
+          ...SEED,
+          expertises: [
+            { ...subjectLines, status: 'ARCHIVED' },
+            f.EXPERTISES[1],
+          ],
+        });
+
+        await expect(
+          publication.publishVersion(LINES, ALICE)
+        ).rejects.toMatchObject({
+          message: 'SKILL_PUBLICATION_GUARD_REQUIRED',
+        });
+        const guard = await publication.guardPublication(LINES, ALICE);
+        expect(guard.cases).toEqual([
+          expect.objectContaining({
+            before: { output: { text: 'no expertise, active skill' } },
+            after: { output: { text: 'draft expertise, active skill' } },
+          }),
+        ]);
+
+        await publication.publishVersion(
+          { ...LINES, guardKey: guard.key },
+          ALICE
+        );
+        expect(
+          store
+            .stored('expertises')
+            .find((e) => e.expertiseId === SUBJECT_LINES).status
+        ).toBe('ACTIVE');
+      });
+
+      it('replays a skill published again with no before', async () => {
+        store.seed({
+          ...SEED,
+          skills: [{ ...subjectIdeas, status: 'ARCHIVED' }, preheaderIdeas],
+        });
+
+        expect((await publication.planPublication(IDEAS)).calls).toBe(1);
+        const guard = await publication.guardPublication(IDEAS, ALICE);
+        expect(guard.cases).toEqual([
+          expect.objectContaining({
+            before: null,
+            after: { output: { text: 'active expertise, draft skill' } },
+          }),
+        ]);
+      });
+    });
+
     it('publishes a version no feature uses at once', async () => {
       store.seed({
         ...SEED,

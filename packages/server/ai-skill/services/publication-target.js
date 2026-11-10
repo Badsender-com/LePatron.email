@@ -9,6 +9,7 @@
 const createError = require('http-errors');
 const { Expertises, LePatronSkills } = require('../../common/models.common.js');
 const ERROR_CODES = require('../../constant/error-codes.js');
+const { SkillStatuses } = require('../constant/skill-constants.js');
 const { manifestsUsing } = require('./feature-use.js');
 const { findVersion } = require('./version-helpers.js');
 
@@ -17,8 +18,11 @@ const MODELS = { skill: LePatronSkills, expertise: Expertises };
 
 const keyOf = ({ kind, id }) => `${kind}:${id}`;
 
-// The features a publication of this item reaches.
-const usesOf = (kind, doc) => manifestsUsing(kind, doc);
+// The features a publication of this item reaches: those that use it once
+// published. An archived item is used by no feature, but publishing it makes
+// it active again, so its publication goes through the guard too.
+const usesOf = (kind, doc) =>
+  manifestsUsing(kind, doc && { ...doc, status: SkillStatuses.ACTIVE });
 
 /**
  * The stored skill or expertise and the features that use it; the version
