@@ -274,6 +274,8 @@ describe('publishing and opening from an assistant', () => {
       });
 
       expect(answer.error).toMatch(/never published/i);
+      // Whoever publishes, a person or an assistant (publish_draft).
+      expect(answer.error).not.toMatch(/a person publishes/i);
     });
 
     it('refuses a user who may not manage the platform, whatever the token says', async () => {
