@@ -408,6 +408,35 @@ describe('publishing what a feature uses', () => {
       });
     });
 
+    // The person compares each output with what the case expects.
+    it('gives each case what a good output should hold', async () => {
+      const expected = 'Three subjects, each under 40 characters.';
+      store.seed({
+        ...SEED,
+        skills: [
+          {
+            ...subjectIdeas,
+            versions: subjectIdeas.versions.map((v) => ({
+              ...v,
+              testCases: [{ ...CASE, expectedOutput: expected }],
+            })),
+          },
+          preheaderIdeas,
+        ],
+      });
+
+      const guard = await publication.guardPublication(
+        {
+          kind: 'expertise',
+          id: SUBJECT_LINES,
+          version: { major: 2, minor: 2 },
+        },
+        ALICE
+      );
+
+      expect(guard.cases[0].expectedOutput).toBe(expected);
+    });
+
     it('names the feature skills concerned that have no test case', async () => {
       const guard = await publication.guardPublication(
         {

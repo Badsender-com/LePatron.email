@@ -1,6 +1,7 @@
 <script>
 import {
   caseOutcome,
+  expectedText,
   failedCount,
   outputText,
   sideOutcome,
@@ -20,6 +21,7 @@ export default {
   },
   methods: {
     caseOutcome,
+    expectedText,
     outputText,
     sideOutcome,
     sideError(result) {
@@ -53,12 +55,7 @@ export default {
         <span class="text-body-2 font-weight-medium">{{ c.name }}</span>
         <span class="text-caption text--secondary ml-2">{{ c.skillId }}</span>
         <v-spacer />
-        <v-chip
-          v-if="caseOutcome(c) !== 'ok'"
-          x-small
-          outlined
-          color="warning"
-        >
+        <v-chip v-if="caseOutcome(c) !== 'ok'" x-small outlined color="warning">
           {{
             sideError(c.after) ||
             $t('aiSkills.publicationGuard.errors.OUTPUT_CONTRACT')
@@ -72,12 +69,14 @@ export default {
           {{ $t('aiSkills.publicationGuard.same') }}
         </v-chip>
       </div>
+      <div v-if="expectedText(c)" class="guard-expected mb-2">
+        <div class="text-caption text--secondary mb-1">
+          {{ $t('aiSkills.publicationGuard.expected') }}
+        </div>
+        <pre class="guard-output">{{ expectedText(c) }}</pre>
+      </div>
       <div class="guard-sides">
-        <div
-          v-for="side in ['before', 'after']"
-          :key="side"
-          class="guard-side"
-        >
+        <div v-for="side in ['before', 'after']" :key="side" class="guard-side">
           <div class="text-caption text--secondary mb-1">
             {{ $t(`aiSkills.publicationGuard.${side}`) }}
           </div>
@@ -87,10 +86,7 @@ export default {
           >
             {{ $t('aiSkills.publicationGuard.noBefore') }}
           </p>
-          <p
-            v-else-if="c[side].error"
-            class="text-caption warning--text mb-0"
-          >
+          <p v-else-if="c[side].error" class="text-caption warning--text mb-0">
             {{ sideError(c[side]) }}
           </p>
           <pre v-else class="guard-output">{{ outputText(c[side]) }}</pre>

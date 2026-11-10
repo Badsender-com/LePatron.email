@@ -2110,6 +2110,7 @@ export default {
       run: 'Run the check',
       running: 'Checking, three calls at a time at most…',
       summary: '{cases} case(s) replayed, {failed} with a difference.',
+      expected: 'What a good output should hold',
       before: 'Active version',
       after: 'This version',
       noBefore: 'Not published yet',

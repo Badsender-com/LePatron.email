@@ -69,3 +69,13 @@ export function outputText(result) {
   }
   return JSON.stringify(output, null, 2);
 }
+
+// What a good output should hold, as the test case says it: its text, or its
+// JSON; empty when the case says nothing of it.
+export function expectedText(testCase) {
+  const expected = testCase && testCase.expectedOutput;
+  if (expected === undefined || expected === null || expected === '') return '';
+  return typeof expected === 'string'
+    ? expected
+    : JSON.stringify(expected, null, 2);
+}

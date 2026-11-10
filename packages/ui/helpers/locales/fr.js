@@ -2138,6 +2138,7 @@ export default {
       run: 'Lancer la vérification',
       running: 'Vérification en cours, trois appels à la fois au plus…',
       summary: '{cases} cas rejoué(s), {failed} en écart.',
+      expected: 'Ce qu\'une bonne sortie doit contenir',
       before: 'Version active',
       after: 'Cette version',
       noBefore: 'Pas encore publiée',

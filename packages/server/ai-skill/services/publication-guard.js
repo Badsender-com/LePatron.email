@@ -226,7 +226,7 @@ async function runOnce({ skillId, version, input, groupId }) {
  * Replay the cases of a plan, a few calls at a time. `overrides`: the
  * expertises published, `{ id, version }`, swapped in after.
  *
- * @returns {Promise<Array<{ skillId, name, notes, input,
+ * @returns {Promise<Array<{ skillId, name, notes, input, expectedOutput?,
  *   before: ({ output }|{ error })|null, after: { output }|{ error },
  *   contract: { before: boolean|null, after: boolean|null } }>>}
  */
@@ -274,6 +274,10 @@ async function replayCase({ run, mix, testCase, groupId }) {
     name: testCase.name,
     notes: testCase.notes || '',
     input: testCase.input,
+    // What a good output should hold, for the person to compare with.
+    ...(testCase.expectedOutput !== undefined && {
+      expectedOutput: testCase.expectedOutput,
+    }),
     before: before ? before.result : null,
     after: after.result,
     contract: {

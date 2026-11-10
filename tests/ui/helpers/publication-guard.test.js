@@ -13,6 +13,7 @@ const {
   failedCount,
   outputText,
   notReplayedOf,
+  expectedText,
 } = require('../../../packages/ui/helpers/publication-guard');
 const {
   aiVersionAction,
@@ -53,6 +54,17 @@ describe('the publication guard', () => {
       notReplayed: 2,
       missing: ['redaction.preheader-ideas'],
     });
+  });
+
+  it('shows what a good output should hold, as text or as JSON', () => {
+    expect(expectedText({ expectedOutput: 'Under 40 characters' })).toBe(
+      'Under 40 characters'
+    );
+    expect(expectedText({ expectedOutput: { subjects: ['a'] } })).toBe(
+      '{\n  "subjects": [\n    "a"\n  ]\n}'
+    );
+    expect(expectedText({})).toBe('');
+    expect(expectedText(null)).toBe('');
   });
 
   it('counts the cases left out past the cap of calls', () => {
@@ -122,6 +134,7 @@ describe('the publication guard', () => {
       'notReplayed',
       'missing',
       'run',
+      'expected',
       'before',
       'after',
       'publish',
