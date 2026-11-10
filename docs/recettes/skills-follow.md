@@ -1,6 +1,6 @@
 # Recette — Une copie suit la production
 
-À rejouer avant la release qui porte le suivi de la production (ADR 0019, epic #1420), puis à chaque release qui touche les skills, les expertises, leurs versions ou les jetons de lecture. Elle vérifie qu'une copie suit en tout ce que la production tient, ne perd jamais le travail fait sur elle, ne touche pas à ce qui n'existe que chez elle, et ne lit plus rien une fois son jeton révoqué.
+À rejouer avant la release qui porte le suivi de la production (ADR 0019, epic #1420), puis à chaque release qui touche les skills, les expertises, leurs versions ou les jetons de lecture. Elle vérifie qu'une copie suit en tout ce que la production tient, ne perd jamais le travail fait sur elle, laisse tel quel ce qui n'existe que chez elle, et ne lit plus rien une fois son jeton révoqué.
 
 La documentation suivie pendant la recette est [docs/user/skills-follow/](../user/skills-follow/README.md).
 
@@ -77,11 +77,12 @@ C joue une recette qui existait avant le suivi. Sur C, aucune variable `SKILLS_S
 2. Un nouvel élément de la copie apparaît, intitulé « <titre de F> (travail de la copie) », avec cette version en brouillon, réservé à l'entreprise plateforme et non proposé aux assistants. F n'a pas changé.
 3. Suivre : le nouvel élément n'est pas touché.
 
-## 9. Ce que la production supprime, et ce qui n'existe que sur la copie
+## 9. Ce que la production supprime, et ce que la copie a écrit
 
 1. **Brouillon supprimé :** sur P, ouvrir un brouillon de F ; sur C, suivre (le brouillon arrive). Sur P, supprimer ce brouillon ; sur C, suivre : le rapport montre F **supprimé** pour ce brouillon, qui a disparu de C.
 2. **Élément jamais publié supprimé :** sur P, supprimer D. Sur C, suivre : D est **supprimé** de C.
 3. **Ce que la copie a écrit :** sur C, créer une expertise T qui n'existe pas sur P. Elle porte le badge **Écrit sur cette copie**. Suivre : T reste intacte. Les éléments du travail de la copie des étapes 6 à 8 sont toujours là.
+4. **Puis la production prend le même identifiant :** sur P, créer et publier une expertise avec l'identifiant de T. Sur C, suivre : T porte maintenant le badge **Suit la production** et la version de P, et le rapport montre T en **travail de la copie mis de côté** : le contenu écrit sur C est en brouillon dans `<id de T>.copie`.
 
 ## 10. Un skill de fonctionnalité qui naît avant son code
 

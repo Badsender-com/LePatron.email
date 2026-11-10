@@ -223,7 +223,7 @@ _UI_: Export de skills
 _Avoid_: Backup (it holds no history), sync (nothing happens on its own), package
 
 **Copy**:
-A LePatron instance (staging, development) whose skills and expertises follow production's, which is their only source. An item that came from production follows it in everything, its versions, audience and state, unless it is kept on the copy. What the copy wrote itself is never lost: the follow never touches an item that exists only on the copy, and sets the copy's work on a followed item aside in a new item rather than overwrite it.
+A LePatron instance (staging, development) whose skills and expertises follow production's, which is their only source. An item that came from production follows it in everything, its versions, audience and state, unless it is kept on the copy. What the copy wrote itself is never lost: the follow leaves an item written on the copy alone as long as production has none with its identifier, and sets the copy's work aside in a new item rather than overwrite it.
 _UI_: Copie
 _Avoid_: Mirror (a copy keeps its own items), replica, sync target, sync (the concept is the copy, the act is following)
 

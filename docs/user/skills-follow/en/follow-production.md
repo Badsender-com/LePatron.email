@@ -95,21 +95,21 @@ That new item has the original item's identifier followed by a suffix (`<identif
 
 A draft or an item never published that production removes leaves the copy, **if the copy had received it by a follow**. What the copy wrote itself is never removed.
 
-### What exists only on the copy
+### An item written on the copy
 
-An item created on the copy, a skill being tried out for instance, is never touched by the follow.
+An item created on the copy, a skill being tried out for instance, is left alone **as long as production has no item with the same identifier**. If production has one, the item follows it from the next follow on, and what was written on the copy goes into a separate "(travail de la copie)" item. To try something on a copy, pick an identifier production does not use.
 
 ### Where each item comes from
 
 On a copy, the lists and the page of a skill or an expertise carry a badge:
 
-| Badge                    | What it means                                                                                                        |
-| ------------------------ | -------------------------------------------------------------------------------------------------------------------- |
-| **Not followed yet**     | The copy has not succeeded any follow yet: the first one will tell which of its items follow production (see above). |
-| **Follows production**   | The item came from production and follows it at each follow.                                                         |
-| **Kept on this copy**    | The item came from production, but the follow no longer touches it (see below).                                      |
-| **Written on this copy** | The item was created on the copy: the follow never touches it.                                                       |
-| **Copy's work**          | The item holds the copy's work set aside, or a duplicated version. The link leads to the original item.              |
+| Badge                    | What it means                                                                                                            |
+| ------------------------ | ------------------------------------------------------------------------------------------------------------------------ |
+| **Not followed yet**     | The copy has not succeeded any follow yet: the first one will tell which of its items follow production (see above).     |
+| **Follows production**   | The item came from production and follows it at each follow.                                                             |
+| **Kept on this copy**    | The item came from production, but the follow no longer touches it (see below).                                          |
+| **Written on this copy** | The item was created on the copy: the follow leaves it alone as long as production has no item with the same identifier. |
+| **Copy's work**          | The item holds the copy's work set aside, or a duplicated version. The link leads to the original item.                  |
 
 These badges and the actions below do not show on production.
 

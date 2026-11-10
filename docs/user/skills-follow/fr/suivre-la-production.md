@@ -95,21 +95,21 @@ Ce nouvel élément porte l'identifiant de l'élément d'origine suivi d'un suff
 
 Un brouillon ou un élément jamais publié que la production supprime disparaît de la copie, **si la copie l'avait reçu par un suivi**. Ce que la copie a écrit elle-même n'est jamais supprimé.
 
-### Ce qui n'existe que sur la copie
+### Un élément écrit sur la copie
 
-Un élément créé sur la copie, par exemple un skill en cours d'essai, n'est jamais touché par le suivi.
+Un élément créé sur la copie, par exemple un skill en cours d'essai, est laissé tel quel **tant que la production n'a pas d'élément du même identifiant**. Si la production en a un, l'élément la suit à partir du suivi suivant, et ce qui a été écrit sur la copie part dans un élément à part, « (travail de la copie) ». Pour essayer quelque chose sur une copie, choisissez un identifiant que la production n'utilise pas.
 
 ### D'où vient chaque élément
 
 Sur une copie, les listes et la fiche d'un skill ou d'une expertise portent un badge :
 
-| Badge                     | Ce que ça veut dire                                                                                                       |
-| ------------------------- | ------------------------------------------------------------------------------------------------------------------------- |
-| **Pas encore suivi**      | La copie n'a encore réussi aucun suivi : le premier dira lesquels de ses éléments suivent la production (voir plus haut). |
-| **Suit la production**    | L'élément vient de la production et la suit à chaque suivi.                                                               |
-| **Gardé sur cette copie** | L'élément vient de la production, mais le suivi n'y touche plus (voir plus bas).                                          |
-| **Écrit sur cette copie** | L'élément a été créé sur la copie : le suivi n'y touche jamais.                                                           |
-| **Travail de la copie**   | L'élément tient le travail de la copie mis de côté, ou une version dupliquée. Le lien mène à l'élément d'origine.         |
+| Badge                     | Ce que ça veut dire                                                                                                           |
+| ------------------------- | ----------------------------------------------------------------------------------------------------------------------------- |
+| **Pas encore suivi**      | La copie n'a encore réussi aucun suivi : le premier dira lesquels de ses éléments suivent la production (voir plus haut).     |
+| **Suit la production**    | L'élément vient de la production et la suit à chaque suivi.                                                                   |
+| **Gardé sur cette copie** | L'élément vient de la production, mais le suivi n'y touche plus (voir plus bas).                                              |
+| **Écrit sur cette copie** | L'élément a été créé sur la copie : le suivi le laisse tel quel tant que la production n'a pas d'élément du même identifiant. |
+| **Travail de la copie**   | L'élément tient le travail de la copie mis de côté, ou une version dupliquée. Le lien mène à l'élément d'origine.             |
 
 Ces badges et les actions ci-dessous n'apparaissent pas sur la production.
 
