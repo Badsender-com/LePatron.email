@@ -2051,6 +2051,22 @@ export default {
         'A test case is incomplete: each case needs a name and an input.',
       SKILL_PUBLICATION_GUARD_REQUIRED:
         'A feature uses this version: check it before publishing it.',
+      SKILL_PUBLICATION_KIND_INVALID:
+        'Only a skill or an expertise is published.',
+      SKILL_PUBLICATION_ITEM_NOT_FOUND:
+        '{id} does not exist here: reload the list.',
+      SKILL_PUBLICATION_VERSION_NOT_FOUND:
+        'Version {version} of {id} does not exist here.',
+      SKILL_PUBLICATION_VERSION_INVALID:
+        'The version is not written as major.minor.',
+      SKILL_PUBLICATION_GUARD_INVALID:
+        'This check does not hold for this version any more: check it again.',
+      SKILLS_PUBLICATION_SELECTION_EMPTY:
+        'Select at least one skill or expertise.',
+      SKILLS_PUBLICATION_SELECTION_TOO_BIG:
+        'Select {max} items at most.',
+      SKILLS_PUBLICATION_SELECTION_INVALID:
+        'The selection names an item without its kind or its identifier.',
     },
     publishDrafts: {
       action: 'Publish the drafts',

@@ -119,4 +119,20 @@ describe('the publication guard', () => {
     ].forEach((key) => expect(section).toMatch(new RegExp(`\\b${key}:`)));
     expect(locale).toMatch(/SKILL_PUBLICATION_GUARD_REQUIRED:/);
   });
+
+  // The server answers a code, never a sentence (ERROR_CODES).
+  it.each(['en', 'fr'])('words in %s every code a publication answers', (l) => {
+    const {
+      aiSkills,
+    } = require(`../../../packages/ui/helpers/locales/${l}.js`).default;
+    const ERROR_CODES = require('../../../packages/server/constant/error-codes.js');
+    Object.keys(ERROR_CODES)
+      .filter((code) => /^SKILLS?_PUBLICATION_/.test(code))
+      .forEach((code) =>
+        expect([code, aiSkills.errors[code]]).toEqual([
+          code,
+          expect.any(String),
+        ])
+      );
+  });
 });

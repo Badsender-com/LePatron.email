@@ -2,6 +2,7 @@
 
 const asyncHandler = require('express-async-handler');
 const createError = require('http-errors');
+const ERROR_CODES = require('../../constant/error-codes.js');
 const publication = require('../services/publication-batch.js');
 
 /**
@@ -12,19 +13,23 @@ const publication = require('../services/publication-batch.js');
  */
 
 const KINDS = ['skill', 'expertise'];
+// What one batch publishes at most, as the lists page 200 rows at most.
+const MAX_ITEMS = 200;
 
 function itemsOf(req) {
   const { items } = req.body || {};
   if (!Array.isArray(items) || !items.length) {
-    throw createError(400, 'Select at least one skill or expertise');
+    throw createError(400, ERROR_CODES.SKILLS_PUBLICATION_SELECTION_EMPTY);
   }
-  if (items.length > 200) {
-    throw createError(400, 'Select 200 items at most');
+  if (items.length > MAX_ITEMS) {
+    throw createError(400, ERROR_CODES.SKILLS_PUBLICATION_SELECTION_TOO_BIG, {
+      max: MAX_ITEMS,
+    });
   }
   return items.map((item) => {
     const { kind, id, updatedAt } = item || {};
     if (!KINDS.includes(kind) || typeof id !== 'string' || !id) {
-      throw createError(400, 'Each item needs a kind and an id');
+      throw createError(400, ERROR_CODES.SKILLS_PUBLICATION_SELECTION_INVALID);
     }
     // When the page read the draft, a string or nothing (ADR 0014).
     return { kind, id, ...(typeof updatedAt === 'string' && { updatedAt }) };
@@ -61,7 +66,7 @@ module.exports = {
   cancel: asyncHandler(async (req, res) => {
     const { guard } = req.body || {};
     if (!guard || !Array.isArray(guard.cases)) {
-      throw createError(400, 'The guard that was cancelled is required');
+      throw createError(400, ERROR_CODES.SKILL_PUBLICATION_GUARD_INVALID);
     }
     const { targets } = await publication.draftsToPublish(itemsOf(req));
     res.json(await publication.cancelMany(targets, { guard }, req.user));

@@ -160,7 +160,7 @@ async function consumedWarningsOf({ kind, id, version }, doc) {
 async function cancelPublication(params, user) {
   await loadUse(params);
   if (!isGuard(params.guard)) {
-    throw createError(400, 'The guard that was cancelled is required');
+    throw createError(400, ERROR_CODES.SKILL_PUBLICATION_GUARD_INVALID);
   }
   return record(params, user, 'cancelled');
 }

@@ -486,6 +486,35 @@ describe('publishing what a feature uses', () => {
       ).toBe('all');
     });
 
+    it('names, with a code, an item or a version that does not exist, and a cancellation without its guard', async () => {
+      const at = (id, major, minor) => ({
+        kind: 'expertise',
+        id,
+        version: { major, minor },
+      });
+
+      await expect(
+        publication.planPublication(at('qc.nowhere', 1, 0))
+      ).rejects.toMatchObject({
+        status: 404,
+        message: 'SKILL_PUBLICATION_ITEM_NOT_FOUND',
+        id: 'qc.nowhere',
+      });
+      await expect(
+        publication.planPublication(at(SUBJECT_LINES, 9, 0))
+      ).rejects.toMatchObject({
+        status: 404,
+        message: 'SKILL_PUBLICATION_VERSION_NOT_FOUND',
+        version: '9.0',
+      });
+      await expect(
+        publication.cancelPublication(at(SUBJECT_LINES, 2, 2), ALICE)
+      ).rejects.toMatchObject({
+        status: 400,
+        message: 'SKILL_PUBLICATION_GUARD_INVALID',
+      });
+    });
+
     it('records a cancellation, and publishes nothing', async () => {
       const guard = await publication.guardPublication({
         kind: 'expertise',

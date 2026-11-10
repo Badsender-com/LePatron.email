@@ -2,6 +2,7 @@
 
 const asyncHandler = require('express-async-handler');
 const createError = require('http-errors');
+const ERROR_CODES = require('../../constant/error-codes.js');
 const publication = require('../services/skills-publication.service.js');
 const { parseVersionParam } = require('../services/version-helpers.js');
 
@@ -18,7 +19,7 @@ function publicationController(kind, idParam) {
   function target(req) {
     const version = parseVersionParam(req.params.version);
     if (!version) {
-      throw createError(400, 'Invalid version format (expected "major.minor")');
+      throw createError(400, ERROR_CODES.SKILL_PUBLICATION_VERSION_INVALID);
     }
     return { kind, id: req.params[idParam], version };
   }

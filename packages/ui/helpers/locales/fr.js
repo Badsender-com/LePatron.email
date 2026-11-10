@@ -2079,6 +2079,22 @@ export default {
         'Un cas de test est incomplet : chaque cas a besoin d\'un nom et d\'une entrée.',
       SKILL_PUBLICATION_GUARD_REQUIRED:
         'Une fonctionnalité utilise cette version : vérifiez-la avant de la publier.',
+      SKILL_PUBLICATION_KIND_INVALID:
+        'Seule une skill ou une expertise se publie.',
+      SKILL_PUBLICATION_ITEM_NOT_FOUND:
+        '{id} n\'existe pas ici : rechargez la liste.',
+      SKILL_PUBLICATION_VERSION_NOT_FOUND:
+        'La version {version} de {id} n\'existe pas ici.',
+      SKILL_PUBLICATION_VERSION_INVALID:
+        'La version n\'est pas écrite sous la forme majeure.mineure.',
+      SKILL_PUBLICATION_GUARD_INVALID:
+        'Cette vérification ne vaut plus pour cette version : relancez-la.',
+      SKILLS_PUBLICATION_SELECTION_EMPTY:
+        'Sélectionnez au moins une skill ou une expertise.',
+      SKILLS_PUBLICATION_SELECTION_TOO_BIG:
+        'Sélectionnez {max} éléments au plus.',
+      SKILLS_PUBLICATION_SELECTION_INVALID:
+        'La sélection nomme un élément sans son type ou son identifiant.',
     },
     publishDrafts: {
       action: 'Publier les brouillons',

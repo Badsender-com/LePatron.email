@@ -90,6 +90,16 @@ describe('the publication guard on the back office', () => {
     });
   });
 
+  it('refuses a version not written as major.minor, with its code', async () => {
+    const res = await request(makeApp()).get(
+      `/api/ai-expertise/${SUBJECT_LINES}/versions/latest/publication`
+    );
+
+    expect(res.status).toBe(400);
+    expect(res.body.message).toBe('SKILL_PUBLICATION_VERSION_INVALID');
+    expect(publication.planPublication).not.toHaveBeenCalled();
+  });
+
   it('runs the guard on a version', async () => {
     publication.guardPublication.mockResolvedValue(GUARD);
 

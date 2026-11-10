@@ -8,6 +8,7 @@
 
 const createError = require('http-errors');
 const { Expertises, LePatronSkills } = require('../../common/models.common.js');
+const ERROR_CODES = require('../../constant/error-codes.js');
 const { manifestsUsing } = require('./feature-use.js');
 const { findVersion } = require('./version-helpers.js');
 
@@ -23,14 +24,21 @@ const MODELS = { skill: LePatronSkills, expertise: Expertises };
  * @returns {Promise<{ doc: Object, manifests: Object[] }>}
  */
 async function loadUse({ kind, id, version }) {
-  if (!ID_FIELDS[kind]) throw createError(400, `Unknown kind "${kind}"`);
+  if (!ID_FIELDS[kind]) {
+    throw createError(400, ERROR_CODES.SKILL_PUBLICATION_KIND_INVALID);
+  }
   const doc = await MODELS[kind].findOne({ [ID_FIELDS[kind]]: id }).lean();
-  if (!doc) throw createError(404, `${kind} "${id}" not found`);
+  if (!doc) {
+    throw createError(404, ERROR_CODES.SKILL_PUBLICATION_ITEM_NOT_FOUND, {
+      kind,
+      id,
+    });
+  }
   if (!findVersion(doc, version.major, version.minor)) {
-    throw createError(
-      404,
-      `Version ${version.major}.${version.minor} not found`
-    );
+    throw createError(404, ERROR_CODES.SKILL_PUBLICATION_VERSION_NOT_FOUND, {
+      id,
+      version: `${version.major}.${version.minor}`,
+    });
   }
   return { doc, manifests: manifestsUsing(kind, doc) };
 }

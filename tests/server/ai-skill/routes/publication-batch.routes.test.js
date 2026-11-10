@@ -62,7 +62,7 @@ function makeApp(user = ADMIN) {
   });
   app.use('/api/ai-skills', skillsRouter);
   app.use((err, _req, res, _next) => {
-    res.status(err.status || 500).json({ message: err.message });
+    res.status(err.status || 500).json({ ...err, message: err.message });
   });
   return app;
 }
@@ -143,6 +143,7 @@ describe('several drafts at once, on the back office', () => {
       .send({ items: ITEMS, guard: GUARD });
 
     expect(refused.status).toBe(400);
+    expect(refused.body.message).toBe('SKILL_PUBLICATION_GUARD_INVALID');
     expect(cancelled.status).toBe(200);
     expect(publication.cancelMany).toHaveBeenCalledTimes(1);
   });
@@ -166,18 +167,29 @@ describe('several drafts at once, on the back office', () => {
     ]);
   });
 
-  it('refuses a selection that names no item, or an unknown kind', async () => {
+  it('refuses a selection that names no item, too many, or an unknown kind, with its code', async () => {
     const app = makeApp();
+    const plan = (items) =>
+      request(app).post('/api/ai-skills/publications/plan').send({ items });
 
-    const empty = await request(app)
-      .post('/api/ai-skills/publications/plan')
-      .send({ items: [] });
-    const unknown = await request(app)
-      .post('/api/ai-skills/publications/plan')
-      .send({ items: [{ kind: 'template', id: 'x' }] });
+    const empty = await plan([]);
+    const tooMany = await plan(
+      Array.from({ length: 201 }, (_, i) => ({ kind: 'skill', id: `s.${i}` }))
+    );
+    const unknown = await plan([{ kind: 'template', id: 'x' }]);
 
-    expect(empty.status).toBe(400);
-    expect(unknown.status).toBe(400);
+    expect([empty.status, empty.body.message]).toEqual([
+      400,
+      'SKILLS_PUBLICATION_SELECTION_EMPTY',
+    ]);
+    expect(tooMany.body).toMatchObject({
+      message: 'SKILLS_PUBLICATION_SELECTION_TOO_BIG',
+      max: 200,
+    });
+    expect([unknown.status, unknown.body.message]).toEqual([
+      400,
+      'SKILLS_PUBLICATION_SELECTION_INVALID',
+    ]);
     expect(publication.draftsToPublish).not.toHaveBeenCalled();
   });
 
