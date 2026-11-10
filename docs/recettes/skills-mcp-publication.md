@@ -45,11 +45,13 @@ Sur le staging :
 
 ## 5. Ouvrir et refermer une audience
 
-- [ ] Demander d'ouvrir E aux entreprises (`set_audience`, `all`). Le client demande votre accord. La réponse indique la version que les entreprises lisent (`clientsRead`).
+- [ ] Demander d'ouvrir E aux entreprises (`set_audience`, `all`). Le premier appel ne change rien : la réponse indique la version que les entreprises liront (`clientsRead`) et une clé. E reste réservée.
+- [ ] Confirmer : le client demande votre accord, l'assistant rappelle l'outil avec la clé, et E est ouverte.
+- [ ] Vérifier de nouveau l'ouverture de E, la refermer dans le back-office, puis confirmer avec la clé obtenue : refus « The audience or the active version changed after the check… ».
 - [ ] Avec l'assistant du compte utilisateur, retrouver E (`find_applicable_expertises`) : elle est lue, dans sa version active.
 - [ ] Demander de refermer E (`platform`) : à son appel suivant, l'assistant du compte utilisateur ne la trouve plus.
 - [ ] Demander d'ouvrir N, jamais publiée : refus « "…" was never published: a person publishes a version before it is opened. » Son audience n'a pas changé.
-- [ ] Sur une skill de tâche publiée **T**, réservée à l'entreprise plateforme et qui consomme E réservée elle aussi : demander d'ouvrir T. La réponse liste E (`platformOnlyExpertises`), et E reste réservée. Demander d'ouvrir E avec T (`openExpertiseIds`) : E est ouverte.
+- [ ] Sur une skill de tâche publiée **T**, réservée à l'entreprise plateforme et qui consomme E réservée elle aussi : demander d'ouvrir T. La réponse liste E (`platformOnlyExpertises`), et E reste réservée. Demander d'ouvrir E avec T (`openExpertiseIds`), puis confirmer : E est ouverte. Une clé obtenue pour T seule ne vaut pas pour T avec E : refus « This confirmation key was not given for this change… ».
 - [ ] Demander de réserver de nouveau E (`platform`) : la réponse liste T (`openTaskSkills`).
 
 ## 6. Refus et journal

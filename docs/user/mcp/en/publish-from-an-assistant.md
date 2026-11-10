@@ -69,18 +69,23 @@ Publishing shows nothing to the companies: the audience decides who reads a skil
 
 ## Opening or closing an audience
 
-The `set_audience` tool changes the audience of a skill or an expertise in one call:
+The `set_audience` tool changes the audience of a skill or an expertise:
 
 - `all` opens it to every company: in the editor's features, and in the assistants of the companies that have MCP access;
 - `platform` keeps it to the platform company again.
 
-Companies always read the active version, never a draft: the tool's answer says which one (`clientsRead`). A skill or expertise never published is not opened: ""…" was never published: a person publishes a version before it is opened." Nor is an archived one.
+It does so in two calls, as a publication does:
+
+1. The first call changes nothing. It answers the version companies will read (`clientsRead`), what the change leaves behind, and a confirmation key.
+2. Once you agree, the assistant calls the tool again with the same arguments and the key: the audience changes. The key holds for an hour, for this change and for you alone. If the audience or the active version changed in between, the tool refuses: "The audience or the active version changed after the check…", and checking again is enough.
+
+Companies always read the active version, never a draft. A skill or expertise never published is not opened: ""…" was never published: a person publishes a version before it is opened." Nor is an archived one.
 
 Closing an audience is immediate: the companies' assistants no longer read it at their next call.
 
 The tool follows the same rules as the back office:
 
-- **Opening a task skill:** the answer lists the expertises it consumes that stay kept to the platform company (`platformOnlyExpertises`): the other companies' assistants follow the skill without them. To open some of them too, ask the assistant to call the tool again with them (`openExpertiseIds`). Opening an expertise also applies it, at once, to the editor features of every company: choose them one by one.
+- **Opening a task skill:** the answer lists the expertises it consumes that stay kept to the platform company (`platformOnlyExpertises`): the other companies' assistants follow the skill without them. To open some of them too, ask the assistant to check again with them (`openExpertiseIds`), then to confirm. Opening an expertise also applies it, at once, to the editor features of every company: choose them one by one.
 - **Keeping an expertise to the platform company again:** the answer lists the task skills open to every company that consume it (`openTaskSkills`): they no longer receive it at the clients.
 
 ## Why the assistant asks you to confirm
