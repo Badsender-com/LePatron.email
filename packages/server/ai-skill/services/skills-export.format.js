@@ -12,14 +12,17 @@ const {
   SkillCategoryValues,
   SkillIdRegex,
   MaxConsumedExpertises,
+  MaxSkillIdLength,
 } = require('../constant/skill-constants.js');
 
 const FORMAT = 1;
 
 // What a file may hold, typed, so a wrong file is refused whole before the
 // preview rather than failing item by item at the import (ADR 0018). Keys
-// this format does not know are dropped.
-const id = z.string().regex(SkillIdRegex);
+// this format does not know are dropped: a field added to what a file
+// carries changes FORMAT, so an older instance refuses the file rather than
+// lose the field.
+const id = z.string().max(MaxSkillIdLength).regex(SkillIdRegex);
 const strings = z.array(z.string());
 const version = (content) =>
   z.object({
@@ -135,4 +138,16 @@ function readSkillsExport(json) {
   return parsed.data;
 }
 
-module.exports = { FORMAT, readSkillsExport };
+// The content fields of a version a file carries, by kind: those of the
+// models' versions (VERSION_CONTENT_FIELDS), which a test keeps equal.
+const RELEASE_FIELDS = ['major', 'minor', 'changelog', 'releaseNotes'];
+const versionFieldsOf = (schema) =>
+  Object.keys(schema.shape.version.shape).filter(
+    (field) => !RELEASE_FIELDS.includes(field)
+  );
+const VERSION_FIELDS = {
+  expertise: versionFieldsOf(EXPERTISE),
+  skill: versionFieldsOf(SKILL),
+};
+
+module.exports = { FORMAT, readSkillsExport, VERSION_FIELDS };

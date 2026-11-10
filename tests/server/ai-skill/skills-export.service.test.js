@@ -25,6 +25,8 @@ jest.doMock('../../../packages/server/utils/logger.js', () => ({
 }));
 
 const f = require('../../helpers/mcp-fixtures');
+const skillService = require('../../../packages/server/ai-skill/services/skill.service');
+const expertiseService = require('../../../packages/server/ai-skill/services/expertise.service');
 
 const SUBJECT_LINES = 'redaction.subject-line';
 const SPAM_WORDS = 'deliverability.spam-words';
@@ -279,6 +281,29 @@ describe('the skills export', () => {
       ).toThrow(/testCases/);
     });
 
+    it('refuses a file whose id is longer than an id may be', async () => {
+      const file = await exportOf({ expertiseIds: [SUBJECT_LINES] });
+      file.expertises[0].expertiseId = 'a'.repeat(101);
+
+      expect(() => readSkillsExport(file)).toThrow();
+    });
+
+    // zod drops the keys it does not know: a field added to a version and
+    // forgotten in the format would be lost on the way.
+    it('carries every content field of a version, and no other', () => {
+      const {
+        VERSION_FIELDS,
+      } = require('../../../packages/server/ai-skill/services/skills-export.format');
+      const namesOf = (fields) => fields.map(({ name }) => name).sort();
+
+      expect([...VERSION_FIELDS.skill].sort()).toEqual(
+        namesOf(skillService.VERSION_CONTENT_FIELDS)
+      );
+      expect([...VERSION_FIELDS.expertise].sort()).toEqual(
+        namesOf(expertiseService.VERSION_CONTENT_FIELDS)
+      );
+    });
+
     it('refuses a file that holds an item twice', async () => {
       const file = await exportOf({ expertiseIds: [SUBJECT_LINES] });
       file.expertises.push(file.expertises[0]);
@@ -335,6 +360,16 @@ describe('the skills export', () => {
       const preview = await previewImport(file);
 
       expect(itemOf(preview, SPAM_WORDS).state).toBe('up_to_date');
+    });
+
+    // A field the file leaves out reads as its empty value, as here.
+    it('says up to date for the same version with a field the file leaves out', async () => {
+      delete file.skills.find((s) => s.skillId === WRITE_SUBJECT).version
+        .systemPrompt;
+
+      expect(itemOf(await previewImport(file), WRITE_SUBJECT).state).toBe(
+        'up_to_date'
+      );
     });
 
     it('blocks the same version with a different content: the instances diverged', async () => {
@@ -676,7 +711,6 @@ describe('the skills export', () => {
         { expertiseIds: [SUBJECT_LINES], skillIds: [WRITE_SUBJECT] },
         { user: ALICE }
       );
-      const skillService = require('../../../packages/server/ai-skill/services/skill.service');
 
       await expect(
         skillService.activateVersion(

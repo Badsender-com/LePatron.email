@@ -10,6 +10,7 @@
  * published is not exported.
  */
 
+const { isDeepStrictEqual } = require('util');
 const createError = require('http-errors');
 const { Expertises, LePatronSkills } = require('../../common/models.common.js');
 const {
@@ -55,18 +56,32 @@ const ENTITIES = {
 const copy = (value) =>
   value === undefined ? undefined : JSON.parse(JSON.stringify(value));
 
-// Every content field of the version, at its empty value when missing, so a
-// file reads the same whatever the age of the version it comes from.
-function versionOf(version, contentFields) {
-  const out = { major: version.versionMajor, minor: version.versionMinor };
+// What a version says, without the notes that come with its release: every
+// content field, at its empty value when missing, so a file reads the same
+// whatever the age of the version it comes from, and a field a file leaves
+// out compares as this instance stores it.
+function contentOf(version, contentFields) {
+  const out = {};
   contentFields.forEach(({ name, default: empty }) => {
     const value = version[name];
     out[name] = value === undefined || value === null ? empty() : copy(value);
   });
-  out.changelog = version.changelog || '';
-  out.releaseNotes = version.releaseNotes || '';
   return out;
 }
+
+function versionOf(version, contentFields) {
+  return {
+    major: version.versionMajor,
+    minor: version.versionMinor,
+    ...contentOf(version, contentFields),
+    changelog: version.changelog || '',
+    releaseNotes: version.releaseNotes || '',
+  };
+}
+
+// Whatever order the keys of an embedded object come in.
+const sameContent = (a, b, contentFields) =>
+  isDeepStrictEqual(contentOf(a, contentFields), contentOf(b, contentFields));
 
 function itemOf(kind, doc) {
   const { idField, fields, contentFields } = ENTITIES[kind];
@@ -181,12 +196,6 @@ function compare({ major, minor }, version) {
   return minor > version.versionMinor ? 1 : -1;
 }
 
-// What a version says, without the notes that come with its release.
-const contentOf = (version, contentFields) =>
-  JSON.stringify(
-    contentFields.map(({ name }) => [name, version[name] ?? null])
-  );
-
 // A version stored before natures were versioned has none: a feature one.
 const natureOf = (version) => version.nature || SkillNatures.FEATURE;
 
@@ -209,10 +218,7 @@ function stateOf(kind, item, doc) {
     if (order < 0) return { state: 'blocked', reason: 'target_newer' };
     if (order === 0) {
       const { contentFields } = ENTITIES[kind];
-      const same =
-        contentOf(versionOf(active, contentFields), contentFields) ===
-        contentOf(item.version, contentFields);
-      return same
+      return sameContent(active, item.version, contentFields)
         ? { state: 'up_to_date' }
         : { state: 'blocked', reason: 'diverged' };
     }
