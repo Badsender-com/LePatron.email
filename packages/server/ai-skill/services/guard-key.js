@@ -5,28 +5,25 @@
  * the guard has run, for the versions it ran on as they were then (their
  * `updatedAt`), for the person who ran it, with what it showed. A publication
  * of a version a feature uses requires it, and records what the key carries,
- * never what a page declares. Signed, so nothing is held between the guard
- * and the publication: an assistant's confirmation in two steps is the same
- * key.
+ * never what a page declares. Signed (signed-key.js), so nothing is held
+ * between the guard and the publication: an assistant's confirmation in two
+ * steps is the same key.
  */
 
-const crypto = require('crypto');
 const createError = require('http-errors');
-const config = require('../../node.config.js');
 const ERROR_CODES = require('../../constant/error-codes.js');
+const {
+  signKey,
+  readKey,
+  isExpired,
+  KEY_LIFETIME_MS,
+} = require('../../utils/signed-key.js');
 
-const KEY_LIFETIME_MS = 60 * 60 * 1000;
 // Keeps this signature from standing for any other the secret makes.
 const PURPOSE = 'skills-publication-guard';
 
 const label = ({ major, minor }) => `${major}.${minor}`;
 const isoOf = (date) => (date ? new Date(date).toISOString() : null);
-
-const sign = (payload) =>
-  crypto
-    .createHmac('sha256', config.sessionSecret)
-    .update(`${PURPOSE}:${payload}`)
-    .digest('base64url');
 
 const invalid = () =>
   createError(400, ERROR_CODES.SKILL_PUBLICATION_GUARD_INVALID);
@@ -66,26 +63,7 @@ function issueGuardKey({ targets, guard, terms }, user) {
     },
     ...(terms && { terms }),
   };
-  const payload = Buffer.from(JSON.stringify(claims)).toString('base64url');
-  return `${payload}.${sign(payload)}`;
-}
-
-function claimsOf(key) {
-  const [payload, signature, extra] = String(key).split('.');
-  if (!payload || !signature || extra !== undefined) return null;
-  const expected = Buffer.from(sign(payload));
-  const given = Buffer.from(signature);
-  if (
-    expected.length !== given.length ||
-    !crypto.timingSafeEqual(expected, given)
-  ) {
-    return null;
-  }
-  try {
-    return JSON.parse(Buffer.from(payload, 'base64url').toString('utf8'));
-  } catch (err) {
-    return null;
-  }
+  return signKey(PURPOSE, claims);
 }
 
 /**
@@ -102,12 +80,12 @@ function claimsOf(key) {
  * @throws {HttpError} 400 `SKILL_PUBLICATION_GUARD_INVALID`
  */
 function readGuardKey(key, { kind, id, version }, user) {
-  const claims = typeof key === 'string' ? claimsOf(key) : null;
+  const claims = typeof key === 'string' ? readKey(PURPOSE, key) : null;
   if (
     !claims ||
     !Array.isArray(claims.targets) ||
     claims.by !== String(user && user.id) ||
-    !(Date.now() - claims.at < KEY_LIFETIME_MS)
+    isExpired(claims)
   ) {
     throw invalid();
   }

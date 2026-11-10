@@ -4,9 +4,9 @@
 
 const { z } = require('zod');
 const { ID } = require('./mcp-authoring.schemas.js');
+const { MAX_KEY_LENGTH } = require('./mcp-confirmation.js');
 
 // What an assistant may send: bounded, like every input of this server.
-const MAX_KEY_LENGTH = 4000;
 const MAX_TEXT_LENGTH = 2000;
 const MAX_GUARD_ID_LENGTH = 100;
 const VERSION = /^\d{1,4}\.\d{1,4}$/;
