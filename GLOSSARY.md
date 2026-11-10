@@ -272,10 +272,11 @@ _Avoid_: Session, link, integration
 **Call log**:
 The record of each call a connected application makes to LePatron: who, in which company, from which application, which tool, prompt or resource, the ids it named, how long it took and how it ended. Never what was typed nor what LePatron answered. Kept for the company's log retention.
 _Avoid_: Audit log, activity log, trace (the security events are another record)
+
 **Relayed image**:
-An image of a mailing hosted outside the instance, that the instance fetches and serves itself so that the preview in an assistant shows it, through a signed address for that image only.
+An image of a mailing hosted outside the instance over https, that the instance fetches and serves itself so that the preview in an assistant shows it, through a signed address for that image only.
 _UI_: Image relayée
-_Avoid_: Proxied image, cached image (nothing is kept)
+_Avoid_: Proxied image, cached image (the instance keeps it a few minutes only, to spare a second fetch)
 
 **Feedback**:
 A rating and a comment a user sends from a connected application about what LePatron gave them. Both reach the platform company whatever the retex; it is kept for the company's log retention.

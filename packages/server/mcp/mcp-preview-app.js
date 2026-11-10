@@ -45,7 +45,8 @@ const PREVIEW_TOOL_META = {
 /**
  * The preview app, served as an MCP App. The host frames it under the CSP it
  * declares: no connection anywhere, and images from LePatron only, where the
- * editor uploads them; an image hosted elsewhere shows as its alternative text.
+ * editor uploads them; an image hosted elsewhere shows through an address of
+ * LePatron, which relays it (ADR 0022).
  * The app holds the same CSP itself, which the email's frame inherits, should
  * the host apply the one declared poorly. It reads no data, but is read like
  * every primitive, by who may call (`withIdentity`).
