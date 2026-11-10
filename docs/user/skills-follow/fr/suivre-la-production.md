@@ -50,6 +50,14 @@ Sur une instance où `SKILLS_SOURCE_NIGHTLY` vaut `true`, la copie suit la produ
 
 Un suivi en cours est enregistré en base dès qu'il commence. Tant qu'il tourne, un second suivi est refusé, qu'il vienne du bouton, du suivi de nuit ou d'une autre instance de la même application : la section dit qu'un suivi est déjà en cours. Si le processus qui suivait s'arrête en route, cet enregistrement expire de lui-même, et l'on peut suivre de nouveau.
 
+### Le premier suivi d'une copie qui a déjà des éléments
+
+Une recette qui existait avant le suivi tient des éléments importés par fichier ou écrits sur elle, qu'aucun suivi n'a marqués. Tant que la copie n'a pas réussi un premier suivi, ses éléments portent le badge **Pas encore suivi**.
+
+Le premier suivi reprend **chaque élément dont la production a le même identifiant** : il suit la production à partir de là. Si sa version active sur la copie diffère de celle de la production, elle part en brouillon dans un élément « (travail de la copie) », comme tout travail de la copie. Une recette qui s'est éloignée de la production en aura beaucoup après son premier suivi : rien n'est perdu, et le rapport les liste un par un.
+
+**Avant ce premier suivi**, vous pouvez **Garder sur cette copie** n'importe quel élément, suivi ou non : le premier suivi n'y touchera pas. Lancez ensuite ce premier suivi à la main, avec **Suivre maintenant**, et lisez son rapport.
+
 ## 4. Le rapport d'un suivi
 
 Un suivi est **Réussi**, **Réussi en partie** (au moins un élément en échec, les autres ont été écrits, affiché en orange) ou **Échoué** (rien n'a été écrit). Le rapport donne sa date, qui l'a lancé, et ce qui est arrivé à chaque élément :
@@ -95,12 +103,13 @@ Un élément créé sur la copie, par exemple un skill en cours d'essai, n'est j
 
 Sur une copie, les listes et la fiche d'un skill ou d'une expertise portent un badge :
 
-| Badge                     | Ce que ça veut dire                                                                                               |
-| ------------------------- | ----------------------------------------------------------------------------------------------------------------- |
-| **Suit la production**    | L'élément vient de la production et la suit à chaque suivi.                                                       |
-| **Gardé sur cette copie** | L'élément vient de la production, mais le suivi n'y touche plus (voir plus bas).                                  |
-| **Écrit sur cette copie** | L'élément a été créé sur la copie : le suivi n'y touche jamais.                                                   |
-| **Travail de la copie**   | L'élément tient le travail de la copie mis de côté, ou une version dupliquée. Le lien mène à l'élément d'origine. |
+| Badge                     | Ce que ça veut dire                                                                                                       |
+| ------------------------- | ------------------------------------------------------------------------------------------------------------------------- |
+| **Pas encore suivi**      | La copie n'a encore réussi aucun suivi : le premier dira lesquels de ses éléments suivent la production (voir plus haut). |
+| **Suit la production**    | L'élément vient de la production et la suit à chaque suivi.                                                               |
+| **Gardé sur cette copie** | L'élément vient de la production, mais le suivi n'y touche plus (voir plus bas).                                          |
+| **Écrit sur cette copie** | L'élément a été créé sur la copie : le suivi n'y touche jamais.                                                           |
+| **Travail de la copie**   | L'élément tient le travail de la copie mis de côté, ou une version dupliquée. Le lien mène à l'élément d'origine.         |
 
 Ces badges et les actions ci-dessous n'apparaissent pas sur la production.
 

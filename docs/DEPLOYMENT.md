@@ -54,6 +54,12 @@ Production is the source of skills and expertises (ADR 0019). A copy (staging, d
 
 Leave them all unset on production itself: it follows nothing. Without the first two, a copy offers no follow and the nightly command does nothing. The copy's **Production and copies** tab shows whether the nightly follow is on.
 
+### The first follow, by hand
+
+Run the first follow of a copy by hand, before turning the nightly follow on: restart the copy without `SKILLS_SOURCE_NIGHTLY`, click **Follow now** in its **Production and copies** tab, then read the report.
+
+On a copy that already held skills and expertises, imported by file or written there, the first follow takes over every item whose identifier production also has. Each local active version that differs from production's moves, as a draft, to a "(travail de la copie)" item: a staging that drifted from production can get many of them, and the report lists them. Until that first follow succeeds, the copy's items carry the "Not followed yet" badge, and a super admin may keep any of them on the copy to leave it out of the take-over. Once the report is read, set `SKILLS_SOURCE_NIGHTLY` to `true` if the copy should follow every night.
+
 ### The nightly follow
 
 The web server runs no timer. The hosting platform's scheduler runs `node scripts/follow-production.js` (also `yarn follow-production`) every night at 3:00 UTC, on every app deployed from this repository; the command follows production only where `SKILLS_SOURCE_NIGHTLY` is `true` and `SKILLS_SOURCE_URL` and `SKILLS_SOURCE_TOKEN` are set, and otherwise does nothing and exits 0.

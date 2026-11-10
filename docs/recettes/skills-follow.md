@@ -12,9 +12,13 @@ Sur P :
 
 - une expertise X active en 1.0, ouverte à **Tous les groupes abonnés à l'accès MCP** ;
 - un **skill de fonctionnalité** F actif, ouvert à **Tous les groupes abonnés à l'accès MCP** et **proposé aux assistants** (la case n'existe que pour un skill de fonctionnalité) ;
-- une expertise D en brouillon, jamais publiée.
+- une expertise D en brouillon, jamais publiée ;
+- deux expertises E et K actives en 1.0.
 
-Sur C, aucune variable `SKILLS_SOURCE_*` pour commencer.
+C joue une recette qui existait avant le suivi. Sur C, aucune variable `SKILLS_SOURCE_*` pour commencer, et déjà des éléments :
+
+- E et K, importées plus tôt depuis P par fichier, puis modifiées et publiées sur C : leur version active diffère de celle de P ;
+- une expertise L, qui n'existe que sur C.
 
 ## 1. Jeton de lecture
 
@@ -29,13 +33,17 @@ Sur C, aucune variable `SKILLS_SOURCE_*` pour commencer.
 1. Sur C, renseigner `SKILLS_SOURCE_URL` (l'adresse de P) et `SKILLS_SOURCE_TOKEN` (le jeton de l'étape 1), sans `SKILLS_SOURCE_NIGHTLY`, puis redémarrer.
 2. Onglet **Production et copies** de C : la section **Suivre la production** apparaît avec « Production : » suivi de l'origine de P, sans le jeton, et « La production n'a encore jamais été suivie. ». Elle dit que le suivi de nuit n'est pas actif sur cette instance.
 3. Sur C, **Créer un jeton** n'apparaît pas.
+4. Sur C, E, K et L portent le badge **Pas encore suivi**.
+5. Sur K, section **Origine sur cette copie**, **Garder sur cette copie** est proposé alors que K n'a jamais été suivie : le choisir. K porte le badge **Gardé sur cette copie**.
 
-## 3. Premier suivi
+## 3. Premier suivi d'une copie qui a déjà des éléments
 
-1. **Suivre maintenant**. Le dernier suivi est **Réussi**, à votre nom, avec X, F et D **ajoutés**.
-2. Sur C, X et F sont **actifs**, aux mêmes numéros que sur P, et D est en brouillon. F est ouvert aux groupes abonnés et proposé aux assistants, comme sur P. Les trois portent le badge **Suit la production**.
-3. Sur P, le jeton « Recette » indique maintenant une dernière utilisation.
-4. **Suivre maintenant** une seconde fois : tout est **déjà à jour**, rien n'est réécrit (la date de mise à jour de X ne change pas).
+1. **Suivre maintenant**, le premier suivi lancé à la main. Le dernier suivi est **Réussi**, à votre nom, avec X, F et D **ajoutés**.
+2. Le rapport montre E en **travail de la copie mis de côté** : la version active de C est en brouillon dans un nouvel élément `<id de E>.copie`, intitulé « <titre de E> (travail de la copie) », et E porte maintenant la 1.0 de P.
+3. K est **gardé sur cette copie** : sa version de C n'a pas changé. L n'est pas touchée, et porte le badge **Écrit sur cette copie**.
+4. Sur C, X et F sont **actifs**, aux mêmes numéros que sur P, et D est en brouillon. F est ouvert aux groupes abonnés et proposé aux assistants, comme sur P. X, F, D et E portent le badge **Suit la production** ; plus aucun élément ne porte **Pas encore suivi**.
+5. Sur P, le jeton « Recette » indique maintenant une dernière utilisation.
+6. **Suivre maintenant** une seconde fois : tout est **déjà à jour**, rien n'est réécrit (la date de mise à jour de X ne change pas).
 
 ## 4. Un brouillon qui arrive
 

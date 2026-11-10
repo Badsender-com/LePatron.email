@@ -50,6 +50,14 @@ On an instance where `SKILLS_SOURCE_NIGHTLY` is `true`, the copy follows product
 
 A follow in progress is recorded in the database as soon as it starts. While it runs, a second follow is refused, whether it comes from the button, the nightly follow or another instance of the same application: the section says a follow is already running. If the process that was following stops on the way, that record expires on its own, and a follow can start again.
 
+### The first follow of a copy that already holds items
+
+A staging that existed before the follow holds items imported by file or written on it, which no follow has marked. Until the copy has succeeded a first follow, its items carry the **Not followed yet** badge.
+
+The first follow takes over **every item whose identifier production also has**: it follows production from then on. If its active version on the copy differs from production's, that version goes as a draft into a "(travail de la copie)" item, like any work of the copy. A staging that drifted from production will hold many of them after its first follow: nothing is lost, and the report lists each one.
+
+**Before that first follow**, you may **Keep on this copy** any item, followed or not: the first follow will not touch it. Then run that first follow by hand, with **Follow now**, and read its report.
+
 ## 4. The report of a follow
 
 A follow **Succeeded**, **Partly succeeded** (at least one item failed, the others were written, shown in orange) or **Failed** (nothing was written). The report gives its date, who started it, and what happened to each item:
@@ -95,12 +103,13 @@ An item created on the copy, a skill being tried out for instance, is never touc
 
 On a copy, the lists and the page of a skill or an expertise carry a badge:
 
-| Badge                    | What it means                                                                                           |
-| ------------------------ | ------------------------------------------------------------------------------------------------------- |
-| **Follows production**   | The item came from production and follows it at each follow.                                            |
-| **Kept on this copy**    | The item came from production, but the follow no longer touches it (see below).                         |
-| **Written on this copy** | The item was created on the copy: the follow never touches it.                                          |
-| **Copy's work**          | The item holds the copy's work set aside, or a duplicated version. The link leads to the original item. |
+| Badge                    | What it means                                                                                                        |
+| ------------------------ | -------------------------------------------------------------------------------------------------------------------- |
+| **Not followed yet**     | The copy has not succeeded any follow yet: the first one will tell which of its items follow production (see above). |
+| **Follows production**   | The item came from production and follows it at each follow.                                                         |
+| **Kept on this copy**    | The item came from production, but the follow no longer touches it (see below).                                      |
+| **Written on this copy** | The item was created on the copy: the follow never touches it.                                                       |
+| **Copy's work**          | The item holds the copy's work set aside, or a duplicated version. The link leads to the original item.              |
 
 These badges and the actions below do not show on production.
 
