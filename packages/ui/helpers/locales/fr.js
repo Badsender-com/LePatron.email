@@ -1892,7 +1892,7 @@ export default {
       skills: 'Skills',
       expertise: 'Expertise',
       invocations: 'Invocations',
-      sync: 'Synchronisation',
+      sync: 'Production et copies',
       details: 'Détails',
       versions: 'Versions',
     },

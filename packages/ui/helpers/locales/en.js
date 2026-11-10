@@ -1864,7 +1864,7 @@ export default {
       skills: 'Skills',
       expertise: 'Expertise',
       invocations: 'Invocations',
-      sync: 'Sync',
+      sync: 'Production and copies',
       details: 'Details',
       versions: 'Versions',
     },

@@ -172,6 +172,14 @@ describe("a copy's follows of production", () => {
     );
   });
 
+  it.each([
+    ['fr', 'Production et copies'],
+    ['en', 'Production and copies'],
+  ])('names its tab as the glossary names a copy, in %s', (l, name) => {
+    const messages = require(`~/helpers/locales/${l}.js`).default;
+    expect(messages.aiSkills.tabs.sync).toBe(name);
+  });
+
   it.each(['en', 'fr'])('has its words in %s', (l) => {
     const locale = fs.readFileSync(
       path.join(__dirname, `../../../packages/ui/helpers/locales/${l}.js`),
