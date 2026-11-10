@@ -5,7 +5,8 @@
 
 // The export bar of the skills (ADR 0018), mounted: the expertises the
 // selected task skills consume, read from the list without asking the server
-// for each skill, each one that can be taken out of the file and back in.
+// for each skill, each one that can be taken out of the file and back in, and
+// an export the server refuses says why.
 
 const { mountSfc, settle } = require('../../helpers/mount-sfc.js');
 const vuex = require('vuex');
@@ -127,5 +128,34 @@ describe('an expertise taken out', () => {
     await settle(vm);
 
     expect(chips(vm)).toEqual(['spam']);
+  });
+});
+
+describe('an export the server refuses', () => {
+  it('says the reason the server gives', async () => {
+    const refused = Object.assign(new Error('Request failed'), {
+      response: {
+        status: 400,
+        data: new Blob([
+          JSON.stringify({ message: '"qc.review" is archived.' }),
+        ]),
+      },
+    });
+    const { vm, commit } = mountBar({
+      skills: [REVIEW],
+      post: jest.fn().mockRejectedValue(refused),
+    });
+    await settle(vm);
+
+    exportButton(vm).dispatchEvent(new Event('click'));
+    await settle(vm);
+
+    expect(commit).toHaveBeenCalledWith('SHOW_SNACKBAR', {
+      text: expect.stringContaining('is archived'),
+      color: 'error',
+    });
+    expect(commit.mock.calls[0][1].text).toMatch(
+      /^aiSkills\.export\.failedBecause /
+    );
   });
 });

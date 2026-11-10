@@ -1692,6 +1692,7 @@ export default {
       remove: 'Remove {id} from the export',
       done: 'Export downloaded.',
       failed: 'The export failed.',
+      failedBecause: 'The export failed: {reason}',
     },
     feedback: {
       tab: 'Feedback',

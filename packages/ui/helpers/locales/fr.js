@@ -1716,6 +1716,7 @@ export default {
       remove: 'Retirer {id} de l\'export',
       done: 'Export téléchargé.',
       failed: 'L\'export a échoué.',
+      failedBecause: 'L\'export a échoué : {reason}',
     },
     feedback: {
       tab: 'Avis',

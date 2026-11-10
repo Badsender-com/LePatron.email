@@ -2,7 +2,10 @@
 import { mapMutations } from 'vuex';
 import { Download } from 'lucide-vue';
 import { PAGE, SHOW_SNACKBAR } from '~/store/page.js';
-import { downloadSkillsExport } from '~/helpers/skills-export-download.js';
+import {
+  downloadSkillsExport,
+  exportFailureMessage,
+} from '~/helpers/skills-export-download.js';
 import { SKILL_NATURES } from '../../../shared/ai-skill/constants.js';
 
 // What a selection exports (ADR 0018): the selected skills and expertises,
@@ -61,7 +64,7 @@ export default {
         });
       } catch (err) {
         this.showSnackbar({
-          text: this.$t('aiSkills.export.failed'),
+          text: exportFailureMessage(this, err),
           color: 'error',
         });
       } finally {

@@ -9,7 +9,10 @@ import BsAiSkillsImportModal from '~/components/ai-skill/bs-ai-skills-import-mod
 import { mapMutations } from 'vuex';
 import { Plus, Download, Upload } from 'lucide-vue';
 import { PAGE, SHOW_SNACKBAR } from '~/store/page.js';
-import { downloadSkillsExport } from '~/helpers/skills-export-download.js';
+import {
+  downloadSkillsExport,
+  exportFailureMessage,
+} from '~/helpers/skills-export-download.js';
 
 const VALID_TABS = ['skills', 'expertise', 'invocations'];
 
@@ -79,7 +82,7 @@ export default {
         });
       } catch (err) {
         this.showSnackbar({
-          text: this.$t('aiSkills.export.failed'),
+          text: exportFailureMessage(this, err),
           color: 'error',
         });
       } finally {
