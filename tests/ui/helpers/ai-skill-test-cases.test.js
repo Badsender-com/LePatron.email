@@ -9,6 +9,7 @@ const {
   testCaseFromRun,
   openDraftOf,
   addRunAsTestCase,
+  casesForNature,
 } = require('../../../packages/ui/helpers/ai-skill-test-cases');
 
 const CASE = {
@@ -191,9 +192,18 @@ describe('adding a run to the test cases of the open draft', () => {
     expect(addRunAsTestCase(skill, RUN)).toEqual({ outcome: 'noDraft' });
   });
 
-  it('refuses a task skill, which has no test case', () => {
-    const skill = { ...featureSkill([version(1, 1, 'DRAFT')]), nature: 'task' };
+  // The nature is the version's (ADR 0013), never the skill's.
+  it('refuses a task draft, which has no test case', () => {
+    const skill = featureSkill([
+      version(1, 0, 'ACTIVE'),
+      { ...version(1, 1, 'DRAFT'), nature: 'task' },
+    ]);
     expect(addRunAsTestCase(skill, RUN)).toEqual({ outcome: 'taskSkill' });
+  });
+
+  it('drops the cases of a draft turned into a task', () => {
+    expect(casesForNature('task', [CASE])).toEqual([]);
+    expect(casesForNature('feature', [CASE])).toEqual([CASE]);
   });
 
   it('refuses a run that did not succeed', () => {

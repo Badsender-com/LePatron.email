@@ -373,12 +373,26 @@ async function versionPlatformOnlyExpertises(skillId, ref) {
   return platformOnlyExpertises(versionOf(await getSkill(skillId), ref));
 }
 
+// No feature calls a task skill, so a task version has no test case
+// (ADR 0019): the version as the patch leaves it is checked.
+function assertCasesFitNature(version, patch) {
+  const nature = patch.nature !== undefined ? patch.nature : version.nature;
+  const cases =
+    patch.testCases !== undefined ? patch.testCases : version.testCases;
+  if (nature === SkillNatures.TASK && Array.isArray(cases) && cases.length) {
+    throw createError(400, ERROR_CODES.SKILL_TEST_CASES_ON_TASK);
+  }
+}
+
 // A draft saved with its consumed expertises or its test cases gets them
 // checked before anything is written (the shared lifecycle knows nothing of
 // them): an incomplete test case would otherwise fail the save as a Mongoose
 // ValidationError, answered as a 500.
 async function updateVersion(skillId, ref, patch, userId) {
   if (patch && patch.testCases !== undefined) assertTestCases(patch.testCases);
+  if (patch && (patch.testCases !== undefined || patch.nature !== undefined)) {
+    assertCasesFitNature(versionOf(await getSkill(skillId), ref), patch);
+  }
   if (patch && patch.consumedExpertiseIds !== undefined) {
     await assertConsumedExpertises(patch.consumedExpertiseIds);
   }

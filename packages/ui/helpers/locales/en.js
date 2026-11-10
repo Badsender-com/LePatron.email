@@ -2047,6 +2047,8 @@ export default {
         'Version {version} of {id} does not exist on this copy.',
       SKILLS_COPY_ID_TAKEN:
         'Too many items already hold the copy\'s work on {id}: delete some before creating another.',
+      SKILL_TEST_CASES_ON_TASK:
+        'A task skill has no test case: no feature calls it.',
       SKILL_TEST_CASE_INVALID:
         'A test case is incomplete: each case needs a name and an input.',
       SKILL_PUBLICATION_GUARD_REQUIRED:

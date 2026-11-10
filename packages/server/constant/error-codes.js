@@ -271,6 +271,8 @@ module.exports = {
   SKILLS_COPY_ID_TAKEN: 'SKILLS_COPY_ID_TAKEN',
   // A test case without a name or an input (ADR 0019).
   SKILL_TEST_CASE_INVALID: 'SKILL_TEST_CASE_INVALID',
+  // A task skill's version holds no test case: no feature calls it.
+  SKILL_TEST_CASES_ON_TASK: 'SKILL_TEST_CASES_ON_TASK',
   SKILL_PUBLICATION_GUARD_REQUIRED: 'SKILL_PUBLICATION_GUARD_REQUIRED',
   // What a publication is asked about (ADR 0019): its kind, its item with
   // the `kind` and `id`, its version as `major.minor`, the guard that ran.

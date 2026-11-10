@@ -15,6 +15,7 @@ import {
   SKILL_NATURE_VALUES,
 } from '~/helpers/ai-skill-categories.js';
 import BsAiSkillTestCases from '~/components/ai-skill/bs-ai-skill-test-cases.vue';
+import { casesForNature } from '~/helpers/ai-skill-test-cases.js';
 import { Plus, CheckCircle2, Copy, Trash2 } from 'lucide-vue';
 
 // What the version editor lets one change on a DRAFT.
@@ -90,6 +91,7 @@ export default {
     }
   },
   methods: {
+    casesForNature,
     // The nature is the version's (ADR 0013): a task skill's version has a
     // procedure instead of a template and schemas. One stored before natures
     // were versioned is a feature skill's.
@@ -218,6 +220,12 @@ export default {
               :readonly="v.status !== 'DRAFT'"
               :disabled="v.status !== 'DRAFT'"
               class="mb-3"
+              @input="
+                draftFor(v).testCases = casesForNature(
+                  $event,
+                  draftFor(v).testCases
+                )
+              "
             />
             <bs-ai-skill-task-version-fields
               v-if="isTask(v)"

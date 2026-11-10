@@ -106,13 +106,20 @@ export function openDraftOf(skill) {
  *   | {outcome: 'noDraft'|'taskSkill'|'runFailed'}}
  */
 export function addRunAsTestCase(skill, run, { notes } = {}) {
-  if (skill.nature === 'task') return { outcome: 'taskSkill' };
   if (run.status !== 'SUCCESS') return { outcome: 'runFailed' };
   const draft = openDraftOf(skill);
   if (!draft) return { outcome: 'noDraft' };
+  // The nature is the version's (ADR 0013): a task draft holds no case.
+  if (draft.nature === 'task') return { outcome: 'taskSkill' };
   return {
     outcome: 'added',
     draft,
     testCases: [...(draft.testCases || []), testCaseFromRun(run, { notes })],
   };
+}
+
+// A draft turned into a task keeps no test case: no feature calls a task
+// skill, and the server refuses one on a task version (ADR 0019).
+export function casesForNature(nature, testCases) {
+  return nature === 'task' ? [] : testCases;
 }

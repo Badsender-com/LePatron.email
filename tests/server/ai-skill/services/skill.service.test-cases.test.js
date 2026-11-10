@@ -88,6 +88,43 @@ describe("Test cases on a feature skill's version", () => {
     expect((await versionOf(1, 3)).testCases).toEqual([]);
   });
 
+  // No feature calls a task skill: its version holds no test case.
+  it('refuses test cases on a task version, and a task nature on a version that has some', async () => {
+    store.seed({
+      skills: [
+        {
+          ...subjectIdeas,
+          versions: subjectIdeas.versions.map((v) =>
+            v.status === 'DRAFT' ? { ...v, nature: 'task' } : v
+          ),
+        },
+      ],
+    });
+    const refused = {
+      status: 400,
+      message: ERROR_CODES.SKILL_TEST_CASES_ON_TASK,
+    };
+
+    await expect(
+      skillService.updateVersion(
+        SUBJECT_IDEAS,
+        DRAFT,
+        { testCases: [CASE] },
+        USER
+      )
+    ).rejects.toMatchObject(refused);
+    await skillService.updateVersion(
+      SUBJECT_IDEAS,
+      DRAFT,
+      { nature: 'feature', testCases: [CASE] },
+      USER
+    );
+    await expect(
+      skillService.updateVersion(SUBJECT_IDEAS, DRAFT, { nature: 'task' }, USER)
+    ).rejects.toMatchObject(refused);
+    expect((await versionOf(1, 3)).testCases).toEqual([CASE]);
+  });
+
   it('refuses test cases that are not a list', async () => {
     await expect(
       skillService.updateVersion(

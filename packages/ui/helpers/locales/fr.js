@@ -2075,6 +2075,8 @@ export default {
         'La version {version} de {id} n\'existe pas sur cette copie.',
       SKILLS_COPY_ID_TAKEN:
         'Trop d\'éléments portent déjà le travail de la copie de {id} : supprimez-en avant d\'en créer un autre.',
+      SKILL_TEST_CASES_ON_TASK:
+        'Une skill de tâche n\'a pas de cas de test : aucune fonctionnalité ne l\'appelle.',
       SKILL_TEST_CASE_INVALID:
         'Un cas de test est incomplet : chaque cas a besoin d\'un nom et d\'une entrée.',
       SKILL_PUBLICATION_GUARD_REQUIRED:
