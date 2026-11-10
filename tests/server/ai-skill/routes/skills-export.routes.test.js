@@ -22,6 +22,14 @@ jest.doMock('../../../../packages/server/utils/logger.js', () => ({
   error: jest.fn(),
   debug: jest.fn(),
 }));
+// The file's origin is the site's, read as the rest of the site reads it,
+// not through the emails' module, which loads its templates on start.
+jest.doMock(
+  '../../../../packages/server/email-templates/email-template.js',
+  () => {
+    throw new Error('the skills export does not send emails');
+  }
+);
 // The real rule: the platform capability.
 jest.doMock('../../../../packages/server/account/auth.guard', () => ({
   GUARD_ADMIN: (req, res, next) => {

@@ -11,7 +11,7 @@ const {
   importSkills,
 } = require('../services/skills-export.service.js');
 const { SkillIdRegex } = require('../constant/skill-constants.js');
-const { siteOrigin } = require('../../email-templates/email-template.js');
+const { siteOrigin } = require('../../utils/site-origin.js');
 
 // The file's name says where and when it was exported:
 // lepatron-skills-<instance>-<date>.json.
