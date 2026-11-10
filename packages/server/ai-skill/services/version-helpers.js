@@ -63,9 +63,21 @@ function assertDraft(version) {
   }
 }
 
-const isAfter = (a, b) =>
-  a.versionMajor > b.versionMajor ||
-  (a.versionMajor === b.versionMajor && a.versionMinor > b.versionMinor);
+/**
+ * -1, 0 or 1 as version `a` stands to version `b`, both numbered as stored
+ * (`versionMajor`, `versionMinor`).
+ *
+ * @returns {-1|0|1}
+ */
+function compareVersions(a, b) {
+  if (a.versionMajor !== b.versionMajor) {
+    return a.versionMajor > b.versionMajor ? 1 : -1;
+  }
+  if (a.versionMinor === b.versionMinor) return 0;
+  return a.versionMinor > b.versionMinor ? 1 : -1;
+}
+
+const isAfter = (a, b) => compareVersions(a, b) > 0;
 
 /**
  * The draft being written: the latest DRAFT version, provided it is newer
@@ -89,14 +101,16 @@ function openDraftOf(doc) {
  * millisecond.
  *
  * @param {Date} [previous]
+ * @param {Date|number} [now] the time it is, for a caller that reads it once
  * @returns {Date}
  */
-function laterThan(previous) {
+function laterThan(previous, now = Date.now()) {
   const before = previous ? new Date(previous).getTime() : 0;
-  return new Date(Math.max(Date.now(), before + 1));
+  return new Date(Math.max(new Date(now).getTime(), before + 1));
 }
 
 module.exports = {
+  compareVersions,
   laterThan,
   parseVersionParam,
   versionLabel,

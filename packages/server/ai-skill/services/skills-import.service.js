@@ -13,6 +13,7 @@ const {
   Audiences,
 } = require('../constant/skill-constants.js');
 const {
+  compareVersions,
   findActiveVersion,
   findVersion,
   openDraftOf,
@@ -34,13 +35,8 @@ const labelOf = ({ major, minor }) =>
   versionLabel({ versionMajor: major, versionMinor: minor });
 
 // -1, 0 or 1 as the file's version stands to a version of this instance.
-function compare({ major, minor }, version) {
-  if (major !== version.versionMajor) {
-    return major > version.versionMajor ? 1 : -1;
-  }
-  if (minor === version.versionMinor) return 0;
-  return minor > version.versionMinor ? 1 : -1;
-}
+const compare = ({ major, minor }, version) =>
+  compareVersions({ versionMajor: major, versionMinor: minor }, version);
 
 // A version stored before natures were versioned has none: a feature one.
 const natureOf = (version) => version.nature || SkillNatures.FEATURE;
