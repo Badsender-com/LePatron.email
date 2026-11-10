@@ -69,18 +69,23 @@ Publier ne montre rien aux entreprises : c'est l'audience qui décide qui lit un
 
 ## Ouvrir ou fermer une audience
 
-L'outil `set_audience` change l'audience d'une skill ou d'une expertise en un seul appel :
+L'outil `set_audience` change l'audience d'une skill ou d'une expertise :
 
 - `all` l'ouvre à toutes les entreprises : dans les fonctionnalités de l'éditeur, et dans l'assistant de celles qui ont l'accès MCP ;
 - `platform` la réserve de nouveau à l'entreprise plateforme.
 
-Les entreprises lisent toujours la version active, jamais un brouillon : la réponse de l'outil indique laquelle (`clientsRead`). Une skill ou une expertise jamais publiée ne s'ouvre pas : « "…" was never published: a person publishes a version before it is opened. » Une archivée non plus.
+Il le fait en deux appels, comme une publication :
+
+1. Le premier appel ne change rien. Il répond la version que les entreprises liront (`clientsRead`), ce que le changement laisse derrière lui, et une clé de confirmation.
+2. Une fois votre accord donné, l'assistant rappelle l'outil avec les mêmes arguments et la clé : l'audience change. La clé vaut une heure, pour ce changement et pour vous uniquement. Si l'audience ou la version active a changé entre-temps, l'outil refuse : « The audience or the active version changed after the check… », et il suffit de vérifier de nouveau.
+
+Les entreprises lisent toujours la version active, jamais un brouillon. Une skill ou une expertise jamais publiée ne s'ouvre pas : « "…" was never published: a person publishes a version before it is opened. » Une archivée non plus.
 
 Refermer une audience est immédiat : les assistants des entreprises ne la lisent plus à leur appel suivant.
 
 L'outil suit les mêmes règles que le back-office :
 
-- **Ouvrir une skill de tâche :** la réponse liste les expertises qu'elle consomme qui restent réservées à l'entreprise plateforme (`platformOnlyExpertises`) : les assistants des autres entreprises suivent la skill sans elles. Pour en ouvrir aussi, demandez à l'assistant de rappeler l'outil avec elles (`openExpertiseIds`). Ouvrir une expertise l'applique aussi, tout de suite, aux fonctionnalités de l'éditeur de toutes les entreprises : choisissez-les une par une.
+- **Ouvrir une skill de tâche :** la réponse liste les expertises qu'elle consomme qui restent réservées à l'entreprise plateforme (`platformOnlyExpertises`) : les assistants des autres entreprises suivent la skill sans elles. Pour en ouvrir aussi, demandez à l'assistant de vérifier de nouveau avec elles (`openExpertiseIds`), puis de confirmer. Ouvrir une expertise l'applique aussi, tout de suite, aux fonctionnalités de l'éditeur de toutes les entreprises : choisissez-les une par une.
 - **Réserver de nouveau une expertise à l'entreprise plateforme :** la réponse liste les skills de tâche ouvertes à toutes les entreprises qui la consomment (`openTaskSkills`) : elles ne la reçoivent plus chez les clients.
 
 ## Pourquoi l'assistant vous demande confirmation
