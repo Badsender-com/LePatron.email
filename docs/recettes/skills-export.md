@@ -36,7 +36,7 @@ Sur A :
 
 ## 4. Mises à jour et blocages
 
-Sur A, publier une nouvelle version mineure de X, puis l'exporter. Sur B :
+Sur B, publier le brouillon de X importé à l'étape 3 : sans version active ici, X serait bloqué par ce brouillon. Sur A, publier une nouvelle version mineure de X, puis l'exporter. Sur B :
 
 1. **Mise à jour :** X est **Mise à jour**. Après l'import, la version active de B sert toujours, et un brouillon porte le numéro de A.
 2. **Brouillon ouvert :** sans publier ce brouillon, réimporter le même fichier : X est **Bloqué**, « Un brouillon est ouvert ici ».
