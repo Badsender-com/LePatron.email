@@ -62,4 +62,6 @@ A consultant's retex belongs to the platform company, whatever company they pick
 
 ## How long they are kept
 
+A company keeps 200 retex in 24 hours at most; past that, the assistant answers that the limit is reached. The consultants' count for the platform company.
+
 An open retex is kept until it is addressed or dismissed. Once closed, it follows its company's log retention, from the day it was closed. A consultant's retex follows the platform company's. Deleting a company deletes its users' retex, open or closed; those consultants wrote while working for it stay, without its name.

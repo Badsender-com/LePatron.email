@@ -81,6 +81,8 @@ McpRetexSchema.index({ status: 1, category: 1, part: 1 });
 // A change of the company's retention re-stamps its closed retex
 // (group/log-retention.js).
 McpRetexSchema.index({ _company: 1, closedAt: -1 });
+// A company's retex of the last day, against its daily cap.
+McpRetexSchema.index({ _company: 1, createdAt: -1 });
 McpRetexSchema.index({ expiresAt: 1 }, { expireAfterSeconds: 0 });
 
 module.exports = McpRetexSchema;

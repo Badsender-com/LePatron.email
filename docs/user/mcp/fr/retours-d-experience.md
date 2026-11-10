@@ -62,4 +62,6 @@ Le retour d'un consultant appartient à l'entreprise plateforme, quelle que soit
 
 ## Combien de temps ils sont gardés
 
+Une entreprise garde au plus 200 retours d'expérience sur 24 heures ; au-delà, l'assistant répond que la limite est atteinte. Ceux des consultants comptent pour l'entreprise plateforme.
+
 Un retour d'expérience ouvert est gardé tant qu'il n'est ni pris en compte ni écarté. Une fois clos, il suit la durée de conservation des journaux de son entreprise, à partir du jour où il a été clos. Le retour d'un consultant suit celle de l'entreprise plateforme. Supprimer une entreprise supprime les retours d'expérience de ses utilisateurs, ouverts ou clos ; ceux que des consultants ont écrits en travaillant pour elle restent, sans son nom.

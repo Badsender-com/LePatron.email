@@ -300,6 +300,69 @@ describe('the retex loop', () => {
     });
   });
 
+  // A company keeps 200 retex a day at most: a guard against an assistant
+  // that runs away (ADR 0021).
+  describe('the daily cap of a company', () => {
+    const HOUR = 60 * 60 * 1000;
+    const retexOf = (company, count, hoursAgo = 1) =>
+      Array.from({ length: count }, () => ({
+        ...ORPHAN_COMPLEMENT,
+        _company: company,
+        author: 'client',
+        status: 'open',
+        createdAt: new Date(Date.now() - hoursAgo * HOUR),
+      }));
+    const seedWith = (...retex) =>
+      harness.seed({ ...SEED, retex: retex.flat() });
+
+    it('answers that the cap is reached past 200 retex in the last 24 hours, and keeps nothing', async () => {
+      seedWith(retexOf(f.CLIENT_GROUP, 200));
+      allowRetex();
+
+      const answer = await call(await asClient(), REPORT, {
+        ...LENGTH_DIVERGENCE,
+        approvedByUser: true,
+      });
+
+      expect(answer).toEqual({ kept: false, reason: 'limit' });
+      expect(harness.stored('retex')).toHaveLength(200);
+    });
+
+    it('counts only the retex of the last 24 hours, of the same company', async () => {
+      seedWith(
+        retexOf(f.CLIENT_GROUP, 199),
+        retexOf(f.CLIENT_GROUP, 50, 25),
+        retexOf(f.OTHER_GROUP, 200)
+      );
+      allowRetex();
+
+      const answer = await call(await asClient(), REPORT, {
+        ...LENGTH_DIVERGENCE,
+        approvedByUser: true,
+      });
+
+      expect(answer.kept).toBe(true);
+    });
+
+    it("counts a consultant's retex with the platform company's, whatever company they connected to", async () => {
+      seedWith(retexOf(f.PLATFORM_GROUP, 200));
+
+      const consultant = await call(
+        await asConsultant(f.CLIENT_GROUP),
+        REPORT,
+        LENGTH_DIVERGENCE
+      );
+      allowRetex();
+      const client = await call(await asClient(), REPORT, {
+        ...LENGTH_DIVERGENCE,
+        approvedByUser: true,
+      });
+
+      expect(consultant).toEqual({ kept: false, reason: 'limit' });
+      expect(client.kept).toBe(true);
+    });
+  });
+
   // Stopping the retex of a company erases its users' retex, open or closed
   // (ADR 0012, ADR 0021); the consultants' belong to the platform company.
   describe('the retex stopped', () => {
