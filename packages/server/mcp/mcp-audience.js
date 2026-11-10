@@ -24,6 +24,7 @@ const {
   assertOpenable,
   openTaskSkillsConsuming,
 } = require('../ai-skill/services/audience-opening.js');
+const source = require('../ai-skill/services/skills-source-client.js');
 const ERROR_CODES = require('../constant/error-codes.js');
 const logger = require('../utils/logger.js');
 const { keyOf, claimsOf, isExpired } = require('./mcp-confirmation.js');
@@ -142,7 +143,9 @@ function assertKey(claims, expected) {
   }
 }
 
-// Written on the condition that the item is as checked.
+// Written on the condition that the item is as checked, and on a copy kept
+// there, as the back office's publication keeps it (ADR 0019): the next
+// follow does not undo it.
 async function write({ kind, id, audience }, { toOpen }, options) {
   if (kind === 'skill') {
     const { skill, warnings } = await skillService.updateSkill(
@@ -161,11 +164,14 @@ async function write({ kind, id, audience }, { toOpen }, options) {
 }
 
 async function apply(args, change, user) {
+  const keptOnCopy = source.isConfigured();
   try {
-    return await write(args, change, {
+    const written = await write(args, change, {
       readAt: change.doc.updatedAt,
+      keepOnCopy: keptOnCopy,
       userId: user.id,
     });
+    return { ...written, keptOnCopy };
   } catch (err) {
     if (err && err.message === ERROR_CODES.SKILL_ITEM_CHANGED) {
       throw changedSince(args.id);
@@ -214,13 +220,14 @@ async function setAudience(args, user) {
     };
   }
   assertKey(claimsOf(PURPOSE, confirmation), expected);
-  const { saved, warnings } = await apply(args, change, user);
+  const { saved, warnings, keptOnCopy } = await apply(args, change, user);
   const notes = await audienceNotes({ kind, id, ...change });
   return {
     id,
     audience: saved.audience,
     clientsRead: expected.reads,
     changed: true,
+    keptOnCopy,
     ...notes,
     warnings: [...warnings, ...(notes.warnings || [])],
   };

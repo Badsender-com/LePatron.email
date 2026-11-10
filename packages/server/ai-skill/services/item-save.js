@@ -3,7 +3,8 @@
 /**
  * Saving a skill or an expertise itself, its identity or its audience, on the
  * condition that it is as it was read (`readAt`, its `updatedAt`), so a write
- * made meanwhile is never written over (ADR 0014).
+ * made meanwhile is never written over (ADR 0014); and on a copy, keeping it
+ * on the copy in the same write (ADR 0019).
  */
 
 const createError = require('http-errors');
@@ -15,13 +16,19 @@ const CONFLICTS = new Set(['DocumentNotFoundError', 'VersionError']);
 
 /**
  * @param {Object} doc the stored item, as read
- * @param {{ readAt?: Date|string }} [options] `readAt`: when it was last
- *   written, as read
+ * @param {{ readAt?: Date|string, keepOnCopy?: boolean, userId? }} [options]
+ *   `readAt`: when it was last written, as read; `keepOnCopy`: keep it on the
+ *   copy, by `userId`
  * @returns {Promise<Object>} the item saved
  * @throws {HttpError} 409 `SKILL_ITEM_CHANGED` when it was written since
  */
-async function saveItem(doc, { readAt } = {}) {
+async function saveItem(doc, { readAt, keepOnCopy, userId } = {}) {
   /* eslint-disable no-param-reassign */
+  if (keepOnCopy === true) {
+    doc.keptOnCopy = true;
+    doc.keptOnCopyAt = new Date();
+    doc._keptOnCopyBy = userId;
+  }
   // Said here too, where timestamps do not run: the next read sees a write.
   doc.updatedAt = laterThan(readAt);
   if (!readAt) {
