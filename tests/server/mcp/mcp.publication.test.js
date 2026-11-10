@@ -5,9 +5,10 @@
 
 // Publishing and opening from an assistant (ADR 0019, epic #1422, amending
 // ADR 0014): a token with the skills:write scope, held by someone who may
-// manage the platform, publishes a draft in two calls (the guard first, then
-// the publication on the key of the draft checked) and opens or closes an
-// audience. A draft is never opened to clients.
+// manage the platform, publishes a draft and opens or closes an audience, each
+// in two calls: the first changes nothing and answers what will change (the
+// guard, or what clients will read) with a key, the second applies the change
+// on that key. A draft is never opened to clients.
 
 const harness = require('../../helpers/mcp-harness');
 const f = require('../../helpers/mcp-fixtures');
@@ -70,7 +71,7 @@ describe('publishing and opening from an assistant', () => {
       );
     });
 
-    it('opens an active expertise to every company, and says what clients will read', async () => {
+    it('changes nothing at the first call, and answers what clients will read with a key', async () => {
       const answer = await call(await asAuthor(), AUDIENCE, {
         kind: 'expertise',
         id: SUBJECT_LINES,
@@ -81,24 +82,102 @@ describe('publishing and opening from an assistant', () => {
         id: SUBJECT_LINES,
         audience: 'all',
         clientsRead: '2.1',
+        changed: false,
+        confirmation: expect.any(String),
       });
-      expect(subjectLines().audience).toBe('all');
+      expect(subjectLines().audience).toBe('platform');
     });
 
-    it('closes it back to the platform company', async () => {
+    it('opens an active expertise to every company on the key of the change checked', async () => {
       const client = await asAuthor();
-      await call(client, AUDIENCE, {
+      const { confirmation } = await call(client, AUDIENCE, {
         kind: 'expertise',
         id: SUBJECT_LINES,
         audience: 'all',
       });
 
-      await call(client, AUDIENCE, {
+      const answer = await call(client, AUDIENCE, {
+        kind: 'expertise',
+        id: SUBJECT_LINES,
+        audience: 'all',
+        confirmation,
+      });
+
+      expect(answer).toMatchObject({
+        id: SUBJECT_LINES,
+        audience: 'all',
+        clientsRead: '2.1',
+        changed: true,
+      });
+      expect(subjectLines().audience).toBe('all');
+    });
+
+    it('closes it back to the platform company, in two steps too', async () => {
+      const client = await asAuthor();
+      const change = async (audience) => {
+        const { confirmation } = await call(client, AUDIENCE, {
+          kind: 'expertise',
+          id: SUBJECT_LINES,
+          audience,
+        });
+        return call(client, AUDIENCE, {
+          kind: 'expertise',
+          id: SUBJECT_LINES,
+          audience,
+          confirmation,
+        });
+      };
+      await change('all');
+
+      const answer = await change('platform');
+
+      expect(answer).toMatchObject({ audience: 'platform', changed: true });
+      expect(subjectLines().audience).toBe('platform');
+    });
+
+    it('refuses a key when the audience changed after the check', async () => {
+      const client = await asAuthor();
+      const { confirmation } = await call(client, AUDIENCE, {
+        kind: 'expertise',
+        id: SUBJECT_LINES,
+        audience: 'all',
+      });
+      // Opened meanwhile, in the back office or by another conversation
+      harness.update('expertises', subjectLines()._id, { audience: 'all' });
+
+      const answer = await call(client, AUDIENCE, {
+        kind: 'expertise',
+        id: SUBJECT_LINES,
+        audience: 'all',
+        confirmation,
+      });
+
+      expect(answer.error).toMatch(/changed/i);
+    });
+
+    it('refuses a key made up or given for another change', async () => {
+      const client = await asAuthor();
+      const { confirmation } = await call(client, AUDIENCE, {
+        kind: 'expertise',
+        id: SUBJECT_LINES,
+        audience: 'all',
+      });
+
+      const madeUp = await call(client, AUDIENCE, {
+        kind: 'expertise',
+        id: SUBJECT_LINES,
+        audience: 'all',
+        confirmation: 'made-up',
+      });
+      const otherChange = await call(client, AUDIENCE, {
         kind: 'expertise',
         id: SUBJECT_LINES,
         audience: 'platform',
+        confirmation,
       });
 
+      expect(madeUp.error).toMatch(/confirmation/i);
+      expect(otherChange.error).toMatch(/confirmation/i);
       expect(subjectLines().audience).toBe('platform');
     });
 
