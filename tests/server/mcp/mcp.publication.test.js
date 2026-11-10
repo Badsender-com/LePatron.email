@@ -245,24 +245,41 @@ describe('publishing and opening from an assistant', () => {
       expect(subjectLines().audience).toBe('platform');
     });
 
-    // The call log keeps metadata only (ADR 0012); which way an audience went
-    // is one, and the log would not say it otherwise.
-    it('records which way the audience went in the call log', async () => {
+    // The call log keeps metadata only (ADR 0012); which way an audience was
+    // asked to go is one, and whether the call checked it or applied it.
+    it('records which way the audience went in the call log, a check apart', async () => {
       const client = await asAuthor();
       const args = { kind: 'expertise', id: SUBJECT_LINES, audience: 'all' };
       const { confirmation } = await call(client, AUDIENCE, args);
       await call(client, AUDIENCE, { ...args, confirmation });
 
-      expect(await harness.callLogs()).toEqual(
-        expect.arrayContaining([
-          expect.objectContaining({
-            name: AUDIENCE,
-            objectIds: [SUBJECT_LINES],
-            change: 'audience:all',
-            clientId: 'test-client',
-          }),
-        ])
+      const audienceLogs = (await harness.callLogs()).filter(
+        (log) => log.name === AUDIENCE
       );
+      expect(audienceLogs).toEqual([
+        expect.objectContaining({
+          objectIds: [SUBJECT_LINES],
+          change: 'audience:all:check',
+          clientId: 'test-client',
+        }),
+        expect.objectContaining({
+          objectIds: [SUBJECT_LINES],
+          change: 'audience:all',
+        }),
+      ]);
+    });
+
+    it('records no change for another tool, nor an audience it does not know', async () => {
+      const client = await asAuthor();
+      await call(client, 'find_skills', { audience: 'all' });
+      await call(client, AUDIENCE, {
+        kind: 'expertise',
+        id: SUBJECT_LINES,
+        audience: 'everyone, and more',
+      });
+
+      const changes = (await harness.callLogs()).map((log) => log.change);
+      expect(changes.every((change) => change == null)).toBe(true);
     });
 
     it('never opens what was never published', async () => {
