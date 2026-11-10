@@ -24,6 +24,13 @@ Sur Scalingo, en une fois, sans que la clé ne s'affiche :
 scalingo --app <app> env-set "lepatron_mcpOauthJwks=$(node -e "const {generateKeyPairSync}=require('node:crypto');const jwk=generateKeyPairSync('rsa',{modulusLength:2048}).privateKey.export({format:'jwk'});console.log(JSON.stringify({keys:[{...jwk,kid:'mcp-1',alg:'RS256',use:'sig'}]}))")"
 ```
 
+Sur Clever Cloud, de même, puis redémarrer l'application, car une variable ne s'applique qu'au démarrage :
+
+```bash
+clever env set lepatron_mcpOauthJwks "$(node -e "const {generateKeyPairSync}=require('node:crypto');const jwk=generateKeyPairSync('rsa',{modulusLength:2048}).privateKey.export({format:'jwk'});console.log(JSON.stringify({keys:[{...jwk,kid:'mcp-1',alg:'RS256',use:'sig'}]}))")" --alias <alias>
+clever restart --alias <alias>
+```
+
 La changer ne déconnecte aucun assistant. Pour tout couper :
 
 - pour une entreprise, couper son accès MCP (**Paramètres › Fonctionnalités IA**, section **Accès MCP**) ;
