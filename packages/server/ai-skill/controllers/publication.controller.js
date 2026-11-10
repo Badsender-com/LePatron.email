@@ -3,6 +3,7 @@
 const asyncHandler = require('express-async-handler');
 const createError = require('http-errors');
 const ERROR_CODES = require('../../constant/error-codes.js');
+const { guardKeyIn } = require('../services/guard-key.js');
 const publication = require('../services/skills-publication.service.js');
 const { parseVersionParam } = require('../services/version-helpers.js');
 
@@ -30,26 +31,25 @@ function publicationController(kind, idParam) {
     }),
 
     guard: asyncHandler(async (req, res) => {
-      res.json(await publication.guardPublication(target(req)));
+      res.json(await publication.guardPublication(target(req), req.user));
     }),
 
     cancel: asyncHandler(async (req, res) => {
       res.json(
         await publication.cancelPublication(
-          { ...target(req), guard: (req.body || {}).guard },
+          { ...target(req), guardKey: guardKeyIn(req.body) },
           req.user
         )
       );
     }),
 
-    // The guard, when one ran, rides along with the changelog and release
+    // The key of the guard, when one ran, rides along with the changelog and release
     // notes of the version, with the opening the publication asks for
     // (`openToAll`, and a skill's `openExpertiseIds`, ADR 0013), whether a copy
     // keeps the item it publishes (`keepOnCopy`, ADR 0019), and with the
     // update date of the draft the page read, on which it publishes (ADR 0014).
     publish(req) {
       const {
-        guard,
         changelog,
         releaseNotes,
         openToAll,
@@ -60,7 +60,7 @@ function publicationController(kind, idParam) {
       return publication.publishVersion(
         {
           ...target(req),
-          guard,
+          guardKey: guardKeyIn(req.body),
           payload: {
             changelog,
             releaseNotes,

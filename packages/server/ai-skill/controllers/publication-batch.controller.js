@@ -3,13 +3,15 @@
 const asyncHandler = require('express-async-handler');
 const createError = require('http-errors');
 const ERROR_CODES = require('../../constant/error-codes.js');
+const { guardKeyIn } = require('../services/guard-key.js');
 const publication = require('../services/publication-batch.js');
 
 /**
  * Several drafts published at once from the back office lists (ADR 0019,
  * #1431). The body names the selected items, `{ kind, id }`; the server finds
- * the one draft of each, and says which it leaves out and why. A guard, once
- * it ran, rides along with the publication or the cancellation.
+ * the one draft of each, and says which it leaves out and why. The key a
+ * guard answered, once it ran, rides along with the publication or the
+ * cancellation.
  */
 
 const KINDS = ['skill', 'expertise'];
@@ -48,27 +50,29 @@ module.exports = {
 
   guard: asyncHandler(async (req, res) => {
     const { targets } = await publication.draftsToPublish(itemsOf(req));
-    res.json(await publication.guardMany(targets));
+    res.json(await publication.guardMany(targets, req.user));
   }),
 
+  // The key the guard answered rides along, never what it showed: the
+  // server records what its key carries.
   publish: asyncHandler(async (req, res) => {
     const { targets, skipped } = await publication.draftsToPublish(
       itemsOf(req)
     );
     const report = await publication.publishMany(
       targets,
-      { guard: (req.body || {}).guard },
+      { guardKey: guardKeyIn(req.body) },
       req.user
     );
     res.json({ ...report, skipped });
   }),
 
   cancel: asyncHandler(async (req, res) => {
-    const { guard } = req.body || {};
-    if (!guard || !Array.isArray(guard.cases)) {
+    const guardKey = guardKeyIn(req.body);
+    if (!guardKey) {
       throw createError(400, ERROR_CODES.SKILL_PUBLICATION_GUARD_INVALID);
     }
     const { targets } = await publication.draftsToPublish(itemsOf(req));
-    res.json(await publication.cancelMany(targets, { guard }, req.user));
+    res.json(await publication.cancelMany(targets, { guardKey }, req.user));
   }),
 };

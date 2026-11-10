@@ -84,7 +84,7 @@ export default {
       const doc = await this.call(() =>
         this.$axios.$post(this.route('activate'), {
           ...this.payload,
-          guard: this.guard,
+          guardKey: this.guard.key,
         })
       );
       if (!doc) return;
@@ -94,7 +94,7 @@ export default {
     async cancel() {
       const doc = await this.call(() =>
         this.$axios.$post(this.route('cancel-publication'), {
-          guard: this.guard,
+          guardKey: this.guard.key,
         })
       );
       if (!doc) return;

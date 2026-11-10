@@ -48,7 +48,9 @@ const GUARD = {
   calls: 2,
   cases: [{ skillId: 'redaction.subject-ideas', name: 'A sale' }],
   missing: [],
+  key: 'the-key.signed',
 };
+const KEY = GUARD.key;
 
 function makeApp(user = ADMIN) {
   const app = express();
@@ -108,14 +110,18 @@ describe('the publication guard on the back office', () => {
     );
 
     expect(res.body).toEqual(GUARD);
-    expect(publication.guardPublication).toHaveBeenCalledWith({
-      kind: 'skill',
-      id: 'redaction.subject-ideas',
-      version: { major: 1, minor: 3 },
-    });
+    expect(publication.guardPublication).toHaveBeenCalledWith(
+      {
+        kind: 'skill',
+        id: 'redaction.subject-ideas',
+        version: { major: 1, minor: 3 },
+      },
+      ADMIN
+    );
   });
 
-  it('publishes with the guard that ran, and the release notes', async () => {
+  // What the guard showed is the server's (ADR 0019): only its key goes.
+  it('publishes with the key of the guard that ran, and the release notes', async () => {
     publication.publishVersion.mockResolvedValue({
       doc: { expertiseId: SUBJECT_LINES },
       warnings: [],
@@ -123,7 +129,7 @@ describe('the publication guard on the back office', () => {
 
     const res = await request(makeApp())
       .post(versionRoute('activate'))
-      .send({ guard: GUARD, changelog: 'Shorter' });
+      .send({ guardKey: KEY, guard: GUARD, changelog: 'Shorter' });
 
     expect(res.status).toBe(200);
     expect(publication.publishVersion).toHaveBeenCalledWith(
@@ -131,7 +137,7 @@ describe('the publication guard on the back office', () => {
         kind: 'expertise',
         id: SUBJECT_LINES,
         version: VERSION,
-        guard: GUARD,
+        guardKey: KEY,
         payload: { changelog: 'Shorter', releaseNotes: undefined },
       },
       ADMIN
@@ -150,7 +156,7 @@ describe('the publication guard on the back office', () => {
 
     await request(makeApp())
       .post(versionRoute('activate'))
-      .send({ guard: GUARD, updatedAt: readAt });
+      .send({ guardKey: KEY, updatedAt: readAt });
 
     expect(publication.publishVersion).toHaveBeenCalledWith(
       expect.objectContaining({
@@ -170,13 +176,13 @@ describe('the publication guard on the back office', () => {
 
     const res = await request(makeApp())
       .post('/api/ai-skills/redaction.subject-ideas/versions/1.3/activate')
-      .send({ guard: GUARD, openToAll: true, openExpertiseIds: ['a.b'] });
+      .send({ guardKey: KEY, openToAll: true, openExpertiseIds: ['a.b'] });
 
     expect(res.status).toBe(200);
     expect(publication.publishVersion).toHaveBeenCalledWith(
       expect.objectContaining({
         kind: 'skill',
-        guard: GUARD,
+        guardKey: KEY,
         payload: expect.objectContaining({
           openToAll: true,
           openExpertiseIds: ['a.b'],
@@ -206,17 +212,17 @@ describe('the publication guard on the back office', () => {
     });
   });
 
-  it('records a cancellation with the guard that ran', async () => {
+  it('records a cancellation with the key of the guard that ran', async () => {
     publication.cancelPublication.mockResolvedValue({
       expertiseId: SUBJECT_LINES,
     });
 
     await request(makeApp())
       .post(versionRoute('cancel-publication'))
-      .send({ guard: GUARD });
+      .send({ guardKey: KEY });
 
     expect(publication.cancelPublication).toHaveBeenCalledWith(
-      { kind: 'expertise', id: SUBJECT_LINES, version: VERSION, guard: GUARD },
+      { kind: 'expertise', id: SUBJECT_LINES, version: VERSION, guardKey: KEY },
       ADMIN
     );
   });

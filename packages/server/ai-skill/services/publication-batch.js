@@ -14,6 +14,7 @@ const { keyOf, loadMany, usesOf } = require('./publication-target.js');
 const { planRuns, replay } = require('./publication-guard.js');
 const { findVersion } = require('./version-helpers.js');
 const publication = require('./skills-publication.service.js');
+const { issueGuardKey } = require('./guard-key.js');
 
 const summaryOf = ({ kind, id, version }) => ({
   kind,
@@ -24,7 +25,11 @@ const summaryOf = ({ kind, id, version }) => ({
 // Why one publication failed, as a word the back office translates.
 function failureReason(err) {
   const status = err && (err.status || err.statusCode);
-  if (err && err.message === ERROR_CODES.SKILL_PUBLICATION_GUARD_REQUIRED) {
+  if (
+    err &&
+    (err.message === ERROR_CODES.SKILL_PUBLICATION_GUARD_REQUIRED ||
+      err.message === ERROR_CODES.SKILL_PUBLICATION_GUARD_INVALID)
+  ) {
     return 'guard_required';
   }
   if (err && err.message === ERROR_CODES.SKILL_VERSION_CHANGED) {
@@ -127,7 +132,7 @@ async function planOf(targets) {
     targets.filter((t) => t.kind === 'skill').map((t) => [t.id, t.version])
   );
   const plan = await planRuns({ skillIds: [...skillIds], drafts });
-  return { usedBy: [...features.values()], plan };
+  return { usedBy: [...features.values()], plan, docs };
 }
 
 /**
@@ -144,18 +149,32 @@ async function planMany(targets) {
 /**
  * One guard over everything the drafts touch: each case of each feature skill
  * reached is replayed once, before with the active versions, after with every
- * draft in place. Publishes nothing.
+ * draft in place. Publishes nothing. Answers one key for every draft, on each
+ * as it was read (guard-key.js).
  *
  * @param {Array<{ kind, id, version }>} targets
- * @returns {Promise<{ usedBy, calls, cases, missing }>}
+ * @param {{ id: string }} user who runs it
+ * @returns {Promise<{ usedBy, calls, cases, missing, key }>}
  */
-async function guardMany(targets) {
-  const { usedBy, plan } = await planOf(targets);
+async function guardMany(targets, user) {
+  const { usedBy, plan, docs } = await planOf(targets);
   const overrides = targets
     .filter((t) => t.kind === 'expertise')
     .map(({ id, version }) => ({ id, version }));
   const cases = await replay({ runs: plan.runs, overrides });
-  return { usedBy, calls: plan.calls, cases, missing: plan.missing };
+  const guard = { cases, missing: plan.missing };
+  const read = targets.map((target) => {
+    const doc = docs.get(keyOf(target));
+    const version =
+      doc && findVersion(doc, target.version.major, target.version.minor);
+    return { ...target, updatedAt: version ? version.updatedAt : null };
+  });
+  return {
+    usedBy,
+    calls: plan.calls,
+    ...guard,
+    key: issueGuardKey({ targets: read, guard }, user),
+  };
 }
 
 /**
@@ -163,13 +182,13 @@ async function guardMany(targets) {
  * nothing else.
  *
  * @param {Array<{ kind, id, version }>} targets
- * @param {{ guard?: Object, application?: string }} options the guard that
- *   ran over all of them
+ * @param {{ guardKey?: string, application?: string }} options the key of
+ *   the guard that ran over all of them
  * @param {{ id: string }} user
  * @returns {Promise<{ published: Array<{ kind, id, version, warnings? }>,
  *   failed: Array<{ kind, id, version, reason, message }> }>}
  */
-async function publishMany(targets, { guard, application } = {}, user) {
+async function publishMany(targets, { guardKey, application } = {}, user) {
   const report = { published: [], failed: [] };
   const docs = await loadMany(asList(targets));
   for (const target of asList(targets)) {
@@ -177,7 +196,7 @@ async function publishMany(targets, { guard, application } = {}, user) {
       const payload = payloadOf(target, docs.get(keyOf(target)));
       // eslint-disable-next-line no-await-in-loop
       const { doc, warnings } = await publication.publishVersion(
-        { ...target, guard, payload, application },
+        { ...target, guardKey, payload, application },
         user
       );
       // What a publication warns of, as on the item's own page (ADR 0013).
@@ -202,10 +221,10 @@ async function publishMany(targets, { guard, application } = {}, user) {
 }
 
 /** Record, on each draft, that the person cancelled after their guard. */
-async function cancelMany(targets, { guard } = {}, user) {
+async function cancelMany(targets, { guardKey } = {}, user) {
   for (const target of asList(targets)) {
     // eslint-disable-next-line no-await-in-loop
-    await publication.cancelPublication({ ...target, guard }, user);
+    await publication.cancelPublication({ ...target, guardKey }, user);
   }
   return { cancelled: asList(targets).map(summaryOf) };
 }

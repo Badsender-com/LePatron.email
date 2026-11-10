@@ -120,6 +120,20 @@ describe('the publication guard', () => {
     expect(locale).toMatch(/SKILL_PUBLICATION_GUARD_REQUIRED:/);
   });
 
+  // What the guard showed is the server's: the page hands back its key.
+  it.each([
+    'packages/ui/components/ai-skill/bs-ai-publication-guard-modal.vue',
+    'packages/ui/components/ai-skill/bs-ai-publish-drafts.vue',
+  ])('%s publishes and cancels with the key of the guard', (file) => {
+    const source = fs.readFileSync(
+      path.join(__dirname, '../../..', file),
+      'utf8'
+    );
+
+    expect(source).toMatch(/guardKey: this\.guard/);
+    expect(source).not.toMatch(/\bguard: this\.guard\b/);
+  });
+
   // The server answers a code, never a sentence (ERROR_CODES).
   it.each(['en', 'fr'])('words in %s every code a publication answers', (l) => {
     const {

@@ -291,22 +291,28 @@ describe('publishing what a feature uses', () => {
   // Turned on by #1430 (the guard on a publication)
   describe('the guard', () => {
     it('has nothing to replay for a version no feature uses', async () => {
-      const guard = await publication.guardPublication({
-        kind: 'expertise',
-        id: SPAM_WORDS,
-        version: { major: 1, minor: 0 },
-      });
+      const guard = await publication.guardPublication(
+        {
+          kind: 'expertise',
+          id: SPAM_WORDS,
+          version: { major: 1, minor: 0 },
+        },
+        ALICE
+      );
 
       expect(guard).toEqual({ usedBy: [], calls: 0, cases: [], missing: [] });
       expect(provider.chatComplete).not.toHaveBeenCalled();
     });
 
     it('replays the cases of the feature skills an expertise reaches, with the active version and the new one', async () => {
-      const guard = await publication.guardPublication({
-        kind: 'expertise',
-        id: SUBJECT_LINES,
-        version: { major: 2, minor: 2 },
-      });
+      const guard = await publication.guardPublication(
+        {
+          kind: 'expertise',
+          id: SUBJECT_LINES,
+          version: { major: 2, minor: 2 },
+        },
+        ALICE
+      );
 
       expect(guard.calls).toBe(2);
       expect(guard.cases).toEqual([
@@ -321,11 +327,14 @@ describe('publishing what a feature uses', () => {
     });
 
     it("replays a feature skill's own cases when the skill is published", async () => {
-      const guard = await publication.guardPublication({
-        kind: 'skill',
-        id: SUBJECT_IDEAS,
-        version: { major: 1, minor: 3 },
-      });
+      const guard = await publication.guardPublication(
+        {
+          kind: 'skill',
+          id: SUBJECT_IDEAS,
+          version: { major: 1, minor: 3 },
+        },
+        ALICE
+      );
 
       expect(guard.cases).toEqual([
         expect.objectContaining({
@@ -336,11 +345,14 @@ describe('publishing what a feature uses', () => {
     });
 
     it('names the feature skills concerned that have no test case', async () => {
-      const guard = await publication.guardPublication({
-        kind: 'expertise',
-        id: SUBJECT_LINES,
-        version: { major: 2, minor: 2 },
-      });
+      const guard = await publication.guardPublication(
+        {
+          kind: 'expertise',
+          id: SUBJECT_LINES,
+          version: { major: 2, minor: 2 },
+        },
+        ALICE
+      );
 
       expect(guard.missing).toEqual([PREHEADER_IDEAS]);
     });
@@ -356,20 +368,26 @@ describe('publishing what a feature uses', () => {
         return { content: JSON.stringify({ text: 'fine' }) };
       });
 
-      const guard = await publication.guardPublication({
-        kind: 'expertise',
-        id: SUBJECT_LINES,
-        version: { major: 2, minor: 2 },
-      });
+      const guard = await publication.guardPublication(
+        {
+          kind: 'expertise',
+          id: SUBJECT_LINES,
+          version: { major: 2, minor: 2 },
+        },
+        ALICE
+      );
 
       expect(guard.cases[0].contract).toEqual({ before: true, after: false });
 
       provider.chatComplete.mockRejectedValue(new Error('provider down'));
-      const failing = await publication.guardPublication({
-        kind: 'expertise',
-        id: SUBJECT_LINES,
-        version: { major: 2, minor: 2 },
-      });
+      const failing = await publication.guardPublication(
+        {
+          kind: 'expertise',
+          id: SUBJECT_LINES,
+          version: { major: 2, minor: 2 },
+        },
+        ALICE
+      );
       expect(failing.cases[0].after).toEqual({ error: expect.any(String) });
     });
 
@@ -475,18 +493,21 @@ describe('publishing what a feature uses', () => {
     });
 
     it('publishes after the guard, and records it with its outcome', async () => {
-      const guard = await publication.guardPublication({
-        kind: 'expertise',
-        id: SUBJECT_LINES,
-        version: { major: 2, minor: 2 },
-      });
+      const guard = await publication.guardPublication(
+        {
+          kind: 'expertise',
+          id: SUBJECT_LINES,
+          version: { major: 2, minor: 2 },
+        },
+        ALICE
+      );
 
       await publication.publishVersion(
         {
           kind: 'expertise',
           id: SUBJECT_LINES,
           version: { major: 2, minor: 2 },
-          guard,
+          guardKey: guard.key,
         },
         ALICE
       );
@@ -510,14 +531,117 @@ describe('publishing what a feature uses', () => {
       ]);
     });
 
-    // Published and recorded in the same write: nothing is read or written
-    // once the version is online.
-    it('writes the decision with the publication, in one write', async () => {
-      const guard = await publication.guardPublication({
+    // What the guard showed is the server's: a page or an assistant only
+    // hands back the key the guard answered (ADR 0019).
+    describe('the key its guard answered', () => {
+      const LINES = {
         kind: 'expertise',
         id: SUBJECT_LINES,
         version: { major: 2, minor: 2 },
+      };
+      const publish = (params, user = ALICE) =>
+        publication.publishVersion({ ...LINES, ...params }, user);
+
+      it('is required: a guard the page declares publishes nothing', async () => {
+        await expect(
+          publish({ guard: { cases: [] }, guardKey: undefined })
+        ).rejects.toMatchObject({
+          status: 409,
+          message: 'SKILL_PUBLICATION_GUARD_REQUIRED',
+        });
+        expect(
+          versionOf('expertises', 'expertiseId', SUBJECT_LINES, 2, 2).status
+        ).toBe('DRAFT');
       });
+
+      it('holds only for the version, the person and the hour it was given for', async () => {
+        const { key } = await publication.guardPublication(LINES, ALICE);
+        const { key: otherVersion } = await publication.guardPublication(
+          { kind: 'skill', id: SUBJECT_IDEAS, version: { major: 1, minor: 3 } },
+          ALICE
+        );
+        const [payload] = key.split('.');
+        const invalid = {
+          status: 400,
+          message: 'SKILL_PUBLICATION_GUARD_INVALID',
+        };
+
+        await expect(publish({ guardKey: otherVersion })).rejects.toMatchObject(
+          invalid
+        );
+        await expect(
+          publish({ guardKey: key }, { id: 'another-super-admin' })
+        ).rejects.toMatchObject(invalid);
+        await expect(
+          publish({ guardKey: `${payload}.forged` })
+        ).rejects.toMatchObject(invalid);
+        const now = Date.now();
+        const later = jest
+          .spyOn(Date, 'now')
+          .mockReturnValue(now + 61 * 60 * 1000);
+        try {
+          await expect(publish({ guardKey: key })).rejects.toMatchObject(
+            invalid
+          );
+        } finally {
+          later.mockRestore();
+        }
+        expect(
+          versionOf('expertises', 'expertiseId', SUBJECT_LINES, 2, 2).status
+        ).toBe('DRAFT');
+      });
+
+      it('does not hold once the version was written since its guard', async () => {
+        const { key } = await publication.guardPublication(LINES, ALICE);
+        const stored = store
+          .stored('expertises')
+          .find((e) => e.expertiseId === SUBJECT_LINES);
+        store.update('expertises', stored._id, {
+          versions: stored.versions.map((v) =>
+            v.status === 'DRAFT'
+              ? { ...v, body: `${v.body}\nMore.`, updatedAt: new Date() }
+              : v
+          ),
+        });
+
+        await expect(publish({ guardKey: key })).rejects.toMatchObject({
+          status: 409,
+          message: 'SKILL_VERSION_CHANGED',
+        });
+      });
+
+      it('carries what the guard showed, which the version records', async () => {
+        provider.chatComplete.mockResolvedValue({
+          content: JSON.stringify({ subjects: ['not the contract'] }),
+        });
+        const { key } = await publication.guardPublication(LINES, ALICE);
+
+        await publish({ guardKey: key, guard: { cases: [] } });
+
+        expect(
+          versionOf('expertises', 'expertiseId', SUBJECT_LINES, 2, 2)
+            .guardHistory
+        ).toEqual([
+          expect.objectContaining({
+            cases: 1,
+            failed: 1,
+            missing: [PREHEADER_IDEAS],
+          }),
+        ]);
+      });
+    });
+
+    // Published and recorded in the same write: nothing is read or written
+    // once the version is online.
+    it('writes the decision with the publication, in one write', async () => {
+      const guard = await publication.guardPublication(
+        {
+          kind: 'expertise',
+          id: SUBJECT_LINES,
+          version: { major: 2, minor: 2 },
+        },
+        ALICE
+      );
       const read = store.models.Expertises.findOne;
       const isOnline = () =>
         versionOf('expertises', 'expertiseId', SUBJECT_LINES, 2, 2).status ===
@@ -535,7 +659,7 @@ describe('publishing what a feature uses', () => {
             kind: 'expertise',
             id: SUBJECT_LINES,
             version: { major: 2, minor: 2 },
-            guard,
+            guardKey: guard.key,
           },
           ALICE
         );
@@ -556,18 +680,21 @@ describe('publishing what a feature uses', () => {
         skills: [{ ...subjectIdeas, audience: 'platform' }, preheaderIdeas],
       });
       const version = { major: 1, minor: 3 };
-      const guard = await publication.guardPublication({
-        kind: 'skill',
-        id: SUBJECT_IDEAS,
-        version,
-      });
+      const guard = await publication.guardPublication(
+        {
+          kind: 'skill',
+          id: SUBJECT_IDEAS,
+          version,
+        },
+        ALICE
+      );
 
       const { doc, warnings } = await publication.publishVersion(
         {
           kind: 'skill',
           id: SUBJECT_IDEAS,
           version,
-          guard,
+          guardKey: guard.key,
           payload: { changelog: 'Five', openToAll: true },
         },
         ALICE
@@ -610,18 +737,21 @@ describe('publishing what a feature uses', () => {
     });
 
     it('records a cancellation, and publishes nothing', async () => {
-      const guard = await publication.guardPublication({
-        kind: 'expertise',
-        id: SUBJECT_LINES,
-        version: { major: 2, minor: 2 },
-      });
+      const guard = await publication.guardPublication(
+        {
+          kind: 'expertise',
+          id: SUBJECT_LINES,
+          version: { major: 2, minor: 2 },
+        },
+        ALICE
+      );
 
       await publication.cancelPublication(
         {
           kind: 'expertise',
           id: SUBJECT_LINES,
           version: { major: 2, minor: 2 },
-          guard,
+          guardKey: guard.key,
         },
         ALICE
       );
@@ -642,7 +772,7 @@ describe('publishing what a feature uses', () => {
     ];
 
     it('runs one guard over everything they touch', async () => {
-      const guard = await batch.guardMany(BOTH);
+      const guard = await batch.guardMany(BOTH, ALICE);
 
       expect(guard.cases).toHaveLength(1);
       expect(guard.cases[0].after).toEqual({
@@ -652,9 +782,13 @@ describe('publishing what a feature uses', () => {
     });
 
     it('publishes them all after that guard, and reports each one', async () => {
-      const guard = await batch.guardMany(BOTH);
+      const guard = await batch.guardMany(BOTH, ALICE);
 
-      const report = await batch.publishMany(BOTH, { guard }, ALICE);
+      const report = await batch.publishMany(
+        BOTH,
+        { guardKey: guard.key },
+        ALICE
+      );
 
       expect(report.published.map((p) => p.id)).toEqual([
         SUBJECT_LINES,
@@ -724,7 +858,7 @@ describe('publishing what a feature uses', () => {
     });
 
     it('goes on when one fails, and says why', async () => {
-      const guard = await batch.guardMany(BOTH);
+      const guard = await batch.guardMany(BOTH, ALICE);
 
       const report = await batch.publishMany(
         [
@@ -735,7 +869,7 @@ describe('publishing what a feature uses', () => {
             version: { major: 9, minor: 0 },
           },
         ],
-        { guard },
+        { guardKey: guard.key },
         ALICE
       );
 
@@ -779,12 +913,12 @@ describe('publishing what a feature uses', () => {
           f.EXPERTISES[1],
         ],
       });
-      const guard = await batch.guardMany(BOTH);
+      const guard = await batch.guardMany(BOTH, ALICE);
       const [lines, ideas] = BOTH;
 
       const report = await batch.publishMany(
         [{ ...lines, readAt: readAt.toISOString() }, ideas],
-        { guard },
+        { guardKey: guard.key },
         ALICE
       );
 
@@ -798,9 +932,9 @@ describe('publishing what a feature uses', () => {
     });
 
     it('records the decision on each draft', async () => {
-      const guard = await batch.guardMany(BOTH);
+      const guard = await batch.guardMany(BOTH, ALICE);
 
-      await batch.publishMany(BOTH, { guard }, ALICE);
+      await batch.publishMany(BOTH, { guardKey: guard.key }, ALICE);
 
       expect(
         versionOf('skills', 'skillId', SUBJECT_IDEAS, 1, 3).guardHistory

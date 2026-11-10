@@ -51,6 +51,7 @@ const GUARD = {
   calls: 2,
   cases: [{ name: 'A sale' }],
   missing: [],
+  key: 'the-key.signed',
 };
 
 function makeApp(user = ADMIN) {
@@ -106,10 +107,11 @@ describe('several drafts at once, on the back office', () => {
       .send({ items: ITEMS });
 
     expect(res.body).toEqual(GUARD);
-    expect(publication.guardMany).toHaveBeenCalledWith(TARGETS);
+    expect(publication.guardMany).toHaveBeenCalledWith(TARGETS, ADMIN);
   });
 
-  it('publishes with the guard that ran, and reports each draft', async () => {
+  // What the guard showed is the server's (ADR 0019): only its key goes.
+  it('publishes with the key of the guard that ran, and reports each draft', async () => {
     publication.publishMany.mockResolvedValue({
       published: TARGETS,
       failed: [],
@@ -117,7 +119,7 @@ describe('several drafts at once, on the back office', () => {
 
     const res = await request(makeApp())
       .post('/api/ai-skills/publications')
-      .send({ items: ITEMS, guard: GUARD });
+      .send({ items: ITEMS, guard: GUARD, guardKey: GUARD.key });
 
     expect(res.body).toEqual({
       published: TARGETS,
@@ -126,21 +128,21 @@ describe('several drafts at once, on the back office', () => {
     });
     expect(publication.publishMany).toHaveBeenCalledWith(
       TARGETS,
-      { guard: GUARD },
+      { guardKey: GUARD.key },
       ADMIN
     );
   });
 
-  it('records a cancellation only with the guard that was cancelled', async () => {
+  it('records a cancellation only with the key of the guard that was cancelled', async () => {
     publication.cancelMany.mockResolvedValue({ cancelled: TARGETS });
     const app = makeApp();
 
     const refused = await request(app)
       .post('/api/ai-skills/publications/cancel')
-      .send({ items: ITEMS });
+      .send({ items: ITEMS, guard: GUARD });
     const cancelled = await request(app)
       .post('/api/ai-skills/publications/cancel')
-      .send({ items: ITEMS, guard: GUARD });
+      .send({ items: ITEMS, guardKey: GUARD.key });
 
     expect(refused.status).toBe(400);
     expect(refused.body.message).toBe('SKILL_PUBLICATION_GUARD_INVALID');

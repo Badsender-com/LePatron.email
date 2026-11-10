@@ -110,7 +110,7 @@ export default {
     },
     async publish() {
       const report = await this.post(null, {
-        guard: this.guard,
+        guardKey: this.guard ? this.guard.key : undefined,
         items: readItems(this.targets),
       });
       if (!report) return;
@@ -118,7 +118,7 @@ export default {
       this.$emit('published', report);
     },
     async cancel() {
-      if (!(await this.post('cancel', { guard: this.guard }))) return;
+      if (!(await this.post('cancel', { guardKey: this.guard.key }))) return;
       this.$refs.modal.close();
       this.showSnackbar({
         text: this.$t('aiSkills.publishDrafts.cancelled'),
