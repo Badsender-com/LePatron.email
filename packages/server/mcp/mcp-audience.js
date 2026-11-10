@@ -77,7 +77,7 @@ async function changeOf({ kind, id, audience, openExpertiseIds }) {
   if (opening && !active) {
     throw createError(
       409,
-      `"${id}" was never published: a person publishes a version before it is opened.`
+      `"${id}" was never published: publish a version before opening it.`
     );
   }
   if (openExpertiseIds !== undefined && (kind !== 'skill' || !opening)) {
