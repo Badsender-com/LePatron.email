@@ -6,7 +6,8 @@
 // set_audience follows the rules of the back office (ADR 0013): opening a
 // task skill says which of its consumed expertises stay kept to the platform
 // company, and may open those the user chooses with it; keeping an expertise
-// to the platform company again says which open task skills lose it.
+// to the platform company again says which open task skills lose it. Each
+// change is checked first, then applied on the key of the check.
 
 const harness = require('../../helpers/mcp-harness');
 const f = require('../../helpers/mcp-fixtures');
@@ -52,15 +53,55 @@ const stored = (kind, id) =>
 describe('set_audience, as the back office opens and closes', () => {
   afterEach(() => harness.disconnect());
 
-  const call = async (args) => {
-    const client = await harness.connectAs(f.ALICE, {
-      group: f.PLATFORM_GROUP,
-      scopes: WRITE,
-    });
-    return harness.answerOf(
+  const connect = () =>
+    harness.connectAs(f.ALICE, { group: f.PLATFORM_GROUP, scopes: WRITE });
+  const ask = async (client, args) =>
+    harness.answerOf(
       await client.callTool({ name: AUDIENCE, arguments: args })
     );
+  // The check, then the change on its key, as an assistant makes it.
+  const call = async (args) => {
+    const client = await connect();
+    const check = await ask(client, args);
+    if (check.error) return check;
+    return ask(client, { ...args, confirmation: check.confirmation });
   };
+
+  it('names at the check the expertises an opening would leave kept, and opens nothing', async () => {
+    seedWith('platform');
+
+    const answer = await ask(await connect(), {
+      kind: 'skill',
+      id: WRITE_SUBJECT,
+      audience: 'all',
+      openExpertiseIds: [SUBJECT_LINES],
+    });
+
+    expect(answer).toMatchObject({
+      changed: false,
+      platformOnlyExpertises: [
+        expect.objectContaining({ expertiseId: SPAM_WORDS }),
+      ],
+    });
+    expect(stored('skill', WRITE_SUBJECT).audience).toBe('platform');
+    expect(stored('expertise', SUBJECT_LINES).audience).toBe('platform');
+  });
+
+  it('refuses a key checked for other expertises to open', async () => {
+    seedWith('platform');
+    const client = await connect();
+    const args = { kind: 'skill', id: WRITE_SUBJECT, audience: 'all' };
+    const { confirmation } = await ask(client, args);
+
+    const answer = await ask(client, {
+      ...args,
+      openExpertiseIds: [SUBJECT_LINES],
+      confirmation,
+    });
+
+    expect(answer.error).toMatch(/confirmation/i);
+    expect(stored('expertise', SUBJECT_LINES).audience).toBe('platform');
+  });
 
   it('opens a task skill alone, and names the expertises it leaves kept', async () => {
     seedWith('platform');

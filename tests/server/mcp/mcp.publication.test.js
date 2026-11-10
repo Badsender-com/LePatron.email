@@ -196,18 +196,17 @@ describe('publishing and opening from an assistant', () => {
     // The call log keeps metadata only (ADR 0012); which way an audience went
     // is one, and the log would not say it otherwise.
     it('records which way the audience went in the call log', async () => {
-      await call(await asAuthor(), AUDIENCE, {
-        kind: 'expertise',
-        id: SUBJECT_LINES,
-        audience: 'subscribers',
-      });
+      const client = await asAuthor();
+      const args = { kind: 'expertise', id: SUBJECT_LINES, audience: 'all' };
+      const { confirmation } = await call(client, AUDIENCE, args);
+      await call(client, AUDIENCE, { ...args, confirmation });
 
       expect(await harness.callLogs()).toEqual(
         expect.arrayContaining([
           expect.objectContaining({
             name: AUDIENCE,
             objectIds: [SUBJECT_LINES],
-            change: 'audience:subscribers',
+            change: 'audience:all',
             clientId: 'test-client',
           }),
         ])
