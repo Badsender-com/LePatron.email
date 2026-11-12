@@ -32,21 +32,39 @@ module.exports = {
  * @param {Object} params.mailing
  * @param {string} [params.requested] the user's choice, `auto` for none
  * @param {Function} [params.detect] the fallback guess, from the mailing
+ * @param {Array|Function} [params.sourceLanguages] the languages the provider
+ *   takes (`fr`, `en-gb`), or a function reading them: the email's language is
+ *   only sent as a source when it is among them, so a language the provider
+ *   cannot read (`lb`) falls back to the guess rather than failing the job
  * @returns {Promise<string>} a language code, or `auto`
  */
 async function sourceLanguageFor({
   mailing,
   requested,
   detect = detectSourceLanguage,
+  sourceLanguages,
 }) {
   if (requested && requested !== 'auto') return requested;
   // An email with no value has no language to read: no lookup.
   if ((mailing._taxonomyItems || []).length > 0) {
     const { language } = await resolveEmailLocale({ mailing });
     // ISO 639-1, the code the providers take as a source.
-    if (language) return language;
+    if (language && (await takesAsSource(sourceLanguages, language))) {
+      return language;
+    }
   }
   return detect(mailing);
+}
+
+async function takesAsSource(sourceLanguages, language) {
+  if (!sourceLanguages) return true;
+  const list =
+    typeof sourceLanguages === 'function'
+      ? await sourceLanguages()
+      : sourceLanguages;
+  return (list || []).some(
+    (code) => String(code).split('-')[0].toLowerCase() === language
+  );
 }
 
 /**

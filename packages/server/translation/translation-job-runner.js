@@ -108,6 +108,10 @@ async function translateSource({
         mailing,
         requested: sourceLanguage,
         detect: translationService.detectSourceLanguage,
+        // Read only when the email has a language to offer.
+        sourceLanguages: async () =>
+          (await translationService.getAvailableLanguages({ groupId }))
+            .languages,
       })
   );
 
