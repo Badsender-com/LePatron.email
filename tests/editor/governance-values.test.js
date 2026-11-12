@@ -268,7 +268,7 @@ describe('the dimensions an email has had a value for', () => {
 });
 
 // Turned on by #1359 (design tokens and precedence)
-describe.skip('publishing design tokens', () => {
+describe('publishing design tokens', () => {
   let governanceValues;
 
   beforeAll(() => {
@@ -344,6 +344,39 @@ describe.skip('publishing design tokens', () => {
     });
 
     expect(values.audience).toBe('vip');
+  });
+
+  it('never lets a token write over a piece of the content the editor builds', () => {
+    const { values } = governanceValues({
+      dimensions: [
+        {
+          ...BRAND,
+          values: [
+            {
+              id: '64a0000000000000000000b3',
+              canonicalType: 'brand-c',
+              tokens: { type: 'versafix-1', mainColorVar: '#123456' },
+            },
+          ],
+        },
+      ],
+      selections: { brand: '64a0000000000000000000b3' },
+    });
+
+    expect(values).not.toHaveProperty('type');
+    expect(values.mainColorVar).toBe('#123456');
+  });
+
+  it('gives the email type the precedence the server sent', () => {
+    const { values } = governanceValues({
+      dimensions: [BRAND],
+      selections: { brand: '64a0000000000000000000b1' },
+      emailTypes: EMAIL_TYPE.values,
+      emailTypeId: '64a0000000000000000000c1',
+      emailTypePrecedence: 40,
+    });
+
+    expect(values.mainColorVar).toBe('#e60000');
   });
 
   it('publishes no token for a dimension the email has no value for', () => {

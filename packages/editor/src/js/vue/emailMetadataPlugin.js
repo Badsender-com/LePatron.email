@@ -21,7 +21,10 @@ const {
   governanceValues,
   rememberValued,
 } = require('../utils/governance-values');
-const { publishOutsideUndo } = require('../utils/publish-to-template');
+const {
+  createTemplatePublisher,
+  publishOutsideUndo,
+} = require('../utils/publish-to-template');
 const {
   exposeHiddenTemplateOptions,
   hideTemplateOptionsFedBy,
@@ -111,6 +114,10 @@ module.exports = {
       selectionsFromIds(dimensions, initialForm.taxonomyItemIds)
     );
 
+    // One per section: it remembers what the template held before a token was
+    // first written, to give it back when no chosen value carries it any more.
+    const templatePublisher = createTemplatePublisher();
+
     Vue.component('EmailMetadataPlugin', {
       data: () => ({
         subject: initialForm.subject,
@@ -196,6 +203,7 @@ module.exports = {
             selections: this.selections,
             emailTypes: this.emailTypes,
             emailTypeId: this.emailTypeId,
+            emailTypePrecedence: config.emailTypePrecedence,
             trigger: this.trigger,
             valued: this.valued,
           }).values;
@@ -228,7 +236,7 @@ module.exports = {
         // history: an undo must not take the content away from the settings.
         templateValues: {
           handler(values) {
-            publishOutsideUndo(vm, values);
+            publishOutsideUndo(vm, values, templatePublisher.publish);
           },
           immediate: true,
         },

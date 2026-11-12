@@ -38,6 +38,39 @@ function publishToTemplate(content, values) {
 }
 
 /**
+ * A publisher for one editing session, which remembers what each property held
+ * before it first wrote it. A design token no longer carried (a brand B with no
+ * `textColorVar` after a brand A with one) gets that value back, the template's
+ * own, rather than keeping the previous brand's.
+ *
+ * @returns {{publish: Function}} `publish(content, values)`, as publishToTemplate
+ */
+function createTemplatePublisher() {
+  const originals = new Map();
+
+  function publish(content, values) {
+    if (!content) return { applied: [], skipped: [] };
+    const restored = {};
+    Object.keys(values || {}).forEach((name) => {
+      const target = content[name];
+      // Only what publishToTemplate would write: anything else is left alone,
+      // and has nothing to give back.
+      if (isPublishable(target) && !originals.has(name)) {
+        originals.set(name, target.peek());
+      }
+    });
+    originals.forEach((original, name) => {
+      if (values && name in values) return;
+      restored[name] = original;
+      originals.delete(name);
+    });
+    return publishToTemplate(content, { ...restored, ...values });
+  }
+
+  return { publish };
+}
+
+/**
  * Publish to the email's content outside the undo history. The values follow
  * the email settings, which the history does not hold: an undo that took them
  * back would leave the content disagreeing with the settings on screen, and
@@ -49,13 +82,15 @@ function publishToTemplate(content, values) {
  *   `suspendUndo` / `resumeUndo` (undomanager/undomain.js), absent
  *   before the stack starts, when nothing is recorded anyway
  * @param {Object} values template property → value
+ * @param {Function} [publish] what writes them, `(content, values)`: a
+ *   session's publisher (createTemplatePublisher), publishToTemplate by default
  * @returns {{applied: string[], skipped: string[]}}
  */
-function publishOutsideUndo(vm, values) {
+function publishOutsideUndo(vm, values, publish = publishToTemplate) {
   const pausable = typeof vm.suspendUndo === 'function';
   if (pausable) vm.suspendUndo();
   try {
-    return publishToTemplate(vm.content && vm.content(), values);
+    return publish(vm.content && vm.content(), values);
   } finally {
     if (pausable) vm.resumeUndo();
   }
@@ -80,4 +115,9 @@ function isPublishable(target) {
   return ['string', 'number', 'boolean'].includes(typeof current);
 }
 
-module.exports = { publishToTemplate, publishOutsideUndo, isPublishable };
+module.exports = {
+  publishToTemplate,
+  createTemplatePublisher,
+  publishOutsideUndo,
+  isPublishable,
+};

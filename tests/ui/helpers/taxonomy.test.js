@@ -335,6 +335,8 @@ describe('TAXONOMY_LIMITS', () => {
       DIMENSION_NAME: 60,
       VALUES_PER_DIMENSION: 200,
       DIMENSIONS_PER_COMPANY: 20,
+      TOKENS_PER_VALUE: 24,
+      TOKEN_VALUE: 200,
     });
   });
 });

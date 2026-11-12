@@ -2,13 +2,16 @@
 
 const {
   STANDARD_DIMENSIONS,
+  RESERVED_DIMENSION_NAMES,
 } = require('../../../../shared/taxonomy/constants.js');
 
 /**
  * What the editor publishes to the template for one email (ADR-0015): the email
  * type, the trigger and each active dimension under its name, the property a
  * template reads (`_root_.audience`), valued by the identifier of the chosen
- * value.
+ * value; and the design tokens of the chosen values under their own names.
+ * When two chosen values carry the same token, the dimension with the highest
+ * precedence wins, and on a tie the later one in the declared order.
  *
  * Pure, like the rest of the section's helpers: the editor has no component test
  * harness. Covered by tests/editor/governance-values.test.js.
@@ -22,26 +25,32 @@ const PUBLISHABLE_IDENTIFIER = /^[A-Za-z0-9_-]+$/;
 
 /**
  * @param {Object} params
- * @param {Array} params.dimensions `{name, isActive, values: [{id, canonicalType}]}`
+ * @param {Array} params.dimensions `{name, isActive, precedence, values: [{id,
+ *   canonicalType, tokens}]}`, in the declared order
  * @param {Object} params.selections dimension name → chosen value id
  * @param {Array} [params.emailTypes] the email types the editor offers,
- *   `{id, canonicalType}`, published as the `emailType` dimension
+ *   `{id, canonicalType, tokens}`, published as the `emailType` dimension
  * @param {string} [params.emailTypeId] the chosen email type
+ * @param {number} [params.emailTypePrecedence] the email type's precedence,
+ *   for the design tokens its values carry
  * @param {string} [params.trigger] the email's trigger
  * @param {string[]} [params.valued] the dimensions the email has had a value
  *   for, when it opened or since (see `rememberValued`)
  * @returns {{values: Object, sources: Object}} `values` maps a template property
- *   to what it receives; `sources` says where a design token came from (#1359)
+ *   to what it receives; `sources` says, for each token, which dimension it
+ *   came from and which ones it overrode
  */
 function governanceValues({
   dimensions,
   selections,
   emailTypes,
   emailTypeId,
+  emailTypePrecedence,
   trigger,
   valued,
 }) {
   const values = {};
+  const carriers = [];
   const wasValued = (name) => (valued || []).includes(name);
   const chosenBy = withEmailType(selections, emailTypes, emailTypeId);
 
@@ -52,11 +61,16 @@ function governanceValues({
     values[STANDARD_DIMENSIONS.TRIGGER] = '';
   }
 
-  withEmailTypeDimension(dimensions, emailTypes)
+  const all = withEmailTypeDimension(
+    dimensions,
+    emailTypes,
+    emailTypePrecedence
+  );
+  all
     // The server sends active dimensions only; the flag is read for the
     // dimensions it may still send deactivated.
     .filter((dimension) => dimension.isActive !== false)
-    .forEach((dimension) => {
+    .forEach((dimension, index) => {
       const chosen = chosenBy[dimension.name];
       if (!chosen) {
         // An email that never had a value for the dimension writes nothing: the
@@ -75,9 +89,51 @@ function governanceValues({
       // it has rather than being rewritten to nothing.
       if (!value) return;
       values[dimension.name] = publishedIdentifier(value);
+      if (value.tokens) {
+        carriers.push({
+          name: dimension.name,
+          precedence: dimension.precedence || 0,
+          index,
+          tokens: value.tokens,
+        });
+      }
     });
 
-  return { values, sources: {} };
+  return { values, sources: resolveTokens(carriers, values, all) };
+}
+
+/**
+ * Write the tokens of the chosen values into `values`, the lowest precedence
+ * first so the highest is written last and wins.
+ *
+ * @returns {Object} token name → `{dimension, overrode}`
+ */
+function resolveTokens(carriers, values, dimensions) {
+  // A token never shadows a dimension: `_root_.audience` stays the audience.
+  // Nor a name a dimension may not take: a piece of the content the editor
+  // builds, or a name every object answers to.
+  const reserved = new Set([
+    STANDARD_DIMENSIONS.TRIGGER,
+    ...RESERVED_DIMENSION_NAMES,
+    ...(dimensions || []).map((dimension) => dimension.name),
+  ]);
+  const sources = {};
+
+  carriers
+    .sort((a, b) => a.precedence - b.precedence || a.index - b.index)
+    .forEach((carrier) => {
+      Object.entries(carrier.tokens).forEach(([name, token]) => {
+        if (reserved.has(name)) return;
+        const previous = sources[name];
+        values[name] = token;
+        sources[name] = {
+          dimension: carrier.name,
+          overrode: previous ? [...previous.overrode, previous.dimension] : [],
+        };
+      });
+    });
+
+  return sources;
 }
 
 /**
@@ -114,12 +170,16 @@ function publishedIdentifier(value) {
     : String(value.id);
 }
 
-function withEmailTypeDimension(dimensions, emailTypes) {
+function withEmailTypeDimension(dimensions, emailTypes, precedence) {
   const list = dimensions || [];
   if (!emailTypes) return list;
-  return [{ name: STANDARD_DIMENSIONS.EMAIL_TYPE, values: emailTypes }].concat(
-    list
-  );
+  return [
+    {
+      name: STANDARD_DIMENSIONS.EMAIL_TYPE,
+      precedence: precedence || 0,
+      values: emailTypes,
+    },
+  ].concat(list);
 }
 
 function withEmailType(selections, emailTypes, emailTypeId) {

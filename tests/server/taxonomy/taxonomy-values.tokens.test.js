@@ -52,7 +52,7 @@ const addValue = (type, payload, user = adminA) =>
   taxonomyService.createTaxonomyItem({ user, type, payload });
 
 // Turned on by #1359 (design tokens and precedence)
-describe.skip('design tokens', () => {
+describe('design tokens', () => {
   beforeAll(loadServices);
 
   beforeEach(async () => {
@@ -99,6 +99,18 @@ describe.skip('design tokens', () => {
       details: { limit: 24 },
     });
   });
+
+  it.each(['type', 'theme', 'mainBlocks', 'customStyle', 'constructor'])(
+    'refuses a token named %p, which publishing would write over the content',
+    async (name) => {
+      await expect(
+        addValue('brand', { label: 'Marque A', tokens: { [name]: '#000' } })
+      ).rejects.toMatchObject({
+        status: 400,
+        message: ERROR_CODES.INVALID_TAXONOMY_ITEM,
+      });
+    }
+  );
 
   it.each(['main-color', '1color', 'main color'])(
     'refuses a token named %p, which no template could read',

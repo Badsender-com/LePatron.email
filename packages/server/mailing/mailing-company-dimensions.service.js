@@ -210,7 +210,14 @@ async function buildEditorDimensions({ companyId, currentIds = [] }) {
     isActive: true,
     name: { $nin: StandardDimensionNames },
   })
-    .select({ name: 1, label: 1, order: 1, createdAt: 1, parentName: 1 })
+    .select({
+      name: 1,
+      label: 1,
+      order: 1,
+      createdAt: 1,
+      parentName: 1,
+      precedence: 1,
+    })
     .lean();
   if (dimensions.length === 0) return [];
   dimensions.sort(compareDimensions);
@@ -228,6 +235,7 @@ async function buildEditorDimensions({ companyId, currentIds = [] }) {
       isActive: 1,
       order: 1,
       _parents: 1,
+      tokens: 1,
     })
     .sort({ order: 1, label: 1 })
     .lean();
@@ -236,6 +244,8 @@ async function buildEditorDimensions({ companyId, currentIds = [] }) {
     name: dimension.name,
     label: dimension.label,
     parentName: dimension.parentName || null,
+    // Who wins a design token two chosen values carry: the highest.
+    precedence: dimension.precedence || 0,
     values: values
       .filter((value) => value.type === dimension.name)
       .map((value) => ({
@@ -246,6 +256,7 @@ async function buildEditorDimensions({ companyId, currentIds = [] }) {
         isActive: value.isActive,
         // The availability: offered under these parent values, or all of them.
         parentIds: value._parents || [],
+        tokens: value.tokens || {},
       })),
   }));
 }

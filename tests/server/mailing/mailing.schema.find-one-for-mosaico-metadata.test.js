@@ -34,6 +34,8 @@ jest.mock('../../../packages/server/common/models.common.js', () => ({
     find: () => ({
       select: () => ({ lean: async () => [] }),
     }),
+    // The email type's precedence: unseeded, the standard default applies.
+    findOne: () => ({ select: () => ({ lean: async () => null }) }),
   },
   Mailings: {},
   // Whether the company shares previews (share-link.service.js): it does.
@@ -315,14 +317,18 @@ describe('findOneForMosaico — company opted in', () => {
         label: 'Infolettre',
         canonicalType: 'newsletter',
         description: 'Notre rendez-vous mensuel.',
+        tokens: {},
       },
       {
         id: mongoose.Types.ObjectId('507f1f77bcf86cd799439102'),
         label: 'Promo',
         canonicalType: undefined,
         description: undefined,
+        tokens: {},
       },
     ]);
+    // The standard default, the email type's dimension never having been read.
+    expect(emailMetadataConfig.emailTypePrecedence).toBe(100);
     expect(emailMetadataConfig.url.update).toBe(
       `/api/mailings/${MAILING}/metadata`
     );
