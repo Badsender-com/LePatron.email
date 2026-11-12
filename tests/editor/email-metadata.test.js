@@ -143,6 +143,28 @@ describe('buildMetadataPayload', () => {
       ).toEqual(['emailTypeId', 'subject']);
     });
 
+    it('carries the company dimension values whole when one moved', () => {
+      const before = { ...INITIAL, taxonomyItemIds: ['a1', 'b1'] };
+
+      expect(
+        buildMetadataPayload(
+          { ...before, taxonomyItemIds: ['a2', 'b1'] },
+          before
+        )
+      ).toEqual({ taxonomyItemIds: ['a2', 'b1'] });
+    });
+
+    it('takes the same values in another order as unchanged', () => {
+      const before = { ...INITIAL, taxonomyItemIds: ['a1', 'b1'] };
+
+      expect(
+        buildMetadataPayload(
+          { ...before, taxonomyItemIds: ['b1', 'a1'] },
+          before
+        )
+      ).toEqual({});
+    });
+
     it('is empty when nothing moved', () => {
       expect(buildMetadataPayload({ ...INITIAL }, INITIAL)).toEqual({});
     });
@@ -157,7 +179,7 @@ describe('buildMetadataPayload', () => {
     });
   });
 
-  it('carries the three fields the PATCH owns', () => {
+  it('carries the fields the PATCH owns', () => {
     const payload = buildMetadataPayload({
       subject: 'Soldes',
       plannedSendDate: '2026-09-01',
@@ -182,6 +204,7 @@ describe('buildMetadataPayload', () => {
       'emailTypeId',
       'plannedSendDate',
       'subject',
+      'taxonomyItemIds',
       'trigger',
     ]);
   });
@@ -221,6 +244,7 @@ describe('toFormState', () => {
       plannedSendDate: '2026-09-01',
       emailTypeId: '507f1f77bcf86cd799439101',
       trigger: 'automated',
+      taxonomyItemIds: [],
     });
   });
 
@@ -232,6 +256,7 @@ describe('toFormState', () => {
         plannedSendDate: '',
         emailTypeId: '',
         trigger: '',
+        taxonomyItemIds: [],
       });
     }
   );
@@ -278,6 +303,7 @@ describe('errorKeyFor', () => {
   it.each([
     ['EMAIL_METADATA_DISABLED', 'email-metadata-error-disabled'],
     ['EMAIL_TYPE_NOT_FOUND', 'email-metadata-error-typology'],
+    ['TAXONOMY_ITEM_NOT_FOUND', 'email-metadata-error-dimension-value'],
     ['EMAIL_TYPE_COMPANY_MISSING', 'email-metadata-error-no-company'],
     ['INVALID_EMAIL_METADATA', 'email-metadata-error-invalid'],
   ])('maps %s onto %s', (code, key) => {

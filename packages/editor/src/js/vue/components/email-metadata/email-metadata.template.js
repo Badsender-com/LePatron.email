@@ -128,5 +128,23 @@ module.exports = `
         {{ triggerDescription }}
       </p>
     </div>
+
+    <!-- The company dimensions, in the order the company declared them. Each is
+         optional, with an explicit empty choice like the two above. -->
+    <div v-for="select in dimensionChoices"
+         :key="select.name"
+         class="email-metadata__field">
+      <div class="email-metadata__label-row">
+        <label :for="'email-metadata-dimension-' + select.name">{{ select.label }}</label>
+      </div>
+      <select :id="'email-metadata-dimension-' + select.name"
+              class="email-metadata__select"
+              v-model="selections[select.name]">
+        <option value="">{{ t('email-metadata-dimension-none') }}</option>
+        <option v-for="option in select.options"
+                :key="option.id"
+                :value="option.id">{{ option.label }}</option>
+      </select>
+    </div>
   </section>
 `;
