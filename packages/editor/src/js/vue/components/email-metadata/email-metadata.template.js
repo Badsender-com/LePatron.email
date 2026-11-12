@@ -129,8 +129,11 @@ module.exports = `
       </p>
     </div>
 
-    <!-- The company dimensions, in the order the company declared them. Each is
-         optional, with an explicit empty choice like the two above. -->
+    <!-- The company dimensions, in the order the company declared them, each
+         nested one right after its parent and hidden while the parent is empty.
+         Each is optional, with an explicit empty choice like the two above.
+         Chosen through a method rather than v-model: a parent change clears the
+         child values it no longer offers. -->
     <div v-for="select in dimensionChoices"
          :key="select.name"
          class="email-metadata__field">
@@ -139,12 +142,21 @@ module.exports = `
       </div>
       <select :id="'email-metadata-dimension-' + select.name"
               class="email-metadata__select"
-              v-model="selections[select.name]">
+              :value="selections[select.name]"
+              :aria-describedby="select.unavailable ? 'email-metadata-dimension-' + select.name + '-hint' : null"
+              @change="choose(select.name, $event.target.value)">
         <option value="">{{ t('email-metadata-dimension-none') }}</option>
         <option v-for="option in select.options"
                 :key="option.id"
                 :value="option.id">{{ option.label }}</option>
       </select>
+      <!-- A combination narrowed since the email chose it: said, never undone
+           behind the user's back. The email still saves. -->
+      <p v-if="select.unavailable"
+         :id="'email-metadata-dimension-' + select.name + '-hint'"
+         class="email-metadata__hint">
+        {{ t('email-metadata-dimension-unavailable') }}
+      </p>
     </div>
   </section>
 `;

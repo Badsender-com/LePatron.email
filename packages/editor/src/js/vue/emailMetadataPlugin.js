@@ -10,6 +10,7 @@ const {
 } = require('../utils/email-metadata-options');
 const {
   dimensionSelects,
+  reconcileSelections,
   selectionsFromIds,
   idsFromSelections,
 } = require('../utils/dimension-selects');
@@ -159,6 +160,7 @@ module.exports = {
           return dimensionSelects({
             dimensions: this.dimensions,
             selections: this.selections,
+            emailTypeId: this.emailTypeId,
           });
         },
         // What the template reads of the email's settings (ADR-0015), recomputed
@@ -196,6 +198,11 @@ module.exports = {
       },
 
       watch: {
+        // A dimension may hang under the email type: changing it reconciles
+        // the values offered under it.
+        emailTypeId() {
+          this.reconcile(['emailType']);
+        },
         // Immediate: the content must hold what the email carries from the
         // moment it opens, not from the first change.
         templateValues: {
@@ -213,6 +220,24 @@ module.exports = {
       },
 
       methods: {
+        choose(name, value) {
+          this.selections[name] = value;
+          this.reconcile([name]);
+        },
+        // Only the descendants of what the user changed are looked at: a
+        // combination narrowed since the email chose it is kept, with its notice,
+        // until the user changes its parent.
+        reconcile(changed) {
+          const kept = reconcileSelections({
+            dimensions: this.dimensions,
+            selections: this.selections,
+            emailTypeId: this.emailTypeId,
+            changed,
+          });
+          Object.keys(this.selections).forEach((name) => {
+            this.selections[name] = kept[name] || '';
+          });
+        },
         // The second argument matters: vm.t(key, params) interpolates __token__
         // placeholders, and dropping it would lose them without an error.
         t: (key, params) => vm.t(key, params),

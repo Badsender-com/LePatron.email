@@ -378,6 +378,9 @@ module.exports = {
   'email-metadata-trigger-none': 'None',
   // The empty choice of a company dimension select, whatever its name.
   'email-metadata-dimension-none': 'No value',
+  // Under a dimension whose value is no longer offered under its parent value.
+  'email-metadata-dimension-unavailable':
+    'This value is no longer offered for this choice. The email can still be saved.',
   'email-metadata-trigger-adhoc': 'One Shot',
   'email-metadata-trigger-automated': 'Automated',
   // Shown under the field for the selected value, and as a tooltip on the options.

@@ -954,6 +954,7 @@ export default {
       inactive: 'Désactivée',
       inactiveHint:
         'Elle n\'est plus proposée sur les emails et ne reçoit plus de nouvelle valeur. Les emails qui portent déjà une de ses valeurs la conservent.',
+      under: 'Sous {parent}',
       deactivate: 'Désactiver',
       reactivate: 'Réactiver',
       declare: 'Ajouter une dimension',
@@ -988,6 +989,10 @@ export default {
           'Fixé à la création : les templates lisent ce nom, le changer les casserait.',
         descriptionHint:
           'Ce que cette dimension décide pour un email, chez vous. Ce texte sert de contexte à l\'IA.',
+        parent: 'Sous la dimension',
+        parentNone: 'Aucune : premier niveau',
+        parentHint:
+          'Ses valeurs seront proposées selon la valeur choisie pour la dimension parente : la Langue selon le Marché.',
       },
     },
     values: {
@@ -1016,6 +1021,9 @@ export default {
         identifier: 'Identifiant',
         identifierHint:
           'Ce que les templates comparent. Proposé depuis le libellé, unique dans la dimension.',
+        availability: 'Disponible sous',
+        availabilityHint:
+          'Les valeurs de « {parent} » sous lesquelles celle-ci est proposée. Vide : proposée sous toutes.',
         isActiveHint:
           'Une valeur désactivée disparaît des listes de choix, mais les emails qui l\'utilisent la conservent.',
       },
@@ -1089,6 +1097,12 @@ export default {
         'Cet identifiant est déjà pris dans cette dimension.',
       dimensionNameAlreadyExists:
         'Une dimension porte déjà ce nom, peut-être désactivée.',
+      isParent:
+        '{count} valeur est proposée sous celle-ci : retirez-la de sa disponibilité ou désactivez celle-ci. | {count} valeurs sont proposées sous celle-ci : retirez-la de leur disponibilité ou désactivez celle-ci.',
+      dimensionHasChildren:
+        'Une autre dimension est placée sous celle-ci : déplacez-la d\'abord.',
+      dimensionHasAvailability:
+        '{count} valeur a une disponibilité sous la dimension actuelle : videz-la avant de déplacer la dimension. | {count} valeurs ont une disponibilité sous la dimension actuelle : videz-les avant de déplacer la dimension.',
       dimensionHasValues:
         'Cette dimension a {count} valeur : désactivez-la plutôt que de la supprimer. | Cette dimension a {count} valeurs : désactivez-la plutôt que de la supprimer.',
       inUse:

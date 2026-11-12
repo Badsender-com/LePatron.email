@@ -6,6 +6,7 @@ import BsTextField from '~/components/form/bs-text-field.vue';
 import BsSelect from '~/components/form/bs-select.vue';
 import BsTextarea from '~/components/form/bs-textarea.vue';
 import BsTaxonomyFormOrderStatus from '~/components/group/taxonomy-form-order-status.vue';
+import BsTaxonomyAvailabilityField from '~/components/group/taxonomy-availability-field.vue';
 import {
   CANONICAL_TYPES,
   TAXONOMY_LIMITS,
@@ -31,6 +32,7 @@ export default {
     BsSelect,
     BsTextarea,
     BsTaxonomyFormOrderStatus,
+    BsTaxonomyAvailabilityField,
   },
   mixins: [validationMixin],
   props: {
@@ -38,6 +40,9 @@ export default {
     // The email type maps a value onto the doctrine's six types; any other
     // dimension gives it an identifier of its own.
     isEmailType: { type: Boolean, default: true },
+    // The values of the parent dimension, null when the dimension has none.
+    parentValues: { type: Array, default: null },
+    parentLabel: { type: String, default: '' },
   },
   data() {
     return {
@@ -145,8 +150,9 @@ export default {
             canonicalType: item.canonicalType || null,
             isActive: item.isActive !== false,
             order: typeof item.order === 'number' ? item.order : 0,
+            parentIds: (item._parents || []).map(String),
           }
-        : { ...emptyItem(), order: suggestedOrder };
+        : { ...emptyItem(), order: suggestedOrder, parentIds: [] };
       this.$v.$reset();
       this.$refs.modal.open();
     },
@@ -189,10 +195,9 @@ export default {
       this.$v.$touch();
       if (this.$v.$invalid) return;
 
-      this.$emit('save', {
-        id: this.editingId,
-        payload: buildTaxonomyPayload(this.form),
-      });
+      const payload = buildTaxonomyPayload(this.form);
+      if (this.parentValues) payload.parentIds = this.form.parentIds;
+      this.$emit('save', { id: this.editingId, payload });
     },
   },
 };
@@ -258,6 +263,14 @@ export default {
       :maxlength="identifierMaxLength"
       persistent-hint
       @input="onIdentifierInput"
+    />
+
+    <bs-taxonomy-availability-field
+      v-if="parentValues"
+      v-model="form.parentIds"
+      :parent-values="parentValues"
+      :parent-label="parentLabel"
+      :disabled="loading"
     />
 
     <bs-taxonomy-form-order-status

@@ -63,7 +63,7 @@ const newMailing = (overrides = {}) => ({
 const companyA = { _id: COMPANY_A, emailMetadata: { enabled: true } };
 
 // Turned on by #1358 (nested dimensions and availability)
-describe.skip('availability on an email', () => {
+describe('availability on an email', () => {
   let canada;
   let belgium;
   let french;
