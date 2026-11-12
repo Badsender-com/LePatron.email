@@ -13,26 +13,32 @@ const { openCreateForm } = component.methods;
 const tabWith = ({ canCreate }) => {
   const open = jest.fn();
   return {
-    vm: { canCreate, items: [], $refs: { formDialog: { open } } },
+    vm: {
+      canCreate,
+      items: [],
+      fetchParentValues: jest.fn(async () => {}),
+      $refs: { formDialog: { open } },
+    },
     open,
   };
 };
 
 describe('taxonomy tab: creating a value', () => {
-  it('opens the form on an active dimension', () => {
+  it('opens the form on an active dimension', async () => {
     const { vm, open } = tabWith({ canCreate: true });
 
-    openCreateForm.call(vm);
+    await openCreateForm.call(vm);
 
     expect(open).toHaveBeenCalledWith(null, 0);
   });
 
-  it('opens nothing on a deactivated dimension', () => {
+  it('opens nothing on a deactivated dimension', async () => {
     const { vm, open } = tabWith({ canCreate: false });
 
-    openCreateForm.call(vm);
+    await openCreateForm.call(vm);
 
     expect(open).not.toHaveBeenCalled();
+    expect(vm.fetchParentValues).not.toHaveBeenCalled();
   });
 
   it('offers creation unless told otherwise', () => {

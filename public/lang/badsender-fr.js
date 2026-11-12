@@ -399,6 +399,9 @@ module.exports = {
   'email-metadata-trigger-none': 'Aucun',
   // The empty choice of a company dimension select, whatever its name.
   'email-metadata-dimension-none': 'Aucune valeur',
+  // Under a dimension whose value is no longer offered under its parent value.
+  'email-metadata-dimension-unavailable':
+    "Cette valeur n'est plus proposée pour ce choix. L'email peut tout de même être enregistré.",
   // Les mots de la doctrine, les mêmes que l'écran de taxonomie et l'IA
   // (packages/shared/taxonomy/trigger-definitions.js).
   'email-metadata-trigger-adhoc': TRIGGERS.adhoc.label,

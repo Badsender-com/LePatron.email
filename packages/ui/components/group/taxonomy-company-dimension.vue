@@ -23,6 +23,8 @@ export default {
     // A request on the dimension runs: its buttons wait, so a double click
     // cannot send it twice.
     busy: { type: Boolean, default: false },
+    // The dimension this one hangs under, if any.
+    parent: { type: Object, default: null },
   },
   data() {
     return {
@@ -50,6 +52,9 @@ export default {
         {{ dimension.label }}
       </h2>
       <code class="taxonomy-dimension__name">{{ dimension.name }}</code>
+      <v-chip v-if="parent" x-small outlined>
+        {{ $t('taxonomy.dimensions.under', { parent: parent.label }) }}
+      </v-chip>
       <v-chip v-if="!dimension.isActive" x-small outlined>
         {{ $t('taxonomy.dimensions.inactive') }}
       </v-chip>
@@ -112,6 +117,8 @@ export default {
       ref="values"
       :dimension-name="dimension.name"
       :can-create="dimension.isActive"
+      :parent-name="parent ? parent.name : null"
+      :parent-label="parent ? parent.label : ''"
       @count="valueCount = $event"
     />
   </section>

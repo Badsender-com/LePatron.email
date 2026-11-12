@@ -11,7 +11,10 @@ const { trimString } = require('../../utils/model');
 // of changing the shared helper, which every other schema relies on.
 const trimOptionalString = (value) =>
   value === undefined || value === null ? value : trimString(value);
-const { GroupModel } = require('../../constant/model.names.js');
+const {
+  GroupModel,
+  TaxonomyItemModel,
+} = require('../../constant/model.names.js');
 const {
   StandardDimensions,
   DIMENSION_NAME_PATTERN,
@@ -84,6 +87,9 @@ const TaxonomyItemSchema = Schema(
       type: Number,
       default: 0,
     },
+    // The availability: the values of the parent dimension this value is
+    // offered under. Empty: offered under all of them.
+    _parents: [{ type: ObjectId, ref: TaxonomyItemModel }],
   },
   { timestamps: true, toJSON: { virtuals: true }, toObject: { virtuals: true } }
 );
@@ -93,5 +99,8 @@ const TaxonomyItemSchema = Schema(
 TaxonomyItemSchema.index({ _company: 1, type: 1, label: 1 }, { unique: true });
 // Serves the select lists: active items of one taxonomy, in display order.
 TaxonomyItemSchema.index({ _company: 1, type: 1, isActive: 1, order: 1 });
+
+// Serves the refusal to delete a value another value is offered under.
+TaxonomyItemSchema.index({ _company: 1, _parents: 1 });
 
 module.exports = TaxonomyItemSchema;

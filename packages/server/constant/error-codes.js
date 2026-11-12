@@ -394,6 +394,12 @@ module.exports = {
   DIMENSION_NAME_DIFFERS_ONLY_BY_CASE: 'DIMENSION_NAME_DIFFERS_ONLY_BY_CASE',
   STANDARD_DIMENSION_LOCKED: 'STANDARD_DIMENSION_LOCKED',
   DIMENSION_HAS_VALUES: 'DIMENSION_HAS_VALUES',
+  // A value another value is offered under (its availability lists it).
+  TAXONOMY_ITEM_IS_PARENT: 'TAXONOMY_ITEM_IS_PARENT',
+  // A dimension another one hangs under.
+  DIMENSION_HAS_CHILDREN: 'DIMENSION_HAS_CHILDREN',
+  // Moving a dimension whose values carry an availability under its parent.
+  DIMENSION_HAS_AVAILABILITY: 'DIMENSION_HAS_AVAILABILITY',
 
   // MCP CONSENT (what the consent page translates)
   MCP_CONSENT_SIGN_IN_REQUIRED: 'MCP_CONSENT_SIGN_IN_REQUIRED',

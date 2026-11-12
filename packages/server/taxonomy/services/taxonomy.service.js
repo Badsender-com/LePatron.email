@@ -19,6 +19,10 @@ const {
   scopedById,
 } = require('./company-scope.js');
 const { assertValueType } = require('./dimension.service.js');
+const {
+  readAvailability,
+  assertNotOfferedUnder,
+} = require('./availability.js');
 const logger = require('../../utils/logger.js');
 
 module.exports = {
@@ -62,7 +66,14 @@ async function createTaxonomyItem({ user, groupId, type, payload = {} }) {
     type,
     toWrite: true,
   });
-  const fields = validatePayload(payload, { partial: false });
+  const { parentIds, ...fields } = validatePayload(payload, { partial: false });
+  if (parentIds !== undefined) {
+    fields._parents = await readAvailability({
+      companyId,
+      type: taxonomyType,
+      parentIds,
+    });
+  }
 
   await assertLabelIsFree({
     companyId,
@@ -125,7 +136,16 @@ async function updateTaxonomyItem({ user, itemId, payload = {} }) {
   logger.log('taxonomyService:updateTaxonomyItem');
 
   const item = await findScopedItem({ user, itemId });
-  const fields = validatePayload(payload, { partial: true });
+  const { parentIds, ...fields } = validatePayload(payload, { partial: true });
+  // Narrowing an availability leaves the emails using the combination as they
+  // are: the server checks it again only when a request changes it (ADR-0014).
+  if (parentIds !== undefined) {
+    fields._parents = await readAvailability({
+      companyId: item._company,
+      type: item.type,
+      parentIds,
+    });
+  }
 
   if (fields.label !== undefined && fields.label !== item.label) {
     await assertLabelIsFree({
@@ -200,6 +220,7 @@ async function deleteTaxonomyItem({ user, itemId }) {
     error.details = { usageCount };
     throw error;
   }
+  await assertNotOfferedUnder(item);
 
   const deleted = await TaxonomyItems.deleteOne({
     _id: item._id,

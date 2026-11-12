@@ -27,6 +27,9 @@ export default {
     dimensionName: { type: String, default: STANDARD_DIMENSIONS.EMAIL_TYPE },
     // False on a deactivated dimension: the server refuses it a new value.
     canCreate: { type: Boolean, default: true },
+    // The dimension this one hangs under: its values make the availability.
+    parentName: { type: String, default: null },
+    parentLabel: { type: String, default: '' },
   },
   data() {
     return {
@@ -40,6 +43,8 @@ export default {
       // managed to read.
       loadError: false,
       items: [],
+      // Null while the dimension hangs under nothing.
+      parentValues: null,
       deletingItem: null,
     };
   },
@@ -66,9 +71,11 @@ export default {
     // A super admin switching company keeps this component mounted, and would
     // otherwise keep reading the previous company's list.
     groupId: 'fetchItems',
+    parentName: 'fetchParentValues',
   },
   mounted() {
     this.fetchItems();
+    this.fetchParentValues();
   },
   methods: {
     ...mapMutations(PAGE, { showSnackbar: SHOW_SNACKBAR }),
@@ -93,6 +100,24 @@ export default {
       }
     },
 
+    // Read again before each form opens: values added to the parent since
+    // the screen loaded are offered.
+    async fetchParentValues() {
+      if (!this.parentName) {
+        this.parentValues = null;
+        return;
+      }
+      try {
+        const response = await this.$axios.$get(
+          apiRoutes.taxonomyItems(this.groupId, { type: this.parentName })
+        );
+        this.parentValues = response.items || [];
+      } catch (error) {
+        this.parentValues = null;
+        this.reportError(error);
+      }
+    },
+
     openRestoreDefaults() {
       if (this.loading || this.saving) return;
       this.$refs.defaultsDialog.open();
@@ -108,12 +133,14 @@ export default {
       await this.fetchItems();
     },
 
-    openCreateForm() {
+    async openCreateForm() {
       if (!this.canCreate) return;
+      await this.fetchParentValues();
       this.$refs.formDialog.open(null, nextOrder(this.items));
     },
 
-    openEditForm(item) {
+    async openEditForm(item) {
+      await this.fetchParentValues();
       this.$refs.formDialog.open(item);
     },
 
@@ -209,6 +236,8 @@ export default {
       ref="formDialog"
       :loading="saving"
       :is-email-type="isEmailType"
+      :parent-values="parentValues"
+      :parent-label="parentLabel"
       @save="saveItem"
     />
 
