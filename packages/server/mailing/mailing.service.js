@@ -37,6 +37,9 @@ const {
   resolveTrackingConfig,
   validateRequiredTrackingParams,
 } = require('../utils/resolve-tracking-config');
+const {
+  resolveQualitySettings,
+} = require('../utils/resolve-quality-settings.js');
 
 const IMAGES_FOLDER = 'images';
 
@@ -243,14 +246,16 @@ async function findOne(mailingId) {
 // duplicate-translate) MUST use this instead to avoid cross-tenant reads:
 // a group admin of group A could otherwise load a mailing of group B by id.
 // Super admins are unfiltered, matching addGroupFilter.
-async function findOneForUser(mailingId, user) {
+// `projection` limits what is read: a caller that only decides a right has no
+// use for `data` and `previewHtml`.
+async function findOneForUser(mailingId, user, projection) {
   if (!mailingId || !mongoose.Types.ObjectId.isValid(mailingId)) {
     throw new NotFound(ERROR_CODES.MAILING_NOT_FOUND);
   }
   const query = modelsUtils.addGroupFilter(user, {
     _id: mongoose.Types.ObjectId(mailingId),
   });
-  const mailing = await Mailings.findOne(query);
+  const mailing = await Mailings.findOne(query, projection);
   if (!mailing) {
     throw new NotFound(ERROR_CODES.MAILING_NOT_FOUND);
   }
@@ -330,6 +335,9 @@ const MAILING_COPY_OMITTED_FIELDS = Object.freeze([
   '_parentFolder',
   '__v',
   'plannedSendDate',
+  // Ignoring a quality finding is a decision about one email, made by its
+  // authors: a copy (a translated one first) starts its review afresh.
+  'qualityIgnores',
 ]);
 
 /**
@@ -1218,7 +1226,13 @@ async function resolveMailingTrackingContext(
     tracking,
     groupTrackingConfig
   );
-  if (missingParams.length > 0) {
+  // The required tracking parameters are a check like the others (ADR 0009):
+  // blocking by default; the server refuses them missing only while the
+  // mailing's group or template keeps that check blocking.
+  const trackingCheckBlocks =
+    resolveQualitySettings(group, template).checks['tracking-params'].state ===
+    'blocking';
+  if (missingParams.length > 0 && trackingCheckBlocks) {
     const err = new UnprocessableEntity(
       ERROR_CODES.TRACKING_REQUIRED_PARAMS_MISSING
     );

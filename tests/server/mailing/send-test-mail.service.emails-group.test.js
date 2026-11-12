@@ -71,4 +71,13 @@ describe('sendTestMail, with a list of addresses', () => {
       'me@client.test',
     ]);
   });
+
+  it('says to whom and with which subject it went', async () => {
+    const result = await send({ role: 'writer', group: { id: CLIENT } });
+    expect(result.addresses.sort()).toEqual([
+      'list@client.test',
+      'me@client.test',
+    ]);
+    expect(result.subject).toEqual(expect.any(String));
+  });
 });

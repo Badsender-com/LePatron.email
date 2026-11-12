@@ -1,0 +1,90 @@
+'use strict';
+
+const asyncHandler = require('express-async-handler');
+const textGenerationService = require('./text-generation.service.js');
+const textCorrectionService = require('./text-correction.service.js');
+
+/**
+ * @api {post} /text-generation/subject Subject proposals for an email
+ * @apiPermission user
+ * @apiName GenerateSubjects
+ * @apiGroup TextGeneration
+ *
+ * @apiParam (Body) {String} mailingId the email being edited
+ * @apiParam (Body) {Object[]} content its text as the editor shows it: `{ role, text }`
+ * @apiParam (Body) {String} [currentSubject]
+ * @apiParam (Body) {String} [brief] an instruction of the user
+ * @apiParam (Body) {String[]} [avoid] proposals already seen
+ *
+ * @apiSuccess {Object[]} proposals `{ text, angle, facts }`
+ * @apiSuccess {Number} dropped proposals set aside for breaking a rule
+ */
+async function generateSubject(req, res) {
+  res.json(
+    await textGenerationService.generateSubjects({
+      user: req.user,
+      body: req.body,
+    })
+  );
+}
+
+/**
+ * @api {post} /text-generation/preheader Preheader proposals, built from the picked subject if any
+ * @apiPermission user
+ * @apiName GeneratePreheaders
+ * @apiGroup TextGeneration
+ *
+ * @apiParam (Body) {String} mailingId the email being edited
+ * @apiParam (Body) {Object[]} content its text as the editor shows it: `{ role, text }`
+ * @apiParam (Body) {String} [subject] the subject the user picked; without it, the preheader carries the main point of the email
+ * @apiParam (Body) {String} [currentPreheader]
+ * @apiParam (Body) {String} [brief] an instruction of the user
+ * @apiParam (Body) {String[]} [avoid] proposals already seen
+ *
+ * @apiSuccess {Object[]} proposals `{ text, angle, facts }`
+ * @apiSuccess {Number} dropped proposals set aside for breaking a rule
+ */
+async function generatePreheader(req, res) {
+  res.json(
+    await textGenerationService.generatePreheaders({
+      user: req.user,
+      body: req.body,
+    })
+  );
+}
+
+/**
+ * @api {post} /text-generation/corrections Spelling corrections of a block's fields
+ * @apiPermission user
+ * @apiName CorrectText
+ * @apiGroup TextGeneration
+ *
+ * @apiParam (Body) {String} mailingId the email being edited
+ * @apiParam (Body) {Object} target the block or block field: `{ kind, blockId, blockType, field? }`
+ * @apiParam (Body) {Object[]} fields their visible text: `{ path, role, text }`,
+ *   at most 40, a path once, 50,000 characters in all; a field target sends its
+ *   field alone
+ *
+ * @apiSuccess {Object[]} corrections `{ field, before, after, reason }`
+ * @apiSuccess {Number} dropped corrections the code could not place
+ *
+ * @apiError (400) INVALID_TEXT_GENERATION_REQUEST the body breaks the rules above
+ * @apiError (403) TEXT_GENERATION_DISABLED text generation is off for the group
+ * @apiError (404) mailing not found for the user
+ * @apiError (429) AI rate limit reached, `retryAfterSeconds` in the body
+ * @apiError (503) TEXT_GENERATION_UNAVAILABLE the skill or the engine is missing
+ */
+async function correctText(req, res) {
+  res.json(
+    await textCorrectionService.correctText({
+      user: req.user,
+      body: req.body,
+    })
+  );
+}
+
+module.exports = {
+  generateSubject: asyncHandler(generateSubject),
+  generatePreheader: asyncHandler(generatePreheader),
+  correctText: asyncHandler(correctText),
+};

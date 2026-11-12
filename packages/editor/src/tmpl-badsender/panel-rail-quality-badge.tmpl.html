@@ -1,0 +1,13 @@
+<!-- The badge of « Tester l'email » in the panel rail (ADR 0020): chosen by
+     ext/quality/rail-badge.js, said in words. -->
+<!-- ko with: $root.quality.railBadge() -->
+<span class="panel-rail__badge" data-bind="css: 'panel-rail__badge--' + kind">
+  <!-- ko if: kind === 'blocking' || kind === 'volume' -->
+  <span aria-hidden="true" data-bind="text: $data.count > 99 ? '99+' : $data.count"></span>
+  <!-- /ko -->
+  <!-- ko ifnot: kind === 'blocking' || kind === 'volume' -->
+  <span aria-hidden="true" data-bind="css: { lucide: true, 'lucide-check': kind === 'ready', 'lucide-loader': kind === 'running', 'lucide-rotate-ccw': kind === 'stale', 'lucide-minus': kind === 'incomplete' }"></span>
+  <!-- /ko -->
+  <span class="panel-rail__sr" data-bind="text: $root.t($data.labelKey, $data.params || {})"></span>
+</span>
+<!-- /ko -->

@@ -98,8 +98,11 @@ const MANAGES = {
     REVIEWER,
   ],
   [GROUP_ADMIN]: [GROUP_ADMIN, REGULAR_USER, WRITER, REVIEWER],
-  [REGULAR_USER]: [REGULAR_USER, WRITER, REVIEWER],
-  [WRITER]: [WRITER, REVIEWER],
+  // A reviewer approves, which neither a regular user nor a writer does
+  // (ADR 0020): its account holds a right theirs lack. Neither reaches the
+  // user screens anyway, which need group.manage.
+  [REGULAR_USER]: [REGULAR_USER, WRITER],
+  [WRITER]: [WRITER],
   [REVIEWER]: [REVIEWER],
 };
 

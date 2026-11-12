@@ -1,0 +1,112 @@
+// THE NAME OF THE EMAIL, on the left of the top bar (boards « Éditeur v2 »):
+// a pill as wide as the name, renamed from a click, its pencil on hover; in
+// the same pill while renamed, its cancel and save buttons beside it.
+// Imported after badsender-topbar.less.
+#toolbar {
+  // NAME: on the left, renamed from a click, its pencil on hover.
+  .creation-name {
+    flex: 1 1 auto;
+    display: flex;
+    align-items: center;
+    min-width: 0;
+    border-width: 0;
+
+    // The cancel and save buttons, right after the field: 32px, as the
+    // way back.
+    .ui-button {
+      flex: none;
+      width: 32px;
+      height: 32px;
+      margin: 0 0 0 2px;
+      border: 0;
+      border-radius: 6px;
+      background: transparent;
+      padding: 0;
+      line-height: 32px;
+      color: white;
+
+      &,
+      &.ui-state-active {
+        border: 0;
+        background: transparent;
+        color: white;
+      }
+
+      &:hover { background: rgba(255, 255, 255, 0.1); }
+
+      &:focus-visible {
+        outline: 2px solid white;
+        outline-offset: 1px;
+      }
+    }
+
+    // The name's pill, as at rest: as wide as the name, up to 480px.
+    input {
+      flex: 0 1 auto;
+      width: 320px;
+      min-width: 160px;
+      max-width: 480px;
+      height: 32px;
+      padding: 0 10px;
+      border: 0;
+      border-radius: 7px;
+      outline: 0;
+      box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.45);
+      background: rgba(255, 255, 255, 0.1);
+      color: white;
+      font-size: 15px;
+      font-weight: 600;
+
+      @supports (field-sizing: content) {
+        width: auto;
+        field-sizing: content;
+      }
+    }
+  }
+
+  .creation-name__button {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    min-width: 0;
+    padding: 6px 10px;
+    border: 0;
+    border-radius: 7px;
+    background: transparent;
+    color: white;
+    font: inherit;
+    cursor: pointer;
+
+    &:hover { background: rgba(255, 255, 255, 0.08); }
+
+    &:focus-visible {
+      outline: 2px solid white;
+      outline-offset: 1px;
+    }
+  }
+
+  .creation-name__text {
+    overflow: hidden;
+    color: white;
+    font-size: 15px;
+    font-weight: 600;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  // Plain text for whom may not rename: aligned with the button's text.
+  .creation-name > .creation-name__text {
+    padding: 0 10px;
+  }
+
+  .creation-name__pencil {
+    flex: none;
+    font-size: 14px;
+    opacity: 0;
+  }
+
+  .creation-name__button:hover .creation-name__pencil,
+  .creation-name__button:focus-visible .creation-name__pencil {
+    opacity: 1;
+  }
+}

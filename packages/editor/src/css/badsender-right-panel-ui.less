@@ -1,0 +1,300 @@
+////////
+// RIGHT PANEL — the shared kit of the right-hand panels (ADR 0010, 0020):
+// the shell, buttons, notices, spinner. Born with the quality drawer, hence the qc-
+// prefix; quality control and the AI panel both use it.
+//
+// Focus rings of buttons and links are in the brand's dark colour (the accent
+// falls below 3:1 on white); a text field's border turns to the accent alone.
+//
+// Scoped under `.slidebar.right-panel` (0,2,0): the editor's generic
+// `.mo button` / `.mo p` rules sit at (0,1,1) and would win otherwise.
+////////
+
+@qc-error: #d32f2f;
+@qc-error-text: #b71c1c; // text on its tint: 5.6:1, where @qc-error falls to 4.3:1
+@qc-warning: #b07400; // icons only: 3.9:1, enough for a graphic, not for text
+@qc-warning-text: #8a5a00; // 5.9:1 on white
+@qc-info: #1565c0;
+@qc-success: #2e7d32;
+@qc-tint-error: rgba(211, 47, 47, 0.1);
+@qc-tint-warning: rgba(255, 180, 0, 0.14);
+@qc-tint-info: rgba(33, 150, 243, 0.12);
+@qc-tint-success: rgba(76, 175, 80, 0.12);
+// The boards' radii (v3). Not @standard-border-radius / @large-border-radius:
+// the editor sets the first to 2px (badsender-editor.less), which shrinks both.
+@qc-radius: 5px;
+// Cards, rows and replies.
+@qc-radius-card: 7px;
+// Chips.
+@qc-radius-pill: 999px;
+// The small text of chips, menus and tabs.
+@qc-font-sm: 12.5px;
+@qc-motion: 0.2s ease-out;
+
+.slidebar.right-panel {
+  // ===== Shell (ADR 0020): header, nav, body, foot =====
+  .right-panel-shell {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    font-size: 13px;
+    color: var(--gray-900);
+
+    button {
+      font-family: inherit;
+    }
+
+    &__header {
+      display: flex;
+      flex: none;
+      align-items: center;
+      gap: 8px;
+      height: 52px;
+      padding: 0 8px 0 16px;
+      border-bottom: 1px solid var(--gray-200);
+    }
+
+    &__back,
+    &__close {
+      justify-content: center;
+      width: 32px;
+      height: 32px;
+      padding: 0;
+      font-size: 17px;
+    }
+
+    &__back {
+      margin-left: -8px;
+    }
+
+    // The close button keeps its place, whatever precedes it.
+    &__close {
+      margin-left: auto;
+    }
+
+    &__title {
+      flex: 0 1 auto;
+      min-width: 0;
+      margin: 0;
+      overflow: hidden;
+      font-size: 15px;
+      font-weight: 600;
+      line-height: 1.3;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      color: var(--primary);
+
+      // Focused when the panel changes level, to be announced; not a control.
+      &:focus {
+        outline: none;
+      }
+    }
+
+    // Right after the title.
+    &__count {
+      flex: none;
+      min-width: 18px;
+      height: 18px;
+      padding: 0 5px;
+      border-radius: 9px;
+      box-sizing: border-box;
+      background: var(--accent);
+      // White on the accent, as everywhere in the app and on the boards.
+      color: var(--white);
+      font-size: 11px;
+      font-weight: 700;
+      line-height: 18px;
+      text-align: center;
+    }
+
+    &__nav {
+      flex: none;
+      padding: 12px 16px 0;
+    }
+
+    // The only part that scrolls; a panel with its own scrolling list fills it.
+    &__body {
+      display: flex;
+      flex: 1;
+      flex-direction: column;
+      min-height: 0;
+      overflow-y: auto;
+    }
+
+    &__footer {
+      display: flex;
+      flex: none;
+      justify-content: flex-end;
+      gap: 8px;
+      padding: 12px 16px;
+      border-top: 1px solid var(--gray-200);
+      background: var(--gray-50);
+    }
+  }
+
+  // ===== Buttons =====
+  .qc-button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 7px;
+    height: 36px;
+    padding: 0 14px;
+    border: 1px solid transparent;
+    border-radius: @qc-radius;
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background-color 0.15s;
+
+    &:focus-visible {
+      outline: 2px solid var(--primary);
+      outline-offset: 2px;
+    }
+
+    // White on the accent, as everywhere in the app and on the boards.
+    &--cta {
+      background: var(--accent);
+      color: var(--white);
+
+      &:hover { filter: brightness(0.92); }
+    }
+
+    &--outline {
+      background: transparent;
+      border-color: var(--gray-300);
+      color: var(--primary);
+
+      &:hover { background: var(--gray-100); }
+    }
+
+    &--ghost {
+      background: transparent;
+      color: var(--gray-700);
+
+      &:hover { background: var(--gray-100); }
+    }
+
+    &--sm {
+      height: 28px;
+      padding: 0 10px;
+      font-size: @qc-font-sm;
+    }
+
+    &--grow {
+      flex: 1;
+    }
+
+    &[disabled] {
+      cursor: not-allowed;
+      opacity: 0.5;
+    }
+  }
+
+  .qc-link-button,
+  .qc-icon-button {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    border: 0;
+    background: transparent;
+    cursor: pointer;
+
+    &:focus-visible {
+      outline: 2px solid var(--primary);
+      outline-offset: 2px;
+    }
+  }
+
+  // A link reads as one without its colour: the accent, on white, falls below
+  // 4.5:1.
+  .qc-link-button {
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--primary);
+    text-decoration: underline;
+    text-underline-offset: 2px;
+
+    &:hover { text-decoration-thickness: 2px; }
+
+    // An action that cannot be undone.
+    &--danger { color: @qc-error-text; }
+  }
+
+  .qc-icon-button {
+    padding: 6px;
+    border-radius: 4px;
+    color: var(--gray-600);
+    font-size: 16px;
+
+    &:hover { background: var(--gray-100); }
+  }
+
+  .qc-sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    margin: -1px;
+    padding: 0;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+  }
+
+  // ===== Notice =====
+  .qc-notice {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 12px;
+    border-radius: @qc-radius;
+    background: @qc-tint-info;
+    color: @qc-info;
+    font-size: 12px;
+
+    &--error {
+      background: @qc-tint-error;
+      color: @qc-error;
+    }
+
+    &--success {
+      background: @qc-tint-success;
+      color: @qc-success;
+    }
+
+    // Something to know, nothing blocking (board q4).
+    &--neutral {
+      border: 1px solid var(--gray-200);
+      background: var(--gray-50);
+      color: @qc-warning;
+    }
+
+    &__text {
+      flex: 1;
+      min-width: 0;
+      color: var(--gray-800);
+    }
+  }
+
+  // ===== Spinner =====
+  .qc-spinner {
+    width: 14px;
+    height: 14px;
+    border: 2px solid var(--gray-200);
+    border-top-color: var(--accent);
+    border-radius: 50%;
+    animation: qc-spin 0.7s linear infinite;
+  }
+}
+
+@keyframes qc-spin {
+  to { transform: rotate(360deg); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .slidebar.right-panel .qc-spinner {
+    animation: none;
+  }
+}

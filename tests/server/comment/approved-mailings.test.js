@@ -7,7 +7,8 @@ const {
 } = require('../../../packages/server/comment/comment.schema.js');
 
 // The listing's green check: a mailing is approved when its LATEST root comment
-// is an approval (a later comment, whatever it says, lifts it).
+// is an approval (a later comment, whatever it says, lifts it), with no blocking
+// root comment open (ADR 0020, tests/server/comment/approval.test.js).
 describe('CommentSchema.statics.findApprovedMailingIds', () => {
   const ids = [new mongoose.Types.ObjectId(), new mongoose.Types.ObjectId()];
 
@@ -22,12 +23,12 @@ describe('CommentSchema.statics.findApprovedMailingIds', () => {
       isDeleted: false,
     });
     expect(pipeline[1]).toEqual({ $sort: { createdAt: -1 } });
-    expect(pipeline[2].$group).toEqual({
+    expect(pipeline[2].$group).toMatchObject({
       _id: '$_mailing',
       decision: { $first: '$decision' },
     });
     expect(pipeline[3]).toEqual({
-      $match: { decision: COMMENT_DECISIONS.APPROVED },
+      $match: { decision: COMMENT_DECISIONS.APPROVED, openBlocking: 0 },
     });
   });
 

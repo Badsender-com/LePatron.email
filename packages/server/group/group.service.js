@@ -204,13 +204,18 @@ async function deleteGroup(groupId) {
   ]);
 }
 
-async function updateGroup(group) {
+// `operators`: writes made in the same update, beside the group's fields, such
+// as the quality settings written check by check.
+async function updateGroup(group, operators = {}) {
   const { id, ...otherProperties } = group;
+  const $set = { ...otherProperties, ...operators.$set };
+  const update = {
+    ...operators,
+    ...(Object.keys($set).length ? { $set } : {}),
+  };
+  if (!Object.keys(update).length) return;
 
-  await Groups.updateOne(
-    { _id: mongoose.Types.ObjectId(id) },
-    { ...otherProperties }
-  );
+  await Groups.updateOne({ _id: mongoose.Types.ObjectId(id) }, update);
 }
 
 async function findColorScheme({ groupId }) {

@@ -157,6 +157,18 @@ module.exports = {
         },
       },
 
+      // A field written from outside the section (an AI action, through
+      // ext/email-subject.js) goes to the store first; the section shows it.
+      created() {
+        this.stopListening = store.onWrite((name, value) => {
+          this[name] = value;
+        });
+      },
+
+      beforeDestroy() {
+        this.stopListening();
+      },
+
       methods: {
         // The second argument matters: vm.t(key, params) interpolates __token__
         // placeholders, and dropping it would lose them without an error.

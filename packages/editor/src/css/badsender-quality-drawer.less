@@ -1,0 +1,150 @@
+////////
+// QUALITY DRAWER — right-side panel of quality checks
+// Design: Claude Design "Quality Drawer" (preview/components-quality-drawer).
+// Colours come from the editor's tokens (badsender-editor.less :root): --gray-*,
+// --accent, --primary. Severity text uses darker shades than the icons so that
+// labels reach WCAG AA on white; icons only need 3:1.
+////////
+
+// The @qc-* colours and radius live with the shared right-panel kit
+// (badsender-right-panel-ui.less).
+
+// Panel position: the right-hand place shared with the comments and the AI
+// panel, in badsender-right-panel.less.
+#toolquality #quality-drawer {
+  height: 100%;
+}
+
+// Scoped under the panel: the editor's global h2/h3/p rules (em sizes,
+// margins) are more specific than a bare class and would win otherwise.
+#toolquality {
+// ===== Drawer =====
+.qc-drawer {
+  // Its layout is the shell's (badsender-right-panel-ui.less).
+  // Before a run (board q1).
+  &__empty {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    flex: 1;
+    justify-content: center;
+    padding: 40px 32px;
+  }
+
+  &__empty-icon {
+    margin-bottom: 16px;
+    color: var(--gray-500);
+    font-size: 30px;
+  }
+
+  &__empty-title {
+    margin: 0 0 8px;
+    font-size: 15px;
+    font-weight: 600;
+  }
+
+  &__empty-text {
+    max-width: 300px;
+    margin: 0 0 8px;
+    line-height: 1.5;
+    color: var(--gray-700);
+  }
+
+  &__hint {
+    margin: 24px 0 0;
+    font-size: 11px;
+    color: var(--gray-600);
+  }
+
+  // Centred in the body, as the empty state before a run.
+  &__running {
+    flex: 1;
+    justify-content: center;
+  }
+
+  // The shell's body scrolls, the actions staying in its foot.
+  &__list {
+    padding-bottom: 16px;
+  }
+}
+
+// ===== Where the email stands (boards q2, q3) =====
+// Red only when something blocks the export (decision 6).
+.qc-status {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 12px 16px 4px;
+  padding: 10px 12px;
+  border: 1px solid var(--gray-200);
+  border-radius: @qc-radius-card;
+  background: var(--gray-50);
+
+  &__icon {
+    flex: none;
+    font-size: 20px;
+  }
+
+  &__title {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin: 0 0 2px;
+    font-weight: 600;
+    color: var(--gray-900);
+
+    > .qc-status__icon { font-size: 15px; }
+  }
+
+  &__text {
+    margin: 0;
+    font-size: 12px;
+    line-height: 1.45;
+    color: var(--gray-700);
+  }
+
+  &--ready {
+    border-color: transparent;
+    background: @qc-tint-success;
+
+    .qc-status__icon { color: @qc-success; }
+  }
+
+  &--blocking {
+    border-color: color-mix(in srgb, @qc-error 30%, var(--white));
+    background: color-mix(in srgb, @qc-error 8%, var(--white));
+
+    .qc-status__icon { color: @qc-error-text; }
+  }
+
+  &--todo .qc-status__icon { color: @qc-warning; }
+  &--incomplete .qc-status__icon { color: var(--gray-600); }
+}
+
+// ===== Severity colours =====
+.qc-sev--error { color: @qc-error; }
+.qc-sev--warning { color: @qc-warning; }
+.qc-sev--info { color: @qc-info; }
+.qc-sev--success { color: @qc-success; }
+
+// Pills, groups, rows and buttons of the result list.
+@import 'badsender-quality-drawer-results.less';
+// Tabs and the "Send a test" tab.
+@import 'badsender-quality-drawer-send.less';
+@import 'badsender-quality-drawer-recipients.less';
+// Stale results, server checks that did not run, checks not run.
+@import 'badsender-quality-drawer-notices.less';
+// The saved list field of the "Send a test" tab.
+@import (multiple) 'badsender-simple-select.less';
+} // End #toolquality
+
+// ===== Block located from the drawer =====
+.editable.qc-highlight {
+  outline: 2px solid var(--accent);
+  outline-offset: -2px;
+
+  &--error { outline-color: @qc-error; }
+  &--warning { outline-color: @qc-warning; }
+  &--info { outline-color: @qc-info; }
+}

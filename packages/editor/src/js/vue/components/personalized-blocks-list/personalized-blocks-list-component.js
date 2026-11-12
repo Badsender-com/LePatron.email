@@ -84,13 +84,14 @@ const PersonalizedBlocksListComponent = Vue.component(
     <div id="personalized-blocks-list">
       <!-- Input field with style and search icon -->
       <div class="bs-form-field search-container">
-        <input type="text"
+        <input type="search"
          v-model="searchTerm"
          @input="handleSearch"
          :placeholder="vm.t('personalized-blocks-search-placeholder')"
+         :aria-label="vm.t('personalized-blocks-search-placeholder')"
          class="search-input"
          id="searchBlock"/>
-        <label for="searchBlock"><i class="fa fa-search search-icon"></i></label> <!-- Search Icon -->
+        <label for="searchBlock"><span class="lucide lucide-search search-icon" aria-hidden="true"></span></label>
       </div>
       <div v-if="isLoading" class="loading-state">
         <!-- Loading Spinner -->

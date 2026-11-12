@@ -29,7 +29,7 @@ async function sendTestMail(req, res) {
   } = req;
   const { mailingId } = req.params;
 
-  const resultSendingTestMail = await sendTestMailService.sendTestMail({
+  const { addresses, subject } = await sendTestMailService.sendTestMail({
     user,
     rcpt,
     htmlFromEditor,
@@ -37,5 +37,5 @@ async function sendTestMail(req, res) {
     mailingId,
   });
 
-  res.json({ result: resultSendingTestMail });
+  res.json({ result: addresses, subject });
 }

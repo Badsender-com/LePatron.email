@@ -82,11 +82,13 @@ const { McpOAuthAdapter } = require('./mcp/mcp-oauth-adapter.js');
 const { siteOrigin } = require('./utils/site-origin.js');
 const aiPlaygroundRouter = require('./ai-playground/ai-playground.routes');
 const translationRouter = require('./translation/translation.routes');
+const { workerCount } = require('./utils/worker-count.js');
+const textGenerationRouter = require('./text-generation/text-generation.routes.js');
 
 process.env.TMPDIR = path.join(process.env.HOME, 'badsender-vips');
 
 const cpuCount = require('os').cpus().length;
-const workers = process.env.WORKERS <= cpuCount ? process.env.WORKERS : 1;
+const workers = workerCount({ cpuCount });
 
 if (cluster.isMaster) {
   // Before any worker: a worker that fails on start is forked again.
@@ -424,6 +426,7 @@ if (cluster.isMaster) {
   app.use('/api/ai-invocations', aiInvocationsRouter);
   app.use('/api/ai-playground', aiPlaygroundRouter);
   app.use('/api/translation', translationRouter);
+  app.use('/api/text-generation', textGenerationRouter);
   app.use('/api/account', accountRouter);
   app.use('/api/version', versionRouter);
   app.use('/api/comments', commentsRouter);
@@ -438,6 +441,10 @@ if (cluster.isMaster) {
     mosaicoEditor.exposeHelpersToPug,
     mosaicoEditor.render
   );
+
+  // Public preview of an email, opened from a share link: no session needed.
+  const sharePage = require('./share-link/share-page.controller.js');
+  app.get('/share/:token', sharePage.renderShare);
 
   const maintenanceEditor = require('./maintenance/maintenance.controller.js');
   app.get(

@@ -13,6 +13,22 @@ describe('zod schema registry', () => {
     expect(hasSchema('genericTextOutput')).toBe(true);
   });
 
+  // The feature shows three: a model that answers more is not refused for it,
+  // one that answers fewer has not done its job.
+  it('subjectGenOutput takes three proposals or more, never fewer', () => {
+    const subjectGenOutput = getSchema('subjectGenOutput');
+    const of = (n) => ({
+      proposals: Array.from({ length: n }, (_, i) => ({
+        text: `Objet ${i}`,
+        angle: 'bénéfice direct',
+      })),
+    });
+
+    expect(subjectGenOutput.safeParse(of(3)).success).toBe(true);
+    expect(subjectGenOutput.safeParse(of(4)).success).toBe(true);
+    expect(subjectGenOutput.safeParse(of(2)).success).toBe(false);
+  });
+
   it('returns undefined for unknown schemaId', () => {
     expect(getSchema('does-not-exist')).toBeUndefined();
     expect(hasSchema('does-not-exist')).toBe(false);
@@ -70,6 +86,16 @@ describe('zod schema registry', () => {
       brief: 'nope',
     });
     expect(result.success).toBe(false);
+  });
+
+  // The subject may be set in the sending platform: the preheader then carries
+  // the main point of the email on its own.
+  it('preheaderGenInput accepts an email without a subject, not an empty one', () => {
+    const content = [{ role: 'text', text: 'Votre facture est disponible.' }];
+    expect(schemas.preheaderGenInput.safeParse({ content }).success).toBe(true);
+    expect(
+      schemas.preheaderGenInput.safeParse({ content, subject: '' }).success
+    ).toBe(false);
   });
 
   // A bare `schemas[id]` lookup returned Object.prototype members as truthy

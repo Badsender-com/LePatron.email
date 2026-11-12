@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<title>Outils IA · champ sélectionné</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap">
+<style>
+body{margin:0}
+a{color:#093040}a:hover{color:#00acdc}
+.p{width:360px;height:680px;background:#fff;border:1px solid #e5e7eb;border-radius:10px;display:flex;flex-direction:column;overflow:hidden;box-sizing:border-box;font-family:'Inter',-apple-system,'Segoe UI',sans-serif;color:#111827;font-size:13px;line-height:1.5}
+.ph{height:52px;flex-shrink:0;display:flex;align-items:center;gap:8px;padding:0 8px 0 16px;border-bottom:1px solid #e5e7eb}
+.pt{font-size:15px;font-weight:600;color:#093040}
+.pb{flex:1;min-height:0;overflow:hidden;padding:16px;display:flex;flex-direction:column;gap:10px}
+.ib{width:32px;height:32px;border:none;border-radius:5px;background:transparent;color:#6b7280;display:inline-flex;align-items:center;justify-content:center;padding:0;font:inherit}
+.sec{font-size:12px;font-weight:600;color:#6b7280;margin:6px 0 -2px;display:flex;gap:6px;align-items:baseline}
+.sec .c{font-weight:400}
+.row{display:flex;align-items:center;gap:12px;width:100%;box-sizing:border-box;padding:9px 12px;border:1px solid #e5e7eb;border-radius:7px;background:#fff;font-family:inherit;text-align:left}
+.row .ico{width:30px;height:30px;border-radius:7px;background:#f3f4f6;color:#093040;display:inline-flex;align-items:center;justify-content:center;flex-shrink:0}
+.row .t{font-size:13px;font-weight:600;color:#111827}
+.row .d{font-size:12px;color:#6b7280}
+.row-on{border-color:#00acdc;background:rgba(0,172,220,0.06)}
+</style>
+</helmet>
+<div class="p" style="width: 360px; height: 680px">
+<div class="ph"><span class="pt">Outils IA</span><div style="flex: 1"></div><button class="ib" aria-label="Fermer le panneau"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 6 6 18"></path><path d="m6 6 12 12"></path></svg></button></div>
+<div class="pb">
+<span class="sec">Champ sélectionné <span class="c">· Titre, bloc Cover</span></span>
+<button class="row row-on"><span class="ico"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 16 6-12 6 12"></path><path d="M8 12h8"></path><path d="m16 20 2 2 4-4"></path></svg></span><span style="flex: 1; display: flex; flex-direction: column"><span class="t">Corriger ce champ</span><span class="d">Orthographe et grammaire du titre</span></span><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#9ca3af" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6"></path></svg></button>
+
+<span class="sec">Bloc sélectionné <span class="c">· Cover, bloc 2</span></span>
+<button class="row"><span class="ico"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 16 6-12 6 12"></path><path d="M8 12h8"></path><path d="m16 20 2 2 4-4"></path></svg></span><span style="flex: 1; display: flex; flex-direction: column"><span class="t">Corriger ce bloc</span><span class="d">Les 4 champs de texte du bloc</span></span><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#9ca3af" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6"></path></svg></button>
+
+<span class="sec">Tout l'email</span>
+<button class="row"><span class="ico"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect width="20" height="16" x="2" y="4" rx="2"></rect><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"></path></svg></span><span style="flex: 1; display: flex; flex-direction: column"><span class="t">Générer l'objet</span></span><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#9ca3af" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6"></path></svg></button>
+<button class="row"><span class="ico"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M17 6.1H3"></path><path d="M21 12.1H3"></path><path d="M15.1 18H3"></path></svg></span><span style="flex: 1; display: flex; flex-direction: column"><span class="t">Générer le préheader</span></span><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#9ca3af" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6"></path></svg></button>
+<button class="row"><span class="ico"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 16 6-12 6 12"></path><path d="M8 12h8"></path><path d="m16 20 2 2 4-4"></path></svg></span><span style="flex: 1; display: flex; flex-direction: column"><span class="t">Corriger tout l'email</span></span><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#9ca3af" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6"></path></svg></button>
+
+<p style="margin: auto 0 0; font-size: 12px; color: #6b7280; line-height: 1.45">Chaque action dit sur quoi elle porte. L'action qui correspond à la sélection la plus fine est mise en avant.</p>
+</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":360,"height":680}}'>
+class Component extends DCLogic {
+renderVals() {
+return {};
+}
+}
+</script>
+</body>
+</html>

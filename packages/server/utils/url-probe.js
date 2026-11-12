@@ -1,0 +1,253 @@
+'use strict';
+
+const http = require('http');
+const https = require('https');
+const net = require('net');
+const fetch = require('node-fetch');
+const psl = require('psl');
+const {
+  assertOutboundHostAllowed,
+  guardedLookup,
+  BLOCKED_HOST_ERROR_CODE,
+  OUTBOUND_HOST_ERRORS,
+} = require('./outbound-host.js');
+
+/**
+ * GET requests to addresses a user typed in an email (links, images), for the
+ * quality checks. Such an address can point anywhere, so every request goes
+ * through the SSRF guard:
+ *   - the socket connects to an address `guardedLookup` checked, and a literal
+ *     IP is checked by `assertOutboundHostAllowed` before each hop;
+ *   - redirects are followed by hand, each new host checked again;
+ *   - the whole chain shares one deadline, and the body read is bounded.
+ * Nothing is sent but a User-Agent: no cookie, no credential.
+ */
+
+const httpAgent = new http.Agent({ lookup: guardedLookup });
+const httpsAgent = new https.Agent({ lookup: guardedLookup });
+const agentFor = (parsedUrl) =>
+  parsedUrl.protocol === 'http:' ? httpAgent : httpsAgent;
+
+const USER_AGENT =
+  'Mozilla/5.0 (compatible; LePatron-QualityCheck/1.0; +https://lepatron.email)';
+
+// What went wrong, in words a quality check can turn into a message.
+const PROBE_FAILURES = Object.freeze({
+  // The name does not exist: the link is broken for every reader.
+  NOT_FOUND: 'not-found',
+  // No answer in time: maybe slow, maybe down, maybe blocking robots.
+  TIMEOUT: 'timeout',
+  // An address we refuse to judge: a private network, a bad scheme, a name
+  // outside the public DNS.
+  REFUSED: 'refused',
+  // Too many redirects, a redirect without a target, a connection reset.
+  UNREACHABLE: 'unreachable',
+  // The body is larger than the caller allows.
+  TOO_LARGE: 'too-large',
+});
+
+class ProbeError extends Error {
+  constructor(reason) {
+    super(`URL probe failed: ${reason}`);
+    this.reason = reason;
+  }
+}
+
+// The resolver's answers for a name that does not exist.
+const NO_SUCH_NAME = new Set(['ENOTFOUND', 'ENODATA']);
+
+function hostnameOf(url) {
+  try {
+    return new URL(url).hostname.replace(/^\[|\]$/g, '');
+  } catch (e) {
+    return '';
+  }
+}
+
+/**
+ * "Not found" is said of a name under a public suffix only: it does not exist
+ * for anyone. A name outside the public DNS (`intranet`, `*.test`, `*.local`)
+ * gets the same answer whether the server's resolver knows it or not, so the
+ * answer never says what that resolver knows.
+ */
+function missingName(hostname) {
+  return new ProbeError(
+    !net.isIP(hostname) && psl.isValid(hostname)
+      ? PROBE_FAILURES.NOT_FOUND
+      : PROBE_FAILURES.REFUSED
+  );
+}
+
+function failureOf(error, hostname) {
+  if (error instanceof ProbeError) return error;
+  const code = error && error.code;
+  // Only a name that does not exist: EAI_AGAIN is the resolver failing for a
+  // moment, and must not call a link broken.
+  if (NO_SUCH_NAME.has(code)) return missingName(hostname);
+  if (
+    code === BLOCKED_HOST_ERROR_CODE ||
+    code === OUTBOUND_HOST_ERRORS.PRIVATE_ADDRESS ||
+    code === OUTBOUND_HOST_ERRORS.INVALID_PROTOCOL ||
+    code === OUTBOUND_HOST_ERRORS.INVALID_URL
+  ) {
+    return new ProbeError(PROBE_FAILURES.REFUSED);
+  }
+  if (code === OUTBOUND_HOST_ERRORS.DNS_FAILED) {
+    // No cause: the name resolved to no address at all.
+    const cause = error.cause && error.cause.code;
+    return !cause || NO_SUCH_NAME.has(cause)
+      ? missingName(hostname)
+      : new ProbeError(PROBE_FAILURES.UNREACHABLE);
+  }
+  if (error && error.name === 'FetchError') {
+    if (error.type === 'request-timeout' || error.type === 'body-timeout') {
+      return new ProbeError(PROBE_FAILURES.TIMEOUT);
+    }
+    if (error.type === 'max-size') {
+      return new ProbeError(PROBE_FAILURES.TOO_LARGE);
+    }
+  }
+  return new ProbeError(PROBE_FAILURES.UNREACHABLE);
+}
+
+const isRedirect = (status) => status >= 300 && status < 400;
+
+// Settles as `promise` does, or fails with TIMEOUT once `deadline` has passed.
+function beforeDeadline(promise, deadline) {
+  let timer;
+  const timeout = new Promise((resolve, reject) => {
+    timer = setTimeout(
+      () => reject(new ProbeError(PROBE_FAILURES.TIMEOUT)),
+      Math.max(1, deadline - Date.now())
+    );
+  });
+  return Promise.race([promise, timeout]).finally(() => clearTimeout(timer));
+}
+
+// Closes a response without downloading what is left of it.
+function dropBody(response) {
+  if (response.body && typeof response.body.destroy === 'function') {
+    response.body.destroy();
+  }
+}
+
+// node-fetch's `timeout` is two timers, one for the headers and one for the
+// body, each as long as the time left: a hop could last twice that. Both
+// steps are held to the deadline here, and a response that arrives late is
+// closed, as is a body left half-read.
+async function fetchBeforeDeadline(fetchImpl, url, options, deadline) {
+  const fetching = fetchImpl(url, options);
+  try {
+    return await beforeDeadline(fetching, deadline);
+  } catch (error) {
+    fetching.then(dropBody, () => {});
+    throw error;
+  }
+}
+
+async function readBeforeDeadline(response, deadline) {
+  try {
+    return await beforeDeadline(response.buffer(), deadline);
+  } catch (error) {
+    dropBody(response);
+    throw error;
+  }
+}
+
+const contentLengthOf = (response) => {
+  const header = response.headers.get('content-length');
+  const length = header === null ? NaN : Number(header);
+  return Number.isInteger(length) && length >= 0 ? length : null;
+};
+
+/**
+ * GETs a URL, following redirects, every hop checked by the SSRF guard.
+ *
+ * @param {string} url - http or https
+ * @param {Object} [options]
+ * @param {number} [options.timeoutMs=5000] - for the whole chain and the body
+ * @param {number} [options.maxRedirects=5]
+ * @param {boolean} [options.readBody=false] - read the body into a Buffer
+ * @param {boolean} [options.defaultPortsOnly=false] - refuse a hop to another
+ *   port than 80 or 443, redirects included: a redirector must not turn the
+ *   probe into a port scanner of public hosts
+ * @param {number} [options.maxBytes] - ceiling on the body read
+ * @param {Function} [options.acceptBody] - asked `{ contentLength }` (null
+ *   when the server does not say) before a body is read; `false` leaves the
+ *   body unread (`body: null`)
+ * @param {Function} [options.fetchImpl] - injectable for tests
+ * @returns {Promise<{ status: number, url: string, contentType: string|null,
+ *   body: Buffer|null }>}
+ * @throws {ProbeError} carrying one of PROBE_FAILURES as `reason`
+ */
+async function probeUrl(
+  url,
+  {
+    timeoutMs = 5000,
+    maxRedirects = 5,
+    readBody = false,
+    defaultPortsOnly = false,
+    maxBytes = 0,
+    acceptBody = () => true,
+    fetchImpl = fetch,
+  } = {}
+) {
+  const deadline = Date.now() + timeoutMs;
+  let currentUrl = url;
+  try {
+    for (let hop = 0; ; hop += 1) {
+      // A literal IP never goes through guardedLookup. The check resolves the
+      // name too, and a lookup has no timeout of its own: the deadline bounds it.
+      if (defaultPortsOnly && new URL(currentUrl).port !== '') {
+        throw new ProbeError(PROBE_FAILURES.UNREACHABLE);
+      }
+      await beforeDeadline(assertOutboundHostAllowed(currentUrl), deadline);
+      const response = await fetchBeforeDeadline(
+        fetchImpl,
+        currentUrl,
+        {
+          method: 'GET',
+          headers: { 'User-Agent': USER_AGENT, Accept: '*/*' },
+          agent: agentFor,
+          redirect: 'manual',
+          compress: false,
+          size: maxBytes,
+          timeout: Math.max(1, deadline - Date.now()),
+        },
+        deadline
+      );
+      if (isRedirect(response.status)) {
+        dropBody(response);
+        const location = response.headers.get('location');
+        if (!location || hop >= maxRedirects) {
+          throw new ProbeError(PROBE_FAILURES.UNREACHABLE);
+        }
+        currentUrl = new URL(location, currentUrl).toString();
+        continue;
+      }
+      const result = {
+        status: response.status,
+        url: currentUrl,
+        contentType: response.headers.get('content-type'),
+        body: null,
+      };
+      const wanted =
+        readBody &&
+        response.ok &&
+        acceptBody({ contentLength: contentLengthOf(response) });
+      if (wanted) result.body = await readBeforeDeadline(response, deadline);
+      else dropBody(response);
+      return result;
+    }
+  } catch (error) {
+    throw failureOf(error, hostnameOf(currentUrl));
+  }
+}
+
+module.exports = {
+  probeUrl,
+  contentLengthOf,
+  ProbeError,
+  PROBE_FAILURES,
+  USER_AGENT,
+};
