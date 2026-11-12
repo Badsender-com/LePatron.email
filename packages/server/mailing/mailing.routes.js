@@ -17,6 +17,7 @@ const mailings = require('./mailing.controller.js');
 const mailingSearch = require('./mailing-search.controller.js');
 const { requireJsonBody } = require('../utils/require-json-body.js');
 const mailingMetadata = require('./mailing-metadata.controller.js');
+const governanceContext = require('./governance-context.controller.js');
 const translation = require('../translation/translation.controller.js');
 
 // All routes below require an authenticated user AND the Email Builder module
@@ -63,6 +64,12 @@ router.patch(
   GUARD_CAN(C.MAILING_EDIT_CONTENT),
   GUARD_EMAIL_METADATA,
   mailingMetadata.updateMetadata
+);
+// A read, like the mosaico one: any user of the email's company.
+router.get(
+  '/:mailingId/governance-context',
+  GUARD_USER,
+  governanceContext.readGovernanceContext
 );
 router.put(
   '/:mailingId/mosaico',
