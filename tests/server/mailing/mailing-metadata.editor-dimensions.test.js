@@ -130,6 +130,27 @@ describe('what the editor receives of the company dimensions, and what follows a
       ).toEqual({ mainColorVar: '#0050ff' });
     });
 
+    it('gives each dimension its role and each value its normalised code', async () => {
+      const audienceDimension = (
+        await dimensionService.listDimensions({ user: adminA })
+      ).find((dimension) => dimension.name === 'audience');
+      await dimensionService.updateDimension({
+        user: adminA,
+        dimensionId: idOf(audienceDimension),
+        payload: { role: 'language' },
+      });
+      await addValue('audience', { label: 'Français', code: 'fr' });
+
+      const { emailMetadataConfig } = await build(newMailing());
+
+      const audience = emailMetadataConfig.dimensions[1];
+      expect(audience.role).toBe('language');
+      expect(
+        audience.values.find((value) => value.label === 'Français').code
+      ).toBe('fr');
+      expect(emailMetadataConfig.dimensions[0].role).toBeNull();
+    });
+
     it('leaves the standard dimensions to their own fields', async () => {
       const { emailMetadataConfig } = await build(newMailing());
 
