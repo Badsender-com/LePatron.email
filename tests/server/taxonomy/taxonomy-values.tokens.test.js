@@ -52,7 +52,7 @@ const addValue = (type, payload, user = adminA) =>
   taxonomyService.createTaxonomyItem({ user, type, payload });
 
 // Turned on by #1359 (design tokens and precedence)
-describe.skip('design tokens', () => {
+describe('design tokens', () => {
   beforeAll(loadServices);
 
   beforeEach(async () => {

@@ -954,6 +954,8 @@ export default {
       inactive: 'Désactivée',
       inactiveHint:
         'Elle n\'est plus proposée sur les emails et ne reçoit plus de nouvelle valeur. Les emails qui portent déjà une de ses valeurs la conservent.',
+      resolution:
+        'Résolution des tokens : {order}. La dernière l\'emporte quand deux valeurs portent le même token.',
       under: 'Sous {parent}',
       deactivate: 'Désactiver',
       reactivate: 'Réactiver',
@@ -993,6 +995,9 @@ export default {
         parentNone: 'Aucune : premier niveau',
         parentHint:
           'Ses valeurs seront proposées selon la valeur choisie pour la dimension parente : la Langue selon le Marché.',
+        precedence: 'Précédence',
+        precedenceHint:
+          'Quand deux valeurs choisies sur un email portent le même token, celle de la dimension à la plus haute précédence l\'emporte.',
       },
     },
     values: {
@@ -1024,6 +1029,17 @@ export default {
         availability: 'Disponible sous',
         availabilityHint:
           'Les valeurs de « {parent} » sous lesquelles celle-ci est proposée. Vide : proposée sous toutes.',
+        tokens: 'Tokens de design',
+        tokensHint:
+          'Des valeurs nommées que les templates lisent sous leur nom, comme la couleur principale d\'une marque : mainColorVar = #ffd845.',
+        tokenName: 'Nom du token',
+        tokenValue: 'Valeur du token',
+        tokenNamePlaceholder: 'mainColorVar',
+        tokenValuePlaceholder: '#ffd845',
+        tokenNameInvalid:
+          'Lettres sans accent, chiffres et _ seulement, sans commencer par un chiffre.',
+        addToken: 'Ajouter un token',
+        tokensFull: 'Limite de {limit} tokens atteinte.',
         isActiveHint:
           'Une valeur désactivée disparaît des listes de choix, mais les emails qui l\'utilisent la conservent.',
       },

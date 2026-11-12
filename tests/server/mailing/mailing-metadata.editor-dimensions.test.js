@@ -115,6 +115,21 @@ describe('what the editor receives of the company dimensions, and what follows a
       ).toMatchObject({ canonicalType: 'loyal' });
     });
 
+    it('gives each dimension its precedence and each value its design tokens', async () => {
+      await addValue('brand', {
+        label: 'Marque B',
+        tokens: { mainColorVar: '#0050ff' },
+      });
+
+      const { emailMetadataConfig } = await build(newMailing());
+
+      const brand = emailMetadataConfig.dimensions[0];
+      expect(brand.precedence).toBe(0);
+      expect(
+        brand.values.find((value) => value.label === 'Marque B').tokens
+      ).toEqual({ mainColorVar: '#0050ff' });
+    });
+
     it('leaves the standard dimensions to their own fields', async () => {
       const { emailMetadataConfig } = await build(newMailing());
 

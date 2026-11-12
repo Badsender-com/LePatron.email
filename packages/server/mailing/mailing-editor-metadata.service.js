@@ -1,6 +1,12 @@
 'use strict';
 
-const { TaxonomyItems } = require('../common/models.common.js');
+const {
+  TaxonomyItems,
+  TaxonomyDimensions,
+} = require('../common/models.common.js');
+const {
+  STANDARD_DIMENSIONS,
+} = require('../taxonomy/services/default-dimensions.js');
 const { TaxonomyTypes } = require('../constant/taxonomy-type.js');
 const { EmailTriggerValues } = require('../constant/email-trigger.js');
 const {
@@ -9,6 +15,10 @@ const {
 const logger = require('../utils/logger.js');
 
 module.exports = { buildEditorMetadata };
+
+const DEFAULT_EMAIL_TYPE_PRECEDENCE = STANDARD_DIMENSIONS.find(
+  (dimension) => dimension.name === TaxonomyTypes.EMAIL_TYPE
+).precedence;
 
 /**
  * What the editor needs to render the email-settings section: the VALUES it edits,
@@ -90,7 +100,13 @@ async function buildEditorMetadata({ mailing, group }) {
         // with the Badsender one. It travels to the editor so the picker can say
         // what a typology means to someone choosing between six of them, rather
         // than only naming them.
-        .select({ label: 1, canonicalType: 1, order: 1, description: 1 })
+        .select({
+          label: 1,
+          canonicalType: 1,
+          order: 1,
+          description: 1,
+          tokens: 1,
+        })
         .sort({ order: 1, label: 1 })
         .lean()
     : [];
@@ -101,6 +117,19 @@ async function buildEditorMetadata({ mailing, group }) {
         currentIds: mailing._taxonomyItems,
       })
     : [];
+
+  const emailTypeDimension = mailingCompanyId
+    ? await TaxonomyDimensions.findOne({
+        _company: mailingCompanyId,
+        name: TaxonomyTypes.EMAIL_TYPE,
+      })
+        .select({ precedence: 1 })
+        .lean()
+    : null;
+  // Unseeded, it has the default of the standard dimension (default-dimensions.js).
+  const emailTypePrecedence = emailTypeDimension
+    ? emailTypeDimension.precedence || 0
+    : DEFAULT_EMAIL_TYPE_PRECEDENCE;
 
   return {
     emailMetadata: {
@@ -120,7 +149,10 @@ async function buildEditorMetadata({ mailing, group }) {
         label: item.label,
         canonicalType: item.canonicalType,
         description: item.description,
+        tokens: item.tokens || {},
       })),
+      // The email type's precedence, for the design tokens its values carry.
+      emailTypePrecedence,
       // The two values the trigger select offers. Sent rather than hard-coded in
       // the editor so the doctrine's vocabulary has one source; the editor
       // translates them from its own locale files.

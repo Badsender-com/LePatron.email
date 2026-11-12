@@ -18,7 +18,7 @@ const {
   createEmailMetadataStore,
 } = require('../utils/email-metadata-store');
 const { governanceValues } = require('../utils/governance-values');
-const { publishToTemplate } = require('../utils/publish-to-template');
+const { createTemplatePublisher } = require('../utils/publish-to-template');
 const template = require('./components/email-metadata/email-metadata.template');
 
 // The mounted Vue instance, kept so `dispose` can tear it down when the editor
@@ -99,6 +99,10 @@ module.exports = {
       selectionsFromIds(dimensions, initialForm.taxonomyItemIds)
     );
 
+    // One per section: it remembers what the template held before a token was
+    // first written, to give it back when no chosen value carries it any more.
+    const templatePublisher = createTemplatePublisher();
+
     Vue.component('EmailMetadataPlugin', {
       data: () => ({
         subject: initialForm.subject,
@@ -168,7 +172,11 @@ module.exports = {
         templateValues() {
           return governanceValues({
             dimensions: [
-              { name: 'emailType', values: this.emailTypes },
+              {
+                name: 'emailType',
+                precedence: config.emailTypePrecedence || 0,
+                values: this.emailTypes,
+              },
               ...this.dimensions,
             ],
             selections: { ...this.selections, emailType: this.emailTypeId },
@@ -207,7 +215,7 @@ module.exports = {
         // moment it opens, not from the first change.
         templateValues: {
           handler(values) {
-            publishToTemplate(vm.content && vm.content(), values);
+            templatePublisher.publish(vm.content && vm.content(), values);
           },
           immediate: true,
         },
