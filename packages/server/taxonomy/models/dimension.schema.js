@@ -25,6 +25,8 @@ const trimOptionalString = (value) =>
  * @apiSuccess {Boolean} isActive
  * @apiSuccess {Number} order display position
  * @apiSuccess {Number} precedence who wins a design token two dimensions carry
+ * @apiSuccess {String} parentName the dimension this one hangs under, null at
+ *   the first level
  */
 
 /**

@@ -47,6 +47,7 @@ async function listDimensions(req, res) {
  * @apiParam (Body) {String} [description]
  * @apiParam (Body) {Number} [order]
  * @apiParam (Body) {Number} [precedence]
+ * @apiParam (Body) {String} [parentName] the dimension it hangs under
  *
  * @apiUse taxonomyDimension
  */
@@ -112,5 +113,7 @@ function expose(dimension) {
     isActive: dimension.isActive,
     order: dimension.order,
     precedence: dimension.precedence,
+    // The dimension this one hangs under, null at the first level.
+    parentName: dimension.parentName || null,
   };
 }
