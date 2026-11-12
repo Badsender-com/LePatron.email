@@ -53,6 +53,7 @@ async function listDimensions(req, res) {
  *   name is refused with a 409 `DIMENSION_NAME_DIFFERS_ONLY_BY_CASE` carrying
  *   `details.existingName`
  * @apiParam (Body) {String} [parentName] the dimension it hangs under
+ * @apiParam (Body) {String} [role] `language`, `country` or `locale`
  *
  * @apiUse taxonomyDimension
  */
@@ -122,5 +123,6 @@ function expose(dimension) {
     createdAt: dimension.createdAt,
     // The dimension this one hangs under, null at the first level.
     parentName: dimension.parentName || null,
+    role: dimension.role || null,
   };
 }

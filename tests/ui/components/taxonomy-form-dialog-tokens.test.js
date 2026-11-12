@@ -46,6 +46,7 @@ function mountDialog() {
       '~/components/group/taxonomy-form-order-status.vue': {},
       '~/components/group/taxonomy-availability-field.vue': {},
       '~/components/group/taxonomy-tokens-field.vue': TokensField,
+      '~/components/group/taxonomy-code-field.vue': {},
       '~/helpers/taxonomy.js': require('~/helpers/taxonomy.js'),
       '~/helpers/taxonomy-builder.js': builder,
     },

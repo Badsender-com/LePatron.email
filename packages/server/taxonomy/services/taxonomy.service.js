@@ -28,6 +28,7 @@ const {
   readAvailability,
   assertNotOfferedUnder,
 } = require('./availability.js');
+const { readNormalisedCode } = require('./dimension-role.js');
 const logger = require('../../utils/logger.js');
 
 module.exports = {
@@ -77,6 +78,13 @@ async function createTaxonomyItem({ user, groupId, type, payload = {} }) {
       companyId,
       type: taxonomyType,
       parentIds,
+    });
+  }
+  if (fields.code !== undefined) {
+    fields.code = await readNormalisedCode({
+      companyId,
+      type: taxonomyType,
+      code: fields.code,
     });
   }
 
@@ -150,6 +158,13 @@ async function updateTaxonomyItem({ user, itemId, payload = {} }) {
       companyId: item._company,
       type: item.type,
       parentIds,
+    });
+  }
+  if (fields.code !== undefined) {
+    fields.code = await readNormalisedCode({
+      companyId: item._company,
+      type: item.type,
+      code: fields.code,
     });
   }
 
