@@ -1391,6 +1391,7 @@ async function duplicateWithTranslatedData({
   translatedData,
   workspaceId,
   folderId,
+  taxonomyItemIds,
 }) {
   // Group-scoped load: prevent a group admin from duplicating+translating a
   // mailing of another group by id (cross-tenant IDOR).
@@ -1424,6 +1425,11 @@ async function duplicateWithTranslatedData({
   // Replace data with translated data
   if (translatedData) {
     copy.data = keepBlockInformationFields(translatedData);
+  }
+
+  // The language value of the target, in place of the source's (ADR-0023).
+  if (Array.isArray(taxonomyItemIds)) {
+    copy._taxonomyItems = taxonomyItemIds;
   }
 
   // Set user info

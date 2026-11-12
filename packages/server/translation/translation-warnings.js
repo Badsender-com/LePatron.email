@@ -34,4 +34,18 @@ function warningKeysFor(stats, missedComposedBlocks) {
     : WARNING_KEYS;
 }
 
-module.exports = { WARNING_KEYS, COMPOSED_BLOCK_WARNING_KEY, warningKeysFor };
+// The copy could not be given the language value of the target (ADR-0023):
+// none offered under its market, or several.
+const LANGUAGE_VALUE_WARNING_KEYS = Object.freeze({
+  TRANSLATION_LANGUAGE_VALUE_NOT_FOUND:
+    'translation.warnings.languageValueNotFound',
+  TRANSLATION_LANGUAGE_VALUE_AMBIGUOUS:
+    'translation.warnings.languageValueAmbiguous',
+});
+
+module.exports = {
+  WARNING_KEYS,
+  COMPOSED_BLOCK_WARNING_KEY,
+  LANGUAGE_VALUE_WARNING_KEYS,
+  warningKeysFor,
+};
