@@ -194,7 +194,14 @@ async function buildEditorDimensions({ companyId, currentIds = [] }) {
     isActive: true,
     name: { $nin: StandardDimensionNames },
   })
-    .select({ name: 1, label: 1, order: 1, parentName: 1, precedence: 1 })
+    .select({
+      name: 1,
+      label: 1,
+      order: 1,
+      parentName: 1,
+      precedence: 1,
+      role: 1,
+    })
     .sort({ order: 1, name: 1 })
     .lean();
   if (dimensions.length === 0) return [];
@@ -213,6 +220,7 @@ async function buildEditorDimensions({ companyId, currentIds = [] }) {
       order: 1,
       _parents: 1,
       tokens: 1,
+      code: 1,
     })
     .sort({ order: 1, label: 1 })
     .lean();
@@ -223,6 +231,9 @@ async function buildEditorDimensions({ companyId, currentIds = [] }) {
     parentName: dimension.parentName || null,
     // Who wins a design token two chosen values carry: the highest.
     precedence: dimension.precedence || 0,
+    // The role and the codes make the email's locale, which the editor
+    // publishes to the template (ADR-0023).
+    role: dimension.role || null,
     values: values
       .filter((value) => value.type === dimension.name)
       .map((value) => ({
@@ -234,6 +245,7 @@ async function buildEditorDimensions({ companyId, currentIds = [] }) {
         // The availability: offered under these parent values, or all of them.
         parentIds: value._parents || [],
         tokens: value.tokens || {},
+        code: value.code || null,
       })),
   }));
 }
