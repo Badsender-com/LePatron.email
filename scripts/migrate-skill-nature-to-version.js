@@ -51,8 +51,21 @@ function planNatureMigration(doc) {
   }));
 }
 
+// Host (and port) of a Mongo connection string, without user:password or query
+// parameters. Falls back to a placeholder rather than risk echoing the URI.
+function databaseHost(uri) {
+  try {
+    return new URL(uri).host || 'mongo';
+  } catch (e) {
+    return 'mongo';
+  }
+}
+
 async function main() {
-  console.log(`Connecting to ${config.database} (dry-run=${DRY})…`);
+  // Never log the connection string: it carries the credentials.
+  console.log(
+    `Connecting to ${databaseHost(config.database)} (dry-run=${DRY})…`
+  );
   await mongoose.connect(config.database, {
     useNewUrlParser: true,
     useUnifiedTopology: true,
