@@ -956,6 +956,13 @@ export default {
         'Elle n\'est plus proposée sur les emails et ne reçoit plus de nouvelle valeur. Les emails qui portent déjà une de ses valeurs la conservent.',
       resolution:
         'Résolution des tokens : {order}. La dernière l\'emporte quand deux valeurs portent le même token.',
+      roles: {
+        language: "Langue de l'email",
+        country: "Pays de l'email",
+        locale: "Langue et pays de l'email",
+      },
+      missingCodes:
+        'Une valeur sans code normalisé : pour les emails qui la portent, l\'application ne sait pas ce qu\'elle désigne. | {n} valeurs sans code normalisé : pour les emails qui les portent, l\'application ne sait pas ce qu\'elles désignent.',
       under: 'Sous {parent}',
       deactivate: 'Désactiver',
       reactivate: 'Réactiver',
@@ -995,6 +1002,10 @@ export default {
         parentNone: 'Aucune : premier niveau',
         parentHint:
           'Ses valeurs seront proposées selon la valeur choisie pour la dimension parente : la Langue selon le Marché.',
+        role: 'Rôle',
+        roleNone: 'Aucun',
+        roleHint:
+          "Ce que la dimension représente pour l'application : la langue de l'email, son pays, ou les deux. Chaque valeur reçoit alors un code normalisé.",
         precedence: 'Précédence',
         precedenceHint:
           'Quand deux valeurs choisies sur un email portent le même token, celle de la dimension à la plus haute précédence l\'emporte.',
@@ -1029,6 +1040,14 @@ export default {
         availability: 'Disponible sous',
         availabilityHint:
           'Les valeurs de « {parent} » sous lesquelles celle-ci est proposée. Vide : proposée sous toutes.',
+        code: {
+          language: 'Code de langue',
+          country: 'Code de pays',
+        },
+        codeLanguage: 'Langue',
+        codeCountry: 'Pays (facultatif)',
+        codeHint:
+          "Le code standard que l'IA et la traduction lisent, quel que soit le libellé. Facultatif.",
         tokens: 'Tokens de design',
         tokensHint:
           'Des valeurs nommées que les templates lisent sous leur nom, comme la couleur principale d\'une marque : mainColorVar = #ffd845.',
@@ -1115,6 +1134,7 @@ export default {
         'Une dimension porte déjà ce nom, peut-être désactivée.',
       isParent:
         '{count} valeur est proposée sous celle-ci : retirez-la de sa disponibilité ou désactivez celle-ci. | {count} valeurs sont proposées sous celle-ci : retirez-la de leur disponibilité ou désactivez celle-ci.',
+      roleTaken: 'La dimension « {holder} » a déjà ce rôle.',
       dimensionHasChildren:
         'Une autre dimension est placée sous celle-ci : déplacez-la d\'abord.',
       dimensionHasAvailability:

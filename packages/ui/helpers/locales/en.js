@@ -1153,6 +1153,13 @@ export default {
         'It is no longer offered on emails and takes no new value. Emails already carrying one of its values keep it.',
       resolution:
         'Token resolution: {order}. The last one wins when two values carry the same token.',
+      roles: {
+        language: 'Email language',
+        country: 'Email country',
+        locale: 'Email language and country',
+      },
+      missingCodes:
+        'One value has no normalised code: for the emails carrying it, the application cannot tell what it stands for. | {n} values have no normalised code: for the emails carrying them, the application cannot tell what they stand for.',
       under: 'Under {parent}',
       deactivate: 'Deactivate',
       reactivate: 'Reactivate',
@@ -1192,6 +1199,10 @@ export default {
         parentNone: 'None: first level',
         parentHint:
           'Its values will be offered by the value chosen for the parent dimension: the Language by the Market.',
+        role: 'Role',
+        roleNone: 'None',
+        roleHint:
+          'What the dimension stands for, for the application: the email’s language, its country, or both. Each value then gets a normalised code.',
         precedence: 'Precedence',
         precedenceHint:
           'When two values chosen on an email carry the same token, the one of the dimension with the highest precedence wins.',
@@ -1226,6 +1237,14 @@ export default {
         availability: 'Offered under',
         availabilityHint:
           'The values of “{parent}” this one is offered under. Empty: offered under all of them.',
+        code: {
+          language: 'Language code',
+          country: 'Country code',
+        },
+        codeLanguage: 'Language',
+        codeCountry: 'Country (optional)',
+        codeHint:
+          'The standard code the AI and the translation read, whatever the label. Optional.',
         tokens: 'Design tokens',
         tokensHint:
           'Named values templates read under their name, like a brand’s main colour: mainColorVar = #ffd845.',
@@ -1312,6 +1331,7 @@ export default {
         'A dimension already has this name, perhaps a deactivated one.',
       isParent:
         '{count} value is offered under this one: take it out of its availability, or deactivate this one. | {count} values are offered under this one: take it out of their availability, or deactivate this one.',
+      roleTaken: 'The dimension “{holder}” already has this role.',
       dimensionHasChildren:
         'Another dimension sits under this one: move it first.',
       dimensionHasAvailability:

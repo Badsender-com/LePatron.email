@@ -7,6 +7,7 @@ import BsTaxonomyTable from '~/components/group/taxonomy-table.vue';
 import BsTaxonomyFormDialog from '~/components/group/taxonomy-form-dialog.vue';
 import BsTaxonomyDefaultsDialog from '~/components/group/taxonomy-defaults-dialog.vue';
 import { taxonomyErrorFor, nextOrder } from '~/helpers/taxonomy.js';
+import { valuesWithoutCode } from '~/helpers/taxonomy-roles.js';
 import { STANDARD_DIMENSIONS } from '~/helpers/taxonomy-builder.js';
 
 /**
@@ -28,6 +29,7 @@ export default {
     // The dimension this one hangs under: its values make the availability.
     parentName: { type: String, default: null },
     parentLabel: { type: String, default: '' },
+    role: { type: String, default: null },
   },
   data() {
     return {
@@ -89,6 +91,7 @@ export default {
         );
         this.items = response.items || [];
         this.$emit('count', this.items.length);
+        this.$emit('missing-codes', valuesWithoutCode(this.items));
       } catch (error) {
         this.loadError = true;
         this.items = [];
@@ -234,6 +237,7 @@ export default {
       :is-email-type="isEmailType"
       :parent-values="parentValues"
       :parent-label="parentLabel"
+      :role="role"
       @save="saveItem"
     />
 

@@ -12,6 +12,7 @@ import {
   isValidDimensionName,
   parentCandidates,
 } from '~/helpers/taxonomy-builder.js';
+import { roleOptions } from '~/helpers/taxonomy-roles.js';
 
 export default {
   name: 'BsTaxonomyDimensionFormDialog',
@@ -35,7 +36,9 @@ export default {
         description: '',
         parentName: null,
         precedence: 0,
+        role: null,
       },
+      initialRole: null,
       initialPrecedence: 0,
       editingId: null,
       // The standard dimensions open the list: neither hangs under anything.
@@ -61,6 +64,17 @@ export default {
   computed: {
     isEditing() {
       return this.editingId !== null;
+    },
+    roleItems() {
+      return [
+        { value: null, text: this.$t('taxonomy.dimensions.form.roleNone') },
+        ...roleOptions(this.dimensions, { name: this.form.name }).map(
+          (role) => ({
+            value: role,
+            text: this.$t(`taxonomy.dimensions.roles.${role}`),
+          })
+        ),
+      ];
     },
     parentItems() {
       const labels = Object.fromEntries(
@@ -118,12 +132,14 @@ export default {
       this.isStandard = Boolean(dimension && dimension.standard);
       this.initialParentName = (dimension && dimension.parentName) || null;
       this.initialPrecedence = (dimension && dimension.precedence) || 0;
+      this.initialRole = (dimension && dimension.role) || null;
       this.form = {
         name: dimension ? dimension.name : '',
         label: dimension ? dimension.label || '' : '',
         description: dimension ? dimension.description || '' : '',
         parentName: this.initialParentName,
         precedence: this.initialPrecedence,
+        role: this.initialRole,
       };
       this.$v.$reset();
       this.$refs.modal.open();
@@ -156,6 +172,9 @@ export default {
         : buildNewDimensionPayload(this.form);
       if (!this.isStandard && this.form.parentName !== this.initialParentName) {
         payload.parentName = this.form.parentName || null;
+      }
+      if (!this.isStandard && this.form.role !== this.initialRole) {
+        payload.role = this.form.role || null;
       }
       const precedence = Math.trunc(Number(this.form.precedence));
       if (
@@ -239,6 +258,16 @@ export default {
       :disabled="loading"
       type="number"
       step="1"
+      persistent-hint
+    />
+
+    <bs-select
+      v-if="!isStandard"
+      v-model="form.role"
+      :label="$t('taxonomy.dimensions.form.role')"
+      :items="roleItems"
+      :hint="$t('taxonomy.dimensions.form.roleHint')"
+      :disabled="loading"
       persistent-hint
     />
 

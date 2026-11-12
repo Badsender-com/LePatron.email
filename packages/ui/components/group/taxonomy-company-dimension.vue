@@ -27,6 +27,7 @@ export default {
     return {
       // Unknown until the values are read: no delete offered before then.
       valueCount: null,
+      missingCodes: 0,
     };
   },
   computed: {
@@ -51,6 +52,9 @@ export default {
       <code class="taxonomy-dimension__name">{{ dimension.name }}</code>
       <v-chip v-if="parent" x-small outlined>
         {{ $t('taxonomy.dimensions.under', { parent: parent.label }) }}
+      </v-chip>
+      <v-chip v-if="dimension.role" x-small outlined>
+        {{ $t(`taxonomy.dimensions.roles.${dimension.role}`) }}
       </v-chip>
       <v-chip v-if="!dimension.isActive" x-small outlined>
         {{ $t('taxonomy.dimensions.inactive') }}
@@ -102,12 +106,20 @@ export default {
     <p v-if="!dimension.isActive" class="taxonomy-dimension__hint">
       {{ $t('taxonomy.dimensions.inactiveHint') }}
     </p>
+    <p
+      v-if="dimension.role && missingCodes > 0"
+      class="taxonomy-dimension__hint"
+    >
+      {{ $tc('taxonomy.dimensions.missingCodes', missingCodes) }}
+    </p>
     <bs-group-taxonomy-tab
       ref="values"
       :dimension-name="dimension.name"
       :parent-name="parent ? parent.name : null"
       :parent-label="parent ? parent.label : ''"
+      :role="dimension.role || null"
       @count="valueCount = $event"
+      @missing-codes="missingCodes = $event"
     />
   </section>
 </template>
