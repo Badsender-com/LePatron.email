@@ -31,7 +31,7 @@ const MARKET_LANGUAGE = {
 };
 
 // Turned on by #1505 (the template receives the locale)
-describe.skip('publishing the locale to the template', () => {
+describe('publishing the locale to the template', () => {
   let governanceValues;
 
   beforeAll(() => {
@@ -70,7 +70,28 @@ describe.skip('publishing the locale to the template', () => {
     expect(
       localeOf([MARKET, LANGUAGE], { market: 'be', language: 'multi' })
     ).toBe('');
-    expect(localeOf([], {})).toBe('');
+  });
+
+  // The rule of a dimension's value (ADR-0015): the content keeps what it
+  // holds until the email has a value that decides the locale.
+  it('publishes no locale while no dimension with a role has had a value', () => {
+    expect(
+      governanceValues({ dimensions: [], selections: {} }).values
+    ).not.toHaveProperty('locale');
+    expect(
+      governanceValues({ dimensions: [MARKET, LANGUAGE], selections: {} })
+        .values
+    ).not.toHaveProperty('locale');
+  });
+
+  it('publishes an empty locale once the writer emptied the language', () => {
+    expect(
+      governanceValues({
+        dimensions: [MARKET, LANGUAGE],
+        selections: { language: '' },
+        valued: ['language'],
+      }).values.locale
+    ).toBe('');
   });
 
   it('reads no locale from a deactivated dimension', () => {
@@ -80,6 +101,21 @@ describe.skip('publishing the locale to the template', () => {
         language: 'fr',
       })
     ).toBe('');
+  });
+
+  it('never lets a design token named locale shadow it', () => {
+    const brand = {
+      name: 'brand',
+      values: [{ id: 'a', tokens: { locale: 'xx' } }],
+    };
+
+    expect(
+      localeOf([MARKET, LANGUAGE, brand], {
+        market: 'be',
+        language: 'fr',
+        brand: 'a',
+      })
+    ).toBe('fr-BE');
   });
 
   it('keeps publishing each dimension under its own name', () => {

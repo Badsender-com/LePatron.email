@@ -5,6 +5,7 @@ const {
   RESERVED_TOKEN_NAMES,
   isTokenValue,
 } = require('../../../../shared/taxonomy/constants.js');
+const { composeLocale } = require('../../../../shared/locale/locale-codes.js');
 
 /**
  * What the editor publishes to the template for one email (ADR-0015): the email
@@ -13,7 +14,8 @@ const {
  * value; and the design tokens of the chosen values under their own names.
  * When two chosen values carry the same token, the dimension with the highest
  * precedence wins, and on a tie the later one in the declared order, the email
- * type in its own place in it.
+ * type in its own place in it. The email's locale is published under `locale`
+ * (ADR-0023), by the rule the server applies.
  *
  * Pure, like the rest of the section's helpers: the editor has no component test
  * harness. Covered by tests/editor/governance-values.test.js.
@@ -24,6 +26,9 @@ const {
 // the email type's identifier has no format of its own: anything else is
 // published as the value's id.
 const PUBLISHABLE_IDENTIFIER = /^[A-Za-z0-9_-]+$/;
+
+// The property the email's locale is published under (ADR-0023).
+const LOCALE = 'locale';
 
 /**
  * @param {Object} params
@@ -71,40 +76,68 @@ function governanceValues({
     precedence: emailTypePrecedence,
     position: emailTypePosition,
   });
-  all
-    // The server sends active dimensions only; the flag is read for the
-    // dimensions it may still send deactivated.
-    .filter((dimension) => dimension.isActive !== false)
-    .forEach((dimension, index) => {
-      const chosen = chosenBy[dimension.name];
-      if (!chosen) {
-        // An email that never had a value for the dimension writes nothing: the
-        // content keeps what it holds, a template option set before the
-        // dimension existed included. Emptied after it had one, it is
-        // published empty: the writer cleared it.
-        if (wasValued(dimension.name)) {
-          values[dimension.name] = '';
-        }
-        return;
+  // The server sends active dimensions only; the flag is read for the
+  // dimensions it may still send deactivated.
+  const active = all.filter((dimension) => dimension.isActive !== false);
+  active.forEach((dimension, index) => {
+    const chosen = chosenBy[dimension.name];
+    if (!chosen) {
+      // An email that never had a value for the dimension writes nothing: the
+      // content keeps what it holds, a template option set before the
+      // dimension existed included. Emptied after it had one, it is
+      // published empty: the writer cleared it.
+      if (wasValued(dimension.name)) {
+        values[dimension.name] = '';
       }
-      const value = (dimension.values || []).find(
-        (option) => String(option.id) === String(chosen)
-      );
-      // A value the editor was not sent cannot be named: the template keeps what
-      // it has rather than being rewritten to nothing.
-      if (!value) return;
-      values[dimension.name] = publishedIdentifier(value);
-      if (value.tokens) {
-        carriers.push({
-          name: dimension.name,
-          precedence: dimension.precedence || 0,
-          index,
-          tokens: value.tokens,
-        });
-      }
-    });
+      return;
+    }
+    const value = (dimension.values || []).find(
+      (option) => String(option.id) === String(chosen)
+    );
+    // A value the editor was not sent cannot be named: the template keeps what
+    // it has rather than being rewritten to nothing.
+    if (!value) return;
+    values[dimension.name] = publishedIdentifier(value);
+    if (value.tokens) {
+      carriers.push({
+        name: dimension.name,
+        precedence: dimension.precedence || 0,
+        index,
+        tokens: value.tokens,
+      });
+    }
+  });
+
+  const locale = localeOf(active, chosenBy, wasValued);
+  if (locale !== undefined) values[LOCALE] = locale;
 
   return { values, sources: resolveTokens(carriers, values, all) };
+}
+
+/**
+ * The locale of the values chosen, `fr-BE`, from the codes of the dimensions
+ * holding a role. Unknown, the same rule as a dimension's: an empty string
+ * once a dimension holding a role has had a value, so a template's `lang` is
+ * emptied rather than left on a locale the email no longer has; nothing at all
+ * (`undefined`) while none has, so the content keeps what it holds.
+ *
+ * @returns {string|undefined}
+ */
+function localeOf(dimensions, chosenBy, wasValued) {
+  let hadValue = false;
+  const codes = dimensions.reduce((byRole, dimension) => {
+    if (!dimension.role) return byRole;
+    const chosen = chosenBy[dimension.name];
+    if (chosen || wasValued(dimension.name)) hadValue = true;
+    const value = (dimension.values || []).find(
+      (option) => String(option.id) === String(chosen)
+    );
+    byRole[dimension.role] = (value && value.code) || null;
+    return byRole;
+  }, {});
+  const { locale } = composeLocale(codes);
+  if (locale) return locale;
+  return hadValue ? '' : undefined;
 }
 
 /**
@@ -120,6 +153,7 @@ function resolveTokens(carriers, values, dimensions) {
   // email's language, which the template receives under that name (ADR-0023).
   const reserved = new Set([
     STANDARD_DIMENSIONS.TRIGGER,
+    LOCALE,
     ...RESERVED_TOKEN_NAMES,
     ...(dimensions || []).map((dimension) => dimension.name),
   ]);
