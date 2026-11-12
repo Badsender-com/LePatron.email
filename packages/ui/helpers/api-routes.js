@@ -415,6 +415,11 @@ export function taxonomyDimensions(groupId, { lang } = {}) {
   return `/taxonomy-dimensions?${params.toString()}`;
 }
 
+// The company travels in the body, matching the route's guard.
+export function taxonomyDimensionsCreate() {
+  return '/taxonomy-dimensions';
+}
+
 export function taxonomyDimensionsItem(dimensionId) {
   return `/taxonomy-dimensions/${dimensionId}`;
 }

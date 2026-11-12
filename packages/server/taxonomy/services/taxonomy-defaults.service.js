@@ -1,9 +1,6 @@
 'use strict';
 
-const { Conflict } = require('http-errors');
-
 const { TaxonomyItems } = require('../../common/models.common.js');
-const ERROR_CODES = require('../../constant/error-codes.js');
 const {
   TaxonomyLimits,
   TaxonomyTypes,
@@ -13,6 +10,7 @@ const {
   planMissingDefaultEmailTypes,
 } = require('./default-email-types.js');
 const { resolveCompanyId } = require('./taxonomy.service.js');
+const { limitReached } = require('./taxonomy.validation.js');
 const logger = require('../../utils/logger.js');
 
 /**
@@ -146,7 +144,7 @@ async function addMissingDefaultEmailTypes({ user, groupId, lang }) {
   // Same cap as createTaxonomyItem, checked before the write rather than letting
   // six inserts take a company past it one at a time.
   if (existing.length + toCreate.length > TaxonomyLimits.ITEMS_PER_COMPANY) {
-    throw new Conflict(ERROR_CODES.TAXONOMY_LIMIT_REACHED);
+    throw limitReached(TaxonomyLimits.ITEMS_PER_COMPANY);
   }
 
   const items = toCreate.map((item) => ({
