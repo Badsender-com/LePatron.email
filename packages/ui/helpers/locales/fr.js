@@ -531,6 +531,10 @@ export default {
       checkLinks: 'Les liens présents dans l\'email',
       checkImages: 'Les images contenant du texte',
       checkVariant: 'La variante de template si applicable',
+      languageValueNotFound:
+        "La langue de la copie : aucune valeur de votre taxonomie ne correspond à la langue cible pour ce marché. Choisissez-la dans les réglages de l'email.",
+      languageValueAmbiguous:
+        "La langue de la copie : plusieurs valeurs de votre taxonomie correspondent à la langue cible. Choisissez-la dans les réglages de l'email.",
       composedBlockUntranslated: 'Les blocs composés : certains n\'ont pas pu être traduits, ou ont été reconstruits avec une version plus récente du constructeur de blocs',
     },
     understood: 'J\'ai compris',
@@ -1134,6 +1138,8 @@ export default {
         'Une dimension porte déjà ce nom, peut-être désactivée.',
       isParent:
         '{count} valeur est proposée sous celle-ci : retirez-la de sa disponibilité ou désactivez celle-ci. | {count} valeurs sont proposées sous celle-ci : retirez-la de leur disponibilité ou désactivez celle-ci.',
+      dimensionHasCodes:
+        'Le code d\'une valeur changerait de sens sous ce rôle : videz-le d\'abord. | Le code de {count} valeurs changerait de sens sous ce rôle : videz-les d\'abord.',
       roleTaken: 'La dimension « {holder} » a déjà ce rôle.',
       dimensionHasChildren:
         'Une autre dimension est placée sous celle-ci : déplacez-la d\'abord.',

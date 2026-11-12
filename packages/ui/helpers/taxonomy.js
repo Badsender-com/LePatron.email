@@ -155,6 +155,16 @@ export function taxonomyErrorFor(error) {
         field: null,
       };
 
+    case ERROR_CODES.DIMENSION_HAS_CODES: {
+      const count = data.details?.valueCount || 0;
+      return {
+        key: 'taxonomy.errors.dimensionHasCodes',
+        params: { count },
+        count,
+        field: null,
+      };
+    }
+
     case ERROR_CODES.DIMENSION_HAS_CHILDREN:
       return {
         key: 'taxonomy.errors.dimensionHasChildren',

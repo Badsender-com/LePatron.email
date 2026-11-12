@@ -2,7 +2,10 @@
 
 const { BadRequest, Conflict } = require('http-errors');
 
-const { TaxonomyDimensions } = require('../../common/models.common.js');
+const {
+  TaxonomyDimensions,
+  TaxonomyItems,
+} = require('../../common/models.common.js');
 const ERROR_CODES = require('../../constant/error-codes.js');
 const { normaliseCode } = require('../../../shared/locale/locale-codes.js');
 
@@ -12,7 +15,11 @@ const { normaliseCode } = require('../../../shared/locale/locale-codes.js');
  * then carries a code from that role's standard list, beside its free
  * identifier.
  */
-module.exports = { assertRoleIsFree, readNormalisedCode };
+module.exports = {
+  assertRoleIsFree,
+  assertCodesKeepTheirMeaning,
+  readNormalisedCode,
+};
 
 /**
  * At most one dimension per role in a company, a deactivated one included: it
@@ -34,6 +41,34 @@ async function assertRoleIsFree({ companyId, role, exceptName }) {
     error.details = { role, holder: holder.label };
     throw error;
   }
+}
+
+/**
+ * A code is read under the role of its dimension: `BE` is Belgium as a country
+ * and Belarusian as a locale. A new role is refused while a code would change
+ * meaning or stop being one, so nothing is reinterpreted silently; the admin
+ * clears those codes first. A code its new role writes the same way keeps its
+ * meaning (`fr`, from a language to a locale).
+ *
+ * @param {Object} dimension the stored dimension
+ * @param {string|null} role the role it is given
+ */
+async function assertCodesKeepTheirMeaning(dimension, role) {
+  if (!role || role === dimension.role) return;
+  const values = await TaxonomyItems.find({
+    _company: dimension._company,
+    type: dimension.name,
+  })
+    .select({ code: 1 })
+    .lean();
+  const valueCount = values.filter(
+    (value) => value.code && normaliseCode(role, value.code) !== value.code
+  ).length;
+  if (valueCount === 0) return;
+
+  const error = new Conflict(ERROR_CODES.DIMENSION_HAS_CODES);
+  error.details = { valueCount };
+  throw error;
 }
 
 /**
