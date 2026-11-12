@@ -123,6 +123,25 @@ describe('the retex loop', () => {
       expect(answer.kept).toBe(true);
     });
 
+    // Deliverability (a monitoring portal, a DNS survey, an ESP export) has no
+    // part of the email: the kind of know-how is enough.
+    it('records a complement about no skill or expertise by its kind of know-how alone', async () => {
+      const answer = await call(await asConsultant(), REPORT, {
+        ...ORPHAN_COMPLEMENT,
+        category: 'deliverability',
+        part: undefined,
+      });
+
+      expect(answer.kept).toBe(true);
+      expect(await listOpen({ category: 'deliverability' })).toEqual([
+        expect.objectContaining({
+          about: null,
+          category: 'deliverability',
+          part: null,
+        }),
+      ]);
+    });
+
     it('records a complement about no skill or expertise, by its kind of know-how and part of the email', async () => {
       const answer = await call(
         await asConsultant(),
@@ -766,6 +785,36 @@ describe('the retex loop', () => {
       });
 
       expect(second.candidates.map((c) => c.retexId)).toEqual([first.retexId]);
+    });
+
+    it('matches complements about nothing by kind of know-how alone when one names no part of the email', async () => {
+      const deliverability = {
+        ...ORPHAN_COMPLEMENT,
+        category: 'deliverability',
+      };
+      const withPart = await call(await asConsultant(), REPORT, deliverability);
+      const withoutPart = await call(await asConsultant(), REPORT, {
+        ...deliverability,
+        part: undefined,
+        brought: 'SNDS shows a filtered IP before the ESP does',
+      });
+      // Another part of the email: not a candidate of the first.
+      await call(await asConsultant(), REPORT, {
+        ...deliverability,
+        part: 'subject',
+        brought: 'A subject naming the product is filtered less',
+      });
+
+      const third = await call(await asConsultant(), REPORT, {
+        ...deliverability,
+        part: undefined,
+        brought: 'Microsoft filters before the ESP sees a bounce',
+      });
+
+      expect(withoutPart.candidates.map((c) => c.retexId)).toEqual([
+        withPart.retexId,
+      ]);
+      expect(third.candidates.map((c) => c.retexId).sort()).toHaveLength(3);
     });
 
     it.each([
