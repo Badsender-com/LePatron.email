@@ -21,6 +21,10 @@ module.exports = { readGovernanceContext: asyncHandler(readGovernanceContext) };
  *   for: `name`, `label`, `description`, and `value` (`label`, `identifier`,
  *   `description`)
  * @apiSuccess {String[]} missing the active dimensions the email leaves empty
+ * @apiSuccess {String} language the email's language, ISO 639-1, null when
+ *   unknown (ADR-0023)
+ * @apiSuccess {String} locale the email's locale, `fr-BE` or `fr`, null when
+ *   unknown
  * @apiSuccess {String} text the same facts as text, empty when there are none
  *
  * @apiDescription What an AI writing assistant is handed about this email. Read
