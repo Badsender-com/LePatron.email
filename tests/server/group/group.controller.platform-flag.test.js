@@ -38,7 +38,7 @@ jest.mock(
   () => ({})
 );
 jest.mock(
-  '../../../packages/server/taxonomy/taxonomy-defaults.service.js',
+  '../../../packages/server/taxonomy/services/taxonomy-defaults.service.js',
   () => ({})
 );
 jest.mock(

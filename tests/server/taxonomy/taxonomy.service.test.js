@@ -29,7 +29,7 @@ const {
   TaxonomyItems,
   Mailings,
 } = require('../../../packages/server/common/models.common.js');
-const taxonomyService = require('../../../packages/server/taxonomy/taxonomy.service.js');
+const taxonomyService = require('../../../packages/server/taxonomy/services/taxonomy.service.js');
 const ERROR_CODES = require('../../../packages/server/constant/error-codes.js');
 
 const COMPANY_A = '507f1f77bcf86cd799439a01';
@@ -183,7 +183,7 @@ describe('listTaxonomyItems — company scope', () => {
     expect(TaxonomyItems.find.mock.calls[1][0].isActive).toBe(true);
   });
 
-  it.each([[undefined], [''], ['language'], ['../emailType'], [{}]])(
+  it.each([[undefined], [''], ['trigger'], ['../emailType'], [{}]])(
     'refuses the taxonomy type %p',
     async (type) => {
       await expect(

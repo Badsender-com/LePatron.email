@@ -27,13 +27,13 @@ jest.mock('../../../packages/server/utils/logger.js', () => ({
 const {
   TaxonomyItems,
 } = require('../../../packages/server/common/models.common.js');
-const taxonomyDefaultsService = require('../../../packages/server/taxonomy/taxonomy-defaults.service.js');
+const taxonomyDefaultsService = require('../../../packages/server/taxonomy/services/taxonomy-defaults.service.js');
 const {
   DEFAULT_EMAIL_TYPES,
   pickSeedLang,
   buildDefaultEmailTypes,
   planMissingDefaultEmailTypes,
-} = require('../../../packages/server/taxonomy/default-email-types.js');
+} = require('../../../packages/server/taxonomy/services/default-email-types.js');
 const {
   EmailTypeCanonicalValues,
 } = require('../../../packages/server/constant/email-type-canonical.js');

@@ -2,11 +2,8 @@
 
 const { BadRequest } = require('http-errors');
 
-const ERROR_CODES = require('../constant/error-codes.js');
-const {
-  TaxonomyTypeValues,
-  TaxonomyLimits,
-} = require('../constant/taxonomy-type.js');
+const ERROR_CODES = require('../../constant/error-codes.js');
+const { TaxonomyLimits } = require('../../constant/taxonomy-type.js');
 
 // `ObjectId.isValid` returns true for ANY 12-character string, reinterpreting its
 // bytes as an id: 'companyAdmin' becomes a perfectly valid ObjectId pointing at a
@@ -25,19 +22,22 @@ const EDITABLE_FIELDS = Object.freeze([
   'order',
 ]);
 
+// What a request may set on a dimension. The name is read apart, on creation
+// only: it is write-once (ADR-0015). `standard` is the seed's alone.
+const DIMENSION_EDITABLE_FIELDS = Object.freeze([
+  'label',
+  'description',
+  'isActive',
+  'order',
+  'precedence',
+]);
+
 module.exports = {
   isObjectId,
-  validateType,
   validatePayload,
+  validateDimensionPayload,
   EDITABLE_FIELDS,
 };
-
-function validateType(type) {
-  if (!type || !TaxonomyTypeValues.includes(type)) {
-    throw new BadRequest(ERROR_CODES.INVALID_TAXONOMY_TYPE);
-  }
-  return type;
-}
 
 const invalid = () => new BadRequest(ERROR_CODES.INVALID_TAXONOMY_ITEM);
 
@@ -143,4 +143,52 @@ function readIsActive(value) {
 function readOrder(value) {
   if (typeof value !== 'number' || !Number.isFinite(value)) throw invalid();
   return value;
+}
+
+/**
+ * Validate the editable fields of a dimension, on the same rules as a value's:
+ * an unknown key is refused, a partial update returns only the keys present.
+ *
+ * @param {Object} payload
+ * @param {Object} options
+ * @param {boolean} options.partial
+ * @returns {Object} the fields to assign
+ */
+function validateDimensionPayload(payload, { partial }) {
+  const invalidDimension = () => new BadRequest(ERROR_CODES.INVALID_DIMENSION);
+  const readOrRefuse = (read, value) => {
+    try {
+      return read(value);
+    } catch (error) {
+      throw invalidDimension();
+    }
+  };
+
+  if (
+    Object.keys(payload).some((key) => !DIMENSION_EDITABLE_FIELDS.includes(key))
+  ) {
+    throw invalidDimension();
+  }
+  if (!partial && payload.label === undefined) throw invalidDimension();
+
+  const fields = {};
+  if (payload.label !== undefined) {
+    fields.label = readOrRefuse(readLabel, payload.label);
+  }
+  if (payload.description !== undefined) {
+    fields.description = readOrRefuse(readDescription, payload.description);
+  }
+  if (payload.isActive !== undefined) {
+    fields.isActive = readOrRefuse(readIsActive, payload.isActive);
+  }
+  if (payload.order !== undefined) {
+    fields.order = readOrRefuse(readOrder, payload.order);
+  }
+  if (payload.precedence !== undefined) {
+    fields.precedence = readOrRefuse(readOrder, payload.precedence);
+  }
+
+  if (partial && Object.keys(fields).length === 0) throw invalidDimension();
+
+  return fields;
 }

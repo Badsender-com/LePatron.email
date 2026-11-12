@@ -10,7 +10,7 @@
 
 const mongoose = require('mongoose');
 
-const TaxonomyItemSchema = require('../../../packages/server/taxonomy/taxonomy.schema.js');
+const TaxonomyItemSchema = require('../../../packages/server/taxonomy/models/taxonomy.schema.js');
 
 const COMPANY = mongoose.Types.ObjectId('507f1f77bcf86cd799439a01');
 
@@ -79,8 +79,15 @@ describe('defaults', () => {
     expect(String(build().group)).toBe(String(COMPANY));
   });
 
-  it.each([['language'], ['brand'], [''], ['emailtype']])(
-    'refuses the unknown taxonomy type %p',
+  it.each([['language'], ['brand'], ['audience_2']])(
+    'accepts a value of the company dimension %p',
+    (type) => {
+      expect(build({ type }).validateSync()).toBeUndefined();
+    }
+  );
+
+  it.each([[''], ['trigger'], ['2nd'], ['market-fr'], ['marché']])(
+    'refuses the type %p, which no value can belong to',
     (type) => {
       const error = build({ type }).validateSync();
       expect(error.errors.type).toBeDefined();
