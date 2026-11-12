@@ -12,6 +12,7 @@ const logger = require('../utils/logger.js');
 const { Templates } = require('../common/models.common');
 const { BLOCK_BUILDER_BLOCK } = require('../../shared/synthetic-blocks.js');
 const { warningKeysFor } = require('./translation-warnings.js');
+const { sourceLanguageFor } = require('./translation-locale.js');
 
 // The background half of duplicate + translate: everything that runs after
 // the controller has answered 202 with a job id. Its own module so the
@@ -92,12 +93,17 @@ async function translateSource({
   targetLanguage,
 }) {
   const { mailing, groupId, templateMarkup, blockBuilderEnabled } = source;
-  const detectedSourceLanguage =
-    sourceLanguage === 'auto'
-      ? await runTranslationStep('detectSourceLanguage', () =>
-          translationService.detectSourceLanguage(mailing)
-        )
-      : sourceLanguage;
+  // The user's choice, otherwise the email's language (ADR-0023), otherwise
+  // the guess from the markup.
+  const detectedSourceLanguage = await runTranslationStep(
+    'detectSourceLanguage',
+    () =>
+      sourceLanguageFor({
+        mailing,
+        requested: sourceLanguage,
+        detect: translationService.detectSourceLanguage,
+      })
+  );
 
   const result = await translationService.translateMailing({
     groupId,
