@@ -69,8 +69,12 @@ export default {
       {{ $t('taxonomy.values.form.tokensHint') }}
     </p>
     <div v-for="(row, index) in rows" :key="index" class="taxonomy-tokens__row">
+      <!-- Labels hidden from sight, not from screen readers: a row of two
+           bare inputs would have no name. -->
       <bs-text-field
         v-model="row.name"
+        :label="$t('taxonomy.values.form.tokenName')"
+        hide-label
         :placeholder="$t('taxonomy.values.form.tokenNamePlaceholder')"
         :error-messages="nameErrors(row)"
         :disabled="disabled"
@@ -78,11 +82,14 @@ export default {
       />
       <bs-text-field
         v-model="row.value"
+        :label="$t('taxonomy.values.form.tokenValue')"
+        hide-label
         :placeholder="$t('taxonomy.values.form.tokenValuePlaceholder')"
         :disabled="disabled"
         @input="emit"
       />
       <v-btn
+        class="taxonomy-tokens__remove"
         icon
         small
         :disabled="disabled"
@@ -129,6 +136,12 @@ export default {
     grid-template-columns: 1fr 1fr auto;
     gap: 0.5rem;
     align-items: start;
+  }
+
+  // Centred on the input rather than on the field: an error message under the
+  // name would otherwise drag the button down with it.
+  &__remove {
+    margin-top: 6px;
   }
 }
 </style>
