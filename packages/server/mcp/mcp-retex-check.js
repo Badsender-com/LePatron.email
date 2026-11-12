@@ -90,9 +90,11 @@ function assertRetex(retex) {
   ['missing', 'source'].forEach((field) => {
     if (!flat(retex[field])) throw new Error(`A complement needs "${field}".`);
   });
-  if (!retex.about && (!retex.category || !flat(retex.part))) {
+  // The part of the email is for what has one: deliverability (a monitoring
+  // portal, a DNS survey, an ESP export) has none.
+  if (!retex.about && !retex.category) {
     throw new Error(
-      'A complement about no skill or expertise needs its category and the part of the email.'
+      'A complement about no skill or expertise needs its category, and the part of the email when there is one.'
     );
   }
 }

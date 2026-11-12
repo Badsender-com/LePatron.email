@@ -156,7 +156,7 @@ const RETEX_INPUT = z.object({
   part: text(MAX_PART_LENGTH)
     .optional()
     .describe(
-      'A complement about no skill or expertise: the part of the email, e.g. subject, preheader, cta.'
+      'A complement about no skill or expertise: the part of the email, e.g. subject, preheader, cta, when there is one. Left out for what has none, such as deliverability.'
     ),
   section: text(MAX_ANCHOR_LENGTH)
     .optional()
