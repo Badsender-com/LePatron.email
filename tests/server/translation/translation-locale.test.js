@@ -71,7 +71,7 @@ const email = (values = [], extra = {}) => ({
 beforeEach(() => resetTaxonomyModels(models));
 
 // Turned on by #1506 (the translation starts from the email's language)
-describe.skip('translation source language from the email', () => {
+describe('translation source language from the email', () => {
   let sourceLanguageFor;
 
   beforeAll(() => {
