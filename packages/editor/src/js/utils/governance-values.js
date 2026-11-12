@@ -1,12 +1,17 @@
 'use strict';
 
+const {
+  composeLocale,
+} = require('../../../../shared/locale/locale-codes.js');
+
 /**
  * What the editor publishes to the template for one email (ADR-0015): each
  * active dimension under its name, the property a template reads
  * (`_root_.audience`), valued by the identifier of the chosen value; and the
  * design tokens of the chosen values under their own names. When two chosen
  * values carry the same token, the dimension with the highest precedence wins,
- * and on a tie the later one in the declared order.
+ * and on a tie the later one in the declared order. The email's locale is
+ * published under `locale` (ADR-0023), by the rule the server applies.
  *
  * Pure, like the rest of the section's helpers: the editor has no component test
  * harness. Covered by tests/editor/governance-values.test.js.
@@ -58,7 +63,27 @@ function governanceValues({ dimensions, selections, trigger }) {
     }
   });
 
+  values.locale = localeOf(active, selections);
+
   return { values, sources: resolveTokens(carriers, values, dimensions) };
+}
+
+/**
+ * The locale of the values chosen, `fr-BE`, from the codes of the dimensions
+ * holding a role; an empty string when unknown, so a template's `lang` is
+ * emptied rather than left on another email's.
+ */
+function localeOf(dimensions, selections) {
+  const codes = dimensions.reduce((byRole, dimension) => {
+    if (!dimension.role) return byRole;
+    const chosen = selections && selections[dimension.name];
+    const value = (dimension.values || []).find(
+      (option) => String(option.id) === String(chosen)
+    );
+    byRole[dimension.role] = (value && value.code) || null;
+    return byRole;
+  }, {});
+  return composeLocale(codes).locale || '';
 }
 
 /**
@@ -71,6 +96,7 @@ function resolveTokens(carriers, values, dimensions) {
   // A token never shadows a dimension: `_root_.audience` stays the audience.
   const reserved = new Set([
     'trigger',
+    'locale',
     ...(dimensions || []).map((dimension) => dimension.name),
   ]);
   const sources = {};

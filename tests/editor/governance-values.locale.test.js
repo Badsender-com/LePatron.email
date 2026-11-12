@@ -31,7 +31,7 @@ const MARKET_LANGUAGE = {
 };
 
 // Turned on by #1505 (the template receives the locale)
-describe.skip('publishing the locale to the template', () => {
+describe('publishing the locale to the template', () => {
   let governanceValues;
 
   beforeAll(() => {
@@ -80,6 +80,21 @@ describe.skip('publishing the locale to the template', () => {
         language: 'fr',
       })
     ).toBe('');
+  });
+
+  it('never lets a design token named locale shadow it', () => {
+    const brand = {
+      name: 'brand',
+      values: [{ id: 'a', tokens: { locale: 'xx' } }],
+    };
+
+    expect(
+      localeOf([MARKET, LANGUAGE, brand], {
+        market: 'be',
+        language: 'fr',
+        brand: 'a',
+      })
+    ).toBe('fr-BE');
   });
 
   it('keeps publishing each dimension under its own name', () => {
