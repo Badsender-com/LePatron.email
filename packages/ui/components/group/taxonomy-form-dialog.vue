@@ -7,6 +7,7 @@ import BsSelect from '~/components/form/bs-select.vue';
 import BsTextarea from '~/components/form/bs-textarea.vue';
 import BsTaxonomyFormOrderStatus from '~/components/group/taxonomy-form-order-status.vue';
 import BsTaxonomyAvailabilityField from '~/components/group/taxonomy-availability-field.vue';
+import BsTaxonomyTokensField from '~/components/group/taxonomy-tokens-field.vue';
 import {
   CANONICAL_TYPES,
   TAXONOMY_LIMITS,
@@ -33,6 +34,7 @@ export default {
     BsTextarea,
     BsTaxonomyFormOrderStatus,
     BsTaxonomyAvailabilityField,
+    BsTaxonomyTokensField,
   },
   mixins: [validationMixin],
   props: {
@@ -151,8 +153,9 @@ export default {
             isActive: item.isActive !== false,
             order: typeof item.order === 'number' ? item.order : 0,
             parentIds: (item._parents || []).map(String),
+            tokens: { ...(item.tokens || {}) },
           }
-        : { ...emptyItem(), order: suggestedOrder, parentIds: [] };
+        : { ...emptyItem(), order: suggestedOrder, parentIds: [], tokens: {} };
       this.$v.$reset();
       this.$refs.modal.open();
     },
@@ -197,6 +200,7 @@ export default {
 
       const payload = buildTaxonomyPayload(this.form);
       if (this.parentValues) payload.parentIds = this.form.parentIds;
+      payload.tokens = this.form.tokens;
       this.$emit('save', { id: this.editingId, payload });
     },
   },
@@ -272,6 +276,8 @@ export default {
       :parent-label="parentLabel"
       :disabled="loading"
     />
+
+    <bs-taxonomy-tokens-field v-model="form.tokens" :disabled="loading" />
 
     <bs-taxonomy-form-order-status
       :order.sync="form.order"

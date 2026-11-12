@@ -25,6 +25,8 @@ const EDITABLE_FIELDS = Object.freeze([
   'order',
   // The availability: the parent values a value is offered under.
   'parentIds',
+  // Design tokens, replaced as a whole on each edit.
+  'tokens',
 ]);
 
 // What a request may set on a dimension. The name is read apart, on creation
@@ -100,6 +102,7 @@ function validatePayload(payload, { partial }) {
   if (payload.parentIds !== undefined) {
     fields.parentIds = readParentIds(payload.parentIds);
   }
+  if (payload.tokens !== undefined) fields.tokens = readTokens(payload.tokens);
 
   // A PATCH carrying nothing usable would answer 200 without changing anything,
   // which reads as a successful save.
@@ -171,6 +174,28 @@ function readParentIds(value) {
   }
   if (new Set(value).size !== value.length) throw invalid();
   return value;
+}
+
+/**
+ * @returns {Object} name → value; `null` clears them. Each name is one a
+ *   template reads as a property, like a dimension's (ADR-0015).
+ */
+function readTokens(value) {
+  if (value === null) return {};
+  if (typeof value !== 'object' || Array.isArray(value)) throw invalid();
+  const entries = Object.entries(value);
+  // Told with the limit, like the other caps, rather than as a bare 400.
+  if (entries.length > TaxonomyLimits.TOKENS_PER_VALUE) {
+    throw limitReached(TaxonomyLimits.TOKENS_PER_VALUE);
+  }
+  entries.forEach(([name, token]) => {
+    if (!DIMENSION_NAME_PATTERN.test(name)) throw invalid();
+    if (typeof token !== 'string' || token.trim() === '') throw invalid();
+    if (token.length > TaxonomyLimits.TOKEN_VALUE) throw invalid();
+  });
+  return Object.fromEntries(
+    entries.map(([name, token]) => [name, token.trim()])
+  );
 }
 
 /**

@@ -1151,6 +1151,8 @@ export default {
       inactive: 'Deactivated',
       inactiveHint:
         'It is no longer offered on emails and takes no new value. Emails already carrying one of its values keep it.',
+      resolution:
+        'Token resolution: {order}. The last one wins when two values carry the same token.',
       under: 'Under {parent}',
       deactivate: 'Deactivate',
       reactivate: 'Reactivate',
@@ -1190,6 +1192,9 @@ export default {
         parentNone: 'None: first level',
         parentHint:
           'Its values will be offered by the value chosen for the parent dimension: the Language by the Market.',
+        precedence: 'Precedence',
+        precedenceHint:
+          'When two values chosen on an email carry the same token, the one of the dimension with the highest precedence wins.',
       },
     },
     values: {
@@ -1221,6 +1226,15 @@ export default {
         availability: 'Offered under',
         availabilityHint:
           'The values of “{parent}” this one is offered under. Empty: offered under all of them.',
+        tokens: 'Design tokens',
+        tokensHint:
+          'Named values templates read under their name, like a brand’s main colour: mainColorVar = #ffd845.',
+        tokenNamePlaceholder: 'mainColorVar',
+        tokenValuePlaceholder: '#ffd845',
+        tokenNameInvalid:
+          'Unaccented letters, digits and _ only, not starting with a digit.',
+        addToken: 'Add a token',
+        tokensFull: 'Limit of {limit} tokens reached.',
         isActiveHint:
           'A deactivated value disappears from the select lists, but the emails using it keep it.',
       },

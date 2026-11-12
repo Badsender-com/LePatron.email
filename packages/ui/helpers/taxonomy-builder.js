@@ -172,3 +172,45 @@ export function parentCandidates(dimensions = [], dimension = {}) {
     )
     .map((candidate) => candidate.name);
 }
+
+/**
+ * The order design tokens are resolved in, the last one winning: by precedence,
+ * a tie broken by the screen's order, the way the editor resolves them
+ * (packages/editor/src/js/utils/governance-values.js). The trigger carries no
+ * token and is left out, like deactivated dimensions.
+ *
+ * @param {Object[]} dimensions
+ * @returns {string[]} their names
+ */
+export function resolutionOrder(dimensions = []) {
+  return sortDimensions(dimensions)
+    .map((dimension, index) => ({ dimension, index }))
+    .filter(
+      ({ dimension }) =>
+        dimension.isActive && dimension.name !== STANDARD_DIMENSIONS.TRIGGER
+    )
+    .sort(
+      (a, b) =>
+        (a.dimension.precedence || 0) - (b.dimension.precedence || 0) ||
+        a.index - b.index
+    )
+    .map(({ dimension }) => dimension.name);
+}
+
+/**
+ * The design tokens a value carries, as rows the form edits, and back. Rows
+ * with no name are dropped on the way back; the server checks the rest.
+ */
+export const TOKENS_PER_VALUE = 24;
+
+export function tokenRows(tokens = {}) {
+  return Object.entries(tokens || {}).map(([name, value]) => ({ name, value }));
+}
+
+export function tokensFromRows(rows = []) {
+  return Object.fromEntries(
+    rows
+      .map((row) => [String(row.name || '').trim(), String(row.value || '')])
+      .filter(([name]) => name !== '')
+  );
+}

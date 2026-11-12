@@ -115,7 +115,7 @@ describe('publishing dimensions to the template', () => {
 });
 
 // Turned on by #1359 (design tokens and precedence)
-describe.skip('publishing design tokens', () => {
+describe('publishing design tokens', () => {
   let governanceValues;
 
   beforeAll(() => {

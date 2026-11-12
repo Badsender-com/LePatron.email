@@ -46,6 +46,10 @@ const TaxonomyLimits = Object.freeze({
   // Same reasoning for the dimensions: a company declines its emails by a
   // handful of axes, not a hundred.
   DIMENSIONS_PER_COMPANY: 20,
+  // The design tokens of one value: a brand's palette and type, not a theme.
+  TOKENS_PER_VALUE: 24,
+  // A colour, a font stack, a size: never a block of CSS.
+  TOKEN_VALUE: 200,
 });
 
 module.exports = {

@@ -55,3 +55,33 @@ describe('publishing values to the template', () => {
     });
   });
 });
+
+describe('publishing over an editing session', () => {
+  const {
+    createTemplatePublisher,
+  } = require('../../packages/editor/src/js/utils/publish-to-template.js');
+
+  it("gives a token no longer carried the template's own value back", () => {
+    const content = {
+      brand: observable(''),
+      textColorVar: observable('#333333'),
+    };
+    const { publish } = createTemplatePublisher();
+
+    publish(content, { brand: 'brand-a', textColorVar: '#1a1a1a' });
+    publish(content, { brand: 'brand-b' });
+
+    expect(content.textColorVar()).toBe('#333333');
+  });
+
+  it('keeps the value the template had before the first write, not an intermediate one', () => {
+    const content = { mainColorVar: observable('#000000') };
+    const { publish } = createTemplatePublisher();
+
+    publish(content, { mainColorVar: '#ffd845' });
+    publish(content, { mainColorVar: '#0050ff' });
+    publish(content, {});
+
+    expect(content.mainColorVar()).toBe('#000000');
+  });
+});

@@ -35,4 +35,35 @@ function publishToTemplate(content, values) {
   return { applied, skipped };
 }
 
-module.exports = { publishToTemplate };
+/**
+ * A publisher for one editing session, which remembers what each property held
+ * before it first wrote it. A design token no longer carried (a brand B with no
+ * `textColorVar` after a brand A with one) gets that value back, the template's
+ * own, rather than keeping the previous brand's.
+ *
+ * @returns {{publish: Function}} `publish(content, values)`, as publishToTemplate
+ */
+function createTemplatePublisher() {
+  const originals = new Map();
+
+  function publish(content, values) {
+    if (!content) return { applied: [], skipped: [] };
+    const restored = {};
+    Object.keys(values || {}).forEach((name) => {
+      const target = content[name];
+      if (typeof target === 'function' && !originals.has(name)) {
+        originals.set(name, target());
+      }
+    });
+    originals.forEach((original, name) => {
+      if (values && name in values) return;
+      restored[name] = original;
+      originals.delete(name);
+    });
+    return publishToTemplate(content, { ...restored, ...values });
+  }
+
+  return { publish };
+}
+
+module.exports = { publishToTemplate, createTemplatePublisher };
