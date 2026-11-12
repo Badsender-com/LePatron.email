@@ -523,6 +523,10 @@ export default {
       checkLinks: 'Links in the email',
       checkImages: 'Images containing text',
       checkVariant: 'Template variant if applicable',
+      languageValueNotFound:
+        'The language of the copy: no value of your taxonomy matches the target language for this market. Choose it in the email settings.',
+      languageValueAmbiguous:
+        'The language of the copy: several values of your taxonomy match the target language. Choose it in the email settings.',
       composedBlockUntranslated: 'Composed blocks: some could not be translated, or were rebuilt with a newer version of the block builder',
     },
     understood: 'Got it',

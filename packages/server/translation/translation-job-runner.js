@@ -11,8 +11,14 @@ const {
 const logger = require('../utils/logger.js');
 const { Templates } = require('../common/models.common');
 const { BLOCK_BUILDER_BLOCK } = require('../../shared/synthetic-blocks.js');
-const { warningKeysFor } = require('./translation-warnings.js');
-const { sourceLanguageFor } = require('./translation-locale.js');
+const {
+  warningKeysFor,
+  LANGUAGE_VALUE_WARNING_KEYS,
+} = require('./translation-warnings.js');
+const {
+  sourceLanguageFor,
+  copyLanguageValues,
+} = require('./translation-locale.js');
 
 // The background half of duplicate + translate: everything that runs after
 // the controller has answered 202 with a job id. Its own module so the
@@ -139,6 +145,10 @@ async function processTranslationAsync(params) {
     const source = await loadSource({ mailingId, user });
     const translated = await translateSource({ ...params, source });
     const { mailing: translatedData, stats } = translated;
+    // An email carrying no value has none to follow the target.
+    const languageValues = (source.mailing._taxonomyItems || []).length
+      ? await copyLanguageValues({ mailing: source.mailing, targetLanguage })
+      : { taxonomyItemIds: undefined, warning: null };
 
     const duplicatedMailing = await mailingService.duplicateWithTranslatedData({
       mailingId,
@@ -148,6 +158,7 @@ async function processTranslationAsync(params) {
       translatedData: translatedData.data,
       workspaceId: params.workspaceId,
       folderId: params.folderId,
+      taxonomyItemIds: languageValues.taxonomyItemIds,
     });
 
     const preview = await storeTranslatedPreview({
@@ -165,7 +176,12 @@ async function processTranslationAsync(params) {
       stats,
       sourceLanguage: translated.sourceLanguage,
       targetLanguage,
-      warningKeys: warningKeysFor(stats, preview.missedComposedBlocks),
+      warningKeys: [
+        ...warningKeysFor(stats, preview.missedComposedBlocks),
+        ...(languageValues.warning
+          ? [LANGUAGE_VALUE_WARNING_KEYS[languageValues.warning]]
+          : []),
+      ],
     });
   } catch (error) {
     // Handle cancellation gracefully

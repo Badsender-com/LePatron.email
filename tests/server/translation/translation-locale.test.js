@@ -121,7 +121,7 @@ describe('translation source language from the email', () => {
 });
 
 // Turned on by #1507 (the translated copy carries the target language value)
-describe.skip('translated copy: the language value follows', () => {
+describe('translated copy: the language value follows', () => {
   let copyLanguageValues;
 
   beforeAll(() => {
