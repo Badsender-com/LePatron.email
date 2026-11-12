@@ -52,7 +52,7 @@ const EMAIL_TYPE = {
 };
 
 // Turned on by #1357 (the chosen values reach the template)
-describe.skip('publishing dimensions to the template', () => {
+describe('publishing dimensions to the template', () => {
   let governanceValues;
 
   beforeAll(() => {

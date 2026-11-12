@@ -101,6 +101,20 @@ describe('what the editor receives of the company dimensions, and what follows a
       ]);
     });
 
+    it('gives each value its identifier, which the editor publishes to the template', async () => {
+      await addValue('audience', {
+        label: 'Clients fidèles',
+        canonicalType: 'loyal',
+      });
+
+      const { emailMetadataConfig } = await build(newMailing());
+
+      const audience = emailMetadataConfig.dimensions[1];
+      expect(
+        audience.values.find((value) => value.label === 'Clients fidèles')
+      ).toMatchObject({ canonicalType: 'loyal' });
+    });
+
     it('leaves the standard dimensions to their own fields', async () => {
       const { emailMetadataConfig } = await build(newMailing());
 
