@@ -11,7 +11,7 @@ There are two kinds.
 | **Divergence** | you decided otherwise than a skill or an expertise recommended                  | the passage, what it recommended, what you decided, and why                                |
 | **Complement** | the skill or expertise said nothing about your case, and you brought the answer | what was missing, what you brought, and where it comes from (experience, a source, a test) |
 
-A complement may also be about know-how no expertise covers yet. It then names a category (copywriting, deliverability…) and a part of the email (subject, preheader…).
+A complement may also be about know-how no expertise covers yet. It then names a category (copywriting, deliverability…), and a part of the email (subject, preheader…) when there is one: a DNS survey or a monitoring portal has none.
 
 A retex is **never a summary of the conversation**. No divergence and nothing brought, no retex: LePatron refuses the ones that say nothing precise. It must hold nothing that identifies your company or your clients.
 
@@ -40,7 +40,7 @@ The connection screen offers a super admin every company that has the MCP module
 ### The loop
 
 1. You contradict a recommendation, or bring what was missing: the assistant records the retex.
-2. LePatron answers the open retex on the same passage (or, for a complement about no expertise, on the same category and part of the email), whatever the company.
+2. LePatron answers the open retex on the same passage (or, for a complement about no expertise, on the same category, and the same part of the email when both name one), whatever the company.
 3. **Two retex pointing the same way are enough**: the assistant proposes the change at once, as a draft citing them. For a complement no expertise covers, it proposes a new expertise.
 4. You adjust, the guard replays the test cases if there are any, then you publish.
 5. The retex cited become **addressed** with the published version, named by its skill or expertise (a retex on a skill may be addressed by an expertise), whether you publish from the assistant or from the back office. If the draft is deleted before, they stay open.

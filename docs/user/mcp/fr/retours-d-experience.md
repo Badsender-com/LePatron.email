@@ -11,7 +11,7 @@ Il y en a deux sortes.
 | **Divergence** | vous avez décidé autrement que ce que recommandait une skill ou une expertise         | le passage concerné, ce qu'il recommandait, ce que vous avez décidé, et pourquoi       |
 | **Complément** | la skill ou l'expertise ne disait rien sur votre cas, et vous avez apporté la réponse | ce qui manquait, ce que vous avez apporté, et d'où ça vient (expérience, source, test) |
 
-Un complément peut aussi porter sur un savoir-faire qu'aucune expertise ne couvre encore. Il nomme alors une catégorie (rédaction, délivrabilité…) et une partie de l'email (objet, préheader…).
+Un complément peut aussi porter sur un savoir-faire qu'aucune expertise ne couvre encore. Il nomme alors une catégorie (rédaction, délivrabilité…), et une partie de l'email (objet, préheader…) quand il y en a une : un relevé DNS ou un portail de monitoring n'en a pas.
 
 Un retour d'expérience n'est **jamais un résumé de la conversation**. S'il n'y a ni divergence ni rien d'apporté, il n'y a pas de retour d'expérience, et LePatron refuse ceux qui ne disent rien de précis. Il ne doit rien contenir qui identifie votre entreprise ou vos clients.
 
@@ -40,7 +40,7 @@ L'écran de connexion propose à un super admin toutes les entreprises qui ont l
 ### La boucle
 
 1. Vous contredisez une recommandation, ou vous apportez ce qui manquait : l'assistant enregistre le retour d'expérience.
-2. LePatron lui répond les retours d'expérience ouverts sur le même passage (ou, pour un complément sans expertise, sur la même catégorie et la même partie de l'email), quelle que soit l'entreprise.
+2. LePatron lui répond les retours d'expérience ouverts sur le même passage (ou, pour un complément sans expertise, sur la même catégorie, et la même partie de l'email quand les deux en nomment une), quelle que soit l'entreprise.
 3. **Deux retours qui vont dans le même sens suffisent** : l'assistant vous propose aussitôt l'évolution, sous forme de brouillon qui les cite. Pour un complément qu'aucune expertise ne couvre, il propose une nouvelle expertise.
 4. Vous ajustez, le garde-fou rejoue les cas de test s'il y en a, puis vous publiez.
 5. Les retours cités passent à **« Pris en compte »** avec la version publiée, nommée par sa skill ou son expertise (un retour sur une skill peut être pris en compte par une expertise), que vous la publiiez depuis l'assistant ou depuis le back-office. Si le brouillon est supprimé avant, ils restent ouverts.
