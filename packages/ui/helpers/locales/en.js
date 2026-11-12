@@ -1229,6 +1229,8 @@ export default {
         tokens: 'Design tokens',
         tokensHint:
           'Named values templates read under their name, like a brand’s main colour: mainColorVar = #ffd845.',
+        tokenName: 'Token name',
+        tokenValue: 'Token value',
         tokenNamePlaceholder: 'mainColorVar',
         tokenValuePlaceholder: '#ffd845',
         tokenNameInvalid:

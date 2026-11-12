@@ -133,30 +133,34 @@ module.exports = `
          nested one right after its parent and hidden while the parent is empty.
          Each is optional, with an explicit empty choice like the two above.
          Chosen through a method rather than v-model: a parent change clears the
-         child values it no longer offers. -->
-    <div v-for="select in dimensionChoices"
-         :key="select.name"
-         class="email-metadata__field">
-      <div class="email-metadata__label-row">
-        <label :for="'email-metadata-dimension-' + select.name">{{ select.label }}</label>
+         child values it no longer offers. Two per row: a company may well have
+         four or five dimensions, and one per row pushed the tracking below the
+         fold. -->
+    <div v-if="dimensionChoices.length" class="email-metadata__dimensions">
+      <div v-for="select in dimensionChoices"
+           :key="select.name"
+           class="email-metadata__field">
+        <div class="email-metadata__label-row">
+          <label :for="'email-metadata-dimension-' + select.name">{{ select.label }}</label>
+        </div>
+        <select :id="'email-metadata-dimension-' + select.name"
+                class="email-metadata__select"
+                :value="selections[select.name]"
+                :aria-describedby="select.unavailable ? 'email-metadata-dimension-' + select.name + '-hint' : null"
+                @change="choose(select.name, $event.target.value)">
+          <option value="">{{ t('email-metadata-dimension-none') }}</option>
+          <option v-for="option in select.options"
+                  :key="option.id"
+                  :value="option.id">{{ option.label }}</option>
+        </select>
+        <!-- A combination narrowed since the email chose it: said, never undone
+             behind the user's back. The email still saves. -->
+        <p v-if="select.unavailable"
+           :id="'email-metadata-dimension-' + select.name + '-hint'"
+           class="email-metadata__hint">
+          {{ t('email-metadata-dimension-unavailable') }}
+        </p>
       </div>
-      <select :id="'email-metadata-dimension-' + select.name"
-              class="email-metadata__select"
-              :value="selections[select.name]"
-              :aria-describedby="select.unavailable ? 'email-metadata-dimension-' + select.name + '-hint' : null"
-              @change="choose(select.name, $event.target.value)">
-        <option value="">{{ t('email-metadata-dimension-none') }}</option>
-        <option v-for="option in select.options"
-                :key="option.id"
-                :value="option.id">{{ option.label }}</option>
-      </select>
-      <!-- A combination narrowed since the email chose it: said, never undone
-           behind the user's back. The email still saves. -->
-      <p v-if="select.unavailable"
-         :id="'email-metadata-dimension-' + select.name + '-hint'"
-         class="email-metadata__hint">
-        {{ t('email-metadata-dimension-unavailable') }}
-      </p>
     </div>
   </section>
 `;

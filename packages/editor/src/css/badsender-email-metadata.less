@@ -121,6 +121,21 @@
     padding: 0 16px;
   }
 
+  // The company dimensions, two per row, in the order of their selects. The
+  // inset moves from each field to the grid, so the columns line up with the
+  // fields above.
+  &__dimensions {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    column-gap: 12px;
+    padding: 0 16px;
+
+    > .email-metadata__field {
+      padding: 0;
+      min-width: 0;
+    }
+  }
+
   // Kept as a row even though it holds only the label now: the three fields share
   // this structure, and a field-level control may well come back here.
   &__label-row {
