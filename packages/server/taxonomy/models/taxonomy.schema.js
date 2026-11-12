@@ -90,6 +90,13 @@ const TaxonomyItemSchema = Schema(
     // The availability: the values of the parent dimension this value is
     // offered under. Empty: offered under all of them.
     _parents: [{ type: ObjectId, ref: TaxonomyItemModel }],
+    // Design tokens a template reads under their name (`_root_.mainColorVar`):
+    // a brand's colour as a role, not as `#ffd845`. The service checks the
+    // names and the count.
+    tokens: {
+      type: Map,
+      of: { type: String, maxlength: TaxonomyLimits.TOKEN_VALUE },
+    },
   },
   { timestamps: true, toJSON: { virtuals: true }, toObject: { virtuals: true } }
 );

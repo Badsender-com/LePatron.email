@@ -13,6 +13,7 @@ import {
   STANDARD_DIMENSIONS,
   DIMENSIONS_PER_COMPANY,
   sortDimensions,
+  resolutionOrder,
 } from '~/helpers/taxonomy-builder.js';
 
 export default {
@@ -59,6 +60,13 @@ export default {
     // count, as the server counts them.
     isFull() {
       return this.dimensions.length >= DIMENSIONS_PER_COMPANY;
+    },
+    // What the template receives when two chosen values carry one token.
+    resolution() {
+      const labels = Object.fromEntries(
+        this.dimensions.map((dimension) => [dimension.name, dimension.label])
+      );
+      return resolutionOrder(this.dimensions).map((name) => labels[name]);
     },
     dimensionLimit() {
       return DIMENSIONS_PER_COMPANY;
@@ -224,6 +232,14 @@ export default {
         {{ $t('taxonomy.dimensions.full', { limit: dimensionLimit }) }}
       </span>
     </div>
+
+    <p v-if="resolution.length > 1" class="taxonomy-dimension__hint mt-4">
+      {{
+        $t('taxonomy.dimensions.resolution', {
+          order: resolution.join(' → '),
+        })
+      }}
+    </p>
 
     <bs-modal-confirm
       ref="deleteModal"

@@ -151,7 +151,7 @@ describe('nesting a dimension', () => {
 });
 
 // Turned on by #1359 (design tokens and precedence)
-describe.skip('precedence', () => {
+describe('precedence', () => {
   let dimensionService;
 
   beforeAll(() => {

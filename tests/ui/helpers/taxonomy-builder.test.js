@@ -185,7 +185,7 @@ describe('taxonomy screen: nesting', () => {
 });
 
 // Turned on by #1359 (design tokens and precedence)
-describe.skip('taxonomy screen: precedence', () => {
+describe('taxonomy screen: precedence', () => {
   let resolutionOrder;
 
   beforeAll(() => {
@@ -251,5 +251,29 @@ describe('taxonomy screen: the wording of a dimension', () => {
     expect(
       buildDimensionPayload({ label: 'Typologie', description: '' })
     ).toEqual({ label: 'Typologie', description: null });
+  });
+});
+
+describe('taxonomy screen: the design tokens of a value', () => {
+  let tokenRows;
+  let tokensFromRows;
+
+  beforeAll(() => {
+    ({ tokenRows, tokensFromRows } = require(HELPERS));
+  });
+
+  it('turns the tokens into rows and back', () => {
+    const tokens = { mainColorVar: '#ffd845', textColorVar: '#1a1a1a' };
+
+    expect(tokensFromRows(tokenRows(tokens))).toEqual(tokens);
+  });
+
+  it('drops a row with no name, and trims the names', () => {
+    expect(
+      tokensFromRows([
+        { name: ' mainColorVar ', value: '#ffd845' },
+        { name: '', value: '#000000' },
+      ])
+    ).toEqual({ mainColorVar: '#ffd845' });
   });
 });

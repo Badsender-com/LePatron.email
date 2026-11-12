@@ -29,7 +29,14 @@ export default {
   },
   data() {
     return {
-      form: { name: '', label: '', description: '', parentName: null },
+      form: {
+        name: '',
+        label: '',
+        description: '',
+        parentName: null,
+        precedence: 0,
+      },
+      initialPrecedence: 0,
       editingId: null,
       // The standard dimensions open the list: neither hangs under anything.
       isStandard: false,
@@ -110,11 +117,13 @@ export default {
       this.serverNameError = null;
       this.isStandard = Boolean(dimension && dimension.standard);
       this.initialParentName = (dimension && dimension.parentName) || null;
+      this.initialPrecedence = (dimension && dimension.precedence) || 0;
       this.form = {
         name: dimension ? dimension.name : '',
         label: dimension ? dimension.label || '' : '',
         description: dimension ? dimension.description || '' : '',
         parentName: this.initialParentName,
+        precedence: this.initialPrecedence,
       };
       this.$v.$reset();
       this.$refs.modal.open();
@@ -147,6 +156,14 @@ export default {
         : buildNewDimensionPayload(this.form);
       if (!this.isStandard && this.form.parentName !== this.initialParentName) {
         payload.parentName = this.form.parentName || null;
+      }
+      const precedence = Math.trunc(Number(this.form.precedence));
+      if (
+        this.form.name !== 'trigger' &&
+        Number.isFinite(precedence) &&
+        precedence !== this.initialPrecedence
+      ) {
+        payload.precedence = precedence;
       }
       this.$emit('save', { id: this.editingId, payload });
     },
@@ -211,6 +228,18 @@ export default {
       :disabled="loading"
       rows="4"
       @blur="$v.form.description.$touch()"
+    />
+
+    <!-- The trigger carries no design token: nothing to win. -->
+    <bs-text-field
+      v-if="form.name !== 'trigger'"
+      v-model="form.precedence"
+      :label="$t('taxonomy.dimensions.form.precedence')"
+      :hint="$t('taxonomy.dimensions.form.precedenceHint')"
+      :disabled="loading"
+      type="number"
+      step="1"
+      persistent-hint
     />
 
     <bs-select
