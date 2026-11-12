@@ -80,6 +80,12 @@ const TaxonomyDimensionSchema = Schema(
       type: Number,
       default: 0,
     },
+    // The dimension this one hangs under (ADR-0014): its values are offered
+    // under values of that one, by their availability. Absent at the first level.
+    parentName: {
+      type: String,
+      match: [DIMENSION_NAME_PATTERN, 'parentName must be a dimension name'],
+    },
     // Highest wins a token two dimensions carry. Not `order`: a company may list
     // a dimension first and want it resolved last.
     precedence: {

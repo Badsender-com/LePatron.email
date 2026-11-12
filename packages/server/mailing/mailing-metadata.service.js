@@ -9,6 +9,7 @@ const { TaxonomyTypes } = require('../constant/taxonomy-type.js');
 const { EmailTriggerValues } = require('../constant/email-trigger.js');
 const {
   validateTaxonomyItemIds,
+  assertCombinationOffered,
 } = require('./mailing-company-dimensions.service.js');
 // Read path of the same feature, in its own file for length; exported from
 // here so the endpoint and what the editor receives keep one entry point.
@@ -76,7 +77,7 @@ const invalid = () =>
  */
 async function validateMetadataPayload(
   payload = {},
-  { companyId, currentItemIds } = {}
+  { companyId, currentItemIds, currentEmailTypeId } = {}
 ) {
   assertNoUnknownKey(payload);
 
@@ -137,6 +138,22 @@ async function validateMetadataPayload(
       payload.taxonomyItemIds,
       { companyId, currentIds: currentItemIds }
     );
+  }
+
+  // A nested value depends on its parent value, the email type's included: a
+  // change on either side checks the combination (ADR-0014).
+  if ('_taxonomyItems' in validated || '_emailType' in validated) {
+    await assertCombinationOffered({
+      companyId,
+      ids:
+        '_taxonomyItems' in validated
+          ? validated._taxonomyItems
+          : currentItemIds,
+      currentIds: currentItemIds,
+      emailTypeId:
+        '_emailType' in validated ? validated._emailType : currentEmailTypeId,
+      currentEmailTypeId,
+    });
   }
 
   return validated;
@@ -251,6 +268,7 @@ async function applyMetadataToMailing(mailing, payload = {}) {
   const validated = await validateMetadataPayload(payload, {
     companyId,
     currentItemIds: mailing._taxonomyItems,
+    currentEmailTypeId: mailing._emailType,
   });
 
   // `validated` holds exactly the keys the payload carried, so a field added to

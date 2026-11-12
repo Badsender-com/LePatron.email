@@ -8,7 +8,10 @@ const {
   TaxonomyItems,
 } = require('../common/models.common.js');
 const ERROR_CODES = require('../constant/error-codes.js');
-const { StandardDimensionNames } = require('../constant/taxonomy-type.js');
+const {
+  StandardDimensions,
+  StandardDimensionNames,
+} = require('../constant/taxonomy-type.js');
 
 /**
  * The company dimensions an email carries (ADR-0014): one list of values, at most
@@ -21,6 +24,7 @@ const { StandardDimensionNames } = require('../constant/taxonomy-type.js');
  */
 module.exports = {
   validateTaxonomyItemIds,
+  assertCombinationOffered,
   buildEditorDimensions,
 };
 
@@ -107,6 +111,73 @@ async function assertChosenAreOffered(chosen, companyId) {
 }
 
 /**
+ * Check that each value of a nested dimension is offered under the parent value
+ * the email has (ADR-0014): a child value needs a parent value, and one of those
+ * its availability lists, unless it lists none.
+ *
+ * Only for the values the request changes: newly chosen, or whose parent value
+ * changed. A combination narrowed since it was chosen is kept as it is sent
+ * back. A dimension whose parent is deactivated offers its values everywhere.
+ *
+ * @param {Object} params
+ * @param {string} params.companyId
+ * @param {Array} params.ids the values the email will carry
+ * @param {Array} params.currentIds the values it carries
+ * @param {*} params.emailTypeId the email type it will have
+ * @param {*} params.currentEmailTypeId the email type it has
+ */
+async function assertCombinationOffered({
+  companyId,
+  ids,
+  currentIds = [],
+  emailTypeId,
+  currentEmailTypeId,
+}) {
+  const allIds = [...(ids || []), ...(currentIds || [])].map(String);
+  if (allIds.length === 0) return;
+
+  const [dimensions, items] = await Promise.all([
+    TaxonomyDimensions.find({ _company: asObjectId(companyId), isActive: true })
+      .select({ name: 1, parentName: 1 })
+      .lean(),
+    TaxonomyItems.find({
+      _id: { $in: [...new Set(allIds)].map(asObjectId) },
+      _company: asObjectId(companyId),
+    })
+      .select({ type: 1, _parents: 1 })
+      .lean(),
+  ]);
+  const active = new Map(dimensions.map((d) => [d.name, d]));
+  const itemById = new Map(items.map((item) => [String(item._id), item]));
+  const valuesByName = (list, emailType) =>
+    (list || []).reduce(
+      (byName, id) => {
+        const item = itemById.get(String(id));
+        if (item) byName[item.type] = String(id);
+        return byName;
+      },
+      { [StandardDimensions.EMAIL_TYPE]: emailType && String(emailType) }
+    );
+  const next = valuesByName(ids, emailTypeId);
+  const previous = valuesByName(currentIds, currentEmailTypeId);
+  const carried = new Set((currentIds || []).map(String));
+
+  (ids || []).forEach((id) => {
+    const item = itemById.get(String(id));
+    const parentName = item && active.get(item.type)?.parentName;
+    if (!parentName || !active.has(parentName)) return;
+    const parentValue = next[parentName];
+    if (carried.has(String(id)) && previous[parentName] === parentValue) return;
+
+    const offeredUnder = (item._parents || []).map(String);
+    if (!parentValue) throw invalid();
+    if (offeredUnder.length > 0 && !offeredUnder.includes(parentValue)) {
+      throw invalid();
+    }
+  });
+}
+
+/**
  * The company dimensions the editor offers a select for: the active ones, in
  * their declared order, each with its active values and the deactivated values
  * the email carries, so the select still shows what the email has. Each value
@@ -123,7 +194,7 @@ async function buildEditorDimensions({ companyId, currentIds = [] }) {
     isActive: true,
     name: { $nin: StandardDimensionNames },
   })
-    .select({ name: 1, label: 1, order: 1 })
+    .select({ name: 1, label: 1, order: 1, parentName: 1 })
     .sort({ order: 1, name: 1 })
     .lean();
   if (dimensions.length === 0) return [];
@@ -134,13 +205,21 @@ async function buildEditorDimensions({ companyId, currentIds = [] }) {
     type: { $in: dimensions.map((dimension) => dimension.name) },
     $or: [{ isActive: true }, { _id: { $in: carried } }],
   })
-    .select({ type: 1, label: 1, canonicalType: 1, isActive: 1, order: 1 })
+    .select({
+      type: 1,
+      label: 1,
+      canonicalType: 1,
+      isActive: 1,
+      order: 1,
+      _parents: 1,
+    })
     .sort({ order: 1, label: 1 })
     .lean();
 
   return dimensions.map((dimension) => ({
     name: dimension.name,
     label: dimension.label,
+    parentName: dimension.parentName || null,
     values: values
       .filter((value) => value.type === dimension.name)
       .map((value) => ({
@@ -149,6 +228,8 @@ async function buildEditorDimensions({ companyId, currentIds = [] }) {
         // The identifier the template reads (ADR-0015), published by the editor.
         canonicalType: value.canonicalType,
         isActive: value.isActive,
+        // The availability: offered under these parent values, or all of them.
+        parentIds: value._parents || [],
       })),
   }));
 }

@@ -149,7 +149,7 @@ describe('taxonomy screen: company dimensions', () => {
 });
 
 // Turned on by #1358 (nested dimensions and availability)
-describe.skip('taxonomy screen: nesting', () => {
+describe('taxonomy screen: nesting', () => {
   let parentCandidates;
 
   beforeAll(() => {

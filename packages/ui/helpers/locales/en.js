@@ -1151,6 +1151,7 @@ export default {
       inactive: 'Deactivated',
       inactiveHint:
         'It is no longer offered on emails and takes no new value. Emails already carrying one of its values keep it.',
+      under: 'Under {parent}',
       deactivate: 'Deactivate',
       reactivate: 'Reactivate',
       declare: 'Add a dimension',
@@ -1185,6 +1186,10 @@ export default {
           'Set on creation: templates read this name, and changing it would break them.',
         descriptionHint:
           'What this dimension decides about an email, for you. This text is context for the AI.',
+        parent: 'Under the dimension',
+        parentNone: 'None: first level',
+        parentHint:
+          'Its values will be offered by the value chosen for the parent dimension: the Language by the Market.',
       },
     },
     values: {
@@ -1213,6 +1218,9 @@ export default {
         identifier: 'Identifier',
         identifierHint:
           'What templates compare against. Proposed from the label, unique within the dimension.',
+        availability: 'Offered under',
+        availabilityHint:
+          'The values of “{parent}” this one is offered under. Empty: offered under all of them.',
         isActiveHint:
           'A deactivated value disappears from the select lists, but the emails using it keep it.',
       },
@@ -1286,6 +1294,12 @@ export default {
         'This identifier is already taken in this dimension.',
       dimensionNameAlreadyExists:
         'A dimension already has this name, perhaps a deactivated one.',
+      isParent:
+        '{count} value is offered under this one: take it out of its availability, or deactivate this one. | {count} values are offered under this one: take it out of their availability, or deactivate this one.',
+      dimensionHasChildren:
+        'Another dimension sits under this one: move it first.',
+      dimensionHasAvailability:
+        '{count} value has an availability under the current parent: clear it before moving the dimension. | {count} values have an availability under the current parent: clear them before moving the dimension.',
       dimensionHasValues:
         'This dimension has {count} value: deactivate it instead of deleting it. | This dimension has {count} values: deactivate it instead of deleting it.',
       inUse:

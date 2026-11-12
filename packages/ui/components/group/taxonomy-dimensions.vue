@@ -204,6 +204,7 @@ export default {
       v-for="dimension in companyDimensions"
       :key="dimension.id"
       :dimension="dimension"
+      :parent="byName[dimension.parentName] || null"
       @edit="openEditForm"
       @toggle-active="toggleActive"
       @delete="confirmDelete"
@@ -242,6 +243,7 @@ export default {
     <bs-taxonomy-dimension-form-dialog
       ref="formDialog"
       :loading="saving"
+      :dimensions="dimensions"
       @save="saveDimension"
     />
   </div>
