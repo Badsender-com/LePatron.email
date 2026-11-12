@@ -105,3 +105,49 @@ describe('the copy of a mailing — the saved block of a block', () => {
     expect(informationOf(stored.data)).toEqual([undefined, KEPT_INFORMATION]);
   });
 });
+
+// The company dimension values of a translated copy (ADR-0023): those the job
+// computed for the target language, and no empty list when none is left
+// (mailing.schema.js).
+describe('the translated copy of a mailing — its company dimension values', () => {
+  const translate = async (taxonomyItemIds) => {
+    const doc = {
+      _id: MAILING,
+      name: 'Newsletter',
+      _workspace: 'w',
+      _taxonomyItems: ['belgium', 'french'],
+    };
+    Mailings.findOne.mockResolvedValue({
+      ...doc,
+      toObject: () => ({ ...doc }),
+    });
+
+    await mailingService.duplicateWithTranslatedData({
+      mailingId: MAILING,
+      user,
+      newName: 'Newsletter - EN',
+      taxonomyItemIds,
+    });
+
+    const [[stored]] = Mailings.create.mock.calls;
+    return stored;
+  };
+
+  it('carries the values computed for the target language', async () => {
+    const stored = await translate(['belgium', 'english']);
+
+    expect(stored._taxonomyItems).toEqual(['belgium', 'english']);
+  });
+
+  it('stores no empty list when no value is left', async () => {
+    const stored = await translate([]);
+
+    expect(stored._taxonomyItems).toBeUndefined();
+  });
+
+  it("keeps the source's values when the job computed none", async () => {
+    const stored = await translate(undefined);
+
+    expect(stored._taxonomyItems).toEqual(['belgium', 'french']);
+  });
+});
