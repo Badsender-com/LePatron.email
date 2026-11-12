@@ -52,7 +52,7 @@ const addValue = (type, payload, user = adminA) =>
   taxonomyService.createTaxonomyItem({ user, type, payload });
 
 // Turned on by #1358 (nested dimensions and availability)
-describe.skip('availability', () => {
+describe('availability', () => {
   let canada;
   let belgium;
 

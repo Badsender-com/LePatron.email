@@ -19,6 +19,11 @@ const {
   validateDimensionPayload,
   limitReached,
 } = require('./taxonomy.validation.js');
+const {
+  assertParentName,
+  assertNoChildDimension,
+  assertNoAvailabilityToMove,
+} = require('./availability.js');
 const logger = require('../../utils/logger.js');
 
 module.exports = {
@@ -82,10 +87,13 @@ async function createDimension({ user, groupId, payload = {} }) {
   if (dimensionCount >= TaxonomyLimits.DIMENSIONS_PER_COMPANY) {
     throw limitReached(TaxonomyLimits.DIMENSIONS_PER_COMPANY);
   }
+  if (fields.parentName !== undefined) {
+    await assertParentName({ companyId, name, parentName: fields.parentName });
+  }
 
   try {
     return await TaxonomyDimensions.create({
-      ...fields,
+      ...withParentName(fields),
       name,
       _company: companyId,
       standard: false,
@@ -115,8 +123,21 @@ async function updateDimension({ user, dimensionId, payload = {} }) {
   if (dimension.standard && fields.isActive === false) {
     throw new Conflict(ERROR_CODES.STANDARD_DIMENSION_LOCKED);
   }
+  if (fields.parentName !== undefined) {
+    // The standard dimensions open the list of selects; neither hangs under
+    // anything.
+    if (dimension.standard && fields.parentName !== null) {
+      throw new BadRequest(ERROR_CODES.INVALID_DIMENSION);
+    }
+    await assertParentName({
+      companyId: dimension._company,
+      name: dimension.name,
+      parentName: fields.parentName,
+    });
+    await assertNoAvailabilityToMove(dimension, fields.parentName);
+  }
 
-  Object.assign(dimension, fields);
+  Object.assign(dimension, withParentName(fields));
   await dimension.save();
   return dimension;
 }
@@ -144,6 +165,7 @@ async function deleteDimension({ user, dimensionId }) {
     error.details = { valueCount };
     throw error;
   }
+  await assertNoChildDimension(dimension);
 
   await TaxonomyDimensions.deleteOne({
     _id: dimension._id,
@@ -183,6 +205,11 @@ async function assertValueType({ companyId, type, toWrite = false }) {
 
   return type;
 }
+
+// A dimension taken back to the first level loses the field rather than storing
+// null: absent reads the same everywhere.
+const withParentName = (fields) =>
+  fields.parentName === null ? { ...fields, parentName: undefined } : fields;
 
 async function findScopedDimension({ user, dimensionId }) {
   if (!dimensionId || !isObjectId(dimensionId)) {

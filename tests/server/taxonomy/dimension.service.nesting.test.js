@@ -33,7 +33,7 @@ const DIMENSION_SERVICE =
 beforeEach(() => resetTaxonomyModels(models));
 
 // Turned on by #1358 (nested dimensions and availability)
-describe.skip('nesting a dimension', () => {
+describe('nesting a dimension', () => {
   let dimensionService;
   let market;
   let language;

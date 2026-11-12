@@ -3,7 +3,10 @@
 const { BadRequest, Conflict } = require('http-errors');
 
 const ERROR_CODES = require('../../constant/error-codes.js');
-const { TaxonomyLimits } = require('../../constant/taxonomy-type.js');
+const {
+  TaxonomyLimits,
+  DIMENSION_NAME_PATTERN,
+} = require('../../constant/taxonomy-type.js');
 
 // `ObjectId.isValid` returns true for ANY 12-character string, reinterpreting its
 // bytes as an id: 'companyAdmin' becomes a perfectly valid ObjectId pointing at a
@@ -20,6 +23,8 @@ const EDITABLE_FIELDS = Object.freeze([
   'canonicalType',
   'isActive',
   'order',
+  // The availability: the parent values a value is offered under.
+  'parentIds',
 ]);
 
 // What a request may set on a dimension. The name is read apart, on creation
@@ -30,6 +35,7 @@ const DIMENSION_EDITABLE_FIELDS = Object.freeze([
   'isActive',
   'order',
   'precedence',
+  'parentName',
 ]);
 
 module.exports = {
@@ -91,6 +97,9 @@ function validatePayload(payload, { partial }) {
     fields.isActive = readIsActive(payload.isActive);
   }
   if (payload.order !== undefined) fields.order = readOrder(payload.order);
+  if (payload.parentIds !== undefined) {
+    fields.parentIds = readParentIds(payload.parentIds);
+  }
 
   // A PATCH carrying nothing usable would answer 200 without changing anything,
   // which reads as a successful save.
@@ -149,6 +158,32 @@ function readCanonicalType(value) {
   return canonicalType;
 }
 
+/**
+ * @returns {string[]} the ids, checked against the parent dimension by the
+ *   service; `null` or `[]` clears the availability: offered under every value.
+ */
+function readParentIds(value) {
+  if (value === null) return [];
+  if (!Array.isArray(value)) throw invalid();
+  if (value.length > TaxonomyLimits.ITEMS_PER_COMPANY) throw invalid();
+  if (value.some((id) => typeof id !== 'string' || !isObjectId(id))) {
+    throw invalid();
+  }
+  if (new Set(value).size !== value.length) throw invalid();
+  return value;
+}
+
+/**
+ * @returns {string|null} null takes the dimension back to the first level
+ */
+function readParentName(value) {
+  if (value === null || value === '') return null;
+  if (typeof value !== 'string' || !DIMENSION_NAME_PATTERN.test(value)) {
+    throw invalid();
+  }
+  return value;
+}
+
 function readIsActive(value) {
   if (typeof value !== 'boolean') throw invalid();
   return value;
@@ -200,6 +235,9 @@ function validateDimensionPayload(payload, { partial }) {
   }
   if (payload.precedence !== undefined) {
     fields.precedence = readOrRefuse(readOrder, payload.precedence);
+  }
+  if (payload.parentName !== undefined) {
+    fields.parentName = readOrRefuse(readParentName, payload.parentName);
   }
 
   if (partial && Object.keys(fields).length === 0) throw invalidDimension();

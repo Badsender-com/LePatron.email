@@ -140,3 +140,35 @@ export function buildNewDimensionPayload(form) {
     ...buildDimensionPayload(form),
   };
 }
+
+/**
+ * The dimensions `dimension` may hang under (ADR-0014): the active ones, the
+ * email type included, never the trigger (its values are not stored), the
+ * dimension itself or one of its descendants, which would make a cycle.
+ *
+ * @param {Object[]} dimensions every dimension of the company
+ * @param {Object} dimension the one being placed; `{}` for a new one
+ * @returns {string[]} their names, in screen order
+ */
+export function parentCandidates(dimensions = [], dimension = {}) {
+  const byName = new Map(dimensions.map((d) => [d.name, d]));
+  const descendsFrom = (candidate) => {
+    const seen = new Set();
+    for (let at = candidate; at && !seen.has(at.name); ) {
+      if (at.name === dimension.name) return true;
+      seen.add(at.name);
+      at = byName.get(at.parentName);
+    }
+    return false;
+  };
+
+  return sortDimensions(dimensions)
+    .filter(
+      (candidate) =>
+        candidate.isActive &&
+        candidate.name !== STANDARD_DIMENSIONS.TRIGGER &&
+        candidate.name !== dimension.name &&
+        !descendsFrom(candidate)
+    )
+    .map((candidate) => candidate.name);
+}

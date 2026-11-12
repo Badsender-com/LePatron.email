@@ -139,7 +139,7 @@ describe('the values an email carries, between the selects and the save', () => 
 });
 
 // Turned on by #1358 (nested dimensions and availability)
-describe.skip('nested selects', () => {
+describe('nested selects', () => {
   let dimensionSelects;
   let reconcileSelections;
 

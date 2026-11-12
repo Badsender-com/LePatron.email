@@ -4,11 +4,13 @@ import { required, maxLength } from 'vuelidate/lib/validators';
 import BsModalForm from '~/components/modal/bs-modal-form.vue';
 import BsTextField from '~/components/form/bs-text-field.vue';
 import BsTextarea from '~/components/form/bs-textarea.vue';
+import BsSelect from '~/components/form/bs-select.vue';
 import { TAXONOMY_LIMITS } from '~/helpers/taxonomy.js';
 import {
   buildDimensionPayload,
   buildNewDimensionPayload,
   isValidDimensionName,
+  parentCandidates,
 } from '~/helpers/taxonomy-builder.js';
 
 export default {
@@ -17,15 +19,23 @@ export default {
     BsModalForm,
     BsTextField,
     BsTextarea,
+    BsSelect,
   },
   mixins: [validationMixin],
   props: {
     loading: { type: Boolean, default: false },
+    // Every dimension of the company, for the parent a dimension hangs under.
+    dimensions: { type: Array, default: () => [] },
   },
   data() {
     return {
-      form: { name: '', label: '', description: '' },
+      form: { name: '', label: '', description: '', parentName: null },
       editingId: null,
+      // The standard dimensions open the list: neither hangs under anything.
+      isStandard: false,
+      // Sent only when changed: a parent deactivated since must not block an
+      // edit of the wording.
+      initialParentName: null,
       // A name another dimension already holds: the server alone knows.
       serverNameError: null,
     };
@@ -44,6 +54,17 @@ export default {
   computed: {
     isEditing() {
       return this.editingId !== null;
+    },
+    parentItems() {
+      const labels = Object.fromEntries(
+        this.dimensions.map((dimension) => [dimension.name, dimension.label])
+      );
+      return [
+        { value: null, text: this.$t('taxonomy.dimensions.form.parentNone') },
+        ...parentCandidates(this.dimensions, {
+          name: this.form.name,
+        }).map((name) => ({ value: name, text: labels[name] })),
+      ];
     },
     nameErrors() {
       const errors = [];
@@ -87,10 +108,13 @@ export default {
     open(dimension = null) {
       this.editingId = dimension ? dimension.id : null;
       this.serverNameError = null;
+      this.isStandard = Boolean(dimension && dimension.standard);
+      this.initialParentName = (dimension && dimension.parentName) || null;
       this.form = {
         name: dimension ? dimension.name : '',
         label: dimension ? dimension.label || '' : '',
         description: dimension ? dimension.description || '' : '',
+        parentName: this.initialParentName,
       };
       this.$v.$reset();
       this.$refs.modal.open();
@@ -118,12 +142,13 @@ export default {
       this.$v.$touch();
       if (this.$v.$invalid) return;
 
-      this.$emit('save', {
-        id: this.editingId,
-        payload: this.isEditing
-          ? buildDimensionPayload(this.form)
-          : buildNewDimensionPayload(this.form),
-      });
+      const payload = this.isEditing
+        ? buildDimensionPayload(this.form)
+        : buildNewDimensionPayload(this.form);
+      if (!this.isStandard && this.form.parentName !== this.initialParentName) {
+        payload.parentName = this.form.parentName || null;
+      }
+      this.$emit('save', { id: this.editingId, payload });
     },
   },
 };
@@ -186,6 +211,15 @@ export default {
       :disabled="loading"
       rows="4"
       @blur="$v.form.description.$touch()"
+    />
+
+    <bs-select
+      v-if="!isStandard"
+      v-model="form.parentName"
+      :label="$t('taxonomy.dimensions.form.parent')"
+      :items="parentItems"
+      :hint="$t('taxonomy.dimensions.form.parentHint')"
+      :disabled="loading"
     />
   </bs-modal-form>
 </template>

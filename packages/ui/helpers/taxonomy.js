@@ -113,6 +113,34 @@ export function taxonomyErrorFor(error) {
       };
     }
 
+    case ERROR_CODES.TAXONOMY_ITEM_IS_PARENT: {
+      const count = data.details?.childCount || 0;
+      return {
+        key: 'taxonomy.errors.isParent',
+        params: { count },
+        count,
+        field: null,
+      };
+    }
+
+    case ERROR_CODES.DIMENSION_HAS_CHILDREN:
+      return {
+        key: 'taxonomy.errors.dimensionHasChildren',
+        params: {},
+        count: null,
+        field: null,
+      };
+
+    case ERROR_CODES.DIMENSION_HAS_AVAILABILITY: {
+      const count = data.details?.valueCount || 0;
+      return {
+        key: 'taxonomy.errors.dimensionHasAvailability',
+        params: { count },
+        count,
+        field: null,
+      };
+    }
+
     // The same message for the dimensions of a company and the values of a
     // dimension: the screen the admin is on says which one is full.
     case ERROR_CODES.TAXONOMY_LIMIT_REACHED:

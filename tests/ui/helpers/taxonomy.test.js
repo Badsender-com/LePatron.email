@@ -91,6 +91,30 @@ describe('taxonomyErrorFor', () => {
     expect(result.params).toEqual({ count: 3 });
   });
 
+  it('carries how many values are offered under a value that cannot be deleted', () => {
+    const result = taxonomyErrorFor(
+      axiosError('TAXONOMY_ITEM_IS_PARENT', { childCount: 2 })
+    );
+
+    expect(result.key).toBe('taxonomy.errors.isParent');
+    expect(result.count).toBe(2);
+  });
+
+  it('carries how many values hold an availability when a dimension cannot move', () => {
+    const result = taxonomyErrorFor(
+      axiosError('DIMENSION_HAS_AVAILABILITY', { valueCount: 4 })
+    );
+
+    expect(result.key).toBe('taxonomy.errors.dimensionHasAvailability');
+    expect(result.params).toEqual({ count: 4 });
+  });
+
+  it('says a dimension another one hangs under cannot be deleted', () => {
+    expect(taxonomyErrorFor(axiosError('DIMENSION_HAS_CHILDREN')).key).toBe(
+      'taxonomy.errors.dimensionHasChildren'
+    );
+  });
+
   // The taxonomy is no longer gated by `emailMetadata.enabled`, so this code
   // cannot come back from a taxonomy call — it falls through to the generic
   // message like any other unexpected one.
