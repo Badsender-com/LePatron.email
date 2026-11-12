@@ -52,6 +52,7 @@ async function listDimensions(req, res) {
  *   that differs from an existing one only by its case; without it, such a
  *   name is refused with a 409 `DIMENSION_NAME_DIFFERS_ONLY_BY_CASE` carrying
  *   `details.existingName`
+ * @apiParam (Body) {String} [parentName] the dimension it hangs under
  *
  * @apiUse taxonomyDimension
  */
@@ -119,5 +120,7 @@ function expose(dimension) {
     precedence: dimension.precedence,
     // The tie-break of the order the screen and the editor share.
     createdAt: dimension.createdAt,
+    // The dimension this one hangs under, null at the first level.
+    parentName: dimension.parentName || null,
   };
 }

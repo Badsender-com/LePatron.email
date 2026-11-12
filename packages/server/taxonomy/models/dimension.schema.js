@@ -26,6 +26,8 @@ const trimOptionalString = (value) =>
  * @apiSuccess {Number} order display position, then createdAt
  * @apiSuccess {Number} precedence who wins a design token two dimensions carry
  * @apiSuccess {Date} createdAt breaks a tie of order: the first declared first
+ * @apiSuccess {String} parentName the dimension this one hangs under, null at
+ *   the first level
  */
 
 /**
