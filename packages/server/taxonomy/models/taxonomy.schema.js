@@ -90,6 +90,12 @@ const TaxonomyItemSchema = Schema(
     // The availability: the values of the parent dimension this value is
     // offered under. Empty: offered under all of them.
     _parents: [{ type: ObjectId, ref: TaxonomyItemModel }],
+    // The normalised code of a value whose dimension has a role (ADR-0023):
+    // `fr`, `BE`, `fr-BE`. Beside the identifier, which stays the company's.
+    code: {
+      type: String,
+      maxlength: 5,
+    },
     // Design tokens a template reads under their name (`_root_.mainColorVar`):
     // a brand's colour as a role, not as `#ffd845`. The service checks the
     // names and the count.

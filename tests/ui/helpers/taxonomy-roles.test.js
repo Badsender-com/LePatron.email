@@ -12,7 +12,7 @@ const LANGUAGE = { name: 'language', isActive: true, role: 'language' };
 const BRAND = { name: 'brand', isActive: true };
 
 // Turned on by #1503 (a dimension carries a role, its values a normalised code)
-describe.skip('taxonomy screen: roles and codes', () => {
+describe('taxonomy screen: roles and codes', () => {
   let roleOptions;
   let codeOptions;
   let valuesWithoutCode;

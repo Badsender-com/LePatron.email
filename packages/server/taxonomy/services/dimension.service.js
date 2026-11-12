@@ -24,7 +24,12 @@ const {
   assertNoChildDimension,
   assertNoAvailabilityToMove,
 } = require('./availability.js');
+const { assertRoleIsFree } = require('./dimension-role.js');
 const logger = require('../../utils/logger.js');
+
+// Published by the application to every template (ADR-0023): a dimension of
+// that name would shadow it.
+const RESERVED_NAMES = Object.freeze(['locale']);
 
 module.exports = {
   listDimensions,
@@ -68,7 +73,11 @@ async function createDimension({ user, groupId, payload = {} }) {
 
   const companyId = resolveCompanyId(user, groupId);
   const { name, ...rest } = payload;
-  if (typeof name !== 'string' || !DIMENSION_NAME_PATTERN.test(name)) {
+  if (
+    typeof name !== 'string' ||
+    !DIMENSION_NAME_PATTERN.test(name) ||
+    RESERVED_NAMES.includes(name)
+  ) {
     throw new BadRequest(ERROR_CODES.INVALID_DIMENSION);
   }
   const fields = validateDimensionPayload(rest, { partial: false });
@@ -90,6 +99,7 @@ async function createDimension({ user, groupId, payload = {} }) {
   if (fields.parentName !== undefined) {
     await assertParentName({ companyId, name, parentName: fields.parentName });
   }
+  await assertRoleIsFree({ companyId, role: fields.role });
 
   try {
     return await TaxonomyDimensions.create({
@@ -135,6 +145,18 @@ async function updateDimension({ user, dimensionId, payload = {} }) {
       parentName: fields.parentName,
     });
     await assertNoAvailabilityToMove(dimension, fields.parentName);
+  }
+
+  if (fields.role !== undefined) {
+    // The doctrine's dimensions mean what the doctrine says, nothing more.
+    if (dimension.standard && fields.role !== null) {
+      throw new BadRequest(ERROR_CODES.INVALID_DIMENSION);
+    }
+    await assertRoleIsFree({
+      companyId: dimension._company,
+      role: fields.role,
+      exceptName: dimension.name,
+    });
   }
 
   Object.assign(dimension, withParentName(fields));
@@ -208,8 +230,13 @@ async function assertValueType({ companyId, type, toWrite = false }) {
 
 // A dimension taken back to the first level loses the field rather than storing
 // null: absent reads the same everywhere.
-const withParentName = (fields) =>
-  fields.parentName === null ? { ...fields, parentName: undefined } : fields;
+const withParentName = (fields) => {
+  const cleared = { ...fields };
+  ['parentName', 'role'].forEach((key) => {
+    if (cleared[key] === null) cleared[key] = undefined;
+  });
+  return cleared;
+};
 
 async function findScopedDimension({ user, dimensionId }) {
   if (!dimensionId || !isObjectId(dimensionId)) {
