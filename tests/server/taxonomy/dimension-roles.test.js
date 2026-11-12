@@ -39,7 +39,7 @@ const dimensionNamed = async (name) =>
 beforeEach(() => resetTaxonomyModels(models));
 
 // Turned on by #1503 (a dimension carries a role, its values a normalised code)
-describe.skip('dimension roles', () => {
+describe('dimension roles', () => {
   it('gives a dimension the language role', async () => {
     const language = await declare({
       name: 'language',
@@ -134,7 +134,7 @@ describe.skip('dimension roles', () => {
 });
 
 // Turned on by #1503 (a dimension carries a role, its values a normalised code)
-describe.skip('normalised codes', () => {
+describe('normalised codes', () => {
   beforeEach(async () => {
     await declare({ name: 'language', label: 'Langue', role: 'language' });
     await declare({ name: 'market', label: 'Marché', role: 'country' });

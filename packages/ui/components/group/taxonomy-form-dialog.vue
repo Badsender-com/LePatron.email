@@ -8,10 +8,11 @@ import BsTextarea from '~/components/form/bs-textarea.vue';
 import BsTaxonomyFormOrderStatus from '~/components/group/taxonomy-form-order-status.vue';
 import BsTaxonomyAvailabilityField from '~/components/group/taxonomy-availability-field.vue';
 import BsTaxonomyTokensField from '~/components/group/taxonomy-tokens-field.vue';
+import BsTaxonomyCodeField from '~/components/group/taxonomy-code-field.vue';
 import {
-  CANONICAL_TYPES,
   TAXONOMY_LIMITS,
   buildTaxonomyPayload,
+  canonicalTypeItems,
 } from '~/helpers/taxonomy.js';
 import { proposeIdentifier } from '~/helpers/taxonomy-builder.js';
 
@@ -35,6 +36,7 @@ export default {
     BsTaxonomyFormOrderStatus,
     BsTaxonomyAvailabilityField,
     BsTaxonomyTokensField,
+    BsTaxonomyCodeField,
   },
   mixins: [validationMixin],
   props: {
@@ -45,6 +47,8 @@ export default {
     // The values of the parent dimension, null when the dimension has none.
     parentValues: { type: Array, default: null },
     parentLabel: { type: String, default: '' },
+    // The dimension's role: its values then carry a normalised code.
+    role: { type: String, default: null },
   },
   data() {
     return {
@@ -83,22 +87,7 @@ export default {
       return this.isEditing ? this.$t('global.save') : this.$t('global.create');
     },
     canonicalTypeItems() {
-      const items = CANONICAL_TYPES.map((value) => ({
-        value,
-        text: this.$t(`taxonomy.canonicalTypes.${value}`),
-      }));
-
-      // The server takes any string here on purpose, so an item may carry a value
-      // this list does not offer — an import, or a newer skills vocabulary. Left
-      // out, the select finds nothing to match and falls back to its placeholder
-      // ("None"), which reads as "no mapping" while the value is in fact still
-      // there and still sent on save. Shown raw, the way the table shows it.
-      const current = this.form.canonicalType;
-      if (current && !CANONICAL_TYPES.includes(current)) {
-        items.push({ value: current, text: current });
-      }
-
-      return items;
+      return canonicalTypeItems(this.form.canonicalType, (key) => this.$t(key));
     },
     labelErrors() {
       const errors = [];
@@ -154,8 +143,15 @@ export default {
             order: typeof item.order === 'number' ? item.order : 0,
             parentIds: (item._parents || []).map(String),
             tokens: { ...(item.tokens || {}) },
+            code: item.code || null,
           }
-        : { ...emptyItem(), order: suggestedOrder, parentIds: [], tokens: {} };
+        : {
+            ...emptyItem(),
+            order: suggestedOrder,
+            parentIds: [],
+            tokens: {},
+            code: null,
+          };
       this.$v.$reset();
       this.$refs.modal.open();
     },
@@ -201,6 +197,7 @@ export default {
       const payload = buildTaxonomyPayload(this.form);
       if (this.parentValues) payload.parentIds = this.form.parentIds;
       payload.tokens = this.form.tokens;
+      if (this.role) payload.code = this.form.code;
       this.$emit('save', { id: this.editingId, payload });
     },
   },
@@ -267,6 +264,13 @@ export default {
       :maxlength="identifierMaxLength"
       persistent-hint
       @input="onIdentifierInput"
+    />
+
+    <bs-taxonomy-code-field
+      v-if="role"
+      v-model="form.code"
+      :role="role"
+      :disabled="loading"
     />
 
     <bs-taxonomy-availability-field

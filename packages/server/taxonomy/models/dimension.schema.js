@@ -25,6 +25,7 @@ const trimOptionalString = (value) =>
  * @apiSuccess {Boolean} isActive
  * @apiSuccess {Number} order display position
  * @apiSuccess {Number} precedence who wins a design token two dimensions carry
+ * @apiSuccess {String} role `language`, `country` or `locale`, null without
  * @apiSuccess {String} parentName the dimension this one hangs under, null at
  *   the first level
  */
@@ -87,6 +88,13 @@ const TaxonomyDimensionSchema = Schema(
     parentName: {
       type: String,
       match: [DIMENSION_NAME_PATTERN, 'parentName must be a dimension name'],
+    },
+    // What the dimension stands for, so the application can read it: the
+    // language, the country or the locale of an email (ADR-0023). Unique per
+    // company, checked by the service.
+    role: {
+      type: String,
+      enum: ['language', 'country', 'locale'],
     },
     // Highest wins a token two dimensions carry. Not `order`: a company may list
     // a dimension first and want it resolved last.

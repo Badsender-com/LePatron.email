@@ -279,6 +279,8 @@ module.exports = {
   DIMENSION_HAS_CHILDREN: 'DIMENSION_HAS_CHILDREN',
   // Moving a dimension whose values carry an availability under its parent.
   DIMENSION_HAS_AVAILABILITY: 'DIMENSION_HAS_AVAILABILITY',
+  // Another dimension of the company already stands for this role (ADR-0023).
+  DIMENSION_ROLE_TAKEN: 'DIMENSION_ROLE_TAKEN',
 
   // EMAIL METADATA
   INVALID_EMAIL_METADATA: 'INVALID_EMAIL_METADATA',

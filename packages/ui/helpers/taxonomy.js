@@ -48,6 +48,30 @@ export function canonicalTypeLabelKey(canonicalType) {
 }
 
 /**
+ * The doctrine's types offered to an email type value, named by `translate`.
+ *
+ * The server takes any string here on purpose, so a value may carry one this
+ * list does not offer: an import, or a newer skills vocabulary. Left out, the
+ * select finds nothing to match and falls back to its placeholder ("None"),
+ * which reads as "no mapping" while the value is still there and still sent on
+ * save. Shown raw, the way the table shows it.
+ *
+ * @param {string|null} current the value's canonical type
+ * @param {Function} translate `$t`
+ * @returns {Array<{value: string, text: string}>}
+ */
+export function canonicalTypeItems(current, translate) {
+  const items = CANONICAL_TYPES.map((value) => ({
+    value,
+    text: translate(`taxonomy.canonicalTypes.${value}`),
+  }));
+  if (current && !CANONICAL_TYPES.includes(current)) {
+    items.push({ value: current, text: current });
+  }
+  return items;
+}
+
+/**
  * Maps a failed request onto what the user should read.
  *
  * A raw server message is never shown: it is an error code, or an English
@@ -122,6 +146,14 @@ export function taxonomyErrorFor(error) {
         field: null,
       };
     }
+
+    case ERROR_CODES.DIMENSION_ROLE_TAKEN:
+      return {
+        key: 'taxonomy.errors.roleTaken',
+        params: { holder: data.details?.holder || '' },
+        count: null,
+        field: null,
+      };
 
     case ERROR_CODES.DIMENSION_HAS_CHILDREN:
       return {
