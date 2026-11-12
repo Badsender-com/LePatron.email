@@ -1138,6 +1138,8 @@ export default {
         'Une dimension porte déjà ce nom, peut-être désactivée.',
       isParent:
         '{count} valeur est proposée sous celle-ci : retirez-la de sa disponibilité ou désactivez celle-ci. | {count} valeurs sont proposées sous celle-ci : retirez-la de leur disponibilité ou désactivez celle-ci.',
+      dimensionHasCodes:
+        'Le code d\'une valeur changerait de sens sous ce rôle : videz-le d\'abord. | Le code de {count} valeurs changerait de sens sous ce rôle : videz-les d\'abord.',
       roleTaken: 'La dimension « {holder} » a déjà ce rôle.',
       dimensionHasChildren:
         'Une autre dimension est placée sous celle-ci : déplacez-la d\'abord.',

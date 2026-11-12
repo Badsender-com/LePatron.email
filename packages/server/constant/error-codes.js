@@ -281,6 +281,8 @@ module.exports = {
   DIMENSION_HAS_AVAILABILITY: 'DIMENSION_HAS_AVAILABILITY',
   // Another dimension of the company already stands for this role (ADR-0023).
   DIMENSION_ROLE_TAKEN: 'DIMENSION_ROLE_TAKEN',
+  // A new role under which codes its values carry would mean something else.
+  DIMENSION_HAS_CODES: 'DIMENSION_HAS_CODES',
 
   // EMAIL METADATA
   INVALID_EMAIL_METADATA: 'INVALID_EMAIL_METADATA',

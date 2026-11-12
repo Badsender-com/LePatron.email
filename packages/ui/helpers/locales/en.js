@@ -1335,6 +1335,8 @@ export default {
         'A dimension already has this name, perhaps a deactivated one.',
       isParent:
         '{count} value is offered under this one: take it out of its availability, or deactivate this one. | {count} values are offered under this one: take it out of their availability, or deactivate this one.',
+      dimensionHasCodes:
+        'The code of one value would change meaning under this role: clear it first. | The codes of {count} values would change meaning under this role: clear them first.',
       roleTaken: 'The dimension “{holder}” already has this role.',
       dimensionHasChildren:
         'Another dimension sits under this one: move it first.',

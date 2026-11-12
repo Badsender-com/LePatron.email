@@ -24,7 +24,10 @@ const {
   assertNoChildDimension,
   assertNoAvailabilityToMove,
 } = require('./availability.js');
-const { assertRoleIsFree } = require('./dimension-role.js');
+const {
+  assertRoleIsFree,
+  assertCodesKeepTheirMeaning,
+} = require('./dimension-role.js');
 const logger = require('../../utils/logger.js');
 
 // Published by the application to every template (ADR-0023): a dimension of
@@ -157,6 +160,7 @@ async function updateDimension({ user, dimensionId, payload = {} }) {
       role: fields.role,
       exceptName: dimension.name,
     });
+    await assertCodesKeepTheirMeaning(dimension, fields.role);
   }
 
   Object.assign(dimension, withParentName(fields));

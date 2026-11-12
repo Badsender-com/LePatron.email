@@ -106,3 +106,23 @@ describe('publishing the locale to the template', () => {
     expect(values).toMatchObject({ market: 'be', language: 'fr' });
   });
 });
+
+describe('a company dimension named locale, declared before the name was reserved', () => {
+  const {
+    governanceValues,
+  } = require('../../packages/editor/src/js/utils/governance-values.js');
+
+  it('keeps publishing the company dimension: the application does not take its place', () => {
+    const legacy = {
+      name: 'locale',
+      values: [{ id: 'x', canonicalType: 'bel_fr' }],
+    };
+
+    expect(
+      governanceValues({
+        dimensions: [MARKET, LANGUAGE, legacy],
+        selections: { market: 'be', language: 'fr', locale: 'x' },
+      }).values.locale
+    ).toBe('bel_fr');
+  });
+});
