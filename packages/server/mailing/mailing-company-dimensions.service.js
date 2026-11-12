@@ -109,7 +109,8 @@ async function assertChosenAreOffered(chosen, companyId) {
 /**
  * The company dimensions the editor offers a select for: the active ones, in
  * their declared order, each with its active values and the deactivated values
- * the email carries, so the select still shows what the email has.
+ * the email carries, so the select still shows what the email has. Each value
+ * carries its identifier, which the editor publishes to the template.
  *
  * @param {Object} options
  * @param {ObjectId|string} options.companyId the mailing's company
@@ -133,7 +134,7 @@ async function buildEditorDimensions({ companyId, currentIds = [] }) {
     type: { $in: dimensions.map((dimension) => dimension.name) },
     $or: [{ isActive: true }, { _id: { $in: carried } }],
   })
-    .select({ type: 1, label: 1, isActive: 1, order: 1 })
+    .select({ type: 1, label: 1, canonicalType: 1, isActive: 1, order: 1 })
     .sort({ order: 1, label: 1 })
     .lean();
 
@@ -145,6 +146,8 @@ async function buildEditorDimensions({ companyId, currentIds = [] }) {
       .map((value) => ({
         id: value._id,
         label: value.label,
+        // The identifier the template reads (ADR-0015), published by the editor.
+        canonicalType: value.canonicalType,
         isActive: value.isActive,
       })),
   }));

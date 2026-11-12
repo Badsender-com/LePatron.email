@@ -16,6 +16,8 @@ const {
 const {
   createEmailMetadataStore,
 } = require('../utils/email-metadata-store');
+const { governanceValues } = require('../utils/governance-values');
+const { publishToTemplate } = require('../utils/publish-to-template');
 const template = require('./components/email-metadata/email-metadata.template');
 
 // The mounted Vue instance, kept so `dispose` can tear it down when the editor
@@ -159,6 +161,18 @@ module.exports = {
             selections: this.selections,
           });
         },
+        // What the template reads of the email's settings (ADR-0015), recomputed
+        // as the user picks: the preview follows without a save.
+        templateValues() {
+          return governanceValues({
+            dimensions: [
+              { name: 'emailType', values: this.emailTypes },
+              ...this.dimensions,
+            ],
+            selections: { ...this.selections, emailType: this.emailTypeId },
+            trigger: this.trigger,
+          }).values;
+        },
         triggerHintId() {
           return this.triggerDescription ? 'email-metadata-trigger-hint' : null;
         },
@@ -182,6 +196,14 @@ module.exports = {
       },
 
       watch: {
+        // Immediate: the content must hold what the email carries from the
+        // moment it opens, not from the first change.
+        templateValues: {
+          handler(values) {
+            publishToTemplate(vm.content && vm.content(), values);
+          },
+          immediate: true,
+        },
         formState: {
           handler(state) {
             store.setCurrent(state);
