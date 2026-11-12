@@ -64,7 +64,7 @@ const email = (values = [], extra = {}) => ({
 beforeEach(() => resetTaxonomyModels(models));
 
 // Turned on by #1504 (an email knows its locale, and the AI context says it)
-describe.skip('email locale', () => {
+describe('email locale', () => {
   let resolveEmailLocale;
 
   beforeAll(() => {
@@ -206,7 +206,7 @@ describe.skip('email locale', () => {
 });
 
 // Turned on by #1504 (an email knows its locale, and the AI context says it)
-describe.skip('governance context: the language of an email', () => {
+describe('governance context: the language of an email', () => {
   let buildGovernanceContext;
 
   beforeAll(() => {
