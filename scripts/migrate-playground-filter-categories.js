@@ -22,6 +22,7 @@ const path = require('path');
 const mongoose = require('mongoose');
 
 require('dotenv').config();
+const { databaseHost } = require('./database-host');
 const config = require(path.resolve(
   __dirname,
   '..',
@@ -72,16 +73,6 @@ function planScenarioMigration(scenarios, categoryOf) {
     toUpdate.push({ scenarioId: sc.scenarioId, categories: [category] });
   }
   return { toUpdate, skipped };
-}
-
-// Host (and port) of a Mongo connection string, without user:password or query
-// parameters. Falls back to a placeholder rather than risk echoing the URI.
-function databaseHost(uri) {
-  try {
-    return new URL(uri).host || 'mongo';
-  } catch (e) {
-    return 'mongo';
-  }
 }
 
 async function main() {

@@ -43,6 +43,7 @@ const path = require('path');
 const mongoose = require('mongoose');
 
 require('dotenv').config();
+const { databaseHost } = require('./database-host');
 
 const config = require(path.resolve(
   __dirname,
@@ -115,7 +116,7 @@ function parseArgs(argv) {
 async function main() {
   const options = parseArgs(process.argv);
 
-  console.log(`${PREFIX} connecting to ${config.database}`);
+  console.log(`${PREFIX} connecting to ${databaseHost(config.database)}`);
   await mongoose.connect(config.database, {
     useNewUrlParser: true,
     useUnifiedTopology: true,

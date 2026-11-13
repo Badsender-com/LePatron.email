@@ -19,6 +19,7 @@ const path = require('path');
 const mongoose = require('mongoose');
 
 require('dotenv').config();
+const { databaseHost } = require('./database-host');
 const config = require(path.resolve(
   __dirname,
   '..',
@@ -54,7 +55,9 @@ function planSkillMigration(doc) {
 }
 
 async function main() {
-  console.log(`Connecting to ${config.database} (dry-run=${DRY})…`);
+  console.log(
+    `Connecting to ${databaseHost(config.database)} (dry-run=${DRY})…`
+  );
   await mongoose.connect(config.database, {
     useNewUrlParser: true,
     useUnifiedTopology: true,
