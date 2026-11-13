@@ -7,6 +7,15 @@
 // token for the MCP endpoint and a refresh token that rotates. The MCP endpoint
 // takes only the tokens issued for it.
 
+jest.doMock('../../../packages/server/utils/logger.js', () => ({
+  log: jest.fn(),
+  info: jest.fn(),
+  warn: jest.fn(),
+  error: jest.fn(),
+  debug: jest.fn(),
+}));
+
+const logger = require('../../../packages/server/utils/logger.js');
 const request = require('../../helpers/local-request');
 const oauth = require('../../helpers/mcp-oauth-harness');
 const f = require('../../helpers/mcp-fixtures');
@@ -212,13 +221,79 @@ describe('token and refresh', () => {
       expect(response.body.refresh_token).not.toBe(first.refresh_token);
     });
 
-    it('refuses a refresh token already used', async () => {
-      const first = (await exchange(await codeFor())).body;
-      await refresh(first.refresh_token);
+    // A client may send the refresh token it just traded once more: two of
+    // its requests at once, or a retry when the answer was lost. Within a
+    // minute of its first use, that is a client's, not a thief's.
+    describe('a refresh token already used', () => {
+      let now;
+      beforeEach(() => {
+        now = Date.now();
+        jest.spyOn(Date, 'now').mockImplementation(() => now);
+        logger.warn.mockClear();
+      });
+      afterEach(() => jest.restoreAllMocks());
+      const later = (seconds) => {
+        now += seconds * 1000;
+      };
 
-      const again = await refresh(first.refresh_token);
+      it('gives a new access token again, within a minute of its first use', async () => {
+        const first = (await exchange(await codeFor())).body;
+        await refresh(first.refresh_token);
+        later(10);
 
-      expect(again.body.error).toBe('invalid_grant');
+        const again = await refresh(first.refresh_token);
+
+        expect(again.status).toBe(200);
+        expect(again.body.access_token).toEqual(expect.any(String));
+        expect(again.body.refresh_token).not.toBe(first.refresh_token);
+      });
+
+      it('keeps the connection open to the refresh token it traded first', async () => {
+        const first = (await exchange(await codeFor())).body;
+        const traded = (await refresh(first.refresh_token)).body;
+        later(10);
+        await refresh(first.refresh_token);
+
+        const response = await refresh(traded.refresh_token);
+
+        expect(response.status).toBe(200);
+      });
+
+      it('refuses it past the minute, and ends the connection', async () => {
+        const first = (await exchange(await codeFor())).body;
+        const traded = (await refresh(first.refresh_token)).body;
+        later(61);
+
+        const again = await refresh(first.refresh_token);
+        const after = await refresh(traded.refresh_token);
+
+        expect(again.body.error).toBe('invalid_grant');
+        expect(after.body.error).toBe('invalid_grant');
+      });
+
+      it('counts the minute from its first use, not from a retry', async () => {
+        const first = (await exchange(await codeFor())).body;
+        await refresh(first.refresh_token);
+        later(50);
+        await refresh(first.refresh_token);
+        later(20);
+
+        const again = await refresh(first.refresh_token);
+
+        expect(again.body.error).toBe('invalid_grant');
+      });
+
+      it('logs why it refused it', async () => {
+        const first = (await exchange(await codeFor())).body;
+        await refresh(first.refresh_token);
+        later(61);
+
+        await refresh(first.refresh_token);
+
+        expect(logger.warn).toHaveBeenCalledWith(
+          expect.stringContaining('refresh token already used')
+        );
+      });
     });
 
     // A super admin bound to the client group stays there after a refresh:

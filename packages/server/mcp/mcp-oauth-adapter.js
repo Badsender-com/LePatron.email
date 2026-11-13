@@ -20,6 +20,22 @@ function payloadOf(record) {
   return record.consumed ? { ...payload, consumed: record.consumed } : payload;
 }
 
+// How long a refresh token just traded may be traded again (ADR 0012): two
+// requests of a client at once, or a retry when the answer was lost, send it
+// twice. Past it, a second use is taken for a stolen token, and the provider
+// ends the connection.
+const REFRESH_REUSE_SECONDS = 60;
+
+// Whether a refresh token was consumed within the minute: its second use is
+// then a client's, and the provider is told it was not consumed.
+function isWithinReuse(name, payload) {
+  return (
+    name === 'RefreshToken' &&
+    typeof payload.consumed === 'number' &&
+    Math.floor(Date.now() / 1000) - payload.consumed < REFRESH_REUSE_SECONDS
+  );
+}
+
 // What MongoDB answers an insertion whose `_id` is taken.
 const DUPLICATE_KEY = 11000;
 
@@ -97,10 +113,16 @@ class McpOAuthAdapter {
 
   async find(id) {
     if (this.isClientRegisteredByHand(id)) return registeredClientMetadata(id);
-    const payload = payloadOf(
+    const found = payloadOf(
       await (await this.collection()).findOne({ _id: this.storedId(id) })
     );
-    return payload && HASHED.has(this.name) ? { ...payload, jti: id } : payload;
+    if (!found) return found;
+    let payload = found;
+    if (isWithinReuse(this.name, found)) {
+      const { consumed: _consumed, ...unconsumed } = found;
+      payload = unconsumed;
+    }
+    return HASHED.has(this.name) ? { ...payload, jti: id } : payload;
   }
 
   async findByUid(uid) {
@@ -113,9 +135,11 @@ class McpOAuthAdapter {
     return undefined;
   }
 
+  // When it was first consumed: traded again within the minute, a refresh
+  // token keeps that minute (REFRESH_REUSE_SECONDS).
   async consume(id) {
     await (await this.collection()).updateOne(
-      { _id: this.storedId(id) },
+      { _id: this.storedId(id), consumed: { $exists: false } },
       { $set: { consumed: Math.floor(Date.now() / 1000) } }
     );
   }
@@ -143,4 +167,8 @@ function compareClientSecretsByDigest(provider) {
   });
 }
 
-module.exports = { McpOAuthAdapter, compareClientSecretsByDigest };
+module.exports = {
+  McpOAuthAdapter,
+  compareClientSecretsByDigest,
+  REFRESH_REUSE_SECONDS,
+};
