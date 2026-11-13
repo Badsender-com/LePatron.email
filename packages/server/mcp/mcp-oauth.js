@@ -302,6 +302,15 @@ function createAuthorizationServer({
     }
   });
   attachAuthorizationServer(provider);
+  // Why a token request was refused, never what it carried: a refresh token
+  // used twice past the minute ends the connection, and the trace says so.
+  provider.on('grant.error', (ctx, error) =>
+    logger.warn(
+      `[mcp-oauth] a token request was refused: ${
+        error.error_detail || error.error_description || error.message
+      }`
+    )
+  );
   provider.on('registration_create.success', (ctx, client) =>
     keepRegisteredClient(
       provider,
