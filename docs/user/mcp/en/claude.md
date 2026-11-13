@@ -31,6 +31,10 @@ In a conversation, turn LePatron on with the **+** button, then **Connectors**. 
 - send feedback to Badsender when you ask it to;
 - report a retex on a skill or an expertise, with your approval ([Retex](./retex.md)).
 
+### Stop confirming each read
+
+Claude, not LePatron, asks you to allow each call of a tool. LePatron only tells it which tools merely read. In **Customize › Connectors › LePatron**, set the reading tools (`find_skills`, `find_applicable_expertises`, `search`, `fetch`, `list_mailings`, `get_mailing`…) to **Always allow**, and keep the confirmation for those that write (`report_retex`, `submit_feedback`, the drafts and the publication).
+
 ## Claude Code
 
 In a terminal:

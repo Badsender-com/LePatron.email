@@ -66,6 +66,7 @@ A client that connects nobody is forgotten after a day; each consent keeps it as
 ### Connections and revocation
 
 Access tokens last an hour, refresh tokens rotate and last 30 days each, and a connection lasts 90 days at most, after which the user connects the assistant again.
+A refresh token already traded is taken again within a minute of its first use: a client sends it twice when two of its requests go at once, or when it retries an answer it lost. Past that minute, a second use is taken for a stolen token and ends the connection. The refusals of the token endpoint are logged with their reason, never with what was sent.
 Consent is asked at every connection.
 A connection does not depend on the browser it was consented in: neither its code nor its tokens are bound to the authorization server's session of that browser, so another consent there, or that session's end after a day, leaves it whole.
 Each consent is recorded as a connected application, one connection per consent.
