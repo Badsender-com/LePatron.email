@@ -2,7 +2,7 @@
 import { required } from 'vuelidate/lib/validators';
 import * as apiRoutes from '~/helpers/api-routes.js';
 import { mapMutations } from 'vuex';
-import { ArrowRight, Eye, EyeOff, Lock, LogIn } from 'lucide-vue';
+import { ArrowRight, LogIn } from 'lucide-vue';
 
 import { PAGE, SHOW_SNACKBAR } from '~/store/page.js';
 import * as acls from '~/helpers/pages-acls.js';
@@ -17,6 +17,7 @@ import {
 import { takeLogoutReason } from '~/helpers/logout-reason.js';
 import BsAuthCard from '~/components/account/auth-card.vue';
 import BsTextField from '~/components/form/bs-text-field.vue';
+import BsLoginPassword from '~/components/account/login-password.vue';
 import BsTwoFactorCode from '~/components/account/two-factor-code.vue';
 import BsTwoFactorSetup from '~/components/account/two-factor-setup.vue';
 import BsRecoveryCodes from '~/components/account/recovery-codes.vue';
@@ -27,13 +28,11 @@ export default {
   components: {
     BsAuthCard,
     BsTextField,
+    BsLoginPassword,
     BsTwoFactorCode,
     BsTwoFactorSetup,
     BsRecoveryCodes,
     LucideArrowRight: ArrowRight,
-    LucideEye: Eye,
-    LucideEyeOff: EyeOff,
-    LucideLock: Lock,
     LucideLogIn: LogIn,
   },
   layout: 'centered',
@@ -45,7 +44,6 @@ export default {
       userIsFound: false,
       isBasicAuthentication: true,
       isLoading: false,
-      showPassword: false,
       // After the password, with two-factor authentication (ADR 0008): the
       // step the server asks, the member's method, and the account held
       // while its new recovery codes are shown.
@@ -246,59 +244,14 @@ export default {
     </bs-auth-card>
 
     <!-- Password field -->
-    <bs-auth-card
+    <bs-login-password
       v-if="userIsFound && isBasicAuthentication && !step"
-      :title="$t('forms.user.login')"
+      v-model="password"
       :email="username"
       :loading="isLoading"
+      @submit="handleSubmit"
       @change-account="back"
-    >
-      <template #icon><lucide-lock :size="26" /></template>
-      <template #description>{{ $t('authCard.passwordIntro') }}</template>
-      <v-form id="login-form" @submit.prevent="handleSubmit">
-        <bs-text-field
-          id="password"
-          v-model="password"
-          autofocus
-          dense
-          :label="$t('global.password')"
-          name="password"
-          autocomplete="current-password"
-          :type="showPassword ? 'text' : 'password'"
-          required
-        >
-          <template #append>
-            <v-btn
-              icon
-              small
-              :aria-label="
-                showPassword
-                  ? $t('authCard.hidePassword')
-                  : $t('authCard.showPassword')
-              "
-              @click="showPassword = !showPassword"
-            >
-              <lucide-eye v-if="showPassword" :size="18" />
-              <lucide-eye-off v-else :size="18" />
-            </v-btn>
-          </template>
-        </bs-text-field>
-        <nuxt-link to="/account/reset-password" class="bs-page-login__forgot">
-          {{ $t('forms.user.forgottenPassword') }}
-        </nuxt-link>
-      </v-form>
-      <template #actions>
-        <v-btn
-          :loading="isLoading"
-          elevation="0"
-          color="accent"
-          form="login-form"
-          type="submit"
-        >
-          {{ $t('forms.user.login') }}
-        </v-btn>
-      </template>
-    </bs-auth-card>
+    />
 
     <!-- After the password (ADR 0008) -->
     <bs-two-factor-code
@@ -323,20 +276,3 @@ export default {
     />
   </div>
 </template>
-
-<style lang="scss" scoped>
-.bs-page-login__forgot {
-  display: inline-block;
-  margin-top: 8px;
-  color: var(--v-accent-darken1);
-  font-size: 13px;
-  font-weight: 500;
-  text-decoration: none;
-
-  &:hover,
-  &:focus-visible {
-    color: var(--v-primary-base);
-    text-decoration: underline;
-  }
-}
-</style>
