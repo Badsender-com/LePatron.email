@@ -252,10 +252,13 @@ async function buildEditorDimensions({
     name: dimension.name,
     label: dimension.label,
     // A parent out of the email's scope is not there: the child is offered
-    // with all its values.
-    parentName: offeredNames.has(dimension.parentName)
-      ? dimension.parentName
-      : null,
+    // with all its values. The email type has its own field, never in scope
+    // filtering: a dimension under it stays under it.
+    parentName:
+      offeredNames.has(dimension.parentName) ||
+      dimension.parentName === StandardDimensions.EMAIL_TYPE
+        ? dimension.parentName
+        : null,
     // Who wins a design token two chosen values carry: the highest.
     precedence: dimension.precedence || 0,
     // The role and the codes make the email's locale, which the editor
