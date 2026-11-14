@@ -1,44 +1,89 @@
 export default {
+  authCard: {
+    changeAccount: 'Changer de compte',
+    emailIntro: 'Saisissez l’adresse email de votre compte.',
+    passwordIntro: 'Saisissez votre mot de passe.',
+    next: 'Continuer',
+    showPassword: 'Afficher le mot de passe',
+    hidePassword: 'Masquer le mot de passe',
+  },
   twoFactor: {
     code: {
-      label: 'Code',
+      title: 'Vérification en deux étapes',
+      label: 'Code de vérification',
       submit: 'Valider',
       hints: {
         totp: 'Saisissez le code à 6 chiffres affiché par votre application d’authentification.',
-        email: 'Saisissez le code à 6 chiffres reçu par email.',
+        email: 'Saisissez le code à 6 chiffres envoyé à {email}.',
+        recovery: 'Saisissez l’un des codes de secours que vous avez notés.',
       },
+      recoveryLabel: 'Code de secours',
       recoveryHint:
-        'Sans votre méthode de vérification ? Saisissez l’un de vos codes de secours.',
+        'Chaque code ne sert qu’une fois. De nouveaux codes vous seront donnés après la connexion.',
+      useRecovery: 'Utiliser un code de secours',
+      useMethod: {
+        totp: 'Utiliser mon application',
+        email: 'Utiliser le code reçu par email',
+      },
       incorrect: 'Code incorrect',
       expired: 'Étape expirée : saisissez de nouveau votre mot de passe.',
       trustDevice: 'Faire confiance à cet appareil pendant 30 jours',
+      trustDeviceHint: 'Vous ne saisirez plus de code sur ce navigateur.',
       resend: 'Renvoyer un code',
+      resendIn: 'Renvoyer dans {seconds} s',
       sent: 'Un nouveau code vous a été envoyé',
     },
     setup: {
-      intro:
-        'Votre entreprise demande une double authentification : après votre mot de passe, vous saisirez un code.',
-      choose: 'Comment recevoir vos codes ?',
-      methods: {
-        totp: 'Une application d’authentification sur mon téléphone',
-        email: 'Un code par email',
+      step: 'Configuration · étape {step} sur 3',
+      title: 'Protégez votre compte',
+      titles: {
+        totp: 'Associez votre application',
+        email: 'Vérifiez votre adresse',
       },
+      intro:
+        'Votre entreprise exige une vérification en deux étapes : après votre mot de passe, vous saisirez un code.',
+      choose: 'Méthode de vérification',
+      methods: {
+        totp: 'Application d’authentification',
+        email: 'Code par email',
+      },
+      methodHints: {
+        totp: 'Google Authenticator, Microsoft Authenticator, 1Password…',
+        email: 'Un code à chaque connexion, envoyé à {email}',
+      },
+      recommended: 'Recommandé',
       start: 'Continuer',
       emailSent:
-        'Un code vient de vous être envoyé par email : saisissez-le pour activer la double authentification.',
-      scan: 'Scannez ce QR code avec votre application d’authentification (Google Authenticator, Microsoft Authenticator, 1Password…), puis saisissez le code qu’elle affiche.',
+        'Un code vient d’être envoyé à {email}. Saisissez-le pour activer la vérification en deux étapes.',
+      emailHint: 'Rien reçu ? Regardez dans vos courriers indésirables.',
+      scanIntro:
+        'Scannez le QR code avec votre application, puis saisissez le code qu’elle affiche.',
+      scanSteps: {
+        1: 'Ouvrez votre application d’authentification.',
+        2: 'Ajoutez un compte et scannez le QR code.',
+        3: 'Saisissez ci-dessous le code à 6 chiffres affiché.',
+      },
       qrCodeAlt: 'QR code de configuration',
-      manual: 'Ou saisissez cette clé dans l’application :',
+      manual: 'Impossible de scanner ? Saisissez cette clé',
+      copyKey: 'Copier',
+      keyCopied: 'Copié',
+      changeMethod: 'Changer de méthode',
       confirm: 'Activer',
     },
     recoveryCodes: {
+      title: 'Gardez vos codes de secours',
       intro:
-        'Chaque code de secours vous connecte une fois, sans votre méthode de vérification. Gardez-les en lieu sûr : ils ne seront plus affichés.',
+        'Sans votre méthode de vérification, chaque code vous connecte une fois.',
+      introAfterUse:
+        'Vous avez utilisé un code de secours : voici une nouvelle série, les anciens ne marchent plus.',
+      notShownAgain: 'Ils ne seront plus affichés.',
+      keepThem:
+        'Rangez-les dans votre gestionnaire de mots de passe ou téléchargez-les.',
       copy: 'Copier',
-      copied: 'Codes copiés',
-      download: 'Télécharger',
-      noted: 'J’ai noté mes codes de secours',
-      continue: 'Continuer',
+      copied: 'Copié',
+      download: 'Télécharger (.txt)',
+      noted: 'J’ai noté mes codes en lieu sûr',
+      continue: 'Continuer vers LePatron',
     },
     group: {
       title: 'Double authentification',
