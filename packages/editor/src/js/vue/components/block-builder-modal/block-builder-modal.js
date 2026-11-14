@@ -9,6 +9,7 @@ const { PreviewSurfaceMixin } = require('./preview-surface.js');
 const { ElementListMixin } = require('./element-list.js');
 const { DismissalMixin } = require('./dismissal.js');
 const { DragSurfaceMixin } = require('./drag-surface.js');
+const { RowSettingsMixin } = require('./row-settings.js');
 const MODAL_TEMPLATE = require('./modal-template.js');
 const {
   validateBlockBuilderLength,
@@ -59,6 +60,7 @@ const BlockBuilderModalComponent = Vue.component('BlockBuilderModal', {
     PreviewSurfaceMixin,
     ElementListMixin,
     DragSurfaceMixin,
+    RowSettingsMixin,
     DismissalMixin,
   ],
   props: {
@@ -83,7 +85,10 @@ const BlockBuilderModalComponent = Vue.component('BlockBuilderModal', {
     // than a boolean so the message goes as soon as the composition changes.
     refusedState: null,
     state: emptyState(),
-    selectedId: null,
+    selectedElementId: null,
+    // The other kind of selection. One of the two is active, never both:
+    // see selectRow and selectElement in row-settings.js.
+    selectedRowId: null,
     previewWidth: DESKTOP_WIDTH,
     desktopWidth: DESKTOP_WIDTH,
     mobileWidth: MOBILE_WIDTH,
@@ -109,7 +114,7 @@ const BlockBuilderModalComponent = Vue.component('BlockBuilderModal', {
     selected() {
       return (
         this.columnElements.find(
-          (element) => element.id === this.selectedId
+          (element) => element.id === this.selectedElementId
         ) ||
         null
       );
@@ -167,7 +172,7 @@ const BlockBuilderModalComponent = Vue.component('BlockBuilderModal', {
     },
     // Only the outline moves, so the body is left alone — re-rendering it would
     // refetch the images on every change of selection.
-    selectedId() {
+    selectedElementId() {
       this.applySelectionHighlight();
     },
   },
@@ -204,7 +209,7 @@ const BlockBuilderModalComponent = Vue.component('BlockBuilderModal', {
         typeof existingMarkup === 'string' &&
         existingMarkup !== '';
       this.rebuildsMarkup = Boolean(restored) && existingMarkup !== this.html;
-      this.selectedId = this.columnElements.length
+      this.selectedElementId = this.columnElements.length
         ? this.columnElements[0].id
         : null;
       this.previewWidth = DESKTOP_WIDTH;
@@ -272,7 +277,8 @@ const BlockBuilderModalComponent = Vue.component('BlockBuilderModal', {
       this.rebuildsMarkup = false;
       this.refusedState = null;
       this.state = { ...emptyState(), rows: emptyRows() };
-      this.selectedId = null;
+      this.selectedElementId = null;
+      this.selectedRowId = null;
       this.openedState = '';
     },
   },
