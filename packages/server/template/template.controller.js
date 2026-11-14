@@ -18,6 +18,7 @@ const fileManager = require('../common/file-manage.service.js');
 const generatePreview = require('./generate-preview.controller.js');
 const templateBlocks = require('./template-blocks.controller.js');
 const _getTemplateImagePrefix = require('../utils/get-template-image-prefix.js');
+const { contractOfTemplate } = require('./template-contract.service.js');
 const {
   sanitizeTrackingConfig,
 } = require('../utils/resolve-tracking-config.js');
@@ -104,6 +105,10 @@ async function read(req, res) {
     select: 'id name',
   });
   if (!template) throw new createError.NotFound();
+  // A template saved before ADR-0024 has no contract stored: read it once now.
+  if (!template.contract) {
+    template.contract = await contractOfTemplate(templateId);
+  }
   res.json(template);
 }
 
