@@ -7,6 +7,7 @@ const mongooseHidden = require('mongoose-hidden')();
 
 const { trimString } = require('../utils/model');
 const { GroupModel } = require('../constant/model.names');
+const { refreshContract } = require('./template-contract.js');
 const {
   TEMPLATE_FLAG_PROJECTION,
 } = require('../mailing/synthetic-block-guard.js');
@@ -125,9 +126,20 @@ const TemplateSchema = Schema(
       type: Boolean,
       default: false,
     },
+    // What the template declares and reads at its root (ADR-0024), read from
+    // the markup each time it changes. A template saved before has none until
+    // its contract is first needed (template-contract.service.js).
+    contract: {
+      type: Schema.Types.Mixed,
+    },
   },
   { timestamps: true, toJSON: { virtuals: true, getters: true } }
 );
+
+TemplateSchema.pre('save', function readContract(next) {
+  refreshContract(this);
+  next();
+});
 
 // easily hide keys from toJSON
 // https://www.npmjs.com/package/mongoose-hidden

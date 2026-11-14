@@ -1520,6 +1520,12 @@ export default {
     confirmationField: 'Type the template name to confirm',
     newTemplate: 'New template',
     generalInfo: 'General information',
+    contract: {
+      title: 'What the template reads',
+      description: 'The root properties the template declares or reads. A dimension of the same name is offered on its emails.',
+      empty: 'This template reads no root property.',
+      adopted: '{name} takes the value of {source} for emails already created.',
+    },
     generalInfoDescription: 'Template name and description',
     templateFiles: 'Template files',
     templateFilesDescription: 'Upload the HTML markup and associated images',
