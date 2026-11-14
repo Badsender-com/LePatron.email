@@ -84,6 +84,16 @@ async function assertDefaultIsFree({ companyId, type, exceptId }) {
   if (type === StandardDimensions.EMAIL_TYPE) {
     throw new BadRequest(ERROR_CODES.INVALID_TAXONOMY_ITEM);
   }
+  // A child value is the default under parent values, with `defaultUnder`.
+  const dimension = await TaxonomyDimensions.findOne({
+    _company: companyId,
+    name: type,
+  })
+    .select({ parentName: 1 })
+    .lean();
+  if (dimension && dimension.parentName) {
+    throw new BadRequest(ERROR_CODES.INVALID_TAXONOMY_ITEM);
+  }
 
   const query = { _company: companyId, type, isDefault: true };
   if (exceptId) query._id = { $ne: exceptId };

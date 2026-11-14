@@ -240,3 +240,32 @@ describe('the adoption sources the editor receives', () => {
     });
   });
 });
+
+// Review of the stack: a default keeps its meaning where its dimension is.
+describe('defaults and the place of their dimension', () => {
+  it('refuses a first-level default on a child value', async () => {
+    await expect(
+      editValue(redNotebooks, { isDefault: true })
+    ).rejects.toMatchObject({ status: 400 });
+  });
+
+  it('clears the defaults of a dimension moved under another one', async () => {
+    await declare({ name: 'audience', label: 'Cible' });
+    const teachers = await addValue('audience', { label: 'Enseignants' });
+    await editValue(teachers, { isDefault: true });
+    const [audience] = await models.TaxonomyDimensions.find({
+      name: 'audience',
+    }).lean();
+
+    await dimensionService.updateDimension({
+      user: adminA,
+      dimensionId: idOf(audience),
+      payload: { parentName: 'silo' },
+    });
+
+    const [moved] = await models.TaxonomyItems.find({
+      _id: teachers._id,
+    }).lean();
+    expect(moved.isDefault).toBe(false);
+  });
+});
