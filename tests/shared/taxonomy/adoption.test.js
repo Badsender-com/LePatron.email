@@ -169,3 +169,30 @@ describe('adoption when an email opens', () => {
     });
   });
 });
+
+// Review of the stack: a dimension under the email type waits for a typology,
+// as its select does in the editor and as the server checks on save.
+describe('adoption under the email type', () => {
+  const TONE = {
+    name: 'tone',
+    parentName: 'emailType',
+    values: [
+      {
+        id: 'warm',
+        canonicalType: 'warm',
+        isActive: true,
+        parentIds: ['news'],
+      },
+    ],
+  };
+  const adoptTone = (selections) =>
+    adoptValues({ dimensions: [TONE], content: { tone: 'warm' }, selections });
+
+  it('adopts nothing while the email has no typology', () => {
+    expect(adoptTone({})).toEqual({ selections: {}, adopted: [], gaps: [] });
+  });
+
+  it('adopts the value offered under the typology the email has', () => {
+    expect(adoptTone({ emailType: 'news' }).adopted).toEqual(['tone']);
+  });
+});
