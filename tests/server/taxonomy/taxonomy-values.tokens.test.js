@@ -112,3 +112,60 @@ describe('design tokens', () => {
     }
   );
 });
+
+// Review of the stack: a token and an identifier end up in the email's
+// content, inside a style or an attribute. They hold a value, never markup or
+// a block of CSS that would close it.
+describe('what a token and an identifier may hold', () => {
+  beforeAll(loadServices);
+
+  beforeEach(async () => {
+    await declare({ name: 'brand', label: 'Marque' });
+  });
+
+  it.each([
+    ['a colour', '#ffd845'],
+    ['a font stack', "'Helvetica Neue', Arial, sans-serif"],
+    ['a size', '16px'],
+    ['a link', 'https://example.com/logo.png?w=200&h=80'],
+  ])('accepts %s', async (kind, value) => {
+    const brand = await addValue('brand', {
+      label: 'Marque A',
+      tokens: { mainColorVar: value },
+    });
+
+    expect(plainTokens(brand.tokens).mainColorVar).toBe(value);
+  });
+
+  it.each([
+    ['a block of CSS', 'red} body{display:none'],
+    ['the end of a style', '</style><script>x()</script>'],
+    ['a script link', 'javascript:alert(1)'],
+    ['an import', '@import "https://example.com/x.css"'],
+  ])('refuses %s', async (kind, value) => {
+    await expect(
+      addValue('brand', { label: 'Marque A', tokens: { mainColorVar: value } })
+    ).rejects.toMatchObject({ status: 400 });
+  });
+
+  it('refuses a token name longer than a dimension name may be', async () => {
+    await expect(
+      addValue('brand', {
+        label: 'Marque A',
+        tokens: { [`a${'b'.repeat(60)}`]: '#000' },
+      })
+    ).rejects.toMatchObject({ status: 400 });
+  });
+
+  it('refuses an identifier a template property could not hold', async () => {
+    await expect(
+      addValue('brand', { label: 'Marque A', canonicalType: 'marque a' })
+    ).rejects.toMatchObject({ status: 400 });
+  });
+
+  it('refuses a dimension name past its limit with a 400, not a server error', async () => {
+    await expect(
+      declare({ name: `a${'b'.repeat(60)}`, label: 'Trop long' })
+    ).rejects.toMatchObject({ status: 400 });
+  });
+});

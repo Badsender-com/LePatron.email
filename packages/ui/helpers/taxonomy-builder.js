@@ -113,7 +113,9 @@ export function isValidDimensionName(name) {
 
 /**
  * The identifier proposed for a value, from its label: lower case, accents
- * dropped, words joined by hyphens. Only a proposal: the admin may change it.
+ * dropped, words joined by underscores, so that it can also name a template
+ * property (`brand_[silo]` becomes `brand_petit_lecteur`). Only a proposal:
+ * the admin may change it.
  *
  * @param {string} label
  * @returns {string} empty when the label holds no letter or digit
@@ -123,8 +125,8 @@ export function proposeIdentifier(label) {
     .normalize('NFD')
     .replace(/[̀-ͯ]/g, '')
     .toLowerCase()
-    .replace(/[^a-z0-9]+/g, '-')
-    .replace(/^-+|-+$/g, '');
+    .replace(/[^a-z0-9]+/g, '_')
+    .replace(/^_+|_+$/g, '');
 }
 
 /**
