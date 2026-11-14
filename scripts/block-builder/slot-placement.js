@@ -27,8 +27,13 @@ const URL_ATTRIBUTES = new Set([
 
 // What may fill each position. Event handlers, tag and attribute names and
 // comments accept nothing: no context escapes for those.
+//
+// MARKUP sits in text only, like the other two that carry markup — a column's
+// rendered cells go between tags, never inside an attribute. The compiler has
+// already refused it anywhere but a layout's manifest, so reaching here means
+// the generator fills it with its own output.
 const ALLOWED = {
-  text: ['TEXT', 'RICH_TEXT'],
+  text: ['TEXT', 'RICH_TEXT', 'MARKUP'],
   url: ['URL'],
   style: ['COLOR', 'PX', 'CSS_VALUE'],
   attribute: ['ATTR', 'COLOR', 'PX', 'CSS_VALUE'],
