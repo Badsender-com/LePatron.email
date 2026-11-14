@@ -22,6 +22,7 @@ export function valueFormFor(item, suggestedOrder = 0) {
       tokens: {},
       code: null,
       isDefault: false,
+      defaultUnder: [],
     };
   }
   return {
@@ -34,6 +35,7 @@ export function valueFormFor(item, suggestedOrder = 0) {
     tokens: { ...(item.tokens || {}) },
     code: item.code || null,
     isDefault: item.isDefault === true,
+    defaultUnder: (item.defaultUnder || []).map(String),
   };
 }
 
@@ -50,14 +52,30 @@ export function valuePayloadFrom(form, { isEmailType, hasParent, role }) {
   if (hasParent) payload.parentIds = form.parentIds;
   payload.tokens = form.tokens;
   if (role) payload.code = form.code;
-  // The company's default: first-level dimensions only, never the email type,
-  // which keeps its own field on the email (ADR-0024).
-  if (canBeDefault({ isEmailType, hasParent })) {
-    payload.isDefault = form.isDefault === true;
+  // The company's default (ADR-0024), never on the email type, which keeps its
+  // own field on the email: ticked at the first level, under some parent
+  // values for a child dimension.
+  if (canBeDefault({ isEmailType })) {
+    if (hasParent) {
+      payload.defaultUnder = defaultUnderOffered(form);
+    } else {
+      payload.isDefault = form.isDefault === true;
+    }
   }
   return payload;
 }
 
-export function canBeDefault({ isEmailType, hasParent }) {
-  return !isEmailType && !hasParent;
+export function canBeDefault({ isEmailType }) {
+  return !isEmailType;
+}
+
+/**
+ * The parent values a child value is the default under, kept to those its
+ * availability offers it under: narrowing the availability takes the others.
+ */
+export function defaultUnderOffered({ defaultUnder, parentIds }) {
+  const offered = parentIds || [];
+  return (defaultUnder || []).filter(
+    (id) => offered.length === 0 || offered.includes(id)
+  );
 }

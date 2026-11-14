@@ -87,7 +87,12 @@ export default {
   >
     <template #item.label="{ item }">
       <span class="taxonomy-table__label">{{ item.label }}</span>
-      <v-chip v-if="item.isDefault" x-small outlined class="ml-2">
+      <v-chip
+        v-if="item.isDefault || (item.defaultUnder || []).length > 0"
+        x-small
+        outlined
+        class="ml-2"
+      >
         {{ $t('taxonomy.values.form.defaultChip') }}
       </v-chip>
     </template>

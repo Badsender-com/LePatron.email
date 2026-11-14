@@ -31,6 +31,8 @@ const EDITABLE_FIELDS = Object.freeze([
   'code',
   // The company's default value of a first-level dimension (ADR-0024).
   'isDefault',
+  // For a child value: the parent values it is the default under.
+  'defaultUnder',
 ]);
 
 module.exports = {
@@ -105,6 +107,9 @@ function validatePayload(payload, { partial }) {
   if (payload.code !== undefined) fields.code = readCode(payload.code);
   if (payload.isDefault !== undefined) {
     fields.isDefault = readIsActive(payload.isDefault);
+  }
+  if (payload.defaultUnder !== undefined) {
+    fields.defaultUnder = readParentIds(payload.defaultUnder);
   }
 
   // A PATCH carrying nothing usable would answer 200 without changing anything,
