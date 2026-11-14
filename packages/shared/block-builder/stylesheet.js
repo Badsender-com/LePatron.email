@@ -71,7 +71,7 @@ function classesOf(composition) {
  * @param {Array<Object>} compositions
  * @returns {string}
  */
-function collectCssFor(compositions) {
+function collectRules(compositions) {
   const names = (compositions || []).reduce((found, composition) => {
     classesOf(composition).forEach((name) => found.add(name));
     return found;
@@ -88,11 +88,27 @@ function collectCssFor(compositions) {
     })
     .filter(Boolean);
 
-  if (rules.length === 0) return '';
+  return rules.join('');
+}
 
-  return `@media only screen and (max-width:${BREAKPOINT}px){${rules.join(
-    ''
-  )}}`;
+/**
+ * The same rules, wrapped in the media query that makes them apply.
+ *
+ * Split from `collectRules` because the builder's own preview needs the rules
+ * WITHOUT this wrapper: its iframe is 600px wide on desktop, which is exactly
+ * the breakpoint, and `max-width` is inclusive — the mobile rules would apply
+ * to the desktop preview. There the Desktop/Mobile toggle decides instead of
+ * the iframe's width, which is also how the canvas already works
+ * (ext/preview-media.js).
+ *
+ * @param {Array<Object>} compositions
+ * @returns {string}
+ */
+function collectCssFor(compositions) {
+  const rules = collectRules(compositions);
+  if (rules === '') return '';
+
+  return `@media only screen and (max-width:${BREAKPOINT}px){${rules}}`;
 }
 
 /**
@@ -108,6 +124,7 @@ function collectCss(composition) {
 module.exports = {
   collectCss,
   collectCssFor,
+  collectRules,
   classesOf,
   BREAKPOINT,
   BEHAVIOURS,

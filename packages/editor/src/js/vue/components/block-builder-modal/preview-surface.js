@@ -1,6 +1,9 @@
 'use strict';
 
 const {
+  collectRules,
+} = require('../../../../../../shared/block-builder/stylesheet.js');
+const {
   COLUMN_CHROME_CLASS,
   ELEMENT_ATTRIBUTE,
   STARTER_ATTRIBUTE,
@@ -43,6 +46,9 @@ const MOVING_CLASS = 'lp-bb-moving';
 // The insertion line: one element over the whole preview, placed at the edge
 // the drop would land on (drag-surface.js), in pixels.
 const DROP_LINE_ID = 'lp-bb-drop-line';
+// The sheet holding what the composition derives, kept apart from the chrome
+// one so a render can replace it without touching the rest.
+const DERIVED_STYLE_ID = 'lp-bb-derived';
 const DROP_LINE_HEIGHT = 4;
 
 // The drop target of a block that holds nothing yet.
@@ -224,8 +230,35 @@ const PreviewSurfaceMixin = {
         zone.textContent = this.vm.t('block-builder-drop-here');
         doc.body.appendChild(zone);
       }
+      this.renderDerivedCss(doc);
       this.applySelectionHighlight();
       this.$emit(PREVIEW_RENDERED_EVENT, doc);
+    },
+
+    /**
+     * Puts the composition's own rules in the preview, under the toggle.
+     *
+     * Without this the preview carried the stacking CLASS and nothing that
+     * defines it, so switching to Mobile shrank the columns instead of
+     * stacking them — in the one place a user is told to check that.
+     *
+     * The rules are written WITHOUT their media query, and only in Mobile.
+     * The query cannot do the deciding here: the iframe is 600px wide on
+     * desktop, which is exactly the breakpoint, and `max-width` is inclusive,
+     * so the mobile rules would apply to the desktop preview too. The toggle
+     * decides instead — the same arrangement the canvas already uses
+     * (ext/preview-media.js).
+     */
+    renderDerivedCss(doc) {
+      let sheet = doc.getElementById(DERIVED_STYLE_ID);
+      if (!sheet) {
+        sheet = doc.createElement('style');
+        sheet.setAttribute('id', DERIVED_STYLE_ID);
+        sheet.setAttribute('type', 'text/css');
+        doc.head.appendChild(sheet);
+      }
+      sheet.textContent =
+        this.previewWidth === this.mobileWidth ? collectRules([this.state]) : '';
     },
 
     previewRows(doc) {
@@ -295,6 +328,7 @@ module.exports = {
   SELECTED_CLASS,
   DRAGGING_CLASS,
   DROP_LINE_ID,
+  DERIVED_STYLE_ID,
   DROP_LINE_HEIGHT,
   MOVING_CLASS,
   EMPTY_DROP_ID,
