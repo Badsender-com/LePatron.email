@@ -107,11 +107,17 @@ describe('an empty element still takes room in the preview', () => {
   });
 
   // `min-height` is ignored on a table cell; `height` there is the floor.
+  //
+  // Checked on the ELEMENT rule rather than on the whole stylesheet, which is
+  // what this was really about: a column's drop zone is a div inside the cell,
+  // and a div honours `min-height` perfectly well. Banning the property
+  // outright would have refused that for a reason that does not apply to it.
   it('gives every row a floor that a table cell honours', async () => {
     const { doc } = await openModal(['spacer']);
+    const elementRule = stylesheet(doc).match(/\[data-lp-el\]\{[^}]*\}/)[0];
 
-    expect(stylesheet(doc)).toMatch(/\[data-lp-el\]\{[^}]*;height:\d+px/);
-    expect(stylesheet(doc)).not.toContain('min-height');
+    expect(elementRule).toMatch(/;height:\d+px/);
+    expect(elementRule).not.toContain('min-height');
   });
 });
 

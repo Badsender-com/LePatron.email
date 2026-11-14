@@ -47,6 +47,16 @@ const ELEMENT_ATTRIBUTE = 'data-lp-el';
 // ever carries it. Its value is the element type, for the preview's stylesheet.
 const STARTER_ATTRIBUTE = 'data-lp-starter';
 
+// Editing chrome again, on a column this time: which row and which column a
+// cell is, so a drag can tell where the cursor is without the preview having
+// to guess from coordinates alone. Written only when the preview asks, like
+// the two above — an email has no use for either.
+const COLUMN_ROW_ATTRIBUTE = 'data-lp-row';
+const COLUMN_INDEX_ATTRIBUTE = 'data-lp-col';
+// The class the preview styles to make a column visible as a drop target, and
+// to give an empty one a box worth aiming at.
+const COLUMN_CHROME_CLASS = 'lp-bb-col';
+
 const DEFAULT_BLOCK = {
   backgroundColor: 'transparent',
   paddingTop: 0,
@@ -207,13 +217,35 @@ function generateRow(row, options) {
   if (columns.length === 0) return '';
 
   const stackClass = stackClassFor(columns.length);
-  const contents = columns.map((column) =>
-    renderColumnContent(column.elements, options)
+  const chrome = Boolean(options && options.elementIds);
+  const rowId = chrome ? escapeForContext(row.id, ATTR) : '';
+  const contents = columns.map((column, index) => {
+    const content = renderColumnContent(column.elements, options);
+    if (!chrome) return content;
+    // A box the cursor can be inside, even when the column holds nothing —
+    // which is the whole point for an empty one. A div inside the cell rather
+    // than attributes on the cell itself: the cell is email markup, written in
+    // a component, and chrome has no business in it.
+    return (
+      `<div class="${COLUMN_CHROME_CLASS}"` +
+      ` ${COLUMN_ROW_ATTRIBUTE}="${rowId}"` +
+      ` ${COLUMN_INDEX_ATTRIBUTE}="${index}">` +
+      content +
+      '</div>'
+    );
+  });
+
+  // Emptiness is read from the elements, never from the rendered string: with
+  // chrome on, an empty column still renders its drop zone, and testing the
+  // string would make the preview pick a different variant than the export.
+  const empties = columns.map(
+    (column) => renderColumnContent(column.elements, options) === ''
   );
 
   // A row where every column is empty renders nothing at all: it would
-  // otherwise ship a band of blank cells nobody can see or click.
-  if (contents.every((content) => content === '')) return '';
+  // otherwise ship a band of blank cells nobody can see or click. With chrome
+  // on it stays, because an empty row is somewhere a user can still drop.
+  if (!chrome && empties.every(Boolean)) return '';
 
   const cells = columns.map((column, index) => {
     const values = {
@@ -221,7 +253,7 @@ function generateRow(row, options) {
       stackClass,
       content: contents[index],
     };
-    return contents[index] === ''
+    return empties[index] && !chrome
       ? renderEmptyColumn(values)
       : renderFilledColumn(values);
   });
@@ -330,6 +362,9 @@ module.exports = {
   GENERATOR_VERSION,
   ELEMENT_ATTRIBUTE,
   STARTER_ATTRIBUTE,
+  COLUMN_ROW_ATTRIBUTE,
+  COLUMN_INDEX_ATTRIBUTE,
+  COLUMN_CHROME_CLASS,
   DEFAULT_BLOCK,
   isBlankRichText,
 };

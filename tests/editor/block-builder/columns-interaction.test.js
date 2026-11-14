@@ -127,7 +127,7 @@ describe('selecting a row', () => {
 });
 
 // Turned on by #1211 (dropping into a column, and moving a row)
-describe.skip('dropping into a column', () => {
+describe('dropping into a column', () => {
   it('drops an element from the palette into the column under the cursor', async () => {
     const { modal, doc } = await openModal(['text']);
     modal.setRowWidths(modal.state.rows[0].id, [50, 50]);
@@ -196,17 +196,32 @@ describe.skip('dropping into a column', () => {
 });
 
 // Turned on by #1211 (dropping into a column, and moving a row)
-describe.skip('moving a row', () => {
+describe('moving a row', () => {
   const rowIds = (modal) => modal.state.rows.map((row) => row.id);
 
+  // The same index convention as moving an element: a DROP POSITION, counted
+  // with the row still among the others. Passing 1 here would leave it where
+  // it is — just above itself — which is what a drag just above the next row
+  // means. The two operations have to agree, or one of them grows an
+  // off-by-one the first time a drag calls both.
   it('moves a row below the next one', async () => {
     const { modal } = await openModal(['text']);
     modal.addRow();
     const [first, second] = rowIds(modal);
 
-    modal.moveRow(first, 1);
+    modal.moveRow(first, 2);
 
     expect(rowIds(modal)).toEqual([second, first]);
+  });
+
+  it('leaves a row where it is when dropped just above itself', async () => {
+    const { modal } = await openModal(['text']);
+    modal.addRow();
+    const before = rowIds(modal);
+
+    modal.moveRow(before[0], 1);
+
+    expect(rowIds(modal)).toEqual(before);
   });
 
   it('moves a row from the keyboard', async () => {
@@ -236,7 +251,7 @@ describe.skip('moving a row', () => {
 
     modal.scheduleRender();
 
-    expect(modal.renderHeldDuringDrag).toBe(true);
+    expect(modal.renderHeld).toBe(true);
   });
 });
 
