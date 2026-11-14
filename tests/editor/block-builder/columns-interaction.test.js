@@ -256,7 +256,7 @@ describe('moving a row', () => {
 });
 
 // Turned on by #1212 (duplicating and deleting a row)
-describe.skip('duplicating and deleting a row', () => {
+describe('duplicating and deleting a row', () => {
   it('puts the copy directly below its source', async () => {
     const { modal } = await openModal(['text']);
     modal.addRow();
@@ -322,7 +322,7 @@ describe.skip('duplicating and deleting a row', () => {
     const { modal } = await openModal(['text']);
     modal.duplicateRow(modal.state.rows[0].id);
 
-    modal.apply();
+    modal.handleApply();
 
     expect(modal.vm.startMultiple).toHaveBeenCalledTimes(1);
     expect(modal.vm.stopMultiple).toHaveBeenCalledTimes(1);
