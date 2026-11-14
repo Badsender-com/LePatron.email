@@ -3,7 +3,7 @@ import { initialsOfEmail } from '~/helpers/two-factor.js';
 import BsLoginLogo from '~/components/account/login-logo.vue';
 
 // The card of the sign-in steps, after the consent of a connected application
-// and the LePatron design system: the brand, a 480px white card with its
+// and the LePatron design system: the logo, a 480px white card with its
 // header (eyebrow, round icon, title, sentence), who signs in, the body, the
 // actions, and the signature under the card.
 export default {
@@ -30,7 +30,6 @@ export default {
   <div class="bs-auth-card">
     <div class="bs-auth-card__brand">
       <bs-login-logo />
-      <span>Email Builder by Badsender</span>
     </div>
 
     <v-card class="bs-auth-card__card">
@@ -86,12 +85,8 @@ export default {
 
   &__brand {
     display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 6px;
-    margin-bottom: 24px;
-    color: var(--v-primary-lighten5);
-    font-size: 12px;
+    justify-content: center;
+    margin-bottom: 28px;
   }
 
   &__card.v-card {
