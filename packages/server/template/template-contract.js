@@ -13,19 +13,16 @@
  * - `adopt`: for a property, the source its value is adopted from when the
  *   template renamed it (`siloBrand { adopt: brand_[silo]; }`).
  *
- * Read with regular expressions rather than by running Mosaico, which needs a
+ * Read by scanning the markup rather than by running Mosaico, which needs a
  * browser: the definitions live in the template's `<style>` blocks, in a syntax
- * a template integrator writes by hand (TEMPLATE_DEVELOPER_GUIDE.md).
+ * a template integrator writes by hand (TEMPLATE_DEVELOPER_GUIDE.md). Each
+ * scan goes through the markup once: it is read on user requests, and an
+ * expression that backtracks would let a malformed template hold the server.
  */
 
-const STYLE_BLOCK = /<style[^>]*>([\s\S]*?)<\/style>/gi;
-// One definition `name { ... }`: Mosaico's definitions hold no nested braces.
-const DEFINITION = /([A-Za-z_][A-Za-z0-9_]*)\s*\{([^{}]*)\}/g;
 const ROOT_READ = /_root_\.([A-Za-z_][A-Za-z0-9_]*)/g;
-// A comment documents, it reads nothing. An Outlook conditional comment
-// (`<!--[if mso]>`) holds markup, bindings included: it is kept, and so is
-// the `<!-->` that opens the markup hidden from Outlook only.
-const PLAIN_COMMENT = /<!--(?!\[if|>)[\s\S]*?-->/g;
+const IDENTIFIER_CHAR = /[A-Za-z0-9_]/;
+const WHITESPACE = /\s/;
 
 // Raised each time the reader reads differently: a contract stored by an older
 // reader is read again on its next need (template-contract.service.js).
@@ -63,7 +60,7 @@ function readTemplateContract(markup) {
   const definitions = definitionsOf(markup);
   return {
     declared: declaredProperties(definitions.get('template')),
-    read: rootReads(markup.replace(PLAIN_COMMENT, '')),
+    read: rootReads(withoutPlainComments(markup)),
     adopt: adoptionSources(definitions),
   };
 }
@@ -78,12 +75,73 @@ function rootReads(markup) {
 // its last body, as in a stylesheet.
 function definitionsOf(markup) {
   const definitions = new Map();
-  [...markup.matchAll(STYLE_BLOCK)].forEach(([, css]) => {
-    [...css.matchAll(DEFINITION)].forEach(([, name, body]) => {
-      definitions.set(name, body);
-    });
+  styleBlocks(markup).forEach((css) => {
+    definitionsIn(css).forEach(([name, body]) => definitions.set(name, body));
   });
   return definitions;
+}
+
+function styleBlocks(markup) {
+  const lower = markup.toLowerCase();
+  const blocks = [];
+  let from = 0;
+  for (;;) {
+    const open = lower.indexOf('<style', from);
+    const start = open === -1 ? -1 : lower.indexOf('>', open);
+    const end = start === -1 ? -1 : lower.indexOf('</style>', start);
+    if (end === -1) return blocks;
+    blocks.push(markup.slice(start + 1, end));
+    from = end + '</style>'.length;
+  }
+}
+
+// One definition `name { ... }`: Mosaico's definitions hold no nested braces,
+// so a body is what lies between a `{` and the next `}` with no `{` between.
+function definitionsIn(css) {
+  const found = [];
+  let open = -1;
+  for (let at = 0; at < css.length; at += 1) {
+    if (css[at] === '{') open = at;
+    else if (css[at] === '}' && open !== -1) {
+      const name = nameBefore(css, open);
+      if (name) found.push([name, css.slice(open + 1, at)]);
+      open = -1;
+    }
+  }
+  return found;
+}
+
+// The identifier right before a `{`, spaces allowed between: it starts with a
+// letter or an underscore.
+function nameBefore(css, brace) {
+  let end = brace;
+  while (end > 0 && WHITESPACE.test(css[end - 1])) end -= 1;
+  let start = end;
+  while (start > 0 && IDENTIFIER_CHAR.test(css[start - 1])) start -= 1;
+  while (start < end && /[0-9]/.test(css[start])) start += 1;
+  return start < end ? css.slice(start, end) : null;
+}
+
+// A comment documents, it reads nothing. An Outlook conditional comment
+// (`<!--[if mso]>`) holds markup, bindings included: it is kept, and so is
+// the `<!-->` that opens the markup hidden from Outlook only.
+function withoutPlainComments(markup) {
+  let kept = '';
+  let from = 0;
+  for (;;) {
+    const open = markup.indexOf('<!--', from);
+    if (open === -1) return kept + markup.slice(from);
+    const after = open + '<!--'.length;
+    if (markup.startsWith('[if', after) || markup[after] === '>') {
+      kept += markup.slice(from, after);
+      from = after;
+    } else {
+      const close = markup.indexOf('-->', after);
+      if (close === -1) return kept + markup.slice(from);
+      kept += markup.slice(from, open);
+      from = close + '-->'.length;
+    }
+  }
 }
 
 // The value of one `key: value;` entry of a definition body.
