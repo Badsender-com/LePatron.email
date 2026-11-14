@@ -237,8 +237,26 @@ describe('what the template reads while a gap is reported', () => {
     );
   });
 
-  it('still publishes the other dimensions', () => {
-    expect(values({ market: '', language: '' }, JP)).toHaveProperty('language');
+  it('keeps the property of an empty child too: it waits for its parent', () => {
+    expect(values({ market: '', language: '' }, JP)).not.toHaveProperty(
+      'language'
+    );
+  });
+
+  it('still publishes the dimensions the gap does not hold', () => {
+    const audience = {
+      name: 'audience',
+      values: [{ id: 'pro', canonicalType: 'pro', isActive: true }],
+    };
+
+    expect(
+      templateValuesFor({
+        emailTypes: [],
+        dimensions: [MARKET, LANGUAGE, audience],
+        selections: { market: '', language: '', audience: '' },
+        gaps: JP,
+      })
+    ).toHaveProperty('audience');
   });
 
   it('publishes the dimension once it has a value, a default included', () => {

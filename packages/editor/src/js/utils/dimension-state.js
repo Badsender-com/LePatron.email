@@ -149,6 +149,28 @@ function nextSelections({ dimensions, selections, emailTypeId, changed }) {
   );
 }
 
+function withheldBy(dimensions, selections, gaps) {
+  const isEmpty = (name) => !(selections && selections[name]);
+  const withheld = new Set(
+    Object.keys(gaps || {}).filter((name) => gaps[name] && isEmpty(name))
+  );
+  let grew = withheld.size > 0;
+  while (grew) {
+    grew = false;
+    (dimensions || []).forEach((dimension) => {
+      if (
+        !withheld.has(dimension.name) &&
+        withheld.has(dimension.parentName) &&
+        isEmpty(dimension.name)
+      ) {
+        withheld.add(dimension.name);
+        grew = true;
+      }
+    });
+  }
+  return withheld;
+}
+
 /**
  * What the template reads of the email's settings (ADR-0015): the email type
  * counts as a dimension, with its own precedence for the tokens its values carry.
@@ -189,8 +211,9 @@ function templateValuesFor({
   // while the dimension stays empty and the gap is said under its select:
   // nothing decided it away. A value, chosen or by default, or a choice in
   // the select, and the dimension decides again.
-  Object.keys(gaps || {}).forEach((name) => {
-    if (gaps[name] && !(selections && selections[name])) delete values[name];
+  // An empty child waits for its parent: it is kept with it.
+  withheldBy(dimensions, selections, gaps).forEach((name) => {
+    delete values[name];
   });
   return values;
 }
