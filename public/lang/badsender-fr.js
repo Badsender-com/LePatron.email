@@ -394,6 +394,12 @@ module.exports = {
   // Under a dimension whose value is no longer offered under its parent value.
   'email-metadata-dimension-unavailable':
     "Cette valeur n'est plus proposée pour ce choix. L'email peut tout de même être enregistré.",
+  // Under a dimension whose value the email's content held, and that could not
+  // be taken up when the email opened (ADR-0024).
+  'email-metadata-adoption-unknown':
+    "Le contenu de l'email indique «\u00a0__identifier__\u00a0», qu'aucune valeur ne porte : rien n'a été repris.",
+  'email-metadata-adoption-not-offered':
+    "Le contenu de l'email indique «\u00a0__identifier__\u00a0», qui n'est pas proposée pour ce choix : rien n'a été repris.",
   'email-metadata-trigger-adhoc': 'Ad hoc',
   'email-metadata-trigger-automated': 'Automatisé',
   // Affichées sous le champ pour la valeur sélectionnée, et en infobulle sur les

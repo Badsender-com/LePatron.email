@@ -381,6 +381,12 @@ module.exports = {
   // Under a dimension whose value is no longer offered under its parent value.
   'email-metadata-dimension-unavailable':
     'This value is no longer offered for this choice. The email can still be saved.',
+  // Under a dimension whose value the email's content held, and that could not
+  // be taken up when the email opened (ADR-0024).
+  'email-metadata-adoption-unknown':
+    'The email content says “__identifier__”, which no value carries: nothing was taken up.',
+  'email-metadata-adoption-not-offered':
+    'The email content says “__identifier__”, which is not offered for this choice: nothing was taken up.',
   'email-metadata-trigger-adhoc': 'One Shot',
   'email-metadata-trigger-automated': 'Automated',
   // Shown under the field for the selected value, and as a tooltip on the options.
