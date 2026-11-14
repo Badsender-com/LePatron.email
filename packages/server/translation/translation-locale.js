@@ -1,13 +1,14 @@
 'use strict';
 
+const { TaxonomyItems } = require('../common/models.common.js');
 const {
-  TaxonomyDimensions,
-  TaxonomyItems,
-} = require('../common/models.common.js');
+  buildEditorDimensions,
+} = require('../mailing/mailing-company-dimensions.service.js');
 const {
   resolveEmailLocale,
 } = require('../taxonomy/services/email-locale.service.js');
 const { joinLocale } = require('../../shared/locale/locale-codes.js');
+const { isOfferedUnder } = require('../../shared/taxonomy/availability.js');
 
 const NOT_FOUND = 'TRANSLATION_LANGUAGE_VALUE_NOT_FOUND';
 const AMBIGUOUS = 'TRANSLATION_LANGUAGE_VALUE_AMBIGUOUS';
@@ -110,12 +111,13 @@ async function copyLanguageValues({ mailing, targetLanguage }) {
   const companyId = mailing._company?._id || mailing._company;
   if (!companyId) return { taxonomyItemIds: ids, warning: null };
 
-  const dimensions = await TaxonomyDimensions.find({
-    _company: companyId,
-    isActive: true,
-  })
-    .select({ name: 1, role: 1, parentName: 1 })
-    .lean();
+  // The dimensions offered on the email, each with the parent that counts on
+  // it: a parent out of the email's scope is none (ADR-0024).
+  const dimensions = await buildEditorDimensions({
+    companyId,
+    currentIds: ids,
+    templateId: mailing._wireframe?._id || mailing._wireframe,
+  });
   const targets = dimensions.filter(
     (dimension) => dimension.role === 'language' || dimension.role === 'locale'
   );
@@ -133,7 +135,6 @@ async function copyLanguageValues({ mailing, targetLanguage }) {
     name === 'emailType'
       ? mailing._emailType
       : carried.find((item) => item.type === name)?._id;
-  const activeNames = new Set(dimensions.map((dimension) => dimension.name));
 
   let taxonomyItemIds = ids;
   let warning = null;
@@ -142,12 +143,9 @@ async function copyLanguageValues({ mailing, targetLanguage }) {
       dimension.role === 'locale'
         ? joinLocale({ language, country })
         : language;
-    const parentValue =
-      dimension.parentName &&
-      (activeNames.has(dimension.parentName) ||
-        dimension.parentName === 'emailType')
-        ? carriedOf(dimension.parentName) || null
-        : undefined;
+    const parentValue = dimension.parentName
+      ? carriedOf(dimension.parentName) || null
+      : undefined;
     const candidates = await offered({
       companyId,
       dimension,
@@ -185,8 +183,7 @@ async function offered({ companyId, dimension, code, parentValue }) {
     .select({ _parents: 1 })
     .lean();
   if (parentValue === undefined) return values;
-  return values.filter((value) => {
-    const parents = (value._parents || []).map(String);
-    return parents.length === 0 || parents.includes(String(parentValue));
-  });
+  return values.filter((value) =>
+    isOfferedUnder({ parentIds: value._parents }, parentValue)
+  );
 }
