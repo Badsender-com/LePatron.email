@@ -218,3 +218,38 @@ describe('the selections an email opens with', () => {
     });
   });
 });
+
+// #1525 (ADR-0024): what the content held and could not be adopted stays in
+// the content until someone decides, rather than being wiped by the first write.
+describe('what the template reads while a gap is reported', () => {
+  const values = (selections, gaps) =>
+    templateValuesFor({
+      emailTypes: [],
+      dimensions: [MARKET, LANGUAGE],
+      selections,
+      gaps,
+    });
+  const JP = { market: { identifier: 'jp', reason: 'UNKNOWN_IDENTIFIER' } };
+
+  it('leaves out an empty dimension with a gap, so its property is kept', () => {
+    expect(values({ market: '', language: '' }, JP)).not.toHaveProperty(
+      'market'
+    );
+  });
+
+  it('still publishes the other dimensions', () => {
+    expect(values({ market: '', language: '' }, JP)).toHaveProperty('language');
+  });
+
+  it('publishes the dimension once it has a value, a default included', () => {
+    expect(values({ market: 'ca', language: '' }, JP)).toMatchObject({
+      market: 'ca',
+    });
+  });
+
+  it('publishes an empty value once the gap is dismissed by a choice', () => {
+    expect(
+      values({ market: '', language: '' }, { market: null })
+    ).toHaveProperty('market');
+  });
+});

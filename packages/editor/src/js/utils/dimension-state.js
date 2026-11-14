@@ -160,6 +160,8 @@ function nextSelections({ dimensions, selections, emailTypeId, changed }) {
  * @param {Object} params.selections
  * @param {string} [params.emailTypeId]
  * @param {string} [params.trigger]
+ * @param {Object} [params.gaps] by dimension name, what could not be adopted
+ *   when the email opened; null once the user chose in its select
  * @returns {Object} template property → value
  */
 function templateValuesFor({
@@ -169,8 +171,9 @@ function templateValuesFor({
   selections,
   emailTypeId,
   trigger,
+  gaps,
 }) {
-  return governanceValues({
+  const values = governanceValues({
     dimensions: [
       {
         name: 'emailType',
@@ -182,4 +185,12 @@ function templateValuesFor({
     selections: { ...selections, emailType: emailTypeId },
     trigger,
   }).values;
+  // What the content held and could not be adopted (ADR-0024) is kept there
+  // while the dimension stays empty and the gap is said under its select:
+  // nothing decided it away. A value, chosen or by default, or a choice in
+  // the select, and the dimension decides again.
+  Object.keys(gaps || {}).forEach((name) => {
+    if (gaps[name] && !(selections && selections[name])) delete values[name];
+  });
+  return values;
 }
