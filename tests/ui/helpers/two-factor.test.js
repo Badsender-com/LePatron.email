@@ -72,7 +72,7 @@ describe('the login page', () => {
 
 describe('choosing the verification method', () => {
   it('offers the authenticator app and the code by email', () => {
-    const setup = read('components/account/two-factor-setup.vue');
+    const setup = read('components/account/two-factor-methods.vue');
 
     expect(setup).toMatch(/v-for="option in \['totp', 'email'\]"/);
     expect(setup).toMatch(/type="radio"[\s\S]*?:value="option"/);
@@ -125,7 +125,10 @@ describe('the sign-in card (after the consent of a connected application)', () =
       'components/account/recovery-codes.vue',
     ].map(read);
 
-    expect(login.match(/<bs-auth-card/g)).toHaveLength(2);
+    expect(login.match(/<bs-auth-card/g)).toHaveLength(1);
+    expect(read('components/account/login-password.vue')).toMatch(
+      /<bs-auth-card/
+    );
     steps.forEach((step) => expect(step).toMatch(/<bs-auth-card/));
   });
 
