@@ -22,6 +22,8 @@ const { adoptValues } = require('../../shared/taxonomy/adoption.js');
  */
 module.exports = { adoptForTemplate };
 
+const OBJECT_ID = /^[0-9a-fA-F]{24}$/;
+
 /**
  * @param {Object} params
  * @param {string} params.templateId
@@ -33,20 +35,28 @@ module.exports = { adoptForTemplate };
  *   `withGaps` when it has one, `complete` when nothing is left to adopt.
  */
 async function adoptForTemplate({ templateId, apply }) {
-  const template = await Templates.findOne({ _id: templateId })
-    .select({ _company: 1 })
-    .lean();
+  const template = OBJECT_ID.test(String(templateId))
+    ? await Templates.findOne({ _id: templateId })
+        .select({ _company: 1 })
+        .lean()
+    : null;
   if (!template) throw new NotFound(ERROR_CODES.TEMPLATE_NOT_FOUND);
 
   const companyId = template._company;
-  const dimensions = await buildEditorDimensions({ companyId, templateId });
-  const contract = await contractOfTemplate(templateId);
   const mailings = await Mailings.find({
     _company: companyId,
     _wireframe: templateId,
   })
     .select({ name: 1, data: 1, _taxonomyItems: 1, _emailType: 1 })
     .lean();
+  // With the values the emails carry, deactivated ones included: a dimension
+  // holding one is not empty, and takes no second value.
+  const dimensions = await buildEditorDimensions({
+    companyId,
+    templateId,
+    currentIds: mailings.flatMap((mailing) => mailing._taxonomyItems || []),
+  });
+  const contract = await contractOfTemplate(templateId);
 
   const emails = mailings
     .map((mailing) => entryFor(mailing, dimensions, contract))
@@ -72,12 +82,14 @@ async function attach(mailings, emails) {
   // One email at a time: a few hundred at most, and each its own condition.
   for (const entry of toAttach) {
     const carried = byId.get(entry.id)._taxonomyItems || [];
-    await Mailings.updateOne(
+    const result = await Mailings.updateOne(
       { _id: entry.id, _taxonomyItems: unchanged(carried) },
       { $set: { _taxonomyItems: [...carried, ...entry.adoptedIds] } },
       // Attaching values is not an edit of the email.
       { timestamps: false }
     );
+    // Saved by someone in between: not attached, and the report says so.
+    if ((result.matchedCount ?? result.n) === 0) entry.skipped = true;
   }
 }
 
@@ -85,7 +97,7 @@ function entryFor(mailing, dimensions, contract) {
   const { selections, adopted, gaps } = adoptValues({
     dimensions,
     contract,
-    content: mailing.data || {},
+    content: contentOf(mailing, contract),
     selections: carriedSelections(mailing, dimensions),
   });
   const identifierOf = (name) =>
@@ -103,6 +115,17 @@ function entryFor(mailing, dimensions, contract) {
     adoptedIds: adopted.map((name) => selections[name]),
     gaps,
   };
+}
+
+// The root of the email's content as the editor sees it: a property the email
+// never saved holds the template's own default.
+function contentOf(mailing, contract) {
+  const declared = Object.fromEntries(
+    Object.entries((contract && contract.declared) || {}).filter(
+      ([, value]) => typeof value === 'string' && value !== ''
+    )
+  );
+  return { ...declared, ...(mailing.data || {}) };
 }
 
 // What the email carries: one value per dimension, and its email type, the
@@ -127,14 +150,19 @@ function unchanged(carried) {
   return carried.length > 0 ? carried : { $in: [null, []] };
 }
 
+// `skipped` only when an email was saved during the run, so the usual report
+// keeps its three counts.
 function countsOf(emails) {
-  return emails.reduce(
-    (counts, entry) => {
-      if (entry.gaps.length > 0) counts.withGaps += 1;
-      else if (entry.adoptedIds.length > 0) counts.attached += 1;
-      else counts.complete += 1;
-      return counts;
+  const counts = emails.reduce(
+    (sums, entry) => {
+      if (entry.skipped) sums.skipped += 1;
+      else if (entry.gaps.length > 0) sums.withGaps += 1;
+      else if (entry.adoptedIds.length > 0) sums.attached += 1;
+      else sums.complete += 1;
+      return sums;
     },
-    { attached: 0, withGaps: 0, complete: 0 }
+    { attached: 0, withGaps: 0, complete: 0, skipped: 0 }
   );
+  if (counts.skipped === 0) delete counts.skipped;
+  return counts;
 }
