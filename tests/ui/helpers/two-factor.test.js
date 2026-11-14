@@ -161,6 +161,57 @@ describe('the sign-in card (after the consent of a connected application)', () =
   });
 });
 
+describe('the other sign-in pages', () => {
+  it('take the same card', () => {
+    [
+      'routes/account/reset-password.vue',
+      'routes/account/_email/password/_token.vue',
+    ]
+      .map(read)
+      .forEach((page) => expect(page).toMatch(/<bs-auth-card/));
+  });
+
+  it('say in the card where the reset link went', () => {
+    const reset = read('routes/account/reset-password.vue');
+
+    expect(reset).toMatch(/this\.sentTo = this\.form\.email/);
+    expect(reset).toMatch(/v-if="!sentTo"/);
+  });
+
+  it('offer a new link when the one followed no longer works', () => {
+    const set = read('routes/account/_email/password/_token.vue');
+
+    expect(set).toMatch(/v-if="linkExpired"/);
+    expect(set).toMatch(/to="\/account\/reset-password"/);
+  });
+
+  it('carry no tagline under the logo', () => {
+    [
+      'components/account/auth-card.vue',
+      'routes/account/reset-password.vue',
+      'routes/account/_email/password/_token.vue',
+    ]
+      .map(read)
+      .forEach((page) => expect(page).not.toMatch(/Builder by Badsender/));
+  });
+});
+
+describe('a failed sign-in through the identity provider', () => {
+  const server = fs.readFileSync(
+    path.join(__dirname, '../../../packages/server/index.js'),
+    'utf8'
+  );
+
+  it('lands on the login page, which says so', () => {
+    expect(server).toMatch(/SSO_FAILED = '\/account\/login\?sso=failed'/);
+    expect(server).not.toMatch(/failureRedirect: '\/'/);
+
+    const login = read('routes/account/login/index.vue');
+    expect(login).toMatch(/\$route\.query\.sso !== 'failed'/);
+    expect(login).toMatch(/:alert="ssoFailed \? \$t\('authCard\.ssoFailed'\)/);
+  });
+});
+
 describe('the 401 of the step of the code', () => {
   let onError;
   let redirected;
