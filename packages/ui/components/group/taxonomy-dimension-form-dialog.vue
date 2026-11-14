@@ -13,6 +13,11 @@ import {
   parentCandidates,
 } from '~/helpers/taxonomy-builder.js';
 import { roleOptions } from '~/helpers/taxonomy-roles.js';
+import {
+  changedDimensionFields,
+  scopeIsFixed,
+} from '~/helpers/taxonomy-dimension-form.js';
+import BsTaxonomyScopeField from './taxonomy-scope-field.vue';
 
 export default {
   name: 'BsTaxonomyDimensionFormDialog',
@@ -21,6 +26,7 @@ export default {
     BsTextField,
     BsTextarea,
     BsSelect,
+    BsTaxonomyScopeField,
   },
   mixins: [validationMixin],
   props: {
@@ -37,15 +43,13 @@ export default {
         parentName: null,
         precedence: 0,
         role: null,
+        scope: 'all',
       },
-      initialRole: null,
-      initialPrecedence: 0,
+      // The structural fields as the dialog opened: only changes are sent.
+      initial: {},
       editingId: null,
       // The standard dimensions open the list: neither hangs under anything.
       isStandard: false,
-      // Sent only when changed: a parent deactivated since must not block an
-      // edit of the wording.
-      initialParentName: null,
       // A name another dimension already holds: the server alone knows.
       serverNameError: null,
     };
@@ -64,6 +68,9 @@ export default {
   computed: {
     isEditing() {
       return this.editingId !== null;
+    },
+    scopeFixed() {
+      return scopeIsFixed({ standard: this.isStandard, role: this.form.role });
     },
     roleItems() {
       return [
@@ -130,16 +137,17 @@ export default {
       this.editingId = dimension ? dimension.id : null;
       this.serverNameError = null;
       this.isStandard = Boolean(dimension && dimension.standard);
-      this.initialParentName = (dimension && dimension.parentName) || null;
-      this.initialPrecedence = (dimension && dimension.precedence) || 0;
-      this.initialRole = (dimension && dimension.role) || null;
+      this.initial = {
+        parentName: (dimension && dimension.parentName) || null,
+        precedence: (dimension && dimension.precedence) || 0,
+        role: (dimension && dimension.role) || null,
+        scope: (dimension && dimension.scope) || 'all',
+      };
       this.form = {
         name: dimension ? dimension.name : '',
         label: dimension ? dimension.label || '' : '',
         description: dimension ? dimension.description || '' : '',
-        parentName: this.initialParentName,
-        precedence: this.initialPrecedence,
-        role: this.initialRole,
+        ...this.initial,
       };
       this.$v.$reset();
       this.$refs.modal.open();
@@ -167,23 +175,16 @@ export default {
       this.$v.$touch();
       if (this.$v.$invalid) return;
 
-      const payload = this.isEditing
-        ? buildDimensionPayload(this.form)
-        : buildNewDimensionPayload(this.form);
-      if (!this.isStandard && this.form.parentName !== this.initialParentName) {
-        payload.parentName = this.form.parentName || null;
-      }
-      if (!this.isStandard && this.form.role !== this.initialRole) {
-        payload.role = this.form.role || null;
-      }
-      const precedence = Math.trunc(Number(this.form.precedence));
-      if (
-        this.form.name !== 'trigger' &&
-        Number.isFinite(precedence) &&
-        precedence !== this.initialPrecedence
-      ) {
-        payload.precedence = precedence;
-      }
+      const payload = {
+        ...(this.isEditing
+          ? buildDimensionPayload(this.form)
+          : buildNewDimensionPayload(this.form)),
+        ...changedDimensionFields({
+          form: this.form,
+          initial: this.initial,
+          isStandard: this.isStandard,
+        }),
+      };
       this.$emit('save', { id: this.editingId, payload });
     },
   },
@@ -269,6 +270,13 @@ export default {
       :hint="$t('taxonomy.dimensions.form.roleHint')"
       :disabled="loading"
       persistent-hint
+    />
+
+    <bs-taxonomy-scope-field
+      v-if="!isStandard"
+      v-model="form.scope"
+      :fixed="scopeFixed"
+      :disabled="loading"
     />
 
     <bs-select
