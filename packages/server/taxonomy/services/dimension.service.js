@@ -13,11 +13,8 @@ const {
 } = require('../../constant/taxonomy-type.js');
 const { buildStandardDimensions } = require('./default-dimensions.js');
 const { resolveCompanyId, scopedById } = require('./company-scope.js');
-const {
-  isObjectId,
-  validateDimensionPayload,
-  limitReached,
-} = require('./taxonomy.validation.js');
+const { isObjectId, limitReached } = require('./taxonomy.validation.js');
+const { validateDimensionPayload } = require('./dimension.validation.js');
 const {
   assertParentName,
   assertNoChildDimension,
