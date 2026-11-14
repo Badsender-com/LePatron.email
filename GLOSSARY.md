@@ -218,3 +218,23 @@ _Avoid_: Email language setting, lang
 Which dimension wins when the values chosen for one email carry the same design token. Unrelated to the order dimensions are listed in.
 _UI_: Priorité
 _Avoid_: Order, weight
+
+**Template contract**:
+What a template declares and reads at its root: the properties it compares or prints, the design tokens it uses, and where its former properties are adopted from. It decides which dimensions an email of that template offers.
+_UI_: Contrat du template
+_Avoid_: Template schema, template variables
+
+**Scope**:
+Which emails a dimension is offered on: every email, or only those whose template reads it. A dimension holding a role, and a standard dimension, are offered on every email.
+_UI_: Portée
+_Avoid_: Visibility, applicability, availability
+
+**Default value**:
+The value an email takes for a dimension nobody chose: one per dimension at the first level, one per parent value for a child dimension ("default under"). Never applied over a value someone chose, nor to emails that already exist.
+_UI_: Valeur par défaut
+_Avoid_: Preset, initial value, fallback
+
+**Adoption**:
+Taking, for an empty dimension, the value an email's content already holds in its template's property, so that an email made before the taxonomy keeps what it had chosen. Done when the email is opened, or in bulk on a template.
+_UI_: Reprise des valeurs
+_Avoid_: Migration, import, conversion
