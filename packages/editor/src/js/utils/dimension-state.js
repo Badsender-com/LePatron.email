@@ -79,6 +79,7 @@ function openingSelections({
       ? resolveDefaults({
           dimensions,
           selections: adoption.selections,
+          templateDefaults: templateDefaultsOf(dimensions),
           changed: adoption.adopted,
         })
       : adoption.selections;
@@ -96,6 +97,16 @@ function openingSelections({
       {}
     ),
   };
+}
+
+// The value the template itself gives each dimension, sent with it by the
+// server: the first default, as when the email was created (ADR-0024).
+function templateDefaultsOf(dimensions) {
+  return Object.fromEntries(
+    (dimensions || [])
+      .filter((dimension) => dimension.templateDefault)
+      .map((dimension) => [dimension.name, dimension.templateDefault])
+  );
 }
 
 /**
@@ -140,6 +151,7 @@ function nextSelections({ dimensions, selections, emailTypeId, changed }) {
         dimensions,
         // The email type is a parent like any other, with its own field.
         selections: { ...kept, emailType: emailTypeId },
+        templateDefaults: templateDefaultsOf(dimensions),
         changed,
       })
     : kept;

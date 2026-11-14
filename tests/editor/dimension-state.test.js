@@ -271,3 +271,25 @@ describe('what the template reads while a gap is reported', () => {
     ).toHaveProperty('market');
   });
 });
+
+// Review of the stack: the template's own default comes first on a parent
+// change too, as when the email was created (ADR-0024).
+describe("the template's own default on a parent change", () => {
+  it('lands the child on the value the template gives it, when offered', () => {
+    const language = {
+      ...LANGUAGE,
+      templateDefault: 'fr',
+      values: LANGUAGE.values.map((value) =>
+        value.id === 'en' ? { ...value, defaultUnder: ['ca'] } : value
+      ),
+    };
+
+    expect(
+      nextSelections({
+        dimensions: [MARKET, language],
+        selections: { market: 'ca', language: 'nl' },
+        changed: ['market'],
+      })
+    ).toEqual({ market: 'ca', language: 'fr' });
+  });
+});
