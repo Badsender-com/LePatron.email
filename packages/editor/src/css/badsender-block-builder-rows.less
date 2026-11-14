@@ -16,9 +16,27 @@
     .bb-pickable();
   }
 
-  &__add-row {
-    width: 100%;
+  &__row-actions {
+    display: flex;
+    gap: 0.25rem;
     margin: 0.25rem 0 0.75rem;
+
+    button:not(.bb-modal__add-row) {
+      width: 1.75rem;
+      cursor: pointer;
+      border: 1px solid #d5d5d5;
+      border-radius: 2px;
+      background: #fff;
+
+      &:hover {
+        border-color: @bs-accent-color;
+        color: @bs-accent-color;
+      }
+    }
+  }
+
+  &__add-row {
+    flex: 1;
     padding: 0.3125rem;
     font-size: 0.8125rem;
     cursor: pointer;

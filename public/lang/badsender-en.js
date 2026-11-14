@@ -425,6 +425,8 @@ module.exports = {
   'block-builder-elements-folded':
     '__count__ elements moved to column __column__.',
   'block-builder-elements-folded-one': '1 element moved to column __column__.',
+  'block-builder-duplicate-row': 'Duplicate the row',
+  'block-builder-delete-row': 'Delete the row',
   'block-builder-add-row': 'Add a row',
   'block-builder-row-limit': 'A block holds at most __max__ rows.',
   'block-builder-too-many-rows':

@@ -66,12 +66,26 @@ module.exports = `<modal-component
             @drop.prevent="dropRowAt(index)"
             @dragend="dropRowAt(index)">{{ rowLabel(row, index) }}</li>
         </ul>
-        <button
-          type="button"
-          class="bb-modal__add-row"
-          :disabled="rowLimitReached"
-          :title="rowLimitReached ? vm.t('block-builder-row-limit', { max: maxRows }) : null"
-          @click.prevent="addRow">+ {{ vm.t('block-builder-add-row') }}</button>
+        <div class="bb-modal__row-actions">
+          <button
+            type="button"
+            class="bb-modal__add-row"
+            :disabled="rowLimitReached"
+            :title="rowLimitReached ? vm.t('block-builder-row-limit', { max: maxRows }) : null"
+            @click.prevent="addRow">+ {{ vm.t('block-builder-add-row') }}</button>
+          <button
+            v-if="selectedRow"
+            type="button"
+            :title="vm.t('block-builder-duplicate-row')"
+            :aria-label="vm.t('block-builder-duplicate-row')"
+            @click.prevent="duplicateSelectedRow">⧉</button>
+          <button
+            v-if="selectedRow"
+            type="button"
+            :title="vm.t('block-builder-delete-row')"
+            :aria-label="vm.t('block-builder-delete-row')"
+            @click.prevent="deleteSelectedRow">✕</button>
+        </div>
 
         <div v-if="selectedRow" class="bb-modal__structure">
           <p class="bb-modal__section">{{ vm.t('block-builder-structure') }}</p>

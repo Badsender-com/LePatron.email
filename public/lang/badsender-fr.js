@@ -440,6 +440,8 @@ module.exports = {
     '__count__ éléments déplacés dans la colonne __column__.',
   'block-builder-elements-folded-one':
     '1 élément déplacé dans la colonne __column__.',
+  'block-builder-duplicate-row': 'Dupliquer la ligne',
+  'block-builder-delete-row': 'Supprimer la ligne',
   'block-builder-add-row': 'Ajouter une ligne',
   'block-builder-row-limit': 'Un bloc compte au plus __max__ lignes.',
   'block-builder-too-many-rows':
