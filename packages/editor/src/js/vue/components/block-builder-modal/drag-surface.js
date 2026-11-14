@@ -8,8 +8,11 @@ const {
 } = require('./preview-surface.js');
 const {
   ELEMENT_ATTRIBUTE,
+  COLUMN_ROW_ATTRIBUTE,
+  COLUMN_INDEX_ATTRIBUTE,
 } = require('../../../../../../shared/block-builder/generate.js');
-const { dropIndexAt, showDropLine, clearDropLine } = require('./drop-line.js');
+const { showDropLine, clearDropLine } = require('./drop-line.js');
+const { dropTargetAt, columnElements } = require('./drop-target.js');
 
 // Dragging in the preview, two gestures in one: an element from the palette,
 // to insert it, or a row already in the block, to move it. Same indicator and
@@ -44,6 +47,12 @@ const DragSurfaceMixin = {
     // The palette entry, a moment later: it is faded only once the browser
     // has taken its picture for the drag image (see handleDragStart).
     fadedType: null,
+    // Where the indicator currently says the drop will land: a row, a column
+    // and a position inside it. The drop uses THIS rather than measuring the
+    // event again — see handlePreviewDrop.
+    dropTarget: null,
+    // The row being dragged by its handle, rather than an element.
+    draggingRowId: null,
   }),
   created() {
     // Not reactive: nothing renders off them.
@@ -77,7 +86,28 @@ const DragSurfaceMixin = {
 
     /** True while either kind of drag is under way. */
     isDragging() {
-      return Boolean(this.draggingType || this.draggingId);
+      return Boolean(this.draggingType || this.draggingId || this.draggingRowId);
+    },
+
+    /**
+     * Picks up a row by its handle.
+     *
+     * Holds the preview still for the same reason the other two drags do:
+     * re-rendering replaces the body, and the row under the cursor with it.
+     */
+    startRowDrag(rowId) {
+      this.draggingRowId = rowId;
+      this.selectRow(rowId);
+      this.freezeRender();
+    },
+
+    /** Drops the row being dragged before the row at `index`. */
+    dropRowAt(index) {
+      const id = this.draggingRowId;
+      this.draggingRowId = null;
+      this.thawRender();
+      if (!id) return false;
+      return this.moveRow(id, index);
     },
 
     // Never both. WebKit can lose the dragend of a drag that crossed the
@@ -255,9 +285,12 @@ const DragSurfaceMixin = {
       if (!doc || !doc.body) return;
       doc.body.classList.add(DRAGGING_CLASS);
 
-      const rows = this.previewRows(doc);
-      const index = dropIndexAt(rows, event.clientY);
-      showDropLine(doc, rows, index, this.draggingId);
+      const target = dropTargetAt(doc, event.clientX, event.clientY);
+      this.setDropTarget(target);
+      if (!target) return;
+
+      const column = this.columnElementAt(doc, target);
+      showDropLine(doc, columnElements(column), target.index, this.draggingId);
     },
 
     // Leaving the iframe entirely, rather than crossing between two rows:
@@ -275,22 +308,61 @@ const DragSurfaceMixin = {
       clearDropLine(this.previewDocument());
     },
 
-    // The index is measured again rather than kept from the last dragover: the
-    // drop carries its own coordinates, and they are the ones that count.
+    /**
+     * The target the indicator is showing, which is where a drop will land.
+     *
+     * Kept rather than measured again at drop time, and that is a reversal.
+     * In one dimension the two could not disagree, so measuring twice was
+     * harmless. With a column in the answer they can: a cursor sitting between
+     * two cells resolves to whichever is nearest, and a pixel of movement
+     * between the last dragover and the release flips it. **The user drops
+     * where the line is.** If the drop lands anywhere else, the indicator was
+     * a lie, and that is the kind of bug nobody can report precisely.
+     */
+    setDropTarget(target) {
+      this.dropTarget = target;
+    },
+
+    /** The column element a target names, in the preview. */
+    columnElementAt(doc, target) {
+      if (!doc || !doc.body || !target) return null;
+      return doc.body.querySelector(
+        `[${COLUMN_ROW_ATTRIBUTE}="${target.rowId}"]` +
+          `[${COLUMN_INDEX_ATTRIBUTE}="${target.columnIndex}"]`
+      );
+    },
+
+    // Every column accepts a drop, empty ones included — that is most of why
+    // an empty column keeps a box worth aiming at.
+    canDropInto(target) {
+      if (!target || !target.rowId) return false;
+      const row = (this.state.rows || []).find(
+        (entry) => entry.id === target.rowId
+      );
+      return Boolean(row && row.columns[target.columnIndex]);
+    },
+
     handlePreviewDrop(event) {
       event.preventDefault();
       if (!this.isDragging()) return;
 
       const doc = this.previewDocument();
-      const index = doc ? dropIndexAt(this.previewRows(doc), event.clientY) : 0;
+      // The stored target first; measured from the event only when the drop
+      // arrives without a dragover before it, which a test can do and a
+      // browser does not.
+      const target =
+        this.dropTarget ||
+        (doc ? dropTargetAt(doc, event.clientX, event.clientY) : null);
       const type = this.draggingType;
       const id = this.draggingId;
 
       // Ended as a drop, not a cancel: the selection goes to what moved.
       this.draggingId = null;
       this.handleDragEnd();
-      if (id) this.moveElementTo(id, index);
-      else this.insertElement(type, index);
+      if (!target || !this.canDropInto(target)) return;
+
+      if (id) this.moveElement(id, target);
+      else this.insertElementInto(type, target);
     },
   },
 };

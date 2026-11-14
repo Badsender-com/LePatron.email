@@ -126,6 +126,37 @@ const ElementListMixin = {
       return element;
     },
 
+    /**
+     * Adds a new element of `type` into a column, at a position inside it.
+     *
+     * The column-aware twin of `insertElement`, which still serves the palette
+     * click: that one appends to wherever the list is working, this one takes
+     * the place a drag chose.
+     *
+     * @param {string} type
+     * @param {{rowId: string, columnIndex: number, index: number}} target
+     * @returns {Object|null} the element, or null when the target is gone
+     */
+    insertElementInto(type, target) {
+      if (!PALETTE.some((item) => item.type === type)) return null;
+      const row = (this.state.rows || []).find(
+        (entry) => entry.id === (target && target.rowId)
+      );
+      const column = row && row.columns[target.columnIndex];
+      if (!column) return null;
+
+      // Blank, as its defaults have it. What the preview shows in a blank
+      // element is a starter drawn there and nowhere else.
+      const element = { id: newElementId(), type, ...defaultsFor(type) };
+      const at = Math.max(0, Math.min(target.index, column.elements.length));
+      column.elements.splice(at, 0, element);
+      // Selected on arrival, so the settings panel is already on it — dropping
+      // and editing are one gesture, not two.
+      this.selectElement(element.id);
+      this.scheduleRender();
+      return element;
+    },
+
     removeSelected() {
       const index = this.indexOfSelected();
       if (index === -1) return;

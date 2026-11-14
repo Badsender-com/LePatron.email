@@ -57,8 +57,13 @@ module.exports = `<modal-component
             :tabindex="rowTabIndex(index)"
             class="bb-modal__row"
             :class="{ 'bb-modal__row--on': row.id === selectedRowId }"
+            draggable="true"
             @click="selectRow(row.id)"
-            @keydown="onRowKeydown($event, index)">{{ rowLabel(row, index) }}</li>
+            @keydown="onRowKeydown($event, index)"
+            @dragstart="startRowDrag(row.id)"
+            @dragover.prevent
+            @drop.prevent="dropRowAt(index)"
+            @dragend="dropRowAt(index)">{{ rowLabel(row, index) }}</li>
         </ul>
         <button
           type="button"

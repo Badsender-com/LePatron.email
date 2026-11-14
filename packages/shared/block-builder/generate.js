@@ -21,7 +21,12 @@ const {
   ELEMENT_ATTRIBUTE,
   STARTER_ATTRIBUTE,
 } = require('./element-markup.js');
-const { generateRow } = require('./row-markup.js');
+const {
+  generateRow,
+  COLUMN_ROW_ATTRIBUTE,
+  COLUMN_INDEX_ATTRIBUTE,
+  COLUMN_CHROME_CLASS,
+} = require('./row-markup.js');
 const { escapeForContext, COLOR, PX } = require('./slot-contexts.js');
 const {
   singleColumnElements,
@@ -144,6 +149,9 @@ module.exports = {
   GENERATOR_VERSION,
   ELEMENT_ATTRIBUTE,
   STARTER_ATTRIBUTE,
+  COLUMN_ROW_ATTRIBUTE,
+  COLUMN_INDEX_ATTRIBUTE,
+  COLUMN_CHROME_CLASS,
   DEFAULT_BLOCK,
   isBlankRichText,
 };

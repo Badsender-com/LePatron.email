@@ -7,6 +7,7 @@
 // is decide which variant each cell takes and what goes in it.
 
 const { resolveElement, definitionOf } = require('./element-markup.js');
+const { escapeForContext, ATTR } = require('./slot-contexts.js');
 const { stackClassFor } = require('./generated-classes.js');
 const { usableWidths } = require('./composition.js');
 const { defineLayout } = require('./template.js');
@@ -32,6 +33,16 @@ const COLUMN_VARIANTS = {
 // Windows ignores `max-width` and lays an image out at its `width` attribute,
 // so an image in a half-width column has to be told it has 300px, not 600.
 const BLOCK_WIDTH = 600;
+
+// Editing chrome on a column: which row and which column a cell is, so a drag
+// can tell where the cursor is without the preview having to guess from
+// coordinates alone. Written only when the preview asks, like the element's
+// own chrome (element-markup.js) — an email has no use for either.
+const COLUMN_ROW_ATTRIBUTE = 'data-lp-row';
+const COLUMN_INDEX_ATTRIBUTE = 'data-lp-col';
+// The class the preview styles to make a column visible as a drop target, and
+// to give an empty one a box worth aiming at.
+const COLUMN_CHROME_CLASS = 'lp-bb-col';
 
 /**
  * The elements of a column, resolved once each. A column is empty exactly when
@@ -156,10 +167,16 @@ function rowClass(row) {
 function generateRow(row, options) {
   const columns = columnsOf(row);
 
+  // Emptiness is read from the elements, never from the rendered string: with
+  // chrome on, an empty column still renders its drop zone, and testing the
+  // string would make the preview pick a different variant than the export.
+  const chrome = Boolean(options && options.elementIds);
+
   // A row where every column is empty renders nothing at all: it would
   // otherwise ship a band of blank cells nobody can see or click. A row of no
-  // column at all is one of them.
-  if (columns.every(isEmptyColumn)) return '';
+  // column at all is one of them. With chrome on it stays, because an empty
+  // row is somewhere a user can still drop.
+  if (!chrome && columns.every(isEmptyColumn)) return '';
 
   const resolved = columns.map((column) =>
     resolveColumn(
@@ -171,15 +188,27 @@ function generateRow(row, options) {
 
   const stackClass = classOfColumns(columns);
   const variants = stackClass ? COLUMN_VARIANTS.stacked : COLUMN_VARIANTS.alone;
+  const rowId = chrome ? escapeForContext(row.id, ATTR) : '';
 
   const cells = columns.map((column, index) => {
     const elements = resolved[index];
+    const content = renderColumnContent(elements);
     const values = {
       width: `${column.width}%`,
       stackClass,
-      content: renderColumnContent(elements),
+      // A box the cursor can be inside, even when the column holds nothing —
+      // which is the whole point for an empty one. A div inside the cell
+      // rather than attributes on the cell itself: the cell is email markup,
+      // written in a component, and chrome has no business in it.
+      content: chrome
+        ? `<div class="${COLUMN_CHROME_CLASS}"` +
+          ` ${COLUMN_ROW_ATTRIBUTE}="${rowId}"` +
+          ` ${COLUMN_INDEX_ATTRIBUTE}="${index}">` +
+          content +
+          '</div>'
+        : content,
     };
-    return elements.length === 0
+    return elements.length === 0 && !chrome
       ? variants.empty(values)
       : variants.filled(values);
   });
@@ -187,4 +216,11 @@ function generateRow(row, options) {
   return renderRow({ cells: cells.join('') });
 }
 
-module.exports = { generateRow, rowClass, BLOCK_WIDTH };
+module.exports = {
+  generateRow,
+  rowClass,
+  BLOCK_WIDTH,
+  COLUMN_ROW_ATTRIBUTE,
+  COLUMN_INDEX_ATTRIBUTE,
+  COLUMN_CHROME_CLASS,
+};
