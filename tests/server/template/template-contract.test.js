@@ -52,6 +52,29 @@ describe('template contract', () => {
     ]);
   });
 
+  it('never counts a `_root_.x` written in a comment', () => {
+    const markup = `<!-- Reads _root_.brand and _root_.sm: documentation only -->
+      <div data-ko-display="_root_.market eq 'ca'">Canada</div>`;
+
+    expect(readTemplateContract(markup).read).toEqual(['market']);
+  });
+
+  it('reads `_root_.x` inside an Outlook conditional comment, which is markup', () => {
+    const markup = `<!--[if mso]>
+      <td style="-ko-background-color: @[_root_.mainColorVar]"></td>
+    <![endif]-->`;
+
+    expect(readTemplateContract(markup).read).toEqual(['mainColorVar']);
+  });
+
+  it('reads `_root_.x` in the markup hidden from Outlook only', () => {
+    const markup = `<!--[if !mso]><!-->
+      <div data-ko-display="_root_.audience eq 'teachers'">Teachers</div>
+    <!--<![endif]-->`;
+
+    expect(readTemplateContract(markup).read).toEqual(['audience']);
+  });
+
   it('never counts a block property as a root one', () => {
     const markup = `
       <div data-ko-block="ctaBlock">
