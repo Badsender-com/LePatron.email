@@ -119,10 +119,9 @@ async function read(req, res) {
     select: 'id name',
   });
   if (!template) throw new createError.NotFound(ERROR_CODES.TEMPLATE_NOT_FOUND);
-  // A template saved before ADR-0024 has no contract stored: read it once now.
-  if (!template.contract) {
-    template.contract = await contractOfTemplate(templateId);
-  }
+  // A template saved before ADR-0024, or read by an older reader, has its
+  // contract read again now: the service decides.
+  template.contract = await contractOfTemplate(templateId);
   res.json(template);
 }
 
