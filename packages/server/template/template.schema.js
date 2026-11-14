@@ -139,6 +139,10 @@ const TemplateSchema = Schema(
     contract: {
       type: Schema.Types.Mixed,
     },
+    // The version of the reader that read it: an older one is read again.
+    contractVersion: {
+      type: Number,
+    },
   },
   { timestamps: true, toJSON: { virtuals: true, getters: true } }
 );

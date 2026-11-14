@@ -53,6 +53,21 @@ describe('the contract of a template saved before it existed', () => {
     expect((await contractOfTemplate(TEMPLATE)).read).toEqual(['market']);
   });
 
+  it('is read again when an older reader stored it', async () => {
+    models.Templates.seed([
+      {
+        _id: TEMPLATE,
+        _company: COMPANY_A,
+        markup: TEMPLATE_READING_MARKET,
+        // Read when a comment still counted.
+        contract: { declared: {}, read: ['market', 'sm'], adopt: {} },
+        contractVersion: 1,
+      },
+    ]);
+
+    expect((await contractOfTemplate(TEMPLATE)).read).toEqual(['market']);
+  });
+
   it('is empty for a template that does not exist, or has no markup', async () => {
     models.Templates.seed([{ _id: TEMPLATE, _company: COMPANY_A }]);
     const empty = { declared: {}, read: [], adopt: {} };

@@ -22,8 +22,21 @@ const STYLE_BLOCK = /<style[^>]*>([\s\S]*?)<\/style>/gi;
 // One definition `name { ... }`: Mosaico's definitions hold no nested braces.
 const DEFINITION = /([A-Za-z_][A-Za-z0-9_]*)\s*\{([^{}]*)\}/g;
 const ROOT_READ = /_root_\.([A-Za-z_][A-Za-z0-9_]*)/g;
+// A comment documents, it reads nothing. An Outlook conditional comment
+// (`<!--[if mso]>`) holds markup, bindings included: it is kept, and so is
+// the `<!-->` that opens the markup hidden from Outlook only.
+const PLAIN_COMMENT = /<!--(?!\[if|>)[\s\S]*?-->/g;
 
-module.exports = { readTemplateContract, refreshContract };
+// Raised each time the reader reads differently: a contract stored by an older
+// reader is read again on its next need (template-contract.service.js).
+// 2: comments other than Outlook's conditional ones are not read.
+const CONTRACT_READER_VERSION = 2;
+
+module.exports = {
+  readTemplateContract,
+  refreshContract,
+  CONTRACT_READER_VERSION,
+};
 
 /**
  * Read a template's contract again when its markup changed: called before a
@@ -34,6 +47,7 @@ module.exports = { readTemplateContract, refreshContract };
 function refreshContract(template) {
   if (!template.isNew && !template.isModified('markup')) return;
   template.contract = readTemplateContract(template.markup);
+  template.contractVersion = CONTRACT_READER_VERSION;
   template.markModified('contract');
 }
 
@@ -49,9 +63,15 @@ function readTemplateContract(markup) {
   const definitions = definitionsOf(markup);
   return {
     declared: declaredProperties(definitions.get('template')),
-    read: [...new Set([...markup.matchAll(ROOT_READ)].map((m) => m[1]))].sort(),
+    read: rootReads(markup.replace(PLAIN_COMMENT, '')),
     adopt: adoptionSources(definitions),
   };
+}
+
+function rootReads(markup) {
+  return [
+    ...new Set([...markup.matchAll(ROOT_READ)].map((match) => match[1])),
+  ].sort();
 }
 
 // The definitions of every `<style>` block, by name. A name defined twice keeps
