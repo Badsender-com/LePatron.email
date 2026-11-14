@@ -1,6 +1,6 @@
 'use strict';
 
-const { BadRequest, Conflict } = require('http-errors');
+const { Conflict } = require('http-errors');
 
 const { TaxonomyItems } = require('../../common/models.common.js');
 const ERROR_CODES = require('../../constant/error-codes.js');
@@ -18,7 +18,6 @@ module.exports = {
   readValueFields,
   assertLabelIsFree,
   assertIdentifierIsFree,
-  assertDefaultIsFree,
 };
 
 /**
@@ -97,28 +96,5 @@ async function assertIdentifierIsFree({
 
   if (await TaxonomyItems.exists(query)) {
     throw new Conflict(ERROR_CODES.TAXONOMY_ITEM_IDENTIFIER_ALREADY_EXISTS);
-  }
-}
-
-/**
- * One default per dimension (ADR-0024). The refusal names the value holding the
- * place, so the admin knows which one to unmark. The email type keeps its own
- * field on the email, which no default fills: marking one is refused.
- */
-async function assertDefaultIsFree({ companyId, type, exceptId }) {
-  if (type === StandardDimensions.EMAIL_TYPE) {
-    throw new BadRequest(ERROR_CODES.INVALID_TAXONOMY_ITEM);
-  }
-
-  const query = { _company: companyId, type, isDefault: true };
-  if (exceptId) {
-    query._id = { $ne: exceptId };
-  }
-
-  const holder = await TaxonomyItems.findOne(query).select({ label: 1 }).lean();
-  if (holder) {
-    const error = new Conflict(ERROR_CODES.TAXONOMY_DEFAULT_TAKEN);
-    error.details = { holder: holder.label };
-    throw error;
   }
 }

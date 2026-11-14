@@ -5,6 +5,9 @@ const {
   selectionsFromIds,
 } = require('./dimension-selects');
 const { governanceValues } = require('./governance-values');
+const {
+  resolveDefaults,
+} = require('../../../../shared/taxonomy/default-values.js');
 
 /**
  * The state of the dimension selects of the email settings, as the Vue section
@@ -31,10 +34,11 @@ function initialSelections(dimensions, taxonomyItemIds) {
 }
 
 /**
- * The selections after a change, every key kept: a value no longer offered is
- * emptied rather than removed. Only the descendants of `changed` are looked at,
- * so a combination narrowed since the email chose it is kept, with its notice,
- * until the user changes its parent.
+ * The selections after a change, every key kept. A child value no longer
+ * offered takes the new parent value's default (ADR-0024), or the only value
+ * offered there, or is emptied rather than removed. Only the descendants of
+ * `changed` are looked at, so a combination narrowed since the email chose it
+ * is kept, with its notice, until the user changes its parent.
  *
  * @param {Object} params
  * @param {Array} params.dimensions
@@ -50,8 +54,16 @@ function nextSelections({ dimensions, selections, emailTypeId, changed }) {
     emailTypeId,
     changed,
   });
+  const filled = changed
+    ? resolveDefaults({
+        dimensions,
+        // The email type is a parent like any other, with its own field.
+        selections: { ...kept, emailType: emailTypeId },
+        changed,
+      })
+    : kept;
   return Object.keys(selections).reduce(
-    (next, name) => ({ ...next, [name]: kept[name] || '' }),
+    (next, name) => ({ ...next, [name]: filled[name] || '' }),
     {}
   );
 }
