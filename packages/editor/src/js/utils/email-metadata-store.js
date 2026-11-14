@@ -120,4 +120,32 @@ function createEmailMetadataStore() {
   };
 }
 
-module.exports = { createEmailMetadataStore };
+/**
+ * The `beforeunload` listener of the email settings.
+ *
+ * These fields are the only plain form inputs in the editor, and a form input is
+ * where a user expects their typing to survive. Everything else in the editor is
+ * written through a command; the subject someone types and then closes the tab
+ * on is gone with nothing said.
+ *
+ * A prompt on the way out, not a permanent indicator: the unsaved-state dot was
+ * removed on purpose because it covered the metadata and nothing else, and a
+ * signal that stays dark for a modified block tells the user their work is safe.
+ * This fires only when the metadata are actually dirty, and says nothing the
+ * rest of the time.
+ *
+ * @param {Object} store a store from createEmailMetadataStore
+ * @returns {Function} the listener
+ */
+function unloadGuardFor(store) {
+  return function unloadGuard(event) {
+    if (!store.isDirty()) return undefined;
+    // Browsers ignore the string and show their own wording; both forms are
+    // still required for the prompt to appear at all.
+    event.preventDefault();
+    event.returnValue = '';
+    return '';
+  };
+}
+
+module.exports = { createEmailMetadataStore, unloadGuardFor };
