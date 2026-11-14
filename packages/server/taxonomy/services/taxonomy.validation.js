@@ -29,6 +29,8 @@ const EDITABLE_FIELDS = Object.freeze([
   'tokens',
   // The normalised code, checked against the dimension's role by the service.
   'code',
+  // The company's default value of a first-level dimension (ADR-0024).
+  'isDefault',
 ]);
 
 module.exports = {
@@ -101,6 +103,9 @@ function validatePayload(payload, { partial }) {
   }
   if (payload.tokens !== undefined) fields.tokens = readTokens(payload.tokens);
   if (payload.code !== undefined) fields.code = readCode(payload.code);
+  if (payload.isDefault !== undefined) {
+    fields.isDefault = readIsActive(payload.isDefault);
+  }
 
   // A PATCH carrying nothing usable would answer 200 without changing anything,
   // which reads as a successful save.

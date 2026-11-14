@@ -91,13 +91,15 @@ beforeEach(async () => {
   });
 });
 
+const {
+  defaultValuesForNewEmail,
+} = require('../../../packages/server/taxonomy/services/default-values.service.js');
+
 const defaultsForNewEmail = (templateId) =>
-  require('../../../packages/server/taxonomy/services/default-values.service.js').defaultValuesForNewEmail(
-    { companyId: COMPANY_A, templateId }
-  );
+  defaultValuesForNewEmail({ companyId: COMPANY_A, templateId });
 
 // Turned on by #1523 (a default value at the first level)
-describe.skip('default value at the first level', () => {
+describe('default value at the first level', () => {
   it('marks a value as the default of its dimension', async () => {
     expect((await editValue(school, { isDefault: true })).isDefault).toBe(true);
   });

@@ -1050,6 +1050,10 @@ export default {
         identifier: 'Identifiant',
         identifierHint:
           'Ce que les templates comparent. Proposé depuis le libellé, unique dans la dimension.',
+        isDefault: 'Valeur par défaut',
+        defaultChip: 'Par défaut',
+        isDefaultHint:
+          "Un nouvel email la prend quand son template n'en donne pas. Les emails existants ne changent pas.",
         availability: 'Disponible sous',
         availabilityHint:
           'Les valeurs de « {parent} » sous lesquelles celle-ci est proposée. Vide : proposée sous toutes.',
@@ -1143,6 +1147,8 @@ export default {
       labelAlreadyExists: 'Ce libellé est déjà pris dans cette dimension.',
       identifierAlreadyExists:
         'Cet identifiant est déjà pris dans cette dimension.',
+      defaultTaken:
+        '« {holder} » est déjà la valeur par défaut : décochez-la d\'abord.',
       dimensionNameAlreadyExists:
         'Une dimension porte déjà ce nom, peut-être désactivée.',
       isParent:

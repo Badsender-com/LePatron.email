@@ -1247,6 +1247,10 @@ export default {
         identifier: 'Identifier',
         identifierHint:
           'What templates compare against. Proposed from the label, unique within the dimension.',
+        isDefault: 'Default value',
+        defaultChip: 'Default',
+        isDefaultHint:
+          'A new email takes it when its template gives none. Existing emails do not change.',
         availability: 'Offered under',
         availabilityHint:
           'The values of “{parent}” this one is offered under. Empty: offered under all of them.',
@@ -1340,6 +1344,7 @@ export default {
       labelAlreadyExists: 'This label is already taken in this dimension.',
       identifierAlreadyExists:
         'This identifier is already taken in this dimension.',
+      defaultTaken: '"{holder}" is already the default value: untick it first.',
       dimensionNameAlreadyExists:
         'A dimension already has this name, perhaps a deactivated one.',
       isParent:
