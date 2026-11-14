@@ -21,7 +21,7 @@ const {
  *
  * @param {Element[]} rows the preview's rows, in document order
  * @param {number} clientY
- * @returns {number} an index in `state.elements`
+ * @returns {number} an index in the active column's elements
  */
 function dropIndexAt(rows, clientY) {
   for (let i = 0; i < rows.length; i++) {

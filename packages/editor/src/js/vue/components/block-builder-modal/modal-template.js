@@ -48,7 +48,7 @@ module.exports = `<modal-component
         <p v-if="isEmpty" class="bb-modal__empty">{{ vm.t('block-builder-empty') }}</p>
         <ul v-else class="bb-modal__list" role="listbox" :aria-labelledby="listLabelId">
           <li
-            v-for="(element, index) in state.elements"
+            v-for="(element, index) in columnElements"
             :key="element.id"
             role="option"
             :aria-selected="String(element.id === selectedId)"
