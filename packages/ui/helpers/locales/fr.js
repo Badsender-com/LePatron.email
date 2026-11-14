@@ -1539,6 +1539,12 @@ export default {
     confirmationField: 'Tapez le nom du template pour confirmer',
     newTemplate: 'Nouveau template',
     generalInfo: 'Informations générales',
+    contract: {
+      title: 'Ce que lit le template',
+      description: 'Les propriétés racines que le template déclare ou lit. Une dimension du même nom est proposée sur ses emails.',
+      empty: 'Ce template ne lit aucune propriété racine.',
+      adopted: '{name} reprend la valeur de {source} pour les emails déjà créés.',
+    },
     generalInfoDescription: 'Nom et description du template',
     templateFiles: 'Fichiers du template',
     templateFilesDescription: 'Uploadez le markup HTML et les images associées',
