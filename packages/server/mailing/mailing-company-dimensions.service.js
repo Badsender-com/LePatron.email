@@ -9,6 +9,9 @@ const {
 } = require('../common/models.common.js');
 const ERROR_CODES = require('../constant/error-codes.js');
 const {
+  effectiveParentName,
+} = require('../../shared/taxonomy/availability.js');
+const {
   dimensionsInScope,
 } = require('../taxonomy/services/dimension-scope.js');
 const {
@@ -128,6 +131,7 @@ async function assertChosenAreOffered(chosen, companyId) {
  *
  * @param {Object} params
  * @param {string} params.companyId
+ * @param {string} [params.templateId] the email's template, for its scope
  * @param {Array} params.ids the values the email will carry
  * @param {Array} params.currentIds the values it carries
  * @param {*} params.emailTypeId the email type it will have
@@ -135,6 +139,7 @@ async function assertChosenAreOffered(chosen, companyId) {
  */
 async function assertCombinationOffered({
   companyId,
+  templateId,
   ids,
   currentIds = [],
   emailTypeId,
@@ -143,10 +148,10 @@ async function assertCombinationOffered({
   const allIds = [...(ids || []), ...(currentIds || [])].map(String);
   if (allIds.length === 0) return;
 
-  const [dimensions, items] = await Promise.all([
-    TaxonomyDimensions.find({ _company: asObjectId(companyId), isActive: true })
-      .select({ name: 1, parentName: 1 })
-      .lean(),
+  // The parents that count on this email: those the editor offers it, a parent
+  // out of its scope or deactivated being none (ADR-0024).
+  const [offered, items] = await Promise.all([
+    buildEditorDimensions({ companyId, currentIds: allIds, templateId }),
     TaxonomyItems.find({
       _id: { $in: [...new Set(allIds)].map(asObjectId) },
       _company: asObjectId(companyId),
@@ -154,7 +159,7 @@ async function assertCombinationOffered({
       .select({ type: 1, _parents: 1 })
       .lean(),
   ]);
-  const active = new Map(dimensions.map((d) => [d.name, d]));
+  const parentOf = new Map(offered.map((d) => [d.name, d.parentName]));
   const itemById = new Map(items.map((item) => [String(item._id), item]));
   const valuesByName = (list, emailType) =>
     (list || []).reduce(
@@ -171,8 +176,8 @@ async function assertCombinationOffered({
 
   (ids || []).forEach((id) => {
     const item = itemById.get(String(id));
-    const parentName = item && active.get(item.type)?.parentName;
-    if (!parentName || !active.has(parentName)) return;
+    const parentName = item && parentOf.get(item.type);
+    if (!parentName) return;
     const parentValue = next[parentName];
     if (carried.has(String(id)) && previous[parentName] === parentValue) return;
 
@@ -248,7 +253,13 @@ async function buildEditorDimensions({
   )
     ? await contractOfTemplate(templateId)
     : null;
-  const offered = dimensionsInScope({ dimensions, values, contract });
+  // A deactivated value brings no dimension into scope by its tokens: it is
+  // offered to no one (the governance context reads scope the same way).
+  const offered = dimensionsInScope({
+    dimensions,
+    values: values.filter((value) => value.isActive),
+    contract,
+  });
   const offeredNames = new Set(offered.map((dimension) => dimension.name));
   return offered.map((dimension) => ({
     name: dimension.name,
@@ -256,11 +267,7 @@ async function buildEditorDimensions({
     // A parent out of the email's scope is not there: the child is offered
     // with all its values. The email type has its own field, never in scope
     // filtering: a dimension under it stays under it.
-    parentName:
-      offeredNames.has(dimension.parentName) ||
-      dimension.parentName === StandardDimensions.EMAIL_TYPE
-        ? dimension.parentName
-        : null,
+    parentName: effectiveParentName(dimension, offeredNames),
     // Who wins a design token two chosen values carry: the highest.
     precedence: dimension.precedence || 0,
     // The role and the codes make the email's locale, which the editor

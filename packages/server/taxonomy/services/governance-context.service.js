@@ -166,6 +166,8 @@ async function dimensionsInScopeOf(mailing, companyId, dimensions) {
   const values = await TaxonomyItems.find({
     _company: companyId,
     type: { $in: restricted.map((dimension) => dimension.name) },
+    // As the editor reads scope: a deactivated value brings nothing into it.
+    isActive: true,
   })
     .select({ type: 1, tokens: 1 })
     .lean();

@@ -77,7 +77,7 @@ const invalid = () =>
  */
 async function validateMetadataPayload(
   payload = {},
-  { companyId, currentItemIds, currentEmailTypeId } = {}
+  { companyId, templateId, currentItemIds, currentEmailTypeId } = {}
 ) {
   assertNoUnknownKey(payload);
 
@@ -145,6 +145,7 @@ async function validateMetadataPayload(
   if ('_taxonomyItems' in validated || '_emailType' in validated) {
     await assertCombinationOffered({
       companyId,
+      templateId,
       ids:
         '_taxonomyItems' in validated
           ? validated._taxonomyItems
@@ -267,6 +268,7 @@ async function applyMetadataToMailing(mailing, payload = {}) {
   const companyId = mailing._company ? String(mailing._company) : null;
   const validated = await validateMetadataPayload(payload, {
     companyId,
+    templateId: mailing._wireframe?._id || mailing._wireframe,
     currentItemIds: mailing._taxonomyItems,
     currentEmailTypeId: mailing._emailType,
   });

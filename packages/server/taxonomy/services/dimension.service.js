@@ -124,10 +124,26 @@ async function updateDimension({ user, dimensionId, payload = {} }) {
   const dimension = await findScopedDimension({ user, dimensionId });
 
   await assertDimensionUpdate(dimension, fields);
+  const moved =
+    fields.parentName !== undefined &&
+    (dimension.parentName || null) !== fields.parentName;
 
   Object.assign(dimension, withParentName(fields));
   await dimension.save();
+  if (moved) await clearDefaults(dimension);
   return dimension;
+}
+
+/**
+ * A dimension placed elsewhere loses its values' defaults (ADR-0024): one
+ * marked at the first level means nothing under a parent, and one marked
+ * under a parent value means nothing elsewhere. The admin marks them again.
+ */
+function clearDefaults(dimension) {
+  return TaxonomyItems.updateMany(
+    { _company: dimension._company, type: dimension.name },
+    { $set: { isDefault: false, defaultUnder: [] } }
+  );
 }
 
 /**

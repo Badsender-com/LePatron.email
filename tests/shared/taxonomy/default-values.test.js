@@ -213,9 +213,13 @@ describe('default value of a child dimension', () => {
   });
 
   it('applies no company default to a brand whose silo is out of the email scope', () => {
-    // The server sends no silo: the brand is offered with all its values.
+    // The server sends no silo, and the brand without a parent: it is offered
+    // with all its values, and its defaults under a silo say nothing here.
     expect(
-      resolveDefaults({ dimensions: [SILO_BRAND], selections: {} })
+      resolveDefaults({
+        dimensions: [{ ...SILO_BRAND, parentName: null }],
+        selections: {},
+      })
     ).toEqual({});
   });
 });

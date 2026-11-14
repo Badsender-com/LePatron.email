@@ -8,6 +8,7 @@ const {
   DimensionScopes,
   StandardDimensions,
   DIMENSION_NAME_PATTERN,
+  TaxonomyLimits,
 } = require('../../constant/taxonomy-type.js');
 const {
   assertParentName,
@@ -41,6 +42,8 @@ function assertDimensionName(name) {
   if (
     typeof name !== 'string' ||
     !DIMENSION_NAME_PATTERN.test(name) ||
+    // Past the schema's limit, the save would fail as a server error.
+    name.length > TaxonomyLimits.CANONICAL_TYPE ||
     RESERVED_NAMES.includes(name)
   ) {
     throw new BadRequest(ERROR_CODES.INVALID_DIMENSION);
