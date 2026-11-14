@@ -46,6 +46,16 @@ describe('taxonomyErrorFor', () => {
     expect(result.field).toBeNull();
   });
 
+  it('sends a taken default to the default field, naming its holder', () => {
+    const result = taxonomyErrorFor(
+      axiosError('TAXONOMY_DEFAULT_TAKEN', { holder: 'Scolaire' })
+    );
+
+    expect(result.key).toBe('taxonomy.errors.defaultTaken');
+    expect(result.params).toEqual({ holder: 'Scolaire' });
+    expect(result.field).toBe('isDefault');
+  });
+
   it('defaults the count to 0 rather than undefined, so $tc still works', () => {
     expect(taxonomyErrorFor(axiosError('TAXONOMY_ITEM_IN_USE')).count).toBe(0);
   });

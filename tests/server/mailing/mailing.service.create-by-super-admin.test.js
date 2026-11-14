@@ -26,6 +26,11 @@ jest.mock('../../../packages/server/workspace/workspace.service.js', () => ({
 jest.mock('../../../packages/server/folder/folder.service.js', () => ({
   hasAccess: jest.fn(),
 }));
+// The defaults a new email takes have their own suite.
+jest.mock(
+  '../../../packages/server/taxonomy/services/default-values.service.js',
+  () => ({ defaultValuesForNewEmail: jest.fn().mockResolvedValue([]) })
+);
 jest.mock('../../../packages/server/utils/logger.js', () => ({
   log: jest.fn(),
   info: jest.fn(),
@@ -38,6 +43,9 @@ const {
   Workspaces,
 } = require('../../../packages/server/common/models.common.js');
 const templateService = require('../../../packages/server/template/template.service.js');
+const {
+  defaultValuesForNewEmail,
+} = require('../../../packages/server/taxonomy/services/default-values.service.js');
 const mailingService = require('../../../packages/server/mailing/mailing.service.js');
 const {
   CLIENT_GROUP,
@@ -117,5 +125,20 @@ describe('a new mailing in a client workspace', () => {
 
     expect(mailing.userId).toBeUndefined();
     expect(mailing.group).toBeUndefined();
+  });
+});
+
+describe('the values a new mailing starts on', () => {
+  it('are the defaults of its template and its company, stored on it', async () => {
+    const SCHOOL = '507f1f77bcf86cd799439a01';
+    defaultValuesForNewEmail.mockResolvedValueOnce([SCHOOL]);
+
+    const mailing = await createIn(actor(FRANK));
+
+    expect(defaultValuesForNewEmail).toHaveBeenCalledWith({
+      companyId: CLIENT_GROUP,
+      templateId: TEMPLATE,
+    });
+    expect(mailing._taxonomyItems).toEqual([SCHOOL]);
   });
 });

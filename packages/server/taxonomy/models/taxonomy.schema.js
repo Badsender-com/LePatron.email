@@ -31,6 +31,7 @@ const {
  * @apiSuccess {String} canonicalType optional mapping onto the AI skills vocabulary
  * @apiSuccess {Boolean} isActive
  * @apiSuccess {Number} order
+ * @apiSuccess {Boolean} isDefault the company's default value of its dimension
  * @apiSuccess {Object} group the company it belongs to
  */
 
@@ -95,6 +96,13 @@ const TaxonomyItemSchema = Schema(
     code: {
       type: String,
       maxlength: 5,
+    },
+    // The company's default value of a first-level dimension (ADR-0024): a new
+    // email takes it when its template gives none. One per dimension, which
+    // the service checks.
+    isDefault: {
+      type: Boolean,
+      default: false,
     },
     // Design tokens a template reads under their name (`_root_.mainColorVar`):
     // a brand's colour as a role, not as `#ffd845`. The service checks the
