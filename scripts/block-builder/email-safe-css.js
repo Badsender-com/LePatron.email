@@ -17,6 +17,14 @@ const config = require('./tailwind.config.js');
 const {
   isGeneratedClass,
 } = require('../../packages/shared/block-builder/generated-classes.js');
+const { SENTINEL_PREFIX } = require('./markup-pipeline.js');
+
+// A slot can land in a `class` attribute — a layout's stacking class is one —
+// and at this point it is still a sentinel. It is neither a utility to inline
+// nor dead weight to strip: it is a hole the generator fills with a name it
+// owns, so it is left exactly as it is.
+const isSentinel = (name) => name.startsWith(SENTINEL_PREFIX);
+const isOurs = (name) => isGeneratedClass(name) || isSentinel(name);
 
 // What email clients drop, and why it is refused rather than shipped.
 const UNSAFE = [
@@ -134,7 +142,7 @@ async function inlineStyles(html, label) {
   // one that MUST NOT be, because it only means anything inside a media query.
   // Checking it the same way would refuse exactly the thing it is there for.
   classesOf(html)
-    .filter((name) => !isGeneratedClass(name))
+    .filter((name) => !isOurs(name))
     .forEach((name) => checkClass(label, name, declarations.get(name)));
 
   const inlined = juice.inlineContent(html, css, { removeStyleTags: true });
@@ -158,7 +166,7 @@ async function inlineStyles(html, label) {
  */
 function keepGeneratedClasses(html) {
   return html.replace(/\s+class="([^"]*)"/g, (whole, list) => {
-    const kept = list.split(/\s+/).filter(isGeneratedClass);
+    const kept = list.split(/\s+/).filter(isOurs);
     return kept.length ? ` class="${kept.join(' ')}"` : '';
   });
 }
