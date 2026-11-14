@@ -32,6 +32,7 @@ const {
  * @apiSuccess {Boolean} isActive
  * @apiSuccess {Number} order
  * @apiSuccess {Boolean} isDefault the company's default value of its dimension
+ * @apiSuccess {String[]} defaultUnder the parent values a child value is the default under
  * @apiSuccess {Object} group the company it belongs to
  */
 
@@ -104,6 +105,10 @@ const TaxonomyItemSchema = Schema(
       type: Boolean,
       default: false,
     },
+    // For a value of a child dimension (ADR-0024): the parent values it is the
+    // default under, among those it is offered under. One per parent value,
+    // which the service checks.
+    defaultUnder: [{ type: ObjectId, ref: TaxonomyItemModel }],
     // Design tokens a template reads under their name (`_root_.mainColorVar`):
     // a brand's colour as a role, not as `#ffd845`. The service checks the
     // names and the count.

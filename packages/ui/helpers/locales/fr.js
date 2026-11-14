@@ -1456,6 +1456,9 @@ export default {
         defaultChip: 'Par défaut',
         isDefaultHint:
           "Un nouvel email la prend quand son template n'en donne pas. Les emails existants ne changent pas.",
+        defaultUnder: 'Valeur par défaut sous',
+        defaultUnderHint:
+          'Les valeurs de « {parent} » sous lesquelles un nouvel email la prend, ou un email dont on change la valeur de « {parent} ». Une seule valeur par défaut sous chacune.',
         availability: 'Disponible sous',
         availabilityHint:
           'Les valeurs de « {parent} » sous lesquelles celle-ci est proposée. Vide : proposée sous toutes.',
@@ -1550,7 +1553,7 @@ export default {
       identifierAlreadyExists:
         'Cet identifiant est déjà pris dans cette dimension.',
       defaultTaken:
-        '« {holder} » est déjà la valeur par défaut : décochez-la d\'abord.',
+        '« {holder} » est déjà la valeur par défaut à cet endroit : retirez-la d\'abord.',
       dimensionNameAlreadyExists:
         'Une dimension porte déjà ce nom, peut-être désactivée.',
       isParent:

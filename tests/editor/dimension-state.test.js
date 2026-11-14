@@ -29,6 +29,7 @@ const LANGUAGE = {
   values: [
     { id: 'fr', canonicalType: 'fr', isActive: true, parentIds: ['ca', 'be'] },
     { id: 'nl', canonicalType: 'nl', isActive: true, parentIds: ['be'] },
+    { id: 'en', canonicalType: 'en', isActive: true, parentIds: ['ca'] },
   ],
 };
 
@@ -48,6 +49,56 @@ describe('the state of the dimension selects', () => {
         changed: ['market'],
       })
     ).toEqual({ market: 'ca', language: '' });
+  });
+
+  it('lands a child on the default of the new parent value (#1524)', () => {
+    const withDefault = {
+      ...LANGUAGE,
+      values: LANGUAGE.values.map((value) =>
+        value.id === 'en' ? { ...value, defaultUnder: ['ca'] } : value
+      ),
+    };
+
+    expect(
+      nextSelections({
+        dimensions: [MARKET, withDefault],
+        selections: { market: 'ca', language: 'nl' },
+        changed: ['market'],
+      })
+    ).toEqual({ market: 'ca', language: 'en' });
+  });
+
+  it('lands a child on the only value the new parent value offers (#1524)', () => {
+    expect(
+      nextSelections({
+        dimensions: [
+          MARKET,
+          { ...LANGUAGE, values: LANGUAGE.values.slice(0, 2) },
+        ],
+        selections: { market: 'ca', language: 'nl' },
+        changed: ['market'],
+      })
+    ).toEqual({ market: 'ca', language: 'fr' });
+  });
+
+  it('lands a child of the email type on its default (#1524)', () => {
+    const season = {
+      name: 'season',
+      parentName: 'emailType',
+      values: [
+        { id: 'spring', isActive: true, parentIds: ['t1'] },
+        { id: 'fall', isActive: true, parentIds: ['t1'], defaultUnder: ['t1'] },
+      ],
+    };
+
+    expect(
+      nextSelections({
+        dimensions: [season],
+        selections: { season: '' },
+        emailTypeId: 't1',
+        changed: ['emailType'],
+      })
+    ).toEqual({ season: 'fall' });
   });
 
   it('publishes the email type with the dimensions', () => {

@@ -156,7 +156,7 @@ describe('default value at the first level', () => {
 });
 
 // Turned on by #1524 (the default value of a child dimension)
-describe.skip('default value of a child dimension', () => {
+describe('default value of a child dimension', () => {
   it('marks a brand as the default under a silo it is offered under', async () => {
     const marked = await editValue(redNotebooks, {
       defaultUnder: [idOf(school)],
@@ -195,6 +195,20 @@ describe.skip('default value of a child dimension', () => {
     expect(idsOf(marked.defaultUnder).sort()).toEqual(
       [idOf(youth), idOf(school)].sort()
     );
+  });
+
+  it('refuses a default under on a value of the first level', async () => {
+    await expect(
+      editValue(school, { defaultUnder: [idOf(youth)] })
+    ).rejects.toMatchObject({ status: 400 });
+  });
+
+  it('drops a default under a silo the narrowed availability leaves out', async () => {
+    const guide = await addValue('siloBrand', { label: 'Guide' });
+    await editValue(guide, { defaultUnder: [idOf(youth), idOf(school)] });
+
+    const narrowed = await editValue(guide, { parentIds: [idOf(school)] });
+    expect(idsOf(narrowed.defaultUnder)).toEqual([idOf(school)]);
   });
 
   it('gives an email created on a template the default brand of its silo', async () => {

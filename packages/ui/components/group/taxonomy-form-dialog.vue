@@ -10,12 +10,12 @@ import BsTaxonomyAvailabilityField from '~/components/group/taxonomy-availabilit
 import BsTaxonomyTokensField from '~/components/group/taxonomy-tokens-field.vue';
 import BsTaxonomyCodeField from '~/components/group/taxonomy-code-field.vue';
 import BsTaxonomyDefaultField from '~/components/group/taxonomy-default-field.vue';
+import BsTaxonomyDefaultUnderField from '~/components/group/taxonomy-default-under-field.vue';
 import { TAXONOMY_LIMITS, canonicalTypeItems } from '~/helpers/taxonomy.js';
 import { proposeIdentifier } from '~/helpers/taxonomy-builder.js';
 import {
   valueFormFor,
   valuePayloadFrom,
-  canBeDefault,
 } from '~/helpers/taxonomy-value-form.js';
 
 export default {
@@ -30,6 +30,7 @@ export default {
     BsTaxonomyTokensField,
     BsTaxonomyCodeField,
     BsTaxonomyDefaultField,
+    BsTaxonomyDefaultUnderField,
   },
   mixins: [validationMixin],
   props: {
@@ -65,12 +66,6 @@ export default {
   computed: {
     wording() {
       return this.isEmailType ? 'taxonomy' : 'taxonomy.values';
-    },
-    canBeDefault() {
-      return canBeDefault({
-        isEmailType: this.isEmailType,
-        hasParent: Boolean(this.parentValues),
-      });
     },
     identifierMaxLength() {
       return TAXONOMY_LIMITS.CANONICAL_TYPE;
@@ -158,7 +153,8 @@ export default {
         this.serverIdentifierError = message;
         return true;
       }
-      if (field === 'isDefault' && this.canBeDefault) {
+      // The email type has no default (ADR-0024).
+      if (field === 'isDefault' && !this.isEmailType) {
         this.serverDefaultError = message;
         return true;
       }
@@ -264,20 +260,31 @@ export default {
     />
 
     <bs-taxonomy-default-field
-      v-if="canBeDefault"
+      v-if="!isEmailType && !parentValues"
       v-model="form.isDefault"
       :error-message="serverDefaultError"
       :disabled="loading"
       @input="serverDefaultError = null"
     />
 
-    <bs-taxonomy-availability-field
-      v-if="parentValues"
-      v-model="form.parentIds"
-      :parent-values="parentValues"
-      :parent-label="parentLabel"
-      :disabled="loading"
-    />
+    <template v-if="parentValues">
+      <bs-taxonomy-availability-field
+        v-model="form.parentIds"
+        :parent-values="parentValues"
+        :parent-label="parentLabel"
+        :disabled="loading"
+      />
+      <bs-taxonomy-default-under-field
+        v-if="!isEmailType"
+        v-model="form.defaultUnder"
+        :parent-values="parentValues"
+        :availability="form.parentIds"
+        :parent-label="parentLabel"
+        :error-message="serverDefaultError"
+        :disabled="loading"
+        @input="serverDefaultError = null"
+      />
+    </template>
 
     <bs-taxonomy-tokens-field v-model="form.tokens" :disabled="loading" />
 
