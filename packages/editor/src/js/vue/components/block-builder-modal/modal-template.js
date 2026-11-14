@@ -54,8 +54,15 @@ module.exports = `<modal-component
             tabindex="0"
             class="bb-modal__row"
             :class="{ 'bb-modal__row--on': row.id === selectedRowId }"
+            draggable="true"
             @click="selectRow(row.id)"
-            @keydown.enter.prevent="selectRow(row.id)">{{ vm.t('block-builder-row') }} {{ index + 1 }} — {{ row.columns.length }}</li>
+            @keydown.enter.prevent="selectRow(row.id)"
+            @keydown.up.prevent="moveSelectedRow(-1)"
+            @keydown.down.prevent="moveSelectedRow(1)"
+            @dragstart="startRowDrag(row.id)"
+            @dragover.prevent
+            @drop.prevent="dropRowAt(index)"
+            @dragend="dropRowAt(index)">{{ vm.t('block-builder-row') }} {{ index + 1 }} — {{ row.columns.length }}</li>
         </ul>
         <button
           type="button"
