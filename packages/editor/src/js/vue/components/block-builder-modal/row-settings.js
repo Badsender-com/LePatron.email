@@ -6,6 +6,9 @@ const {
   FULL_WIDTH,
   newRowId,
 } = require('../../../../../../shared/block-builder/composition.js');
+const {
+  newElementId,
+} = require('../../../../../../shared/block-builder/state.js');
 
 // Rows: selecting one, and setting its structure.
 //
@@ -212,6 +215,81 @@ const RowSettingsMixin = {
         this.selectedRowId,
         offset > 0 ? target + 1 : target
       );
+    },
+
+    /**
+     * Duplicates a row, placing the copy directly below it.
+     *
+     * This is what makes repetitive structures usable — three product lines
+     * are composed once and duplicated twice — and it is also the answer to
+     * what a composed block gives up by holding several rows: Mosaico can
+     * duplicate a block, but a row inside one is only reachable from here.
+     *
+     * A deep copy with fresh ids throughout. A shared id would make the two
+     * rows the same row as far as selection and drag are concerned, so
+     * editing one would appear to edit both; a shared element OBJECT would be
+     * worse still, since typing in one would change the other.
+     *
+     * @param {string} rowId
+     * @returns {Object|null} the copy, or null when the row is gone
+     */
+    duplicateRow(rowId) {
+      const rows = this.state.rows || [];
+      const at = rows.findIndex((row) => row.id === rowId);
+      if (at === -1) return null;
+
+      const source = rows[at];
+      const copy = {
+        id: newRowId(),
+        columns: source.columns.map((column) => ({
+          width: column.width,
+          elements: column.elements.map((element) => ({
+            ...element,
+            id: newElementId(),
+          })),
+        })),
+      };
+
+      rows.splice(at + 1, 0, copy);
+      this.selectRow(copy.id);
+      this.scheduleRender();
+      return copy;
+    },
+
+    /**
+     * Removes a row, and the elements in it.
+     *
+     * The last row goes like any other: a composition with no row at all is
+     * what an emptied block is, and the modal has to keep opening on it —
+     * `handleToggle` puts an empty row back when there is none.
+     *
+     * @param {string} rowId
+     * @returns {boolean} whether a row was removed
+     */
+    deleteRow(rowId) {
+      const rows = this.state.rows || [];
+      const at = rows.findIndex((row) => row.id === rowId);
+      if (at === -1) return false;
+
+      rows.splice(at, 1);
+      // Selection goes to the next row, or the previous one at the end, so the
+      // panel is never left pointing at something that is gone.
+      const next = rows[at] || rows[at - 1];
+      if (next) this.selectRow(next.id);
+      else {
+        this.selectedRowId = null;
+        this.selectedElementId = null;
+      }
+      this.scheduleRender();
+      return true;
+    },
+
+    duplicateSelectedRow() {
+      return this.selectedRowId ? this.duplicateRow(this.selectedRowId) : null;
+    },
+
+    deleteSelectedRow() {
+      return this.selectedRowId ? this.deleteRow(this.selectedRowId) : false;
     },
 
     canMoveRow(offset) {

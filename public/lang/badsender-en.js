@@ -420,6 +420,8 @@ module.exports = {
   'block-builder-starter-button': 'Your button',
   'block-builder-rows': 'Rows',
   'block-builder-row': 'Row',
+  'block-builder-duplicate-row': 'Duplicate the row',
+  'block-builder-delete-row': 'Delete the row',
   'block-builder-add-row': 'Add a row',
   'block-builder-structure': 'Row structure',
   'block-builder-structure-full': 'One column',

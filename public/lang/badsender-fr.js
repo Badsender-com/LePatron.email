@@ -434,6 +434,8 @@ module.exports = {
   'block-builder-starter-button': 'Votre bouton',
   'block-builder-rows': 'Lignes',
   'block-builder-row': 'Ligne',
+  'block-builder-duplicate-row': 'Dupliquer la ligne',
+  'block-builder-delete-row': 'Supprimer la ligne',
   'block-builder-add-row': 'Ajouter une ligne',
   'block-builder-structure': 'Structure de la ligne',
   'block-builder-structure-full': 'Une colonne',
