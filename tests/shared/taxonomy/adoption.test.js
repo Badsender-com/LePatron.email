@@ -44,24 +44,18 @@ const SILO_BRAND = {
   ],
 };
 
+const {
+  adoptValues,
+} = require('../../../packages/shared/taxonomy/adoption.js');
+const {
+  resolveDefaults,
+} = require('../../../packages/shared/taxonomy/default-values.js');
+
 const DIMENSIONS = [SILO, SILO_BRAND];
 const CONTRACT = { adopt: { siloBrand: 'brand_[silo]' } };
 
 // Turned on by #1525 (an email adopts the values its content holds when it opens)
-describe.skip('adoption when an email opens', () => {
-  let adoptValues;
-  let resolveDefaults;
-
-  beforeAll(() => {
-    // Required here: the modules don't exist until #1523 and #1525.
-    ({
-      adoptValues,
-    } = require('../../../packages/shared/taxonomy/adoption.js'));
-    ({
-      resolveDefaults,
-    } = require('../../../packages/shared/taxonomy/default-values.js'));
-  });
-
+describe('adoption when an email opens', () => {
   const adopt = (content, selections = {}) =>
     adoptValues({
       dimensions: DIMENSIONS,
