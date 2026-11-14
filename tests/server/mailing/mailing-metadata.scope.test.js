@@ -132,7 +132,7 @@ const offered = async (mailing) =>
   ).emailMetadataConfig.dimensions.map((dimension) => dimension.name);
 
 // Turned on by #1521 (a dimension has a scope)
-describe.skip('the editor offers the dimensions in scope', () => {
+describe('the editor offers the dimensions in scope', () => {
   it('offers the dimensions the template reads, and those offered on every email', async () => {
     expect((await offered(emailOn(SILO_TEMPLATE))).sort()).toEqual([
       'audience',
@@ -203,7 +203,7 @@ describe.skip('the editor offers the dimensions in scope', () => {
 });
 
 // Turned on by #1521 (a dimension has a scope)
-describe.skip('governance context: dimensions out of scope', () => {
+describe('governance context: dimensions out of scope', () => {
   it('leaves out, and does not count as missing, a dimension the template does not read', async () => {
     const context = await buildGovernanceContext({
       mailing: emailOn(MARKET_TEMPLATE, [belgium, school, littleReader]),

@@ -4,11 +4,18 @@ const {
   TaxonomyDimensions,
   TaxonomyItems,
 } = require('../../common/models.common.js');
-const { StandardDimensions } = require('../../constant/taxonomy-type.js');
+const {
+  DimensionScopes,
+  StandardDimensions,
+} = require('../../constant/taxonomy-type.js');
 const { EmailTriggerDefinitions } = require('../../constant/email-trigger.js');
 const { buildStandardDimensions } = require('./default-dimensions.js');
 const { pickSeedLang } = require('./default-email-types.js');
 const { readEmailLocale } = require('./email-locale.service.js');
+const { dimensionsInScope } = require('./dimension-scope.js');
+const {
+  contractOfTemplate,
+} = require('../../template/template-contract.service.js');
 const logger = require('../../utils/logger.js');
 
 /**
@@ -42,7 +49,11 @@ async function buildGovernanceContext({ mailing, lang }) {
   logger.log('governanceContext:build');
 
   const companyId = mailing._company?._id || mailing._company;
-  const active = await activeDimensions(companyId, lang);
+  const active = await dimensionsInScopeOf(
+    mailing,
+    companyId,
+    await activeDimensions(companyId, lang)
+  );
   const values = await valuesOf(mailing, companyId);
   const emailLocale = await readEmailLocale({ mailing });
 
@@ -116,7 +127,14 @@ function localeLine({ locale, hasRole }, lang) {
 // (its taxonomy screen never opened) still counts, in the doctrine's words.
 async function activeDimensions(companyId, lang) {
   const stored = await TaxonomyDimensions.find({ _company: companyId })
-    .select({ name: 1, label: 1, description: 1, order: 1, isActive: 1 })
+    .select({
+      name: 1,
+      label: 1,
+      description: 1,
+      order: 1,
+      isActive: 1,
+      scope: 1,
+    })
     .lean();
   const storedNames = new Set(stored.map((dimension) => dimension.name));
   const unseeded = buildStandardDimensions(lang).filter(
@@ -132,6 +150,26 @@ async function activeDimensions(companyId, lang) {
       (a.order || 0) - (b.order || 0) ||
       a.name.localeCompare(b.name)
   );
+}
+
+// The dimensions in the scope of the email's template (ADR-0024): one out of it
+// is left out like a deactivated one, neither said nor counted as missing.
+async function dimensionsInScopeOf(mailing, companyId, dimensions) {
+  const restricted = dimensions.filter(
+    (dimension) => dimension.scope === DimensionScopes.READING_TEMPLATES
+  );
+  if (restricted.length === 0) return dimensions;
+
+  const contract = await contractOfTemplate(
+    mailing._wireframe?._id || mailing._wireframe
+  );
+  const values = await TaxonomyItems.find({
+    _company: companyId,
+    type: { $in: restricted.map((dimension) => dimension.name) },
+  })
+    .select({ type: 1, tokens: 1 })
+    .lean();
+  return dimensionsInScope({ dimensions, values, contract });
 }
 
 // The values the email carries, by dimension name. Read within the email's

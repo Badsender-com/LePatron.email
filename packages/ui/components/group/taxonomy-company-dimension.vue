@@ -56,6 +56,9 @@ export default {
       <v-chip v-if="dimension.role" x-small outlined>
         {{ $t(`taxonomy.dimensions.roles.${dimension.role}`) }}
       </v-chip>
+      <v-chip v-if="dimension.scope === 'readingTemplates'" x-small outlined>
+        {{ $t('taxonomy.dimensions.scopes.readingTemplates') }}
+      </v-chip>
       <v-chip v-if="!dimension.isActive" x-small outlined>
         {{ $t('taxonomy.dimensions.inactive') }}
       </v-chip>

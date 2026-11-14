@@ -115,6 +115,7 @@ async function buildEditorMetadata({ mailing, group }) {
     ? await buildEditorDimensions({
         companyId: mailingCompanyId,
         currentIds: mailing._taxonomyItems,
+        templateId: mailing._wireframe?._id || mailing._wireframe,
       })
     : [];
 

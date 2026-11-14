@@ -52,7 +52,15 @@ const TaxonomyLimits = Object.freeze({
   TOKEN_VALUE: 200,
 });
 
+// Which emails a dimension is offered on (ADR-0024): every one, or only those
+// whose template reads it.
+const DimensionScopes = Object.freeze({
+  ALL: 'all',
+  READING_TEMPLATES: 'readingTemplates',
+});
+
 module.exports = {
+  DimensionScopes,
   StandardDimensions,
   StandardDimensionNames,
   TaxonomyTypes,
