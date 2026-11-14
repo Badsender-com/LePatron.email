@@ -1,6 +1,7 @@
 'use strict';
 
 const {
+  COLUMN_CHROME_CLASS,
   ELEMENT_ATTRIBUTE,
   STARTER_ATTRIBUTE,
 } = require('../../../../../../shared/block-builder/generate.js');
@@ -125,6 +126,12 @@ const PREVIEW_DOCUMENT = [
   'text-align:center;color:#616161;font:14px Arial,Helvetica,sans-serif;}',
   `body.${DRAGGING_CLASS} #${EMPTY_DROP_ID}{`,
   'border-color:#265090;color:#265090;}',
+  // A column, while something is being dragged: visible as a place to aim at,
+  // with a floor so an empty one is still a target. `min-height` and not
+  // `height`, or a column with content would be cropped to it.
+  `.${COLUMN_CHROME_CLASS}{min-height:40px;}`,
+  `body.${DRAGGING_CLASS} .${COLUMN_CHROME_CLASS}{`,
+  'outline:1px dashed #9e9e9e;outline-offset:-1px;}',
   '</style></head><body></body></html>',
 ].join('');
 
