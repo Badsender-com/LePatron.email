@@ -283,6 +283,8 @@ module.exports = {
   DIMENSION_ROLE_TAKEN: 'DIMENSION_ROLE_TAKEN',
   // A new role under which codes its values carry would mean something else.
   DIMENSION_HAS_CODES: 'DIMENSION_HAS_CODES',
+  // A standard dimension, or one holding a role, is offered on every email.
+  DIMENSION_SCOPE_FIXED: 'DIMENSION_SCOPE_FIXED',
 
   // EMAIL METADATA
   INVALID_EMAIL_METADATA: 'INVALID_EMAIL_METADATA',
