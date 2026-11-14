@@ -12,6 +12,7 @@ const {
 } = require('../account/auth.guard.js');
 const { GUARD_EMAIL_BUILDER } = require('../mailing/email-builder.guard.js');
 const templates = require('./template.controller.js');
+const adoption = require('./template-adoption.controller.js');
 
 /// ///
 // TEMPLATES
@@ -35,6 +36,8 @@ router.get(
 router.get('/:templateId/preview', GUARD_ADMIN, templates.previewMarkup);
 router.post('/:templateId/preview', GUARD_ADMIN, templates.generatePreviews);
 router.get('/:templateId/events', GUARD_ADMIN, templates.previewEvents);
+// The adoption of the template's emails in bulk (ADR-0024).
+router.get('/:templateId/adoption', GUARD_ADMIN, adoption.previewAdoption);
 router.delete('/:templateId/images', GUARD_ADMIN, templates.destroyImages);
 router.delete('/:templateId', GUARD_ADMIN, templates.destroy);
 // Tracking config is editable by company_admin_tech of the template's company

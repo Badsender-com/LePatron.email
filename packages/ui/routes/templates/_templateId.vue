@@ -10,6 +10,7 @@ import * as sseHelpers from '~/helpers/server-sent-events.js';
 import BsPageHeader from '~/components/layout/bs-page-header.vue';
 import BsTemplateForm from '~/components/template/form.vue';
 import BsTemplateContract from '~/components/template/template-contract.vue';
+import BsTemplateAdoption from '~/components/template/template-adoption.vue';
 import { Trash2 } from 'lucide-vue';
 import { CAPABILITIES } from '../../../shared/access/roles.js';
 
@@ -21,6 +22,7 @@ export default {
   name: 'BsPageTemplate',
   components: {
     BsTemplateContract,
+    BsTemplateAdoption,
     BsPageHeader,
     BsTemplateForm,
     LucideTrash2: Trash2,
@@ -272,6 +274,10 @@ export default {
       <bs-template-contract
         v-if="template.hasMarkup"
         :contract="template.contract"
+      />
+      <bs-template-adoption
+        v-if="template.hasMarkup"
+        :template-id="$route.params.templateId"
       />
     </v-container>
   </div>
