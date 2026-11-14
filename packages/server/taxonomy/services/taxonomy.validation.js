@@ -4,6 +4,7 @@ const { BadRequest, Conflict } = require('http-errors');
 
 const ERROR_CODES = require('../../constant/error-codes.js');
 const {
+  DimensionScopes,
   TaxonomyLimits,
   DIMENSION_NAME_PATTERN,
 } = require('../../constant/taxonomy-type.js');
@@ -44,6 +45,7 @@ const DIMENSION_EDITABLE_FIELDS = Object.freeze([
   'precedence',
   'parentName',
   'role',
+  'scope',
 ]);
 
 module.exports = {
@@ -283,6 +285,11 @@ function validateDimensionPayload(payload, { partial }) {
       throw invalidDimension();
     }
     fields.role = payload.role;
+  }
+  if (payload.scope !== undefined) {
+    const scopes = Object.values(DimensionScopes);
+    if (!scopes.includes(payload.scope)) throw invalidDimension();
+    fields.scope = payload.scope;
   }
 
   if (partial && Object.keys(fields).length === 0) throw invalidDimension();

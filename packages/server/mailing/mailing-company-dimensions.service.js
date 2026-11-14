@@ -9,6 +9,13 @@ const {
 } = require('../common/models.common.js');
 const ERROR_CODES = require('../constant/error-codes.js');
 const {
+  dimensionsInScope,
+} = require('../taxonomy/services/dimension-scope.js');
+const {
+  contractOfTemplate,
+} = require('../template/template-contract.service.js');
+const {
+  DimensionScopes,
   StandardDimensions,
   StandardDimensionNames,
 } = require('../constant/taxonomy-type.js');
@@ -186,9 +193,15 @@ async function assertCombinationOffered({
  * @param {Object} options
  * @param {ObjectId|string} options.companyId the mailing's company
  * @param {Array} [options.currentIds] the values the email carries
+ * @param {ObjectId|string} [options.templateId] the email's template: only the
+ *   dimensions in the email's scope are offered (ADR-0024)
  * @returns {Promise<Object[]>}
  */
-async function buildEditorDimensions({ companyId, currentIds = [] }) {
+async function buildEditorDimensions({
+  companyId,
+  currentIds = [],
+  templateId,
+}) {
   const dimensions = await TaxonomyDimensions.find({
     _company: companyId,
     isActive: true,
@@ -201,6 +214,7 @@ async function buildEditorDimensions({ companyId, currentIds = [] }) {
       parentName: 1,
       precedence: 1,
       role: 1,
+      scope: 1,
     })
     .sort({ order: 1, name: 1 })
     .lean();
@@ -225,10 +239,23 @@ async function buildEditorDimensions({ companyId, currentIds = [] }) {
     .sort({ order: 1, label: 1 })
     .lean();
 
-  return dimensions.map((dimension) => ({
+  // Read only when a dimension needs it: the contract of an older template is
+  // read from its markup the first time.
+  const contract = dimensions.some(
+    (dimension) => dimension.scope === DimensionScopes.READING_TEMPLATES
+  )
+    ? await contractOfTemplate(templateId)
+    : null;
+  const offered = dimensionsInScope({ dimensions, values, contract });
+  const offeredNames = new Set(offered.map((dimension) => dimension.name));
+  return offered.map((dimension) => ({
     name: dimension.name,
     label: dimension.label,
-    parentName: dimension.parentName || null,
+    // A parent out of the email's scope is not there: the child is offered
+    // with all its values.
+    parentName: offeredNames.has(dimension.parentName)
+      ? dimension.parentName
+      : null,
     // Who wins a design token two chosen values carry: the highest.
     precedence: dimension.precedence || 0,
     // The role and the codes make the email's locale, which the editor

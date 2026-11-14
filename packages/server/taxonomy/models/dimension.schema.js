@@ -96,6 +96,13 @@ const TaxonomyDimensionSchema = Schema(
       type: String,
       enum: ['language', 'country', 'locale'],
     },
+    // Which emails it is offered on (ADR-0024): every one, or only those whose
+    // template reads it. Absent reads as every one.
+    scope: {
+      type: String,
+      enum: ['all', 'readingTemplates'],
+      default: 'all',
+    },
     // Highest wins a token two dimensions carry. Not `order`: a company may list
     // a dimension first and want it resolved last.
     precedence: {

@@ -117,5 +117,6 @@ function expose(dimension) {
     // The dimension this one hangs under, null at the first level.
     parentName: dimension.parentName || null,
     role: dimension.role || null,
+    scope: dimension.scope || 'all',
   };
 }

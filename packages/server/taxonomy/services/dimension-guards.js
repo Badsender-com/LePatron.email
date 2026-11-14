@@ -5,6 +5,7 @@ const { BadRequest, Conflict } = require('http-errors');
 const { TaxonomyDimensions } = require('../../common/models.common.js');
 const ERROR_CODES = require('../../constant/error-codes.js');
 const {
+  DimensionScopes,
   StandardDimensions,
   DIMENSION_NAME_PATTERN,
 } = require('../../constant/taxonomy-type.js');
@@ -25,6 +26,7 @@ const {
 module.exports = {
   assertDimensionName,
   assertDimensionUpdate,
+  assertScopeFits,
   assertValueType,
 };
 
@@ -54,6 +56,13 @@ function assertDimensionName(name) {
  * @param {Object} fields the validated fields of the request
  */
 async function assertDimensionUpdate(dimension, fields) {
+  if (fields.scope !== undefined || fields.role !== undefined) {
+    assertScopeFits({
+      standard: dimension.standard,
+      role: fields.role !== undefined ? fields.role : dimension.role,
+      scope: fields.scope !== undefined ? fields.scope : dimension.scope,
+    });
+  }
   if (dimension.standard && fields.isActive === false) {
     throw new Conflict(ERROR_CODES.STANDARD_DIMENSION_LOCKED);
   }
@@ -82,6 +91,23 @@ async function assertDimensionUpdate(dimension, fields) {
       exceptName: dimension.name,
     });
     await assertCodesKeepTheirMeaning(dimension, fields.role);
+  }
+}
+
+/**
+ * A standard dimension, and one holding a role, are offered on every email
+ * (ADR-0024): a translated email must not lose its language because its
+ * template does not print it.
+ *
+ * @param {Object} dimension what the dimension is, or is about to be
+ * @param {boolean} [dimension.standard]
+ * @param {string} [dimension.role]
+ * @param {string} [dimension.scope]
+ */
+function assertScopeFits({ standard, role, scope }) {
+  if (scope !== DimensionScopes.READING_TEMPLATES) return;
+  if (standard || role) {
+    throw new Conflict(ERROR_CODES.DIMENSION_SCOPE_FIXED);
   }
 }
 

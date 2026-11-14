@@ -64,6 +64,8 @@ function buildStandardDimensions(lang) {
     order: dimension.order,
     precedence: dimension.precedence,
     standard: true,
+    // Offered on every email, whatever its template (ADR-0024).
+    scope: 'all',
   }));
 }
 

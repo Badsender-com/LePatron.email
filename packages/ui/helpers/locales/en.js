@@ -1157,6 +1157,10 @@ export default {
         'It is no longer offered on emails and takes no new value. Emails already carrying one of its values keep it.',
       resolution:
         'Token resolution: {order}. The last one wins when two values carry the same token.',
+      scopes: {
+        all: 'Every email',
+        readingTemplates: 'Emails whose template reads it',
+      },
       roles: {
         language: 'Email language',
         country: 'Email country',
@@ -1210,6 +1214,11 @@ export default {
         precedence: 'Precedence',
         precedenceHint:
           'When two values chosen on an email carry the same token, the one of the dimension with the highest precedence wins.',
+        scope: 'Scope',
+        scopeHint:
+          'A rendering dimension (a silo, a brand) can be offered only on emails whose template reads it.',
+        scopeFixedHint:
+          'A dimension holding a role is offered on every email: the translation and the AI need it.',
       },
     },
     values: {
