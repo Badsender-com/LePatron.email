@@ -2,7 +2,7 @@
 import { required } from 'vuelidate/lib/validators';
 import * as apiRoutes from '~/helpers/api-routes.js';
 import { mapMutations } from 'vuex';
-import { ArrowLeft, Eye, EyeOff } from 'lucide-vue';
+import { ArrowRight, Eye, EyeOff, Lock, LogIn } from 'lucide-vue';
 
 import { PAGE, SHOW_SNACKBAR } from '~/store/page.js';
 import * as acls from '~/helpers/pages-acls.js';
@@ -11,10 +11,12 @@ import {
   signInStepOf,
   STEP_SIGNED_IN,
   STEP_VERIFY,
+  STEP_SETUP,
   STEP_RECOVERY_CODES,
 } from '~/helpers/two-factor.js';
 import { takeLogoutReason } from '~/helpers/logout-reason.js';
-import BsLoginLogo from '~/components/account/login-logo.vue';
+import BsAuthCard from '~/components/account/auth-card.vue';
+import BsTextField from '~/components/form/bs-text-field.vue';
 import BsTwoFactorCode from '~/components/account/two-factor-code.vue';
 import BsTwoFactorSetup from '~/components/account/two-factor-setup.vue';
 import BsRecoveryCodes from '~/components/account/recovery-codes.vue';
@@ -23,13 +25,16 @@ export default {
   name: 'BsPageLogin',
   meta: { acl: acls.ACL_NOT_CONNECTED },
   components: {
-    BsLoginLogo,
+    BsAuthCard,
+    BsTextField,
     BsTwoFactorCode,
     BsTwoFactorSetup,
     BsRecoveryCodes,
-    LucideArrowLeft: ArrowLeft,
+    LucideArrowRight: ArrowRight,
     LucideEye: Eye,
     LucideEyeOff: EyeOff,
+    LucideLock: Lock,
+    LucideLogIn: LogIn,
   },
   layout: 'centered',
   data() {
@@ -48,6 +53,8 @@ export default {
       method: null,
       signedIn: null,
       recoveryCodes: [],
+      // The recovery codes end the setup, or follow the use of one.
+      recoveryAfterSetup: false,
     };
   },
   head() {
@@ -154,6 +161,7 @@ export default {
         const { recoveryCodes, ...user } = answer;
         this.recoveryCodes = recoveryCodes;
         this.signedIn = user;
+        this.recoveryAfterSetup = this.step === STEP_SETUP;
       }
       this.step = step;
     },
@@ -190,111 +198,133 @@ export default {
 </script>
 
 <template>
-  <div style="display: block; margin: 0 auto; text-align: center">
-    <bs-login-logo />
-    <p style="color: white; font-size: 0.875rem">Email Builder by Badsender</p>
-    <v-card class="elevation-24">
-      <v-toolbar flat>
+  <div class="bs-page-login">
+    <!-- Who signs in -->
+    <bs-auth-card
+      v-if="!userIsFound"
+      :title="$t('forms.user.login')"
+      :loading="isLoading"
+    >
+      <template #icon><lucide-log-in :size="26" /></template>
+      <template #description>{{ $t('authCard.emailIntro') }}</template>
+      <v-form id="check-email-form" @submit.prevent="checkEmailForm">
+        <bs-text-field
+          v-model="username"
+          autofocus
+          dense
+          :label="$t('users.email')"
+          name="username"
+          type="email"
+          autocomplete="username"
+          required
+        />
+      </v-form>
+      <template #actions>
         <v-btn
-          v-if="userIsFound && isBasicAuthentication"
+          :loading="isLoading"
+          elevation="0"
           color="accent"
-          icon
-          @click="back"
+          form="check-email-form"
+          type="submit"
         >
-          <lucide-arrow-left :size="20" />
+          {{ $t('authCard.next') }}
+          <lucide-arrow-right :size="16" class="ml-2" />
         </v-btn>
-        <v-toolbar-title class="pl-0">
-          {{ $t('forms.user.login') }}
-        </v-toolbar-title>
-      </v-toolbar>
-      <v-divider />
-      <div v-if="!userIsFound">
-        <v-card-text>
-          <v-form id="check-email-form" @submit.prevent="checkEmailForm">
-            <v-text-field
-              v-model="username"
-              autofocus
-              :label="$t('users.email')"
-              name="username"
-              prepend-icon="email"
-              type="text"
-              required
-            />
-          </v-form>
-        </v-card-text>
+      </template>
+    </bs-auth-card>
 
-        <v-card-actions>
-          <v-spacer />
-          <v-btn
-            :loading="isLoading"
-            elevation="0"
-            color="accent"
-            dark
-            form="check-email-form"
-            type="submit"
-          >
-            {{ $t('forms.user.login') }}
-          </v-btn>
-        </v-card-actions>
-      </div>
-
-      <!-- Password field  -->
-      <div v-if="userIsFound && isBasicAuthentication && !step">
-        <v-card-text>
-          <v-form id="login-form" @submit.prevent="handleSubmit">
-            <v-text-field
-              id="password"
-              v-model="password"
-              autofocus
-              :label="$t('global.password')"
-              name="password"
-              prepend-icon="lock"
-              :type="showPassword ? 'text' : 'password'"
-              required
+    <!-- Password field -->
+    <bs-auth-card
+      v-if="userIsFound && isBasicAuthentication && !step"
+      :title="$t('forms.user.login')"
+      :email="username"
+      :loading="isLoading"
+      @change-account="back"
+    >
+      <template #icon><lucide-lock :size="26" /></template>
+      <template #description>{{ $t('authCard.passwordIntro') }}</template>
+      <v-form id="login-form" @submit.prevent="handleSubmit">
+        <bs-text-field
+          id="password"
+          v-model="password"
+          autofocus
+          dense
+          :label="$t('global.password')"
+          name="password"
+          autocomplete="current-password"
+          :type="showPassword ? 'text' : 'password'"
+          required
+        >
+          <template #append>
+            <v-btn
+              icon
+              small
+              :aria-label="
+                showPassword
+                  ? $t('authCard.hidePassword')
+                  : $t('authCard.showPassword')
+              "
+              @click="showPassword = !showPassword"
             >
-              <template #append>
-                <v-btn icon small @click="showPassword = !showPassword">
-                  <lucide-eye v-if="showPassword" :size="18" />
-                  <lucide-eye-off v-else :size="18" />
-                </v-btn>
-              </template>
-            </v-text-field>
-          </v-form>
-        </v-card-text>
-        <v-card-actions>
-          <v-spacer />
-          <v-btn nuxt text color="primary" to="/account/reset-password">
-            {{ $t('forms.user.forgottenPassword') }}
-          </v-btn>
-          <v-btn
-            :loading="isLoading"
-            elevation="0"
-            color="accent"
-            form="login-form"
-            type="submit"
-          >
-            {{ $t('forms.user.login') }}
-          </v-btn>
-        </v-card-actions>
-      </div>
+              <lucide-eye v-if="showPassword" :size="18" />
+              <lucide-eye-off v-else :size="18" />
+            </v-btn>
+          </template>
+        </bs-text-field>
+        <nuxt-link to="/account/reset-password" class="bs-page-login__forgot">
+          {{ $t('forms.user.forgottenPassword') }}
+        </nuxt-link>
+      </v-form>
+      <template #actions>
+        <v-btn
+          :loading="isLoading"
+          elevation="0"
+          color="accent"
+          form="login-form"
+          type="submit"
+        >
+          {{ $t('forms.user.login') }}
+        </v-btn>
+      </template>
+    </bs-auth-card>
 
-      <!-- After the password (ADR 0008) -->
-      <bs-two-factor-code
-        v-if="step === 'verify'"
-        :method="method"
-        @answer="onAnswer"
-        @expired="backToPassword"
-      />
-      <bs-two-factor-setup
-        v-if="step === 'setup'"
-        @answer="onAnswer"
-        @expired="backToPassword"
-      />
-      <bs-recovery-codes
-        v-if="step === 'recovery-codes'"
-        :codes="recoveryCodes"
-        @continue="signIn(signedIn)"
-      />
-    </v-card>
+    <!-- After the password (ADR 0008) -->
+    <bs-two-factor-code
+      v-if="step === 'verify'"
+      :method="method"
+      :email="username"
+      @answer="onAnswer"
+      @expired="backToPassword"
+      @change-account="back"
+    />
+    <bs-two-factor-setup
+      v-if="step === 'setup'"
+      :email="username"
+      @answer="onAnswer"
+      @expired="backToPassword"
+    />
+    <bs-recovery-codes
+      v-if="step === 'recovery-codes'"
+      :codes="recoveryCodes"
+      :after-setup="recoveryAfterSetup"
+      @continue="signIn(signedIn)"
+    />
   </div>
 </template>
+
+<style lang="scss" scoped>
+.bs-page-login__forgot {
+  display: inline-block;
+  margin-top: 8px;
+  color: var(--v-accent-darken1);
+  font-size: 13px;
+  font-weight: 500;
+  text-decoration: none;
+
+  &:hover,
+  &:focus-visible {
+    color: var(--v-primary-base);
+    text-decoration: underline;
+  }
+}
+</style>

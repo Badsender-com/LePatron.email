@@ -1,44 +1,86 @@
 export default {
+  authCard: {
+    changeAccount: 'Change account',
+    emailIntro: 'Enter the email address of your account.',
+    passwordIntro: 'Enter your password.',
+    next: 'Continue',
+    showPassword: 'Show password',
+    hidePassword: 'Hide password',
+  },
   twoFactor: {
     code: {
-      label: 'Code',
+      title: 'Two-step verification',
+      label: 'Verification code',
       submit: 'Verify',
       hints: {
         totp: 'Enter the 6-digit code shown by your authenticator app.',
-        email: 'Enter the 6-digit code sent to you by email.',
+        email: 'Enter the 6-digit code sent to {email}.',
+        recovery: 'Enter one of the recovery codes you saved.',
       },
+      recoveryLabel: 'Recovery code',
       recoveryHint:
-        'Without your verification method? Enter one of your recovery codes.',
+        'Each code works once. You will get new codes after signing in.',
+      useRecovery: 'Use a recovery code',
+      useMethod: {
+        totp: 'Use my app',
+        email: 'Use the code sent by email',
+      },
       incorrect: 'Incorrect code',
       expired: 'This step expired: enter your password again.',
       trustDevice: 'Trust this device for 30 days',
+      trustDeviceHint: 'You will not enter a code again in this browser.',
       resend: 'Send a new code',
+      resendIn: 'Send again in {seconds} s',
       sent: 'A new code was sent to you',
     },
     setup: {
-      intro:
-        'Your company requires two-factor authentication: after your password, you will enter a code.',
-      choose: 'How do you want to get your codes?',
-      methods: {
-        totp: 'An authenticator app on my phone',
-        email: 'A code by email',
+      step: 'Setup · step {step} of 3',
+      title: 'Protect your account',
+      titles: {
+        totp: 'Link your app',
+        email: 'Check your address',
       },
+      intro:
+        'Your company requires two-step verification: after your password, you will enter a code.',
+      choose: 'Verification method',
+      methods: {
+        totp: 'Authenticator app',
+        email: 'Code by email',
+      },
+      methodHints: {
+        totp: 'Google Authenticator, Microsoft Authenticator, 1Password…',
+        email: 'A code at each sign-in, sent to {email}',
+      },
+      recommended: 'Recommended',
       start: 'Continue',
       emailSent:
-        'A code was just sent to you by email: enter it to turn on two-factor authentication.',
-      scan: 'Scan this QR code with your authenticator app (Google Authenticator, Microsoft Authenticator, 1Password…), then enter the code it shows.',
+        'A code was just sent to {email}. Enter it to turn on two-step verification.',
+      emailHint: 'Nothing received? Check your spam folder.',
+      scanIntro: 'Scan the QR code with your app, then enter the code it shows.',
+      scanSteps: {
+        1: 'Open your authenticator app.',
+        2: 'Add an account and scan the QR code.',
+        3: 'Enter the 6-digit code it shows below.',
+      },
       qrCodeAlt: 'Setup QR code',
-      manual: 'Or enter this key in the app:',
+      manual: 'Can’t scan? Enter this key',
+      copyKey: 'Copy',
+      keyCopied: 'Copied',
+      changeMethod: 'Change method',
       confirm: 'Turn on',
     },
     recoveryCodes: {
-      intro:
-        'Each recovery code signs you in once, without your verification method. Keep them somewhere safe: they will not be shown again.',
+      title: 'Keep your recovery codes',
+      intro: 'Without your verification method, each code signs you in once.',
+      introAfterUse:
+        'You used a recovery code: here is a new set, the old ones no longer work.',
+      notShownAgain: 'They will not be shown again.',
+      keepThem: 'Store them in your password manager or download them.',
       copy: 'Copy',
-      copied: 'Codes copied',
-      download: 'Download',
-      noted: 'I have saved my recovery codes',
-      continue: 'Continue',
+      copied: 'Copied',
+      download: 'Download (.txt)',
+      noted: 'I have saved my codes somewhere safe',
+      continue: 'Continue to LePatron',
     },
     group: {
       title: 'Two-factor authentication',

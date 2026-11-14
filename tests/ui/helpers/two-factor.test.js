@@ -74,8 +74,8 @@ describe('choosing the verification method', () => {
   it('offers the authenticator app and the code by email', () => {
     const setup = read('components/account/two-factor-setup.vue');
 
-    expect(setup).toMatch(/value="totp"/);
-    expect(setup).toMatch(/value="email"/);
+    expect(setup).toMatch(/v-for="option in \['totp', 'email'\]"/);
+    expect(setup).toMatch(/type="radio"[\s\S]*?:value="option"/);
   });
 
   it('lets a member using email ask for a new code', () => {
@@ -84,6 +84,80 @@ describe('choosing the verification method', () => {
     expect(code).toMatch(
       /<bs-send-email-code[\s\S]*?v-if="method === 'email'"/
     );
+  });
+});
+
+describe('the sign-in card (after the consent of a connected application)', () => {
+  let maskEmail;
+  let groupKey;
+  let initialsOfEmail;
+
+  beforeAll(() => {
+    ({
+      maskEmail,
+      groupKey,
+      initialsOfEmail,
+    } = require('../../../packages/ui/helpers/two-factor.js'));
+  });
+
+  it('says where a code went without showing the whole address', () => {
+    expect(maskEmail('camille.martin@exemple.fr')).toBe('c•••@exemple.fr');
+    expect(maskEmail('')).toBe('');
+    expect(maskEmail('no-domain')).toBe('');
+  });
+
+  it('shows the key of the app in groups of four', () => {
+    expect(groupKey('JBSWY3DPEHPK3PXPAB')).toBe('JBSW Y3DP EHPK 3PXP AB');
+    expect(groupKey(undefined)).toBe('');
+  });
+
+  it('gives two letters to whoever signs in', () => {
+    expect(initialsOfEmail('camille.martin@exemple.fr')).toBe('CM');
+    expect(initialsOfEmail('jo@exemple.fr')).toBe('JO');
+    expect(initialsOfEmail('')).toBe('?');
+  });
+
+  it('wraps every step of the login page in the same card', () => {
+    const login = read('routes/account/login/index.vue');
+    const steps = [
+      'components/account/two-factor-code.vue',
+      'components/account/two-factor-setup.vue',
+      'components/account/recovery-codes.vue',
+    ].map(read);
+
+    expect(login.match(/<bs-auth-card/g)).toHaveLength(2);
+    steps.forEach((step) => expect(step).toMatch(/<bs-auth-card/));
+  });
+
+  it('lets the member change account rather than a bare arrow back', () => {
+    const login = read('routes/account/login/index.vue');
+
+    expect(login).not.toMatch(/lucide-arrow-left/);
+    expect(login).toMatch(/@change-account="back"/);
+  });
+
+  it('keeps a refused code on its field, announced', () => {
+    const field = read('components/account/auth-code-field.vue');
+    const code = read('components/account/two-factor-code.vue');
+
+    expect(field).toMatch(/role="alert"/);
+    expect(field).toMatch(/:aria-describedby="describedBy"/);
+    expect(code).toMatch(
+      /this\.error = this\.\$t\(twoFactorErrorKey\(error\)\)/
+    );
+  });
+
+  it('turns the recovery code into an action of its own', () => {
+    const code = read('components/account/two-factor-code.vue');
+
+    expect(code).toMatch(/@click="toggleRecovery"/);
+    expect(code).toMatch(/twoFactor\.code\.useRecovery/);
+  });
+
+  it('goes on from the recovery codes only once they are noted', () => {
+    const codes = read('components/account/recovery-codes.vue');
+
+    expect(codes).toMatch(/:disabled="!noted"/);
   });
 });
 
