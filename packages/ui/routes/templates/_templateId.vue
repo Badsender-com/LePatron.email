@@ -9,6 +9,7 @@ import * as apiRoutes from '~/helpers/api-routes.js';
 import * as sseHelpers from '~/helpers/server-sent-events.js';
 import BsPageHeader from '~/components/layout/bs-page-header.vue';
 import BsTemplateForm from '~/components/template/form.vue';
+import BsTemplateContract from '~/components/template/template-contract.vue';
 import { Trash2 } from 'lucide-vue';
 import { CAPABILITIES } from '../../../shared/access/roles.js';
 
@@ -19,6 +20,7 @@ const UPDATE_AXIOS_CONFIG = Object.freeze({
 export default {
   name: 'BsPageTemplate',
   components: {
+    BsTemplateContract,
     BsPageHeader,
     BsTemplateForm,
     LucideTrash2: Trash2,
@@ -266,6 +268,10 @@ export default {
         @submit="onSubmit"
         @delete="onDelete"
         @deleteImages="onDeleteImages"
+      />
+      <bs-template-contract
+        v-if="template.hasMarkup"
+        :contract="template.contract"
       />
     </v-container>
   </div>

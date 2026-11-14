@@ -10,7 +10,7 @@ const {
 } = require('./template-contract.fixtures.js');
 
 // Turned on by #1520 (the server reads the template contract)
-describe.skip('template contract', () => {
+describe('template contract', () => {
   let readTemplateContract;
 
   beforeAll(() => {
