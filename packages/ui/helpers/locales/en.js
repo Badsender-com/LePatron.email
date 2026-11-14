@@ -2186,6 +2186,7 @@ export default {
       confirmTitle: 'Apply adoption?',
       confirm: '{attached} email(s) will get the values taken from their content, and so will the {withGaps} email(s) with a gap for what could be taken. Only empty dimensions are filled; the content and HTML of the emails do not change.',
       appliedCounts: 'Adoption applied: {attached} email(s) attached, {withGaps} with a gap, {complete} already complete.',
+      skipped: '{skipped} email(s) saved during the run were left untouched: run the adoption again to attach them.',
       email: 'Email',
       adopted: 'Values taken',
       gaps: 'Gaps',

@@ -110,6 +110,10 @@ export default {
               )
             }}
           </p>
+          <!-- Saved by their author during the run: left as saved. -->
+          <p v-if="report.counts.skipped" class="mb-3">
+            {{ $t('templates.adoption.skipped', report.counts) }}
+          </p>
           <bs-data-table
             v-if="rows.length > 0"
             :headers="headers"
