@@ -8,18 +8,15 @@ const {
   TaxonomyLimits,
   StandardDimensions,
 } = require('../../constant/taxonomy-type.js');
-const {
-  isObjectId,
-  validatePayload,
-  limitReached,
-} = require('./taxonomy.validation.js');
+const { isObjectId, limitReached } = require('./taxonomy.validation.js');
 const { resolveCompanyId, scopedById } = require('./company-scope.js');
-const { assertValueType } = require('./dimension.service.js');
+const { assertValueType } = require('./dimension-guards.js');
+const { assertNotOfferedUnder } = require('./availability.js');
 const {
-  readAvailability,
-  assertNotOfferedUnder,
-} = require('./availability.js');
-const { readNormalisedCode } = require('./dimension-role.js');
+  readValueFields,
+  assertLabelIsFree,
+  assertIdentifierIsFree,
+} = require('./value-fields.js');
 const logger = require('../../utils/logger.js');
 
 module.exports = {
@@ -61,21 +58,12 @@ async function createTaxonomyItem({ user, groupId, type, payload = {} }) {
     type,
     toWrite: true,
   });
-  const { parentIds, ...fields } = validatePayload(payload, { partial: false });
-  if (parentIds !== undefined) {
-    fields._parents = await readAvailability({
-      companyId,
-      type: taxonomyType,
-      parentIds,
-    });
-  }
-  if (fields.code !== undefined) {
-    fields.code = await readNormalisedCode({
-      companyId,
-      type: taxonomyType,
-      code: fields.code,
-    });
-  }
+  const fields = await readValueFields({
+    companyId,
+    type: taxonomyType,
+    payload,
+    partial: false,
+  });
 
   await assertLabelIsFree({
     companyId,
@@ -124,23 +112,12 @@ async function updateTaxonomyItem({ user, itemId, payload = {} }) {
   logger.log('taxonomyService:updateTaxonomyItem');
 
   const item = await findScopedItem({ user, itemId });
-  const { parentIds, ...fields } = validatePayload(payload, { partial: true });
-  // Narrowing an availability leaves the emails using the combination as they
-  // are: the server checks it again only when a request changes it (ADR-0014).
-  if (parentIds !== undefined) {
-    fields._parents = await readAvailability({
-      companyId: item._company,
-      type: item.type,
-      parentIds,
-    });
-  }
-  if (fields.code !== undefined) {
-    fields.code = await readNormalisedCode({
-      companyId: item._company,
-      type: item.type,
-      code: fields.code,
-    });
-  }
+  const fields = await readValueFields({
+    companyId: item._company,
+    type: item.type,
+    payload,
+    partial: true,
+  });
 
   if (fields.label !== undefined && fields.label !== item.label) {
     await assertLabelIsFree({
@@ -245,55 +222,4 @@ async function findScopedItem({ user, itemId }) {
   }
 
   return item;
-}
-
-/**
- * Two companies may use the same label; one company may not use it twice for the
- * same taxonomy. The unique index enforces this, but a duplicate would surface as
- * an E11000 rather than a usable error, so it is checked here too.
- */
-async function assertLabelIsFree({ companyId, type, label, exceptId }) {
-  // Case-insensitive: "Newsletter" and "newsletter" in the same curated list are a
-  // mistake, not two typologies. Accent differences are NOT caught — that would
-  // need a stored normalised field, and it is not the collision people actually
-  // make. The unique index stays as the exact-match backstop.
-  const escaped = label.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-  const query = {
-    _company: companyId,
-    type,
-    label: { $regex: `^${escaped}$`, $options: 'i' },
-  };
-  if (exceptId) {
-    query._id = { $ne: exceptId };
-  }
-
-  if (await TaxonomyItems.exists(query)) {
-    throw new Conflict(ERROR_CODES.TAXONOMY_ITEM_LABEL_ALREADY_EXISTS);
-  }
-}
-
-/**
- * One identifier per value within a dimension: a template compares against it,
- * and two values answering to the same one could not be told apart. Values with
- * no identifier are as many as needed.
- *
- * The email type is left out: there the field maps a value onto one of the
- * doctrine's six types, and several values map onto the same one.
- */
-async function assertIdentifierIsFree({
-  companyId,
-  type,
-  identifier,
-  exceptId,
-}) {
-  if (!identifier || type === StandardDimensions.EMAIL_TYPE) return;
-
-  const query = { _company: companyId, type, canonicalType: identifier };
-  if (exceptId) {
-    query._id = { $ne: exceptId };
-  }
-
-  if (await TaxonomyItems.exists(query)) {
-    throw new Conflict(ERROR_CODES.TAXONOMY_ITEM_IDENTIFIER_ALREADY_EXISTS);
-  }
 }

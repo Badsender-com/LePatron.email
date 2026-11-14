@@ -5,19 +5,22 @@ const Vue = require('vue/dist/vue.common');
 const { toFormState, SUBJECT_HARD_LIMIT } = require('../utils/email-metadata');
 const {
   typologyOptions,
-  triggerOptions,
+  translatedTriggerOptions,
   selectedDescription,
 } = require('../utils/email-metadata-options');
 const {
   dimensionSelects,
-  reconcileSelections,
-  selectionsFromIds,
   idsFromSelections,
 } = require('../utils/dimension-selects');
 const {
+  initialSelections,
+  nextSelections,
+  templateValuesFor,
+} = require('../utils/dimension-state');
+const {
   createEmailMetadataStore,
+  unloadGuardFor,
 } = require('../utils/email-metadata-store');
-const { governanceValues } = require('../utils/governance-values');
 const { createTemplatePublisher } = require('../utils/publish-to-template');
 const template = require('./components/email-metadata/email-metadata.template');
 
@@ -87,16 +90,9 @@ module.exports = {
     store.reset(initialForm);
 
     const dimensions = config.dimensions || [];
-    // Every dimension gets its key up front: Vue 2 does not see a key added
-    // later, and the select of a dimension the email has no value for would not
-    // react.
-    const initialSelections = dimensions.reduce(
-      (selections, dimension) => ({ ...selections, [dimension.name]: '' }),
-      {}
-    );
-    Object.assign(
-      initialSelections,
-      selectionsFromIds(dimensions, initialForm.taxonomyItemIds)
+    const selections = initialSelections(
+      dimensions,
+      initialForm.taxonomyItemIds
     );
 
     // One per section: it remembers what the template held before a token was
@@ -112,7 +108,7 @@ module.exports = {
         emailTypes: config.emailTypes || [],
         triggers: config.triggers || [],
         dimensions,
-        selections: initialSelections,
+        selections,
         subjectHardLimit: SUBJECT_HARD_LIMIT,
       }),
 
@@ -126,20 +122,11 @@ module.exports = {
           );
         },
         triggerChoices() {
-          return triggerOptions(
-            this.triggers,
-            vm.t('email-metadata-trigger-none'),
-            (value) => vm.t(`email-metadata-trigger-${value}`),
-            this.trigger,
-            // A value the locale has no description for falls back to its bare
-            // label: vm.t returns the key itself when it knows nothing, which
-            // would otherwise print the key after a dash.
-            (value) => {
-              const key = `email-metadata-trigger-${value}-description`;
-              const text = vm.t(key);
-              return text === key ? '' : text;
-            }
-          );
+          return translatedTriggerOptions({
+            triggers: this.triggers,
+            trigger: this.trigger,
+            t: (key) => vm.t(key),
+          });
         },
         // Both selects show the definition of the selected value UNDER the field,
         // never inside the option: a native select repeats the chosen option's
@@ -170,18 +157,14 @@ module.exports = {
         // What the template reads of the email's settings (ADR-0015), recomputed
         // as the user picks: the preview follows without a save.
         templateValues() {
-          return governanceValues({
-            dimensions: [
-              {
-                name: 'emailType',
-                precedence: config.emailTypePrecedence || 0,
-                values: this.emailTypes,
-              },
-              ...this.dimensions,
-            ],
-            selections: { ...this.selections, emailType: this.emailTypeId },
+          return templateValuesFor({
+            emailTypes: this.emailTypes,
+            emailTypePrecedence: config.emailTypePrecedence,
+            dimensions: this.dimensions,
+            selections: this.selections,
+            emailTypeId: this.emailTypeId,
             trigger: this.trigger,
-          }).values;
+          });
         },
         triggerHintId() {
           return this.triggerDescription ? 'email-metadata-trigger-hint' : null;
@@ -236,15 +219,15 @@ module.exports = {
         // combination narrowed since the email chose it is kept, with its notice,
         // until the user changes its parent.
         reconcile(changed) {
-          const kept = reconcileSelections({
-            dimensions: this.dimensions,
-            selections: this.selections,
-            emailTypeId: this.emailTypeId,
-            changed,
-          });
-          Object.keys(this.selections).forEach((name) => {
-            this.selections[name] = kept[name] || '';
-          });
+          Object.assign(
+            this.selections,
+            nextSelections({
+              dimensions: this.dimensions,
+              selections: this.selections,
+              emailTypeId: this.emailTypeId,
+              changed,
+            })
+          );
         },
         // The second argument matters: vm.t(key, params) interpolates __token__
         // placeholders, and dropping it would lose them without an error.
@@ -256,24 +239,8 @@ module.exports = {
 
     app = new Vue({ el: '#email-metadata-section' });
 
-    // These fields are the only plain form inputs in the editor, and a form
-    // input is where a user expects their typing to survive. Everything else here
-    // is written through a command; the subject someone types and then closes the
-    // tab on is gone with nothing said.
-    //
-    // A prompt on the way out, not a permanent indicator: the unsaved-state dot was
-    // removed on purpose because it covered the metadata and nothing else, and a
-    // signal that stays dark for a modified block tells the user their work is
-    // safe. This fires only when the metadata are actually dirty, and says nothing
-    // the rest of the time.
-    unloadGuard = function (event) {
-      if (!store.isDirty()) return undefined;
-      // Browsers ignore the string and show their own wording; both forms are
-      // still required for the prompt to appear at all.
-      event.preventDefault();
-      event.returnValue = '';
-      return '';
-    };
+    // A prompt on the way out while the metadata are dirty (see the store).
+    unloadGuard = unloadGuardFor(store);
     window.addEventListener('beforeunload', unloadGuard);
   },
 

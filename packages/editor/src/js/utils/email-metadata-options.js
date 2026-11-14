@@ -128,8 +128,35 @@ function selectedDescription(options, value) {
   return (selected && selected.description) || '';
 }
 
+/**
+ * The trigger options in the editor's words: `t` is the editor's translator,
+ * which answers the key itself when it knows nothing. A value the locale has no
+ * description for falls back to its bare label, rather than the key printed
+ * after a dash.
+ *
+ * @param {Object} params
+ * @param {Array<string>} params.triggers
+ * @param {string} [params.trigger] the trigger the email carries
+ * @param {function(string): string} params.t
+ * @returns {Array<{value: string, text: string, description: string}>}
+ */
+function translatedTriggerOptions({ triggers, trigger, t }) {
+  return triggerOptions(
+    triggers,
+    t('email-metadata-trigger-none'),
+    (value) => t(`email-metadata-trigger-${value}`),
+    trigger,
+    (value) => {
+      const key = `email-metadata-trigger-${value}-description`;
+      const text = t(key);
+      return text === key ? '' : text;
+    }
+  );
+}
+
 module.exports = {
   typologyOptions,
   triggerOptions,
+  translatedTriggerOptions,
   selectedDescription,
 };
