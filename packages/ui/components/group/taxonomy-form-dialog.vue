@@ -9,22 +9,14 @@ import BsTaxonomyFormOrderStatus from '~/components/group/taxonomy-form-order-st
 import BsTaxonomyAvailabilityField from '~/components/group/taxonomy-availability-field.vue';
 import BsTaxonomyTokensField from '~/components/group/taxonomy-tokens-field.vue';
 import BsTaxonomyCodeField from '~/components/group/taxonomy-code-field.vue';
-import {
-  TAXONOMY_LIMITS,
-  buildTaxonomyPayload,
-  canonicalTypeItems,
-} from '~/helpers/taxonomy.js';
+import BsTaxonomyDefaultField from '~/components/group/taxonomy-default-field.vue';
+import { TAXONOMY_LIMITS, canonicalTypeItems } from '~/helpers/taxonomy.js';
 import { proposeIdentifier } from '~/helpers/taxonomy-builder.js';
-
-function emptyItem() {
-  return {
-    label: '',
-    description: '',
-    canonicalType: null,
-    isActive: true,
-    order: 0,
-  };
-}
+import {
+  valueFormFor,
+  valuePayloadFrom,
+  canBeDefault,
+} from '~/helpers/taxonomy-value-form.js';
 
 export default {
   name: 'BsTaxonomyFormDialog',
@@ -37,6 +29,7 @@ export default {
     BsTaxonomyAvailabilityField,
     BsTaxonomyTokensField,
     BsTaxonomyCodeField,
+    BsTaxonomyDefaultField,
   },
   mixins: [validationMixin],
   props: {
@@ -52,12 +45,13 @@ export default {
   },
   data() {
     return {
-      form: emptyItem(),
+      form: valueFormFor(null),
       editingId: null,
       // A refusal the server alone can decide — a label already taken — shown next
       // to the field rather than in a snackbar at the other end of the screen.
       serverLabelError: null,
       serverIdentifierError: null,
+      serverDefaultError: null,
       // The identifier follows the label until the admin writes their own.
       identifierTouched: false,
     };
@@ -71,6 +65,12 @@ export default {
   computed: {
     wording() {
       return this.isEmailType ? 'taxonomy' : 'taxonomy.values';
+    },
+    canBeDefault() {
+      return canBeDefault({
+        isEmailType: this.isEmailType,
+        hasParent: Boolean(this.parentValues),
+      });
     },
     identifierMaxLength() {
       return TAXONOMY_LIMITS.CANONICAL_TYPE;
@@ -133,25 +133,9 @@ export default {
       this.editingId = item ? item.id : null;
       this.serverLabelError = null;
       this.serverIdentifierError = null;
+      this.serverDefaultError = null;
       this.identifierTouched = false;
-      this.form = item
-        ? {
-            label: item.label || '',
-            description: item.description || '',
-            canonicalType: item.canonicalType || null,
-            isActive: item.isActive !== false,
-            order: typeof item.order === 'number' ? item.order : 0,
-            parentIds: (item._parents || []).map(String),
-            tokens: { ...(item.tokens || {}) },
-            code: item.code || null,
-          }
-        : {
-            ...emptyItem(),
-            order: suggestedOrder,
-            parentIds: [],
-            tokens: {},
-            code: null,
-          };
+      this.form = valueFormFor(item, suggestedOrder);
       this.$v.$reset();
       this.$refs.modal.open();
     },
@@ -174,6 +158,10 @@ export default {
         this.serverIdentifierError = message;
         return true;
       }
+      if (field === 'isDefault' && this.canBeDefault) {
+        this.serverDefaultError = message;
+        return true;
+      }
       return false;
     },
 
@@ -191,13 +179,15 @@ export default {
       // A previous refusal must not survive a corrected field.
       this.serverLabelError = null;
       this.serverIdentifierError = null;
+      this.serverDefaultError = null;
       this.$v.$touch();
       if (this.$v.$invalid) return;
 
-      const payload = buildTaxonomyPayload(this.form);
-      if (this.parentValues) payload.parentIds = this.form.parentIds;
-      payload.tokens = this.form.tokens;
-      if (this.role) payload.code = this.form.code;
+      const payload = valuePayloadFrom(this.form, {
+        isEmailType: this.isEmailType,
+        hasParent: Boolean(this.parentValues),
+        role: this.role,
+      });
       this.$emit('save', { id: this.editingId, payload });
     },
   },
@@ -271,6 +261,14 @@ export default {
       v-model="form.code"
       :role="role"
       :disabled="loading"
+    />
+
+    <bs-taxonomy-default-field
+      v-if="canBeDefault"
+      v-model="form.isDefault"
+      :error-message="serverDefaultError"
+      :disabled="loading"
+      @input="serverDefaultError = null"
     />
 
     <bs-taxonomy-availability-field

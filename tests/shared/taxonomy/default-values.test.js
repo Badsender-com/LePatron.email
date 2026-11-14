@@ -65,18 +65,12 @@ const AUDIENCE = {
   values: [{ id: 'teachers', canonicalType: 'teachers', isActive: true }],
 };
 
-let resolveDefaults;
-
-beforeAll(() => {
-  // Required here: the module doesn't exist until #1523.
-  resolveDefaults = (params) =>
-    require('../../../packages/shared/taxonomy/default-values.js').resolveDefaults(
-      params
-    );
-});
+const {
+  resolveDefaults,
+} = require('../../../packages/shared/taxonomy/default-values.js');
 
 // Turned on by #1523 (a default value at the first level)
-describe.skip('default value at the first level', () => {
+describe('default value at the first level', () => {
   it("starts a new email on the company's default", () => {
     expect(resolveDefaults({ dimensions: [SILO], selections: {} })).toEqual({
       silo: 'school',

@@ -235,6 +235,7 @@ async function buildEditorDimensions({
       _parents: 1,
       tokens: 1,
       code: 1,
+      isDefault: 1,
     })
     .sort({ order: 1, label: 1 })
     .lean();
@@ -276,6 +277,9 @@ async function buildEditorDimensions({
         parentIds: value._parents || [],
         tokens: value.tokens || {},
         code: value.code || null,
+        // The company's default (ADR-0024), for the values an empty
+        // dimension takes.
+        isDefault: Boolean(value.isDefault),
       })),
   }));
 }
