@@ -6,6 +6,7 @@
 
 const {
   initialSelections,
+  openingSelections,
   nextSelections,
   templateValuesFor,
 } = require('../../packages/editor/src/js/utils/dimension-state.js');
@@ -160,5 +161,113 @@ describe('the trigger options in the editor words', () => {
     expect(
       options.find((option) => option.value === 'automated').description
     ).toBe('');
+  });
+});
+
+// #1525 (ADR-0024): what an email made before the taxonomy opens on.
+describe('the selections an email opens with', () => {
+  // Mosaico keeps each root property of the content in an observable.
+  const contentOf = (values) =>
+    Object.fromEntries(
+      Object.entries(values).map(([name, value]) => [name, () => value])
+    );
+  const open = (content, taxonomyItemIds = []) =>
+    openingSelections({
+      dimensions: [MARKET, LANGUAGE],
+      taxonomyItemIds,
+      contract: { adopt: {} },
+      content: contentOf(content),
+    });
+
+  it('adopts the market its content holds', () => {
+    expect(open({ market: 'ca', headerVisible: true })).toEqual({
+      selections: { market: 'ca', language: '' },
+      gaps: {},
+    });
+  });
+
+  it('lands the language on the only one offered under the adopted market', () => {
+    const narrow = { ...LANGUAGE, values: LANGUAGE.values.slice(0, 2) };
+
+    expect(
+      openingSelections({
+        dimensions: [MARKET, narrow],
+        taxonomyItemIds: [],
+        content: contentOf({ market: 'ca' }),
+      }).selections
+    ).toEqual({ market: 'ca', language: 'fr' });
+  });
+
+  it('keeps what the email carries over what its content holds', () => {
+    expect(open({ market: 'ca' }, ['be']).selections).toEqual({
+      market: 'be',
+      language: '',
+    });
+  });
+
+  it('adopts nothing from a market emptied and saved', () => {
+    expect(open({ market: '' }).selections).toEqual({
+      market: '',
+      language: '',
+    });
+  });
+
+  it('reports an identifier no value carries, under its dimension', () => {
+    expect(open({ market: 'jp' }).gaps).toEqual({
+      market: { identifier: 'jp', reason: 'UNKNOWN_IDENTIFIER' },
+    });
+  });
+});
+
+// #1525 (ADR-0024): what the content held and could not be adopted stays in
+// the content until someone decides, rather than being wiped by the first write.
+describe('what the template reads while a gap is reported', () => {
+  const values = (selections, gaps) =>
+    templateValuesFor({
+      emailTypes: [],
+      dimensions: [MARKET, LANGUAGE],
+      selections,
+      gaps,
+    });
+  const JP = { market: { identifier: 'jp', reason: 'UNKNOWN_IDENTIFIER' } };
+
+  it('leaves out an empty dimension with a gap, so its property is kept', () => {
+    expect(values({ market: '', language: '' }, JP)).not.toHaveProperty(
+      'market'
+    );
+  });
+
+  it('keeps the property of an empty child too: it waits for its parent', () => {
+    expect(values({ market: '', language: '' }, JP)).not.toHaveProperty(
+      'language'
+    );
+  });
+
+  it('still publishes the dimensions the gap does not hold', () => {
+    const audience = {
+      name: 'audience',
+      values: [{ id: 'pro', canonicalType: 'pro', isActive: true }],
+    };
+
+    expect(
+      templateValuesFor({
+        emailTypes: [],
+        dimensions: [MARKET, LANGUAGE, audience],
+        selections: { market: '', language: '', audience: '' },
+        gaps: JP,
+      })
+    ).toHaveProperty('audience');
+  });
+
+  it('publishes the dimension once it has a value, a default included', () => {
+    expect(values({ market: 'ca', language: '' }, JP)).toMatchObject({
+      market: 'ca',
+    });
+  });
+
+  it('publishes an empty value once the gap is dismissed by a choice', () => {
+    expect(
+      values({ market: '', language: '' }, { market: null })
+    ).toHaveProperty('market');
   });
 });

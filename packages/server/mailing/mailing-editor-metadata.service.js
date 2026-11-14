@@ -12,6 +12,9 @@ const { EmailTriggerValues } = require('../constant/email-trigger.js');
 const {
   buildEditorDimensions,
 } = require('./mailing-company-dimensions.service.js');
+const {
+  contractOfTemplate,
+} = require('../template/template-contract.service.js');
 const logger = require('../utils/logger.js');
 
 module.exports = { buildEditorMetadata };
@@ -111,13 +114,19 @@ async function buildEditorMetadata({ mailing, group }) {
         .lean()
     : [];
   // Same reason as the typologies: no company, no value the save could accept.
+  const templateId = mailing._wireframe?._id || mailing._wireframe;
   const dimensions = mailingCompanyId
     ? await buildEditorDimensions({
         companyId: mailingCompanyId,
         currentIds: mailing._taxonomyItems,
-        templateId: mailing._wireframe?._id || mailing._wireframe,
+        templateId,
       })
     : [];
+  // Where the editor adopts an empty dimension's value from (ADR-0024).
+  const { adopt } =
+    dimensions.length > 0
+      ? await contractOfTemplate(templateId)
+      : { adopt: {} };
 
   const emailTypeDimension = mailingCompanyId
     ? await TaxonomyDimensions.findOne({
@@ -162,6 +171,7 @@ async function buildEditorMetadata({ mailing, group }) {
       // one is absent, but the values the email carries under it stay in
       // `taxonomyItemIds`, and the editor sends them back untouched.
       dimensions,
+      contract: { adopt },
       url: { update: `/api/mailings/${mailingId}/metadata` },
     },
   };

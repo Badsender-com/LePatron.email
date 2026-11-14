@@ -220,3 +220,23 @@ describe('default value of a child dimension', () => {
     );
   });
 });
+
+// #1525: the editor adopts an empty dimension's value from the content, where
+// the template contract says.
+describe('the adoption sources the editor receives', () => {
+  it('are the ones the template contract declares', async () => {
+    const { emailMetadataConfig } = await buildEditorMetadata({
+      mailing: {
+        _id: '507f1f77bcf86cd799439e02',
+        _company: COMPANY_A,
+        _wireframe: SILO_TEMPLATE,
+        _taxonomyItems: [],
+      },
+      group: { _id: COMPANY_A, emailMetadata: { enabled: true } },
+    });
+
+    expect(emailMetadataConfig.contract).toEqual({
+      adopt: { siloBrand: 'brand_[silo]' },
+    });
+  });
+});
