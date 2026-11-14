@@ -25,13 +25,14 @@ module.exports = { adoptForTemplate };
 /**
  * @param {Object} params
  * @param {string} params.templateId
- * @param {boolean} params.apply false previews, and writes nothing
+ * @param {boolean} params.apply false previews, and writes nothing; true
+ *   attaches each email to the values adopted, its content untouched
  * @returns {Promise<{emails: Array, counts: Object}>} per email its `id`,
  *   `name`, the identifiers it would take (`adopted`, dimension → identifier)
  *   and its `gaps`. Counted as `attached` when it takes values and has no gap,
  *   `withGaps` when it has one, `complete` when nothing is left to adopt.
  */
-async function adoptForTemplate({ templateId }) {
+async function adoptForTemplate({ templateId, apply }) {
   const template = await Templates.findOne({ _id: templateId })
     .select({ _company: 1 })
     .lean();
@@ -50,7 +51,34 @@ async function adoptForTemplate({ templateId }) {
   const emails = mailings
     .map((mailing) => entryFor(mailing, dimensions, contract))
     .sort((a, b) => String(a.name).localeCompare(String(b.name)));
+  if (apply) await attach(mailings, emails);
   return { emails, counts: countsOf(emails) };
+}
+
+/**
+ * Write the adopted values beside the ones each email carries: its empty
+ * dimensions only, never its content nor its rendered HTML, which stays the
+ * one it was saved with until the email is opened again.
+ *
+ * Written only while the email carries what was read: one saved in between
+ * is left as its author saved it, and taken up by the next run.
+ */
+async function attach(mailings, emails) {
+  const byId = new Map(
+    mailings.map((mailing) => [String(mailing._id), mailing])
+  );
+  // As when an email opens: what could be adopted is, beside its gaps.
+  const toAttach = emails.filter((entry) => entry.adoptedIds.length > 0);
+  // One email at a time: a few hundred at most, and each its own condition.
+  for (const entry of toAttach) {
+    const carried = byId.get(entry.id)._taxonomyItems || [];
+    await Mailings.updateOne(
+      { _id: entry.id, _taxonomyItems: unchanged(carried) },
+      { $set: { _taxonomyItems: [...carried, ...entry.adoptedIds] } },
+      // Attaching values is not an edit of the email.
+      { timestamps: false }
+    );
+  }
 }
 
 function entryFor(mailing, dimensions, contract) {
@@ -91,6 +119,12 @@ function carriedSelections(mailing, dimensions) {
     if (value) selections[dimension.name] = value.id;
   });
   return selections;
+}
+
+// The list as it was read. An email made before the taxonomy has none at all,
+// which an empty array does not match.
+function unchanged(carried) {
+  return carried.length > 0 ? carried : { $in: [null, []] };
 }
 
 function countsOf(emails) {
