@@ -99,10 +99,14 @@ async function create(req, res) {
 
 async function read(req, res) {
   const { templateId } = req.params;
-  const template = await Templates.findById(templateId).populate({
-    path: '_company',
-    select: 'id name',
-  });
+  // Bounded to the caller's company, as the markup is (super admins read any).
+  const query = modelsUtils.addGroupFilter(req.user, { _id: templateId });
+  const template = modelsUtils.isObjectIdString(templateId)
+    ? await Templates.findOne(query).populate({
+        path: '_company',
+        select: 'id name',
+      })
+    : null;
   if (!template) throw new createError.NotFound();
   res.json(template);
 }
