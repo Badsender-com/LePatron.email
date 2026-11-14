@@ -197,7 +197,7 @@ describe('bulk adoption: preview', () => {
 });
 
 // Turned on by #1527 (apply the adoption to a template's emails)
-describe.skip('bulk adoption: apply', () => {
+describe('bulk adoption: apply', () => {
   it('attaches each email to the values its content holds', async () => {
     await adoptForTemplate({ apply: true });
 
@@ -224,6 +224,41 @@ describe.skip('bulk adoption: apply', () => {
     expect(
       (await models.Mailings.findOne({ _id: email(2) }).lean()).data
     ).toEqual(before);
+  });
+
+  it('attaches what it can adopt beside a gap, as an email does when it opens', async () => {
+    models.Mailings.seed([
+      {
+        _id: email(6),
+        name: 'Wrong brand',
+        _company: COMPANY_A,
+        _wireframe: TEMPLATE,
+        _taxonomyItems: [],
+        data: { silo: 'school', brand_school: 'little_reader' },
+      },
+    ]);
+
+    await adoptForTemplate({ apply: true });
+
+    const partial = await models.Mailings.findOne({ _id: email(6) }).lean();
+    expect(idsOf(partial._taxonomyItems)).toEqual([idOf(school)]);
+  });
+
+  it('attaches an email made before the taxonomy, which has no list of values at all', async () => {
+    models.Mailings.seed([
+      {
+        _id: email(7),
+        name: 'Before the taxonomy',
+        _company: COMPANY_A,
+        _wireframe: TEMPLATE,
+        data: { silo: 'school', brand_school: 'blue_notebooks' },
+      },
+    ]);
+
+    await adoptForTemplate({ apply: true });
+
+    const old = await models.Mailings.findOne({ _id: email(7) }).lean();
+    expect(idsOf(old._taxonomyItems)).toHaveLength(2);
   });
 
   it('reports what it did', async () => {
