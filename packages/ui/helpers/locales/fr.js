@@ -960,6 +960,10 @@ export default {
         'Elle n\'est plus proposée sur les emails et ne reçoit plus de nouvelle valeur. Les emails qui portent déjà une de ses valeurs la conservent.',
       resolution:
         'Résolution des tokens : {order}. La dernière l\'emporte quand deux valeurs portent le même token.',
+      scopes: {
+        all: 'Tous les emails',
+        readingTemplates: 'Les emails dont le template la lit',
+      },
       roles: {
         language: "Langue de l'email",
         country: "Pays de l'email",
@@ -1013,6 +1017,11 @@ export default {
         precedence: 'Précédence',
         precedenceHint:
           'Quand deux valeurs choisies sur un email portent le même token, celle de la dimension à la plus haute précédence l\'emporte.',
+        scope: 'Portée',
+        scopeHint:
+          'Une dimension de rendu (un silo, une marque) peut n\'être proposée que sur les emails dont le template la lit.',
+        scopeFixedHint:
+          "Une dimension qui porte un rôle est proposée sur tous les emails : la traduction et l'IA en ont besoin.",
       },
     },
     values: {

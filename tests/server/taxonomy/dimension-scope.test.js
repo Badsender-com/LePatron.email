@@ -37,7 +37,7 @@ const dimensionNamed = async (name) =>
 beforeEach(() => resetTaxonomyModels(models));
 
 // Turned on by #1521 (a dimension has a scope)
-describe.skip('dimension scope', () => {
+describe('dimension scope', () => {
   it('declares a dimension offered on every email unless told otherwise', async () => {
     const audience = await declare({ name: 'audience', label: 'Cible' });
 
