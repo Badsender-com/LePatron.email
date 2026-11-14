@@ -8,6 +8,11 @@
 // `dimensions` is what the server sends the editor: the dimensions in the email's
 // scope only. `templateProperties` are the root properties the template declares.
 
+const {
+  hiddenTemplateOptions,
+  rootPropertiesOf,
+} = require('../../packages/editor/src/js/utils/template-options.js');
+
 const SILO = { name: 'silo', values: [] };
 const SILO_BRAND = { name: 'siloBrand', parentName: 'silo', values: [] };
 const AUDIENCE = { name: 'audience', values: [] };
@@ -21,16 +26,7 @@ const TEMPLATE_PROPERTIES = [
 ];
 
 // Turned on by #1522 (a template option fed by a dimension is hidden)
-describe.skip('template options fed by a dimension', () => {
-  let hiddenTemplateOptions;
-
-  beforeAll(() => {
-    // Required here: the module doesn't exist until #1522.
-    ({
-      hiddenTemplateOptions,
-    } = require('../../packages/editor/src/js/utils/template-options.js'));
-  });
-
+describe('template options fed by a dimension', () => {
   it('hides the template options of the properties the dimensions feed', () => {
     expect(
       hiddenTemplateOptions({
@@ -65,5 +61,22 @@ describe.skip('template options fed by a dimension', () => {
         templateProperties: TEMPLATE_PROPERTIES,
       })
     ).toEqual(['siloBrand']);
+  });
+});
+
+describe('the root properties of an email content', () => {
+  it('are the observables at its root', () => {
+    const observable = () => '';
+    expect(
+      rootPropertiesOf({
+        silo: observable,
+        siloBrand: observable,
+        type: 'template',
+      })
+    ).toEqual(['silo', 'siloBrand']);
+  });
+
+  it('are none before the content is loaded', () => {
+    expect(rootPropertiesOf(null)).toEqual([]);
   });
 });
