@@ -6,6 +6,22 @@ export default {
     next: 'Continuer',
     showPassword: 'Afficher le mot de passe',
     hidePassword: 'Masquer le mot de passe',
+    ssoFailed:
+      'La connexion par l’authentification unique (SSO) de votre entreprise a échoué. Réessayez, ou contactez son administrateur si cela persiste.',
+    forgotTitle: 'Mot de passe oublié',
+    forgotIntro:
+      'Saisissez l’adresse de votre compte : nous vous enverrons un lien pour choisir un nouveau mot de passe.',
+    sendLink: 'Envoyer le lien',
+    linkSentTitle: 'Vérifiez votre boîte mail',
+    linkSent:
+      'Si un compte existe pour {email}, un lien vient d’y être envoyé. Il sert une seule fois.',
+    sendAgain: 'Renvoyer le lien',
+    backToLogin: 'Retour à la connexion',
+    setTitle: 'Choisissez votre mot de passe',
+    setIntro: 'Vous l’utiliserez à chaque connexion.',
+    setSubmit: 'Enregistrer le mot de passe',
+    linkExpiredTitle: 'Ce lien n’est plus valable',
+    askNewLink: 'Demander un nouveau lien',
   },
   twoFactor: {
     code: {

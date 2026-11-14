@@ -13,10 +13,14 @@ export default {
     title: { type: String, required: true },
     // Over the icon: where the member is in a sequence ("Step 2 of 3").
     eyebrow: { type: String, default: '' },
-    // Who signs in, from the first step on: with it, the link back to it.
+    // Who signs in, from the first step on; the link back to the first step
+    // shows when the page listens to `change-account`.
     email: { type: String, default: '' },
     // A request on its way: a thin bar over the card.
     loading: { type: Boolean, default: false },
+    // What went wrong before this step, said over the body (the sign-in
+    // through the identity provider, an expired link…).
+    alert: { type: String, default: '' },
   },
   computed: {
     initials() {
@@ -52,12 +56,19 @@ export default {
       </header>
 
       <div class="bs-auth-card__body">
+        <p v-if="alert" role="alert" class="bs-auth-card__alert">
+          {{ alert }}
+        </p>
         <div v-if="email" class="bs-auth-card__account">
           <span class="bs-auth-card__avatar" aria-hidden="true">
             {{ initials }}
           </span>
           <span class="bs-auth-card__who">{{ email }}</span>
-          <a href="#" @click.prevent="$emit('change-account')">
+          <a
+            v-if="$listeners['change-account']"
+            href="#"
+            @click.prevent="$emit('change-account')"
+          >
             {{ $t('authCard.changeAccount') }}
           </a>
         </div>
@@ -150,6 +161,17 @@ export default {
     flex-direction: column;
     gap: 20px;
     padding: 0 32px 24px;
+  }
+
+  &__alert {
+    margin: 0;
+    padding: 12px 16px;
+    border: 1px solid rgba(240, 78, 35, 0.35);
+    border-radius: 7px;
+    background: var(--color-error-bg);
+    color: var(--gray-900);
+    font-size: 13px;
+    line-height: 1.5;
   }
 
   &__account {

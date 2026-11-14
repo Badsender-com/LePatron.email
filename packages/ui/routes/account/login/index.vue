@@ -55,6 +55,8 @@ export default {
       recoveryCodes: [],
       // The recovery codes end the setup, or follow the use of one.
       recoveryAfterSetup: false,
+      // The identity provider's sign-in failed: the server sent back here.
+      ssoFailed: false,
     };
   },
   head() {
@@ -71,6 +73,7 @@ export default {
   mounted() {
     // Check for logout reason cookie
     this.checkLogoutReason();
+    this.checkSsoFailure();
   },
   methods: {
     ...mapMutations(PAGE, { showSnackbar: SHOW_SNACKBAR }),
@@ -85,7 +88,15 @@ export default {
         color: reason === 'session-replaced' ? 'warning' : 'info',
       });
     },
+    // Said once: the query leaves the address, so a reload starts afresh.
+    checkSsoFailure() {
+      if (this.$route.query.sso !== 'failed') return;
+      this.ssoFailed = true;
+      const { sso: _sso, ...query } = this.$route.query;
+      this.$router.replace({ query });
+    },
     checkEmailForm: async function () {
+      this.ssoFailed = false;
       this.submitted = true;
       this.$v.$touch();
       if (this.$v.$invalid) {
@@ -204,6 +215,7 @@ export default {
       v-if="!userIsFound"
       :title="$t('forms.user.login')"
       :loading="isLoading"
+      :alert="ssoFailed ? $t('authCard.ssoFailed') : ''"
     >
       <template #icon><lucide-log-in :size="26" /></template>
       <template #description>{{ $t('authCard.emailIntro') }}</template>

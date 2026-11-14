@@ -6,6 +6,22 @@ export default {
     next: 'Continue',
     showPassword: 'Show password',
     hidePassword: 'Hide password',
+    ssoFailed:
+      'Signing in through your company’s single sign-on (SSO) failed. Try again, or contact its administrator if it keeps failing.',
+    forgotTitle: 'Forgot your password',
+    forgotIntro:
+      'Enter the address of your account: we will send you a link to choose a new password.',
+    sendLink: 'Send the link',
+    linkSentTitle: 'Check your inbox',
+    linkSent:
+      'If an account exists for {email}, a link was just sent to it. It works once.',
+    sendAgain: 'Send the link again',
+    backToLogin: 'Back to sign-in',
+    setTitle: 'Choose your password',
+    setIntro: 'You will use it at each sign-in.',
+    setSubmit: 'Save the password',
+    linkExpiredTitle: 'This link no longer works',
+    askNewLink: 'Ask for a new link',
   },
   twoFactor: {
     code: {
