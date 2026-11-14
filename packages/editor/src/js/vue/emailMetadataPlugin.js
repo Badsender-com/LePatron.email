@@ -188,6 +188,7 @@ module.exports = {
             selections: this.selections,
             emailTypeId: this.emailTypeId,
             trigger: this.trigger,
+            gaps: this.adoptionGaps,
           });
         },
         triggerHintId() {
