@@ -127,9 +127,9 @@ describe('taxonomy screen: company dimensions', () => {
 
   it.each([
     ['Canada', 'canada'],
-    ['Clients fidèles', 'clients-fideles'],
-    ['  Français (Belgique) ', 'francais-belgique'],
-    ['Black Friday 2026', 'black-friday-2026'],
+    ['Clients fidèles', 'clients_fideles'],
+    ['  Français (Belgique) ', 'francais_belgique'],
+    ['Black Friday 2026', 'black_friday_2026'],
     ['!!!', ''],
   ])('proposes the identifier of %p as %p', (label, identifier) => {
     expect(proposeIdentifier(label)).toBe(identifier);

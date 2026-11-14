@@ -1,6 +1,6 @@
 'use strict';
 
-const { Conflict } = require('http-errors');
+const { BadRequest, Conflict } = require('http-errors');
 
 const { TaxonomyItems } = require('../../common/models.common.js');
 const ERROR_CODES = require('../../constant/error-codes.js');
@@ -8,6 +8,8 @@ const { StandardDimensions } = require('../../constant/taxonomy-type.js');
 const { validatePayload } = require('./taxonomy.validation.js');
 const { readAvailability } = require('./availability.js');
 const { readNormalisedCode } = require('./dimension-role.js');
+
+const IDENTIFIER_PATTERN = /^[A-Za-z0-9_-]+$/;
 
 /**
  * What a request may write on a value, and the checks a value's fields must
@@ -33,6 +35,16 @@ module.exports = {
  */
 async function readValueFields({ companyId, type, payload, partial }) {
   const { parentIds, ...fields } = validatePayload(payload, { partial });
+  // Outside the email type, which maps onto the doctrine's free vocabulary,
+  // the identifier is what a template compares and an adoption source names
+  // (`brand_[silo]`): letters, digits, underscores and hyphens only.
+  if (
+    fields.canonicalType &&
+    type !== StandardDimensions.EMAIL_TYPE &&
+    !IDENTIFIER_PATTERN.test(fields.canonicalType)
+  ) {
+    throw new BadRequest(ERROR_CODES.INVALID_TAXONOMY_ITEM);
+  }
   // Narrowing an availability leaves the emails using the combination as they
   // are: the server checks it again only when a request changes it (ADR-0032).
   if (parentIds !== undefined) {
