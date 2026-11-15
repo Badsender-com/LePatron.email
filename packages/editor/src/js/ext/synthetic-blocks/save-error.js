@@ -11,6 +11,9 @@
 const SAVE_ERROR_KEYS = Object.freeze({
   HTML_CODE_BLOCK_DISABLED: 'save-message-html-code-disabled',
   BLOCK_BUILDER_DISABLED: 'save-message-block-builder-disabled',
+  // Not the flag but the right: told apart, or the user would ask an admin to
+  // turn on a builder that is already on.
+  BLOCK_BUILDER_NOT_PERMITTED: 'save-message-block-builder-not-permitted',
   HTML_CODE_BLOCK_TOO_LARGE: 'save-message-html-code-too-large',
   BLOCK_BUILDER_TOO_LARGE: 'save-message-block-builder-too-large',
   // A composed block the server cannot rebuild, refused rather than emptied.
