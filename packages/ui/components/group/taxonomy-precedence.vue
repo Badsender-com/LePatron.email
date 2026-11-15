@@ -3,7 +3,10 @@ import { GripVertical } from 'lucide-vue';
 import mixinTaxonomyManage from '~/helpers/mixins/mixin-taxonomy-manage.js';
 import * as apiRoutes from '~/helpers/api-routes.js';
 import { moveItem } from '~/helpers/reorder.js';
-import { precedenceList } from '~/helpers/taxonomy-tokens.js';
+import {
+  precedenceList,
+  precedenceExamples,
+} from '~/helpers/taxonomy-tokens.js';
 
 /**
  * Token precedence as a list (ADR-0026): when values of one email carry the
@@ -27,6 +30,10 @@ export default {
         dimensions: this.dimensions,
         values: this.values,
       });
+    },
+    // The order explained on the company's own values.
+    examples() {
+      return precedenceExamples(this.rows, this.values);
     },
     movable() {
       return this.canManageTaxonomy && !this.saving;
@@ -110,6 +117,19 @@ export default {
         </v-chip>
       </li>
     </ol>
+    <ul v-if="examples.length" class="precedence__examples">
+      <li v-for="example in examples" :key="example.token">
+        <code>{{ example.token }}</code>
+        {{
+          $t('taxonomy.workspace.precedence.example', {
+            winner: `${example.winner.label} (${example.winner.dimension})`,
+            winnerValue: example.winner.value,
+            loser: `${example.loser.label} (${example.loser.dimension})`,
+            loserValue: example.loser.value,
+          })
+        }}
+      </li>
+    </ul>
   </section>
 </template>
 
@@ -174,6 +194,17 @@ export default {
   &__label {
     min-width: 120px;
     font-weight: 500;
+  }
+
+  &__examples {
+    margin: 0;
+    padding-left: 18px;
+    font-size: 13px;
+    color: var(--gray-700);
+
+    li + li {
+      margin-top: 4px;
+    }
   }
 
   &__tokens {

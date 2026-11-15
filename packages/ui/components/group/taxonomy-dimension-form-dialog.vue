@@ -217,6 +217,15 @@ export default {
     <p v-if="!isEditing && form.parentName" class="text-body-2 mb-4">
       {{ $t('taxonomy.dimensions.under', { parent: parentLabel }) }}
     </p>
+    <!-- A suggestion's role, shown rather than asked: creating stays three
+         fields, and the role is changed in the settings afterwards. -->
+    <p v-if="!isEditing && form.role" class="text-body-2 mb-4">
+      {{
+        $t('taxonomy.dimensions.form.presetRole', {
+          role: $t(`taxonomy.dimensions.roles.${form.role}`),
+        })
+      }}
+    </p>
 
     <bs-text-field
       v-model="form.label"

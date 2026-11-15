@@ -6,6 +6,7 @@
 const { DIMENSIONS, VALUES } = require('./taxonomy-workspace.fixtures.js');
 const {
   precedenceList,
+  precedenceExamples,
   tokensOfDimension,
 } = require('~/helpers/taxonomy-tokens.js');
 
@@ -58,5 +59,34 @@ describe('the tokens of a dimension', () => {
 
   it('gives nothing for a dimension carrying no token', () => {
     expect(tokensOfDimension('market', VALUES)).toEqual([]);
+  });
+});
+
+// Acceptance test of #1547 (US 24): the order explained on the company's own
+// values.
+describe('what the precedence decides', () => {
+  const withJuniorColour = VALUES.map((v) =>
+    v.id === 'rg-junior'
+      ? { ...v, tokens: { accentColorVar: '#00acdc', mainColorVar: '#7fbf3f' } }
+      : v
+  );
+  const examples = (values) =>
+    precedenceExamples(
+      precedenceList({ dimensions: DIMENSIONS, values }),
+      values
+    );
+
+  it('shows, for a token two dimensions carry, the value that wins and the one it wins over', () => {
+    expect(examples(withJuniorColour)).toEqual([
+      {
+        token: 'mainColorVar',
+        winner: { dimension: 'Gamme', label: 'Junior', value: '#7fbf3f' },
+        loser: { dimension: 'Marque', label: 'Atlas', value: '#265090' },
+      },
+    ]);
+  });
+
+  it('shows nothing while no token is carried by two dimensions', () => {
+    expect(examples(VALUES)).toEqual([]);
   });
 });

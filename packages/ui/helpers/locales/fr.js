@@ -956,6 +956,7 @@ export default {
         defaultUnder: '{label} par défaut sous {parent}',
         changes: 'Aucun changement | Un changement | {n} changements',
         save: 'Enregistrer les croisements',
+        saved: 'Croisements enregistrés',
         leave: 'Les croisements modifiés ne sont pas enregistrés. Quitter quand même ?',
       },
       defaults: {
@@ -1002,7 +1003,9 @@ export default {
         dimensionUnread:
           'Proposée sur les emails dont le template la lit, mais aucun template ne la lit.',
         literalNotCarried:
-          '{identifier} est comparé par {templates}, mais aucune valeur ne le porte.',
+          '{templates} compare {identifier}, qu\'aucune valeur ne porte.',
+        literalNotOffered:
+          '{templates} compare {identifier} avec {parent}, mais {identifier} n\'est pas proposé sous {parent}.',
       },
       precedence: {
         title: 'Priorité des tokens',
@@ -1010,6 +1013,8 @@ export default {
           "Quand plusieurs valeurs d'un email portent le même token, celle de la dimension placée le plus bas l'emporte. Sans rapport avec l'ordre des selects dans l'éditeur.",
         none: "Aucune valeur ne porte de token pour l'instant.",
         wins: "L'emporte",
+        example:
+          '— {winner} donne {winnerValue} et l\'emporte sur {loser}, qui donne {loserValue}, quand un email porte les deux.',
       },
       tokens: {
         intro: 'Les tokens que portent les valeurs de {label}, réglés dans le panneau de chaque valeur.',
@@ -1036,6 +1041,7 @@ export default {
           },
         },
         suggestionsTitle: 'Partir d\'une dimension courante',
+        dismiss: 'Masquer les suggestions',
         suggestions: {
           market: 'Marché',
           language: 'Langue',
@@ -1050,7 +1056,7 @@ export default {
         title: 'Déplacer « {label} »',
         action: 'Déplacer',
         warning:
-          'Ses valeurs perdent leurs défauts : marqués au premier niveau ou sous une valeur parente, ils ne veulent plus rien ailleurs. Vous les marquerez à nouveau.',
+          'Ses valeurs perdent leurs défauts : marqués au premier niveau ou sous une valeur parente, ils ne veulent plus rien dire ailleurs. Vous les marquerez à nouveau.',
         done: 'Dimension déplacée',
       },
       segmentsLabel: 'Étapes de la dimension',
@@ -1155,6 +1161,7 @@ export default {
           'Ses valeurs seront proposées selon la valeur choisie pour la dimension parente : la Langue selon le Marché.',
         role: 'Rôle',
         roleNone: 'Aucun',
+        presetRole: 'Rôle : {role}. Il se change ensuite dans Réglages.',
         roleHint:
           "Ce que la dimension représente pour l'application : la langue de l'email, son pays, ou les deux. Chaque valeur reçoit alors un code normalisé.",
         precedence: 'Précédence',
@@ -1193,16 +1200,11 @@ export default {
         identifier: 'Identifiant',
         identifierHint:
           'Ce que les templates comparent. Proposé depuis le libellé, unique dans la dimension.',
-        isDefault: 'Valeur par défaut',
         defaultChip: 'Par défaut',
-        isDefaultHint:
-          "Un nouvel email la prend quand son template n'en donne pas. Les emails existants ne changent pas.",
-        defaultUnder: 'Valeur par défaut sous',
-        defaultUnderHint:
-          'Les valeurs de « {parent} » sous lesquelles un nouvel email la prend, ou un email dont on change la valeur de « {parent} ». Une seule valeur par défaut sous chacune.',
-        availability: 'Disponible sous',
-        availabilityHint:
-          'Les valeurs de « {parent} » sous lesquelles celle-ci est proposée. Vide : proposée sous toutes.',
+        crossingsElsewhere:
+          'Sous quelles valeurs de « {parent} » elle est proposée, et où elle est la valeur par défaut : segment Croisements. Une nouvelle valeur est proposée partout.',
+        defaultElsewhere:
+          'La valeur que prend un nouvel email se choisit dans le segment Défauts.',
         code: {
           language: 'Code de langue',
           country: 'Code de pays',

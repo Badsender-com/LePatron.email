@@ -1,14 +1,11 @@
 <script>
-import BsTextField from '~/components/form/bs-text-field.vue';
-
 /**
- * The order and status of a value, side by side. Bound with `.sync`.
+ * The status of a value, in its panel. Bound with `.sync`. Its order is set
+ * by drag and drop in the list (ADR-0026), never typed.
  */
 export default {
-  name: 'BsTaxonomyFormOrderStatus',
-  components: { BsTextField },
+  name: 'BsTaxonomyFormStatus',
   props: {
-    order: { type: [Number, String], default: 0 },
     isActive: { type: Boolean, default: true },
     activeHint: { type: String, default: '' },
     loading: { type: Boolean, default: false },
@@ -17,70 +14,38 @@ export default {
 </script>
 
 <template>
-  <!-- Two columns, each with its own label above the control, so this row reads
-       like the fields above it rather than as a stray switch. -->
-  <div class="taxonomy-form__row">
-    <div class="taxonomy-form__col">
-      <!-- `min`/`step` rather than a free number: an order the server refuses
-           comes back as a generic 400, which the snackbar can only render as
-           "an error occurred" — no message next to the field to fix.
-           buildTaxonomyPayload does the rest, so nothing unusable is sent. -->
-      <bs-text-field
-        :value="order"
-        :label="$t('taxonomy.form.order')"
-        :hint="$t('taxonomy.form.orderHint')"
-        :disabled="loading"
-        type="number"
-        min="0"
-        step="1"
-        @input="$emit('update:order', $event)"
-      />
-    </div>
-
-    <!-- A fieldset rather than a bare span: the column needs a heading to line
-         up with the label opposite, and a heading a screen reader ignores is
-         decoration. -->
-    <fieldset class="taxonomy-form__col taxonomy-form__fieldset">
-      <legend class="taxonomy-form__label">
-        {{ $t('taxonomy.form.status') }}
-      </legend>
-      <v-switch
-        :input-value="isActive"
-        :label="$t('taxonomy.form.isActive')"
-        :disabled="loading"
-        color="accent"
-        inset
-        hide-details
-        class="taxonomy-form__switch"
-        @change="$emit('update:isActive', Boolean($event))"
-      />
-      <p class="taxonomy-form__hint">
-        {{ activeHint }}
-      </p>
-    </fieldset>
-  </div>
+  <!-- A fieldset rather than a bare span: the switch needs a heading to read
+       like the fields above it, and a heading a screen reader ignores is
+       decoration. -->
+  <fieldset class="taxonomy-form__fieldset">
+    <legend class="taxonomy-form__label">
+      {{ $t('taxonomy.form.status') }}
+    </legend>
+    <v-switch
+      :input-value="isActive"
+      :label="$t('taxonomy.form.isActive')"
+      :disabled="loading"
+      color="accent"
+      inset
+      hide-details
+      class="taxonomy-form__switch"
+      @change="$emit('update:isActive', Boolean($event))"
+    />
+    <p class="taxonomy-form__hint">
+      {{ activeHint }}
+    </p>
+  </fieldset>
 </template>
 
 <style lang="scss" scoped>
 .taxonomy-form {
-  &__row {
-    display: flex;
-    align-items: flex-start;
-    gap: 1.5rem;
-  }
-
-  &__col {
-    flex: 1 1 0;
-    min-width: 0;
-  }
-
   &__fieldset {
     border: 0;
     padding: 0;
     margin: 0;
   }
 
-  // Same typography as the bs-* field labels, so the two columns line up.
+  // Same typography as the bs-* field labels.
   &__label {
     display: block;
     font-size: 0.75rem;

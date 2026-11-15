@@ -114,7 +114,7 @@ export default {
       :parent-values="valuesByType[parent.name] || []"
       :child-values="valuesByType[dimension.name] || []"
       @dirty="dirty = $event"
-      @saved="$emit('saved')"
+      @saved="$emit('saved', 'crossings')"
       @error="$emit('error', $event)"
     />
     <bs-taxonomy-default-value
@@ -148,7 +148,7 @@ export default {
       :key="`${$route.params.groupId}-emailType`"
       :dimension="dimension"
       @edit="$emit('edit', $event)"
-      @count="$emit('count', $event)"
+      @values="$emit('values', $event)"
     />
     <bs-taxonomy-trigger-dimension
       v-else-if="dimension.name === 'trigger'"
@@ -164,7 +164,7 @@ export default {
       @add-child="$emit('add-child', $event)"
       @toggle-active="$emit('toggle-active', $event)"
       @delete="$emit('delete', $event)"
-      @count="$emit('count', $event)"
+      @values="$emit('values', $event)"
     />
   </section>
 </template>

@@ -7,12 +7,9 @@ import mixinTaxonomyValueErrors from '~/helpers/mixins/mixin-taxonomy-value-erro
 import BsTextField from '~/components/form/bs-text-field.vue';
 import BsSelect from '~/components/form/bs-select.vue';
 import BsTextarea from '~/components/form/bs-textarea.vue';
-import BsTaxonomyFormOrderStatus from '~/components/group/taxonomy-form-order-status.vue';
-import BsTaxonomyAvailabilityField from '~/components/group/taxonomy-availability-field.vue';
+import BsTaxonomyFormStatus from '~/components/group/taxonomy-form-status.vue';
 import BsTaxonomyTokensField from '~/components/group/taxonomy-tokens-field.vue';
 import BsTaxonomyCodeField from '~/components/group/taxonomy-code-field.vue';
-import BsTaxonomyDefaultField from '~/components/group/taxonomy-default-field.vue';
-import BsTaxonomyDefaultUnderField from '~/components/group/taxonomy-default-under-field.vue';
 import { TAXONOMY_LIMITS, canonicalTypeItems } from '~/helpers/taxonomy.js';
 import { proposeIdentifier } from '~/helpers/taxonomy-builder.js';
 import {
@@ -27,12 +24,9 @@ export default {
     BsTextField,
     BsSelect,
     BsTextarea,
-    BsTaxonomyFormOrderStatus,
-    BsTaxonomyAvailabilityField,
+    BsTaxonomyFormStatus,
     BsTaxonomyTokensField,
     BsTaxonomyCodeField,
-    BsTaxonomyDefaultField,
-    BsTaxonomyDefaultUnderField,
     BsTaxonomyIdentifierImpact,
   },
   mixins: [validationMixin, mixinTaxonomyValueErrors],
@@ -41,8 +35,7 @@ export default {
     // The email type maps a value onto the doctrine's six types; any other
     // dimension gives it an identifier of its own.
     isEmailType: { type: Boolean, default: true },
-    // The values of the parent dimension, null when the dimension has none.
-    parentValues: { type: Array, default: null },
+    // The dimension a value hangs under: its crossings are set in the matrix.
     parentLabel: { type: String, default: '' },
     // The dimension's role: its values then carry a normalised code.
     role: { type: String, default: null },
@@ -142,7 +135,6 @@ export default {
       this.editingId = item ? item.id : null;
       this.serverLabelError = null;
       this.serverIdentifierError = null;
-      this.serverDefaultError = null;
       this.identifierTouched = false;
       this.initialIdentifier = (item && item.canonicalType) || null;
       this.identifierConfirmed = false;
@@ -165,14 +157,12 @@ export default {
       // A previous refusal must not survive a corrected field.
       this.serverLabelError = null;
       this.serverIdentifierError = null;
-      this.serverDefaultError = null;
       this.$v.$touch();
       if (this.$v.$invalid) return;
 
       const payload = valuePayloadFrom(this.form, {
-        isEmailType: this.isEmailType,
-        hasParent: Boolean(this.parentValues),
         role: this.role,
+        isNew: !this.editingId,
       });
       if (this.identifierChanged) {
         payload.confirmIdentifierChange = this.identifierConfirmed;
@@ -259,40 +249,30 @@ export default {
       :disabled="loading"
     />
 
-    <bs-taxonomy-default-field
-      v-if="!isEmailType && !parentValues"
-      v-model="form.isDefault"
-      :error-message="serverDefaultError"
-      :disabled="loading"
-      @input="serverDefaultError = null"
-    />
-
-    <template v-if="parentValues">
-      <bs-taxonomy-availability-field
-        v-model="form.parentIds"
-        :parent-values="parentValues"
-        :parent-label="parentLabel"
-        :disabled="loading"
-      />
-      <bs-taxonomy-default-under-field
-        v-if="!isEmailType"
-        v-model="form.defaultUnder"
-        :parent-values="parentValues"
-        :availability="form.parentIds"
-        :parent-label="parentLabel"
-        :error-message="serverDefaultError"
-        :disabled="loading"
-        @input="serverDefaultError = null"
-      />
-    </template>
+    <p v-if="!isEmailType" class="taxonomy-form__elsewhere">
+      {{
+        parentLabel
+          ? $t('taxonomy.values.form.crossingsElsewhere', {
+              parent: parentLabel,
+            })
+          : $t('taxonomy.values.form.defaultElsewhere')
+      }}
+    </p>
 
     <bs-taxonomy-tokens-field v-model="form.tokens" :disabled="loading" />
 
-    <bs-taxonomy-form-order-status
-      :order.sync="form.order"
+    <bs-taxonomy-form-status
       :is-active.sync="form.isActive"
       :active-hint="$t(`${wording}.form.isActiveHint`)"
       :loading="loading"
     />
   </bs-side-panel-form>
 </template>
+
+<style lang="scss" scoped>
+.taxonomy-form__elsewhere {
+  margin: 0 0 16px;
+  font-size: 0.75rem;
+  color: var(--gray-700);
+}
+</style>
