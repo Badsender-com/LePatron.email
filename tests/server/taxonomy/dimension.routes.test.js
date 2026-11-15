@@ -12,6 +12,7 @@
 
 const {
   GUARD_GROUP_ADMIN,
+  GUARD_CAN,
 } = require('../../../packages/server/account/auth.guard.js');
 const {
   GUARD_CAN_ACCESS_GROUP_FROM_BODY,
@@ -53,17 +54,20 @@ describe('dimension routes', () => {
     ]);
   });
 
-  it('reserves declaring a dimension to admins of the company it names', () => {
+  // The company admin reads the taxonomy; the tech admin builds it (ADR-0026).
+  it('reserves declaring a dimension to taxonomy.manage, in the company it names', () => {
     expect(guardsOf('post', '')).toEqual([
-      GUARD_GROUP_ADMIN,
+      GUARD_CAN(CAPABILITIES.TAXONOMY_MANAGE),
       GUARD_CAN_ACCESS_GROUP_FROM_BODY,
     ]);
   });
 
   it.each(['patch', 'delete'])(
-    'reserves %s to admins; the service scopes the dimension to their company',
+    'reserves %s to taxonomy.manage; the service scopes the dimension to the company',
     (method) => {
-      expect(guardsOf(method, '/:dimensionId')).toEqual([GUARD_GROUP_ADMIN]);
+      expect(guardsOf(method, '/:dimensionId')).toEqual([
+        GUARD_CAN(CAPABILITIES.TAXONOMY_MANAGE),
+      ]);
     }
   );
 

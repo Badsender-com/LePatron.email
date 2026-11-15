@@ -10,8 +10,7 @@ const {
   roleCan,
 } = require('../../../packages/shared/access/roles.js');
 
-// Turned on by #1549 (only the tech admin and the super admin change the taxonomy)
-describe.skip('taxonomy.manage capability', () => {
+describe('taxonomy.manage capability', () => {
   it('is declared under the name the server and the UI ask for', () => {
     expect(CAPABILITIES.TAXONOMY_MANAGE).toBe('taxonomy.manage');
   });
