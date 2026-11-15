@@ -23,8 +23,9 @@ function paletteEntryOf(item) {
   const entry = toPaletteBlock(item);
   if (entry.type !== BLOCK_BUILDER_BLOCK.type) return entry;
 
-  // A composed block is rendered by the current generator from the moment it
-  // is dropped: what the canvas shows is what the save stores (ADR 0027).
+  // A composed block is rendered by the current generator as soon as the list
+  // offers it, so what the canvas shows once it is dropped is what the save
+  // stores (ADR 0027).
   const refreshed = refreshForInsertion({
     builderState: entry[stateProperty],
     builderHtml: entry[htmlProperty],

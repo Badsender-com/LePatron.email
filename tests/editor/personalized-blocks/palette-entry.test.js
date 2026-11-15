@@ -11,6 +11,9 @@ const {
 const {
   parseState,
 } = require('../../../packages/shared/block-builder/state.js');
+const {
+  paletteEntryOf,
+} = require('../../../packages/editor/src/js/vue/components/personalized-blocks-list/palette-entry.js');
 
 const STALE_STATE = JSON.stringify({
   v: 1,
@@ -40,15 +43,6 @@ const TEMPLATE_BLOCK = libraryItem({
 });
 
 describe('inserting a saved composed block', () => {
-  let paletteEntryOf;
-
-  beforeAll(() => {
-    // Required here: the module does not exist until #1565 ships it.
-    ({
-      paletteEntryOf,
-    } = require('../../../packages/editor/src/js/vue/components/personalized-blocks-list/palette-entry.js'));
-  });
-
   it('inserts the rendering of the current generator', () => {
     const entry = paletteEntryOf(COMPOSED);
 
@@ -81,6 +75,35 @@ describe('inserting a saved composed block', () => {
       _id: COMPOSED._id,
       name: 'Essai',
       category: 'Divers',
+    });
+  });
+
+  // The first save stores it in the email with the block: nothing about the
+  // entry's author beyond the name the palette prints.
+  it('keeps nothing else about the entry or its author', () => {
+    const item = {
+      ...TEMPLATE_BLOCK,
+      _group: 'g',
+      userDetails: {
+        name: 'Camille',
+        email: 'camille@example.test',
+        role: 'x',
+      },
+    };
+
+    expect(paletteEntryOf(item).blockInformation).toEqual({
+      _id: TEMPLATE_BLOCK._id,
+      name: 'Essai',
+      category: 'Divers',
+      userDetails: { name: 'Camille' },
+    });
+  });
+
+  it('names an entry whose author is gone after the admin', () => {
+    const { userDetails: _author, ...orphan } = TEMPLATE_BLOCK;
+
+    expect(paletteEntryOf(orphan).blockInformation.userDetails).toEqual({
+      name: 'admin',
     });
   });
 });
