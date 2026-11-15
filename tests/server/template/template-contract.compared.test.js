@@ -137,6 +137,45 @@ describe('contract reader: compared literals', () => {
   });
 });
 
+// Acceptance test of #1547 (ADR-0026, "a template compares `fr`, which is
+// not offered under Canada"): the comparisons made together in one expression.
+describe('contract reader: literals compared together', () => {
+  const together = (markup) => readTemplateContract(markup).comparedTogether;
+  const pair = (property, literal, withProperty, withLiteral, count = 1) => ({
+    property,
+    literal,
+    withProperty,
+    withLiteral,
+    count,
+  });
+
+  it('records two root properties compared in one expression, in name order', () => {
+    const markup = `
+      <p data-ko-display="_root_.market eq 'ca' and _root_.language eq 'fr'">A</p>
+      <p data-ko-display="_root_.language eq &quot;en&quot; and _root_.market eq &quot;ca&quot;">B</p>
+      <p data-ko-display="_root_.language eq 'fr' and _root_.market eq 'ca'">C</p>`;
+
+    expect(together(markup)).toEqual([
+      pair('language', 'en', 'market', 'ca'),
+      pair('language', 'fr', 'market', 'ca', 2),
+    ]);
+  });
+
+  it('never pairs comparisons of nested elements, nor two of one property', () => {
+    const markup = `
+      <div data-ko-display="_root_.market eq 'be'">
+        <p data-ko-display="_root_.language eq 'nl'">Nested</p>
+      </div>
+      <p data-ko-display="_root_.market eq 'be' or _root_.market eq 'ch'">Same</p>`;
+
+    expect(together(markup)).toEqual([]);
+  });
+
+  it('gives an empty template an empty record', () => {
+    expect(readTemplateContract('').comparedTogether).toEqual([]);
+  });
+});
+
 describe('a contract stored by an older reader', () => {
   beforeEach(() => {
     Templates.findOne.mockReset();

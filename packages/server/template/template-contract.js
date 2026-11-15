@@ -18,6 +18,11 @@
  *   impact of changing a value's identifier (ADR-0026). A list rather than an
  *   object keyed by literal: a literal is markup, and as a key it could hold a
  *   dot Mongo refuses to store, or a name an object reserves.
+ * - `comparedTogether`: two root properties compared in one binding
+ *   expression (`_root_.market eq 'ca' and _root_.language eq 'fr'`), and how
+ *   many times: the template expects that combination of values, which the
+ *   taxonomy may not offer (ADR-0026). Comparisons in nested elements are not
+ *   paired: one expression is read at a time.
  *
  * Read by scanning the markup rather than by running Mosaico, which needs a
  * browser: the definitions live in the template's `<style>` blocks, in a syntax
@@ -38,6 +43,8 @@ const ROOT_COMPARED = new RegExp(
   `${PROPERTY}${OPERATOR}${LITERAL}|${LITERAL}${OPERATOR}${PROPERTY}`,
   'g'
 );
+// A binding attribute and its expression, between either quotes.
+const BINDING_ATTRIBUTE = /\sdata-ko-[\w-]+\s*=\s*(?:"([^"]*)"|'([^']*)')/g;
 // Quotes a template wrote as entities inside an attribute.
 const QUOTE_ENTITIES = [
   [/&quot;|&#0*34;|&#x0*22;/gi, '"'],
@@ -51,7 +58,8 @@ const WHITESPACE = /\s/;
 // 2: comments other than Outlook's conditional ones are not read.
 // 3: the literals a root property is compared against are recorded.
 // 4: they are recorded as a list, and read on either side of the operator.
-const CONTRACT_READER_VERSION = 4;
+// 5: the comparisons made together in one expression are recorded.
+const CONTRACT_READER_VERSION = 5;
 
 module.exports = {
   readTemplateContract,
@@ -74,11 +82,17 @@ function refreshContract(template) {
 
 /**
  * @param {string} [markup] a template's HTML
- * @returns {{declared: Object<string, string>, read: string[], adopt: Object<string, string>, compared: Array<{property: string, literal: string, count: number}>}}
+ * @returns {{declared: Object<string, string>, read: string[], adopt: Object<string, string>, compared: Array<{property: string, literal: string, count: number}>, comparedTogether: Array<{property: string, literal: string, withProperty: string, withLiteral: string, count: number}>}}
  */
 function readTemplateContract(markup) {
   if (typeof markup !== 'string' || markup === '') {
-    return { declared: {}, read: [], adopt: {}, compared: [] };
+    return {
+      declared: {},
+      read: [],
+      adopt: {},
+      compared: [],
+      comparedTogether: [],
+    };
   }
 
   const definitions = definitionsOf(markup);
@@ -88,29 +102,63 @@ function readTemplateContract(markup) {
     read: rootReads(bindings),
     adopt: adoptionSources(definitions),
     compared: rootComparisons(bindings),
+    comparedTogether: comparisonsTogether(bindings),
   };
 }
 
-function rootComparisons(markup) {
-  const text = QUOTE_ENTITIES.reduce(
+const decodeQuotes = (text) =>
+  QUOTE_ENTITIES.reduce(
     (decoded, [entity, quote]) => decoded.replace(entity, quote),
-    markup
+    text
   );
-  const counts = new Map();
-  [...text.matchAll(ROOT_COMPARED)].forEach((match) => {
-    const property = match[1] || match[6];
-    const literal = [match[2], match[3], match[4], match[5]].find(
+
+// Every `_root_.x eq 'literal'` of a text, in order.
+function comparisonsIn(text) {
+  return [...decodeQuotes(text).matchAll(ROOT_COMPARED)].map((match) => ({
+    property: match[1] || match[6],
+    literal: [match[2], match[3], match[4], match[5]].find(
       (part) => part !== undefined
-    );
-    const key = JSON.stringify([property, literal]);
-    const entry = counts.get(key) || { property, literal, count: 0 };
-    entry.count += 1;
-    counts.set(key, entry);
+    ),
+  }));
+}
+
+// Counted by their fields and sorted by them: the list a contract stores.
+function counted(entries, fields) {
+  const counts = new Map();
+  entries.forEach((entry) => {
+    const key = JSON.stringify(fields.map((field) => entry[field]));
+    const known = counts.get(key) || { ...entry, count: 0 };
+    known.count += 1;
+    counts.set(key, known);
   });
-  return [...counts.values()].sort(
-    (a, b) =>
-      compareText(a.property, b.property) || compareText(a.literal, b.literal)
+  return [...counts.values()].sort((a, b) =>
+    fields.reduce((order, field) => order || compareText(a[field], b[field]), 0)
   );
+}
+
+function rootComparisons(markup) {
+  return counted(comparisonsIn(markup), ['property', 'literal']);
+}
+
+function comparisonsTogether(markup) {
+  const pairs = [];
+  [...markup.matchAll(BINDING_ATTRIBUTE)].forEach((attribute) => {
+    const found = comparisonsIn(attribute[1] ?? attribute[2]);
+    found.forEach((first, index) => {
+      found.slice(index + 1).forEach((second) => {
+        if (first.property === second.property) return;
+        const [a, b] =
+          first.property < second.property ? [first, second] : [second, first];
+        pairs.push({
+          property: a.property,
+          literal: a.literal,
+          withProperty: b.property,
+          withLiteral: b.literal,
+        });
+      });
+    });
+  });
+  return counted(pairs, ['property', 'literal', 'withProperty', 'withLiteral']);
 }
 
 const compareText = (a, b) => (a < b ? -1 : a > b ? 1 : 0);
