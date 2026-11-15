@@ -31,6 +31,7 @@ export default {
   data() {
     return {
       group: {},
+      pointsTotal: 0,
     };
   },
   head() {
@@ -58,8 +59,19 @@ export default {
           {{ group.name }}
         </v-chip>
       </template>
-      <template v-if="canManageTaxonomy" #actions>
+      <template #actions>
+        <v-chip
+          v-if="pointsTotal"
+          small
+          outlined
+          color="warning"
+          class="mr-2"
+          role="status"
+        >
+          {{ $t('taxonomy.workspace.points.title', { n: pointsTotal }) }}
+        </v-chip>
         <v-btn
+          v-if="canManageTaxonomy"
           color="accent"
           elevation="0"
           @click="$refs.workspace.openDeclareForm()"
@@ -84,7 +96,7 @@ export default {
           {{ $t('taxonomy.readOnly') }}
         </p>
 
-        <bs-taxonomy-workspace ref="workspace" />
+        <bs-taxonomy-workspace ref="workspace" @points="pointsTotal = $event" />
       </div>
     </v-container>
   </div>

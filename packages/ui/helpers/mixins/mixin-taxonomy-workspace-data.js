@@ -1,5 +1,6 @@
 import * as apiRoutes from '~/helpers/api-routes.js';
 import { STANDARD_DIMENSIONS } from '~/helpers/taxonomy-builder.js';
+import { pointsToCheck, pointsByDimension } from '~/helpers/taxonomy-checks.js';
 
 /**
  * What the taxonomy workspace reads (ADR-0026): the company's dimensions,
@@ -15,6 +16,27 @@ export default {
       // `{ id, name, contract }`, by name.
       templates: [],
     };
+  },
+  computed: {
+    allValues() {
+      return Object.values(this.valuesByType).flat();
+    },
+    // What the taxonomy lacks, never blocking (ADR-0026).
+    points() {
+      return pointsToCheck({
+        dimensions: this.dimensions,
+        values: this.allValues,
+        templates: this.templates,
+      });
+    },
+    pointCounts() {
+      return pointsByDimension(this.points);
+    },
+  },
+  watch: {
+    points(points) {
+      this.$emit('points', points.length);
+    },
   },
   methods: {
     async fetchDimensions() {
