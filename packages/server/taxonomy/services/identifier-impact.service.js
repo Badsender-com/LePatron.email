@@ -2,11 +2,11 @@
 
 const { Conflict } = require('http-errors');
 
-const { Mailings, Templates } = require('../../common/models.common.js');
+const { Mailings } = require('../../common/models.common.js');
 const ERROR_CODES = require('../../constant/error-codes.js');
 const { StandardDimensions } = require('../../constant/taxonomy-type.js');
 const {
-  contractOfTemplate,
+  listContracts,
 } = require('../../template/template-contract.service.js');
 const {
   comparisonsOf,
@@ -36,19 +36,17 @@ const carriersOf = (item) =>
 async function impactOf(item) {
   const [emails, templates] = await Promise.all([
     Mailings.countDocuments(carriersOf(item)),
-    Templates.find({ _company: item._company }).select({ name: 1 }).lean(),
+    listContracts({ _company: item._company }),
   ]);
-  const comparing = await Promise.all(
-    templates.map(async (template) => {
-      const contract = await contractOfTemplate(template._id);
-      const comparisons = comparisonsOf(
-        contract,
-        item.type,
-        item.canonicalType
-      );
-      return { id: String(template._id), name: template.name, comparisons };
-    })
-  );
+  const comparing = templates.map((template) => ({
+    id: String(template._id),
+    name: template.name,
+    comparisons: comparisonsOf(
+      template.contract,
+      item.type,
+      item.canonicalType
+    ),
+  }));
   return {
     emails,
     templates: comparing
