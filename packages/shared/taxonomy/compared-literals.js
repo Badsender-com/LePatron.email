@@ -7,7 +7,7 @@
  * workspace (its Templates segment and its points to check). A contract the
  * reader has not read again yet holds no list, and compares nothing.
  */
-module.exports = { comparedLiterals, comparisonsOf };
+module.exports = { comparedLiterals, comparisonsOf, comparedTogether };
 
 const entriesOf = (contract) =>
   Array.isArray(contract?.compared) ? contract.compared : [];
@@ -33,4 +33,15 @@ function comparisonsOf(contract, property, literal) {
   return comparedLiterals(contract, property)
     .filter((entry) => entry.literal === literal)
     .reduce((total, entry) => total + entry.count, 0);
+}
+
+/**
+ * @param {Object} contract a template contract
+ * @returns {Array<{property: string, literal: string, withProperty: string, withLiteral: string, count: number}>}
+ *   the comparisons made together in one expression
+ */
+function comparedTogether(contract) {
+  return Array.isArray(contract?.comparedTogether)
+    ? contract.comparedTogether
+    : [];
 }
