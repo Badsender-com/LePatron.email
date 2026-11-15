@@ -82,8 +82,7 @@ const libraryItem = (content) => ({
   content,
 });
 
-// Turned on by #1566 (an inserted composed block remembers its library entry)
-describe.skip('an inserted composed block remembers its library entry', () => {
+describe('an inserted composed block remembers its library entry', () => {
   let paletteEntryOf;
 
   beforeAll(() => {
