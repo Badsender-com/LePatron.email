@@ -132,9 +132,10 @@ export default {
      *   null to declare one
      * @param {Object} [place] where a new dimension goes
      * @param {string|null} [place.parentName] the dimension it hangs under
+     * @param {Object} [place.preset] a suggestion: `{ label, name, role }`
      */
-    open(dimension = null, { parentName = null } = {}) {
-      this.nameTouched = false;
+    open(dimension = null, { parentName = null, preset = null } = {}) {
+      this.nameTouched = Boolean(preset);
       this.editingId = dimension ? dimension.id : null;
       this.serverNameError = null;
       this.isStandard = Boolean(dimension && dimension.standard);
@@ -150,6 +151,7 @@ export default {
         description: dimension ? dimension.description || '' : '',
         ...this.initial,
         parentName: dimension ? this.initial.parentName : parentName,
+        ...(preset || {}),
       };
       this.$v.$reset();
       this.$refs.modal.open();
