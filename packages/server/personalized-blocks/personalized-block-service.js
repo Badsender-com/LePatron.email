@@ -62,13 +62,19 @@ async function getPersonalizedBlocks(groupId, templateId, searchTerm = '') {
       },
     });
 
-    // Step 2: Join the "Users" collection to get details of the user who created each block
+    // Step 2: Join the "Users" collection for the name of the user who created
+    // each block, which the palette prints and the search reads. An
+    // aggregation applies none of the schema's field options: the projection
+    // is what the list returns.
     query.push({
       $lookup: {
-        from: Users.collection.name, // Use the collection name from the Users model
-        localField: '_user', // Local field for the join
-        foreignField: '_id', // Foreign field for the join
-        as: 'userDetails', // Store the user details in the field "userDetails"
+        from: Users.collection.name,
+        let: { userId: '$_user' },
+        pipeline: [
+          { $match: { $expr: { $eq: ['$_id', '$$userId'] } } },
+          { $project: { _id: 0, name: 1 } },
+        ],
+        as: 'userDetails',
       },
     });
 
