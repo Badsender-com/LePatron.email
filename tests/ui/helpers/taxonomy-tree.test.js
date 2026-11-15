@@ -9,8 +9,7 @@ const { DIMENSIONS, VALUES } = require('./taxonomy-workspace.fixtures.js');
 const TREE = '~/helpers/taxonomy-tree.js';
 const REORDER = '~/helpers/reorder.js';
 
-// Turned on by #1550 (its own page, the tree of dimensions and the segments)
-describe.skip('dimension tree', () => {
+describe('dimension tree', () => {
   let dimensionTree;
   let segmentsOf;
   let workspaceSelection;

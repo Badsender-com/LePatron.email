@@ -130,7 +130,10 @@ export default {
       :parent-name="parent ? parent.name : null"
       :parent-label="parent ? parent.label : ''"
       :role="dimension.role || null"
-      @count="valueCount = $event"
+      @count="
+        valueCount = $event;
+        $emit('count', $event);
+      "
       @missing-codes="missingCodes = $event"
     />
   </section>
