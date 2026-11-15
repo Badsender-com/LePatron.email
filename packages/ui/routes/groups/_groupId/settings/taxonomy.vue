@@ -4,18 +4,17 @@ import { safeFetchGroup } from '~/helpers/safe-fetch-group';
 import mixinSettingsTitle from '~/helpers/mixins/mixin-settings-title.js';
 import mixinTaxonomyManage from '~/helpers/mixins/mixin-taxonomy-manage.js';
 import BsPageHeader from '~/components/layout/bs-page-header.vue';
-import BsTaxonomyDimensions from '~/components/group/taxonomy-dimensions.vue';
-import { Eye, Plus, RotateCcw } from 'lucide-vue';
+import BsTaxonomyWorkspace from '~/components/group/taxonomy-workspace.vue';
+import { Eye, Plus } from 'lucide-vue';
 import { CAPABILITIES } from '../../../../../shared/access/roles.js';
 
 export default {
   name: 'BsPageSettingsTaxonomy',
   components: {
     BsPageHeader,
-    BsTaxonomyDimensions,
+    BsTaxonomyWorkspace,
     LucideEye: Eye,
     LucidePlus: Plus,
-    LucideRotateCcw: RotateCcw,
   },
   mixins: [mixinSettingsTitle, mixinTaxonomyManage],
   meta: {
@@ -57,20 +56,11 @@ export default {
       <template v-if="canManageTaxonomy" #actions>
         <v-btn
           color="accent"
-          outlined
-          class="mr-2"
-          @click="$refs.dimensions.openRestoreDefaults()"
-        >
-          <lucide-rotate-ccw :size="18" class="mr-2" />
-          {{ $t('taxonomy.defaults.action') }}
-        </v-btn>
-        <v-btn
-          color="accent"
           elevation="0"
-          @click="$refs.dimensions.openCreateForm()"
+          @click="$refs.workspace.openDeclareForm()"
         >
           <lucide-plus :size="18" class="mr-2" />
-          {{ $t('taxonomy.empty.action') }}
+          {{ $t('taxonomy.dimensions.declare') }}
         </v-btn>
       </template>
     </bs-page-header>
@@ -89,7 +79,7 @@ export default {
           {{ $t('taxonomy.readOnly') }}
         </p>
 
-        <bs-taxonomy-dimensions ref="dimensions" />
+        <bs-taxonomy-workspace ref="workspace" />
       </div>
     </v-container>
   </div>
