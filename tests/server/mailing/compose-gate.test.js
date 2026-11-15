@@ -57,6 +57,19 @@ describe('the server refuses a composition from whoever may not compose', () => 
     ).rejects.toMatchObject({ message: 'BLOCK_BUILDER_NOT_PERMITTED' });
   });
 
+  // The markup is rebuilt from the state before the gate judges it: a request
+  // sending empty markup beside a real state does not pass as an empty block.
+  it('refuses a real composition sent with empty markup', async () => {
+    const block = composed('Bonjour');
+
+    await expect(
+      save({
+        data: dataWith({ ...block, builderHtml: '' }),
+        mayCompose: false,
+      })
+    ).rejects.toMatchObject({ message: 'BLOCK_BUILDER_NOT_PERMITTED' });
+  });
+
   it('lets a composed block already stored in the email through', async () => {
     const block = composed('Bonjour');
 

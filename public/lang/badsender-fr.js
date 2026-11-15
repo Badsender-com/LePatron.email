@@ -493,7 +493,7 @@ module.exports = {
   'save-message-block-builder-disabled':
     "Enregistrement refusé : le block builder n'est pas activé sur ce template.",
   'save-message-block-builder-not-permitted':
-    'Enregistrement refusé : votre rôle ne permet pas de composer ou de modifier un bloc composé.',
+    'Enregistrement refusé : votre rôle ne permet pas de composer un bloc ni de modifier un bloc composé. Annulez la modification de ce bloc ou demandez à un administrateur de changer votre rôle.',
   'save-message-html-code-too-large':
     'Enregistrement refusé : un bloc Code HTML dépasse la taille maximale.',
   'save-message-block-builder-too-large':

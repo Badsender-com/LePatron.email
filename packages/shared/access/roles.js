@@ -57,9 +57,12 @@ const CAPABILITIES = Object.freeze({
   GALLERY_MANAGE: 'gallery.manage',
   // Save a block to the company's library.
   BLOCK_LIBRARY_ADD: 'block-library.add',
-  // Compose a block in the Block Builder, or change a composed one. Held by
-  // the roles that edit a structure, but a capability of its own (ADR 0027):
-  // the two gestures are unrelated, and who may compose can now move alone.
+  // Compose a block in the Block Builder: its rows, columns, elements and
+  // settings, in an email or in the library. Held by the roles that edit a
+  // structure, but a capability of its own (ADR 0027): the two gestures are
+  // unrelated, and who may compose can now move alone. The texts of a composed
+  // block are content; until inline editing tells them apart, the server
+  // judges the whole block, texts included.
   BLOCK_COMPOSE: 'block.compose',
 });
 

@@ -5,8 +5,8 @@ const { BadRequest } = require('http-errors');
 const {
   hasSyntheticBlock,
   assertSyntheticHtmlAllowed,
-  assertMayCompose,
 } = require('./synthetic-block-guard.js');
+const { assertMayCompose } = require('./compose-gate.js');
 const { validateSyntheticBlocks } = require('./synthetic-block-sizes.js');
 const { rebuildComposedMarkup } = require('./builder-block-integrity.js');
 
@@ -23,7 +23,7 @@ const { rebuildComposedMarkup } = require('./builder-block-integrity.js');
 //    (builder-block-integrity.js);
 // 3. the sizes again, on what was rebuilt — what will actually be stored;
 // 4. the template flags, judged on that same stored content;
-// 5. the right to compose, judged the same way (ADR 0027). After the flags, so
+// 5. the right to compose, judged the same way (compose-gate.js, ADR 0027). After the flags, so
 //    a template that does not allow the builder says so, whoever is saving.
 
 /**

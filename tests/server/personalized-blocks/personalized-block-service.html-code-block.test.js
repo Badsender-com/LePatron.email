@@ -174,7 +174,8 @@ describe('personalized blocks — sizes and composed markup', () => {
       { name: 'n', content },
       GROUP,
       TEMPLATE,
-      USER
+      USER,
+      { mayCompose: true }
     );
 
     const [[saved]] = PersonalizedBlocks.create.mock.calls;
