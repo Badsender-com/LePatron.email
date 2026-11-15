@@ -161,6 +161,7 @@ describe('bulk crossings', () => {
     ).rejects.toMatchObject({
       status: 409,
       message: ERROR_CODES.TAXONOMY_DEFAULT_TAKEN,
+      details: { holder: 'Français' },
     });
 
     expect(await crossingsOf('language')).toEqual(unchanged());
@@ -221,5 +222,39 @@ describe('bulk crossings', () => {
       status: 400,
       message: ERROR_CODES.INVALID_TAXONOMY_ITEM,
     });
+  });
+
+  it('refuses a dimension given as anything but a name', async () => {
+    await expect(
+      save({ $ne: null }, [
+        { itemId: idOf(french), parentIds: [], defaultUnder: [] },
+      ])
+    ).rejects.toMatchObject({
+      status: 400,
+      message: ERROR_CODES.INVALID_TAXONOMY_ITEM,
+    });
+
+    expect(await crossingsOf('language')).toEqual(unchanged());
+  });
+
+  it('refuses a parent value listed twice for one value', async () => {
+    await expect(
+      save('language', [
+        { itemId: idOf(french), parentIds: [B(), B()], defaultUnder: [] },
+        { itemId: idOf(dutch), parentIds: [B()], defaultUnder: [] },
+        { itemId: idOf(english), parentIds: [CA()], defaultUnder: [] },
+      ])
+    ).rejects.toMatchObject({
+      status: 400,
+      message: ERROR_CODES.INVALID_TAXONOMY_ITEM,
+    });
+
+    await expect(
+      save('language', [
+        { itemId: idOf(french), parentIds: [], defaultUnder: [B(), B()] },
+        { itemId: idOf(dutch), parentIds: [B()], defaultUnder: [] },
+        { itemId: idOf(english), parentIds: [CA()], defaultUnder: [] },
+      ])
+    ).rejects.toMatchObject({ status: 400 });
   });
 });

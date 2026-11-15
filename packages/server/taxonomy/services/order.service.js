@@ -7,6 +7,7 @@ const {
   TaxonomyItems,
 } = require('../../common/models.common.js');
 const ERROR_CODES = require('../../constant/error-codes.js');
+const { StandardDimensions } = require('../../constant/taxonomy-type.js');
 const { resolveCompanyId } = require('./company-scope.js');
 const logger = require('../../utils/logger.js');
 
@@ -20,6 +21,9 @@ module.exports = { reorderDimensions, reorderValues, setPrecedence };
 
 // Spaced, so an order set by hand before stays readable beside these.
 const positionOf = (index) => (index + 1) * 10;
+
+const names = (list) =>
+  Array.isArray(list) && list.every((name) => typeof name === 'string');
 
 const sameSet = (expected, given) =>
   given.length === expected.length &&
@@ -36,9 +40,20 @@ const sameSet = (expected, given) =>
  * @param {string|null} params.parentName null for the first level
  * @param {string[]} params.names every company dimension under that parent
  */
-async function reorderDimensions({ user, groupId, parentName = null, names }) {
+async function reorderDimensions({
+  user,
+  groupId,
+  parentName = null,
+  names: ordered,
+}) {
   logger.log('orderService:reorderDimensions');
   const companyId = resolveCompanyId(user, groupId);
+  if (
+    !names(ordered) ||
+    (parentName !== null && typeof parentName !== 'string')
+  ) {
+    throw new BadRequest(ERROR_CODES.INVALID_DIMENSION);
+  }
   const dimensions = await TaxonomyDimensions.find({
     _company: companyId,
   }).lean();
@@ -49,11 +64,11 @@ async function reorderDimensions({ user, groupId, parentName = null, names }) {
     )
     .map((dimension) => dimension.name);
 
-  if (!Array.isArray(names) || !sameSet(siblings, names)) {
+  if (!sameSet(siblings, ordered)) {
     throw new BadRequest(ERROR_CODES.INVALID_DIMENSION);
   }
   await Promise.all(
-    names.map((name, index) =>
+    ordered.map((name, index) =>
       TaxonomyDimensions.updateOne(
         { _company: companyId, name },
         { $set: { order: positionOf(index) } }
@@ -75,6 +90,10 @@ async function reorderDimensions({ user, groupId, parentName = null, names }) {
 async function reorderValues({ user, groupId, type, itemIds }) {
   logger.log('orderService:reorderValues');
   const companyId = resolveCompanyId(user, groupId);
+  // A name, never a query: it goes into the filter below.
+  if (typeof type !== 'string') {
+    throw new BadRequest(ERROR_CODES.INVALID_TAXONOMY_ITEM);
+  }
   const values = await TaxonomyItems.find({ _company: companyId, type })
     .select({ _id: 1 })
     .lean();
@@ -96,8 +115,9 @@ async function reorderValues({ user, groupId, type, itemIds }) {
 
 /**
  * Token precedence as a list (ADR-0026): when values of one email carry the
- * same design token, the dimension listed last wins. The dimensions listed
- * take their rank; the others keep theirs (they carry no token). The trigger
+ * same design token, the dimension listed last wins. The list holds active
+ * dimensions; the ones left out carry no token the screen shows, and rank
+ * below every one listed, so no two dimensions share a rank. The trigger
  * carries none and is refused.
  *
  * @param {Object} params
@@ -106,26 +126,36 @@ async function reorderValues({ user, groupId, type, itemIds }) {
  * @param {string[]} params.names the dimensions carrying tokens, the winner
  *   last
  */
-async function setPrecedence({ user, groupId, names }) {
+async function setPrecedence({ user, groupId, names: ranked }) {
   logger.log('orderService:setPrecedence');
   const companyId = resolveCompanyId(user, groupId);
   const dimensions = await TaxonomyDimensions.find({
     _company: companyId,
   }).lean();
   const known = dimensions
-    .filter((dimension) => dimension.name !== 'trigger')
+    .filter(
+      (dimension) =>
+        dimension.name !== StandardDimensions.TRIGGER &&
+        dimension.isActive !== false
+    )
     .map((dimension) => dimension.name);
   const valid =
-    Array.isArray(names) &&
-    names.length > 0 &&
-    new Set(names).size === names.length &&
-    names.every((name) => known.includes(name));
+    names(ranked) &&
+    ranked.length > 0 &&
+    new Set(ranked).size === ranked.length &&
+    ranked.every((name) => known.includes(name));
   if (!valid) throw new BadRequest(ERROR_CODES.INVALID_DIMENSION);
   await Promise.all(
-    names.map((name, index) =>
+    dimensions.map((dimension) =>
       TaxonomyDimensions.updateOne(
-        { _company: companyId, name },
-        { $set: { precedence: positionOf(index) } }
+        { _company: companyId, name: dimension.name },
+        {
+          $set: {
+            precedence: ranked.includes(dimension.name)
+              ? positionOf(ranked.indexOf(dimension.name))
+              : 0,
+          },
+        }
       )
     )
   );
