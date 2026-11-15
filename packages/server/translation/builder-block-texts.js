@@ -6,6 +6,7 @@ const {
   serialiseState,
 } = require('../../shared/block-builder/state.js');
 const { elementFor } = require('../../shared/block-builder/elements/index.js');
+const { elementsOf } = require('../../shared/block-builder/composition.js');
 const { isTranslatableValue } = require('./mosaico-text-extractor.js');
 const { BLOCK_BUILDER_BLOCK } = require('../../shared/synthetic-blocks.js');
 const {
@@ -49,6 +50,15 @@ const {
 
 const INDEX = /^\d+$/;
 
+// Every element of a parsed composition, in document order: row by row, column
+// by column. Read from the rows, which every parsed state holds, and never from
+// the flat `elements` view, which only a composition stored before columns
+// keeps (state.js parseState). The elements are the state's own objects, so a
+// translation written into one lands in the state that is regenerated. The
+// order is the one the flat view already had, so the keys of an older block do
+// not change.
+const elementsOfState = (state) => elementsOf(state.rows);
+
 const keyFor = (container, blockIndex, elementIndex, field) =>
   `${BUILDER_KEY_PREFIX}.${container}.${blockIndex}.${elementIndex}.${field}`;
 
@@ -85,7 +95,7 @@ function extractBuilderTexts(data) {
     const state = parseState(block[STATE_PROPERTY]);
     if (!state) return;
 
-    state.elements.forEach((element, elementIndex) => {
+    elementsOfState(state).forEach((element, elementIndex) => {
       // parseState drops an element of unknown type, so the definition exists.
       elementFor(element.type).translatable.forEach((field) => {
         const value = element[field];
@@ -190,7 +200,7 @@ function applyToStates(data, entries) {
 
     if (!states.has(id)) states.set(id, readBlock(block));
     const { state } = states.get(id);
-    const element = state && state.elements[parsed.elementIndex];
+    const element = state && elementsOfState(state)[parsed.elementIndex];
     // Only a field the extraction could have sent: one of the element's
     // translatable slots (see extractBuilderTexts), held by the element itself.
     // A translation never writes a link, a colour or a size.
