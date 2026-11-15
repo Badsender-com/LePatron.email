@@ -13,8 +13,7 @@ const {
 
 const EVERY_ROLE = Object.values(ROLES);
 
-// Turned on by #1563 (composing is a capability of its own)
-describe.skip('composing is a capability of its own', () => {
+describe('composing is a capability of its own', () => {
   it('is a capability of the role table', () => {
     expect(CAPABILITIES.BLOCK_COMPOSE).toBe('block.compose');
   });

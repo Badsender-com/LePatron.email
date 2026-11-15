@@ -2,6 +2,7 @@
 
 const { BLOCK_BUILDER_BLOCK } = require('./synthetic-blocks/block-types.js');
 const { userCan } = require('./user-can.js');
+const { isComposedBlock } = require('./synthetic-blocks/block-state.js');
 const { CAPABILITIES } = require('../../../../shared/access/roles.js');
 
 // Widget for the `blockBuilder` property type, declared by the injected block
@@ -46,14 +47,21 @@ module.exports = () => {
       return Boolean(vm.metadata && vm.metadata[BLOCK_BUILDER_BLOCK.flag]);
     };
 
-    // The template flag AND the role: composing rewrites the block's markup, a
-    // structure edit a writer or reviewer does not have. The panel keeps its
-    // "disabled" sentence for the flag only, it would mislead about a role.
+    // The template flag AND the capability to compose (ADR 0026), which the
+    // server checks too. The panel keeps its "disabled" sentence for the flag
+    // only, it would mislead about a right.
     vm.canComposeBlocks = function () {
       return (
-        vm.isBlockBuilderEditable() &&
-        userCan(vm, CAPABILITIES.MAILING_EDIT_STRUCTURE)
+        vm.isBlockBuilderEditable() && userCan(vm, CAPABILITIES.BLOCK_COMPOSE)
       );
+    };
+
+    // The palette's entries: the template flag already removed the composed
+    // block's when the template does not allow it; this hides it from whoever
+    // may not compose, whose save the server would refuse. A palette entry is
+    // read by Knockout, so it follows the user once they are known.
+    vm.isOfferedInPalette = function (blockDef) {
+      return !isComposedBlock(blockDef) || vm.canComposeBlocks();
     };
 
     vm.openBlockBuilder = function (propAccessor, blockProperties) {

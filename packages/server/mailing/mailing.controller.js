@@ -37,6 +37,8 @@ const modelsUtils = require('../utils/model.js');
 
 const mailingService = require('./mailing.service.js');
 const { listingGroupIdOf } = require('../account/request-scope.js');
+const { can } = require('../account/permissions.js');
+const { CAPABILITIES } = require('../../shared/access/roles.js');
 
 module.exports = {
   list: asyncHandler(list),
@@ -528,6 +530,7 @@ async function updateMosaico(req, res) {
     data: req.body.data,
     previousData: mailing.data,
     loadFlags,
+    mayCompose: can(user, CAPABILITIES.BLOCK_COMPOSE),
   });
   await assertHeadCssFlag(req.body, mailing, loadFlags);
 

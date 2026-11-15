@@ -76,6 +76,58 @@ describe('block builder widget, by role', () => {
   });
 });
 
+// Composing is a capability of its own (ADR 0026), no longer read off the
+// right to edit a structure: a role may one day hold one without the other.
+describe('block builder entry points, by capability', () => {
+  const {
+    capabilitiesOfRole,
+    CAPABILITIES,
+  } = require('../../../packages/shared/access/roles.js');
+
+  const regularUserWithout = (capability) => () => ({
+    role: 'regular_user',
+    capabilities: capabilitiesOfRole('regular_user').filter(
+      (held) => held !== capability
+    ),
+  });
+
+  it('offers nothing to whoever may edit a structure but not compose', () => {
+    const { vm, button } = renderPanel(
+      { blockBuilderEnabled: true },
+      regularUserWithout(CAPABILITIES.BLOCK_COMPOSE)
+    );
+
+    expect(vm.canComposeBlocks()).toBe(false);
+    expect(button.style.display).toBe('none');
+  });
+
+  it('offers composing to whoever may compose', () => {
+    const { vm } = renderPanel(
+      { blockBuilderEnabled: true },
+      regularUserWithout(CAPABILITIES.MAILING_EDIT_STRUCTURE)
+    );
+
+    expect(vm.canComposeBlocks()).toBe(true);
+  });
+
+  it('keeps the palette entry from whoever may not compose', () => {
+    const composedDef = { type: 'blockBuilderBlock' };
+    const templateDef = { type: 'textBlock' };
+
+    const without = renderPanel(
+      { blockBuilderEnabled: true },
+      regularUserWithout(CAPABILITIES.BLOCK_COMPOSE)
+    ).vm;
+    expect(without.isOfferedInPalette(composedDef)).toBe(false);
+    expect(without.isOfferedInPalette(templateDef)).toBe(true);
+
+    document.body.innerHTML = '';
+
+    const holder = renderPanel({ blockBuilderEnabled: true }).vm;
+    expect(holder.isOfferedInPalette(composedDef)).toBe(true);
+  });
+});
+
 describe('block builder widget', () => {
   it('registers itself under the block builder widget name', () => {
     expect(widgetBlockBuilder().widget().widget).toBe('blockBuilder');
