@@ -168,12 +168,21 @@ The synthetic block whose content is assembled in the Block Builder. LePatron ow
 _UI_: Bloc composé
 _Avoid_: Builder block, custom block, personalized block
 
+**Template block**:
+A block a template provides, defined in the template's own markup. The counterpart of a composed block: one is received, the other assembled.
+_UI_: Blocs du modèle
+_Avoid_: Native block, standard block
+
+**Block library**:
+The saved blocks of one group, under one template. A block saved under a template is never offered under another.
+_UI_: Bibliothèque de blocs
+
 **Block Builder**:
 The tool a composed block is assembled in: a palette, a composition area and a settings panel. Its title and the button that opens it from the block's panel both read « Composer un bloc », even on a block already composed; the block's toolbar says « Composer le bloc ».
 _UI_: Composer un bloc
 
 **Saved block**:
-A block an author stored in the company's block library, for one template, to insert again in other emails. Any block can be saved, a composed block included: saving copies it, and the copy is no longer tied to the email. Not to be confused with a composed block, which is a kind of block, not a place it is kept.
+A block an author stored in the company's block library, for one template, to insert again in other emails. Any block can be saved, a template block whose settings were kept or a composed block: saving copies it, and the copy is no longer tied to the email. Saving is a state, not a kind: a saved composed block is still a composed block, and still reopens in the Block Builder.
 _UI_: Bloc personnalisé, Enregistrer dans la bibliothèque de blocs
 _Avoid_: Personalized block (the code's name, `PersonalizedBlock`), custom block
 
