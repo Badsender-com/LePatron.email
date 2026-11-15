@@ -1,5 +1,6 @@
 <script>
 import { templatesReading } from '~/helpers/taxonomy-preview.js';
+import { comparedLiterals } from '../../../shared/taxonomy/compared-literals.js';
 
 /**
  * The Templates segment of a dimension: the company's templates that read it,
@@ -23,8 +24,8 @@ export default {
     },
     compared() {
       return (template) =>
-        Object.keys(
-          (template.contract.compared || {})[this.dimension.name] || {}
+        comparedLiterals(template.contract, this.dimension.name).map(
+          (entry) => entry.literal
         );
     },
   },

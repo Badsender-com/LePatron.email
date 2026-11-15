@@ -128,6 +128,10 @@ export default {
       if (this.isEmailType || this.isEditing || this.identifierTouched) return;
       this.form.canonicalType = proposeIdentifier(label) || null;
     },
+    // Back to the saved identifier: a later change asks again.
+    identifierChanged(changed) {
+      if (!changed) this.identifierConfirmed = false;
+    },
   },
   methods: {
     /**

@@ -1369,10 +1369,13 @@ export default {
         title: "Changer l'identifiant de {label}",
         checking: 'Recherche des emails et des templates concernés…',
         emails:
-          'Aucun email ne porte {label} : le changement est libre. | Un email porte {label}. Il la garde ; son contenu prendra {next} à sa prochaine ouverture dans l\'éditeur. | {n} emails portent {label}. Ils la gardent ; leur contenu prendra {next} à leur prochaine ouverture dans l\'éditeur.',
+          'Aucun email ne porte {label}. | Un email porte {label}. Il la garde ; son contenu prendra {next} à sa prochaine ouverture dans l\'éditeur. | {n} emails portent {label}. Ils la gardent ; leur contenu prendra {next} à leur prochaine ouverture dans l\'éditeur.',
         templates:
           'Ces templates comparent {previous} et ne reconnaîtront plus la valeur : il faudra les corriger.',
         noTemplate: 'Aucun template ne compare {previous}.',
+        free: 'Aucun email ne porte {label} et aucun template ne compare {previous} : le changement est libre.',
+        failed: "L'impact n'a pas pu être calculé.",
+        retry: 'Réessayer',
         comparisons: '{n} comparaison | {n} comparaisons',
         keep: 'Garder {previous}',
         confirm: "Changer l'identifiant",

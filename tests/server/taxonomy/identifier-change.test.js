@@ -104,11 +104,10 @@ beforeEach(async () => {
 });
 
 describe('identifier change: impact and confirmation', () => {
-  const impactOf = (value, identifier) =>
+  const impactOf = (value) =>
     taxonomyService.identifierImpact({
       user: techAdminA,
       itemId: idOf(value),
-      identifier,
     });
 
   const update = (value, payload) =>
@@ -119,7 +118,7 @@ describe('identifier change: impact and confirmation', () => {
     });
 
   it('counts the emails carrying the value, and the templates comparing the old identifier', async () => {
-    expect(await impactOf(belgium, 'belgique')).toEqual({
+    expect(await impactOf(belgium)).toEqual({
       emails: 3,
       templates: [
         { id: NEWSLETTER, name: 'Newsletter v4', comparisons: 3 },
@@ -128,15 +127,8 @@ describe('identifier change: impact and confirmation', () => {
     });
   });
 
-  it("counts the comparisons of the value's own dimension only", async () => {
-    const impact = await impactOf(belgium, 'belgique');
-
-    // `_root_.language eq 'be'` compares another dimension.
-    expect(impact.templates[0].comparisons).toBe(3);
-  });
-
   it("leaves out another company's templates", async () => {
-    const impact = await impactOf(belgium, 'belgique');
+    const impact = await impactOf(belgium);
 
     expect(impact.templates.map((t) => t.id)).not.toContain(OTHER_COMPANY);
   });
@@ -165,7 +157,24 @@ describe('identifier change: impact and confirmation', () => {
     expect(first.data.market).toBe('be');
   });
 
-  it('changes the identifier of a value no email carries without asking', async () => {
+  // `_root_.language eq 'be'` in the Newsletter compares another dimension:
+  // the count above leaves it out.
+
+  it('refuses to change the identifier of a value no email carries but a template compares, without the confirmation', async () => {
+    // Once its only email is gone, nothing carries France: two templates
+    // still compare `fr`.
+    await models.Mailings.deleteMany({ _id: email(4) });
+
+    await expect(
+      update(france, { canonicalType: 'fra' })
+    ).rejects.toMatchObject({
+      status: 409,
+      message: ERROR_CODES.TAXONOMY_IDENTIFIER_CHANGE_UNCONFIRMED,
+      details: { emails: 0, templates: 2 },
+    });
+  });
+
+  it('changes the identifier of a value nothing carries nor compares without asking', async () => {
     const luxembourg = await addValue('market', {
       label: 'Luxembourg',
       canonicalType: 'lux',
