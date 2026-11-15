@@ -4,6 +4,12 @@ const asyncHandler = require('express-async-handler');
 const ERROR_CODES = require('../constant/error-codes.js');
 const personalizedBlockService = require('./personalized-block-service');
 const createHttpError = require('http-errors');
+const { Templates } = require('../common/models.common.js');
+const {
+  TEMPLATE_FLAG_PROJECTION,
+  syntheticBlockFlagsOf,
+} = require('../mailing/synthetic-block-guard.js');
+const { BLOCK_BUILDER_BLOCK } = require('../../shared/synthetic-blocks.js');
 const { can } = require('../account/permissions.js');
 const { CAPABILITIES } = require('../../shared/access/roles.js');
 
@@ -38,7 +44,34 @@ async function listPersonalizedBlocks(req, res, next) {
     templateId,
     searchTerm
   );
-  return res.json({ items: personalizedBlocks });
+  const offersComposed = await offersComposedBlocks(req.user, templateId);
+  return res.json({
+    items: offersComposed
+      ? personalizedBlocks
+      : personalizedBlocks.filter((block) => !isComposed(block)),
+  });
+}
+
+const isComposed = (block) =>
+  Boolean(block.content) && block.content.type === BLOCK_BUILDER_BLOCK.type;
+
+/**
+ * Whether the list may offer composed blocks (ADR 0027): only those the email
+ * save would accept. A composed block inserted under a template whose Block
+ * Builder is off, or by someone who may not compose, is a new composition the
+ * save refuses — the whole save, after the user has worked. Hidden, never
+ * deleted: turning the builder back on brings them back.
+ *
+ * @param {Object} user
+ * @param {string} templateId
+ * @returns {Promise<boolean>}
+ */
+async function offersComposedBlocks(user, templateId) {
+  if (!can(user, CAPABILITIES.BLOCK_COMPOSE)) return false;
+  const template = await Templates.findById(templateId)
+    .select(TEMPLATE_FLAG_PROJECTION)
+    .lean();
+  return syntheticBlockFlagsOf(template)[BLOCK_BUILDER_BLOCK.flag];
 }
 
 /**
