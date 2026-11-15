@@ -203,6 +203,25 @@ describe('nested selects', () => {
     expect(labels(language('de'))).toEqual(['Anglais']);
   });
 
+  // Acceptance test of #1547: a child dimension that only means something
+  // under some parent values (Clarins' sub-regions under one market).
+  it('hides the child under a parent value it offers nothing under', () => {
+    const selects = dimensionSelects({
+      dimensions: [PROGRAMME],
+      selections: {},
+      emailTypeId: 'info',
+    });
+
+    expect(selects.map((select) => select.name)).toEqual([]);
+    expect(
+      dimensionSelects({
+        dimensions: [PROGRAMME],
+        selections: {},
+        emailTypeId: 'promo',
+      }).map((select) => select.name)
+    ).toEqual(['programme']);
+  });
+
   it('keeps showing a value no longer offered under the parent value, and says so', () => {
     // An admin narrowed Dutch to Belgium after this email chose Canada + Dutch.
     const language = dimensionSelects({
@@ -232,7 +251,8 @@ describe('nested selects', () => {
 
     expect(without).toEqual([]);
     expect(labels(promo[0])).toEqual(['Fidélité']);
-    expect(labels(editorial[0])).toEqual([]);
+    // Nothing offered under an editorial email: no select at all.
+    expect(editorial).toEqual([]);
   });
 
   describe('when the user changes a parent value', () => {

@@ -151,6 +151,7 @@ export default {
       :load-error="loadError"
       :is-email-type="isEmailType"
       :can-create="writable"
+      :defaultable="!isEmailType && !parentLabel"
       reorderable
       @retry="fetchItems"
       @create="openCreateForm"
@@ -158,6 +159,7 @@ export default {
       @edit="openEditForm"
       @delete="confirmDelete"
       @reorder="reorder"
+      @default="toggleDefault"
     />
     <bs-taxonomy-quick-add
       v-if="canManageTaxonomy && writable && !loadError"

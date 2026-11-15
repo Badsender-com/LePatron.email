@@ -4,11 +4,16 @@ import * as apiRoutes from '~/helpers/api-routes.js';
 import { proposeIdentifier } from '~/helpers/taxonomy-builder.js';
 import { TAXONOMY_LIMITS } from '~/helpers/taxonomy.js';
 
+// What a template compares: the server refuses anything else (value-fields.js).
+const IDENTIFIER_PATTERN = /^[A-Za-z0-9_-]*$/;
+
 /**
  * The quick-add row under a dimension's values (ADR-0026): Enter adds the
- * value with the identifier proposed from its label, offered everywhere, and
- * keeps the cursor in the field for the next one. The rest is set in the
- * value's panel. Emits `added` and `error`.
+ * value, offered everywhere, and keeps the cursor in the label for the next
+ * one. Its identifier is proposed from the label and can be written instead,
+ * the one an existing template already compares (`bel_fr`); once written, it
+ * no longer follows the label. The rest is set in the value's panel. Emits
+ * `added` and `error`.
  */
 export default {
   name: 'BsTaxonomyQuickAdd',
@@ -19,20 +24,31 @@ export default {
     nextOrder: { type: Number, default: 0 },
   },
   data() {
-    return { label: '', saving: false };
+    return {
+      label: '',
+      identifier: '',
+      identifierTouched: false,
+      saving: false,
+    };
   },
   computed: {
     labelLimit() {
       return TAXONOMY_LIMITS.LABEL;
     },
-    identifier() {
-      return this.isEmailType ? '' : proposeIdentifier(this.label.trim());
+    identifierValid() {
+      return IDENTIFIER_PATTERN.test(this.identifier);
+    },
+  },
+  watch: {
+    label(label) {
+      if (this.isEmailType || this.identifierTouched) return;
+      this.identifier = proposeIdentifier(label.trim()) || '';
     },
   },
   methods: {
     async add() {
       const label = this.label.trim();
-      if (!label || this.saving) return;
+      if (!label || this.saving || !this.identifierValid) return;
       try {
         this.saving = true;
         await this.$axios.$post(apiRoutes.taxonomyItemsCreate(), {
@@ -43,6 +59,8 @@ export default {
           groupId: this.$route.params.groupId,
         });
         this.label = '';
+        this.identifier = '';
+        this.identifierTouched = false;
         this.$emit('added');
       } catch (error) {
         this.$emit('error', error);
@@ -69,17 +87,31 @@ export default {
       :disabled="saving"
       :maxlength="labelLimit"
     />
-    <span v-if="identifier" class="taxonomy-quick-add__hint">
-      {{ $t('taxonomy.workspace.quickAdd.identifier') }}
-      <code>{{ identifier }}</code>
-    </span>
+    <template v-if="!isEmailType">
+      <label
+        class="taxonomy-quick-add__hint"
+        :for="`quick-add-${dimensionName}-identifier`"
+      >
+        {{ $t('taxonomy.workspace.quickAdd.identifier') }}
+      </label>
+      <input
+        :id="`quick-add-${dimensionName}-identifier`"
+        v-model="identifier"
+        class="taxonomy-quick-add__input taxonomy-quick-add__identifier"
+        :class="{ 'taxonomy-quick-add__input--invalid': !identifierValid }"
+        :aria-invalid="String(!identifierValid)"
+        :disabled="saving"
+        spellcheck="false"
+        @input="identifierTouched = true"
+      />
+    </template>
     <v-btn
       type="submit"
       color="accent"
       elevation="0"
       small
       :loading="saving"
-      :disabled="!label.trim()"
+      :disabled="!label.trim() || !identifierValid"
     >
       <lucide-plus :size="16" class="mr-1" />
       {{ $t('taxonomy.workspace.quickAdd.action') }}
@@ -113,6 +145,15 @@ export default {
       border-color: var(--v-accent-base);
       box-shadow: 0 0 0 3px rgba(0, 172, 220, 0.2);
     }
+  }
+
+  &__identifier {
+    flex: 0 1 180px;
+    font-family: monospace;
+  }
+
+  &__input--invalid {
+    border-color: var(--v-error-base);
   }
 
   &__hint {

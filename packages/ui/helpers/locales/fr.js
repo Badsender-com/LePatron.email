@@ -1347,7 +1347,7 @@ export default {
       quickAdd: {
         label: 'Libellé de la nouvelle valeur',
         placeholder: 'Nouvelle valeur, puis Entrée',
-        identifier: 'Identifiant proposé',
+        identifier: 'Identifiant',
         action: 'Ajouter',
       },
       crossings: {
@@ -1360,11 +1360,6 @@ export default {
         save: 'Enregistrer les croisements',
         saved: 'Croisements enregistrés',
         leave: 'Les croisements modifiés ne sont pas enregistrés. Quitter quand même ?',
-      },
-      defaults: {
-        intro: 'La valeur que prend un nouvel email quand son template ne donne pas la sienne.',
-        none: 'Aucune',
-        hint: "Jamais appliquée à un email existant, ni à la place d'une valeur choisie.",
       },
       impact: {
         title: "Changer l'identifiant de {label}",
@@ -1399,7 +1394,6 @@ export default {
         title: 'À vérifier · {n}',
         missingCode:
           "{value} n'a pas de code normalisé : la langue ou le pays de l'email restera inconnu.",
-        nothingOffered: 'Sous {parent}, aucune valeur n\'est proposée.',
         noValue: "La dimension n'a encore aucune valeur active.",
         tokenUnread: "Le token {token} n'est lu par aucun template.",
         dimensionUnread:
@@ -1469,7 +1463,6 @@ export default {
       segments: {
         values: 'Valeurs',
         crossings: 'Croisements',
-        defaults: 'Défauts',
         tokens: 'Tokens',
         templates: 'Templates',
         settings: 'Réglages',
@@ -1577,6 +1570,7 @@ export default {
       },
     },
     values: {
+      defaultStar: '{label} : valeur par défaut des nouveaux emails',
       deleteConfirmTitle: 'Supprimer cette valeur ?',
       deleteConfirmMessage: 'La valeur « {label} » sera supprimée.',
       deleteConfirmHint:
@@ -1606,7 +1600,7 @@ export default {
         crossingsElsewhere:
           'Sous quelles valeurs de « {parent} » elle est proposée, et où elle est la valeur par défaut : segment Croisements. Une nouvelle valeur est proposée partout.',
         defaultElsewhere:
-          'La valeur que prend un nouvel email se choisit dans le segment Défauts.',
+          "L'étoile, dans la liste des valeurs, marque celle que prend un nouvel email quand son template ne donne pas la sienne.",
         code: {
           language: 'Code de langue',
           country: 'Code de pays',

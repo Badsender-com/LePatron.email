@@ -28,8 +28,6 @@ describe('points to check', () => {
 
   const EXPECTED = [
     { kind: 'missingCode', dimension: 'language', valueId: 'lg-it' },
-    { kind: 'nothingOffered', dimension: 'language', parentValueId: 'mk-de' },
-    { kind: 'nothingOffered', dimension: 'range', parentValueId: 'br-nova' },
     { kind: 'noValue', dimension: 'audience' },
     { kind: 'tokenUnread', dimension: 'brand', token: 'ctaColorVar' },
     { kind: 'tokenUnread', dimension: 'range', token: 'accentColorVar' },
@@ -57,8 +55,8 @@ describe('points to check', () => {
 
   it('counts them per dimension, for the tree', () => {
     expect(pointsByDimension(check())).toEqual({
-      language: 3,
-      range: 2,
+      language: 2,
+      range: 1,
       audience: 1,
       brand: 1,
       market: 1,
@@ -185,15 +183,16 @@ describe('points to check', () => {
     ]);
   });
 
-  it('counts a child dimension with no value once, not once per parent value', () => {
-    const values = VALUES.filter((v) => v.type !== 'language');
-
-    const language = check({ values }).filter(
-      (p) => p.dimension === 'language'
-    );
-
-    expect(language).toContainEqual({ kind: 'noValue', dimension: 'language' });
-    expect(language.map((p) => p.kind)).not.toContain('nothingOffered');
+  // Feedback on #1547: a child may mean something under some parent values
+  // only, Clarins' sub-regions under one market.
+  it('never counts a parent value under which a child offers nothing', () => {
+    // Germany offers no language, Nova no range: neither is a point.
+    expect(check().map((p) => p.kind)).not.toContain('nothingOffered');
+    expect(
+      check()
+        .filter((p) => p.dimension === 'range')
+        .map((p) => p.kind)
+    ).toEqual(['tokenUnread']);
   });
 
   it('says nothing of a pair the taxonomy offers, nor of one it cannot read', () => {
