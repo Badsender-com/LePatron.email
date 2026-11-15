@@ -11,6 +11,7 @@ const { NotFound, BadRequest } = require('http-errors');
 const logger = require('../utils/logger');
 const {
   hasSyntheticBlock,
+  descriptorOf,
   asModel,
   TEMPLATE_FLAG_PROJECTION,
 } = require('../mailing/synthetic-block-guard.js');
@@ -137,6 +138,24 @@ async function normalizeAndGuardBlockContent({
   });
 }
 
+/**
+ * A block as the library stores it: without the library entry it was itself
+ * inserted from (ADR 0027). That origin names the block it was copied from in
+ * an email; kept in a new entry, it would name an entry the new one is not.
+ * Dropped here rather than in the editor, which the server does not trust.
+ *
+ * @param {Object} content one block
+ * @returns {Object} the same block, without its origin
+ */
+function withoutOrigin(content) {
+  const descriptor = descriptorOf(content);
+  if (!descriptor || !descriptor.originProperty) return content;
+  if (!Object.prototype.hasOwnProperty.call(content, descriptor.originProperty))
+    return content;
+  const { [descriptor.originProperty]: _origin, ...rest } = content;
+  return rest;
+}
+
 // What a block's author may change. Its group, template and author are set by
 // the server, never by the request.
 const UPDATABLE_FIELDS = ['name', 'category', 'content'];
@@ -188,6 +207,7 @@ async function addPersonalizedBlock(
 ) {
   assertObjectIds(groupId, templateId);
   await assertTemplateInGroup(templateId, groupId);
+  block = { ...block, content: withoutOrigin(block.content) };
   await normalizeAndGuardBlockContent({
     content: block.content,
     templateId,
@@ -220,6 +240,7 @@ async function updatePersonalizedBlock(
 ) {
   assertObjectIds(id, groupId);
   const changes = updatableOf(updatedBlock);
+  if (changes.content) changes.content = withoutOrigin(changes.content);
 
   if (hasSyntheticBlock(changes.content)) {
     const existing = await PersonalizedBlocks.findOne(inGroup(id, groupId))

@@ -49,8 +49,8 @@ function paletteEntryOf({ content, _id, name, category, userDetails }) {
   entry[htmlProperty] = refreshed.builderHtml;
   // The entry it comes from, kept on the block itself (ADR 0027). Stored and
   // never shown: shown before synchronisation exists, it would read as a live
-  // link.
-  entry[originProperty] = String(_id);
+  // link. An entry without an id leaves no origin rather than a false one.
+  entry[originProperty] = _id ? String(_id) : null;
   return entry;
 }
 
