@@ -1799,6 +1799,18 @@ export default {
         tokens: 'Tokens read:',
         legend: 'A star marks the value offered by default.',
       },
+      points: {
+        title: 'To check · {n}',
+        missingCode:
+          '{value} has no normalised code: the language or country of the email stays unknown.',
+        nothingOffered: 'Under {parent}, no value is offered.',
+        noValue: 'The dimension has no active value yet.',
+        tokenUnread: 'The token {token} is read by no template.',
+        dimensionUnread:
+          'Offered on the emails whose template reads it, but no template reads it.',
+        literalNotCarried:
+          'The template {templates} compares {identifier}, which no value carries.',
+      },
       addChild: 'Add a sub-dimension',
       move: {
         open: 'Move',

@@ -1391,6 +1391,18 @@ export default {
         tokens: 'Tokens lus :',
         legend: 'Une étoile marque la valeur proposée par défaut.',
       },
+      points: {
+        title: 'À vérifier · {n}',
+        missingCode:
+          "{value} n'a pas de code normalisé : la langue ou le pays de l'email restera inconnu.",
+        nothingOffered: 'Sous {parent}, aucune valeur n\'est proposée.',
+        noValue: "La dimension n'a encore aucune valeur active.",
+        tokenUnread: "Le token {token} n'est lu par aucun template.",
+        dimensionUnread:
+          'Proposée sur les emails dont le template la lit, mais aucun template ne la lit.',
+        literalNotCarried:
+          'Le template {templates} compare {identifier}, qu\'aucune valeur ne porte.',
+      },
       addChild: 'Ajouter une sous-dimension',
       move: {
         open: 'Déplacer',
