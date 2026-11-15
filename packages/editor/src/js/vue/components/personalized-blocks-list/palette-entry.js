@@ -11,7 +11,7 @@ const {
 // returns. A click or a drag inserts this object as it is (viewmodel.js
 // addBlock), so this is where insertion is decided.
 
-const { htmlProperty, stateProperty } = BLOCK_BUILDER_BLOCK;
+const { htmlProperty, stateProperty, originProperty } = BLOCK_BUILDER_BLOCK;
 
 /**
  * @param {Object} item an entry of `GET /personalized-blocks`
@@ -47,6 +47,10 @@ function paletteEntryOf({ content, _id, name, category, userDetails }) {
   });
   entry[stateProperty] = refreshed.builderState;
   entry[htmlProperty] = refreshed.builderHtml;
+  // The entry it comes from, kept on the block itself (ADR 0027). Stored and
+  // never shown: shown before synchronisation exists, it would read as a live
+  // link. An entry without an id leaves no origin rather than a false one.
+  entry[originProperty] = _id ? String(_id) : null;
   return entry;
 }
 
