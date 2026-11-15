@@ -1160,6 +1160,19 @@ export default {
         none: 'None',
         hint: 'Never applied to an existing email, nor over a chosen value.',
       },
+      impact: {
+        title: 'Change the identifier of {label}',
+        checking: 'Looking for the emails and templates concerned…',
+        emails:
+          'No email carries {label}: the change is free. | One email carries {label}. It keeps it; its content takes {next} the next time it is opened in the editor. | {n} emails carry {label}. They keep it; their content takes {next} the next time they are opened in the editor.',
+        templates:
+          'These templates compare {previous} and will no longer recognise the value: they need fixing.',
+        noTemplate: 'No template compares {previous}.',
+        comparisons: '{n} comparison | {n} comparisons',
+        keep: 'Keep {previous}',
+        confirm: 'Change the identifier',
+        confirmed: 'Change confirmed: it applies on save.',
+      },
       addChild: 'Add a sub-dimension',
       move: {
         open: 'Move',
@@ -1407,6 +1420,8 @@ export default {
       limitReached:
         'Limit reached: {limit} at most. Delete some before adding more.',
       labelAlreadyExists: 'This label is already taken in this dimension.',
+      identifierUnconfirmed:
+        'Emails carry this value: confirm the identifier change.',
       identifierAlreadyExists:
         'This identifier is already taken in this dimension.',
       defaultTaken: '"{holder}" is already the default value there: remove it first.',

@@ -119,6 +119,14 @@ export function taxonomyErrorFor(error) {
         field: 'canonicalType',
       };
 
+    case ERROR_CODES.TAXONOMY_IDENTIFIER_CHANGE_UNCONFIRMED:
+      return {
+        key: 'taxonomy.errors.identifierUnconfirmed',
+        params: {},
+        count: null,
+        field: 'canonicalType',
+      };
+
     case ERROR_CODES.TAXONOMY_DEFAULT_TAKEN:
       return {
         key: 'taxonomy.errors.defaultTaken',

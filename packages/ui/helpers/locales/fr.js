@@ -963,6 +963,19 @@ export default {
         none: 'Aucune',
         hint: "Jamais appliquée à un email existant, ni à la place d'une valeur choisie.",
       },
+      impact: {
+        title: "Changer l'identifiant de {label}",
+        checking: 'Recherche des emails et des templates concernés…',
+        emails:
+          'Aucun email ne porte {label} : le changement est libre. | Un email porte {label}. Il la garde ; son contenu prendra {next} à sa prochaine ouverture dans l\'éditeur. | {n} emails portent {label}. Ils la gardent ; leur contenu prendra {next} à leur prochaine ouverture dans l\'éditeur.',
+        templates:
+          'Ces templates comparent {previous} et ne reconnaîtront plus la valeur : il faudra les corriger.',
+        noTemplate: 'Aucun template ne compare {previous}.',
+        comparisons: '{n} comparaison | {n} comparaisons',
+        keep: 'Garder {previous}',
+        confirm: "Changer l'identifiant",
+        confirmed: "Changement confirmé : il s'applique à l'enregistrement.",
+      },
       addChild: 'Ajouter une sous-dimension',
       move: {
         open: 'Déplacer',
@@ -1210,6 +1223,8 @@ export default {
       limitReached:
         'Limite atteinte : {limit} au maximum. Supprimez-en avant d\'en ajouter d\'autres.',
       labelAlreadyExists: 'Ce libellé est déjà pris dans cette dimension.',
+      identifierUnconfirmed:
+        'Des emails portent cette valeur : confirmez le changement d\'identifiant.',
       identifierAlreadyExists:
         'Cet identifiant est déjà pris dans cette dimension.',
       defaultTaken:
