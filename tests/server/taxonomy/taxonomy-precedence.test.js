@@ -63,6 +63,7 @@ describe('token precedence', () => {
     ['an unknown dimension', ['brand', 'season']],
     ['a dimension twice', ['brand', 'range', 'brand']],
     ['nothing', []],
+    ['a name that is not one', [{ $ne: null }]],
   ])('refuses a list with %s, changing nothing', async (_case, names) => {
     const before = await precedenceOf();
 
@@ -71,6 +72,35 @@ describe('token precedence', () => {
       message: ERROR_CODES.INVALID_DIMENSION,
     });
     expect(await precedenceOf()).toEqual(before);
+  });
+
+  it('ranks the dimensions left out below every one listed', async () => {
+    await set(['range', 'brand']);
+
+    expect(await precedenceOf()).toMatchObject({
+      emailType: 0,
+      market: 0,
+      range: 10,
+      brand: 20,
+    });
+  });
+
+  it('refuses a deactivated dimension, which an email no longer offers', async () => {
+    const [market] = (
+      await dimensionService.listDimensions({
+        user: techAdminA,
+      })
+    ).filter((dimension) => dimension.name === 'market');
+    await dimensionService.updateDimension({
+      user: techAdminA,
+      dimensionId: String(market._id || market.id),
+      payload: { isActive: false },
+    });
+
+    await expect(set(['brand', 'market'])).rejects.toMatchObject({
+      status: 400,
+      message: ERROR_CODES.INVALID_DIMENSION,
+    });
   });
 
   it("never touches another company's dimensions", async () => {

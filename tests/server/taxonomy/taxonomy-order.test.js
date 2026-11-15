@@ -191,6 +191,17 @@ describe('bulk order: values', () => {
     });
   });
 
+  it('refuses a dimension given as anything but a name', async () => {
+    const atlas = await addValue('brand', { label: 'Atlas' });
+
+    await expect(
+      reorder({ $ne: null }, [atlas, canada, switzerland, france, belgium])
+    ).rejects.toMatchObject({
+      status: 400,
+      message: ERROR_CODES.INVALID_TAXONOMY_ITEM,
+    });
+  });
+
   it("refuses the whole order when another company's value is listed", async () => {
     await declare({ name: 'market', label: 'Market' }, adminB);
     const elsewhere = await addValue('market', { label: 'Spain' }, adminB);

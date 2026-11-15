@@ -44,6 +44,15 @@ export default {
   data() {
     return { dirty: false };
   },
+  watch: {
+    // The matrix is gone with its draft, however it was left.
+    tab() {
+      this.dirty = false;
+    },
+    'dimension.name'() {
+      this.dirty = false;
+    },
+  },
   methods: {
     // Asked before the workspace selects elsewhere: an unsaved matrix warns.
     confirmLeave() {

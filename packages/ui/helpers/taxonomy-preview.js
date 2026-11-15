@@ -8,6 +8,14 @@
  */
 import { STANDARD_DIMENSIONS, TRIGGER_VALUES } from './taxonomy-builder.js';
 import { dimensionTree } from './taxonomy-tree.js';
+import {
+  isOfferedUnder,
+  effectiveParentName,
+} from '../../shared/taxonomy/availability.js';
+import {
+  firstLevelDefault,
+  childValue,
+} from '../../shared/taxonomy/default-values.js';
 
 const ids = (list) => (list || []).map(String);
 const plainTokens = (tokens) =>
@@ -33,51 +41,49 @@ function isInScope(dimension, values, read) {
     );
 }
 
-const offeredUnder = (value, parentId) => {
-  const parents = ids(value._parents);
-  return parents.length === 0 || parents.includes(parentId);
-};
+// A value as the editor's rules read it (shared/taxonomy/).
+const asEditorValue = (value) => ({
+  id: String(value.id),
+  canonicalType: value.canonicalType,
+  isActive: value.isActive !== false,
+  isDefault: Boolean(value.isDefault),
+  parentIds: ids(value._parents),
+  defaultUnder: ids(value.defaultUnder),
+});
 
-function describe(dimension, { active, inScope, template, byName }) {
+function describe(dimension, { active, inScope, declared }) {
+  const entry = { name: dimension.name, label: dimension.label };
   if (dimension.name === STANDARD_DIMENSIONS.TRIGGER) {
-    return {
-      name: dimension.name,
-      label: dimension.label,
-      values: TRIGGER_VALUES.map((v) => v.value),
-    };
+    return { ...entry, values: TRIGGER_VALUES.map((v) => v.value) };
   }
-  const own = active.filter((value) => value.type === dimension.name);
-  const parent = dimension.parentName && byName[dimension.parentName];
-  const entry = {
-    name: dimension.name,
-    label: dimension.label,
-    values: own.map((value) => String(value.id)),
-  };
-  if (parent && inScope.has(parent.name)) {
-    const parentValues = active.filter((value) => value.type === parent.name);
-    entry.under = {};
-    entry.defaultUnder = {};
-    parentValues.forEach((parentValue) => {
-      const parentId = String(parentValue.id);
-      const offered = own.filter((value) => offeredUnder(value, parentId));
-      entry.under[parentId] = offered.map((value) => String(value.id));
-      const holder = offered.find((value) =>
-        ids(value.defaultUnder).includes(parentId)
-      );
-      if (holder) entry.defaultUnder[parentId] = String(holder.id);
-    });
+  const own = active
+    .filter((value) => value.type === dimension.name)
+    .map(asEditorValue);
+  entry.values = own.map((value) => value.id);
+  // The email type has no default (ADR-0024).
+  if (dimension.name === STANDARD_DIMENSIONS.EMAIL_TYPE) return entry;
+
+  const editorDimension = { name: dimension.name, values: own };
+  // A parent out of the email's scope is not there: the child is offered
+  // with all its values, and takes its default as a first-level one.
+  const parentName = effectiveParentName(dimension, inScope);
+  if (!parentName) {
+    const chosen = firstLevelDefault(editorDimension, declared);
+    if (chosen) entry.defaultValue = chosen.id;
     return entry;
   }
-  if (!parent) {
-    // The template's own default first, then the company's (ADR-0024).
-    const declared = (template?.contract?.declared || {})[dimension.name];
-    const byTemplate = own.find(
-      (value) => declared && value.canonicalType === declared
-    );
-    const byCompany = own.find((value) => value.isDefault);
-    const chosen = byTemplate || byCompany;
-    if (chosen) entry.defaultValue = String(chosen.id);
-  }
+  entry.under = {};
+  entry.defaultUnder = {};
+  active
+    .filter((value) => value.type === parentName)
+    .forEach((parentValue) => {
+      const parentId = String(parentValue.id);
+      entry.under[parentId] = own
+        .filter((value) => isOfferedUnder(value, parentId))
+        .map((value) => value.id);
+      const chosen = childValue(editorDimension, parentId, null, declared);
+      if (chosen) entry.defaultUnder[parentId] = chosen.id;
+    });
   return entry;
 }
 
@@ -107,7 +113,11 @@ export function valuesProposed({ template, dimensions = [], values = [] }) {
   );
   return {
     dimensions: kept.map((dimension) =>
-      describe(dimension, { active, inScope, template, byName })
+      describe(dimension, {
+        active,
+        inScope,
+        declared: template?.contract?.declared || {},
+      })
     ),
     tokens: [...carried].filter((token) => read.has(token)).sort(),
   };
