@@ -98,6 +98,9 @@ function dimensionSelects({ dimensions, selections, emailTypeId }) {
       )
       .map((option) => ({ id: String(option.id), label: option.label }));
     const chosen = values.find(isValue);
+    // A child that offers nothing under this parent value means nothing
+    // there: no select, rather than one whose only choice is "none".
+    if (nested && options.length === 0) return selects;
 
     selects.push({
       name: dimension.name,

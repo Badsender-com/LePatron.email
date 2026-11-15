@@ -1142,7 +1142,7 @@ export default {
       quickAdd: {
         label: 'Label of the new value',
         placeholder: 'New value, then Enter',
-        identifier: 'Proposed identifier',
+        identifier: 'Identifier',
         action: 'Add',
       },
       crossings: {
@@ -1155,11 +1155,6 @@ export default {
         save: 'Save the crossings',
         saved: 'Crossings saved',
         leave: 'The crossings you changed are not saved. Leave anyway?',
-      },
-      defaults: {
-        intro: 'The value a new email takes when its template gives none.',
-        none: 'None',
-        hint: 'Never applied to an existing email, nor over a chosen value.',
       },
       impact: {
         title: 'Change the identifier of {label}',
@@ -1194,7 +1189,6 @@ export default {
         title: 'To check · {n}',
         missingCode:
           '{value} has no normalised code: the language or country of the email stays unknown.',
-        nothingOffered: 'Under {parent}, no value is offered.',
         noValue: 'The dimension has no active value yet.',
         tokenUnread: 'The token {token} is read by no template.',
         dimensionUnread:
@@ -1264,7 +1258,6 @@ export default {
       segments: {
         values: 'Values',
         crossings: 'Crossings',
-        defaults: 'Defaults',
         tokens: 'Tokens',
         templates: 'Templates',
         settings: 'Settings',
@@ -1372,6 +1365,7 @@ export default {
       },
     },
     values: {
+      defaultStar: '{label}: default value of new emails',
       deleteConfirmTitle: 'Delete this value?',
       deleteConfirmMessage: 'The value “{label}” will be deleted.',
       deleteConfirmHint:
@@ -1401,7 +1395,7 @@ export default {
         crossingsElsewhere:
           'Which values of “{parent}” it is offered under, and where it is the default: Crossings segment. A new value is offered everywhere.',
         defaultElsewhere:
-          'The value a new email takes is chosen in the Defaults segment.',
+          'The star, in the list of values, marks the one a new email takes when its template gives none.',
         code: {
           language: 'Language code',
           country: 'Country code',

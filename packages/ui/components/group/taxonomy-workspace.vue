@@ -20,12 +20,11 @@ import {
   sortDimensions,
 } from '~/helpers/taxonomy-builder.js';
 
-// The segments the workspace shows so far; the others come with their
-// tickets of epic #1547 (crossings, defaults, tokens, templates).
+// The segments the workspace shows. A first-level default is starred in the
+// values, not set in a segment of its own.
 const IMPLEMENTED_SEGMENTS = [
   'values',
   'crossings',
-  'defaults',
   'tokens',
   'templates',
   'settings',
