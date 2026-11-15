@@ -130,7 +130,8 @@ module.exports = `
     </div>
 
     <!-- The company dimensions, in the order the company declared them, each
-         nested one right after its parent and hidden while the parent is empty.
+         nested one right after its parent, hidden while the parent is empty or
+         offers it nothing.
          Each is optional, with an explicit empty choice like the two above.
          Chosen through a method rather than v-model: a parent change clears the
          child values it no longer offers. Two per row: a company may well have

@@ -5,12 +5,14 @@ import { canonicalTypeLabelKey } from '~/helpers/taxonomy.js';
 import { Pencil, Trash2, GripVertical } from 'lucide-vue';
 import { moveItem } from '~/helpers/reorder.js';
 import BsTaxonomyTableEmpty from '~/components/group/taxonomy-table-empty.vue';
+import BsTaxonomyDefaultStar from '~/components/group/taxonomy-default-star.vue';
 
 export default {
   name: 'BsTaxonomyTable',
   components: {
     BsDataTable,
     BsTaxonomyTableEmpty,
+    BsTaxonomyDefaultStar,
     LucidePencil: Pencil,
     LucideTrash2: Trash2,
     LucideGripVertical: GripVertical,
@@ -30,6 +32,9 @@ export default {
     reorderable: { type: Boolean, default: false },
     // A deactivated dimension takes no new value.
     canCreate: { type: Boolean, default: true },
+    // A first-level dimension: its default is starred here, and `default`
+    // emits the value clicked.
+    defaultable: { type: Boolean, default: false },
   },
   data() {
     return { dragged: null };
@@ -151,9 +156,16 @@ export default {
     </template>
 
     <template #item.label="{ item }">
+      <bs-taxonomy-default-star
+        v-if="defaultable"
+        :active="item.isDefault === true"
+        :editable="canManageTaxonomy && canCreate && item.isActive !== false"
+        :label="item.label"
+        @toggle="$emit('default', item)"
+      />
       <span class="taxonomy-table__label">{{ item.label }}</span>
       <v-chip
-        v-if="item.isDefault || (item.defaultUnder || []).length > 0"
+        v-if="!defaultable && (item.defaultUnder || []).length > 0"
         x-small
         outlined
         class="ml-2"

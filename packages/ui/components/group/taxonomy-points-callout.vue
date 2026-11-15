@@ -8,7 +8,6 @@ import { AlertTriangle } from 'lucide-vue';
  */
 const SEGMENT_OF = {
   missingCode: 'values',
-  nothingOffered: 'crossings',
   noValue: 'values',
   tokenUnread: 'templates',
   dimensionUnread: 'settings',

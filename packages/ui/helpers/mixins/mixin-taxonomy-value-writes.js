@@ -49,6 +49,37 @@ export default {
       await this.fetchItems();
     },
 
+    /**
+     * Star a first-level value as the default, or unstar it (ADR-0024): one
+     * default per dimension, so the value holding the place is unmarked
+     * first, and marked again when the new one is refused.
+     *
+     * @param {Object} item the value clicked
+     */
+    async toggleDefault(item) {
+      if (this.saving) return;
+      const holder = this.items.find((value) => value.isDefault);
+      const patch = (id, isDefault) =>
+        this.$axios.$patch(apiRoutes.taxonomyItemsItem(id), { isDefault });
+      let unmarked = false;
+      try {
+        this.saving = true;
+        if (holder) {
+          await patch(holder.id, false);
+          unmarked = true;
+        }
+        if (!holder || String(holder.id) !== String(item.id)) {
+          await patch(item.id, true);
+        }
+      } catch (error) {
+        if (unmarked) await patch(holder.id, true).catch(() => {});
+        this.reportError(error);
+      } finally {
+        this.saving = false;
+        await this.fetchItems();
+      }
+    },
+
     async saveItem({ id, payload }) {
       try {
         this.saving = true;

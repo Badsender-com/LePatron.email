@@ -5,7 +5,6 @@ import BsTaxonomyTriggerDimension from '~/components/group/taxonomy-trigger-dime
 import BsTaxonomyCompanyDimension from '~/components/group/taxonomy-company-dimension.vue';
 import BsTaxonomyDimensionSettings from '~/components/group/taxonomy-dimension-settings.vue';
 import BsTaxonomyCrossingsMatrix from '~/components/group/taxonomy-crossings-matrix.vue';
-import BsTaxonomyDefaultValue from '~/components/group/taxonomy-default-value.vue';
 import BsTaxonomyDimensionTemplates from '~/components/group/taxonomy-dimension-templates.vue';
 import BsTaxonomyPointsCallout from '~/components/group/taxonomy-points-callout.vue';
 import BsTaxonomyDimensionTokens from '~/components/group/taxonomy-dimension-tokens.vue';
@@ -24,7 +23,6 @@ export default {
     BsTaxonomyCompanyDimension,
     BsTaxonomyDimensionSettings,
     BsTaxonomyCrossingsMatrix,
-    BsTaxonomyDefaultValue,
     BsTaxonomyDimensionTemplates,
     BsTaxonomyPointsCallout,
     BsTaxonomyDimensionTokens,
@@ -36,7 +34,7 @@ export default {
     segments: { type: Array, default: () => ['values'] },
     tab: { type: String, default: 'values' },
     treeOpen: { type: Boolean, default: false },
-    // Values per dimension name, for the crossings and the defaults.
+    // Values per dimension name, for the crossings.
     valuesByType: { type: Object, default: () => ({}) },
     templates: { type: Array, default: () => [] },
     points: { type: Array, default: () => [] },
@@ -117,13 +115,6 @@ export default {
       @saved="$emit('saved', 'crossings')"
       @error="$emit('error', $event)"
     />
-    <bs-taxonomy-default-value
-      v-else-if="tab === 'defaults'"
-      :dimension="dimension"
-      :values="valuesByType[dimension.name] || []"
-      @saved="$emit('saved')"
-      @error="$emit('error', $event)"
-    />
     <bs-taxonomy-dimension-tokens
       v-else-if="tab === 'tokens'"
       :dimension="dimension"
@@ -148,6 +139,7 @@ export default {
       :key="`${$route.params.groupId}-emailType`"
       :dimension="dimension"
       @edit="$emit('edit', $event)"
+      @add-child="$emit('add-child', $event)"
       @values="$emit('values', $event)"
     />
     <bs-taxonomy-trigger-dimension
