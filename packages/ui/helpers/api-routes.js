@@ -436,6 +436,10 @@ export function taxonomyItemsOrder() {
   return '/taxonomy-items/order';
 }
 
+export function taxonomyItemIdentifierImpact(itemId) {
+  return `/taxonomy-items/${itemId}/identifier-impact`;
+}
+
 export function taxonomyItemsCrossings() {
   return '/taxonomy-items/crossings';
 }
