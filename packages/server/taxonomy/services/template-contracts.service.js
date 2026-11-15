@@ -1,8 +1,7 @@
 'use strict';
 
-const { Templates } = require('../../common/models.common.js');
 const {
-  contractOfTemplate,
+  listContracts,
 } = require('../../template/template-contract.service.js');
 const { resolveCompanyId } = require('./company-scope.js');
 
@@ -23,15 +22,11 @@ module.exports = { listTemplateContracts };
  */
 async function listTemplateContracts({ user, groupId }) {
   const companyId = resolveCompanyId(user, groupId);
-  const templates = await Templates.find({ _company: companyId })
-    .select({ name: 1 })
-    .lean();
-  const listed = await Promise.all(
-    templates.map(async (template) => ({
-      id: String(template._id),
-      name: template.name,
-      contract: await contractOfTemplate(template._id),
-    }))
-  );
+  const templates = await listContracts({ _company: companyId });
+  const listed = templates.map((template) => ({
+    id: String(template._id),
+    name: template.name,
+    contract: template.contract,
+  }));
   return listed.sort((a, b) => String(a.name).localeCompare(String(b.name)));
 }
