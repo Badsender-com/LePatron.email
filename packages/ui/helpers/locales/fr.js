@@ -1694,9 +1694,11 @@ export default {
         'Limite atteinte : {limit} au maximum. Supprimez-en avant d\'en ajouter d\'autres.',
       labelAlreadyExists: 'Ce libellé est déjà pris dans cette dimension.',
       identifierUnconfirmed:
-        'Des emails portent cette valeur : confirmez le changement d\'identifiant.',
+        'Des emails portent cette valeur ou des templates comparent son identifiant : confirmez le changement.',
       identifierAlreadyExists:
         'Cet identifiant est déjà pris dans cette dimension.',
+      writeInProgress:
+        'Une autre modification de cette dimension est en cours. Réessayez dans un instant.',
       defaultTaken:
         '« {holder} » est déjà la valeur par défaut à cet endroit : retirez-la d\'abord.',
       dimensionNameAlreadyExists:

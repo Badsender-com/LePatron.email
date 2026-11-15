@@ -2102,9 +2102,11 @@ export default {
         'Limit reached: {limit} at most. Delete some before adding more.',
       labelAlreadyExists: 'This label is already taken in this dimension.',
       identifierUnconfirmed:
-        'Emails carry this value: confirm the identifier change.',
+        'Emails carry this value or templates compare its identifier: confirm the change.',
       identifierAlreadyExists:
         'This identifier is already taken in this dimension.',
+      writeInProgress:
+        'Another change to this dimension is under way. Try again in a moment.',
       defaultTaken: '"{holder}" is already the default value there: remove it first.',
       dimensionNameAlreadyExists:
         'A dimension already has this name, perhaps a deactivated one.',

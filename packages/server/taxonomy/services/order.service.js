@@ -9,6 +9,7 @@ const {
 const ERROR_CODES = require('../../constant/error-codes.js');
 const { StandardDimensions } = require('../../constant/taxonomy-type.js');
 const { resolveCompanyId } = require('./company-scope.js');
+const { withDimensionsLocked } = require('./dimension-lock.js');
 const logger = require('../../utils/logger.js');
 
 /**
@@ -21,6 +22,19 @@ module.exports = { reorderDimensions, reorderValues, setPrecedence };
 
 // Spaced, so an order set by hand before stays readable beside these.
 const positionOf = (index) => (index + 1) * 10;
+
+// One round trip, under the claim of the dimensions the list orders: two drops
+// at once never mix their positions.
+const setEach = (Model, companyId, changes) =>
+  Model.bulkWrite(
+    changes.map(([filter, fields]) => ({
+      updateOne: {
+        filter: { _company: companyId, ...filter },
+        update: { $set: fields },
+      },
+    })),
+    { ordered: true }
+  );
 
 const names = (list) =>
   Array.isArray(list) && list.every((name) => typeof name === 'string');
@@ -54,27 +68,26 @@ async function reorderDimensions({
   ) {
     throw new BadRequest(ERROR_CODES.INVALID_DIMENSION);
   }
-  const dimensions = await TaxonomyDimensions.find({
-    _company: companyId,
-  }).lean();
-  const siblings = dimensions
-    .filter(
-      (dimension) =>
-        !dimension.standard && (dimension.parentName || null) === parentName
-    )
-    .map((dimension) => dimension.name);
-
-  if (!sameSet(siblings, ordered)) {
-    throw new BadRequest(ERROR_CODES.INVALID_DIMENSION);
-  }
-  await Promise.all(
-    ordered.map((name, index) =>
-      TaxonomyDimensions.updateOne(
-        { _company: companyId, name },
-        { $set: { order: positionOf(index) } }
+  await withDimensionsLocked({ companyId, names: ordered }, async () => {
+    const dimensions = await TaxonomyDimensions.find({
+      _company: companyId,
+    }).lean();
+    const siblings = dimensions
+      .filter(
+        (dimension) =>
+          !dimension.standard && (dimension.parentName || null) === parentName
       )
-    )
-  );
+      .map((dimension) => dimension.name);
+
+    if (!sameSet(siblings, ordered)) {
+      throw new BadRequest(ERROR_CODES.INVALID_DIMENSION);
+    }
+    await setEach(
+      TaxonomyDimensions,
+      companyId,
+      ordered.map((name, index) => [{ name }, { order: positionOf(index) }])
+    );
+  });
 }
 
 /**
@@ -94,23 +107,22 @@ async function reorderValues({ user, groupId, type, itemIds }) {
   if (typeof type !== 'string') {
     throw new BadRequest(ERROR_CODES.INVALID_TAXONOMY_ITEM);
   }
-  const values = await TaxonomyItems.find({ _company: companyId, type })
-    .select({ _id: 1 })
-    .lean();
-  const ids = values.map((value) => String(value._id));
-  const given = Array.isArray(itemIds) ? itemIds.map(String) : [];
+  await withDimensionsLocked({ companyId, names: [type] }, async () => {
+    const values = await TaxonomyItems.find({ _company: companyId, type })
+      .select({ _id: 1 })
+      .lean();
+    const ids = values.map((value) => String(value._id));
+    const given = Array.isArray(itemIds) ? itemIds.map(String) : [];
 
-  if (!sameSet(ids, given)) {
-    throw new BadRequest(ERROR_CODES.INVALID_TAXONOMY_ITEM);
-  }
-  await Promise.all(
-    given.map((id, index) =>
-      TaxonomyItems.updateOne(
-        { _company: companyId, _id: id },
-        { $set: { order: positionOf(index) } }
-      )
-    )
-  );
+    if (!sameSet(ids, given)) {
+      throw new BadRequest(ERROR_CODES.INVALID_TAXONOMY_ITEM);
+    }
+    await setEach(
+      TaxonomyItems,
+      companyId,
+      given.map((id, index) => [{ _id: id }, { order: positionOf(index) }])
+    );
+  });
 }
 
 /**
@@ -129,34 +141,38 @@ async function reorderValues({ user, groupId, type, itemIds }) {
 async function setPrecedence({ user, groupId, names: ranked }) {
   logger.log('orderService:setPrecedence');
   const companyId = resolveCompanyId(user, groupId);
-  const dimensions = await TaxonomyDimensions.find({
-    _company: companyId,
-  }).lean();
-  const known = dimensions
-    .filter(
-      (dimension) =>
-        dimension.name !== StandardDimensions.TRIGGER &&
-        dimension.isActive !== false
-    )
-    .map((dimension) => dimension.name);
-  const valid =
-    names(ranked) &&
-    ranked.length > 0 &&
-    new Set(ranked).size === ranked.length &&
-    ranked.every((name) => known.includes(name));
-  if (!valid) throw new BadRequest(ERROR_CODES.INVALID_DIMENSION);
-  await Promise.all(
-    dimensions.map((dimension) =>
-      TaxonomyDimensions.updateOne(
-        { _company: companyId, name: dimension.name },
-        {
-          $set: {
-            precedence: ranked.includes(dimension.name)
-              ? positionOf(ranked.indexOf(dimension.name))
-              : 0,
-          },
-        }
+  const listed = await TaxonomyDimensions.find({ _company: companyId })
+    .select({ name: 1 })
+    .lean();
+  const all = listed.map((dimension) => dimension.name);
+  await withDimensionsLocked({ companyId, names: all }, async () => {
+    const dimensions = await TaxonomyDimensions.find({
+      _company: companyId,
+    }).lean();
+    const known = dimensions
+      .filter(
+        (dimension) =>
+          dimension.name !== StandardDimensions.TRIGGER &&
+          dimension.isActive !== false
       )
-    )
-  );
+      .map((dimension) => dimension.name);
+    const valid =
+      names(ranked) &&
+      ranked.length > 0 &&
+      new Set(ranked).size === ranked.length &&
+      ranked.every((name) => known.includes(name));
+    if (!valid) throw new BadRequest(ERROR_CODES.INVALID_DIMENSION);
+    await setEach(
+      TaxonomyDimensions,
+      companyId,
+      dimensions.map((dimension) => [
+        { name: dimension.name },
+        {
+          precedence: ranked.includes(dimension.name)
+            ? positionOf(ranked.indexOf(dimension.name))
+            : 0,
+        },
+      ])
+    );
+  });
 }

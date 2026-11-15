@@ -9,6 +9,7 @@ const {
 } = require('../../common/models.common.js');
 const ERROR_CODES = require('../../constant/error-codes.js');
 const { resolveCompanyId } = require('./company-scope.js');
+const { withDimensionsLocked } = require('./dimension-lock.js');
 const logger = require('../../utils/logger.js');
 
 /**
@@ -45,8 +46,16 @@ async function saveCrossings({ user, groupId, type, crossings }) {
     throw invalid();
   }
 
+  // Read, checked and written under one claim: another save of the matrix,
+  // or of a value of it, meanwhile is refused.
+  await withDimensionsLocked({ companyId, names: [type] }, () =>
+    writeCrossings({ companyId, dimension, crossings })
+  );
+}
+
+async function writeCrossings({ companyId, dimension, crossings }) {
   const [values, parentValues] = await Promise.all([
-    TaxonomyItems.find({ _company: companyId, type })
+    TaxonomyItems.find({ _company: companyId, type: dimension.name })
       .select({ _id: 1, label: 1 })
       .lean(),
     TaxonomyItems.find({ _company: companyId, type: dimension.parentName })
@@ -63,18 +72,20 @@ async function saveCrossings({ user, groupId, type, crossings }) {
   );
   assertDefaults(entries, labels);
 
-  await Promise.all(
-    entries.map((entry) =>
-      TaxonomyItems.updateOne(
-        { _company: companyId, _id: entry.itemId },
-        {
+  // One round trip: the values are written together or the request fails.
+  await TaxonomyItems.bulkWrite(
+    entries.map((entry) => ({
+      updateOne: {
+        filter: { _company: companyId, _id: entry.itemId },
+        update: {
           $set: {
             _parents: entry.parentIds.map(asObjectId),
             defaultUnder: entry.defaultUnder.map(asObjectId),
           },
-        }
-      )
-    )
+        },
+      },
+    })),
+    { ordered: true }
   );
 }
 
