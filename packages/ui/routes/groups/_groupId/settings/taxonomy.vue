@@ -1,12 +1,11 @@
 <script>
-import { mapGetters } from 'vuex';
 import * as acls from '~/helpers/pages-acls.js';
 import { safeFetchGroup } from '~/helpers/safe-fetch-group';
 import mixinSettingsTitle from '~/helpers/mixins/mixin-settings-title.js';
+import mixinTaxonomyManage from '~/helpers/mixins/mixin-taxonomy-manage.js';
 import BsPageHeader from '~/components/layout/bs-page-header.vue';
 import BsTaxonomyDimensions from '~/components/group/taxonomy-dimensions.vue';
-import { CAN, USER } from '~/store/user';
-import { Plus, RotateCcw } from 'lucide-vue';
+import { Eye, Plus, RotateCcw } from 'lucide-vue';
 import { CAPABILITIES } from '../../../../../shared/access/roles.js';
 
 export default {
@@ -14,10 +13,11 @@ export default {
   components: {
     BsPageHeader,
     BsTaxonomyDimensions,
+    LucideEye: Eye,
     LucidePlus: Plus,
     LucideRotateCcw: RotateCcw,
   },
-  mixins: [mixinSettingsTitle],
+  mixins: [mixinSettingsTitle, mixinTaxonomyManage],
   meta: {
     acl: acls.ACL_GROUP_MANAGE,
   },
@@ -33,7 +33,6 @@ export default {
     return { title: this.settingsTitle };
   },
   computed: {
-    ...mapGetters(USER, { can: CAN }),
     showGroupBadge() {
       return this.can(CAPABILITIES.PLATFORM_MANAGE) && this.group.name;
     },
@@ -55,7 +54,7 @@ export default {
           {{ group.name }}
         </v-chip>
       </template>
-      <template #actions>
+      <template v-if="canManageTaxonomy" #actions>
         <v-btn
           color="accent"
           outlined
@@ -81,6 +80,15 @@ export default {
           {{ $t('taxonomy.description') }}
         </p>
 
+        <p
+          v-if="!canManageTaxonomy"
+          class="taxonomy-page__read-only"
+          role="note"
+        >
+          <lucide-eye :size="16" class="mr-2" />
+          {{ $t('taxonomy.readOnly') }}
+        </p>
+
         <bs-taxonomy-dimensions ref="dimensions" />
       </div>
     </v-container>
@@ -93,6 +101,18 @@ export default {
     color: var(--gray-700);
     font-size: 0.875rem;
     margin-bottom: 1rem;
+  }
+
+  &__read-only {
+    display: flex;
+    align-items: center;
+    padding: 10px 14px;
+    margin-bottom: 1rem;
+    background: var(--white);
+    border: 1px solid var(--gray-300);
+    border-radius: 7px;
+    color: var(--gray-700);
+    font-size: 0.8125rem;
   }
 }
 </style>

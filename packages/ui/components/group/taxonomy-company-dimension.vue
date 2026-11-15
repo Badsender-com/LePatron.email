@@ -1,4 +1,5 @@
 <script>
+import mixinTaxonomyManage from '~/helpers/mixins/mixin-taxonomy-manage.js';
 import { Pencil, Plus, Trash2, EyeOff, Eye } from 'lucide-vue';
 import BsGroupTaxonomyTab from '~/components/group/taxonomy-tab.vue';
 import { dimensionActions } from '~/helpers/taxonomy-builder.js';
@@ -18,6 +19,7 @@ export default {
     LucideEyeOff: EyeOff,
     LucideEye: Eye,
   },
+  mixins: [mixinTaxonomyManage],
   props: {
     dimension: { type: Object, required: true },
     // The dimension this one hangs under, if any.
@@ -64,6 +66,7 @@ export default {
       </v-chip>
       <v-spacer />
       <v-btn
+        v-if="canManageTaxonomy"
         text
         small
         color="accent"
@@ -73,12 +76,18 @@ export default {
         <lucide-plus :size="16" class="mr-1" />
         {{ $t('taxonomy.values.empty.action') }}
       </v-btn>
-      <v-btn text small color="accent" @click="$emit('edit', dimension)">
+      <v-btn
+        v-if="canManageTaxonomy"
+        text
+        small
+        color="accent"
+        @click="$emit('edit', dimension)"
+      >
         <lucide-pencil :size="16" class="mr-1" />
         {{ $t('global.edit') }}
       </v-btn>
       <v-btn
-        v-if="actions.canDeactivate"
+        v-if="canManageTaxonomy && actions.canDeactivate"
         text
         small
         color="accent"
@@ -93,7 +102,7 @@ export default {
         }}
       </v-btn>
       <v-btn
-        v-if="actions.canDelete"
+        v-if="canManageTaxonomy && actions.canDelete"
         text
         small
         color="error"

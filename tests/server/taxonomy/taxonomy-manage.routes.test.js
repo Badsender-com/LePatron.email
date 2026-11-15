@@ -59,8 +59,7 @@ const WRITES = [
 const guardsOf = (routerName, method, path) =>
   routeInspector(require(ROUTERS[routerName])).guardsOf(method, path);
 
-// Turned on by #1549 (only the tech admin and the super admin change the taxonomy)
-describe.skip('taxonomy routes guarded by taxonomy.manage', () => {
+describe('taxonomy routes guarded by taxonomy.manage', () => {
   it.each(WRITES)(
     '%s routes: %s %s asks for taxonomy.manage first',
     (routerName, method, path) => {

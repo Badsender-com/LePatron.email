@@ -34,6 +34,10 @@ const CAPABILITIES = Object.freeze({
   // A company's technical settings: integrations, AI features, feed mappings
   // and tracking.
   GROUP_MANAGE_TECH: 'group.manage-tech',
+  // A company's taxonomy: its dimensions, their values, crossings, defaults and
+  // tokens, and the adoption of a template's emails (ADR-0026). Read by every
+  // member; changed by the tech admin, not the company admin.
+  TAXONOMY_MANAGE: 'taxonomy.manage',
   MAILING_CREATE: 'mailing.create',
   // Rename, move, copy, duplicate (translated or not), tag.
   MAILING_ORGANIZE: 'mailing.organize',
@@ -101,6 +105,7 @@ const GROUP_ADMIN_CAPABILITIES = REGULAR_USER_CAPABILITIES.concat([
 // 2026-10-13).
 const GROUP_ADMIN_TECH_CAPABILITIES = GROUP_ADMIN_CAPABILITIES.concat([
   C.GROUP_MANAGE_TECH,
+  C.TAXONOMY_MANAGE,
 ]);
 
 const CAPABILITIES_BY_ROLE = {};
