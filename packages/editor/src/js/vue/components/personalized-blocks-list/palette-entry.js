@@ -12,7 +12,7 @@ const { toPaletteBlock } = require('./palette-block.js');
 // returns. A click or a drag inserts this object as it is (viewmodel.js
 // addBlock), so this is where insertion is decided.
 
-const { htmlProperty, stateProperty } = BLOCK_BUILDER_BLOCK;
+const { htmlProperty, stateProperty, originProperty } = BLOCK_BUILDER_BLOCK;
 
 /**
  * @param {Object} item an entry of `GET /personalized-blocks`
@@ -32,6 +32,10 @@ function paletteEntryOf(item) {
   });
   entry[stateProperty] = refreshed.builderState;
   entry[htmlProperty] = refreshed.builderHtml;
+  // The entry it comes from, kept on the block itself (ADR 0027). Stored and
+  // never shown: shown before synchronisation exists, it would read as a live
+  // link. An entry without an id leaves no origin rather than a false one.
+  entry[originProperty] = item._id ? String(item._id) : null;
   return entry;
 }
 
