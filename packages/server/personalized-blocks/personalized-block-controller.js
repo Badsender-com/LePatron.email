@@ -9,6 +9,9 @@ const {
   TEMPLATE_FLAG_PROJECTION,
   syntheticBlockFlagsOf,
 } = require('../mailing/synthetic-block-guard.js');
+const {
+  isUnreadableComposition,
+} = require('../mailing/builder-block-integrity.js');
 const { BLOCK_BUILDER_BLOCK } = require('../../shared/synthetic-blocks.js');
 const { can } = require('../account/permissions.js');
 const { CAPABILITIES } = require('../../shared/access/roles.js');
@@ -44,11 +47,18 @@ async function listPersonalizedBlocks(req, res, next) {
     templateId,
     searchTerm
   );
-  const offersComposed = await offersComposedBlocks(req.user, templateId);
+  // A composed entry whose state cannot be read is refused at every email
+  // save, whoever inserts it: it is offered to no one.
+  const insertable = personalizedBlocks.filter(
+    (block) => !isComposed(block) || !isUnreadableComposition(block.content)
+  );
+  const offersComposed =
+    insertable.some(isComposed) &&
+    (await offersComposedBlocks(req.user, groupId, templateId));
   return res.json({
     items: offersComposed
-      ? personalizedBlocks
-      : personalizedBlocks.filter((block) => !isComposed(block)),
+      ? insertable
+      : insertable.filter((block) => !isComposed(block)),
   });
 }
 
@@ -63,12 +73,16 @@ const isComposed = (block) =>
  * deleted: turning the builder back on brings them back.
  *
  * @param {Object} user
- * @param {string} templateId
+ * @param {string} groupId
+ * @param {string} templateId read within the group only
  * @returns {Promise<boolean>}
  */
-async function offersComposedBlocks(user, templateId) {
+async function offersComposedBlocks(user, groupId, templateId) {
   if (!can(user, CAPABILITIES.BLOCK_COMPOSE)) return false;
-  const template = await Templates.findById(templateId)
+  const template = await Templates.findOne({
+    _id: templateId,
+    _company: groupId,
+  })
     .select(TEMPLATE_FLAG_PROJECTION)
     .lean();
   return syntheticBlockFlagsOf(template)[BLOCK_BUILDER_BLOCK.flag];
