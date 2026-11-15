@@ -114,3 +114,22 @@ describe('the workspace reads', () => {
     );
   });
 });
+
+// Acceptance test of #1547: a value edited in its panel changes the points at
+// once, with the values the section read again.
+describe('the values a section read again', () => {
+  it('replace the dimension values, and drop a read of them still under way', async () => {
+    const { ctx, answer, flush } = workspace();
+    ctx.dimensions = [MARKET];
+
+    const late = ctx.fetchValues(['market']);
+    ctx.setValues('market', [{ id: 'fr', type: 'market', code: 'FR' }]);
+    answer(0, [{ id: 'fr', type: 'market', code: null }]);
+    await late;
+    await flush();
+
+    expect(ctx.valuesByType.market).toEqual([
+      { id: 'fr', type: 'market', code: 'FR' },
+    ]);
+  });
+});

@@ -207,7 +207,7 @@ export default {
       :tab="selection.tab"
       :tree-open="treeOpen"
       @preview="openView('preview', $event)"
-      @saved="fetchValues([selected.name])"
+      @saved="onSectionSaved(selected.name, $event)"
       @error="reportError"
       @toggle-tree="treeOpen = !treeOpen"
       @select-tab="select(selected.name, $event)"
@@ -216,7 +216,7 @@ export default {
       @add-child="openDeclareForm($event.name)"
       @toggle-active="toggleActive"
       @delete="confirmDelete"
-      @count="setCount(selected.name, $event)"
+      @values="setValues(selected.name, $event)"
     />
 
     <bs-modal-confirm

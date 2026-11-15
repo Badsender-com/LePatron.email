@@ -14,6 +14,8 @@ export default {
     loadError: { type: Boolean, default: false },
     isEmailType: { type: Boolean, default: true },
     wording: { type: String, default: 'taxonomy' },
+    // A deactivated dimension takes no new value.
+    canCreate: { type: Boolean, default: true },
   },
 };
 </script>
@@ -41,7 +43,7 @@ export default {
         {{ $t(`${wording}.empty.description`) }}
       </p>
       <div
-        v-if="canManageTaxonomy"
+        v-if="canManageTaxonomy && canCreate"
         class="d-flex justify-center flex-wrap"
         style="gap: 0.5rem"
       >

@@ -28,6 +28,8 @@ export default {
     // Rows ordered by drag and drop, or Alt + arrows on a grip: emits
     // `reorder` with every id in the new order (ADR-0026).
     reorderable: { type: Boolean, default: false },
+    // A deactivated dimension takes no new value.
+    canCreate: { type: Boolean, default: true },
   },
   data() {
     return { dragged: null };
@@ -230,6 +232,7 @@ export default {
         :load-error="loadError"
         :is-email-type="isEmailType"
         :wording="wording"
+        :can-create="canCreate"
         @retry="$emit('retry')"
         @create="$emit('create')"
         @restore-defaults="$emit('restore-defaults')"

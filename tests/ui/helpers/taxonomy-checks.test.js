@@ -36,7 +36,14 @@ describe('points to check', () => {
     {
       kind: 'literalNotCarried',
       dimension: 'market',
-      identifier: 'uk',
+      identifiers: ['uk'],
+      templateIds: ['tpl-newsletter'],
+    },
+    {
+      kind: 'literalNotOffered',
+      dimension: 'language',
+      identifier: 'nl',
+      parentValueId: 'mk-fr',
       templateIds: ['tpl-newsletter'],
     },
   ];
@@ -50,7 +57,7 @@ describe('points to check', () => {
 
   it('counts them per dimension, for the tree', () => {
     expect(pointsByDimension(check())).toEqual({
-      language: 2,
+      language: 3,
       range: 2,
       audience: 1,
       brand: 1,
@@ -146,5 +153,52 @@ describe('points to check', () => {
     });
 
     expect(complete).toEqual([]);
+  });
+
+  // Acceptance test of #1547: one point per template for the literals no value
+  // carries, and none per parent value for a dimension that has no value.
+  it('gathers the literals a template compares and no value carries in one point', () => {
+    const templates = TEMPLATES.map((t) =>
+      t.id === 'tpl-newsletter'
+        ? {
+            ...t,
+            contract: {
+              ...t.contract,
+              compared: [
+                ...t.contract.compared,
+                { property: 'market', literal: 'jp', count: 1 },
+              ],
+            },
+          }
+        : t
+    );
+
+    expect(
+      check({ templates }).filter((p) => p.kind === 'literalNotCarried')
+    ).toEqual([
+      {
+        kind: 'literalNotCarried',
+        dimension: 'market',
+        identifiers: ['jp', 'uk'],
+        templateIds: ['tpl-newsletter'],
+      },
+    ]);
+  });
+
+  it('counts a child dimension with no value once, not once per parent value', () => {
+    const values = VALUES.filter((v) => v.type !== 'language');
+
+    const language = check({ values }).filter(
+      (p) => p.dimension === 'language'
+    );
+
+    expect(language).toContainEqual({ kind: 'noValue', dimension: 'language' });
+    expect(language.map((p) => p.kind)).not.toContain('nothingOffered');
+  });
+
+  it('says nothing of a pair the taxonomy offers, nor of one it cannot read', () => {
+    const offered = check().filter((p) => p.kind === 'literalNotOffered');
+
+    expect(offered.map((p) => p.identifier)).toEqual(['nl']);
   });
 });

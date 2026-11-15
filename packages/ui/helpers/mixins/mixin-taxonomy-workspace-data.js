@@ -145,11 +145,29 @@ export default {
       }
     },
 
-    // A section read its values again: the tree counts them.
-    setCount(name, count) {
-      const known = this.valuesByType[name] || [];
-      if (known.length === count) return;
-      this.fetchValues([name]);
+    // A section read its values again, after any change: the tree, the
+    // points and the preview follow, with no second request. A read of the
+    // same dimension still under way is dropped.
+    setValues(name, values) {
+      this.track(`values:${name}`);
+      this.valuesByType = { ...this.valuesByType, [name]: values };
+    },
+
+    /**
+     * A segment saved: its values are read again. The matrix says so, as every
+     * other change does with its own message.
+     *
+     * @param {string} name the dimension
+     * @param {string} [segment] `crossings` for the matrix
+     */
+    onSectionSaved(name, segment) {
+      if (segment === 'crossings') {
+        this.showSnackbar({
+          text: this.$t('taxonomy.workspace.crossings.saved'),
+          color: 'success',
+        });
+      }
+      return this.fetchValues([name]);
     },
 
     async fetchTemplates() {

@@ -63,7 +63,10 @@ export default {
               }),
         id ? 'taxonomy.dimensions.updated' : 'taxonomy.dimensions.created'
       );
-      if (saved) this.$refs.formDialog.close();
+      if (!saved) return;
+      this.$refs.formDialog.close();
+      // A dimension just created opens, to fill it.
+      if (!id) this.select(payload.name);
     },
 
     toggleActive(dimension) {
