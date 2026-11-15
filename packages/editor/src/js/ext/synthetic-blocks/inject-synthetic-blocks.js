@@ -33,7 +33,11 @@ const { descriptorFor } = require('./block-state.js');
  * @returns {string[]} lines
  */
 function blockDefLines(descriptor) {
-  const properties = [descriptor.htmlProperty, descriptor.stateProperty]
+  const properties = [
+    descriptor.htmlProperty,
+    descriptor.stateProperty,
+    descriptor.originProperty,
+  ]
     .filter(Boolean)
     .join(' ');
 
@@ -61,6 +65,14 @@ function blockDefLines(descriptor) {
       '  ' +
         descriptor.stateProperty +
         ' { label: Block builder state; widget: hidden; }'
+    );
+  }
+
+  if (descriptor.originProperty) {
+    lines.push(
+      '  ' +
+        descriptor.originProperty +
+        ' { label: Library entry; widget: hidden; }'
     );
   }
 

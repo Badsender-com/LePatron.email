@@ -9,8 +9,7 @@ const MailingSchema = require('../../../packages/server/mailing/mailing.schema.j
 const ENTRY_ID = '6af8d97d5a86a79f311eaf47';
 const MAILING_ID = '6a859c4b1f26b497e8e011dd';
 
-// Turned on by #1566 (an inserted composed block remembers its library entry)
-describe.skip('an inserted composed block remembers its library entry', () => {
+describe('an inserted composed block remembers its library entry', () => {
   it('keeps its origin through a duplication of the email', () => {
     const mailing = {
       _id: { toString: () => MAILING_ID },
