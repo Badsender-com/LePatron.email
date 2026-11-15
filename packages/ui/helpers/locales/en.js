@@ -1748,6 +1748,8 @@ export default {
     },
   },
   taxonomy: {
+    readOnly:
+      'Read-only: only the tech admin and the super admin change the taxonomy.',
     active: 'Active',
     inactive: 'Inactive',
     title: 'Taxonomy',

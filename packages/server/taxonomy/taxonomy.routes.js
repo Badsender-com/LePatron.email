@@ -5,7 +5,12 @@ const createError = require('http-errors');
 
 const router = express.Router();
 
-const { GUARD_USER, GUARD_GROUP_ADMIN } = require('../account/auth.guard.js');
+const {
+  GUARD_USER,
+  GUARD_GROUP_ADMIN,
+  GUARD_CAN,
+} = require('../account/auth.guard.js');
+const { CAPABILITIES } = require('../../shared/access/roles.js');
 const {
   GUARD_CAN_ACCESS_GROUP,
   GUARD_CAN_ACCESS_GROUP_FROM_BODY,
@@ -24,7 +29,10 @@ const taxonomy = require('./controllers/taxonomy.controller.js');
 // /mailings/:id/metadata, the creation payload, and the listing.
 //
 // Reads are GUARD_USER: any user filling in an email's metadata needs the list of
-// typologies, not just company admins — who own create/update/delete.
+// typologies. Writes ask for `taxonomy.manage`, the tech admin's and the super
+// admin's (ADR-0026): the company admin reads the taxonomy and changes nothing.
+const GUARD_TAXONOMY_MANAGE = GUARD_CAN(CAPABILITIES.TAXONOMY_MANAGE);
+
 router.get('', GUARD_USER, taxonomy.listTaxonomyItems);
 
 // Must come before '/:itemId' below, otherwise "groups" is captured as an itemId.
@@ -47,7 +55,7 @@ router.get(
 );
 router.post(
   '/default-email-types',
-  GUARD_GROUP_ADMIN,
+  GUARD_TAXONOMY_MANAGE,
   GUARD_CAN_ACCESS_GROUP_FROM_BODY,
   taxonomy.restoreDefaultEmailTypes
 );
@@ -56,12 +64,12 @@ router.post(
 // guard states the boundary where the rest of the codebase states it too.
 router.post(
   '',
-  GUARD_GROUP_ADMIN,
+  GUARD_TAXONOMY_MANAGE,
   GUARD_CAN_ACCESS_GROUP_FROM_BODY,
   taxonomy.createTaxonomyItem
 );
-router.patch('/:itemId', GUARD_GROUP_ADMIN, taxonomy.updateTaxonomyItem);
-router.delete('/:itemId', GUARD_GROUP_ADMIN, taxonomy.deleteTaxonomyItem);
+router.patch('/:itemId', GUARD_TAXONOMY_MANAGE, taxonomy.updateTaxonomyItem);
+router.delete('/:itemId', GUARD_TAXONOMY_MANAGE, taxonomy.deleteTaxonomyItem);
 
 // catch anything and forward to error handler
 router.use((req, res, next) => {

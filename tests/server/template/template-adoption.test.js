@@ -26,6 +26,7 @@ const models = require('../../../packages/server/common/models.common.js');
 const {
   COMPANY_A,
   adminA,
+  techAdminA,
   idOf,
   idsOf,
   resetTaxonomyModels,
@@ -128,7 +129,7 @@ beforeEach(async () => {
 
 const adoptForTemplate = (params) =>
   require('../../../packages/server/template/template-adoption.service.js').adoptForTemplate(
-    { templateId: TEMPLATE, ...params }
+    { user: techAdminA, templateId: TEMPLATE, ...params }
   );
 const entryNamed = (report, name) =>
   report.emails.find((entry) => entry.name === name);
@@ -184,15 +185,15 @@ describe('bulk adoption: preview', () => {
     ).toEqual([]);
   });
 
-  it('is open to the super admin only', () => {
+  it('is open to whoever builds the taxonomy (ADR-0026)', () => {
     const router = require('../../../packages/server/template/template.routes.js');
     const {
-      GUARD_ADMIN,
+      GUARD_CAN,
     } = require('../../../packages/server/account/auth.guard.js');
 
     expect(
       routeInspector(router).guardsOf('get', '/:templateId/adoption')
-    ).toContain(GUARD_ADMIN);
+    ).toContain(GUARD_CAN('taxonomy.manage'));
   });
 });
 
@@ -276,14 +277,14 @@ describe('bulk adoption: apply', () => {
     expect(again.counts).toEqual({ attached: 0, withGaps: 1, complete: 3 });
   });
 
-  it('is open to the super admin only', () => {
+  it('is open to whoever builds the taxonomy (ADR-0026)', () => {
     const router = require('../../../packages/server/template/template.routes.js');
     const {
-      GUARD_ADMIN,
+      GUARD_CAN,
     } = require('../../../packages/server/account/auth.guard.js');
 
     expect(
       routeInspector(router).guardsOf('post', '/:templateId/adoption')
-    ).toContain(GUARD_ADMIN);
+    ).toContain(GUARD_CAN('taxonomy.manage'));
   });
 });

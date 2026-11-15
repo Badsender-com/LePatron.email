@@ -1,4 +1,5 @@
 <script>
+import mixinTaxonomyManage from '~/helpers/mixins/mixin-taxonomy-manage.js';
 import BsDataTable from '~/components/data-table/bs-data-table.vue';
 import { canonicalTypeLabelKey } from '~/helpers/taxonomy.js';
 import { Tags, Pencil, Trash2, AlertTriangle } from 'lucide-vue';
@@ -12,6 +13,7 @@ export default {
     LucideTrash2: Trash2,
     LucideAlertTriangle: AlertTriangle,
   },
+  mixins: [mixinTaxonomyManage],
   props: {
     items: { type: Array, default: () => [] },
     loading: { type: Boolean, default: false },
@@ -54,14 +56,16 @@ export default {
           value: 'canonicalType',
         },
         { text: this.$t('taxonomy.table.order'), value: 'order' },
-        { text: this.$t('taxonomy.table.isActive'), value: 'isActive' },
-        {
+        { text: this.$t('taxonomy.table.isActive'), value: 'isActive' }
+      );
+      if (this.canManageTaxonomy) {
+        headers.push({
           text: this.$t('global.actions'),
           value: 'actions',
           sortable: false,
           align: 'right',
-        }
-      );
+        });
+      }
 
       return headers;
     },
@@ -82,8 +86,8 @@ export default {
     :headers="headers"
     :items="items"
     :loading="loading"
-    clickable
-    @click:row="$emit('edit', $event)"
+    :clickable="canManageTaxonomy"
+    @click:row="canManageTaxonomy && $emit('edit', $event)"
   >
     <template #item.label="{ item }">
       <span class="taxonomy-table__label">{{ item.label }}</span>
@@ -183,7 +187,11 @@ export default {
         <p class="text-body-2 grey--text text--darken-1">
           {{ $t(`${wording}.empty.description`) }}
         </p>
-        <div class="d-flex justify-center flex-wrap" style="gap: 0.5rem">
+        <div
+          v-if="canManageTaxonomy"
+          class="d-flex justify-center flex-wrap"
+          style="gap: 0.5rem"
+        >
           <v-btn color="accent" elevation="0" @click="$emit('create')">
             {{ $t(`${wording}.empty.action`) }}
           </v-btn>

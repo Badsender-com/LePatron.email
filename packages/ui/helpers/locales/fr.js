@@ -1340,6 +1340,8 @@ export default {
     },
   },
   taxonomy: {
+    readOnly:
+      'Lecture seule : seuls l\'admin technique et le super administrateur modifient la taxonomie.',
     active: 'Actif',
     inactive: 'Inactif',
     title: 'Taxonomie',
