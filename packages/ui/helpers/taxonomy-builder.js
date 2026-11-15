@@ -216,3 +216,26 @@ export function tokensFromRows(rows = []) {
       .filter(([name]) => name !== '')
   );
 }
+
+/**
+ * The name proposed for a new dimension from its label: what a template will
+ * read (`_root_.marqueEditoriale`), so letters, digits and underscores only,
+ * in camel case, never starting with a digit (ADR-0015).
+ *
+ * @param {string} label
+ * @returns {string} empty when the label has nothing to keep
+ */
+export function proposeDimensionName(label = '') {
+  const words = String(label)
+    .normalize('NFD')
+    .replace(/[̀-ͯ]/g, '')
+    .split(/[^A-Za-z0-9]+/)
+    .filter(Boolean)
+    .map((word) => word.toLowerCase());
+  const name = words
+    .map((word, index) =>
+      index === 0 ? word : word.charAt(0).toUpperCase() + word.slice(1)
+    )
+    .join('');
+  return /^[0-9]/.test(name) ? `_${name}` : name;
+}

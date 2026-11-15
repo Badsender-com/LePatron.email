@@ -16,6 +16,7 @@ module.exports = {
   deleteTaxonomyItem: asyncHandler(deleteTaxonomyItem),
   previewDefaultEmailTypes: asyncHandler(previewDefaultEmailTypes),
   restoreDefaultEmailTypes: asyncHandler(restoreDefaultEmailTypes),
+  reorderTaxonomyItems: asyncHandler(reorderTaxonomyItems),
 };
 
 // Phase 1 has a single taxonomy, so a caller that does not name one gets it.
@@ -211,4 +212,26 @@ async function deleteTaxonomyItem(req, res) {
   });
 
   res.status(204).send();
+}
+
+/**
+ * @api {put} /taxonomy-items/order order the values of a dimension
+ * @apiPermission taxonomy.manage
+ * @apiName ReorderTaxonomyItems
+ * @apiGroup TaxonomyItems
+ * @apiDescription Replaces the order of a dimension's values, deactivated
+ *   ones included; refused whole unless `itemIds` lists exactly them.
+ *
+ * @apiParam (Body) {String} [groupId] super admin only, the target company
+ * @apiParam (Body) {String} type the dimension's name
+ * @apiParam (Body) {String[]} itemIds in their new order
+ */
+async function reorderTaxonomyItems(req, res) {
+  await taxonomyService.reorderValues({
+    user: req.user,
+    groupId: req.body.groupId,
+    type: req.body.type,
+    itemIds: req.body.itemIds,
+  });
+  res.status(204).end();
 }

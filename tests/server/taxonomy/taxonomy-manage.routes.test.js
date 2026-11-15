@@ -49,6 +49,8 @@ const WRITES = [
   ['taxonomy', 'patch', '/:itemId'],
   ['taxonomy', 'delete', '/:itemId'],
   ['taxonomy', 'post', '/default-email-types'],
+  ['taxonomy', 'put', '/order'],
+  ['dimension', 'put', '/order'],
   ['dimension', 'post', ''],
   ['dimension', 'patch', '/:dimensionId'],
   ['dimension', 'delete', '/:dimensionId'],

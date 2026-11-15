@@ -63,8 +63,7 @@ beforeEach(async () => {
   await declare({ name: 'region', label: 'Région', parentName: 'market' });
 });
 
-// Turned on by #1551 (create, move and order dimensions from the tree)
-describe.skip('bulk order: dimensions', () => {
+describe('bulk order: dimensions', () => {
   const reorder = (payload, user = techAdminA) =>
     dimensionService.reorderDimensions({ user, ...payload });
 
@@ -127,8 +126,7 @@ describe.skip('bulk order: dimensions', () => {
   });
 });
 
-// Turned on by #1552 (values by quick add, side panel and drag and drop)
-describe.skip('bulk order: values', () => {
+describe('bulk order: values', () => {
   let france;
   let belgium;
   let canada;
