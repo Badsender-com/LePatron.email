@@ -59,7 +59,7 @@ describe("the company's templates with their contract", () => {
           declared: {},
           read: ['mainColorVar'],
           adopt: {},
-          compared: {},
+          compared: [],
         },
       },
       {
@@ -69,7 +69,7 @@ describe("the company's templates with their contract", () => {
           declared: {},
           read: ['market'],
           adopt: {},
-          compared: { market: { be: 1 } },
+          compared: [{ property: 'market', literal: 'be', count: 1 }],
         },
       },
     ]);

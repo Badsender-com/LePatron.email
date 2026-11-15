@@ -96,12 +96,12 @@ describe('template contract', () => {
   it('reads an empty contract from a template with no root property', () => {
     expect(
       readTemplateContract('<table><tr><td>Hi</td></tr></table>')
-    ).toEqual({ declared: {}, read: [], adopt: {}, compared: {} });
+    ).toEqual({ declared: {}, read: [], adopt: {}, compared: [] });
     expect(readTemplateContract(null)).toEqual({
       declared: {},
       read: [],
       adopt: {},
-      compared: {},
+      compared: [],
     });
   });
 });

@@ -8,6 +8,9 @@ const { StandardDimensions } = require('../../constant/taxonomy-type.js');
 const {
   contractOfTemplate,
 } = require('../../template/template-contract.service.js');
+const {
+  comparisonsOf,
+} = require('../../../shared/taxonomy/compared-literals.js');
 
 /**
  * Changing the identifier of a value emails carry (ADR-0026). The identifier
@@ -38,8 +41,11 @@ async function impactOf(item) {
   const comparing = await Promise.all(
     templates.map(async (template) => {
       const contract = await contractOfTemplate(template._id);
-      const comparisons =
-        (contract.compared?.[item.type] || {})[item.canonicalType] || 0;
+      const comparisons = comparisonsOf(
+        contract,
+        item.type,
+        item.canonicalType
+      );
       return { id: String(template._id), name: template.name, comparisons };
     })
   );
@@ -56,20 +62,22 @@ async function impactOf(item) {
 }
 
 /**
- * Refuse a new identifier for a value emails carry, unless the request
- * confirms it after its impact was shown.
+ * Refuse a new identifier for a value emails carry or templates compare,
+ * unless the request confirms it after its impact was shown. A value nothing
+ * carries yet still breaks the templates comparing its identifier, for the
+ * emails to come.
  *
  * @param {Object} item
  * @param {boolean} confirmed
  */
 async function assertChangeConfirmed(item, confirmed) {
   if (confirmed === true) return;
-  const emails = await Mailings.countDocuments(carriersOf(item));
-  if (emails > 0) {
+  const { emails, templates } = await impactOf(item);
+  if (emails > 0 || templates.length > 0) {
     const error = new Conflict(
       ERROR_CODES.TAXONOMY_IDENTIFIER_CHANGE_UNCONFIRMED
     );
-    error.details = { emails };
+    error.details = { emails, templates: templates.length };
     throw error;
   }
 }

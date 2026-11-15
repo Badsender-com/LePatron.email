@@ -1164,10 +1164,13 @@ export default {
         title: 'Change the identifier of {label}',
         checking: 'Looking for the emails and templates concerned…',
         emails:
-          'No email carries {label}: the change is free. | One email carries {label}. It keeps it; its content takes {next} the next time it is opened in the editor. | {n} emails carry {label}. They keep it; their content takes {next} the next time they are opened in the editor.',
+          'No email carries {label}. | One email carries {label}. It keeps it; its content takes {next} the next time it is opened in the editor. | {n} emails carry {label}. They keep it; their content takes {next} the next time they are opened in the editor.',
         templates:
           'These templates compare {previous} and will no longer recognise the value: they need fixing.',
         noTemplate: 'No template compares {previous}.',
+        free: 'No email carries {label} and no template compares {previous}: the change is free.',
+        failed: 'The impact could not be worked out.',
+        retry: 'Retry',
         comparisons: '{n} comparison | {n} comparisons',
         keep: 'Keep {previous}',
         confirm: 'Change the identifier',
