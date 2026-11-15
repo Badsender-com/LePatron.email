@@ -2,6 +2,7 @@
 import { Plus } from 'lucide-vue';
 import * as apiRoutes from '~/helpers/api-routes.js';
 import { proposeIdentifier } from '~/helpers/taxonomy-builder.js';
+import { TAXONOMY_LIMITS } from '~/helpers/taxonomy.js';
 
 /**
  * The quick-add row under a dimension's values (ADR-0026): Enter adds the
@@ -21,6 +22,9 @@ export default {
     return { label: '', saving: false };
   },
   computed: {
+    labelLimit() {
+      return TAXONOMY_LIMITS.LABEL;
+    },
     identifier() {
       return this.isEmailType ? '' : proposeIdentifier(this.label.trim());
     },
@@ -63,7 +67,7 @@ export default {
       class="taxonomy-quick-add__input"
       :placeholder="$t('taxonomy.workspace.quickAdd.placeholder')"
       :disabled="saving"
-      maxlength="100"
+      :maxlength="labelLimit"
     />
     <span v-if="identifier" class="taxonomy-quick-add__hint">
       {{ $t('taxonomy.workspace.quickAdd.identifier') }}
