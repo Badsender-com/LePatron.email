@@ -13,8 +13,7 @@ const { VALUES } = require('./taxonomy-workspace.fixtures.js');
 const MARKETS = VALUES.filter((v) => v.type === 'market');
 const LANGUAGES = VALUES.filter((v) => v.type === 'language');
 
-// Turned on by #1553 (the crossings matrix, and the defaults of a first-level dimension)
-describe.skip('crossings matrix model', () => {
+describe('crossings matrix model', () => {
   let crossingsMatrix;
   let toggleOffered;
   let toggleEverywhere;
@@ -84,10 +83,10 @@ describe.skip('crossings matrix model', () => {
   });
 
   it('removes the star with the tick', () => {
-    const matrix = toggleOffered(initial(), 'lg-en', 'mk-ca');
+    const matrix = toggleOffered(initial(), 'lg-fr', 'mk-be');
 
-    expect(offeredIn(matrix, 'lg-en')).toEqual([]);
-    expect(defaultsIn(matrix, 'lg-en')).toEqual([]);
+    expect(offeredIn(matrix, 'lg-fr')).toEqual(['mk-fr', 'mk-ch']);
+    expect(defaultsIn(matrix, 'lg-fr')).toEqual(['mk-fr', 'mk-ch']);
   });
 
   it('switches everywhere on, the stars kept', () => {
@@ -148,9 +147,9 @@ describe.skip('crossings matrix model', () => {
 
   it('never changes the matrix it was given', () => {
     const before = initial();
-    toggleOffered(before, 'lg-en', 'mk-ca');
+    toggleOffered(before, 'lg-fr', 'mk-be');
 
-    expect(offeredIn(before, 'lg-en')).toEqual(['mk-ca']);
+    expect(offeredIn(before, 'lg-fr')).toEqual(['mk-fr', 'mk-be', 'mk-ch']);
   });
 
   it('counts the rows the draft changed, and none for a change undone', () => {

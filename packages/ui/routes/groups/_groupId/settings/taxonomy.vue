@@ -20,6 +20,11 @@ export default {
   meta: {
     acl: acls.ACL_GROUP_MANAGE,
   },
+  // An unsaved crossings matrix warns before the page is left.
+  beforeRouteLeave(to, from, next) {
+    const detail = this.$refs.workspace && this.$refs.workspace.$refs.detail;
+    next(!detail || detail.confirmLeave());
+  },
   async asyncData(nuxtContext) {
     return safeFetchGroup(nuxtContext);
   },
@@ -98,7 +103,7 @@ export default {
     align-items: center;
     padding: 10px 14px;
     margin-bottom: 1rem;
-    background: var(--white);
+    background: #fff;
     border: 1px solid var(--gray-300);
     border-radius: 7px;
     color: var(--gray-700);
