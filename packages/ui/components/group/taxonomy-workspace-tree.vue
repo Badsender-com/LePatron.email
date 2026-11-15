@@ -22,6 +22,8 @@ export default {
     reorderable: { type: Boolean, default: false },
     // The preview by template is the view shown.
     previewOn: { type: Boolean, default: false },
+    // The points to check per dimension name.
+    warnings: { type: Object, default: () => ({}) },
   },
   data() {
     return { dragged: null, over: null };
@@ -134,6 +136,15 @@ export default {
           class="taxonomy-tree__icon"
         />
         <span class="taxonomy-tree__label">{{ row.label }}</span>
+        <span
+          v-if="warnings[row.name]"
+          class="taxonomy-tree__warn"
+          :title="
+            $t('taxonomy.workspace.points.title', { n: warnings[row.name] })
+          "
+        >
+          {{ warnings[row.name] }}
+        </span>
         <span class="taxonomy-tree__count">{{ row.count }}</span>
       </button>
     </template>
@@ -228,6 +239,15 @@ export default {
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
+  }
+
+  &__warn {
+    padding: 0 6px;
+    border-radius: 9999px;
+    background: rgba(255, 180, 0, 0.2);
+    color: #8a5a00;
+    font-size: 11px;
+    font-weight: 600;
   }
 
   &__count {

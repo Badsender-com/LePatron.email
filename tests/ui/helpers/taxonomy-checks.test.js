@@ -9,8 +9,7 @@ const {
   TEMPLATES,
 } = require('./taxonomy-workspace.fixtures.js');
 
-// Turned on by #1557 (the points to check)
-describe.skip('points to check', () => {
+describe('points to check', () => {
   let pointsToCheck;
   let pointsByDimension;
 
@@ -89,6 +88,23 @@ describe.skip('points to check', () => {
 
     expect(check({ values })).not.toContainEqual(
       expect.objectContaining({ kind: 'missingCode' })
+    );
+  });
+
+  it('takes a literal carried by a deactivated value as carried', () => {
+    const values = [
+      ...VALUES,
+      {
+        ...VALUES.find((v) => v.id === 'mk-fr'),
+        id: 'mk-uk',
+        label: 'Royaume-Uni',
+        canonicalType: 'uk',
+        isActive: false,
+      },
+    ];
+
+    expect(check({ values })).not.toContainEqual(
+      expect.objectContaining({ kind: 'literalNotCarried' })
     );
   });
 
