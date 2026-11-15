@@ -103,8 +103,7 @@ beforeEach(async () => {
   ]);
 });
 
-// Turned on by #1555 (change a value's identifier after its impact is shown)
-describe.skip('identifier change: impact and confirmation', () => {
+describe('identifier change: impact and confirmation', () => {
   const impactOf = (value, identifier) =>
     taxonomyService.identifierImpact({
       user: techAdminA,

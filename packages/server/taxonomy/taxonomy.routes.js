@@ -82,6 +82,11 @@ router.post(
   GUARD_CAN_ACCESS_GROUP_FROM_BODY,
   taxonomy.createTaxonomyItem
 );
+router.get(
+  '/:itemId/identifier-impact',
+  GUARD_TAXONOMY_MANAGE,
+  taxonomy.identifierImpact
+);
 router.patch('/:itemId', GUARD_TAXONOMY_MANAGE, taxonomy.updateTaxonomyItem);
 router.delete('/:itemId', GUARD_TAXONOMY_MANAGE, taxonomy.deleteTaxonomyItem);
 

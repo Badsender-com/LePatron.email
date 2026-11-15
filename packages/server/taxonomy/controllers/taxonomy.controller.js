@@ -18,6 +18,7 @@ module.exports = {
   restoreDefaultEmailTypes: asyncHandler(restoreDefaultEmailTypes),
   reorderTaxonomyItems: asyncHandler(reorderTaxonomyItems),
   saveCrossings: asyncHandler(saveCrossings),
+  identifierImpact: asyncHandler(identifierImpact),
 };
 
 // Phase 1 has a single taxonomy, so a caller that does not name one gets it.
@@ -259,4 +260,24 @@ async function saveCrossings(req, res) {
     crossings: req.body.crossings,
   });
   res.status(204).end();
+}
+
+/**
+ * @api {get} /taxonomy-items/:itemId/identifier-impact what changing its identifier touches
+ * @apiPermission taxonomy.manage
+ * @apiName TaxonomyIdentifierImpact
+ * @apiGroup TaxonomyItems
+ * @apiDescription Shown before a value's identifier is changed (ADR-0026).
+ *
+ * @apiSuccess {Number} emails the emails carrying the value
+ * @apiSuccess {Object[]} templates `{ id, name, comparisons }`, the company's
+ *   templates comparing its current identifier
+ */
+async function identifierImpact(req, res) {
+  res.json(
+    await taxonomyService.identifierImpact({
+      user: req.user,
+      itemId: req.params.itemId,
+    })
+  );
 }
