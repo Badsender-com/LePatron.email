@@ -1135,6 +1135,34 @@ export default {
     },
   },
   taxonomy: {
+    workspace: {
+      tree: 'Dimensions',
+      segmentsLabel: 'Steps of the dimension',
+      sections: {
+        standard: 'Standard',
+        company: 'The company’s own',
+      },
+      segments: {
+        values: 'Values',
+        crossings: 'Crossings',
+        defaults: 'Defaults',
+        tokens: 'Tokens',
+        templates: 'Templates',
+        settings: 'Settings',
+      },
+      settings: {
+        label: 'Label',
+        name: 'Name read by templates',
+        parent: 'Under the dimension',
+        role: 'Role',
+        scope: 'Offered on',
+        description: 'Description',
+        status: 'Status',
+        none: '—',
+        nameFinal:
+          'The name never changes after creation: it is what templates read.',
+      },
+    },
     readOnly:
       'Read-only: only the tech admin and the super admin change the taxonomy.',
     active: 'Active',

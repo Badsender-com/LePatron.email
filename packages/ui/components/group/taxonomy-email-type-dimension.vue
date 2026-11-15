@@ -1,6 +1,6 @@
 <script>
 import mixinTaxonomyManage from '~/helpers/mixins/mixin-taxonomy-manage.js';
-import { Pencil } from 'lucide-vue';
+import { Pencil, Plus, RotateCcw } from 'lucide-vue';
 import BsGroupTaxonomyTab from '~/components/group/taxonomy-tab.vue';
 
 /**
@@ -12,6 +12,8 @@ export default {
   components: {
     BsGroupTaxonomyTab,
     LucidePencil: Pencil,
+    LucidePlus: Plus,
+    LucideRotateCcw: RotateCcw,
   },
   mixins: [mixinTaxonomyManage],
   props: {
@@ -41,6 +43,26 @@ export default {
       </v-chip>
       <v-spacer />
       <v-btn
+        v-if="canManageTaxonomy"
+        text
+        small
+        color="accent"
+        @click="$refs.values.openRestoreDefaults()"
+      >
+        <lucide-rotate-ccw :size="16" class="mr-1" />
+        {{ $t('taxonomy.defaults.action') }}
+      </v-btn>
+      <v-btn
+        v-if="canManageTaxonomy"
+        text
+        small
+        color="accent"
+        @click="$refs.values.openCreateForm()"
+      >
+        <lucide-plus :size="16" class="mr-1" />
+        {{ $t('taxonomy.empty.action') }}
+      </v-btn>
+      <v-btn
         v-if="dimension && canManageTaxonomy"
         text
         small
@@ -60,7 +82,7 @@ export default {
     <p class="taxonomy-dimension__hint">
       {{ $t('taxonomy.emailTypeHint') }}
     </p>
-    <bs-group-taxonomy-tab ref="values" />
+    <bs-group-taxonomy-tab ref="values" @count="$emit('count', $event)" />
   </section>
 </template>
 

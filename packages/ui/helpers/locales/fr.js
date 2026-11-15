@@ -938,6 +938,34 @@ export default {
     },
   },
   taxonomy: {
+    workspace: {
+      tree: 'Dimensions',
+      segmentsLabel: 'Étapes de la dimension',
+      sections: {
+        standard: 'Standard',
+        company: "Propres à l'entreprise",
+      },
+      segments: {
+        values: 'Valeurs',
+        crossings: 'Croisements',
+        defaults: 'Défauts',
+        tokens: 'Tokens',
+        templates: 'Templates',
+        settings: 'Réglages',
+      },
+      settings: {
+        label: 'Libellé',
+        name: 'Nom lu par les templates',
+        parent: 'Sous la dimension',
+        role: 'Rôle',
+        scope: 'Proposée sur',
+        description: 'Description',
+        status: 'Statut',
+        none: '—',
+        nameFinal:
+          "Le nom ne change plus après la création : c'est ce que les templates lisent.",
+      },
+    },
     readOnly:
       'Lecture seule : seuls l\'admin technique et le super administrateur modifient la taxonomie.',
     active: 'Actif',
