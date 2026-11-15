@@ -128,6 +128,10 @@ async function normalizeAndGuardBlockContent({
       templateId
         ? Templates.findById(templateId).select(TEMPLATE_FLAG_PROJECTION).lean()
         : null,
+    // Not gated by `block.compose` (ADR 0027): a composed block in the library
+    // composes nothing until it is inserted, and inserting it is an email
+    // save, which is.
+    mayCompose: true,
   });
 }
 
