@@ -1404,7 +1404,7 @@ export default {
         dimensionUnread:
           'Proposée sur les emails dont le template la lit, mais aucun template ne la lit.',
         literalNotCarried:
-          'Le template {templates} compare {identifier}, qu\'aucune valeur ne porte.',
+          '{identifier} est comparé par {templates}, mais aucune valeur ne le porte.',
       },
       precedence: {
         title: 'Priorité des tokens',

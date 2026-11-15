@@ -1812,7 +1812,7 @@ export default {
         dimensionUnread:
           'Offered on the emails whose template reads it, but no template reads it.',
         literalNotCarried:
-          'The template {templates} compares {identifier}, which no value carries.',
+          '{identifier} is compared by {templates}, but no value carries it.',
       },
       precedence: {
         title: 'Token precedence',
