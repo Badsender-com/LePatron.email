@@ -496,6 +496,8 @@ module.exports = {
     'Save refused: the HTML code block is not enabled on this template.',
   'save-message-block-builder-disabled':
     'Save refused: the block builder is not enabled on this template.',
+  'save-message-block-builder-not-permitted':
+    'Save refused: your role does not allow composing or changing a composed block.',
   'save-message-html-code-too-large':
     'Save refused: an HTML code block exceeds the maximum size.',
   'save-message-block-builder-too-large':

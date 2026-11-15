@@ -5,6 +5,7 @@ const { BadRequest } = require('http-errors');
 const {
   hasSyntheticBlock,
   assertSyntheticHtmlAllowed,
+  assertMayCompose,
 } = require('./synthetic-block-guard.js');
 const { validateSyntheticBlocks } = require('./synthetic-block-sizes.js');
 const {
@@ -26,7 +27,9 @@ const {
 // 3. each composed block's markup rebuilt from its state
 //    (builder-block-integrity.js);
 // 4. the sizes again, on what was rebuilt — what will actually be stored;
-// 5. the template flags, judged on that same stored content.
+// 5. the template flags, judged on that same stored content;
+// 6. the right to compose, judged the same way (ADR 0027). After the flags, so
+//    a template that does not allow the builder says so, whoever is saving.
 
 /**
  * @param {Object} data a content model
@@ -49,14 +52,18 @@ function assertSizes(data) {
  * @param {Function} params.loadFlags resolves with the template flags, by
  *   name; called only when `data` holds a synthetic block, so a write without
  *   any costs no query
+ * @param {boolean} params.mayCompose whether the author holds `block.compose`;
+ *   anything but `true` refuses a new or changed composed block
  * @throws {BadRequest} HTML_CODE_BLOCK_TOO_LARGE, BLOCK_BUILDER_TOO_LARGE or
  *   SYNTHETIC_CONTENT_TOO_LARGE
- * @throws {Forbidden} HTML_CODE_BLOCK_DISABLED or BLOCK_BUILDER_DISABLED
+ * @throws {Forbidden} HTML_CODE_BLOCK_DISABLED, BLOCK_BUILDER_DISABLED or
+ *   BLOCK_BUILDER_NOT_PERMITTED
  */
 async function normalizeAndGuardSyntheticContent({
   data,
   previousData,
   loadFlags,
+  mayCompose,
 }) {
   if (!hasSyntheticBlock(data)) return;
 
@@ -69,6 +76,7 @@ async function normalizeAndGuardSyntheticContent({
   assertSizes(data);
 
   assertSyntheticHtmlAllowed({ data, previousData, flags });
+  assertMayCompose({ data, previousData, mayCompose });
 }
 
 module.exports = { normalizeAndGuardSyntheticContent };

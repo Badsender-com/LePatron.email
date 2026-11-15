@@ -41,8 +41,7 @@ const save = ({ data, previousData, mayCompose }) =>
     mayCompose,
   });
 
-// Turned on by #1563 (composing is a capability of its own)
-describe.skip('the server refuses a composition from whoever may not compose', () => {
+describe('the server refuses a composition from whoever may not compose', () => {
   it('refuses a new composed block', async () => {
     await expect(
       save({ data: dataWith(composed('Bonjour')), mayCompose: false })

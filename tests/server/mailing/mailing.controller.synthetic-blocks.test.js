@@ -164,3 +164,71 @@ describe('GET /mailings/:mailingId/preview', () => {
     expect(headers['Content-Security-Policy']).toBe('sandbox');
   });
 });
+
+// The pipeline judges the right to compose (compose-gate.test.js); this pins
+// that the save hands it the capability of the user who is saving.
+describe('PUT /mailings/:mailingId/mosaico — the right to compose', () => {
+  const { builderBlock } = require('./synthetic-blocks.fixtures.js');
+  const {
+    generate,
+    emptyState,
+  } = require('../../../packages/shared/block-builder/generate.js');
+  const {
+    serialiseState,
+  } = require('../../../packages/shared/block-builder/state.js');
+  const {
+    singleColumnRows,
+  } = require('../../../packages/shared/block-builder/composition.js');
+
+  const composed = () => {
+    const state = {
+      ...emptyState(),
+      rows: singleColumnRows([
+        { id: 'el-1', type: 'text', content: 'Bonjour' },
+      ]),
+    };
+    return builderBlock(generate(state), serialiseState(state));
+  };
+
+  it('refuses a new composed block from a writer', async () => {
+    const mailing = mockMailing(dataWith());
+    mockFlags({ blockBuilderEnabled: true });
+
+    const error = await save(
+      { data: dataWith(composed()) },
+      { ...user, role: 'writer' }
+    );
+
+    expect(error).toMatchObject({
+      status: 403,
+      message: 'BLOCK_BUILDER_NOT_PERMITTED',
+    });
+    expect(mailing.save).not.toHaveBeenCalled();
+  });
+
+  it('lets a writer save an email whose composed block is untouched', async () => {
+    const block = composed();
+    const mailing = mockMailing(dataWith({ ...block }));
+    mockFlags({ blockBuilderEnabled: true });
+
+    const error = await save(
+      { data: dataWith({ type: 'textBlock' }, { ...block }) },
+      { ...user, role: 'writer' }
+    );
+
+    expect(error).toBeNull();
+    expect(mailing.save).toHaveBeenCalled();
+  });
+
+  it('accepts a new composed block from a regular user', async () => {
+    mockMailing(dataWith());
+    mockFlags({ blockBuilderEnabled: true });
+
+    expect(
+      await save(
+        { data: dataWith(composed()) },
+        { ...user, role: 'regular_user' }
+      )
+    ).toBeNull();
+  });
+});

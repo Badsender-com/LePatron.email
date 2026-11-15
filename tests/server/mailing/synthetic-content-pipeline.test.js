@@ -50,11 +50,18 @@ const stateWith = (content) => {
   return { serialised: serialiseState(state), html: generate(state) };
 };
 
+// By someone who may compose: the right to compose is pinned in
+// compose-gate.test.js, and this file is about the order of the steps.
 const run = (data, previousData, flags = { blockBuilderEnabled: true }) => {
   const loadFlags = jest.fn(async () => flags);
   return {
     loadFlags,
-    done: normalizeAndGuardSyntheticContent({ data, previousData, loadFlags }),
+    done: normalizeAndGuardSyntheticContent({
+      data,
+      previousData,
+      loadFlags,
+      mayCompose: true,
+    }),
   };
 };
 
