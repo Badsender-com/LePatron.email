@@ -1378,6 +1378,19 @@ export default {
         confirm: "Changer l'identifiant",
         confirmed: "Changement confirmé : il s'applique à l'enregistrement.",
       },
+      templates: {
+        intro: 'Les templates qui lisent {label}, par son nom ou par un token de ses valeurs.',
+        none: "Aucun template ne lit {label} pour l'instant.",
+        compares: 'Compare',
+        preview: 'Voir ce que propose un email',
+      },
+      preview: {
+        title: 'Aperçu par template',
+        noTemplate: "L'entreprise n'a pas encore de template.",
+        nothing: 'Rien de proposé',
+        tokens: 'Tokens lus :',
+        legend: 'Une étoile marque la valeur proposée par défaut.',
+      },
       addChild: 'Ajouter une sous-dimension',
       move: {
         open: 'Déplacer',
