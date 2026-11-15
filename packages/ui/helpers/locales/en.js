@@ -1145,6 +1145,21 @@ export default {
         identifier: 'Proposed identifier',
         action: 'Add',
       },
+      crossings: {
+        intro:
+          'Under which values of {parent} each {child} is offered, and which one is offered by default (star).',
+        everywhere: 'Everywhere',
+        everywhereOf: '{label} offered everywhere, future values included',
+        defaultUnder: '{label} by default under {parent}',
+        changes: 'No change | One change | {n} changes',
+        save: 'Save the crossings',
+        leave: 'The crossings you changed are not saved. Leave anyway?',
+      },
+      defaults: {
+        intro: 'The value a new email takes when its template gives none.',
+        none: 'None',
+        hint: 'Never applied to an existing email, nor over a chosen value.',
+      },
       addChild: 'Add a sub-dimension',
       move: {
         open: 'Move',

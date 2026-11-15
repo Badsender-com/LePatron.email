@@ -21,6 +21,7 @@ const { assertDefaults } = require('./value-defaults.js');
 const logger = require('../../utils/logger.js');
 
 const { reorderValues } = require('./order.service.js');
+const { saveCrossings } = require('./crossings.service.js');
 
 module.exports = {
   listTaxonomyItems,
@@ -28,6 +29,7 @@ module.exports = {
   updateTaxonomyItem,
   deleteTaxonomyItem,
   reorderValues,
+  saveCrossings,
   resolveCompanyId,
 };
 

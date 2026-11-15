@@ -436,6 +436,10 @@ export function taxonomyItemsOrder() {
   return '/taxonomy-items/order';
 }
 
+export function taxonomyItemsCrossings() {
+  return '/taxonomy-items/crossings';
+}
+
 /// ///
 // AI FEATURES
 /// ///

@@ -17,6 +17,7 @@ module.exports = {
   previewDefaultEmailTypes: asyncHandler(previewDefaultEmailTypes),
   restoreDefaultEmailTypes: asyncHandler(restoreDefaultEmailTypes),
   reorderTaxonomyItems: asyncHandler(reorderTaxonomyItems),
+  saveCrossings: asyncHandler(saveCrossings),
 };
 
 // Phase 1 has a single taxonomy, so a caller that does not name one gets it.
@@ -232,6 +233,30 @@ async function reorderTaxonomyItems(req, res) {
     groupId: req.body.groupId,
     type: req.body.type,
     itemIds: req.body.itemIds,
+  });
+  res.status(204).end();
+}
+
+/**
+ * @api {put} /taxonomy-items/crossings save the crossings of a child dimension
+ * @apiPermission taxonomy.manage
+ * @apiName SaveTaxonomyCrossings
+ * @apiGroup TaxonomyItems
+ * @apiDescription Replaces, for every value of a child dimension, the parent
+ *   values it is offered under and the ones it is the default under, or
+ *   refuses them all (ADR-0026).
+ *
+ * @apiParam (Body) {String} [groupId] super admin only, the target company
+ * @apiParam (Body) {String} type the child dimension's name
+ * @apiParam (Body) {Object[]} crossings `{ itemId, parentIds, defaultUnder }`
+ *   per value; an empty `parentIds` offers it everywhere
+ */
+async function saveCrossings(req, res) {
+  await taxonomyService.saveCrossings({
+    user: req.user,
+    groupId: req.body.groupId,
+    type: req.body.type,
+    crossings: req.body.crossings,
   });
   res.status(204).end();
 }
