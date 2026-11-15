@@ -72,8 +72,7 @@ beforeEach(() => {
   ]);
 });
 
-// Turned on by #1564 (the library offers no composed block it would refuse)
-describe.skip('the library offers no composed block it would refuse', () => {
+describe('the library offers no composed block it would refuse', () => {
   it('offers every entry while the Block Builder is on', async () => {
     flagsAre({ blockBuilderEnabled: true, htmlBlockEnabled: true });
 
