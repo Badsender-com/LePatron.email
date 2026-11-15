@@ -92,8 +92,7 @@ beforeEach(async () => {
   });
 });
 
-// Turned on by #1553 (the crossings matrix, and the defaults of a first-level dimension)
-describe.skip('bulk crossings', () => {
+describe('bulk crossings', () => {
   const B = () => idOf(belgium);
   const CH = () => idOf(switzerland);
   const CA = () => idOf(canada);
