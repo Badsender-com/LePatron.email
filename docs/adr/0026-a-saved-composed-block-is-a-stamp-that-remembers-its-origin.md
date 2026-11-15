@@ -1,0 +1,31 @@
+# A saved composed block is a stamp that remembers its origin
+
+- Status: proposed
+- Date: 2026-11-15
+- Epic: #1561
+
+The block library already accepts a composed block: saving one stores its composition beside its markup, through the same server pipeline as a mailing save. This slice does not build the library; it decides how a composed block behaves in it. A saved block stays a **stamp, not a link**: inserting it copies it into the email, and editing either copy never touches the other — exactly as for a saved template block, and as for an email that is duplicated. What changes is that the copy now **remembers which library entry it came from**, so that synchronised blocks and usage statistics remain possible later without having to recover a provenance nobody kept.
+
+## Decisions
+
+- **Saving is a state, not a kind.** A block has an origin (the template provides it, or a user composed it) and a scope (this email, or the library). A saved composed block is still a composed block, and still reopens in the Block Builder. One list holds both origins; a composed entry carries a visible mark of its origin, because it is the one that can be reopened.
+- **Adding to the library stays open.** Whoever may save a template block may save a composed one (`block-library.add`). Curation is already held at the other end — renaming and deleting an entry are reserved to the group admin — and the risk of an overgrown library is accepted for now, to be met by curating visibility rather than by gating entry.
+- **Composing gets its own capability, `block.compose`,** held by the same roles that hold `mailing.edit-structure` today. Composing used to ride on editing the structure, which tied two unrelated gestures together. Nothing changes for anyone; the capability can now move between roles on its own. It is enforced by the server's synthetic-content pipeline, where the template flag already is: a gate held only in the editor is walked around by writing the request by hand.
+- **A composed block inserted from the library is regenerated at insertion, in the editor,** and its composition is stamped with the current generator version. The server already regenerated any composed block new to an email at its first save; the defect was that the canvas showed the old rendering while the server stored the new one, and that the stored version then claimed an older generator. Insertion is new content in this email, reviewed in it, so it gets the generator's fixes — unlike translation, which touches a block already reviewed where it stands.
+- **When the template's Block Builder flag is off, saved composed blocks leave the library list,** the way "Composer un bloc" already leaves the palette. They are not deleted: the flag can be turned back on. Before this, they stayed listed and insertable, and the mailing save refused them afterwards — the whole save, after the user had worked.
+- **A composed block does not follow the template theme, by design for now.** Its colours, fonts and sizes are free values entered in the builder. The generator is theme-agnostic and the settings panel is built so that a field can later reference a theme role instead of a literal value. Until that slice exists, every saved composed block holds literal values and will have to be revisited by hand when it lands.
+
+## Considered Options
+
+- **Gating the library to the group admin for composed blocks** (a second capability to save one): rejected. It would let a user save a template block but not the block they just composed — an inconsistency against what they can do today — and doubles a governance that already holds at deletion.
+- **Inserting a library block as stored, without regeneration**: rejected. The server would have to trust markup it did not just build, and the library would become a way around every fix of the generator, an escaping fix included.
+- **Stamping the origin on every saved block, template blocks included**: rejected for this slice. Mosaico's `checkModel` removes from a stored block any property its template does not declare, and a template block's definition comes from the template's markup. Declaring the property on every block of every template would change the content of every email in production for a feature that does nothing yet. Recording origins outside the blocks, at the email level, is a design of its own, left to the statistics it would serve.
+- **Building synchronised blocks now**: rejected. It is a different content model — a block that regenerates from a library entry rather than from its own copy — with open questions of its own (sent emails, detaching a copy, who may edit an entry that others' emails follow).
+
+## Consequences
+
+- **The origin is stored and never shown.** Shown before synchronisation exists, it would read as a live link, and someone would edit an entry believing they were updating their emails. It survives reopening, saving and duplicating an email — the duplication rewrites the email's id, not the blocks' — and it never reaches the export.
+- **A half-link already exists, and is not the origin.** A block inserted from the library carries the palette's `blockInformation` — the entry's id, name and category — into the email. The first save stores it; the next reopening loses it, because `checkModel` removes what no block definition declares (checked in the editor: inserted, saved, reopened, saved again). The editor relies on it only within the session of insertion, to hide the local/global style switch of a library block. It is left as it is: the origin is a declared property of its own, which survives.
+- **Only composed blocks carry an origin.** Statistics on saved template blocks, when they come, will not reach back before they do; blocks inserted before this slice carry no origin at all.
+- **A saved block has no preview in the library.** The defect is the library's, not the builder's — saved template blocks have none either — and showing one for composed blocks alone would make the list worse. It is tracked with the other library improvements, and it is a condition for putting the Block Builder in a client's hands.
+- **Follow-ups**, outside this epic: curating the library's visibility (#1544), synchronised saved blocks (#1545), usage statistics (#1546), previews of saved blocks.
