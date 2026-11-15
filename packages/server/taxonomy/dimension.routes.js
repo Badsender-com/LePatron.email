@@ -30,6 +30,13 @@ router.get(
   GUARD_CAN_ACCESS_GROUP_FROM_QUERY,
   dimension.listDimensions
 );
+// Before '/:dimensionId': the company's templates with their contract.
+router.get(
+  '/templates',
+  GUARD_GROUP_ADMIN,
+  GUARD_CAN_ACCESS_GROUP_FROM_QUERY,
+  dimension.listTemplateContracts
+);
 router.put(
   '/order',
   GUARD_TAXONOMY_MANAGE,

@@ -1173,6 +1173,19 @@ export default {
         confirm: 'Change the identifier',
         confirmed: 'Change confirmed: it applies on save.',
       },
+      templates: {
+        intro: 'The templates reading {label}, by its name or through a token of its values.',
+        none: 'No template reads {label} yet.',
+        compares: 'Compares',
+        preview: 'See what an email proposes',
+      },
+      preview: {
+        title: 'Preview by template',
+        noTemplate: 'The company has no template yet.',
+        nothing: 'Nothing offered',
+        tokens: 'Tokens read:',
+        legend: 'A star marks the value offered by default.',
+      },
       addChild: 'Add a sub-dimension',
       move: {
         open: 'Move',
