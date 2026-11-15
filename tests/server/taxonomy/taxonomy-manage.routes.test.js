@@ -53,6 +53,7 @@ const WRITES = [
   ['taxonomy', 'put', '/crossings'],
   ['taxonomy', 'get', '/:itemId/identifier-impact'],
   ['dimension', 'put', '/order'],
+  ['dimension', 'put', '/precedence'],
   ['dimension', 'post', ''],
   ['dimension', 'patch', '/:dimensionId'],
   ['dimension', 'delete', '/:dimensionId'],

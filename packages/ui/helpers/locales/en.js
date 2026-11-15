@@ -1198,6 +1198,20 @@ export default {
         literalNotCarried:
           'The template {templates} compares {identifier}, which no value carries.',
       },
+      precedence: {
+        title: 'Token precedence',
+        intro:
+          'When several values of one email carry the same token, the one of the dimension placed lowest wins. Unrelated to the order of the selects in the editor.',
+        none: 'No value carries a token yet.',
+        wins: 'Wins',
+      },
+      tokens: {
+        intro: 'The tokens the values of {label} carry, set in each value’s panel.',
+        none: 'No value of {label} carries a token.',
+        token: 'Token',
+        carriedBy: 'Carried by',
+        hint: 'Token types (colour, image, text…) will come with their own epic.',
+      },
       addChild: 'Add a sub-dimension',
       move: {
         open: 'Move',

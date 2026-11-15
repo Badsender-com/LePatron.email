@@ -38,6 +38,12 @@ router.get(
   dimension.listTemplateContracts
 );
 router.put(
+  '/precedence',
+  GUARD_TAXONOMY_MANAGE,
+  GUARD_CAN_ACCESS_GROUP_FROM_BODY,
+  dimension.setPrecedence
+);
+router.put(
   '/order',
   GUARD_TAXONOMY_MANAGE,
   GUARD_CAN_ACCESS_GROUP_FROM_BODY,

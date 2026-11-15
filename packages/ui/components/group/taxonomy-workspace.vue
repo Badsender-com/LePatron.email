@@ -9,6 +9,7 @@ import BsModalConfirm from '~/components/modal-confirm';
 import BsTaxonomyWorkspaceTree from '~/components/group/taxonomy-workspace-tree.vue';
 import BsTaxonomyWorkspaceDetail from '~/components/group/taxonomy-workspace-detail.vue';
 import BsTaxonomyTemplatePreview from '~/components/group/taxonomy-template-preview.vue';
+import BsTaxonomyPrecedence from '~/components/group/taxonomy-precedence.vue';
 import {
   dimensionTree,
   segmentsOf,
@@ -17,7 +18,6 @@ import {
 import {
   DIMENSIONS_PER_COMPANY,
   sortDimensions,
-  resolutionOrder,
 } from '~/helpers/taxonomy-builder.js';
 
 // The segments the workspace shows so far; the others come with their
@@ -26,6 +26,7 @@ const IMPLEMENTED_SEGMENTS = [
   'values',
   'crossings',
   'defaults',
+  'tokens',
   'templates',
   'settings',
 ];
@@ -41,6 +42,7 @@ export default {
     BsTaxonomyWorkspaceTree,
     BsTaxonomyWorkspaceDetail,
     BsTaxonomyTemplatePreview,
+    BsTaxonomyPrecedence,
     BsTaxonomyDimensionFormDialog,
     BsTaxonomyDimensionMoveDialog,
     BsModalConfirm,
@@ -61,8 +63,9 @@ export default {
       const name = this.selected && this.selected.name;
       return this.points.filter((point) => point.dimension === name);
     },
-    isPreview() {
-      return this.$route.query.view === 'preview';
+    // A view of the whole taxonomy instead of a dimension.
+    view() {
+      return this.$route.query.view || null;
     },
     treeRows() {
       return dimensionTree({
@@ -101,13 +104,6 @@ export default {
     isFull() {
       return this.dimensions.length >= DIMENSIONS_PER_COMPANY;
     },
-    // What the template receives when two chosen values carry one token.
-    resolution() {
-      const labels = Object.fromEntries(
-        this.dimensions.map((dimension) => [dimension.name, dimension.label])
-      );
-      return resolutionOrder(this.dimensions).map((name) => labels[name]);
-    },
     dimensionLimit() {
       return DIMENSIONS_PER_COMPANY;
     },
@@ -124,10 +120,10 @@ export default {
     this.fetchTemplates();
   },
   methods: {
-    openPreview(template) {
+    openView(view, template = null) {
       if (this.$refs.detail && !this.$refs.detail.confirmLeave()) return;
       this.treeOpen = false;
-      this.$router.push({ query: { view: 'preview', template } });
+      this.$router.push({ query: { view, ...(template && { template }) } });
     },
 
     select(name, tab = 'values') {
@@ -152,11 +148,11 @@ export default {
     <bs-taxonomy-workspace-tree
       class="taxonomy-workspace__tree"
       :rows="treeRows"
-      :selected="isPreview ? null : selection.dimension"
-      :preview-on="isPreview"
+      :selected="view ? null : selection.dimension"
+      :view="view"
       :warnings="pointCounts"
       :reorderable="canManageTaxonomy && !saving"
-      @preview="openPreview(null)"
+      @view="openView($event)"
       @select="select"
       @reorder="reorderDimensions"
     >
@@ -175,24 +171,25 @@ export default {
         <p v-if="isFull" class="taxonomy-workspace__hint">
           {{ $t('taxonomy.dimensions.full', { limit: dimensionLimit }) }}
         </p>
-        <p v-if="resolution.length > 1" class="taxonomy-workspace__hint">
-          {{
-            $t('taxonomy.dimensions.resolution', {
-              order: resolution.join(' → '),
-            })
-          }}
-        </p>
       </template>
     </bs-taxonomy-workspace-tree>
 
     <bs-taxonomy-template-preview
-      v-if="isPreview"
+      v-if="view === 'preview'"
       class="taxonomy-workspace__detail"
       :templates="templates"
       :template-id="$route.query.template || null"
       :dimensions="dimensions"
       :values="allValues"
-      @select-template="openPreview"
+      @select-template="openView('preview', $event)"
+    />
+    <bs-taxonomy-precedence
+      v-else-if="view === 'precedence'"
+      class="taxonomy-workspace__detail"
+      :dimensions="dimensions"
+      :values="allValues"
+      @saved="fetchDimensions"
+      @error="reportError"
     />
     <bs-taxonomy-workspace-detail
       v-else-if="selected"
@@ -206,7 +203,7 @@ export default {
       :segments="segments"
       :tab="selection.tab"
       :tree-open="treeOpen"
-      @preview="openPreview"
+      @preview="openView('preview', $event)"
       @saved="fetchValues"
       @error="reportError"
       @toggle-tree="treeOpen = !treeOpen"

@@ -1001,6 +1001,20 @@ export default {
         literalNotCarried:
           'Le template {templates} compare {identifier}, qu\'aucune valeur ne porte.',
       },
+      precedence: {
+        title: 'Priorité des tokens',
+        intro:
+          "Quand plusieurs valeurs d'un email portent le même token, celle de la dimension placée le plus bas l'emporte. Sans rapport avec l'ordre des selects dans l'éditeur.",
+        none: "Aucune valeur ne porte de token pour l'instant.",
+        wins: "L'emporte",
+      },
+      tokens: {
+        intro: 'Les tokens que portent les valeurs de {label}, réglés dans le panneau de chaque valeur.',
+        none: 'Aucune valeur de {label} ne porte de token.',
+        token: 'Token',
+        carriedBy: 'Porté par',
+        hint: 'Les types de token (couleur, image, texte…) viendront avec leur propre chantier.',
+      },
       addChild: 'Ajouter une sous-dimension',
       move: {
         open: 'Déplacer',

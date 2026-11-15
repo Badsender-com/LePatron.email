@@ -12,6 +12,7 @@ module.exports = {
   updateDimension: asyncHandler(updateDimension),
   deleteDimension: asyncHandler(deleteDimension),
   reorderDimensions: asyncHandler(reorderDimensions),
+  setPrecedence: asyncHandler(setPrecedence),
   listTemplateContracts: asyncHandler(listTemplateContracts),
 };
 
@@ -162,4 +163,24 @@ async function listTemplateContracts(req, res) {
     groupId: req.query.groupId,
   });
   res.json({ items });
+}
+
+/**
+ * @api {put} /taxonomy-dimensions/precedence set the token precedence
+ * @apiPermission taxonomy.manage
+ * @apiName SetDimensionPrecedence
+ * @apiGroup TaxonomyDimensions
+ * @apiDescription The dimensions carrying design tokens, the winner last
+ *   (ADR-0026).
+ *
+ * @apiParam (Body) {String} [groupId] super admin only, the target company
+ * @apiParam (Body) {String[]} names
+ */
+async function setPrecedence(req, res) {
+  await dimensionService.setPrecedence({
+    user: req.user,
+    groupId: req.body.groupId,
+    names: req.body.names,
+  });
+  res.status(204).end();
 }
