@@ -23,8 +23,9 @@ export default {
       this.$refs.formDialog.open(dimension);
     },
 
-    openDeclareForm(parentName = null) {
-      this.$refs.formDialog.open(null, { parentName });
+    // A suggestion of the empty company prefills the creation (#1559).
+    openDeclareForm(parentName = null, preset = null) {
+      this.$refs.formDialog.open(null, { parentName, preset });
     },
 
     openMoveForm(dimension) {

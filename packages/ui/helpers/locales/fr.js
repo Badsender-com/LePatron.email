@@ -1015,6 +1015,32 @@ export default {
         carriedBy: 'Porté par',
         hint: 'Les types de token (couleur, image, texte…) viendront avec leur propre chantier.',
       },
+      start: {
+        title: "Déclinez les emails de l'entreprise",
+        intro:
+          "La Typologie et le Déclenchement existent déjà. Ajoutez les dimensions propres à l'entreprise : marchés, langues, marques, cibles…",
+        steps: {
+          structure: { title: 'Structure', text: 'déclarer les dimensions et les ranger en arbre.' },
+          values: { title: 'Valeurs', text: 'remplir chaque dimension.' },
+          crossings: {
+            title: 'Croisements et défauts',
+            text: 'quelles valeurs filles sous chaque valeur parente, et laquelle par défaut.',
+          },
+          tokens: { title: 'Tokens et priorité', text: 'ce que les templates lisent de chaque valeur.' },
+          templates: {
+            title: 'Templates',
+            text: "vérifier ce qu'un email propose, et reprendre les valeurs des emails existants.",
+          },
+        },
+        suggestionsTitle: 'Partir d\'une dimension courante',
+        suggestions: {
+          market: 'Marché',
+          language: 'Langue',
+          brand: 'Marque',
+          audience: 'Cible',
+        },
+        hint: 'Une suggestion préremplit le libellé, le nom, le rôle et le parent : tout reste modifiable avant de créer, et aucune valeur n\'est créée.',
+      },
       addChild: 'Ajouter une sous-dimension',
       move: {
         open: 'Déplacer',
