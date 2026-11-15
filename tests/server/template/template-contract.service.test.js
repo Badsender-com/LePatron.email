@@ -35,6 +35,7 @@ describe('the contract of a template saved before it existed', () => {
       declared: { market: '' },
       read: ['market'],
       adopt: {},
+      compared: { market: { be: 1 } },
     });
   });
 
@@ -70,7 +71,7 @@ describe('the contract of a template saved before it existed', () => {
 
   it('is empty for a template that does not exist, or has no markup', async () => {
     models.Templates.seed([{ _id: TEMPLATE, _company: COMPANY_A }]);
-    const empty = { declared: {}, read: [], adopt: {} };
+    const empty = { declared: {}, read: [], adopt: {}, compared: {} };
 
     expect(await contractOfTemplate(TEMPLATE)).toEqual(empty);
     expect(await contractOfTemplate('507f1f77bcf86cd799439f09')).toEqual(empty);
