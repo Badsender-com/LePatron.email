@@ -109,7 +109,7 @@ describe('dimension tree', () => {
 
   it.each([
     ['trigger', ['values']],
-    ['emailType', ['values', 'defaults', 'tokens', 'templates', 'settings']],
+    ['emailType', ['values', 'tokens', 'templates', 'settings']],
     ['market', ['values', 'defaults', 'tokens', 'templates', 'settings']],
     ['language', ['values', 'crossings', 'tokens', 'templates', 'settings']],
   ])('gives %s the segments %j', (name, expected) => {

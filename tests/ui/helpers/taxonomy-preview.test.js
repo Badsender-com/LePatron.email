@@ -114,6 +114,51 @@ describe('values a template proposes', () => {
     expect(dimensionOf(preview, 'range').under).toBeUndefined();
   });
 
+  // Review of #1547: the editor's rule for a child, in its order.
+  it("gives a child the template's own default before the star", () => {
+    const declaringDutch = {
+      ...template('transactional'),
+      contract: {
+        ...template('transactional').contract,
+        declared: { language: 'nl' },
+      },
+    };
+    const preview = valuesProposed({
+      template: declaringDutch,
+      dimensions: DIMENSIONS,
+      values: VALUES,
+    });
+
+    expect(dimensionOf(preview, 'language').defaultUnder['mk-be']).toBe(
+      'lg-nl'
+    );
+    expect(dimensionOf(preview, 'language').defaultUnder['mk-fr']).toBe(
+      'lg-fr'
+    );
+  });
+
+  it('gives a child the only value offered under a parent value, starred or not', () => {
+    const values = VALUES.map((v) =>
+      v.id === 'lg-en' ? { ...v, defaultUnder: [] } : v
+    );
+
+    expect(
+      dimensionOf(proposed('newsletter', values), 'language').defaultUnder[
+        'mk-ca'
+      ]
+    ).toBe('lg-en');
+  });
+
+  it('gives the email type no default, which it never has', () => {
+    const values = VALUES.map((v) =>
+      v.type === 'emailType' ? { ...v, isDefault: true } : v
+    );
+
+    expect(
+      dimensionOf(proposed('newsletter', values), 'emailType').defaultValue
+    ).toBeUndefined();
+  });
+
   it('lists the design tokens the template reads that a value carries', () => {
     expect(proposed('newsletter').tokens).toEqual(['logoUrl', 'mainColorVar']);
     expect(proposed('transactional').tokens).toEqual([]);

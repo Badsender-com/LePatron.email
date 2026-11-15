@@ -21,7 +21,8 @@
  */
 const { isOfferedUnder, inTreeOrder } = require('./availability.js');
 
-module.exports = { resolveDefaults };
+// The two rules on their own: the taxonomy workspace previews them.
+module.exports = { resolveDefaults, firstLevelDefault, childValue };
 
 /**
  * @param {Object} params
@@ -70,6 +71,11 @@ function resolveDefaults({
   return resolved;
 }
 
+/**
+ * @param {Object} dimension with `values`
+ * @param {Object} templateDefaults property → identifier
+ * @returns {Object|null} the value a new email takes
+ */
 function firstLevelDefault(dimension, templateDefaults) {
   const offered = (dimension.values || []).filter((value) => value.isActive);
   const identifier = templateDefaults[dimension.name];

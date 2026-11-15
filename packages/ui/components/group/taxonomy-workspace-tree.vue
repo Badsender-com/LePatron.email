@@ -72,7 +72,10 @@ export default {
     onKey(row, step) {
       if (!this.canMove(row)) return;
       const names = this.siblingsOf(row);
-      this.move(row, names.indexOf(row.name) + step);
+      const target = names.indexOf(row.name) + step;
+      // Already first or last: nothing to send.
+      if (target < 0 || target >= names.length) return;
+      this.move(row, target);
     },
   },
 };
