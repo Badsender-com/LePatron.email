@@ -4,6 +4,7 @@ import mixinTaxonomyDimensionActions from '~/helpers/mixins/mixin-taxonomy-dimen
 import { Plus } from 'lucide-vue';
 import * as apiRoutes from '~/helpers/api-routes.js';
 import BsTaxonomyDimensionFormDialog from '~/components/group/taxonomy-dimension-form-dialog.vue';
+import BsTaxonomyDimensionMoveDialog from '~/components/group/taxonomy-dimension-move-dialog.vue';
 import BsModalConfirm from '~/components/modal-confirm';
 import BsTaxonomyWorkspaceTree from '~/components/group/taxonomy-workspace-tree.vue';
 import BsTaxonomyWorkspaceDetail from '~/components/group/taxonomy-workspace-detail.vue';
@@ -34,6 +35,7 @@ export default {
     BsTaxonomyWorkspaceTree,
     BsTaxonomyWorkspaceDetail,
     BsTaxonomyDimensionFormDialog,
+    BsTaxonomyDimensionMoveDialog,
     BsModalConfirm,
     LucidePlus: Plus,
   },
@@ -169,7 +171,9 @@ export default {
       class="taxonomy-workspace__tree"
       :rows="treeRows"
       :selected="selection.dimension"
+      :reorderable="canManageTaxonomy && !saving"
       @select="select"
+      @reorder="reorderDimensions"
     >
       <template #foot>
         <v-btn
@@ -178,7 +182,7 @@ export default {
           small
           color="accent"
           :disabled="isFull || saving"
-          @click="openDeclareForm"
+          @click="openDeclareForm()"
         >
           <lucide-plus :size="16" class="mr-1" />
           {{ $t('taxonomy.dimensions.declare') }}
@@ -207,6 +211,8 @@ export default {
       @toggle-tree="treeOpen = !treeOpen"
       @select-tab="select(selected.name, $event)"
       @edit="openEditForm"
+      @move="openMoveForm"
+      @add-child="openDeclareForm($event.name)"
       @toggle-active="toggleActive"
       @delete="confirmDelete"
       @count="setCount(selected.name, $event)"
@@ -226,6 +232,13 @@ export default {
         }}
       </p>
     </bs-modal-confirm>
+
+    <bs-taxonomy-dimension-move-dialog
+      ref="moveDialog"
+      :loading="saving"
+      :dimensions="dimensions"
+      @save="moveDimension"
+    />
 
     <bs-taxonomy-dimension-form-dialog
       ref="formDialog"

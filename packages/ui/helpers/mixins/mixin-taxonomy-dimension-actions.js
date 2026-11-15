@@ -5,9 +5,9 @@ import { taxonomyErrorFor } from '~/helpers/taxonomy.js';
 
 /**
  * The requests on a dimension itself, from the taxonomy workspace: declare,
- * edit, deactivate or delete it, then read the dimensions again. The component
- * using it has `groupId`, `fetchDimensions`, a `formDialog` and a
- * `deleteModal` ref.
+ * edit, move, reorder, deactivate or delete it, then read the dimensions
+ * again. The component using it has `groupId`, `fetchDimensions`, and the
+ * `formDialog`, `moveDialog` and `deleteModal` refs.
  */
 export default {
   data() {
@@ -23,8 +23,32 @@ export default {
       this.$refs.formDialog.open(dimension);
     },
 
-    openDeclareForm() {
-      this.$refs.formDialog.open(null);
+    openDeclareForm(parentName = null) {
+      this.$refs.formDialog.open(null, { parentName });
+    },
+
+    openMoveForm(dimension) {
+      this.$refs.moveDialog.open(dimension);
+    },
+
+    async moveDimension({ id, payload }) {
+      const moved = await this.request(
+        () => this.$axios.$patch(apiRoutes.taxonomyDimensionsItem(id), payload),
+        'taxonomy.workspace.move.done'
+      );
+      if (moved) this.$refs.moveDialog.close();
+    },
+
+    reorderDimensions({ parentName, names }) {
+      return this.request(
+        () =>
+          this.$axios.$put(apiRoutes.taxonomyDimensionsOrder(), {
+            groupId: this.groupId,
+            parentName,
+            names,
+          }),
+        'taxonomy.workspace.reordered'
+      );
     },
 
     async saveDimension({ id, payload }) {

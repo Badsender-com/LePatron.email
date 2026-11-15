@@ -8,7 +8,7 @@ import BsTaxonomyDimensionSettings from '~/components/group/taxonomy-dimension-s
 /**
  * The selected dimension of the taxonomy workspace, in segments (ADR-0026).
  * The requests are the workspace's: this emits `select-tab`, `toggle-tree`,
- * `edit`, `toggle-active`, `delete` and `count`.
+ * `edit`, `move`, `add-child`, `toggle-active`, `delete` and `count`.
  */
 export default {
   name: 'BsTaxonomyWorkspaceDetail',
@@ -68,6 +68,7 @@ export default {
       :dimension="dimension"
       :parent="parent"
       @edit="$emit('edit', $event)"
+      @move="$emit('move', $event)"
     />
     <bs-taxonomy-email-type-dimension
       v-else-if="dimension.name === 'emailType'"
@@ -87,6 +88,7 @@ export default {
       :dimension="dimension"
       :parent="parent"
       @edit="$emit('edit', $event)"
+      @add-child="$emit('add-child', $event)"
       @toggle-active="$emit('toggle-active', $event)"
       @delete="$emit('delete', $event)"
       @count="$emit('count', $event)"

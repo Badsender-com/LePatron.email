@@ -1,20 +1,75 @@
 <script>
-import { Lock, CornerDownRight } from 'lucide-vue';
+import { Lock, CornerDownRight, GripVertical } from 'lucide-vue';
+import { moveItem } from '~/helpers/reorder.js';
 
 /**
  * The tree of dimensions on the left of the taxonomy workspace: the standard
  * ones locked, the company's nested under their parent (ADR-0026). Its rows
- * come from helpers/taxonomy-tree.js; emits `select` with a dimension name.
+ * come from helpers/taxonomy-tree.js; emits `select` with a dimension name,
+ * and, when `reorderable`, `reorder` with `{ parentName, names }` after a drop
+ * among siblings or Alt + an arrow key.
  */
 export default {
   name: 'BsTaxonomyWorkspaceTree',
   components: {
     LucideLock: Lock,
     LucideCornerDownRight: CornerDownRight,
+    LucideGripVertical: GripVertical,
   },
   props: {
     rows: { type: Array, default: () => [] },
     selected: { type: String, default: null },
+    reorderable: { type: Boolean, default: false },
+  },
+  data() {
+    return { dragged: null, over: null };
+  },
+  methods: {
+    siblingsOf(row) {
+      return this.rows
+        .filter(
+          (r) =>
+            r.kind === 'dimension' &&
+            !r.locked &&
+            r.parentName === row.parentName
+        )
+        .map((r) => r.name);
+    },
+    canMove(row) {
+      return this.reorderable && row.kind === 'dimension' && !row.locked;
+    },
+    move(row, target) {
+      const names = this.siblingsOf(row);
+      const from = names.indexOf(row.name);
+      if (from === -1 || target === from) return;
+      this.$emit('reorder', {
+        parentName: row.parentName,
+        names: moveItem(names, from, target),
+      });
+    },
+    onDragStart(row, event) {
+      this.dragged = row;
+      event.dataTransfer.effectAllowed = 'move';
+      event.dataTransfer.setData('text/plain', row.name);
+    },
+    onDragOver(row, event) {
+      if (!this.dragged || row.parentName !== this.dragged.parentName) return;
+      if (row.locked) return;
+      event.preventDefault();
+      this.over = row.name;
+    },
+    onDrop(row) {
+      const dragged = this.dragged;
+      this.dragged = null;
+      this.over = null;
+      if (!dragged || row.parentName !== dragged.parentName) return;
+      this.move(dragged, this.siblingsOf(row).indexOf(row.name));
+    },
+    onKey(row, step) {
+      if (!this.canMove(row)) return;
+      const names = this.siblingsOf(row);
+      this.move(row, names.indexOf(row.name) + step);
+    },
   },
 };
 </script>
@@ -40,8 +95,23 @@ export default {
         }"
         :style="{ paddingLeft: `${10 + row.depth * 18}px` }"
         :aria-current="row.name === selected ? 'page' : null"
+        :draggable="canMove(row) ? 'true' : 'false'"
+        :data-over="over === row.name ? 'true' : null"
         @click="$emit('select', row.name)"
+        @dragstart="canMove(row) && onDragStart(row, $event)"
+        @dragover="onDragOver(row, $event)"
+        @dragleave="over = null"
+        @drop.prevent="onDrop(row)"
+        @dragend="dragged = over = null"
+        @keydown.alt.up.prevent="onKey(row, -1)"
+        @keydown.alt.down.prevent="onKey(row, 1)"
       >
+        <lucide-grip-vertical
+          v-if="canMove(row)"
+          :size="14"
+          class="taxonomy-tree__grip"
+          :aria-label="$t('taxonomy.workspace.dragHint')"
+        />
         <lucide-lock
           v-if="row.locked"
           :size="14"
@@ -110,6 +180,16 @@ export default {
       color: var(--gray-600);
       text-decoration: line-through;
     }
+  }
+
+  &__node[data-over='true'] {
+    box-shadow: inset 0 2px 0 var(--v-accent-base);
+  }
+
+  &__grip {
+    flex: none;
+    color: var(--gray-500);
+    cursor: grab;
   }
 
   &__icon {

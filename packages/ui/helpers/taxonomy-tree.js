@@ -24,6 +24,7 @@ const rowOf = (dimension, depth, values) => ({
   id: dimension.id,
   name: dimension.name,
   label: dimension.label,
+  parentName: dimension.parentName || null,
   depth,
   locked: !!dimension.standard,
   inactive: dimension.isActive === false,

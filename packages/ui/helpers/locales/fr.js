@@ -940,6 +940,17 @@ export default {
   taxonomy: {
     workspace: {
       tree: 'Dimensions',
+      dragHint: 'Glisser pour réordonner, ou Alt + flèches',
+      reordered: 'Ordre enregistré',
+      addChild: 'Ajouter une sous-dimension',
+      move: {
+        open: 'Déplacer',
+        title: 'Déplacer « {label} »',
+        action: 'Déplacer',
+        warning:
+          'Ses valeurs perdent leurs défauts : marqués au premier niveau ou sous une valeur parente, ils ne veulent plus rien ailleurs. Vous les marquerez à nouveau.',
+        done: 'Dimension déplacée',
+      },
       segmentsLabel: 'Étapes de la dimension',
       sections: {
         standard: 'Standard',

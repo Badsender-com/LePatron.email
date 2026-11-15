@@ -427,6 +427,15 @@ export function taxonomyDimensionsItem(dimensionId) {
   return `/taxonomy-dimensions/${dimensionId}`;
 }
 
+// A drop sends the whole new order; the company travels in the body.
+export function taxonomyDimensionsOrder() {
+  return '/taxonomy-dimensions/order';
+}
+
+export function taxonomyItemsOrder() {
+  return '/taxonomy-items/order';
+}
+
 /// ///
 // AI FEATURES
 /// ///
