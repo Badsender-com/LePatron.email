@@ -37,12 +37,12 @@ _UI_: Relecteur
 _Avoid_: Validator, viewer
 
 **Company admin**:
-A member of a company who also administers that company: its users, workspaces and settings, apart from its technical settings.
+A member of a company who also administers that company: its users, workspaces and settings, apart from its technical settings and its taxonomy, which it only reads.
 _UI_: Administrateur de l'entreprise
 _Avoid_: Group admin, owner
 
 **Tech admin**:
-A company admin who also administers the company's technical settings: integrations, AI features, content feeds and tracking.
+A company admin who also administers the company's technical settings (integrations, AI features, content feeds and tracking) and builds its taxonomy.
 _UI_: Admin technique
 _Avoid_: Technical admin, integrator
 
@@ -233,6 +233,11 @@ _Avoid_: Visibility, applicability, availability
 The value an email takes for a dimension nobody chose: one per dimension at the first level, one per parent value for a child dimension ("default under"). Never applied over a value someone chose, nor to emails that already exist.
 _UI_: Valeur par défaut
 _Avoid_: Preset, initial value, fallback
+
+**Point to check**:
+Something a company's taxonomy lacks that the application can tell, shown without ever blocking: a value of a dimension with a role and no normalised code, a parent value under which no child value is offered, a dimension or a design token no template reads.
+_UI_: À vérifier
+_Avoid_: Error, warning, validation
 
 **Adoption**:
 Taking, for an empty dimension, the value an email's content already holds in its template's property, so that an email made before the taxonomy keeps what it had chosen. Done when the email is opened, or in bulk on a template.
