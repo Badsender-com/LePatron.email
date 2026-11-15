@@ -66,7 +66,8 @@ export default {
         <v-btn
           small
           outlined
-          :color="copied ? 'success' : 'primary'"
+          color="primary"
+          :class="{ 'bs-two-factor-scan__copied': copied }"
           @click="copyKey"
         >
           <lucide-check v-if="copied" :size="14" class="mr-1" />
@@ -166,8 +167,7 @@ export default {
       padding: 0;
       background: none;
       color: var(--gray-900);
-      font-family: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo,
-        monospace;
+      font-family: var(--font-mono);
       font-size: 13px;
       overflow-wrap: anywhere;
       user-select: all;
@@ -183,6 +183,11 @@ export default {
     &__row {
       flex-direction: column;
     }
+  }
+
+  // Copied, said in words: --success-ink, readable on white.
+  &__copied.v-btn {
+    color: var(--success-ink) !important;
   }
 }
 </style>

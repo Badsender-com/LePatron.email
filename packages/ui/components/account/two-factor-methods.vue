@@ -97,7 +97,7 @@ export default {
     transition: border-color 0.15s, background 0.15s;
 
     &:focus-within {
-      box-shadow: 0 0 0 3px rgba(0, 172, 220, 0.18);
+      box-shadow: var(--focus-ring);
     }
 
     &--on {
@@ -128,7 +128,7 @@ export default {
   }
 
   &__method--on &__method-icon {
-    background: rgba(0, 172, 220, 0.12);
+    background: var(--tint-accent);
     color: var(--v-accent-darken1);
   }
 
@@ -154,7 +154,7 @@ export default {
   &__badge {
     padding: 2px 8px;
     border-radius: var(--r-pill);
-    background: rgba(0, 172, 220, 0.12);
+    background: var(--tint-accent);
     color: var(--v-accent-darken1);
     font-size: 11px;
     font-weight: 500;

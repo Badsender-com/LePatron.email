@@ -98,7 +98,12 @@ export default {
     </ol>
 
     <div class="bs-recovery-codes__tools">
-      <v-btn outlined :color="copied ? 'success' : 'primary'" @click="copy">
+      <v-btn
+        outlined
+        color="primary"
+        :class="{ 'bs-recovery-codes__copied': copied }"
+        @click="copy"
+      >
         <lucide-check v-if="copied" :size="16" class="mr-2" />
         <lucide-copy v-else :size="16" class="mr-2" />
         {{
@@ -123,7 +128,6 @@ export default {
         :disabled="!noted"
         elevation="0"
         color="accent"
-        class="bs-recovery-codes__continue"
         @click="$emit('continue')"
       >
         {{ $t('twoFactor.recoveryCodes.continue') }}
@@ -140,9 +144,9 @@ export default {
     gap: 12px;
     align-items: flex-start;
     padding: 12px 16px;
-    border: 1px solid rgba(255, 180, 0, 0.55);
+    border: 1px solid var(--warning-border);
     border-radius: 7px;
-    background: rgba(255, 180, 0, 0.08);
+    background: var(--tint-warning-soft);
     font-size: 13px;
     line-height: 1.5;
 
@@ -178,8 +182,7 @@ export default {
       padding: 0;
       background: none;
       color: var(--gray-900);
-      font-family: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo,
-        monospace;
+      font-family: var(--font-mono);
       font-size: 15px;
       font-weight: 500;
       letter-spacing: 0.04em;
@@ -205,11 +208,9 @@ export default {
     }
   }
 
-  // Disabled, the action fades rather than turning pale blue.
-  &__continue.v-btn.v-btn--disabled {
-    background-color: var(--v-accent-base) !important;
-    color: var(--text-on-accent) !important;
-    opacity: 0.45;
+  // Copied, said in words: --success-ink, readable on white.
+  &__copied.v-btn {
+    color: var(--success-ink) !important;
   }
 }
 </style>

@@ -95,8 +95,7 @@ export default {
     border-radius: var(--r-sm);
     background: var(--surface);
     color: var(--gray-900);
-    font-family: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo,
-      monospace;
+    font-family: var(--font-mono);
     font-size: 20px;
     letter-spacing: 0.3em;
     text-align: center;
@@ -113,7 +112,7 @@ export default {
 
     &:focus {
       border-color: var(--v-accent-base);
-      box-shadow: 0 0 0 3px rgba(0, 172, 220, 0.18);
+      box-shadow: var(--focus-ring);
     }
   }
 
@@ -157,13 +156,12 @@ export default {
       color: var(--v-accent-darken1);
       font: inherit;
       font-weight: 500;
-      text-decoration: none;
+      text-decoration: underline;
       cursor: pointer;
 
       &:hover,
       &:focus-visible {
         color: var(--v-primary-base);
-        text-decoration: underline;
       }
 
       &:disabled {

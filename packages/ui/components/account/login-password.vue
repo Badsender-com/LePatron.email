@@ -89,12 +89,11 @@ export default {
   color: var(--v-accent-darken1);
   font-size: 13px;
   font-weight: 500;
-  text-decoration: none;
+  text-decoration: underline;
 
   &:hover,
   &:focus-visible {
     color: var(--v-primary-base);
-    text-decoration: underline;
   }
 }
 </style>

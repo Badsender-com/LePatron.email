@@ -102,7 +102,7 @@ export default {
 
   &__card.v-card {
     border-radius: var(--r-md);
-    box-shadow: 0 12px 32px rgba(13, 43, 62, 0.18);
+    box-shadow: var(--shadow-modal);
     overflow: hidden;
   }
 
@@ -131,7 +131,7 @@ export default {
     width: 56px;
     height: 56px;
     border-radius: var(--r-pill);
-    background: rgba(0, 172, 220, 0.12);
+    background: var(--tint-accent);
     color: var(--v-accent-darken1);
   }
 
@@ -166,7 +166,7 @@ export default {
   &__alert {
     margin: 0;
     padding: 12px 16px;
-    border: 1px solid rgba(240, 78, 35, 0.35);
+    border: 1px solid var(--error-border);
     border-radius: 7px;
     background: var(--color-error-bg);
     color: var(--gray-900);
@@ -187,13 +187,12 @@ export default {
       color: var(--v-accent-darken1);
       font-size: 13px;
       font-weight: 500;
-      text-decoration: none;
+      text-decoration: underline;
       white-space: nowrap;
 
       &:hover,
       &:focus-visible {
         color: var(--v-primary-base);
-        text-decoration: underline;
       }
     }
   }
