@@ -942,6 +942,12 @@ export default {
       tree: 'Dimensions',
       dragHint: 'Glisser pour réordonner, ou Alt + flèches',
       reordered: 'Ordre enregistré',
+      quickAdd: {
+        label: 'Libellé de la nouvelle valeur',
+        placeholder: 'Nouvelle valeur, puis Entrée',
+        identifier: 'Identifiant proposé',
+        action: 'Ajouter',
+      },
       addChild: 'Ajouter une sous-dimension',
       move: {
         open: 'Déplacer',
