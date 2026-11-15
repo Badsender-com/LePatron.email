@@ -16,7 +16,7 @@ const logger = require('../../utils/logger.js');
  * exactly what can be ordered there, or nothing changes: a list built on a
  * stale screen would otherwise leave two items on one position.
  */
-module.exports = { reorderDimensions, reorderValues };
+module.exports = { reorderDimensions, reorderValues, setPrecedence };
 
 // Spaced, so an order set by hand before stays readable beside these.
 const positionOf = (index) => (index + 1) * 10;
@@ -89,6 +89,43 @@ async function reorderValues({ user, groupId, type, itemIds }) {
       TaxonomyItems.updateOne(
         { _company: companyId, _id: id },
         { $set: { order: positionOf(index) } }
+      )
+    )
+  );
+}
+
+/**
+ * Token precedence as a list (ADR-0026): when values of one email carry the
+ * same design token, the dimension listed last wins. The dimensions listed
+ * take their rank; the others keep theirs (they carry no token). The trigger
+ * carries none and is refused.
+ *
+ * @param {Object} params
+ * @param {Object} params.user
+ * @param {string} [params.groupId] the target company, super admin only
+ * @param {string[]} params.names the dimensions carrying tokens, the winner
+ *   last
+ */
+async function setPrecedence({ user, groupId, names }) {
+  logger.log('orderService:setPrecedence');
+  const companyId = resolveCompanyId(user, groupId);
+  const dimensions = await TaxonomyDimensions.find({
+    _company: companyId,
+  }).lean();
+  const known = dimensions
+    .filter((dimension) => dimension.name !== 'trigger')
+    .map((dimension) => dimension.name);
+  const valid =
+    Array.isArray(names) &&
+    names.length > 0 &&
+    new Set(names).size === names.length &&
+    names.every((name) => known.includes(name));
+  if (!valid) throw new BadRequest(ERROR_CODES.INVALID_DIMENSION);
+  await Promise.all(
+    names.map((name, index) =>
+      TaxonomyDimensions.updateOne(
+        { _company: companyId, name },
+        { $set: { precedence: positionOf(index) } }
       )
     )
   );

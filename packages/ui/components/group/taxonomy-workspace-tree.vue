@@ -20,8 +20,8 @@ export default {
     rows: { type: Array, default: () => [] },
     selected: { type: String, default: null },
     reorderable: { type: Boolean, default: false },
-    // The preview by template is the view shown.
-    previewOn: { type: Boolean, default: false },
+    // The view of the whole taxonomy shown, if any: `preview`, `precedence`.
+    view: { type: String, default: null },
     // The points to check per dimension name.
     warnings: { type: Object, default: () => ({}) },
   },
@@ -81,12 +81,14 @@ export default {
 <template>
   <nav class="taxonomy-tree" :aria-label="$t('taxonomy.workspace.tree')">
     <button
+      v-for="entry in ['preview', 'precedence']"
+      :key="entry"
       type="button"
       class="taxonomy-tree__view"
-      :class="{ 'taxonomy-tree__view--on': previewOn }"
-      @click="$emit('preview')"
+      :class="{ 'taxonomy-tree__view--on': view === entry }"
+      @click="$emit('view', entry)"
     >
-      {{ $t('taxonomy.workspace.preview.title') }}
+      {{ $t(`taxonomy.workspace.${entry}.title`) }}
     </button>
     <template v-for="row in rows">
       <div
