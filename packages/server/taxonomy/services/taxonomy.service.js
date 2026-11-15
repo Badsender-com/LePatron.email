@@ -18,6 +18,7 @@ const {
   assertIdentifierIsFree,
 } = require('./value-fields.js');
 const { assertDefaults } = require('./value-defaults.js');
+const { withDimensionsLocked } = require('./dimension-lock.js');
 const logger = require('../../utils/logger.js');
 
 const { reorderValues } = require('./order.service.js');
@@ -37,6 +38,11 @@ module.exports = {
   identifierImpact,
   resolveCompanyId,
 };
+
+const touchesCrossings = (fields) =>
+  ['_parents', 'defaultUnder', 'isDefault'].some(
+    (field) => fields[field] !== undefined
+  );
 
 /**
  * @param {Object} params
@@ -152,25 +158,33 @@ async function updateTaxonomyItem({ user, itemId, payload = {} }) {
     });
     await assertChangeConfirmed(item, confirmIdentifierChange);
   }
-  await assertDefaults({
-    companyId: item._company,
-    type: item.type,
-    fields,
-    item,
-  });
-
-  Object.assign(item, fields);
-
-  try {
-    await item.save();
-  } catch (error) {
-    if (error?.code === 11000) {
-      throw new Conflict(ERROR_CODES.TAXONOMY_ITEM_LABEL_ALREADY_EXISTS);
+  const save = async () => {
+    await assertDefaults({
+      companyId: item._company,
+      type: item.type,
+      fields,
+      item,
+    });
+    Object.assign(item, fields);
+    try {
+      await item.save();
+    } catch (error) {
+      if (error?.code === 11000) {
+        throw new Conflict(ERROR_CODES.TAXONOMY_ITEM_LABEL_ALREADY_EXISTS);
+      }
+      throw error;
     }
-    throw error;
-  }
+    return item;
+  };
 
-  return item;
+  // Availability and defaults are checked against the other values: not
+  // while the crossings matrix of the dimension is being written.
+  return touchesCrossings(fields)
+    ? withDimensionsLocked(
+        { companyId: item._company, names: [item.type] },
+        save
+      )
+    : save();
 }
 
 /**

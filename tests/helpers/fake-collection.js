@@ -20,7 +20,7 @@
  *   changing a document without saving it changes nothing.
  * - **Updates**: `$set`, `$unset`, `$inc`, `$push`, `$addToSet`, `$pull` (a value
  *   or `{ $in: [...] }`), or a plain object read as `$set`. Top-level fields
- *   only, like the filters.
+ *   only, like the filters. `bulkWrite` takes `updateOne` operations.
  */
 
 const { Types } = require('mongoose');
@@ -226,6 +226,18 @@ function fakeCollection({ defaults = {}, unique = [] } = {}) {
       const found = matching(filter);
       found.forEach((record) => store(updated(record, update)));
       return { matchedCount: found.length, modifiedCount: found.length };
+    },
+    // `updateOne` operations only, applied in order.
+    bulkWrite: async (operations) => {
+      let modifiedCount = 0;
+      for (const operation of operations) {
+        if (!operation.updateOne) {
+          throw new Error('fake models: bulkWrite takes updateOne only');
+        }
+        const { filter, update } = operation.updateOne;
+        if (await updateFirst(filter, update)) modifiedCount += 1;
+      }
+      return { modifiedCount };
     },
     findOneAndUpdate: async (filter, update) => {
       const next = await updateFirst(filter, update);
