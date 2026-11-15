@@ -2,6 +2,7 @@
 import { mapMutations } from 'vuex';
 import { PAGE, SHOW_SNACKBAR } from '~/store/page.js';
 import * as apiRoutes from '~/helpers/api-routes.js';
+import mixinTaxonomyValueWrites from '~/helpers/mixins/mixin-taxonomy-value-writes.js';
 import BsModalConfirm from '~/components/modal-confirm';
 import BsTaxonomyTable from '~/components/group/taxonomy-table.vue';
 import BsTaxonomyFormDialog from '~/components/group/taxonomy-form-dialog.vue';
@@ -27,7 +28,7 @@ export default {
     BsTaxonomyDefaultsDialog,
     BsTaxonomyQuickAdd,
   },
-  mixins: [mixinTaxonomyManage],
+  mixins: [mixinTaxonomyManage, mixinTaxonomyValueWrites],
   props: {
     dimensionName: { type: String, default: STANDARD_DIMENSIONS.EMAIL_TYPE },
     // The dimension this one hangs under: its values make the availability.
@@ -37,10 +38,9 @@ export default {
   },
   data() {
     return {
-      // Two flags: `saving` must not put the table behind the modal into its
-      // skeleton state and make it flash on the way back.
+      // Apart from `saving` (mixin-taxonomy-value-writes.js): saving must not
+      // put the table behind the modal into its skeleton state.
       loading: false,
-      saving: false,
       // Distinct from an empty list. Without it a failed fetch leaves `items`
       // empty and the table shows "no email type yet" with a create button: the
       // user is told they have none, and invited to duplicate a list nobody
@@ -49,7 +49,6 @@ export default {
       items: [],
       // Null while the dimension hangs under nothing.
       parentValues: null,
-      deletingItem: null,
     };
   },
   computed: {
@@ -139,20 +138,6 @@ export default {
       await this.fetchItems();
     },
 
-    // A drop saves the whole order; the list is read again either way.
-    async reorder(itemIds) {
-      try {
-        await this.$axios.$put(apiRoutes.taxonomyItemsOrder(), {
-          groupId: this.groupId,
-          type: this.dimensionName,
-          itemIds,
-        });
-      } catch (error) {
-        this.reportError(error);
-      }
-      await this.fetchItems();
-    },
-
     async openCreateForm() {
       await this.fetchParentValues();
       this.$refs.formDialog.open(null, nextOrder(this.items));
@@ -161,62 +146,6 @@ export default {
     async openEditForm(item) {
       await this.fetchParentValues();
       this.$refs.formDialog.open(item);
-    },
-
-    async saveItem({ id, payload }) {
-      try {
-        this.saving = true;
-        if (id) {
-          await this.$axios.$patch(apiRoutes.taxonomyItemsItem(id), payload);
-          this.showSnackbar({
-            text: this.$t(`${this.wording}.snackbars.updated`),
-            color: 'success',
-          });
-        } else {
-          await this.$axios.$post(apiRoutes.taxonomyItemsCreate(), {
-            ...payload,
-            type: this.dimensionName,
-            // A super admin edits a company other than their own, so the target
-            // is always named rather than inferred.
-            groupId: this.groupId,
-          });
-          this.showSnackbar({
-            text: this.$t(`${this.wording}.snackbars.created`),
-            color: 'success',
-          });
-        }
-        this.$refs.formDialog.close();
-        await this.fetchItems();
-      } catch (error) {
-        this.reportError(error);
-      } finally {
-        this.saving = false;
-      }
-    },
-
-    confirmDelete(item) {
-      this.deletingItem = item;
-      this.$refs.deleteModal.open();
-    },
-
-    async deleteItem() {
-      if (!this.deletingItem) return;
-      const item = this.deletingItem;
-      try {
-        this.saving = true;
-        await this.$axios.$delete(apiRoutes.taxonomyItemsItem(item.id));
-        this.showSnackbar({
-          text: this.$t(`${this.wording}.snackbars.deleted`),
-          color: 'success',
-        });
-        await this.fetchItems();
-      } catch (error) {
-        this.reportError(error);
-      } finally {
-        // Cleared even on a refusal, so the row is not armed for the next one.
-        this.deletingItem = null;
-        this.saving = false;
-      }
     },
 
     // A taken label or identifier goes next to its field (helpers/taxonomy.js),
