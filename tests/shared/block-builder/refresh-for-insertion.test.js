@@ -40,8 +40,7 @@ const ROWS = {
   ],
 };
 
-// Turned on by #1565 (an inserted composed block shows what will be stored)
-describe.skip('a composition refreshed for insertion', () => {
+describe('a composition refreshed for insertion', () => {
   let refreshForInsertion;
 
   beforeAll(() => {

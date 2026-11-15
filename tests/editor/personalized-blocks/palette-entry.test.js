@@ -39,8 +39,7 @@ const TEMPLATE_BLOCK = libraryItem({
   title: 'Titre',
 });
 
-// Turned on by #1565 (an inserted composed block shows what will be stored)
-describe.skip('inserting a saved composed block', () => {
+describe('inserting a saved composed block', () => {
   let paletteEntryOf;
 
   beforeAll(() => {
