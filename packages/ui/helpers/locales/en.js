@@ -1139,6 +1139,12 @@ export default {
       tree: 'Dimensions',
       dragHint: 'Drag to reorder, or Alt + arrow keys',
       reordered: 'Order saved',
+      quickAdd: {
+        label: 'Label of the new value',
+        placeholder: 'New value, then Enter',
+        identifier: 'Proposed identifier',
+        action: 'Add',
+      },
       addChild: 'Add a sub-dimension',
       move: {
         open: 'Move',

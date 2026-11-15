@@ -1,7 +1,7 @@
 <script>
 import { validationMixin } from 'vuelidate';
 import { required, maxLength } from 'vuelidate/lib/validators';
-import BsModalForm from '~/components/modal/bs-modal-form.vue';
+import BsSidePanelForm from '~/components/modal/bs-side-panel-form.vue';
 import BsTextField from '~/components/form/bs-text-field.vue';
 import BsSelect from '~/components/form/bs-select.vue';
 import BsTextarea from '~/components/form/bs-textarea.vue';
@@ -21,7 +21,7 @@ import {
 export default {
   name: 'BsTaxonomyFormDialog',
   components: {
-    BsModalForm,
+    BsSidePanelForm,
     BsTextField,
     BsSelect,
     BsTextarea,
@@ -191,12 +191,12 @@ export default {
 </script>
 
 <template>
-  <bs-modal-form
+  <bs-side-panel-form
     ref="modal"
     :title="title"
     :submit-label="submitLabel"
     :loading="loading"
-    width="600"
+    width="460"
     persistent
     @submit="onSubmit"
     @cancel="$emit('cancel')"
@@ -294,5 +294,5 @@ export default {
       :active-hint="$t(`${wording}.form.isActiveHint`)"
       :loading="loading"
     />
-  </bs-modal-form>
+  </bs-side-panel-form>
 </template>

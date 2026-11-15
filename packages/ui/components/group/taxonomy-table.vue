@@ -2,16 +2,18 @@
 import mixinTaxonomyManage from '~/helpers/mixins/mixin-taxonomy-manage.js';
 import BsDataTable from '~/components/data-table/bs-data-table.vue';
 import { canonicalTypeLabelKey } from '~/helpers/taxonomy.js';
-import { Tags, Pencil, Trash2, AlertTriangle } from 'lucide-vue';
+import { Pencil, Trash2, GripVertical } from 'lucide-vue';
+import { moveItem } from '~/helpers/reorder.js';
+import BsTaxonomyTableEmpty from '~/components/group/taxonomy-table-empty.vue';
 
 export default {
   name: 'BsTaxonomyTable',
   components: {
     BsDataTable,
-    LucideTags: Tags,
+    BsTaxonomyTableEmpty,
     LucidePencil: Pencil,
     LucideTrash2: Trash2,
-    LucideAlertTriangle: AlertTriangle,
+    LucideGripVertical: GripVertical,
   },
   mixins: [mixinTaxonomyManage],
   props: {
@@ -23,15 +25,23 @@ export default {
     // The email type maps a value onto the doctrine's six types; any other
     // dimension shows the value's own identifier.
     isEmailType: { type: Boolean, default: true },
+    // Rows ordered by drag and drop, or Alt + arrows on a grip: emits
+    // `reorder` with every id in the new order (ADR-0026).
+    reorderable: { type: Boolean, default: false },
+  },
+  data() {
+    return { dragged: null };
   },
   computed: {
     wording() {
       return this.isEmailType ? 'taxonomy' : 'taxonomy.values';
     },
     headers() {
-      const headers = [
-        { text: this.$t('taxonomy.table.label'), value: 'label' },
-      ];
+      const canReorder = this.reorderable && this.canManageTaxonomy;
+      const headers = canReorder
+        ? [{ text: '', value: 'grip', sortable: false, width: 36 }]
+        : [];
+      headers.push({ text: this.$t('taxonomy.table.label'), value: 'label' });
 
       // Dropped below `lg` as a readability choice, not because anything breaks:
       // Vuetify's own wrapper scrolls horizontally, so the columns past the edge
@@ -55,7 +65,9 @@ export default {
             : this.$t('taxonomy.values.form.identifier'),
           value: 'canonicalType',
         },
-        { text: this.$t('taxonomy.table.order'), value: 'order' },
+        ...(canReorder
+          ? []
+          : [{ text: this.$t('taxonomy.table.order'), value: 'order' }]),
         { text: this.$t('taxonomy.table.isActive'), value: 'isActive' }
       );
       if (this.canManageTaxonomy) {
@@ -71,6 +83,31 @@ export default {
     },
   },
   methods: {
+    moveTo(id, target) {
+      const ids = this.items.map((item) => item.id);
+      const from = ids.indexOf(id);
+      if (from === -1 || target === from || target < 0) return;
+      if (target >= ids.length) return;
+      this.$emit('reorder', moveItem(ids, from, target));
+    },
+    rowIdOf(event) {
+      const row = event.target.closest && event.target.closest('tr');
+      const grip = row && row.querySelector('[data-value-id]');
+      return grip ? grip.getAttribute('data-value-id') : null;
+    },
+    onDragOver(event) {
+      if (this.dragged && this.rowIdOf(event)) event.preventDefault();
+    },
+    onDrop(event) {
+      const target = this.rowIdOf(event);
+      const dragged = this.dragged;
+      this.dragged = null;
+      if (!dragged || !target) return;
+      this.moveTo(
+        dragged,
+        this.items.findIndex((item) => item.id === target)
+      );
+    },
     canonicalTypeLabel(item) {
       const key = canonicalTypeLabelKey(item.canonicalType);
       // An unknown value is shown as-is rather than as a missing i18n key: the
@@ -83,12 +120,34 @@ export default {
 
 <template>
   <bs-data-table
+    :disable-sort="reorderable"
+    :items-per-page="reorderable ? -1 : undefined"
     :headers="headers"
     :items="items"
     :loading="loading"
     :clickable="canManageTaxonomy"
+    @dragover.native="onDragOver"
+    @drop.native.prevent="onDrop"
+    @dragend.native="dragged = null"
     @click:row="canManageTaxonomy && $emit('edit', $event)"
   >
+    <template #item.grip="{ item, index }">
+      <span
+        class="taxonomy-table__grip"
+        draggable="true"
+        tabindex="0"
+        role="button"
+        :data-value-id="item.id"
+        :aria-label="$t('taxonomy.workspace.dragHint')"
+        @click.stop
+        @dragstart="dragged = item.id"
+        @keydown.alt.up.prevent="moveTo(item.id, index - 1)"
+        @keydown.alt.down.prevent="moveTo(item.id, index + 1)"
+      >
+        <lucide-grip-vertical :size="16" />
+      </span>
+    </template>
+
     <template #item.label="{ item }">
       <span class="taxonomy-table__label">{{ item.label }}</span>
       <v-chip
@@ -167,52 +226,30 @@ export default {
     </template>
 
     <template #no-data>
-      <div v-if="loadError" class="text-center pa-6">
-        <lucide-alert-triangle :size="48" class="error--text" />
-        <p class="text-body-1 grey--text text--darken-2 mt-4 mb-1">
-          {{ $t(`${wording}.loadError.title`) }}
-        </p>
-        <p class="text-body-2 grey--text text--darken-1">
-          {{ $t('taxonomy.loadError.description') }}
-        </p>
-        <v-btn color="accent" elevation="0" @click="$emit('retry')">
-          {{ $t('taxonomy.loadError.action') }}
-        </v-btn>
-      </div>
-      <div v-else class="text-center pa-6">
-        <lucide-tags :size="48" class="grey--text text--lighten-1" />
-        <p class="text-body-1 grey--text mt-4 mb-1">
-          {{ $t(`${wording}.empty.title`) }}
-        </p>
-        <p class="text-body-2 grey--text text--darken-1">
-          {{ $t(`${wording}.empty.description`) }}
-        </p>
-        <div
-          v-if="canManageTaxonomy"
-          class="d-flex justify-center flex-wrap"
-          style="gap: 0.5rem"
-        >
-          <v-btn color="accent" elevation="0" @click="$emit('create')">
-            {{ $t(`${wording}.empty.action`) }}
-          </v-btn>
-          <!-- The likeliest reason this screen is empty: a company created
-               before the defaults were seeded. Offering the rebuild here, where
-               the user actually is, rather than only in the page header. -->
-          <v-btn
-            v-if="isEmailType"
-            color="accent"
-            outlined
-            @click="$emit('restore-defaults')"
-          >
-            {{ $t('taxonomy.defaults.action') }}
-          </v-btn>
-        </div>
-      </div>
+      <bs-taxonomy-table-empty
+        :load-error="loadError"
+        :is-email-type="isEmailType"
+        :wording="wording"
+        @retry="$emit('retry')"
+        @create="$emit('create')"
+        @restore-defaults="$emit('restore-defaults')"
+      />
     </template>
   </bs-data-table>
 </template>
 
 <style lang="scss" scoped>
+.taxonomy-table__grip {
+  display: inline-flex;
+  color: var(--gray-500);
+  cursor: grab;
+
+  &:focus-visible {
+    outline: 2px solid var(--v-accent-base);
+    border-radius: 4px;
+  }
+}
+
 .taxonomy-table {
   &__label {
     display: block;

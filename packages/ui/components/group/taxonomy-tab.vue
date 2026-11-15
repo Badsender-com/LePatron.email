@@ -6,6 +6,8 @@ import BsModalConfirm from '~/components/modal-confirm';
 import BsTaxonomyTable from '~/components/group/taxonomy-table.vue';
 import BsTaxonomyFormDialog from '~/components/group/taxonomy-form-dialog.vue';
 import BsTaxonomyDefaultsDialog from '~/components/group/taxonomy-defaults-dialog.vue';
+import BsTaxonomyQuickAdd from '~/components/group/taxonomy-quick-add.vue';
+import mixinTaxonomyManage from '~/helpers/mixins/mixin-taxonomy-manage.js';
 import { taxonomyErrorFor, nextOrder } from '~/helpers/taxonomy.js';
 import { valuesWithoutCode } from '~/helpers/taxonomy-roles.js';
 import { STANDARD_DIMENSIONS } from '~/helpers/taxonomy-builder.js';
@@ -23,7 +25,9 @@ export default {
     BsTaxonomyTable,
     BsTaxonomyFormDialog,
     BsTaxonomyDefaultsDialog,
+    BsTaxonomyQuickAdd,
   },
+  mixins: [mixinTaxonomyManage],
   props: {
     dimensionName: { type: String, default: STANDARD_DIMENSIONS.EMAIL_TYPE },
     // The dimension this one hangs under: its values make the availability.
@@ -79,6 +83,7 @@ export default {
   },
   methods: {
     ...mapMutations(PAGE, { showSnackbar: SHOW_SNACKBAR }),
+    nextOrder,
 
     // No activeOnly here: the admin screen must show the deactivated items too,
     // they are exactly what the admin came to manage.
@@ -131,6 +136,20 @@ export default {
           : this.$t('taxonomy.defaults.snackbarNone'),
         color: count ? 'success' : 'info',
       });
+      await this.fetchItems();
+    },
+
+    // A drop saves the whole order; the list is read again either way.
+    async reorder(itemIds) {
+      try {
+        await this.$axios.$put(apiRoutes.taxonomyItemsOrder(), {
+          groupId: this.groupId,
+          type: this.dimensionName,
+          itemIds,
+        });
+      } catch (error) {
+        this.reportError(error);
+      }
       await this.fetchItems();
     },
 
@@ -194,16 +213,14 @@ export default {
       } catch (error) {
         this.reportError(error);
       } finally {
-        // Cleared whatever happened, so a refused delete does not leave the row
-        // armed for the next confirmation.
+        // Cleared even on a refusal, so the row is not armed for the next one.
         this.deletingItem = null;
         this.saving = false;
       }
     },
 
-    // A taken label or identifier belongs next to the field the user must
-    // change; the rest goes to the snackbar. The mapping lives in
-    // helpers/taxonomy.js so it is testable without vue-test-utils.
+    // A taken label or identifier goes next to its field (helpers/taxonomy.js),
+    // the rest to the snackbar.
     reportError(error) {
       const { key, params, count, field } = taxonomyErrorFor(error);
       const text =
@@ -224,11 +241,21 @@ export default {
       :loading="loading"
       :load-error="loadError"
       :is-email-type="isEmailType"
+      reorderable
       @retry="fetchItems"
       @create="openCreateForm"
       @restore-defaults="openRestoreDefaults"
       @edit="openEditForm"
       @delete="confirmDelete"
+      @reorder="reorder"
+    />
+    <bs-taxonomy-quick-add
+      v-if="canManageTaxonomy && !loadError"
+      :dimension-name="dimensionName"
+      :is-email-type="isEmailType"
+      :next-order="nextOrder(items)"
+      @added="fetchItems"
+      @error="reportError"
     />
 
     <bs-taxonomy-form-dialog
