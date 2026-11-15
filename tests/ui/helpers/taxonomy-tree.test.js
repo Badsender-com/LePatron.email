@@ -141,8 +141,7 @@ describe('dimension tree', () => {
   });
 });
 
-// Turned on by #1551 (create, move and order dimensions from the tree)
-describe.skip('reordering after a drop', () => {
+describe('reordering after a drop', () => {
   let moveItem;
 
   beforeAll(() => {

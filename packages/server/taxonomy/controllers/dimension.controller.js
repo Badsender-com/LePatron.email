@@ -10,6 +10,7 @@ module.exports = {
   createDimension: asyncHandler(createDimension),
   updateDimension: asyncHandler(updateDimension),
   deleteDimension: asyncHandler(deleteDimension),
+  reorderDimensions: asyncHandler(reorderDimensions),
 };
 
 /**
@@ -33,6 +34,28 @@ async function listDimensions(req, res) {
   });
 
   res.json({ items: dimensions.map(expose) });
+}
+
+/**
+ * @api {put} /taxonomy-dimensions/order order the dimensions under one parent
+ * @apiPermission taxonomy.manage
+ * @apiName ReorderDimensions
+ * @apiGroup TaxonomyDimensions
+ * @apiDescription Replaces the order of the company dimensions under one
+ *   parent; refused whole unless `names` lists exactly them (ADR-0026).
+ *
+ * @apiParam (Body) {String} [groupId] super admin only, the target company
+ * @apiParam (Body) {String} [parentName] null or absent for the first level
+ * @apiParam (Body) {String[]} names in their new order
+ */
+async function reorderDimensions(req, res) {
+  await dimensionService.reorderDimensions({
+    user: req.user,
+    groupId: req.body.groupId,
+    parentName: req.body.parentName || null,
+    names: req.body.names,
+  });
+  res.status(204).end();
 }
 
 /**

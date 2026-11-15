@@ -20,11 +20,14 @@ const {
 const { assertDefaults } = require('./value-defaults.js');
 const logger = require('../../utils/logger.js');
 
+const { reorderValues } = require('./order.service.js');
+
 module.exports = {
   listTaxonomyItems,
   createTaxonomyItem,
   updateTaxonomyItem,
   deleteTaxonomyItem,
+  reorderValues,
   resolveCompanyId,
 };
 
