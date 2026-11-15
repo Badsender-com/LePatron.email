@@ -4,6 +4,8 @@ const asyncHandler = require('express-async-handler');
 const ERROR_CODES = require('../constant/error-codes.js');
 const personalizedBlockService = require('./personalized-block-service');
 const createHttpError = require('http-errors');
+const { can } = require('../account/permissions.js');
+const { CAPABILITIES } = require('../../shared/access/roles.js');
 
 module.exports = {
   listPersonalizedBlocks: asyncHandler(listPersonalizedBlocks),
@@ -70,7 +72,8 @@ async function createPersonalizedBlock(req, res, next) {
     { name, category, content },
     groupId,
     templateId,
-    user.id
+    user.id,
+    { mayCompose: can(user, CAPABILITIES.BLOCK_COMPOSE) }
   );
 
   res.json(newPersonalizedBlock);
@@ -95,7 +98,8 @@ async function updatePersonalizedBlock(req, res) {
     const updatedBlockResult = await personalizedBlockService.updatePersonalizedBlock(
       id,
       groupId,
-      updatedBlock
+      updatedBlock,
+      { mayCompose: can(req.user, CAPABILITIES.BLOCK_COMPOSE) }
     );
     res.json(updatedBlockResult);
   } catch (error) {
