@@ -5,19 +5,27 @@
  *
  * - `missingCode`: a value of a dimension with a role, without its normalised
  *   code (ADR-0023);
- * - `nothingOffered`: a parent value under which no child value is offered;
+ * - `nothingOffered`: a parent value under which no child value is offered,
+ *   for a dimension that has values;
  * - `noValue`: an active dimension with no active value;
  * - `tokenUnread`: a design token a value carries that no template reads;
  * - `dimensionUnread`: a dimension offered on the templates reading it, which
  *   no template reads;
- * - `literalNotCarried`: a literal a template compares a dimension against,
- *   which no value of it carries, deactivated ones included.
+ * - `literalNotCarried`: the literals a template compares a dimension against,
+ *   which no value of it carries, deactivated ones included: one point per
+ *   template;
+ * - `literalNotOffered`: a template compares a child literal together with a
+ *   parent literal (`market eq 'ca' and language eq 'fr'`), and the value
+ *   carrying the child literal is not offered under that parent value.
  *
  * Deactivated dimensions and values ask nothing; the trigger's values are the
  * doctrine's.
  */
 import { STANDARD_DIMENSIONS } from './taxonomy-builder.js';
-import { comparedLiterals } from '../../shared/taxonomy/compared-literals.js';
+import {
+  comparedLiterals,
+  comparedTogether,
+} from '../../shared/taxonomy/compared-literals.js';
 
 const ids = (list) => (list || []).map(String);
 const plainTokens = (tokens) =>
@@ -64,7 +72,8 @@ export function pointsToCheck({
         );
     }
     const parent = active.find((d) => d.name === dimension.parentName);
-    if (parent) {
+    // A dimension with no value is one point already, not one per parent.
+    if (parent && own.length) {
       of(parent.name).forEach((parentValue) => {
         const parentId = String(parentValue.id);
         const offered = own.some((value) => {
@@ -98,28 +107,73 @@ export function pointsToCheck({
     // A deactivated value still exists, and emails still carry it.
     const all = values.filter((value) => value.type === dimension.name);
     points.push(...literalsNotCarried(dimension, all, templates));
+    if (parent) {
+      points.push(
+        ...literalsNotOffered({ dimension, parent, own, of, templates })
+      );
+    }
   });
   return points;
 }
 
 function literalsNotCarried(dimension, own, templates) {
   const carried = new Set(own.map((value) => value.canonicalType));
-  const comparing = new Map();
+  return templates
+    .map((template) => ({
+      kind: 'literalNotCarried',
+      dimension: dimension.name,
+      identifiers: comparedLiterals(template.contract, dimension.name)
+        .map((entry) => entry.literal)
+        .filter((literal) => !carried.has(literal))
+        .sort(),
+      templateIds: [String(template.id)],
+    }))
+    .filter((point) => point.identifiers.length > 0);
+}
+
+// The child literals compared with a parent literal, as `[child, parent]`.
+function pairsOf(contract, child, parent) {
+  return comparedTogether(contract)
+    .map((entry) => {
+      if (entry.property === child && entry.withProperty === parent) {
+        return [entry.literal, entry.withLiteral];
+      }
+      if (entry.property === parent && entry.withProperty === child) {
+        return [entry.withLiteral, entry.literal];
+      }
+      return null;
+    })
+    .filter(Boolean);
+}
+
+function literalsNotOffered({ dimension, parent, own, of, templates }) {
+  const byIdentifier = (list, identifier) =>
+    list.find((value) => value.canonicalType === identifier);
+  const found = new Map();
   templates.forEach((template) => {
-    comparedLiterals(template.contract, dimension.name)
-      .map((entry) => entry.literal)
-      .filter((literal) => !carried.has(literal))
-      .forEach((literal) => {
-        if (!comparing.has(literal)) comparing.set(literal, []);
-        comparing.get(literal).push(String(template.id));
-      });
+    pairsOf(template.contract, dimension.name, parent.name).forEach(
+      ([childLiteral, parentLiteral]) => {
+        const child = byIdentifier(own, childLiteral);
+        const parentValue = byIdentifier(of(parent.name), parentLiteral);
+        if (!child || !parentValue) return;
+        const parents = ids(child._parents);
+        const parentId = String(parentValue.id);
+        if (parents.length === 0 || parents.includes(parentId)) return;
+        const key = `${childLiteral} ${parentId}`;
+        if (!found.has(key)) {
+          found.set(key, {
+            kind: 'literalNotOffered',
+            dimension: dimension.name,
+            identifier: childLiteral,
+            parentValueId: parentId,
+            templateIds: [],
+          });
+        }
+        found.get(key).templateIds.push(String(template.id));
+      }
+    );
   });
-  return [...comparing].map(([identifier, templateIds]) => ({
-    kind: 'literalNotCarried',
-    dimension: dimension.name,
-    identifier,
-    templateIds,
-  }));
+  return [...found.values()];
 }
 
 /**

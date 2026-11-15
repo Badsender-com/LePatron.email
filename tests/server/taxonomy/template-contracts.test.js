@@ -60,6 +60,7 @@ describe("the company's templates with their contract", () => {
           read: ['mainColorVar'],
           adopt: {},
           compared: [],
+          comparedTogether: [],
         },
       },
       {
@@ -70,6 +71,7 @@ describe("the company's templates with their contract", () => {
           read: ['market'],
           adopt: {},
           compared: [{ property: 'market', literal: 'be', count: 1 }],
+          comparedTogether: [],
         },
       },
     ]);
@@ -96,6 +98,7 @@ describe('the contracts read in one query', () => {
     read: ['stored'],
     adopt: {},
     compared: [],
+    comparedTogether: [],
   };
 
   beforeEach(() => {

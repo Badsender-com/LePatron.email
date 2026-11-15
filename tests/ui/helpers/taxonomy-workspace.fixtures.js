@@ -128,6 +128,24 @@ const TEMPLATES = [
         { property: 'market', literal: 'fr', count: 2 },
         { property: 'market', literal: 'uk', count: 1 },
       ],
+      // Dutch for France, which the taxonomy offers in Belgium only; French
+      // for Belgium, which it offers.
+      comparedTogether: [
+        {
+          property: 'language',
+          literal: 'fr',
+          withProperty: 'market',
+          withLiteral: 'be',
+          count: 1,
+        },
+        {
+          property: 'language',
+          literal: 'nl',
+          withProperty: 'market',
+          withLiteral: 'fr',
+          count: 1,
+        },
+      ],
     },
   },
   {
