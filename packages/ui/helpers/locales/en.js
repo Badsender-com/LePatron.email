@@ -1212,6 +1212,32 @@ export default {
         carriedBy: 'Carried by',
         hint: 'Token types (colour, image, text…) will come with their own epic.',
       },
+      start: {
+        title: 'Decline the company’s emails',
+        intro:
+          'The email type and the trigger exist already. Add the company’s own dimensions: markets, languages, brands, audiences…',
+        steps: {
+          structure: { title: 'Structure', text: 'declare the dimensions and arrange them as a tree.' },
+          values: { title: 'Values', text: 'fill each dimension.' },
+          crossings: {
+            title: 'Crossings and defaults',
+            text: 'which child values under each parent value, and which one by default.',
+          },
+          tokens: { title: 'Tokens and precedence', text: 'what templates read from each value.' },
+          templates: {
+            title: 'Templates',
+            text: 'check what an email proposes, and adopt the values of existing emails.',
+          },
+        },
+        suggestionsTitle: 'Start from a usual dimension',
+        suggestions: {
+          market: 'Market',
+          language: 'Language',
+          brand: 'Brand',
+          audience: 'Audience',
+        },
+        hint: 'A suggestion prefills the label, name, role and parent: everything stays editable before creating, and no value is created.',
+      },
       addChild: 'Add a sub-dimension',
       move: {
         open: 'Move',

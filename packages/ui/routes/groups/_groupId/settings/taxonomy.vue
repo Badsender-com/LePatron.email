@@ -5,6 +5,8 @@ import mixinSettingsTitle from '~/helpers/mixins/mixin-settings-title.js';
 import mixinTaxonomyManage from '~/helpers/mixins/mixin-taxonomy-manage.js';
 import BsPageHeader from '~/components/layout/bs-page-header.vue';
 import BsTaxonomyWorkspace from '~/components/group/taxonomy-workspace.vue';
+import BsTaxonomyGettingStarted from '~/components/group/taxonomy-getting-started.vue';
+import { hasNoCompanyDimension } from '~/helpers/taxonomy-suggestions.js';
 import { Eye, Plus } from 'lucide-vue';
 import { CAPABILITIES } from '../../../../../shared/access/roles.js';
 
@@ -13,6 +15,7 @@ export default {
   components: {
     BsPageHeader,
     BsTaxonomyWorkspace,
+    BsTaxonomyGettingStarted,
     LucideEye: Eye,
     LucidePlus: Plus,
   },
@@ -32,14 +35,27 @@ export default {
     return {
       group: {},
       pointsTotal: 0,
+      dimensions: [],
     };
   },
   head() {
     return { title: this.settingsTitle };
   },
   computed: {
+    isEmpty() {
+      return hasNoCompanyDimension(this.dimensions);
+    },
     showGroupBadge() {
       return this.can(CAPABILITIES.PLATFORM_MANAGE) && this.group.name;
+    },
+  },
+  methods: {
+    suggest(suggestion) {
+      this.$refs.workspace.openDeclareForm(suggestion.parentName, {
+        label: this.$t(suggestion.labelKey),
+        name: suggestion.name,
+        role: suggestion.role,
+      });
     },
   },
 };
@@ -96,7 +112,16 @@ export default {
           {{ $t('taxonomy.readOnly') }}
         </p>
 
-        <bs-taxonomy-workspace ref="workspace" @points="pointsTotal = $event" />
+        <bs-taxonomy-getting-started
+          v-if="dimensions.length && isEmpty"
+          :dimensions="dimensions"
+          @suggest="suggest"
+        />
+        <bs-taxonomy-workspace
+          ref="workspace"
+          @points="pointsTotal = $event"
+          @loaded="dimensions = $event"
+        />
       </div>
     </v-container>
   </div>

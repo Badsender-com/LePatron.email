@@ -37,6 +37,9 @@ export default {
     points(points) {
       this.$emit('points', points.length);
     },
+    dimensions(dimensions) {
+      this.$emit('loaded', dimensions);
+    },
   },
   methods: {
     async fetchDimensions() {
