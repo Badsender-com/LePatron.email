@@ -427,6 +427,10 @@ export function taxonomyDimensionsItem(dimensionId) {
   return `/taxonomy-dimensions/${dimensionId}`;
 }
 
+export function taxonomyTemplateContracts(groupId) {
+  return `/taxonomy-dimensions/templates?groupId=${groupId}`;
+}
+
 // A drop sends the whole new order; the company travels in the body.
 export function taxonomyDimensionsOrder() {
   return '/taxonomy-dimensions/order';

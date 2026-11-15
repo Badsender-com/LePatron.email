@@ -1,20 +1,20 @@
 <script>
 import mixinTaxonomyManage from '~/helpers/mixins/mixin-taxonomy-manage.js';
 import mixinTaxonomyDimensionActions from '~/helpers/mixins/mixin-taxonomy-dimension-actions.js';
+import mixinTaxonomyWorkspaceData from '~/helpers/mixins/mixin-taxonomy-workspace-data.js';
 import { Plus } from 'lucide-vue';
-import * as apiRoutes from '~/helpers/api-routes.js';
 import BsTaxonomyDimensionFormDialog from '~/components/group/taxonomy-dimension-form-dialog.vue';
 import BsTaxonomyDimensionMoveDialog from '~/components/group/taxonomy-dimension-move-dialog.vue';
 import BsModalConfirm from '~/components/modal-confirm';
 import BsTaxonomyWorkspaceTree from '~/components/group/taxonomy-workspace-tree.vue';
 import BsTaxonomyWorkspaceDetail from '~/components/group/taxonomy-workspace-detail.vue';
+import BsTaxonomyTemplatePreview from '~/components/group/taxonomy-template-preview.vue';
 import {
   dimensionTree,
   segmentsOf,
   workspaceSelection,
 } from '~/helpers/taxonomy-tree.js';
 import {
-  STANDARD_DIMENSIONS,
   DIMENSIONS_PER_COMPANY,
   sortDimensions,
   resolutionOrder,
@@ -22,7 +22,13 @@ import {
 
 // The segments the workspace shows so far; the others come with their
 // tickets of epic #1547 (crossings, defaults, tokens, templates).
-const IMPLEMENTED_SEGMENTS = ['values', 'crossings', 'defaults', 'settings'];
+const IMPLEMENTED_SEGMENTS = [
+  'values',
+  'crossings',
+  'defaults',
+  'templates',
+  'settings',
+];
 
 /**
  * The taxonomy workspace (ADR-0026): the tree of dimensions on the left, the
@@ -34,21 +40,26 @@ export default {
   components: {
     BsTaxonomyWorkspaceTree,
     BsTaxonomyWorkspaceDetail,
+    BsTaxonomyTemplatePreview,
     BsTaxonomyDimensionFormDialog,
     BsTaxonomyDimensionMoveDialog,
     BsModalConfirm,
     LucidePlus: Plus,
   },
-  mixins: [mixinTaxonomyManage, mixinTaxonomyDimensionActions],
+  mixins: [
+    mixinTaxonomyManage,
+    mixinTaxonomyDimensionActions,
+    mixinTaxonomyWorkspaceData,
+  ],
   data() {
     return {
-      dimensions: [],
-      // Values per dimension name, read for the counts of the tree.
-      valuesByType: {},
       treeOpen: false,
     };
   },
   computed: {
+    isPreview() {
+      return this.$route.query.view === 'preview';
+    },
     treeRows() {
       return dimensionTree({
         dimensions: this.dimensions,
@@ -99,54 +110,20 @@ export default {
   },
   watch: {
     // A super admin switching company keeps this component mounted.
-    groupId: 'fetchDimensions',
+    groupId() {
+      this.fetchDimensions();
+      this.fetchTemplates();
+    },
   },
   mounted() {
     this.fetchDimensions();
+    this.fetchTemplates();
   },
   methods: {
-    async fetchDimensions() {
-      try {
-        const response = await this.$axios.$get(
-          apiRoutes.taxonomyDimensions(this.groupId, {
-            lang: this.$i18n.locale,
-          })
-        );
-        this.dimensions = response.items || [];
-        await this.fetchValues();
-      } catch (error) {
-        this.dimensions = [];
-        this.showSnackbar({
-          text: this.$t('taxonomy.dimensions.loadError'),
-          color: 'error',
-        });
-      }
-    },
-
-    async fetchValues() {
-      const named = this.dimensions.filter(
-        (dimension) => dimension.name !== STANDARD_DIMENSIONS.TRIGGER
-      );
-      const lists = await Promise.all(
-        named.map((dimension) =>
-          this.$axios
-            .$get(
-              apiRoutes.taxonomyItems(this.groupId, { type: dimension.name })
-            )
-            .then((response) => response.items || [])
-            .catch(() => [])
-        )
-      );
-      this.valuesByType = Object.fromEntries(
-        named.map((dimension, index) => [dimension.name, lists[index]])
-      );
-    },
-
-    // A section read its values again: the tree counts them.
-    setCount(name, count) {
-      const known = this.valuesByType[name] || [];
-      if (known.length === count) return;
-      this.fetchValues();
+    openPreview(template) {
+      if (this.$refs.detail && !this.$refs.detail.confirmLeave()) return;
+      this.treeOpen = false;
+      this.$router.push({ query: { view: 'preview', template } });
     },
 
     select(name, tab = 'values') {
@@ -156,7 +133,7 @@ export default {
         return;
       }
       this.$router.push({
-        query: { ...this.$route.query, dimension: name, tab },
+        query: { dimension: name, tab },
       });
     },
   },
@@ -171,8 +148,10 @@ export default {
     <bs-taxonomy-workspace-tree
       class="taxonomy-workspace__tree"
       :rows="treeRows"
-      :selected="selection.dimension"
+      :selected="isPreview ? null : selection.dimension"
+      :preview-on="isPreview"
       :reorderable="canManageTaxonomy && !saving"
+      @preview="openPreview(null)"
       @select="select"
       @reorder="reorderDimensions"
     >
@@ -201,9 +180,19 @@ export default {
       </template>
     </bs-taxonomy-workspace-tree>
 
+    <bs-taxonomy-template-preview
+      v-if="isPreview"
+      class="taxonomy-workspace__detail"
+      :templates="templates"
+      :template-id="$route.query.template || null"
+      :dimensions="dimensions"
+      :values="Object.values(valuesByType).flat()"
+      @select-template="openPreview"
+    />
     <bs-taxonomy-workspace-detail
-      v-if="selected"
+      v-else-if="selected"
       ref="detail"
+      :templates="templates"
       :values-by-type="valuesByType"
       class="taxonomy-workspace__detail"
       :dimension="selected"
@@ -211,6 +200,7 @@ export default {
       :segments="segments"
       :tab="selection.tab"
       :tree-open="treeOpen"
+      @preview="openPreview"
       @saved="fetchValues"
       @error="reportError"
       @toggle-tree="treeOpen = !treeOpen"

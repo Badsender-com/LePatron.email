@@ -4,6 +4,7 @@ const asyncHandler = require('express-async-handler');
 const { omit } = require('lodash');
 
 const dimensionService = require('../services/dimension.service.js');
+const templateContracts = require('../services/template-contracts.service.js');
 
 module.exports = {
   listDimensions: asyncHandler(listDimensions),
@@ -11,6 +12,7 @@ module.exports = {
   updateDimension: asyncHandler(updateDimension),
   deleteDimension: asyncHandler(deleteDimension),
   reorderDimensions: asyncHandler(reorderDimensions),
+  listTemplateContracts: asyncHandler(listTemplateContracts),
 };
 
 /**
@@ -142,4 +144,22 @@ function expose(dimension) {
     role: dimension.role || null,
     scope: dimension.scope || 'all',
   };
+}
+
+/**
+ * @api {get} /taxonomy-dimensions/templates the company's templates and contracts
+ * @apiPermission group_admin
+ * @apiName ListTemplateContracts
+ * @apiGroup TaxonomyDimensions
+ *
+ * @apiParam (Query) {String} [groupId] super admin only, the target company
+ *
+ * @apiSuccess {Object[]} items `{ id, name, contract }`, by name
+ */
+async function listTemplateContracts(req, res) {
+  const items = await templateContracts.listTemplateContracts({
+    user: req.user,
+    groupId: req.query.groupId,
+  });
+  res.json({ items });
 }

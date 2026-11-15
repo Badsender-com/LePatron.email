@@ -6,12 +6,13 @@ import BsTaxonomyCompanyDimension from '~/components/group/taxonomy-company-dime
 import BsTaxonomyDimensionSettings from '~/components/group/taxonomy-dimension-settings.vue';
 import BsTaxonomyCrossingsMatrix from '~/components/group/taxonomy-crossings-matrix.vue';
 import BsTaxonomyDefaultValue from '~/components/group/taxonomy-default-value.vue';
+import BsTaxonomyDimensionTemplates from '~/components/group/taxonomy-dimension-templates.vue';
 
 /**
  * The selected dimension of the taxonomy workspace, in segments (ADR-0026).
  * The requests are the workspace's: this emits `select-tab`, `toggle-tree`,
- * `edit`, `move`, `add-child`, `toggle-active`, `delete`, `count`, `saved` and
- * `error`.
+ * `edit`, `move`, `add-child`, `toggle-active`, `delete`, `count`, `saved`,
+ * `error` and `preview`.
  */
 export default {
   name: 'BsTaxonomyWorkspaceDetail',
@@ -22,6 +23,7 @@ export default {
     BsTaxonomyDimensionSettings,
     BsTaxonomyCrossingsMatrix,
     BsTaxonomyDefaultValue,
+    BsTaxonomyDimensionTemplates,
     LucidePanelLeft: PanelLeft,
   },
   props: {
@@ -32,6 +34,7 @@ export default {
     treeOpen: { type: Boolean, default: false },
     // Values per dimension name, for the crossings and the defaults.
     valuesByType: { type: Object, default: () => ({}) },
+    templates: { type: Array, default: () => [] },
   },
   data() {
     return { dirty: false };
@@ -100,6 +103,13 @@ export default {
       :values="valuesByType[dimension.name] || []"
       @saved="$emit('saved')"
       @error="$emit('error', $event)"
+    />
+    <bs-taxonomy-dimension-templates
+      v-else-if="tab === 'templates'"
+      :dimension="dimension"
+      :templates="templates"
+      :values="valuesByType[dimension.name] || []"
+      @preview="$emit('preview', $event)"
     />
     <bs-taxonomy-dimension-settings
       v-else-if="tab === 'settings'"
