@@ -29,6 +29,9 @@ const {
   BLOCK_BUILDER_BLOCK,
   HTML_CODE_BLOCK,
 } = require('../../../packages/editor/src/js/ext/synthetic-blocks/block-types.js');
+const {
+  paletteEntryOf,
+} = require('../../../packages/editor/src/js/vue/components/personalized-blocks-list/palette-entry.js');
 const converter = require('../../../packages/editor/src/js/converter/main.js');
 const modelDef = require('../../../packages/editor/src/js/converter/model.js');
 
@@ -83,15 +86,6 @@ const libraryItem = (content) => ({
 });
 
 describe('an inserted composed block remembers its library entry', () => {
-  let paletteEntryOf;
-
-  beforeAll(() => {
-    // Required here: the module does not exist until #1565 ships it.
-    ({
-      paletteEntryOf,
-    } = require('../../../packages/editor/src/js/vue/components/personalized-blocks-list/palette-entry.js'));
-  });
-
   it('is declared by the composed block, and by it alone', () => {
     expect(BLOCK_BUILDER_BLOCK.originProperty).toBe(ORIGIN);
     expect(generatedBlock(BLOCK_BUILDER_BLOCK.type)).toHaveProperty(ORIGIN);
@@ -108,6 +102,16 @@ describe('an inserted composed block remembers its library entry', () => {
     );
 
     expect(entry[ORIGIN]).toBe(ENTRY_ID);
+  });
+
+  it('is left empty, not false, for an entry without an id', () => {
+    const { _id: _unused, ...withoutId } = libraryItem({
+      type: BLOCK_BUILDER_BLOCK.type,
+      builderHtml: '',
+      builderState: '',
+    });
+
+    expect(paletteEntryOf(withoutId)[ORIGIN]).toBeNull();
   });
 
   it('is not set on a saved template block', () => {
