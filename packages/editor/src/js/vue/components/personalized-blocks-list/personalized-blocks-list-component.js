@@ -59,13 +59,16 @@ const PersonalizedBlocksListComponent = Vue.component(
           })
           .then((response) => {
             this.vm.personalizedBlocks(
-              response.data?.items.map(({ content, ...blockInformation }) => ({
+              response.data?.items.map(({ content, _id, name, category, userDetails }) => ({
                 ...content,
+                // Only what the palette and the save and delete modals read.
                 blockInformation: {
+                  _id,
+                  name,
+                  category,
                   userDetails: {
-                    name: 'admin'
+                    name: (userDetails && userDetails.name) || 'admin',
                   },
-                  ...blockInformation,
                 },
                 id: '', // This line is crucial. The `viewModel.loadDefaultBlocks` function will override this `id` when the block is added to the email content. Without this placeholder, there could be issues when adding personalized blocks in emails.
               }))
