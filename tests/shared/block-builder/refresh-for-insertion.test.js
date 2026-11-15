@@ -16,6 +16,9 @@ const {
   serialiseState,
   parseState,
 } = require('../../../packages/shared/block-builder/state.js');
+const {
+  refreshForInsertion,
+} = require('../../../packages/shared/block-builder/refresh.js');
 
 const text = (id, content) => ({ id, type: 'text', content });
 
@@ -40,18 +43,7 @@ const ROWS = {
   ],
 };
 
-// Turned on by #1565 (an inserted composed block shows what will be stored)
-describe.skip('a composition refreshed for insertion', () => {
-  let refreshForInsertion;
-
-  beforeAll(() => {
-    // Required here, not at the top of the file: the module does not exist
-    // until #1565 ships it.
-    ({
-      refreshForInsertion,
-    } = require('../../../packages/shared/block-builder/refresh.js'));
-  });
-
+describe('a composition refreshed for insertion', () => {
   it('regenerates the markup with the current generator', () => {
     const builderState = storedByAnEarlierGenerator(ROWS);
 
