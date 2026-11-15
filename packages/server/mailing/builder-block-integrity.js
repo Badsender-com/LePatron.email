@@ -47,6 +47,21 @@ const composedBlocksOf = (data) =>
   findSyntheticBlocks(data).filter((block) => block.type === type);
 
 /**
+ * Whether a composed block holds something its state cannot account for —
+ * corrupt, or written by a newer version. An empty block, or one whose every
+ * element was removed in the editor, has nothing to rebuild from and nothing
+ * to lose, and is readable.
+ *
+ * @param {Object} block a composed block
+ * @returns {boolean}
+ */
+function isUnreadableComposition(block) {
+  if (parseState(block[stateProperty])) return false;
+  const isEmpty = htmlOf(block) === '' && stateOf(block) === '';
+  return !isEmpty && !isEmptyComposition(block[stateProperty]);
+}
+
+/**
  * The markup a composed block's state generates.
  *
  * @param {Object} block a composed block whose pair is not stored
@@ -57,11 +72,7 @@ const composedBlocksOf = (data) =>
 function markupFromState(block) {
   const state = parseState(block[stateProperty]);
   if (state) return generate(state);
-
-  // Nothing to rebuild from, and nothing that would be lost: an empty block,
-  // or every element removed in the editor.
-  const isEmpty = htmlOf(block) === '' && stateOf(block) === '';
-  if (isEmpty || isEmptyComposition(block[stateProperty])) return '';
+  if (!isUnreadableComposition(block)) return '';
 
   logger.warn('Refused a composed block whose state cannot be read', {
     stateLength: stateOf(block).length,
@@ -93,4 +104,4 @@ function rebuildComposedMarkup(data, previousData) {
   }, 0);
 }
 
-module.exports = { rebuildComposedMarkup };
+module.exports = { rebuildComposedMarkup, isUnreadableComposition };
