@@ -11,6 +11,10 @@ const ERROR_CODES = require('../constant/error-codes.js');
 const { isObjectIdString } = require('../utils/model.js');
 const images = require('./image.controller.js');
 const gallery = require('./gallery.controller.js');
+const { noSniff } = require('./served-file-headers.js');
+
+// Every answer, a file of the storage or an error, has the type it announces.
+router.use(noSniff);
 
 // A gallery is keyed by its mailing's or template's id. Anything else reached
 // the Mongoose casts and came back as a server error; it is a bad request,

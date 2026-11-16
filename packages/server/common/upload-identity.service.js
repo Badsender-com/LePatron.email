@@ -39,10 +39,6 @@ const isJpeg = (buffer) =>
   buffer[1] === 0xd8 &&
   buffer[2] === 0xff;
 
-// types a browser sends when it has no idea: they map to an extension, so they
-// look valid, but they say nothing about the content
-const GENERIC_UPLOAD_TYPES = ['application/octet-stream'];
-
 // The same test `slugFilename` applies before deciding it can do nothing with
 // a name. Kept in step with it on purpose: what follows exists to make sure
 // that function is never handed a name it refuses.
@@ -51,27 +47,34 @@ const EXTENSION = /\.[0-9a-z]+$/i;
 // `mime.extension()` answers `false` — not undefined — for a type it cannot
 // map, and interpolating that into a filename is how production ended up with
 // gallery files named `<hash>.false`. The type declared by the client is not
-// trustworthy either: it is what produced `<hash>.bin` for actual PNGs. So fall
-// back to the bytes, and give up on the upload when they are not an image.
+// trustworthy either: it is what produced `<hash>.bin` for actual PNGs.
 //
 // `head` is the start of the upload when the caller has already read it;
 // without it, it is read here.
 function resolveUploadExtension(file, head) {
-  const declaredExtension = mime.extension(file.type);
-  // `application/octet-stream` *does* map — to `bin` — which is the other half
-  // of the problem: it is what a browser sends when it doesn't know, and it is
-  // how PNGs ended up stored as `.bin`. Never trust it, always look.
-  if (declaredExtension && !GENERIC_UPLOAD_TYPES.includes(file.type)) {
-    return declaredExtension;
-  }
+  return storedExtension(head || readHead(file, SNIFF_BYTES), file.type, file);
+}
 
-  const probed = sniffHead(file, head || readHead(file, SNIFF_BYTES));
-  const sniffedExtension = probed
-    ? mime.extension(probed.mime) || probed.type
-    : null;
-  // not an image: keep whatever the declared type mapped to, so uploads that
-  // legitimately aren't images keep working exactly as before
-  return sniffedExtension || declaredExtension || null;
+/**
+ * The extension a file is stored under, which decides the type it is served
+ * with: the format of its bytes when they are an image, whatever was declared;
+ * otherwise what the declared type maps to, so files that legitimately are
+ * not images keep working.
+ *
+ * A JPEG is recognised from its first bytes even when the prober needs more
+ * of it than `head` holds.
+ *
+ * @param {Buffer} head the start of the file
+ * @param {string} [declaredType] what the client or the remote server said
+ * @param {object} [file] the upload, for the logs
+ * @returns {string|null} null when neither the bytes nor the type name one
+ */
+function storedExtension(head, declaredType, file) {
+  const probed = sniffHead(file, head);
+  const sniffed = probed ? mime.extension(probed.mime) || probed.type : null;
+  if (sniffed) return sniffed;
+  if (isJpeg(head)) return mime.extension('image/jpeg');
+  return mime.extension(declaredType) || null;
 }
 
 // Reads up to `bytes` of an upload from disk, from `position` on (its start
@@ -95,7 +98,7 @@ function sniffHead(file, head) {
   try {
     return probe.sync(head);
   } catch (e) {
-    logger.log('[UPLOAD] unable to sniff', file.path, e.message);
+    logger.log('[UPLOAD] unable to sniff', file && file.path, e.message);
     return null;
   }
 }
@@ -207,6 +210,7 @@ function resolveUploadNames(file, prefix, head) {
 
 module.exports = {
   resolveUploadExtension,
+  storedExtension,
   resolveUploadNames,
   probeImageDimensions,
   measureUpload,

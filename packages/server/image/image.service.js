@@ -2,7 +2,6 @@
 
 const crypto = require('crypto');
 const { PassThrough } = require('stream');
-const mime = require('mime-types');
 const fetch = require('node-fetch');
 const AbortController = require('abort-controller');
 const createError = require('http-errors');
@@ -201,7 +200,11 @@ async function createFromUrl(mongoId, imageUrl) {
     throw new Error('Downloaded image exceeds the maximum allowed size');
   }
 
-  const ext = mime.extension(contentType) || 'jpg';
+  const ext =
+    uploadIdentity.storedExtension(
+      buffer.subarray(0, uploadIdentity.SNIFF_BYTES),
+      contentType
+    ) || 'jpg';
   const hash = crypto.createHash('md5').update(buffer).digest('hex');
   const fileName = `${mongoId}-${hash}.${ext}`;
 

@@ -13,6 +13,7 @@ const { green, red } = require('chalk');
 const config = require('../node.config.js');
 const fileManager = require('../common/file-manage.service.js');
 const { CacheImages } = require('../common/models.common.js');
+const { setServedFileHeaders } = require('./served-file-headers.js');
 
 console.log('[IMAGES] config.images.cache', config.images.cache);
 
@@ -198,7 +199,7 @@ const streamImageToResponse = async (req, res, next, imageName) => {
   // https://groups.google.com/forum/#!topic/nodejs/A8wbaaPmmBQ
   imageStream.once('readable', () => {
     addCacheControl(res);
-    if (contentType) res.set('Content-Type', contentType);
+    setServedFileHeaders(res, contentType);
 
     imageStream
       .pipe(res)
