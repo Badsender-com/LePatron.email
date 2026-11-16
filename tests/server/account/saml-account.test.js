@@ -9,6 +9,12 @@ jest.mock('../../../packages/server/common/models.common.js', () => ({
   Users: { findOne: jest.fn() },
   Groups: { findOne: jest.fn() },
 }));
+jest.mock('../../../packages/server/utils/logger.js', () => ({
+  log: jest.fn(),
+  info: jest.fn(),
+  warn: jest.fn(),
+  error: jest.fn(),
+}));
 
 const { SAML } = require('@node-saml/node-saml');
 
@@ -21,6 +27,7 @@ const {
   samlOptionsForRequest,
   accountOfResponse,
   samlCallbackBody,
+  refusedSamlResponse,
 } = require('../../../packages/server/account/saml-account.js');
 const { createIdp } = require('../../helpers/saml-idp.js');
 
@@ -233,5 +240,32 @@ describe('samlCallbackBody', () => {
       .send({ SAMLResponse: 'A'.repeat(2 * 1024 * 1024) });
 
     expect(res.status).toBe(413);
+  });
+});
+
+// A response the SAML library refuses (a wrong audience, a bad signature)
+// sends the browser back to the application, as a response naming no account
+// does; the reason is logged, never the response itself.
+describe('refusedSamlResponse', () => {
+  const logger = require('../../../packages/server/utils/logger.js');
+
+  it('redirects to the login page, which says it failed, and logs why', () => {
+    const res = { redirect: jest.fn() };
+    const next = jest.fn();
+    const samlResponse = base64(idpOfX.signedResponse('someone@x.test'));
+
+    refusedSamlResponse(
+      new Error('SAML assertion audience mismatch'),
+      { body: { SAMLResponse: samlResponse } },
+      res,
+      next
+    );
+
+    expect(res.redirect).toHaveBeenCalledWith('/account/login?sso=failed');
+    expect(next).not.toHaveBeenCalled();
+    const logged = JSON.stringify(logger.warn.mock.calls);
+    expect(logged).toContain('SAML assertion audience mismatch');
+    expect(logged).not.toContain(samlResponse);
+    expect(logged).not.toContain('someone@x.test');
   });
 });
