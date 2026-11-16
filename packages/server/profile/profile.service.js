@@ -212,6 +212,28 @@ async function updateProfile({
   );
 }
 
+/**
+ * An update edits a campaign the email already has on this profile: the one
+ * recorded in its espIds when it was created. Any other answers like a
+ * campaign that does not exist.
+ *
+ * @param {Object} params
+ * @param {Object} params.mailing with its espIds
+ * @param {string} params.profileId
+ * @param {string} params.campaignId
+ */
+function assertCampaignOfMailing({ mailing, profileId, campaignId }) {
+  const recorded = (mailing.espIds || []).some(
+    (espId) =>
+      espId &&
+      String(espId.profileId) === String(profileId) &&
+      String(espId.campaignId) === String(campaignId)
+  );
+  if (!recorded) {
+    throw new NotFound(ERROR_CODES.ESP_CAMPAIGN_NOT_FOUND);
+  }
+}
+
 async function updateEspCampaign({
   user,
   espSendingMailData,
@@ -233,6 +255,7 @@ async function updateEspCampaign({
   // email, in its workspace or folder, like saving it.
   await mailingService.assertUserCanEditMailing(user, mailing);
   const profile = await findProfileForMailing({ user, profileId, mailing });
+  assertCampaignOfMailing({ mailing, profileId, campaignId });
 
   const {
     apiKey,
