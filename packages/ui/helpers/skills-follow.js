@@ -49,8 +49,9 @@ export function followOutcomes(last) {
   })).filter(({ count }) => count > 0);
 }
 
-// Why a follow wrote nothing, as the server words it.
-export const FOLLOW_FAILURE_REASONS = [
+// Why a follow could not fetch or read production's answer, as the server
+// words it: it stopped before its first item, so it wrote nothing.
+const NOTHING_WRITTEN_REASONS = [
   'not_configured',
   'invalid_address',
   'unreachable',
@@ -59,13 +60,28 @@ export const FOLLOW_FAILURE_REASONS = [
   'unreadable',
 ];
 
-// The words of a failed follow, in the reader's language: an unforeseen
-// reason reads as production out of reach.
+// Why a follow failed, as the server words it: the reasons above, one
+// stopped before its end and found so by the next follow (`interrupted`),
+// and one stopped on an unforeseen error past any one item (`failed`).
+export const FOLLOW_FAILURE_REASONS = [
+  ...NOTHING_WRITTEN_REASONS,
+  'interrupted',
+  'failed',
+];
+
+// The words of a failed follow, in the reader's language: a reason the
+// page does not know says only that the follow failed.
 export function followFailureKey(last) {
   const reason = last && last.reason;
   return `aiSkills.follow.reasons.${
-    FOLLOW_FAILURE_REASONS.includes(reason) ? reason : 'unreachable'
+    FOLLOW_FAILURE_REASONS.includes(reason) ? reason : 'unknown'
   }`;
+}
+
+// Whether a failed follow surely wrote nothing: one interrupted or stopped
+// on an unforeseen error may have written items before it stopped.
+export function followWroteNothing(last) {
+  return NOTHING_WRITTEN_REASONS.includes(last && last.reason);
 }
 
 // Who followed: a person's button, or the night's scheduled command.

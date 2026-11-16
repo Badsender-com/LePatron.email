@@ -385,6 +385,87 @@ describe('the follow of production on a copy', () => {
     );
   });
 
+  // As the server records a failed follow: its reason, and the lists of
+  // what it did before it stopped, empty when it never reached an item.
+  const FAILED = {
+    status: 'failed',
+    trigger: 'manual',
+    by: 'Alice',
+    at: '2026-11-10T08:00:00Z',
+    created: [],
+    updated: [],
+    upToDate: [],
+    kept: [],
+    moved: [],
+    removed: [],
+    failed: [],
+    failures: [],
+  };
+
+  it.each([
+    [
+      'fr',
+      'unreachable',
+      "La production n'a pas pu être jointe. Rien n'a été écrit.",
+    ],
+    [
+      'en',
+      'unreachable',
+      'Production could not be reached. Nothing was written.',
+    ],
+    [
+      'fr',
+      'interrupted',
+      "Le suivi ne s'est pas terminé : le suivi lancé ensuite l'a trouvé arrêté. Ce qu'il avait déjà écrit reste ; suivez de nouveau la production.",
+    ],
+    [
+      'en',
+      'interrupted',
+      'The follow did not end: the follow started next found it stopped. What it had already written stays; follow production again.',
+    ],
+    [
+      'fr',
+      'failed',
+      "Le suivi s'est arrêté sur une erreur inattendue. Ce qu'il a déjà écrit reste ; suivez de nouveau la production.",
+    ],
+    [
+      'en',
+      'failed',
+      'The follow stopped on an unexpected error. What it already wrote stays; follow production again.',
+    ],
+    ['fr', 'something new', 'Le suivi a échoué.'],
+    ['en', 'something new', 'The follow failed.'],
+  ])(
+    'says in %s why a follow failed on %s, and that it wrote nothing only when so',
+    async (locale, reason, words) => {
+      const { vm } = mountFollow({
+        locale,
+        answer: { ...ANSWER, last: { ...FAILED, reason } },
+      });
+      await settle(vm);
+      expect(text(vm.$el.querySelector('.bs-ai-follow__message'))).toBe(words);
+    }
+  );
+
+  it('counts what a follow stopped on an unexpected error wrote before', async () => {
+    const { vm } = mountFollow({
+      answer: {
+        ...ANSWER,
+        last: {
+          ...FAILED,
+          reason: 'failed',
+          created: [{ kind: 'skill', id: 'qc.review', version: '1.0' }],
+          upToDate: [{ kind: 'expertise', id: 'brand', version: '1.0' }],
+        },
+      },
+    });
+    await settle(vm);
+    expect(texts(vm, '.bs-ai-follow__outcomes li')).toEqual([
+      '1 élément ajouté',
+      '1 élément déjà à jour',
+    ]);
+  });
+
   it.each([
     ['fr', 'Un suivi est déjà en cours'],
     ['en', 'A follow is already running'],

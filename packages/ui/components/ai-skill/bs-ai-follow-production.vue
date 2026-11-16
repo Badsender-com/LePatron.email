@@ -13,6 +13,7 @@ import {
   followLockKey,
   followOutcomes,
   followStatusColor,
+  followWroteNothing,
 } from '~/helpers/skills-follow.js';
 import { copyStateOf } from '~/helpers/skills-copy.js';
 
@@ -61,6 +62,7 @@ export default {
     ...mapMutations(PAGE, { showSnackbar: SHOW_SNACKBAR }),
     followStatusColor,
     followFailureKey,
+    followWroteNothing,
     async fetchData() {
       this.loading = true;
       try {
@@ -223,22 +225,23 @@ export default {
       </div>
       <p v-if="last.status === 'failed'" class="bs-ai-follow__message">
         {{ $t(followFailureKey(last)) }}
-        {{ $t('aiSkills.follow.nothingWritten') }}
+        <template v-if="followWroteNothing(last)">
+          {{ $t('aiSkills.follow.nothingWritten') }}
+        </template>
       </p>
-      <template v-else>
-        <p v-if="last.status === 'partial'" class="bs-ai-follow__message">
-          {{ $t('aiSkills.follow.partialHint') }}
-        </p>
-        <ul class="bs-ai-follow__outcomes">
-          <li
-            v-for="outcome in outcomes"
-            :key="outcome.outcome"
-            :class="`bs-ai-follow__outcome--${outcome.outcome}`"
-          >
-            {{ outcomeLabel(outcome) }}
-          </li>
-        </ul>
-      </template>
+      <p v-else-if="last.status === 'partial'" class="bs-ai-follow__message">
+        {{ $t('aiSkills.follow.partialHint') }}
+      </p>
+      <!-- A follow stopped on an unexpected error counts what it wrote. -->
+      <ul v-if="outcomes.length" class="bs-ai-follow__outcomes">
+        <li
+          v-for="outcome in outcomes"
+          :key="outcome.outcome"
+          :class="`bs-ai-follow__outcome--${outcome.outcome}`"
+        >
+          {{ outcomeLabel(outcome) }}
+        </li>
+      </ul>
 
       <div v-if="details.moved.length" class="bs-ai-follow__details">
         <span class="bs-ai-follow__meta">

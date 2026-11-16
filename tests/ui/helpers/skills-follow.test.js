@@ -19,6 +19,7 @@ const {
   followLockKey,
   followOutcomes,
   followStatusColor,
+  followWroteNothing,
 } = require('~/helpers/skills-follow.js');
 
 const LAST = {
@@ -183,14 +184,34 @@ describe("a copy's follows of production", () => {
     expect(followStatusColor('failed')).toBe('error');
   });
 
-  it('says why a follow failed in words of its own, whatever the server wrote', () => {
-    expect(followFailureKey({ reason: 'token_refused' })).toBe(
-      'aiSkills.follow.reasons.token_refused'
-    );
-    expect(followFailureKey({ reason: 'something new' })).toBe(
-      'aiSkills.follow.reasons.unreachable'
-    );
-    expect(followFailureKey({})).toBe('aiSkills.follow.reasons.unreachable');
+  it.each([
+    ['token_refused', 'token_refused'],
+    ['interrupted', 'interrupted'],
+    ['failed', 'failed'],
+    ['something new', 'unknown'],
+    [undefined, 'unknown'],
+  ])(
+    'says why a follow failed in words of its own, the server writing %s',
+    (reason, key) => {
+      expect(followFailureKey({ reason })).toBe(
+        `aiSkills.follow.reasons.${key}`
+      );
+    }
+  );
+
+  // Only a follow that could not fetch or read production's answer stopped
+  // before its first item; one interrupted or stopped on an unforeseen
+  // error may have written some.
+  it.each([
+    ['not_configured', true],
+    ['unreachable', true],
+    ['unreadable', true],
+    ['interrupted', false],
+    ['failed', false],
+    ['something new', false],
+    [undefined, false],
+  ])('says whether a follow failing on %s wrote nothing', (reason, nothing) => {
+    expect(followWroteNothing({ reason })).toBe(nothing);
   });
 
   it('says who followed: a person, or the night', () => {
@@ -244,6 +265,7 @@ describe("a copy's follows of production", () => {
       'failed',
       ...FOLLOW_OUTCOMES,
       ...FOLLOW_FAILURE_REASONS,
+      'unknown',
     ].forEach((key) => expect(section).toMatch(new RegExp(`\\b${key}:`)));
   });
 });

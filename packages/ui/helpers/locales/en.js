@@ -1759,6 +1759,11 @@ export default {
         production_error: 'Production answered with an error.',
         unreadable:
           'Production\'s answer could not be read: the two instances may not run the same version of LePatron.',
+        interrupted:
+          'The follow did not end: the follow started next found it stopped. What it had already written stays; follow production again.',
+        failed:
+          'The follow stopped on an unexpected error. What it already wrote stays; follow production again.',
+        unknown: 'The follow failed.',
       },
     },
     readTokens: {
