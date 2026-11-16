@@ -248,8 +248,8 @@ async function updateEspCampaign({
     user,
     freshTracking,
   });
-  // The push records the campaign on the email (its espIds): a write in the
-  // email, in its workspace or folder, like saving it.
+  // An update rewrites the ESP campaign of the email, the one recorded in its
+  // espIds: asked of whoever may save the email, in its workspace or folder.
   await mailingService.assertUserCanEditMailing(user, mailing);
   const profile = await findProfileForMailing({ user, profileId, mailing });
   assertCampaignOfMailing({ mailing, profileId, campaignId });
