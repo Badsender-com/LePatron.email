@@ -1788,7 +1788,7 @@ export default {
         unreadable:
           'La réponse de la production n\'a pas pu être lue : les deux instances n\'ont peut-être pas la même version de LePatron.',
         interrupted:
-          'Le suivi ne s\'est pas terminé : le suivi lancé ensuite l\'a trouvé arrêté. Ce qu\'il avait déjà écrit reste ; suivez de nouveau la production.',
+          'Le suivi précédent ne s\'est pas terminé ; ce qu\'il avait écrit reste.',
         failed:
           'Le suivi s\'est arrêté sur une erreur inattendue. Ce qu\'il a déjà écrit reste ; suivez de nouveau la production.',
         unknown: 'Le suivi a échoué.',

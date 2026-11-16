@@ -416,12 +416,12 @@ describe('the follow of production on a copy', () => {
     [
       'fr',
       'interrupted',
-      "Le suivi ne s'est pas terminé : le suivi lancé ensuite l'a trouvé arrêté. Ce qu'il avait déjà écrit reste ; suivez de nouveau la production.",
+      "Le suivi précédent ne s'est pas terminé ; ce qu'il avait écrit reste.",
     ],
     [
       'en',
       'interrupted',
-      'The follow did not end: the follow started next found it stopped. What it had already written stays; follow production again.',
+      'The previous follow did not end; what it had written stays.',
     ],
     [
       'fr',

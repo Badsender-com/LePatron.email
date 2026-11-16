@@ -1762,7 +1762,7 @@ export default {
         unreadable:
           'Production\'s answer could not be read: the two instances may not run the same version of LePatron.',
         interrupted:
-          'The follow did not end: the follow started next found it stopped. What it had already written stays; follow production again.',
+          'The previous follow did not end; what it had written stays.',
         failed:
           'The follow stopped on an unexpected error. What it already wrote stays; follow production again.',
         unknown: 'The follow failed.',
