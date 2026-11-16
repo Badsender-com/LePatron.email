@@ -102,6 +102,26 @@ describe('image.controller — read()', () => {
     expect(fileManager.streamImage).toHaveBeenCalledTimes(1);
   });
 
+  // A resized SVG is a PNG kept under the source's name: the bytes say so.
+  it('serves a cached variant of an SVG with the type of its bytes', async () => {
+    probe.mockResolvedValue({ mime: 'image/png', type: 'png' });
+    const res = fakeResponse();
+
+    images.read(
+      { params: { imageName: 'resize_100x100_a-b.svg' } },
+      res,
+      jest.fn()
+    );
+    res.resume();
+    await whenFinished(res);
+
+    expect(res.set).toHaveBeenCalledWith('Content-Type', 'image/png');
+    expect(res.set).not.toHaveBeenCalledWith(
+      'Content-Disposition',
+      'attachment'
+    );
+  });
+
   it('falls back to the extension guess when the bytes are not an image', async () => {
     probe.mockRejectedValue(new Error('unrecognized format'));
     const res = fakeResponse();
