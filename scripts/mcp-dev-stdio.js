@@ -118,6 +118,26 @@ function stopper({ flush, disconnect, exit, timeoutMs = STOP_TIMEOUT_MS }) {
   };
 }
 
+/**
+ * The server the bridge serves, built as the HTTP endpoint builds one
+ * (mcp-http.js): who calls is resolved first, so what it offers depends on
+ * who holds the identity, as there (the reading of the retex for a
+ * consultant of the platform company). Each call still resolves its own
+ * again, since the messages carry the token without it. An identity the
+ * endpoint would refuse stops the bridge, saying why, as the endpoint
+ * answers 403 before any exchange.
+ *
+ * @param {Object} authInfo what a validated access token would carry
+ * @param {Object} deps
+ * @param {Function} deps.resolveIdentity from mcp-identity.js
+ * @param {Function} deps.createMcpServer from mcp-server.js
+ * @returns {Promise<McpServer>}
+ */
+async function serverFor(authInfo, { resolveIdentity, createMcpServer }) {
+  const identity = await resolveIdentity(authInfo);
+  return createMcpServer({ authInfo: { ...authInfo, identity } });
+}
+
 function argument(name) {
   const index = process.argv.indexOf(`--${name}`);
   return index === -1 ? undefined : process.argv[index + 1];
@@ -154,7 +174,10 @@ async function main(protocolOut) {
   } = require('@modelcontextprotocol/server/stdio');
   const { Users } = require(server('common', 'models.common.js'));
   const { createMcpServer } = require(server('mcp', 'mcp-server.js'));
-  const { READ_SCOPE, WRITE_SCOPE } = require(server('mcp', 'mcp-identity.js'));
+  const { READ_SCOPE, WRITE_SCOPE, resolveIdentity } = require(server(
+    'mcp',
+    'mcp-identity.js'
+  ));
 
   await mongoose.connect(config.database, {
     useNewUrlParser: true,
@@ -187,7 +210,11 @@ async function main(protocolOut) {
   process.on('SIGTERM', stop);
 
   const transport = new StdioServerTransport(process.stdin, protocolOut);
-  await createMcpServer({ authInfo }).connect(transport);
+  const mcpServer = await serverFor(authInfo, {
+    resolveIdentity,
+    createMcpServer,
+  });
+  await mcpServer.connect(transport);
   const handle = transport.onmessage;
   transport.onmessage = (message, extra) =>
     handle(message, { ...extra, authInfo });
@@ -204,4 +231,4 @@ if (require.main === module) {
   });
 }
 
-module.exports = { isLocalDatabase, assertMayRun, stopper };
+module.exports = { isLocalDatabase, assertMayRun, stopper, serverFor };

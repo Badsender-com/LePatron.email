@@ -9,6 +9,7 @@ const {
   isLocalDatabase,
   assertMayRun,
   stopper,
+  serverFor,
 } = require('../../scripts/mcp-dev-stdio.js');
 
 const REMOTE = 'mongodb://admin:s3cret@db.example.test:27017/lepatron';
@@ -133,6 +134,48 @@ describe('mcp-dev-stdio', () => {
       await Promise.all([stop(), stop()]);
 
       expect(exit).toHaveBeenCalledTimes(1);
+    });
+  });
+
+  // What the server offers depends on who calls (the reading of the retex
+  // for a consultant of the platform company): the bridge offers what the
+  // HTTP endpoint offers the same account.
+  describe('the server it serves', () => {
+    const AUTH_INFO = {
+      token: 'local-development',
+      scopes: ['mcp:read'],
+      extra: { userId: 'u1', groupId: 'g1' },
+    };
+
+    it('is built with the identity the HTTP endpoint resolves', async () => {
+      const identity = { user: { role: 'super-admin' }, group: {} };
+      const resolveIdentity = jest.fn().mockResolvedValue(identity);
+      const createMcpServer = jest.fn(() => 'server');
+
+      const server = await serverFor(AUTH_INFO, {
+        resolveIdentity,
+        createMcpServer,
+      });
+
+      expect(server).toBe('server');
+      expect(resolveIdentity).toHaveBeenCalledWith(AUTH_INFO);
+      expect(createMcpServer).toHaveBeenCalledWith({
+        authInfo: { ...AUTH_INFO, identity },
+      });
+    });
+
+    it('is not built for an identity the HTTP endpoint refuses, and says why', async () => {
+      const createMcpServer = jest.fn();
+
+      await expect(
+        serverFor(AUTH_INFO, {
+          resolveIdentity: jest
+            .fn()
+            .mockRejectedValue(new Error('This company has no MCP access.')),
+          createMcpServer,
+        })
+      ).rejects.toThrow('This company has no MCP access.');
+      expect(createMcpServer).not.toHaveBeenCalled();
     });
   });
 });
