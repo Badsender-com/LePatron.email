@@ -22,12 +22,13 @@ function payloadOf(record) {
 
 // How long a refresh token just traded may be traded again (ADR 0012): two
 // requests of a client at once, or a retry when the answer was lost, send it
-// twice. Past it, a second use is taken for a stolen token, and the provider
-// ends the connection.
-const REFRESH_REUSE_SECONDS = 60;
+// twice, the retries seen 10 seconds apart. Past it, a second use is taken
+// for a stolen token, and the provider ends the connection.
+const REFRESH_REUSE_SECONDS = 30;
 
-// Whether a refresh token was consumed within the minute: its second use is
-// then a client's, and the provider is told it was not consumed.
+// Whether a refresh token was consumed within REFRESH_REUSE_SECONDS: its
+// second use is then a client's, and the provider is told it was not
+// consumed.
 function isWithinReuse(name, payload) {
   return (
     name === 'RefreshToken' &&
@@ -135,8 +136,8 @@ class McpOAuthAdapter {
     return undefined;
   }
 
-  // When it was first consumed: traded again within the minute, a refresh
-  // token keeps that minute (REFRESH_REUSE_SECONDS).
+  // When it was first consumed: traded again, a refresh token keeps the
+  // time of its first use (REFRESH_REUSE_SECONDS).
   async consume(id) {
     await (await this.collection()).updateOne(
       { _id: this.storedId(id), consumed: { $exists: false } },
