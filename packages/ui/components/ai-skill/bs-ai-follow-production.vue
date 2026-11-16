@@ -127,6 +127,9 @@ export default {
           const { key, color } = followDoneNotice(last.status);
           this.showSnackbar({ text: this.$t(key), color });
           this.$emit('followed');
+        } else if (!followWroteNothing(last)) {
+          // Stopped past its first item: what it wrote shows in the lists.
+          this.$emit('followed');
         }
       } catch (error) {
         console.error(error);

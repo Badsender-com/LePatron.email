@@ -447,6 +447,32 @@ describe('the follow of production on a copy', () => {
     }
   );
 
+  // A follow that failed before its first item wrote nothing: the lists
+  // have nothing to reload. One that failed past it may have written some.
+  it.each([
+    ['unreachable', false],
+    ['token_refused', false],
+    ['failed', true],
+    ['interrupted', true],
+  ])(
+    'has the lists reloaded after a follow that failed on %s only when it may have written',
+    async (reason, reloads) => {
+      const last = { ...FAILED, reason };
+      const post = jest.fn().mockResolvedValue({ report: last, last });
+      const { vm } = mountFollow({ post });
+      const followed = jest.fn();
+      vm.$on('followed', followed);
+      await settle(vm);
+
+      followButton(vm).dispatchEvent(new Event('click'));
+      await settle(vm);
+
+      expect(followed).toHaveBeenCalledTimes(reloads ? 1 : 0);
+      // A failed follow is told on the tab, never as a success.
+      expect(commit).not.toHaveBeenCalled();
+    }
+  );
+
   it('counts what a follow stopped on an unexpected error wrote before', async () => {
     const { vm } = mountFollow({
       answer: {
