@@ -40,11 +40,15 @@ const pushArgs = (contentSendType) => ({
 });
 
 describe('the Brevo provider over HTTP', () => {
-  const client = SibApiV3Sdk.ApiClient.instance;
-  const originalBasePath = client.basePath;
   let stand;
   let origin;
   let provider;
+
+  const providerOf = (apiKey, path = '') => {
+    const built = new SendinBlueProvider({ apiKey });
+    built.client.basePath = `${origin}${path}`;
+    return built;
+  };
 
   beforeAll(async () => {
     stand = brevoStandIn();
@@ -55,23 +59,38 @@ describe('the Brevo provider over HTTP', () => {
   });
 
   afterAll(async () => {
-    client.basePath = originalBasePath;
     await new Promise((resolve) => stand.server.close(resolve));
   });
 
   beforeEach(() => {
     stand.requests.length = 0;
-    client.basePath = origin;
     jest
       .spyOn(mailingService, 'processHtmlWithFTPOption')
       .mockResolvedValue('<html>processed</html>');
     jest.spyOn(logger, 'error').mockImplementation(() => {});
     jest.spyOn(console, 'log').mockImplementation(() => {});
-    provider = new SendinBlueProvider({ apiKey: API_KEY });
+    provider = providerOf(API_KEY);
   });
 
   afterEach(() => {
     jest.restoreAllMocks();
+  });
+
+  it('calls the API with the key of its own account, whatever other providers exist', async () => {
+    const first = providerOf('xkeysib-first');
+    const second = providerOf('xkeysib-second');
+
+    await Promise.all([first.connectApi(), second.connectApi()]);
+    await first.getCampaignMail({ campaignId: 12 });
+
+    expect(stand.requests.map(({ apiKey }) => apiKey).sort()).toEqual([
+      'xkeysib-first',
+      'xkeysib-first',
+      'xkeysib-second',
+    ]);
+    expect(
+      SibApiV3Sdk.ApiClient.instance.authentications['api-key'].apiKey
+    ).toBeUndefined();
   });
 
   describe('each method', () => {
@@ -189,7 +208,7 @@ describe('the Brevo provider over HTTP', () => {
   // Short timeouts: a call that never settles is the failure.
   describe('when the API answers a redirect', () => {
     beforeEach(() => {
-      client.basePath = `${origin}${MOVED}`;
+      provider = providerOf(API_KEY, MOVED);
     });
 
     it('follows it on a read', async () => {
@@ -230,7 +249,7 @@ describe('the Brevo provider over HTTP', () => {
     // HTTP clients, on Node 18 as on 24): the create gets no id back and must
     // fail, not report a campaign.
     it('fails a create behind a 301 instead of reporting a campaign', async () => {
-      client.basePath = `${origin}${PERMANENT}`;
+      provider = providerOf(API_KEY, PERMANENT);
 
       const error = await provider
         .createCampaignMail(pushArgs(ESP_CONTENT_TYPE.MAIL))
