@@ -20,12 +20,16 @@ const {
 const PNG_FIXTURE =
   'iVBORw0KGgoAAAANSUhEUgAAAAgAAAAICAYAAADED76LAAAACXBIWXMAAAPoAAAD6AG1e1JrAAAAEklEQVR42mP4z8DwHx9mGBkKAMLXf4HVAzL9AAAAAElFTkSuQmCC';
 
+const JPEG_FIXTURE =
+  '/9j/2wBDABQODxIPDRQSEBIXFRQYHjIhHhwcHj0sLiQySUBMS0dARkVQWnNiUFVtVkVGZIhlbXd7gYKBTmCNl4x9lnN+gXz/2wBDARUXFx4aHjshITt8U0ZTfHx8fHx8fHx8fHx8fHx8fHx8fHx8fHx8fHx8fHx8fHx8fHx8fHx8fHx8fHx8fHx8fHz/wAARCAAIAAgDASIAAhEBAxEB/8QAFQABAQAAAAAAAAAAAAAAAAAAAAT/xAAUEAEAAAAAAAAAAAAAAAAAAAAA/8QAFAEBAAAAAAAAAAAAAAAAAAAABv/EABQRAQAAAAAAAAAAAAAAAAAAAAD/2gAMAwEAAhEDEQA/AKQB8Wf/2Q==';
+
 const PREFIX = '507f1f77bcf86cd799439011';
 const HASH = 'a1b2c3d4';
 
 let dir;
 let pngPath;
 let textPath;
+let jpegPath;
 
 beforeAll(() => {
   dir = fs.mkdtempSync(path.join(os.tmpdir(), 'lepatron-names-'));
@@ -33,6 +37,8 @@ beforeAll(() => {
   textPath = path.join(dir, 'text-bytes');
   fs.writeFileSync(pngPath, Buffer.from(PNG_FIXTURE, 'base64'));
   fs.writeFileSync(textPath, 'not an image at all');
+  jpegPath = path.join(dir, 'jpeg-bytes');
+  fs.writeFileSync(jpegPath, Buffer.from(JPEG_FIXTURE, 'base64'));
 });
 
 afterAll(() => fs.rmSync(dir, { recursive: true, force: true }));
@@ -62,6 +68,30 @@ describe('resolveUploadNames — the ordinary case', () => {
     // the browser's "I have no idea" type, which used to store PNGs as `.bin`
     const file = png('photo.bin', 'application/octet-stream');
     expect(resolveUploadNames(file, PREFIX).name).toBe(`${PREFIX}-${HASH}.png`);
+  });
+});
+
+// A template's HTML names its images as the kit's files are named: the assets
+// map is keyed by that name, while the stored file takes the bytes' format.
+describe('resolveUploadNames — a file whose extension is not its format', () => {
+  const jpegNamedPng = {
+    name: 'logo.png',
+    type: 'image/png',
+    hash: HASH,
+    size: 100,
+  };
+
+  it('keys the assets map with the name the template uses', () => {
+    expect(
+      resolveUploadNames({ ...jpegNamedPng, path: jpegPath }, PREFIX)
+        .originalName
+    ).toBe('logo.png');
+  });
+
+  it('stores the file under the format of its bytes', () => {
+    expect(
+      resolveUploadNames({ ...jpegNamedPng, path: jpegPath }, PREFIX).name
+    ).toBe(`${PREFIX}-${HASH}.jpeg`);
   });
 });
 

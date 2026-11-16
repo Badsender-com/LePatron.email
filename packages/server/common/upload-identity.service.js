@@ -77,6 +77,20 @@ function storedExtension(head, declaredType, file) {
   return mime.extension(declaredType) || null;
 }
 
+// types a browser sends when it has no idea: they map to an extension, but
+// say nothing about the content
+const GENERIC_UPLOAD_TYPES = ['application/octet-stream'];
+
+// The extension the client gave the file, as its declared type says it, or the
+// bytes' when the type says nothing. A template's HTML refers to its images by
+// those names, so the assets map is keyed with this one, never with the
+// stored file's.
+function claimedExtension(file, head) {
+  const declared = mime.extension(file.type);
+  if (declared && !GENERIC_UPLOAD_TYPES.includes(file.type)) return declared;
+  return resolveUploadExtension(file, head);
+}
+
 // Reads up to `bytes` of an upload from disk, from `position` on (its start
 // by default). Returns an empty buffer rather than throwing: a file we cannot
 // read is one we cannot describe, not a crash.
@@ -169,8 +183,9 @@ function readDimensions(window) {
  * map, and generate-preview.controller rebuilds that key with `slugFilename`
  * too, so the two have to be spelled the same way.
  *
- * The extension comes from the bytes, not from what the client claimed, and
- * is then lent to a name that has none. That last part is not a nicety:
+ * The stored file's extension comes from the bytes, not from what the client
+ * claimed. `originalName` keeps the claimed one, which the template's HTML
+ * uses; the bytes' is lent to a name that has none. That last part is not a nicety:
  * `slugFilename` answers `false` for a name with no extension, and
  * `false.replace(…)` was the next line — thrown inside formidable's `file`
  * event handler, where the process-wide `uncaughtException` net swallowed it.
@@ -188,8 +203,11 @@ function readDimensions(window) {
 function resolveUploadNames(file, prefix, head) {
   const ext = resolveUploadExtension(file, head);
   if (!ext) return null;
+  const claimedExt = claimedExtension(file, head) || ext;
 
-  const claimed = EXTENSION.test(file.name) ? file.name : `${file.name}.${ext}`;
+  const claimed = EXTENSION.test(file.name)
+    ? file.name
+    : `${file.name}.${claimedExt}`;
   // slug every uploaded file name — user may put accent and/or spaces…
   const slugged = slugFilename(claimed);
   if (!slugged) return null;
@@ -204,7 +222,7 @@ function resolveUploadNames(file, prefix, head) {
 
   return {
     name: `${prefix}-${file.hash}.${ext}`,
-    originalName: `${base}.${ext}`,
+    originalName: `${base}.${claimedExt}`,
   };
 }
 
