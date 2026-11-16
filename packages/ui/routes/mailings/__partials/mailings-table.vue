@@ -643,7 +643,9 @@ export default {
       });
     },
     openDuplicateTranslateModal(mailing) {
-      this.$refs.duplicateTranslateDialog.open(mailing);
+      this.$refs.duplicateTranslateDialog.open(mailing, {
+        canWriteSource: this.hasAccess,
+      });
     },
     handleTranslated() {
       this.$emit('on-refetch');
