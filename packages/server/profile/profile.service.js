@@ -14,6 +14,7 @@ const {
 const mailingService = require('../mailing/mailing.service.js');
 const groupService = require('../group/group.service.js');
 const permissions = require('../account/permissions.js');
+const { assertSameGroup } = require('../account/request-scope.js');
 const EspTypes = require('../constant/esp-type');
 
 module.exports = {
@@ -58,6 +59,30 @@ async function assertRequiredTrackingParamsFilled({
   // Pass freshTracking when available so we validate the live builder state
   // instead of the (possibly stale) persisted mailing.data.tracking.
   await mailingService.resolveMailingTrackingContext(mailing, freshTracking);
+  return mailing;
+}
+
+/**
+ * The profile an email is pushed through: one the user reaches, of the
+ * email's own company. A profile the user does not reach answers like one
+ * that does not exist.
+ *
+ * @param {Object} params
+ * @param {Object} params.user
+ * @param {string} params.profileId
+ * @param {Object} params.mailing read in the user's company, its template
+ *   populated (an email created by the platform has no company of its own)
+ */
+async function findProfileForMailing({ user, profileId, mailing }) {
+  const profile = await findOne(profileId);
+  if (!permissions.canAccessGroup(user, profile._company)) {
+    throw new NotFound(ERROR_CODES.PROFILE_NOT_FOUND);
+  }
+  assertSameGroup(
+    mailing._company || mailing._wireframe?._company,
+    profile._company
+  );
+  return profile;
 }
 
 async function checkIfUserIsAuthorizedToAccessProfile({ user, profileId }) {
@@ -199,8 +224,12 @@ async function updateEspCampaign({
 }) {
   const { subject, campaignMailName, planification } = espSendingMailData;
   // Block ESP export when required group/template tracking params are missing
-  await assertRequiredTrackingParamsFilled({ mailingId, user, freshTracking });
-  const profile = await findOne(profileId);
+  const mailing = await assertRequiredTrackingParamsFilled({
+    mailingId,
+    user,
+    freshTracking,
+  });
+  const profile = await findProfileForMailing({ user, profileId, mailing });
 
   const {
     apiKey,
@@ -286,8 +315,12 @@ async function sendEspCampaign({
 }) {
   const { subject, campaignMailName, planification } = espSendingMailData;
   // Block ESP export when required group/template tracking params are missing
-  await assertRequiredTrackingParamsFilled({ mailingId, user, freshTracking });
-  const profile = await findOne(profileId);
+  const mailing = await assertRequiredTrackingParamsFilled({
+    mailingId,
+    user,
+    freshTracking,
+  });
+  const profile = await findProfileForMailing({ user, profileId, mailing });
 
   /*
     For DSC, creating a new campaign from the same profile is allowed
