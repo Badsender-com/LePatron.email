@@ -34,6 +34,7 @@ const {
 const mailingService = require('../../../packages/server/mailing/mailing.service');
 const ERROR_CODES = require('../../../packages/server/constant/error-codes.js');
 const { ROLES } = require('../../../packages/shared/access/roles.js');
+const config = require('../../../packages/server/node.config.js');
 
 const GROUP = '507f1f77bcf86cd799439b01';
 const OTHER_GROUP = '507f1f77bcf86cd799439c01';
@@ -162,6 +163,16 @@ describe.each([
 });
 
 describe('the request of a rename', () => {
+  // A module write: the bootstrap account stays in the settings (ADR 0002).
+  it('refuses the bootstrap account', async () => {
+    mailingIn(GROUP, { member: true });
+
+    await expect(
+      rename({ id: config.admin.id, name: 'admin' })
+    ).rejects.toMatchObject({ status: 403 });
+    expect(Mailings.updateOne).not.toHaveBeenCalled();
+  });
+
   it('answers a mailing of another company like one that does not exist', async () => {
     mailingIn(OTHER_GROUP, { member: true });
 
