@@ -1431,7 +1431,7 @@ async function locationOfTranslatedCopy({
   if (folderId) {
     await folderService.hasAccess(folderId, user);
     const destWorkspace = await folderService.getWorkspaceForFolder(folderId);
-    assertSameGroup(mailing._company, destWorkspace && destWorkspace.group);
+    assertSameGroup(mailing._company, destWorkspace?.group);
     return { _parentFolder: folderId };
   }
   if (workspaceId) {

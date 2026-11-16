@@ -599,13 +599,17 @@ async function bulkUpdate(req, res) {
     _parentFolder: 1,
   });
   // Once per location: a selection is often many mailings of one folder.
-  const checkedLocations = new Set();
-  for (const mailing of userMailings) {
-    const location = `${mailing._workspace}/${mailing._parentFolder}`;
-    if (checkedLocations.has(location)) continue;
-    checkedLocations.add(location);
-    await mailingService.assertUserCanEditMailing(req.user, mailing);
-  }
+  const oneByLocation = new Map(
+    userMailings.map((mailing) => [
+      `${mailing._workspace}/${mailing._parentFolder}`,
+      mailing,
+    ])
+  );
+  await Promise.all(
+    [...oneByLocation.values()].map((mailing) =>
+      mailingService.assertUserCanEditMailing(req.user, mailing)
+    )
+  );
 
   // Find existing tags in the database
   const existingTags = await mongoose.models.Tag.find({

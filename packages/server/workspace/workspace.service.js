@@ -164,7 +164,7 @@ async function createWorkspace(workspace) {
     description: workspace.description || '',
     _company: workspace.groupId,
     _users: await membersOfCompany(
-      (workspace.selectedUsers || []).map((user) => user && user.id),
+      (workspace.selectedUsers || []).map((user) => user?.id),
       workspace.groupId
     ),
   });
