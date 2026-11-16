@@ -3,6 +3,7 @@ const axios = require('axios');
 const { getPersonalizedBlocks } = require('../../utils/apis');
 const debounce = require('lodash.debounce');
 const { INPUT_DEBOUNCE_DELAY_MS } = require('../../constant/blocks');
+const { toPaletteBlock } = require('./palette-block');
 
 const PersonalizedBlocksListComponent = Vue.component(
   'PersonalizedBlocksListComponent',
@@ -59,16 +60,7 @@ const PersonalizedBlocksListComponent = Vue.component(
           })
           .then((response) => {
             this.vm.personalizedBlocks(
-              response.data?.items.map(({ content, ...blockInformation }) => ({
-                ...content,
-                blockInformation: {
-                  userDetails: {
-                    name: 'admin'
-                  },
-                  ...blockInformation,
-                },
-                id: '', // This line is crucial. The `viewModel.loadDefaultBlocks` function will override this `id` when the block is added to the email content. Without this placeholder, there could be issues when adding personalized blocks in emails.
-              }))
+              response.data?.items.map(toPaletteBlock)
             );
             this.isLoading = false;
           })
