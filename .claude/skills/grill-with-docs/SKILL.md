@@ -12,7 +12,11 @@ This is step 1 of the new feature workflow described in `AGENTS.md` (section "Ne
    - **now**: in the feature's scope, as an expertise resource, a skill prompt, a read tool or a writing tool;
    - **later**: worth it, but in its own epic;
    - **never**: say why (a setting only an admin changes, a screen with nothing to read, a risk for the client's data).
-     Exposing it follows the MCP ADRs (0012, 0014, 0017): access asked again on every call through the existing capabilities, writing behind its own scope, the grammar the tool contract tests check. The decision and its reason go into the ADR, whatever it is.
+
+   Exposing it follows the MCP ADRs (0012, 0014, 0017): access asked again on every call through the existing capabilities, writing behind its own scope, the grammar `tests/server/mcp/mcp.tool-contracts.test.js` checks. The server only writes feedback and the drafts of the platform company's own skills and expertises (ADR 0014): any other writing tool amends ADR 0012 and is a decision of its own, and writing mailings waits for #1103. The decision and its reason go into the ADR, whatever it is.
+
+   If `docs/adr/` has no ADR 0012 yet, the MCP server is ready but not merged: it is on `feat/mcp` (#1496) and reaches `develop` soon. Read its ADRs and tests there (`git show origin/feat/mcp:docs/adr/<file>`) and settle the exposure all the same.
+
 5. When the user confirms the shared understanding, make sure the feature has its ADR in `docs/adr/`, with `Status: proposed` and the main design decisions of the feature. A new feature always ends with at least one ADR; the domain-modeling criteria decide which decisions deserve to be in it.
 6. Hand over to the next step: tell the user the next one is the epic, and call the Skill tool with "to-prd".
 
