@@ -214,3 +214,39 @@ describe('GET /api/templates/:templateId', () => {
     expect(res.body.message).toBe(ERROR_CODES.TEMPLATE_NOT_FOUND);
   });
 });
+
+describe('GET /api/templates/:templateId/markup', () => {
+  const readMarkup = (user, templateId) =>
+    request(app(user)).get(`/api/templates/${templateId}/markup`);
+
+  it("sends the markup of the caller's company's template", async () => {
+    const res = await readMarkup(userWith(ROLES.REGULAR_USER), OWN_TEMPLATE);
+
+    expect(res.status).toBe(200);
+    expect(res.text).toBe('<html>own</html>');
+  });
+
+  it.each([
+    ["another company's template", OTHER_TEMPLATE],
+    ['a template that does not exist', MISSING_TEMPLATE],
+  ])('answers not found for %s', async (_label, templateId) => {
+    const res = await readMarkup(userWith(ROLES.REGULAR_USER), templateId);
+
+    expect(res.status).toBe(404);
+    expect(res.body.message).toBe(ERROR_CODES.TEMPLATE_NOT_FOUND);
+  });
+});
+
+describe('GET /api/templates/:templateId/blocks-with-fields', () => {
+  it.each([
+    ["another company's template", OTHER_TEMPLATE],
+    ['a template that does not exist', MISSING_TEMPLATE],
+  ])('answers not found for %s', async (_label, templateId) => {
+    const res = await request(app(userWith(ROLES.GROUP_ADMIN_TECH))).get(
+      `/api/templates/${templateId}/blocks-with-fields`
+    );
+
+    expect(res.status).toBe(404);
+    expect(res.body.message).toBe(ERROR_CODES.TEMPLATE_NOT_FOUND);
+  });
+});
