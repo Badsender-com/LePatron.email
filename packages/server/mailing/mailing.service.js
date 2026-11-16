@@ -1452,13 +1452,16 @@ async function duplicateWithTranslatedData({
   // with the same write check as a destination chosen by the user (the
   // source folder's was asked above).
   if (folderId) {
-    // Validate access to destination folder
+    // Validate access to destination folder, in the source's company
     await folderService.hasAccess(folderId, user);
+    const destWorkspace = await folderService.getWorkspaceForFolder(folderId);
+    assertSameGroup(mailing._company, destWorkspace && destWorkspace.group);
     copy._parentFolder = folderId;
   } else if (workspaceId) {
-    // Validate access to destination workspace
+    // Validate access to destination workspace, in the source's company
     const destWorkspace = await workspaceService.getWorkspace(workspaceId);
     workspaceService.doesUserHaveWriteAccess(user, destWorkspace);
+    assertSameGroup(mailing._company, destWorkspace.group);
     copy._workspace = workspaceId;
   } else if (mailing._parentFolder) {
     copy._parentFolder = mailing._parentFolder;
