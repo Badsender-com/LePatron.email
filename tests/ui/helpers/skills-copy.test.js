@@ -45,11 +45,27 @@ describe('what an instance is', () => {
     [{ status: 'partial' }, true],
     [{ status: 'succeeded' }, true],
   ])(
-    'reads whether the copy has completed a follow from its last one, %j',
+    'reads whether the copy has completed a follow from its last one when the server does not say, %j',
     (last, followedOnce) => {
       expect(copyStateOf({ isCopy: true, last }).followedOnce).toBe(
         followedOnce
       );
+    }
+  );
+
+  // The server counts every follow, not only the last: one that failed
+  // after a completed one does not undo it.
+  it.each([
+    [{ status: 'failed', reason: 'unreachable' }, true, true],
+    [{ status: 'failed', reason: 'interrupted' }, true, true],
+    [{ status: 'failed', reason: 'unreachable' }, false, false],
+    [null, false, false],
+  ])(
+    'takes the server at its word on whether the copy completed a follow, last %j',
+    (last, followedOnce, read) => {
+      expect(
+        copyStateOf({ isCopy: true, last, followedOnce }).followedOnce
+      ).toBe(read);
     }
   );
 

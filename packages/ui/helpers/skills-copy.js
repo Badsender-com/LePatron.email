@@ -19,8 +19,12 @@ export function copyStateOf(answer) {
     typeof answer.isCopy === 'boolean' ? answer.isCopy : !!answer.configured;
   return {
     isCopy,
-    // A follow that failed wrote nothing: the copy has not followed yet.
-    followedOnce: !!(answer.last && answer.last.status !== 'failed'),
+    // The server counts every follow: one that failed after a completed one
+    // does not undo it. Unsaid, the last follow is all there is to read.
+    followedOnce:
+      typeof answer.followedOnce === 'boolean'
+        ? answer.followedOnce
+        : !!(answer.last && answer.last.status !== 'failed'),
     nightly: !!(answer.nightly && answer.nightly.enabled),
     lock: answer.lock || null,
   };
