@@ -61,6 +61,20 @@ describe('the hosts a client document is read on', () => {
     ['2001:0:4136:e378:8000:63bf:3fff:fdd2', false],
     ['64:ff9b:1::a00:1', false],
     ['100::1', false],
+    // Unspecified, IETF protocol, benchmarking, multicast, reserved, global
+    // NAT64.
+    ['0.0.0.0', false],
+    ['::', false],
+    ['192.0.0.8', false],
+    ['198.18.0.1', false],
+    ['224.0.0.1', false],
+    ['ff02::1', false],
+    ['240.0.0.1', false],
+    ['64:ff9b::a00:1', false],
+    // Documentation and deprecated site-local: on no public network either.
+    ['203.0.113.7', false],
+    ['2001:db8::1', false],
+    ['fec0::1', false],
     ['8.8.8.8', true],
     ['2606:4700:4700::1111', true],
     ['not an address', false],

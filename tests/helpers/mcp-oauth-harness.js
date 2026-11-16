@@ -152,8 +152,9 @@ function createApp() {
     cookieKeys: ['a-test-cookie-key'],
     adapter: (name) => new McpOAuthAdapter(name),
     fetch: fetchDocument,
-    // Every host of the tests is a public one.
-    lookup: async () => [{ address: '198.51.100.7', family: 4 }],
+    // Every host of the tests is a public one: an address of the internet,
+    // not of the documentation ranges, which are refused.
+    lookup: async () => [{ address: '93.184.215.14', family: 4 }],
   });
   mountMcpRoutes(app);
   return app;

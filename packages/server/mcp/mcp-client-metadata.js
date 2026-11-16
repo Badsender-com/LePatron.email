@@ -4,6 +4,7 @@ const dns = require('dns');
 const net = require('net');
 // ESM only: Node 24 lets the app require it (ADR 0012).
 const { errors } = require('oidc-provider');
+const { isBlockedAddress } = require('../utils/outbound-host.js');
 
 // The rule of the redirect URIs, which the form of a client registered by
 // hand reads too.
@@ -63,49 +64,16 @@ const EXTRA_CLIENT_METADATA = {
   validator: keepAcceptedRedirects,
 };
 
-// The addresses that are not on the public internet: unspecified, private,
-// shared (CGNAT), loopback, link-local, unique local (ULA), multicast and
-// reserved, and the IPv6 ranges that carry an IPv4 address (compatible,
-// NAT64, Teredo, 6to4). An IPv4 address mapped in IPv6 is checked as itself.
-const NOT_PUBLIC = new net.BlockList();
-[
-  ['0.0.0.0', 8],
-  ['10.0.0.0', 8],
-  ['100.64.0.0', 10],
-  ['127.0.0.0', 8],
-  ['169.254.0.0', 16],
-  ['172.16.0.0', 12],
-  ['192.0.0.0', 24],
-  ['192.168.0.0', 16],
-  ['198.18.0.0', 15],
-  ['224.0.0.0', 4],
-  ['240.0.0.0', 4],
-].forEach(([address, prefix]) => NOT_PUBLIC.addSubnet(address, prefix, 'ipv4'));
-[
-  ['::', 128],
-  ['::1', 128],
-  // IPv4 compatible (deprecated), which carries any IPv4 address.
-  ['::', 96],
-  ['64:ff9b::', 96],
-  ['64:ff9b:1::', 48],
-  // Discard only.
-  ['100::', 64],
-  // Teredo and 6to4, which carry an IPv4 address.
-  ['2001::', 32],
-  ['2002::', 16],
-  ['fc00::', 7],
-  ['fe80::', 10],
-  ['ff00::', 8],
-].forEach(([address, prefix]) => NOT_PUBLIC.addSubnet(address, prefix, 'ipv6'));
-
 /**
+ * Whether an address is one of the public internet: the ranges the outgoing
+ * calls refuse (`utils/outbound-host.js`) are not, nor is anything else than
+ * an IP address. An IPv4 address mapped in IPv6 is checked as itself.
+ *
  * @param {string} address an IP address
  * @returns {boolean} whether it is one of the public internet
  */
 function isPublicAddress(address) {
-  const family = net.isIP(address);
-  if (!family) return false;
-  return !NOT_PUBLIC.check(address, family === 4 ? 'ipv4' : 'ipv6');
+  return net.isIP(address) !== 0 && !isBlockedAddress(address);
 }
 
 // A URL's host, an IPv6 address without its brackets.
