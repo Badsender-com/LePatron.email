@@ -58,7 +58,8 @@ router.put(
   templates.updateTrackingConfig
 );
 router.put('/:templateId', GUARD_ADMIN, templates.update);
-router.get('/:templateId', GUARD_USER, templates.read);
+// One template with its settings: only the super admin's template page reads it.
+router.get('/:templateId', GUARD_ADMIN, templates.read);
 router.post('', GUARD_ADMIN, templates.create);
 router.get('', GUARD_USER, templates.list);
 
