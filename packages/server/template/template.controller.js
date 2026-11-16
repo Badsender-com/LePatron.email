@@ -11,6 +11,7 @@ const {
   Galleries,
 } = require('../common/models.common.js');
 const logger = require('../utils/logger.js');
+const ERROR_CODES = require('../constant/error-codes.js');
 const modelsUtils = require('../utils/model.js');
 const permissions = require('../account/permissions.js');
 const templateService = require('./template.service.js');
@@ -88,7 +89,7 @@ async function create(req, res) {
 
 /**
  * @api {get} /templates/:templateId template
- * @apiPermission user
+ * @apiPermission admin
  * @apiName GetTemplate
  * @apiGroup Templates
  *
@@ -99,11 +100,13 @@ async function create(req, res) {
 
 async function read(req, res) {
   const { templateId } = req.params;
-  const template = await Templates.findById(templateId).populate({
+  // Bounded to the caller's company like the markup, whatever the route's guard.
+  const query = modelsUtils.addGroupFilter(req.user, { _id: templateId });
+  const template = await Templates.findOne(query).populate({
     path: '_company',
     select: 'id name',
   });
-  if (!template) throw new createError.NotFound();
+  if (!template) throw new createError.NotFound(ERROR_CODES.TEMPLATE_NOT_FOUND);
   res.json(template);
 }
 
@@ -126,7 +129,7 @@ async function readMarkup(req, res) {
     _id: templateId,
   });
   const template = await Templates.findOne(templateQuery);
-  if (!template.markup) throw new createError.NotFound();
+  if (!template?.markup) throw createError(404, ERROR_CODES.TEMPLATE_NOT_FOUND);
   if (!download) return res.send(template.markup);
   // let download content
   res.setHeader(
