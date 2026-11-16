@@ -154,12 +154,18 @@ async function getAdobeFolders(req, res) {
  * @apiParam  {String} folderName Adobe selected folderName
  */
 async function getAdobeDeliveries(req, res) {
+  const { user } = req;
   const { profileId } = req.params;
   const { fullName } = req.query;
 
   if (!profileId) {
     throw new NotFound('Missing profileId');
   }
+
+  await profileService.checkIfUserIsAuthorizedToAccessProfile({
+    user,
+    profileId,
+  });
 
   const profile = await profileService.findOne(profileId);
 
