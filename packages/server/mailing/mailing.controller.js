@@ -24,6 +24,7 @@ const {
 
 const simpleI18n = require('../helpers/server-simple-i18n.js');
 const logger = require('../utils/logger.js');
+const { FRAME_ANCESTORS } = require('../utils/frame-headers.js');
 const {
   Mailings,
   Galleries,
@@ -404,7 +405,9 @@ async function previewHtml(req, res) {
   // Opened directly in a tab, the document runs in an opaque origin with no
   // script: whatever the sanitizer missed cannot reach the session. Does not
   // apply to the modal, which fetches the text and sandboxes its own iframe.
-  res.set('Content-Security-Policy', 'sandbox');
+  // This policy replaces the one every page gets (utils/frame-headers.js), so
+  // it carries its frame-ancestors too.
+  res.set('Content-Security-Policy', `sandbox; ${FRAME_ANCESTORS}`);
   res.send(previewMailHtml);
 }
 
