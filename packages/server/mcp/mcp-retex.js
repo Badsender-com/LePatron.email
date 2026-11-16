@@ -13,7 +13,11 @@ const {
 const { withIdentity, isConsultant, failure } = require('./mcp-identity.js');
 const { ADDITIVE } = require('./mcp-tool-grammar.js');
 const { pageOf } = require('./mcp-retex-read.js');
-const { candidatesQuery, flat, partOf } = require('./mcp-retex-candidates.js');
+const {
+  candidatesQuery,
+  flat,
+  partOrNone,
+} = require('./mcp-retex-candidates.js');
 const { checkedAbout } = require('./mcp-retex-check.js');
 
 const MAX_ID_LENGTH = 200;
@@ -81,7 +85,7 @@ function recordOf(identity, retex, about, { consultant, clientId }) {
     about: about
       ? { ...retex.about, version: versionLabel(about.version) }
       : null,
-    part: retex.part ? partOf(retex.part) : null,
+    part: partOrNone(retex.part),
     // Matched by the candidates of a convergence, whatever its spacing.
     flatQuote: retex.quote ? flat(retex.quote) : null,
     approvedAt: consultant ? null : new Date(),

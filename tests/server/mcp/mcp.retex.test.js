@@ -142,6 +142,19 @@ describe('the retex loop', () => {
       ]);
     });
 
+    it('records a part of the email made of spaces as none', async () => {
+      const answer = await call(await asConsultant(), REPORT, {
+        ...ORPHAN_COMPLEMENT,
+        category: 'deliverability',
+        part: '   ',
+      });
+
+      expect(answer.kept).toBe(true);
+      expect(await listOpen({ category: 'deliverability' })).toEqual([
+        expect.objectContaining({ part: null }),
+      ]);
+    });
+
     it('records a complement about no skill or expertise, by its kind of know-how and part of the email', async () => {
       const answer = await call(
         await asConsultant(),
@@ -814,7 +827,7 @@ describe('the retex loop', () => {
       expect(withoutPart.candidates.map((c) => c.retexId)).toEqual([
         withPart.retexId,
       ]);
-      expect(third.candidates.map((c) => c.retexId).sort()).toHaveLength(3);
+      expect(third.candidates).toHaveLength(3);
     });
 
     it.each([
