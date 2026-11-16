@@ -35,7 +35,7 @@ Dans une conversation, activez LePatron avec le bouton **+**, puis **Connectors*
 
 ### Ne plus confirmer chaque lecture
 
-C'est Claude, et non LePatron, qui vous demande d'autoriser chaque appel d'un outil. LePatron lui indique seulement quels outils ne font que lire. Dans **Customize › Connectors › LePatron**, passez les outils de lecture (`find_skills`, `find_applicable_expertises`, `search`, `fetch`, `list_mailings`, `get_mailing`…) sur **Always allow**, et gardez la confirmation pour ceux qui écrivent (`report_retex`, `submit_feedback`, les brouillons et la publication).
+C'est Claude, et non LePatron, qui vous demande d'autoriser chaque appel d'un outil. LePatron lui indique seulement quels outils ne font que lire. Dans les réglages du connecteur LePatron de Claude, autorisez une fois pour toutes les outils de lecture (`find_skills`, `find_applicable_expertises`, `search`, `fetch`, `list_mailings`, `get_mailing`…), et gardez la confirmation pour ceux qui écrivent (`report_retex`, `submit_feedback`, les brouillons et la publication).
 
 ## Claude Code
 
