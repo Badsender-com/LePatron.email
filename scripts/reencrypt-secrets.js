@@ -41,9 +41,9 @@ const { contextOf } = require('../packages/server/utils/encryption-plugin.js');
 const {
   parseArgs,
   confirmDatabase,
-  databaseHosts,
   redact,
 } = require('./gallery/command-line.js');
+const { databaseHost } = require('./database-host.js');
 
 // The encrypted fields, as the schemas declare them to the plugin, and the
 // two-factor secrets (#1324), which are encrypted by hand.
@@ -153,9 +153,8 @@ async function connect(database) {
     useUnifiedTopology: true,
   });
   const { db } = mongoose.connection;
-  console.log(
-    `Connected to ${databaseHosts(config.database)}/${db.databaseName}`
-  );
+  console.log(`Connected to ${databaseHost(config.database)}`);
+  console.log(`Database: "${db.databaseName}"`);
   confirmDatabase(db.databaseName, database);
   return db;
 }
