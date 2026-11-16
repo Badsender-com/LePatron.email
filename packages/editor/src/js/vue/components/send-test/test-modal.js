@@ -4,6 +4,7 @@ const { validationMixin } = require('vuelidate');
 const { ModalComponent } = require('../modal/modalComponent');
 const { SimpleSelect } = require('../select/simpleSelect');
 const { getEmailGroups, sendTestEmails } = require('../../utils/apis');
+const { sendTestErrorKey } = require('./send-test-error.js');
 const styleHelper = require('../../utils/style/styleHelper');
 
 const axios = require('axios');
@@ -116,8 +117,8 @@ const TestModalComponent = Vue.component('TestModal', {
         .then(() => {
           this.vm.notifier.success(this.vm.t('send-test-success'));
         })
-        .catch(() => {
-          this.vm.notifier.error(this.vm.t('send-test-error'));
+        .catch((error) => {
+          this.vm.notifier.error(this.vm.t(sendTestErrorKey(error)));
         })
         .finally(() => {
           this.isLoading = false;
