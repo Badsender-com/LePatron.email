@@ -5,6 +5,7 @@ const {
   Mailings,
   Folders,
   Groups,
+  Users,
 } = require('../common/models.common.js');
 const mongoose = require('mongoose');
 const ERROR_CODES = require('../constant/error-codes.js');
@@ -12,6 +13,7 @@ const { Conflict, NotFound, Forbidden } = require('http-errors');
 const logger = require('../utils/logger');
 const permissions = require('../account/permissions.js');
 const { refuseBootstrapAccount } = require('../account/request-scope.js');
+const { isObjectIdString } = require('../utils/model.js');
 
 module.exports = {
   createWorkspace,
@@ -115,6 +117,23 @@ async function deleteFolderContent(folderId) {
   await Folders.deleteMany({ _parentFolder: folderId });
 }
 
+/**
+ * The members a request lists that are users of the workspace's company:
+ * anything else (another company's user, what is not an id) is left out.
+ *
+ * @param {Array} userIds as the request lists them
+ * @param {string} groupId the workspace's company
+ * @returns {Promise<Array>} the ids of the users kept
+ */
+async function membersOfCompany(userIds, groupId) {
+  const ids = (Array.isArray(userIds) ? userIds : []).filter(isObjectIdString);
+  if (ids.length === 0) return [];
+  const users = await Users.find({ _id: { $in: ids }, _company: groupId })
+    .select('_id')
+    .lean();
+  return users.map((user) => user._id);
+}
+
 async function createWorkspace(workspace) {
   if (!workspace || !workspace.groupId) {
     throw new NotFound(ERROR_CODES.GROUP_NOT_FOUND);
@@ -144,10 +163,10 @@ async function createWorkspace(workspace) {
     name: workspace.name,
     description: workspace.description || '',
     _company: workspace.groupId,
-    _users:
-      (workspace.selectedUsers &&
-        workspace.selectedUsers.map((user) => user.id)) ||
-      [],
+    _users: await membersOfCompany(
+      (workspace.selectedUsers || []).map((user) => user && user.id),
+      workspace.groupId
+    ),
   });
 
   return newWorkspace;
@@ -169,7 +188,7 @@ async function updateWorkspace({ id, groupId, name, description, _users }) {
     throw new Conflict(ERROR_CODES.WORKSPACE_ALREADY_EXISTS);
   }
 
-  const update = { _users };
+  const update = { _users: await membersOfCompany(_users, groupId) };
   if (name !== undefined) update.name = name;
   if (description !== undefined) update.description = description;
 
