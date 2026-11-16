@@ -153,23 +153,27 @@ async function createWorkspace(workspace) {
   return newWorkspace;
 }
 
-async function updateWorkspace(workspace) {
+/**
+ * @param {Object} workspace
+ * @param {string} workspace.id
+ * @param {string} workspace.groupId the company the workspace already belongs to
+ * @param {string} [workspace.name]
+ * @param {string} [workspace.description]
+ * @param {string[]} workspace._users its members
+ */
+async function updateWorkspace({ id, groupId, name, description, _users }) {
   if (
-    await existsByName({
-      workspaceId: workspace.id,
-      workspaceName: workspace?.name,
-      groupId: workspace?.groupId,
-    })
+    name !== undefined &&
+    (await existsByName({ workspaceId: id, workspaceName: name, groupId }))
   ) {
     throw new Conflict(ERROR_CODES.WORKSPACE_ALREADY_EXISTS);
   }
 
-  const { id, ...otherProperties } = workspace;
+  const update = { _users };
+  if (name !== undefined) update.name = name;
+  if (description !== undefined) update.description = description;
 
-  return Workspaces.updateOne(
-    { _id: mongoose.Types.ObjectId(id) },
-    { ...otherProperties }
-  );
+  return Workspaces.updateOne({ _id: mongoose.Types.ObjectId(id) }, update);
 }
 
 async function findWorkspaces({ groupId }) {
