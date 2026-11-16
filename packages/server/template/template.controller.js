@@ -11,6 +11,7 @@ const {
   Galleries,
 } = require('../common/models.common.js');
 const logger = require('../utils/logger.js');
+const ERROR_CODES = require('../constant/error-codes.js');
 const modelsUtils = require('../utils/model.js');
 const permissions = require('../account/permissions.js');
 const templateService = require('./template.service.js');
@@ -101,13 +102,11 @@ async function read(req, res) {
   const { templateId } = req.params;
   // Bounded to the caller's company, as the markup is (super admins read any).
   const query = modelsUtils.addGroupFilter(req.user, { _id: templateId });
-  const template = modelsUtils.isObjectIdString(templateId)
-    ? await Templates.findOne(query).populate({
-        path: '_company',
-        select: 'id name',
-      })
-    : null;
-  if (!template) throw new createError.NotFound();
+  const template = await Templates.findOne(query).populate({
+    path: '_company',
+    select: 'id name',
+  });
+  if (!template) throw new createError.NotFound(ERROR_CODES.TEMPLATE_NOT_FOUND);
   res.json(template);
 }
 
