@@ -25,10 +25,10 @@ const GallerySchema = require('../../packages/server/image/gallery.schema.js');
 const {
   parseArgs,
   confirmDatabase,
-  databaseHosts,
   redact,
   listenForStop,
 } = require('./command-line.js');
+const { databaseHost } = require('../database-host.js');
 
 // The gallery model alone, not models.common.js: loading every model of the
 // application also loads the mail service, which opens an SMTP connection to
@@ -82,15 +82,13 @@ async function eachWithConcurrency(items, concurrency, worker, isStopping) {
 function printHeader(script, dryRun) {
   console.log(script.title);
   if (dryRun) console.log('[DRY-RUN] Nothing is written.');
-  console.log(`Connecting to ${databaseHosts(config.database)}…`);
+  console.log(`Connecting to ${databaseHost(config.database)}…`);
 }
 
-// The name is not a secret, and it is what tells a copy from production when
-// both live on the same hosts.
+// The name the run is connected to, which `--confirm-database` must match: the
+// header above shows the hosts.
 function printTarget(script, databaseName) {
-  console.log(
-    `Database: "${databaseName}" on ${databaseHosts(config.database)}`
-  );
+  console.log(`Database: "${databaseName}"`);
   const environment = script.describeEnvironment
     ? script.describeEnvironment()
     : [];

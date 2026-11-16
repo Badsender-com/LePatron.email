@@ -23,6 +23,7 @@ const path = require('path');
 const mongoose = require('mongoose');
 
 require('dotenv').config();
+const { databaseHost } = require('./database-host');
 const config = require(path.resolve(
   __dirname,
   '..',
@@ -78,7 +79,7 @@ async function flagPlatformGroup(groupId) {
 
 async function main() {
   const groupId = process.argv[2];
-  console.log(`Connecting to ${config.database}…`);
+  console.log(`Connecting to ${databaseHost(config.database)}…`);
   await mongoose.connect(config.database, {
     useNewUrlParser: true,
     useUnifiedTopology: true,

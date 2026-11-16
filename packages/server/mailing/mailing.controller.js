@@ -7,6 +7,9 @@ const mongoose = require('mongoose');
 const ERROR_CODES = require('../constant/error-codes.js');
 const { TEMPLATE_FLAG_PROJECTION } = require('./synthetic-block-guard.js');
 const {
+  keepBlockInformationFields,
+} = require('../../shared/block-information.js');
+const {
   normalizeAndGuardSyntheticContent,
 } = require('./synthetic-content-pipeline.js');
 const {
@@ -434,7 +437,7 @@ function assertHeadCssSize(body) {
  * @param {Object} user the requesting user, for the default name's language
  */
 function applyMosaicoUpdate(mailing, body, user) {
-  mailing.data = body.data || mailing.data;
+  mailing.data = keepBlockInformationFields(body.data || mailing.data);
   mailing.name =
     modelsUtils.trimString(body.name) ||
     simpleI18n('default-mailing-name', user.lang);
