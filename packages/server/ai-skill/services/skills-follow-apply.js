@@ -86,12 +86,16 @@ const isCopyWork = (version) =>
   time(version.updatedAt) > time(version.followedAt) ||
   time(version.activatedAt) > time(version.followedAt);
 
+// Code-unit order, the one of `sort()` without a function: the digests kept
+// do not depend on the server's locale.
+const byCodeUnit = (a, b) => (a < b ? -1 : Number(a > b));
+
 // A JSON with its keys in order, whatever order an object holds them in.
 function canonical(value) {
   if (Array.isArray(value)) return `[${value.map(canonical).join(',')}]`;
   if (value && typeof value === 'object') {
     return `{${Object.keys(value)
-      .sort()
+      .sort(byCodeUnit)
       .filter((key) => value[key] !== undefined)
       .map((key) => `${JSON.stringify(key)}:${canonical(value[key])}`)
       .join(',')}}`;

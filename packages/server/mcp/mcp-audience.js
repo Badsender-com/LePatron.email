@@ -34,6 +34,10 @@ const PURPOSE = 'mcp-audience';
 // Said in an answer, when what the change leaves behind could not be read.
 const WARNING_UNCHECKED = 'WARNING_UNCHECKED';
 
+// Code-unit order, the one of `sort()` without a function: the key of a
+// check names the expertises to open in one order, whatever the locale.
+const byCodeUnit = (a, b) => (a < b ? -1 : Number(a > b));
+
 const getters = {
   skill: (id) => skillService.getSkill(id),
   expertise: (id) => expertiseService.getExpertise(id),
@@ -90,7 +94,7 @@ async function changeOf({ kind, id, audience, openExpertiseIds }) {
     kind === 'skill'
       ? await assertOpenable(active, openExpertiseIds, opening)
       : [];
-  return { doc, active, opening, toOpen: [...toOpen].sort() };
+  return { doc, active, opening, toOpen: [...toOpen].sort(byCodeUnit) };
 }
 
 const isoOf = (date) => (date ? new Date(date).toISOString() : null);
