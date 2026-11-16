@@ -14,10 +14,11 @@ jest.mock('../../../packages/server/utils/logger.js', () => ({
 jest.mock('../../../packages/server/ai-feature/ai-feature.service', () => ({
   getActiveFeatureWithIntegration: jest.fn().mockResolvedValue(null),
 }));
-// Whether the user may write where the email lives: the edit rule of the
+// Whether the user may read and write where the email lives: the rules of the
 // mailing service, stubbed here and tested with the service.
 jest.mock('../../../packages/server/mailing/mailing.service.js', () => ({
   userCanEditMailing: jest.fn().mockResolvedValue(true),
+  userCanReadMailing: jest.fn().mockResolvedValue(true),
 }));
 // The policy itself lives in mailing-metadata.service.js, which findOneForMosaico
 // delegates to; it reads the taxonomy through models.common like the rest of that
@@ -172,6 +173,35 @@ describe('findOneForMosaico — canWrite', () => {
       user,
       expect.objectContaining({ _id: MAILING })
     );
+  });
+});
+
+// The editor opens an email that the user may read, as its preview does: the
+// read rule of the mailing service, for the email's workspace or folder.
+describe('findOneForMosaico — the read rule', () => {
+  const mailingService = require('../../../packages/server/mailing/mailing.service.js');
+
+  it('asks the read rule of the email', async () => {
+    const user = {};
+    const context = makeContext({ companyFlag: undefined });
+
+    await findOneForMosaico.call(context.model, user, {});
+
+    expect(mailingService.userCanReadMailing).toHaveBeenLastCalledWith(
+      user,
+      expect.objectContaining({ _id: MAILING })
+    );
+  });
+
+  it('answers nothing, like an email that does not exist, when it refuses', async () => {
+    mailingService.userCanEditMailing.mockClear();
+    mailingService.userCanReadMailing.mockResolvedValueOnce(false);
+    const context = makeContext({ companyFlag: undefined });
+
+    await expect(
+      findOneForMosaico.call(context.model, {}, {})
+    ).resolves.toBeNull();
+    expect(mailingService.userCanEditMailing).not.toHaveBeenCalled();
   });
 });
 
