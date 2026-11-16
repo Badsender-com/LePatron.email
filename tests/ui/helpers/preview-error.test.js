@@ -44,7 +44,7 @@ describe('previewErrorMessages', () => {
   it.each([
     ['a refusal', failure(403, 'FORBIDDEN_RESOURCE_OR_ACTION')],
     ['a mailing not found', failure(404, 'MAILING_NOT_FOUND')],
-    ['a workspace not found', failure(404, 'WORKSPACE_NOT_FOUND : Other team')],
+    ['a workspace not found', failure(404, 'WORKSPACE_NOT_FOUND')],
     ['a server error', failure(500, 'an error as occurred')],
     ['a body that is not JSON', { response: { status: 502, data: '<html>' } }],
     ['a network failure', new Error('Network Error')],
