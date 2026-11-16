@@ -267,6 +267,7 @@ export default {
       :email="username"
       @answer="onAnswer"
       @expired="backToPassword"
+      @change-account="back"
     />
     <bs-recovery-codes
       v-if="step === 'recovery-codes'"

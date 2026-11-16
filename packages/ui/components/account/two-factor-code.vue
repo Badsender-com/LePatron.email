@@ -131,6 +131,7 @@ export default {
         <bs-send-email-code
           v-if="method === 'email'"
           v-show="!recovery"
+          sent-on-mount
           @expired="$emit('expired')"
         />
       </bs-auth-code-field>

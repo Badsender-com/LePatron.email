@@ -93,7 +93,7 @@ export default {
   >
     <template #icon><lucide-key-round :size="26" /></template>
     <template #description>{{ $t('authCard.forgotIntro') }}</template>
-    <form
+    <v-form
       id="reset-password-form"
       method="post"
       @submit.prevent="resetPassword"
@@ -113,7 +113,7 @@ export default {
         @input="$v.form.email.$touch()"
         @blur="$v.form.email.$touch()"
       />
-    </form>
+    </v-form>
     <template #actions>
       <v-btn text color="primary" nuxt to="/account/login">
         {{ $t('authCard.backToLogin') }}

@@ -45,7 +45,7 @@ export default {
     <div class="bs-two-factor-scan__row">
       <img
         :src="qrCode"
-        :alt="$t('twoFactor.qrCodeAlt')"
+        :alt="$t('twoFactor.setup.qrCodeAlt')"
         width="160"
         height="160"
         class="bs-two-factor-scan__qr"
