@@ -22,6 +22,7 @@ import mixinAiExpertiseDetails from '~/helpers/mixins/mixin-ai-expertise-details
 import { fetchCopyState, copyActionsOf } from '~/helpers/skills-copy.js';
 import BsAiUsedByFeatures from '~/components/ai-skill/bs-ai-used-by-features.vue';
 import { usedByOf } from '~/helpers/used-by-feature.js';
+import { itemLoadFailed, pageLoadError } from '~/helpers/page-load-error.js';
 
 export default {
   name: 'PageAiExpertiseDetail',
@@ -58,7 +59,7 @@ export default {
   async asyncData({ $axios, params, error }) {
     try {
       const [exp, copyState] = await Promise.all([
-        $axios.$get(api.aiExpertise(params.expertiseId)),
+        $axios.$get(api.aiExpertise(params.expertiseId)).catch(itemLoadFailed),
         fetchCopyState($axios, api.aiSkillsFollow),
       ]);
       return {
@@ -69,7 +70,7 @@ export default {
         followedOnce: copyState.followedOnce,
       };
     } catch (err) {
-      return error({ statusCode: 404, message: 'Expertise not found' });
+      return error(pageLoadError(err, 'Expertise not found'));
     }
   },
   data() {

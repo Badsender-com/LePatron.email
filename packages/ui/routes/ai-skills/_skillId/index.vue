@@ -27,6 +27,7 @@ import {
 } from '~/helpers/ai-skill-categories.js';
 import BsAiUsedByFeatures from '~/components/ai-skill/bs-ai-used-by-features.vue';
 import { usedByOf } from '~/helpers/used-by-feature.js';
+import { itemLoadFailed, pageLoadError } from '~/helpers/page-load-error.js';
 
 export default {
   name: 'PageAiSkillDetail',
@@ -64,7 +65,7 @@ export default {
   async asyncData({ $axios, params, error }) {
     try {
       const [skill, schemasRes, copyState] = await Promise.all([
-        $axios.$get(api.aiSkill(params.skillId)),
+        $axios.$get(api.aiSkill(params.skillId)).catch(itemLoadFailed),
         $axios.$get(api.aiSkillSchemas()),
         fetchCopyState($axios, api.aiSkillsFollow),
       ]);
@@ -77,7 +78,7 @@ export default {
         followedOnce: copyState.followedOnce,
       };
     } catch (err) {
-      return error({ statusCode: 404, message: 'Skill not found' });
+      return error(pageLoadError(err, 'Skill not found'));
     }
   },
   data() {
