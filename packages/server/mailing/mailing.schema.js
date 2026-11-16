@@ -566,9 +566,10 @@ MailingSchema.statics.findOneForMosaico = async function findOneForMosaico(
     });
   if (!mailing) return mailing;
 
-  // The editor opens what the user may read, like the preview: the workspace
-  // or the folder holding the email, beyond its company (the query's own
-  // filter). Lazy require: the service reaches models.common, which reaches
+  // The editor opens what the user may read, like the preview: the read rule
+  // (assertUserCanReadMailing) checks that the workspace holding the email,
+  // or holding its folder, is of a company the user reaches; membership is
+  // not asked. Lazy require: the service reaches models.common, which reaches
   // back here.
   const mailingService = require('./mailing.service.js');
   if (!(await mailingService.userCanReadMailing(user, mailing))) return null;
