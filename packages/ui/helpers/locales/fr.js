@@ -1126,6 +1126,8 @@ export default {
     group: 'Entreprise',
     groupHint:
       'L\'assistant ne verra que cette entreprise. Pour en lire une autre, connectez-le à nouveau.',
+    groupHintSuperAdmin:
+      'L\'assistant ne lira les mailings que de cette entreprise. Pour travailler dans une autre, connectez-le à nouveau.',
     superAdminHint:
       'Super admin : vos retours d\'expérience vont à l\'entreprise plateforme, quelle que soit l\'entreprise choisie, et l\'assistant peut lire et écarter ceux de toutes les entreprises. Écrire les skills et expertises n\'est proposé qu\'en connexion à l\'entreprise plateforme.',
     pickGroup: 'Choisissez une entreprise',

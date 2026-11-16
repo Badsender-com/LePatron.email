@@ -414,8 +414,12 @@ export default {
               <lucide-building2 :size="18" />
               <strong>{{ interaction.groups[0].name }}</strong>
             </div>
-            <p class="bs-oauth-consent__hint">
-              {{ $t('oauthConsent.groupHint') }}
+            <p class="bs-oauth-consent__hint bs-oauth-consent__group-hint">
+              {{
+                managesPlatform
+                  ? $t('oauthConsent.groupHintSuperAdmin')
+                  : $t('oauthConsent.groupHint')
+              }}
             </p>
             <p
               v-if="managesPlatform"

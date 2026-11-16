@@ -847,6 +847,8 @@ export default {
     group: 'Company',
     groupHint:
       'The assistant will only see this company. To read another one, connect it again.',
+    groupHintSuperAdmin:
+      'The assistant will only read the mailings of this company. To work in another one, connect it again.',
     superAdminHint:
       'As a super admin: your retex go to the platform company, whatever company you pick, and the assistant can read and dismiss those of every company. Writing skills and expertises is only offered on a connection to the platform company.',
     pickGroup: 'Pick a company',

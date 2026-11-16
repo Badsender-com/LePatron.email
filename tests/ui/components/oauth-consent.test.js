@@ -156,6 +156,24 @@ describe('the consent of a super admin', () => {
     }
   );
 
+  // A super admin's assistant reads the retex of every company: only the
+  // mailings are read in the company picked.
+  it.each(Object.values(ROLES))(
+    'says what stays within the company picked, to a %s',
+    async (role) => {
+      const { vm } = mountConsent(['mcp:read'], { role });
+      await settle(vm);
+
+      expect(
+        vm.$el.querySelector('.bs-oauth-consent__group-hint').textContent.trim()
+      ).toBe(
+        roleCan(role, CAPABILITIES.PLATFORM_MANAGE)
+          ? 'oauthConsent.groupHintSuperAdmin'
+          : 'oauthConsent.groupHint'
+      );
+    }
+  );
+
   it.each([
     [
       'fr',
