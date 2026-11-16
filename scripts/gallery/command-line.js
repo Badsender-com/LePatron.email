@@ -58,14 +58,6 @@ function confirmDatabase(connected, database) {
   }
 }
 
-// The hosts of a connection string, never its credentials: the URI carries the
-// database password, and this output ends up in terminals and job logs.
-// Parsed by hand because `new URL` rejects a replica set's host list.
-function databaseHosts(uri) {
-  const match = /^mongodb(?:\+srv)?:\/\/(?:[^@/]*@)?([^/?]+)/.exec(uri || '');
-  return match ? match[1] : 'an unparsable connection string';
-}
-
 // Driver errors can quote the connection string back.
 function redact(message) {
   return String(message)
@@ -108,7 +100,6 @@ function listenForStop() {
 module.exports = {
   parseArgs,
   confirmDatabase,
-  databaseHosts,
   redact,
   listenForStop,
   DEFAULT_CONCURRENCY,
