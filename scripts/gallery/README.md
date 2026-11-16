@@ -42,7 +42,7 @@ Le script lit la configuration de l'application (`packages/server/node.config.js
 
 Le plus sûr est de le lancer **sur une instance de l'application** (Clever Cloud : `clever ssh`), où ces variables sont déjà celles de l'appli. Sans les variables de stockage, il lirait le disque local et trouverait tous les fichiers « absents » ; il le détecte et s'arrête (voir plus bas), mais autant ne pas en arriver là.
 
-Au démarrage, il affiche ce qu'il va toucher : le nom de la base et ses hôtes (`Database: "<nom>" on <hôtes>`, jamais la chaîne de connexion, qui porte le mot de passe) et le stockage (`S3, bucket "…" at <hôte>` ou `local directory …`).
+Au démarrage, il affiche ce qu'il va toucher : les hôtes et la base de la chaîne de connexion (`Connecting to <hôtes>/<nom>…`, jamais ses identifiants, qui portent le mot de passe), le nom de la base à laquelle il s'est connecté (`Database: "<nom>"`) et le stockage (`S3, bucket "…" at <hôte>` ou `local directory …`).
 
 Si la variable de base ne s'applique pas (posée sans `export`, faute de frappe), la configuration retombe sur sa valeur par défaut : la base de production sur une instance de l'application, `localhost:27017/lepatron` ailleurs. C'est pourquoi **une run qui écrit doit nommer sa base** (`--confirm-database=<nom>`, voir plus bas) : si ce n'est pas celle à laquelle le script s'est connecté, il refuse avant toute lecture et toute écriture.
 

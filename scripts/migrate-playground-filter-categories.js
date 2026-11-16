@@ -22,6 +22,7 @@ const path = require('path');
 const mongoose = require('mongoose');
 
 require('dotenv').config();
+const { databaseHost } = require('./database-host');
 const config = require(path.resolve(
   __dirname,
   '..',
@@ -74,19 +75,7 @@ function planScenarioMigration(scenarios, categoryOf) {
   return { toUpdate, skipped };
 }
 
-// Host (and port) of a Mongo connection string, without user:password or query
-// parameters. Falls back to a placeholder rather than risk echoing the URI.
-function databaseHost(uri) {
-  try {
-    return new URL(uri).host || 'mongo';
-  } catch (e) {
-    return 'mongo';
-  }
-}
-
 async function main() {
-  // Never log the connection string: it carries the credentials
-  // (AGENTS.md § Logging). The host alone is enough to tell environments apart.
   console.log(
     `Connecting to ${databaseHost(config.database)} (dry-run=${DRY})…`
   );
