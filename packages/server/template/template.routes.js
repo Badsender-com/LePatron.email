@@ -11,7 +11,18 @@ const {
   GUARD_GROUP_ADMIN_TECH,
 } = require('../account/auth.guard.js');
 const { GUARD_EMAIL_BUILDER } = require('../mailing/email-builder.guard.js');
+const ERROR_CODES = require('../constant/error-codes.js');
+const { isObjectIdString } = require('../utils/model.js');
 const templates = require('./template.controller.js');
+
+// Every `:templateId` is an ObjectId: anything else is a bad request, refused
+// here before any controller reads it.
+router.param('templateId', (req, res, next, templateId) => {
+  if (!isObjectIdString(templateId)) {
+    return next(new createError.BadRequest(ERROR_CODES.INVALID_OBJECT_ID));
+  }
+  return next();
+});
 
 /// ///
 // TEMPLATES
