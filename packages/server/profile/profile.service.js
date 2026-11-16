@@ -5,12 +5,7 @@ const ESP_CONTENT_TYPE = require('../constant/content-esp-type.js');
 
 const ERROR_CODES = require('../constant/error-codes.js');
 
-const {
-  NotFound,
-  Conflict,
-  InternalServerError,
-  Unauthorized,
-} = require('http-errors');
+const { NotFound, Conflict, InternalServerError } = require('http-errors');
 const mailingService = require('../mailing/mailing.service.js');
 const groupService = require('../group/group.service.js');
 const permissions = require('../account/permissions.js');
@@ -85,10 +80,12 @@ async function findProfileForMailing({ user, profileId, mailing }) {
   return profile;
 }
 
+// A profile the user does not reach answers like one that does not exist, as
+// in findProfileForMailing.
 async function checkIfUserIsAuthorizedToAccessProfile({ user, profileId }) {
   const profile = await findOne(profileId);
   if (!permissions.canAccessGroup(user, profile?._company)) {
-    throw new Unauthorized(ERROR_CODES.FORBIDDEN_PROFILE_ACCESS);
+    throw new NotFound(ERROR_CODES.PROFILE_NOT_FOUND);
   }
 }
 

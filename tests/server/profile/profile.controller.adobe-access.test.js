@@ -13,7 +13,7 @@ jest.mock('../../../packages/server/profile/profile.service', () => ({
 jest.mock('../../../packages/server/mailing/mailing.service', () => ({}));
 jest.mock('../../../packages/server/group/group.service', () => ({}));
 
-const { Unauthorized } = require('http-errors');
+const { NotFound } = require('http-errors');
 const profileService = require('../../../packages/server/profile/profile.service');
 const controller = require('../../../packages/server/profile/profile.controller.js');
 const ERROR_CODES = require('../../../packages/server/constant/error-codes.js');
@@ -69,14 +69,14 @@ describe.each([
 
   it('reads nothing of a profile the user does not reach', async () => {
     profileService.checkIfUserIsAuthorizedToAccessProfile.mockRejectedValue(
-      new Unauthorized(ERROR_CODES.FORBIDDEN_PROFILE_ACCESS)
+      new NotFound(ERROR_CODES.PROFILE_NOT_FOUND)
     );
 
     const result = await call(controller[handler]);
 
     expect(result).toEqual({
-      status: 401,
-      message: ERROR_CODES.FORBIDDEN_PROFILE_ACCESS,
+      status: 404,
+      message: ERROR_CODES.PROFILE_NOT_FOUND,
     });
     expect(profileService.findOne).not.toHaveBeenCalled();
     expect(profileService[serviceCall]).not.toHaveBeenCalled();
