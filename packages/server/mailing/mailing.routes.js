@@ -79,9 +79,13 @@ router.patch(
   GUARD_EMAIL_METADATA,
   mailingMetadata.updateMetadata
 );
+// The editor saves the content as JSON, and renames the email with a
+// form-encoded `name` (badsender-edit-title.js): this route reads that form,
+// no larger than a name needs.
 router.put(
   '/:mailingId/mosaico',
   GUARD_CAN(C.MAILING_EDIT_CONTENT),
+  express.urlencoded({ extended: false }),
   mailings.updateMosaico
 );
 router.get('/:mailingId/mosaico', GUARD_USER, mailings.readMosaico);

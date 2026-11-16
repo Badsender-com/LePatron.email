@@ -25,6 +25,7 @@ const config = require('./node.config.js');
 const { assertNoDevDefaults } = require('./config/dev-defaults.js');
 const { sessionCookieOptions, forceHttps } = require('./utils/https-only.js');
 const { SAML_CALLBACK_PATH } = require('./account/saml-config.js');
+const { samlCallbackBody } = require('./account/saml-account.js');
 const { sameOriginFraming } = require('./utils/frame-headers.js');
 const nuxtConfig = require('../../nuxt.config.js');
 const logger = require('./utils/logger.js');
@@ -146,8 +147,9 @@ if (cluster.isMaster) {
   app.use(cookieParser());
   // fix size error while downloading a zip
   // https://stackoverflow.com/a/19965089
+  // A form-encoded body is read only by the routes a client posts one to:
+  // the SSO callback below and the editor's rename (mailing.routes.js).
   app.use(bodyParser.json({ limit: '50mb' }));
-  app.use(bodyParser.urlencoded({ limit: '50mb', extended: false }));
 
   // enable gzip compression
   // • file manager uploads are omitted by this
@@ -299,7 +301,7 @@ if (cluster.isMaster) {
 
   app.post(
     SAML_CALLBACK_PATH,
-    bodyParser.urlencoded({ extended: false }),
+    samlCallbackBody,
     passport.authenticate('saml', { failureRedirect: SSO_FAILED }),
     async function (req, res) {
       // Update session tracking after SAML login
