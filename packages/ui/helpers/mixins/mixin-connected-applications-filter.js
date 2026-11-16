@@ -5,6 +5,14 @@ const ALL_GROUPS = 'all';
 
 const idOf = (group) => group && String(group.id || group._id);
 
+// The company of this id, as listed with the connections, or, without any,
+// as the store has it.
+function groupOfId(id, applications, modulesGroup) {
+  const listed = applications.find(({ group }) => group.id === id);
+  if (listed) return listed.group;
+  return idOf(modulesGroup) === id ? modulesGroup : null;
+}
+
 /**
  * The company filter of the connected applications page (ADR 0017). Whoever
  * manages the platform connects in any company: the page starts on the
@@ -52,10 +60,7 @@ export default {
     shownGroup() {
       const id = this.shownGroupId;
       if (!id) return null;
-      // As listed with the connections, or, without any, as the store has it.
-      const listed = this.applications.find(({ group }) => group.id === id);
-      if (listed) return listed.group;
-      return idOf(this.modulesGroup) === id ? this.modulesGroup : null;
+      return groupOfId(id, this.applications, this.modulesGroup);
     },
     shownGroupNotice() {
       const group = this.shownGroup;
