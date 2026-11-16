@@ -66,7 +66,9 @@ describe('the mailing routes that act on what the request carries', () => {
     ['/:mailingId/mosaico/send-test-mail', CAPABILITIES.MAILING_SEND_TEST],
     ['/download-multiple-zip', CAPABILITIES.MAILING_EXPORT],
   ])('%s requires a JSON body', (path, capability) => {
-    expect(guardsOf('post', path)).toEqual([
+    // What follows, such as the send-test limit, counts only well-formed
+    // requests.
+    expect(guardsOf('post', path).slice(0, 2)).toEqual([
       GUARD_CAN(capability),
       requireJsonBody,
     ]);
