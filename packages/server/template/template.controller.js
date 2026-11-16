@@ -129,7 +129,7 @@ async function readMarkup(req, res) {
     _id: templateId,
   });
   const template = await Templates.findOne(templateQuery);
-  if (!template.markup) throw new createError.NotFound();
+  if (!template?.markup) throw createError(404, ERROR_CODES.TEMPLATE_NOT_FOUND);
   if (!download) return res.send(template.markup);
   // let download content
   res.setHeader(

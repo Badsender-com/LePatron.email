@@ -4,6 +4,7 @@ const createError = require('http-errors');
 const asyncHandler = require('express-async-handler');
 
 const { Templates } = require('../common/models.common.js');
+const ERROR_CODES = require('../constant/error-codes.js');
 const modelsUtils = require('../utils/model.js');
 const { parseTemplateBlocks } = require('./template-block-parser.js');
 
@@ -39,6 +40,6 @@ async function findTemplateForUser(req) {
     _id: templateId,
   });
   const template = await Templates.findOne(templateQuery);
-  if (!template) throw new createError.NotFound();
+  if (!template) throw new createError.NotFound(ERROR_CODES.TEMPLATE_NOT_FOUND);
   return template;
 }
