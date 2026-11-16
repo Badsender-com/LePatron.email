@@ -10,7 +10,7 @@ jest.mock('../../../packages/server/common/models.common.js', () => ({
   Groups: { findOne: jest.fn() },
 }));
 
-const { SAML } = require('passport-saml/lib/passport-saml/saml.js');
+const { SAML } = require('@node-saml/node-saml');
 
 const {
   Users,
@@ -67,15 +67,12 @@ async function signInWith(xml, query = {}) {
   } catch (error) {
     return { error };
   }
-  const saml = new SAML({
-    ...options,
-    callbackUrl: 'http://localhost/SAML-login/callback',
-  });
-  const { error, profile } = await new Promise((resolve) =>
-    saml.validatePostResponse(req.body, (err, prof) =>
-      resolve({ error: err, profile: prof })
-    )
-  );
+  const { error, profile } = await new SAML(options)
+    .validatePostResponseAsync(req.body)
+    .then(
+      (result) => ({ profile: result.profile }),
+      (err) => ({ error: err })
+    );
   if (error) return { error };
   return { user: await accountOfResponse(req, profile) };
 }

@@ -1,24 +1,25 @@
 'use strict';
 
 // SSO is only an authentication when the identity provider's signature is
-// checked, and passport-saml 2.x checks it only when it is given a certificate.
-// These pin the two halves of that: a company without a certificate never gets
-// SSO options, and a response passport-saml receives with them must carry the
-// IdP's signature.
+// checked against the company's certificate, on an assertion meant for us.
+// These pin it: a company without a certificate never gets SSO options, and a
+// response the SAML library receives with them must carry the IdP's signature
+// and name our issuer as its audience.
 
-const { SAML } = require('passport-saml/lib/passport-saml/saml.js');
+const { SAML } = require('@node-saml/node-saml');
 
+const config = require('../../../packages/server/node.config.js');
 const {
   normalizeIdpCert,
   isSamlConfigured,
   samlOptionsFor,
 } = require('../../../packages/server/account/saml-config.js');
-const { createIdp } = require('../../helpers/saml-idp.js');
+const { createIdp, SP_ENTITY_ID } = require('../../helpers/saml-idp.js');
 
 const idp = createIdp();
 const configured = {
   entryPoint: 'https://idp.example.test/sso',
-  issuer: 'lepatron',
+  issuer: SP_ENTITY_ID,
   idpCert: idp.certPem,
 };
 
@@ -55,11 +56,19 @@ describe('normalizeIdpCert', () => {
 });
 
 describe('samlOptionsFor', () => {
-  it('passes the certificate to passport-saml', () => {
+  it('checks the response with the company certificate, for our issuer', () => {
     expect(samlOptionsFor(configured)).toEqual({
       entryPoint: configured.entryPoint,
       issuer: configured.issuer,
-      cert: idp.certPem,
+      idpCert: idp.certPem,
+      audience: configured.issuer,
+      callbackUrl: `http${config.isDev ? '' : 's'}://${
+        config.host
+      }/SAML-login/callback`,
+      wantAuthnResponseSigned: false,
+      wantAssertionsSigned: false,
+      validateInResponseTo: 'never',
+      rejectReplayedAssertions: false,
     });
   });
 
@@ -74,26 +83,52 @@ describe('samlOptionsFor', () => {
   });
 });
 
-describe('passport-saml with the options samlOptionsFor gives', () => {
-  const saml = new SAML({
-    ...samlOptionsFor(configured),
-    callbackUrl: 'http://localhost/SAML-login/callback',
-  });
+describe('the SAML library with the options samlOptionsFor gives', () => {
+  const saml = new SAML(samlOptionsFor(configured));
 
   const validate = (xml) =>
-    new Promise((resolve) => {
-      saml.validatePostResponse(
-        { SAMLResponse: Buffer.from(xml).toString('base64') },
-        (error, profile) => resolve({ error, profile })
+    saml
+      .validatePostResponseAsync({
+        SAMLResponse: Buffer.from(xml).toString('base64'),
+      })
+      .then(
+        ({ profile }) => ({ error: null, profile }),
+        (error) => ({ error })
       );
-    });
 
-  it('accepts a response signed by the identity provider', async () => {
+  it('accepts a response whose assertion the identity provider signed', async () => {
     const { error, profile } = await validate(
       idp.signedResponse('user@client.test')
     );
     expect(error).toBeNull();
     expect(profile.nameID).toBe('user@client.test');
+  });
+
+  // Identity providers sign the assertion, the whole response, or both: each
+  // of them signs a company in, as before.
+  it('accepts a response the identity provider signed as a whole', async () => {
+    const { error, profile } = await validate(
+      idp.signedEnvelope('user@client.test')
+    );
+    expect(error).toBeNull();
+    expect(profile.nameID).toBe('user@client.test');
+  });
+
+  it('refuses a signed assertion meant for another service provider', async () => {
+    const { error } = await validate(
+      idp.signedResponse('user@client.test', {
+        audience: 'https://other-app.example.test',
+      })
+    );
+    expect(error).toEqual(expect.any(Error));
+    expect(error.message).toMatch(/audience/i);
+  });
+
+  it('refuses a signed assertion that names no audience', async () => {
+    const { error } = await validate(
+      idp.signedResponse('user@client.test', { audience: null })
+    );
+    expect(error).toEqual(expect.any(Error));
   });
 
   it('refuses a response the identity provider did not sign', async () => {

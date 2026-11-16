@@ -207,7 +207,7 @@ passport.deserializeUser(async (id, done) => {
   }
 });
 
-const MultiSamlStrategy = require('passport-saml/multiSamlStrategy');
+const { MultiSamlStrategy } = require('@node-saml/passport-saml');
 const {
   samlOptionsForRequest,
   accountOfResponse,
@@ -238,6 +238,9 @@ passport.use(
       } catch (error) {
         done(error);
       }
-    }
+    },
+    // The identity providers' logout is not offered: a logout request signs
+    // no one out here.
+    (req, profile, done) => done(new Error('SAML logout is not supported'))
   )
 );
