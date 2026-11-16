@@ -87,10 +87,17 @@ describe.each([
       _company: new mongoose.Types.ObjectId(group),
       additionalApiData: { contentSendType: 'MAIL' },
     });
+  // The campaign the email already has on this profile: an update edits it.
   const mailingOf = (group) =>
     mailingService.getMailByMailingIdAndUser.mockResolvedValue({
       _id: mailingId,
       _company: new mongoose.Types.ObjectId(group),
+      espIds: [
+        {
+          profileId: new mongoose.Types.ObjectId(profileId),
+          campaignId: 'campaign-1',
+        },
+      ],
     });
   const push = (user) =>
     profileService[method]({
@@ -160,6 +167,65 @@ describe.each([
     await expect(push(actor(ALICE))).rejects.toMatchObject({
       status: 403,
       message: ERROR_CODES.FORBIDDEN_RESOURCE_OR_ACTION,
+    });
+    expect(EspProvider.build).not.toHaveBeenCalled();
+  });
+});
+
+describe('profileService.updateEspCampaign, the campaign updated', () => {
+  const mailingId = '507f1f77bcf86cd799439e01';
+  const OTHER_PROFILE = '507f1f77bcf86cd799439f02';
+
+  const emailWith = (espIds) =>
+    mailingService.getMailByMailingIdAndUser.mockResolvedValue({
+      _id: mailingId,
+      _company: new mongoose.Types.ObjectId(CLIENT_GROUP),
+      espIds,
+    });
+  const update = (campaignId) =>
+    profileService.updateEspCampaign({
+      user: actor(FRANK),
+      profileId,
+      mailingId,
+      campaignId,
+      type: 'SENDINBLUE',
+      html: '<html></html>',
+      espSendingMailData: { subject: 'News', campaignMailName: 'News' },
+    });
+
+  beforeEach(() => {
+    Profiles.findOne.mockResolvedValue({
+      _id: profileId,
+      type: 'SENDINBLUE',
+      apiKey: 'key',
+      _company: new mongoose.Types.ObjectId(CLIENT_GROUP),
+      additionalApiData: { contentSendType: 'MAIL' },
+    });
+    mailingService.assertUserCanEditMailing.mockResolvedValue(undefined);
+    EspProvider.build.mockResolvedValue({
+      updateCampaignMail: jest.fn().mockResolvedValue('campaign-1'),
+    });
+  });
+
+  it('updates a campaign the email has on this profile', async () => {
+    emailWith([{ profileId, campaignId: 12 }]);
+
+    await expect(update('12')).resolves.toMatchObject({ profileId });
+  });
+
+  it.each([
+    ['the email has no campaign', []],
+    ['the campaign is another one', [{ profileId, campaignId: 'other' }]],
+    [
+      'the campaign is on another profile',
+      [{ profileId: OTHER_PROFILE, campaignId: '12' }],
+    ],
+  ])('answers like a missing campaign when %s', async (_case, espIds) => {
+    emailWith(espIds);
+
+    await expect(update('12')).rejects.toMatchObject({
+      status: 404,
+      message: ERROR_CODES.ESP_CAMPAIGN_NOT_FOUND,
     });
     expect(EspProvider.build).not.toHaveBeenCalled();
   });
