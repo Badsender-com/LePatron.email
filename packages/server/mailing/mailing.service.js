@@ -1442,7 +1442,9 @@ async function duplicateWithTranslatedData({
   }
 
   // Handle destination: use provided or fall back to the original location.
-  // The source location was stripped above, so the fallback re-applies it.
+  // The source location was stripped above, so the fallback re-applies it,
+  // with the same write check as a destination chosen by the user (the
+  // source folder's was asked above).
   if (folderId) {
     // Validate access to destination folder
     await folderService.hasAccess(folderId, user);
@@ -1455,6 +1457,10 @@ async function duplicateWithTranslatedData({
   } else if (mailing._parentFolder) {
     copy._parentFolder = mailing._parentFolder;
   } else if (mailing._workspace) {
+    const sourceWorkspace = await workspaceService.getWorkspace(
+      mailing._workspace
+    );
+    workspaceService.doesUserHaveWriteAccess(user, sourceWorkspace);
     copy._workspace = mailing._workspace;
   }
 
