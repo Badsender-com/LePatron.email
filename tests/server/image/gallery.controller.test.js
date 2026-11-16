@@ -7,6 +7,9 @@ jest.mock('../../../packages/server/image/image.service.js', () => ({
   storeInGallery: jest.fn(),
 }));
 jest.mock('../../../packages/server/mailing/mailing.service.js', () => ({}));
+jest.mock('../../../packages/server/image/gallery-access.js', () => ({
+  assertCanWriteGallery: jest.fn().mockResolvedValue(undefined),
+}));
 
 const fileManager = require('../../../packages/server/common/file-manage.service.js');
 const imageService = require('../../../packages/server/image/image.service.js');
@@ -31,7 +34,7 @@ describe('gallery.controller — create()', () => {
 
     await new Promise((resolve) => {
       res.json.mockImplementation(resolve);
-      gallery.create({ params: { mongoId: 'abc' } }, res, resolve);
+      gallery.create({ params: { mongoId: 'abc' }, user: {} }, res, resolve);
     });
 
     expect(steps).toEqual(['gallery', 'upload']);

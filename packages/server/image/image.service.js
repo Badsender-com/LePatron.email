@@ -7,19 +7,11 @@ const fetch = require('node-fetch');
 const AbortController = require('abort-controller');
 const createError = require('http-errors');
 
-const {
-  Galleries,
-  Mailings,
-  Templates,
-} = require('../common/models.common.js');
+const { Galleries } = require('../common/models.common.js');
 const fileManager = require('../common/file-manage.service.js');
 const uploadIdentity = require('../common/upload-identity.service.js');
 const formatName = require('../helpers/format-filename-for-jquery-fileupload.js');
 const { assertOutboundHostAllowed } = require('../utils/outbound-host.js');
-const modelsUtils = require('../utils/model.js');
-const mailingService = require('../mailing/mailing.service.js');
-const permissions = require('../account/permissions.js');
-const { CAPABILITIES } = require('../../shared/access/roles.js');
 const ERROR_CODES = require('../constant/error-codes.js');
 const logger = require('../utils/logger.js');
 const { labelForUpload } = require('../../shared/gallery/label.js');
@@ -27,31 +19,6 @@ const { labelForUpload } = require('../../shared/gallery/label.js');
 const DOWNLOAD_TIMEOUT_MS = 15000;
 const MAX_IMAGE_BYTES = 10 * 1024 * 1024;
 const DUPLICATE_KEY_ERROR = 11000;
-
-// A gallery carries no company of its own: it belongs to the mailing or the
-// template whose id it bears (creationOrWireframeId), and writing in it is
-// writing in that parent. The gallery of an email follows the email's write
-// scope, the same check as saving the email (its workspace, or the workspace
-// of its folder). The gallery of a template follows the rule for editing a
-// template (PUT /templates/:id): platform.manage.
-//
-// Every refusal is the same Forbidden, a missing parent included, so the
-// answer says nothing about what exists in another group or workspace.
-async function assertCanEditGallery(user, creationOrWireframeId) {
-  const query = modelsUtils.addGroupFilter(user, {
-    _id: creationOrWireframeId,
-  });
-  const [mailing, template] = await Promise.all([
-    Mailings.findOne(query, '_id _workspace _parentFolder'),
-    Templates.findOne(query, '_id'),
-  ]);
-  const allowed = mailing
-    ? await mailingService.userCanEditMailing(user, mailing)
-    : !!template && permissions.can(user, CAPABILITIES.PLATFORM_MANAGE);
-  if (!allowed) {
-    throw new createError.Forbidden(ERROR_CODES.FORBIDDEN_GALLERY_ACCESS);
-  }
-}
 
 // Like every other write here, a single atomic update: the positional operator
 // renames the matched file in place, so a concurrent upload can't be lost.
@@ -271,5 +238,4 @@ module.exports = {
   storeInGallery,
   createFromUrl,
   renameLabel,
-  assertCanEditGallery,
 };

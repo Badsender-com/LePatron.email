@@ -7,24 +7,12 @@ jest.mock('../../../packages/server/common/models.common.js', () => ({
     findOneAndUpdate: jest.fn(),
     exists: jest.fn(),
   },
-  Mailings: {
-    findOne: jest.fn(),
-  },
-  Templates: {
-    findOne: jest.fn(),
-  },
-}));
-jest.mock('../../../packages/server/mailing/mailing.service.js', () => ({
-  userCanEditMailing: jest.fn(),
 }));
 
 const imageService = require('../../../packages/server/image/image.service.js');
 const {
   Galleries,
-  Mailings,
-  Templates,
 } = require('../../../packages/server/common/models.common.js');
-const mailingService = require('../../../packages/server/mailing/mailing.service.js');
 
 const MONGO_ID = '6a212f21f802c2a6f99a4184';
 
@@ -73,69 +61,5 @@ describe('imageService.renameLabel', () => {
     await expect(
       imageService.renameLabel(MONGO_ID, IMAGE_NAME, 'label.jpg')
     ).rejects.toThrow('GALLERY_IMAGE_NOT_FOUND');
-  });
-});
-
-// ---------------------------------------------------------------------------
-// assertCanEditGallery
-// ---------------------------------------------------------------------------
-
-describe('imageService.assertCanEditGallery', () => {
-  const user = { role: 'regular_user', group: { id: 'group-1' } };
-  const superAdmin = { role: 'super_admin', group: { id: 'platform' } };
-  const mailing = { _id: MONGO_ID, _workspace: 'workspace-1' };
-
-  beforeEach(() => {
-    jest.clearAllMocks();
-    Mailings.findOne.mockResolvedValue(null);
-    Templates.findOne.mockResolvedValue(null);
-  });
-
-  it("asks the email's own write rule for the gallery of an email", async () => {
-    Mailings.findOne.mockResolvedValue(mailing);
-    mailingService.userCanEditMailing.mockResolvedValue(true);
-
-    await expect(
-      imageService.assertCanEditGallery(user, MONGO_ID)
-    ).resolves.toBeUndefined();
-    expect(mailingService.userCanEditMailing).toHaveBeenCalledWith(
-      user,
-      mailing
-    );
-  });
-
-  it('raises Forbidden when that rule refuses the email', async () => {
-    Mailings.findOne.mockResolvedValue(mailing);
-    mailingService.userCanEditMailing.mockResolvedValue(false);
-
-    await expect(
-      imageService.assertCanEditGallery(user, MONGO_ID)
-    ).rejects.toThrow('FORBIDDEN_GALLERY_ACCESS');
-  });
-
-  it('reads what the rule needs: the workspace and the folder', async () => {
-    await imageService.assertCanEditGallery(user, MONGO_ID).catch(() => {});
-
-    expect(Mailings.findOne).toHaveBeenCalledWith(
-      { _id: MONGO_ID, _company: 'group-1' },
-      '_id _workspace _parentFolder'
-    );
-  });
-
-  it('lets only who edits templates rename in the gallery of a template', async () => {
-    Templates.findOne.mockResolvedValue({ _id: MONGO_ID });
-
-    await expect(
-      imageService.assertCanEditGallery(user, MONGO_ID)
-    ).rejects.toThrow('FORBIDDEN_GALLERY_ACCESS');
-    await expect(
-      imageService.assertCanEditGallery(superAdmin, MONGO_ID)
-    ).resolves.toBeUndefined();
-  });
-
-  it('raises Forbidden when neither a mailing nor a template matches', async () => {
-    await expect(
-      imageService.assertCanEditGallery(superAdmin, MONGO_ID)
-    ).rejects.toThrow('FORBIDDEN_GALLERY_ACCESS');
   });
 });

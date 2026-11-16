@@ -13,7 +13,6 @@ const { green, red } = require('chalk');
 const config = require('../node.config.js');
 const fileManager = require('../common/file-manage.service.js');
 const { CacheImages } = require('../common/models.common.js');
-const imageService = require('./image.service');
 
 console.log('[IMAGES] config.images.cache', config.images.cache);
 
@@ -24,7 +23,6 @@ module.exports = {
   checkImageCache,
   checkSizes,
   read,
-  destroy,
 };
 
 /// ///
@@ -458,31 +456,4 @@ function placeholder(req, res) {
 function read(req, res, next) {
   const { imageName } = req.params;
   streamImageToResponse(req, res, next, imageName);
-}
-
-/// ///
-// EDITOR SPECIFIC
-/// ///
-
-// destroy an image is not a real deletion…
-// …because those images can be still used inside creations:
-//  - cache can be inactive
-//  - if active: we are not sure that cropped images are cached
-//  - even though every cropped images are cached
-//    an image can be used at it's original size (no cropped image cache)
-// so:
-//  - we just flag this image in the gallery table as not visible
-function destroy(req, res, next) {
-  if (!req.xhr) return next(new createError.NotImplemented());
-  const { imageName } = req.params;
-  let mongoId = /^([a-f\d]{24})-/.exec(imageName);
-  if (!mongoId) return next(new createError.UnprocessableEntity());
-  mongoId = mongoId[1];
-
-  imageService
-    .destroy(mongoId, imageName)
-    .then((gallery) => {
-      res.send({ files: gallery.files });
-    })
-    .catch(next);
 }
