@@ -86,6 +86,7 @@ module.exports = {
   deleteOne,
   copyMailing,
   duplicateWithTranslatedData,
+  assertCanDuplicateWithTranslation,
   moveMailing,
   moveManyMailings,
   findAllIn,
@@ -1390,6 +1391,69 @@ async function copyMailing(mailingId, destination, user) {
 }
 
 /**
+ * Whether the user may duplicate and translate a mailing there: asked before
+ * the translation starts, since the provider bills it, and again when the
+ * copy is written (`duplicateWithTranslatedData`).
+ *
+ * @param {Object} params
+ * @param {string} params.mailingId the source
+ * @param {Object} params.user
+ * @param {string} [params.workspaceId] the workspace the user chose
+ * @param {string} [params.folderId] the folder the user chose
+ */
+async function assertCanDuplicateWithTranslation({
+  mailingId,
+  user,
+  workspaceId,
+  folderId,
+}) {
+  const mailing = await findOneForUser(mailingId, user);
+  await locationOfTranslatedCopy({ mailing, user, workspaceId, folderId });
+}
+
+/**
+ * Where a translated copy goes, once checked: the source is read like the
+ * source of a copy, and the copy goes to the folder or workspace the user
+ * chose, or back next to its source, in a location the user writes to and in
+ * the company of its source.
+ *
+ * @returns {Promise<Object>} `{ _parentFolder }` or `{ _workspace }`
+ */
+async function locationOfTranslatedCopy({
+  mailing,
+  user,
+  workspaceId,
+  folderId,
+}) {
+  await assertUserCanReadMailing(user, mailing);
+
+  if (folderId) {
+    await folderService.hasAccess(folderId, user);
+    const destWorkspace = await folderService.getWorkspaceForFolder(folderId);
+    assertSameGroup(mailing._company, destWorkspace && destWorkspace.group);
+    return { _parentFolder: folderId };
+  }
+  if (workspaceId) {
+    const destWorkspace = await workspaceService.getWorkspace(workspaceId);
+    workspaceService.doesUserHaveWriteAccess(user, destWorkspace);
+    assertSameGroup(mailing._company, destWorkspace.group);
+    return { _workspace: workspaceId };
+  }
+  if (mailing._parentFolder) {
+    await folderService.hasAccess(mailing._parentFolder, user);
+    return { _parentFolder: mailing._parentFolder };
+  }
+  if (mailing._workspace) {
+    const sourceWorkspace = await workspaceService.getWorkspace(
+      mailing._workspace
+    );
+    workspaceService.doesUserHaveWriteAccess(user, sourceWorkspace);
+    return { _workspace: mailing._workspace };
+  }
+  return {};
+}
+
+/**
  * Duplicate a mailing with translated/modified data
  * Used for the "Duplicate + Translate" feature
  * @param {Object} params
@@ -1407,21 +1471,13 @@ async function duplicateWithTranslatedData({
   workspaceId,
   folderId,
 }) {
-  // Group-scoped load: prevent a group admin from duplicating+translating a
-  // mailing of another group by id (cross-tenant IDOR).
   const mailing = await findOneForUser(mailingId, user);
-
-  // Check access to original mailing's folder (now throws on denial)
-  if (mailing?._parentFolder) {
-    await folderService.hasAccess(mailing._parentFolder, user);
-  }
-
-  if (mailing?.workspace) {
-    const sourceWorkspace = await workspaceService.getWorkspace(
-      mailing.workspace
-    );
-    workspaceService.doesUserHaveReadAccess(user, sourceWorkspace);
-  }
+  const location = await locationOfTranslatedCopy({
+    mailing,
+    user,
+    workspaceId,
+    folderId,
+  });
 
   // Same Mongoose-document caveat as `copyMailing`: omit on the raw document
   // does not reliably strip identity/location fields (some are aliases), which
@@ -1447,31 +1503,9 @@ async function duplicateWithTranslatedData({
     copy.author = user.name;
   }
 
-  // Handle destination: use provided or fall back to the original location.
-  // The source location was stripped above, so the fallback re-applies it,
-  // with the same write check as a destination chosen by the user (the
-  // source folder's was asked above).
-  if (folderId) {
-    // Validate access to destination folder, in the source's company
-    await folderService.hasAccess(folderId, user);
-    const destWorkspace = await folderService.getWorkspaceForFolder(folderId);
-    assertSameGroup(mailing._company, destWorkspace && destWorkspace.group);
-    copy._parentFolder = folderId;
-  } else if (workspaceId) {
-    // Validate access to destination workspace, in the source's company
-    const destWorkspace = await workspaceService.getWorkspace(workspaceId);
-    workspaceService.doesUserHaveWriteAccess(user, destWorkspace);
-    assertSameGroup(mailing._company, destWorkspace.group);
-    copy._workspace = workspaceId;
-  } else if (mailing._parentFolder) {
-    copy._parentFolder = mailing._parentFolder;
-  } else if (mailing._workspace) {
-    const sourceWorkspace = await workspaceService.getWorkspace(
-      mailing._workspace
-    );
-    workspaceService.doesUserHaveWriteAccess(user, sourceWorkspace);
-    copy._workspace = mailing._workspace;
-  }
+  // The source location was stripped above: the copy goes where it was
+  // checked to go.
+  Object.assign(copy, location);
 
   // Create the new mailing
   const copiedMailing = await Mailings.create(copy);

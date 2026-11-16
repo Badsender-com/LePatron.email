@@ -10,6 +10,7 @@ import destinationTreeMixin from '~/helpers/mixins/mixin-destination-tree';
 import { Languages, FolderOpen, Folder, Users } from 'lucide-vue';
 import { SPACE_TYPE } from '~/helpers/constants/space-type';
 import { escapeHtml } from '~/helpers/escape-html';
+import { isDestinationMissing } from '~/helpers/translated-copy-destination.js';
 import {
   POLL_INTERVAL_MS,
   POLL_REQUEST_TIMEOUT_MS,
@@ -32,6 +33,9 @@ export default {
       loading: false,
       translating: false,
       mailing: null,
+      // Whether the user writes where the source lies: if not, the copy
+      // cannot go back next to it and a destination is required.
+      canWriteSource: true,
       config: {
         availableLanguages: [],
         hasActiveIntegration: false,
@@ -93,12 +97,19 @@ export default {
         }))
         .sort((a, b) => a.text.localeCompare(b.text));
     },
+    destinationMissing() {
+      return isDestinationMissing({
+        canWriteSource: this.canWriteSource,
+        selectedLocation: this.selectedLocation,
+      });
+    },
     isFormValid() {
       return (
         this.form.newName.trim() &&
         this.form.sourceLanguage &&
         this.form.targetLanguage &&
-        this.config.hasActiveIntegration
+        this.config.hasActiveIntegration &&
+        !this.destinationMissing
       );
     },
     nameRequired() {
@@ -146,8 +157,9 @@ export default {
     ...mapMutations(PAGE, { showSnackbar: SHOW_SNACKBAR }),
     escapeHtml,
 
-    async open(mailing) {
+    async open(mailing, { canWriteSource = true } = {}) {
       this.mailing = mailing;
+      this.canWriteSource = canWriteSource;
       this.form.newName = `${mailing.name} - `;
       this.form.sourceLanguage = '';
       this.form.targetLanguage = '';
@@ -547,6 +559,9 @@ export default {
               <div class="mt-2">
                 <div class="text-subtitle-2 mb-2">
                   {{ $t('translation.destination') }}
+                  <span v-if="!canWriteSource" class="form-label__required"
+                    >*</span
+                  >
                 </div>
                 <v-skeleton-loader
                   type="list-item, list-item"
@@ -589,7 +604,11 @@ export default {
                   </div>
                 </v-skeleton-loader>
                 <div class="text-caption text--secondary mt-1">
-                  {{ $t('translation.destinationHint') }}
+                  {{
+                    canWriteSource
+                      ? $t('translation.destinationHint')
+                      : $t('translation.destinationRequiredHint')
+                  }}
                 </div>
               </div>
             </template>

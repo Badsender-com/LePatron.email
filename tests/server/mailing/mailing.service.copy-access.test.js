@@ -251,3 +251,46 @@ describe('mailingService.duplicateWithTranslatedData, the company of the copy', 
     );
   });
 });
+
+describe('mailingService.assertCanDuplicateWithTranslation', () => {
+  const check = (where = {}) =>
+    mailingService.assertCanDuplicateWithTranslation({
+      mailingId: MAILING,
+      user,
+      ...where,
+    });
+
+  it('refuses the copy next to a source the user only reads', async () => {
+    mockMailing({ _workspace: source._id, workspace: source._id });
+
+    await expect(check()).rejects.toMatchObject({ status: 403 });
+    expect(Mailings.create).not.toHaveBeenCalled();
+  });
+
+  it('accepts a destination the user writes to, from a source it reads', async () => {
+    mockMailing({ _workspace: source._id, workspace: source._id });
+
+    await expect(
+      check({ workspaceId: destination._id })
+    ).resolves.toBeUndefined();
+    expect(Mailings.create).not.toHaveBeenCalled();
+  });
+
+  it('reads a source in a folder of a workspace the user only reads', async () => {
+    mockMailing({ _parentFolder: FOLDER });
+
+    await expect(
+      check({ workspaceId: destination._id })
+    ).resolves.toBeUndefined();
+    expect(folderService.hasAccess).not.toHaveBeenCalledWith(FOLDER, user);
+  });
+
+  it('refuses the copy next to a source in a folder the user only reads', async () => {
+    mockMailing({ _parentFolder: FOLDER });
+    folderService.hasAccess.mockRejectedValue(
+      Object.assign(new Error('WORKSPACE_NOT_FOUND'), { status: 404 })
+    );
+
+    await expect(check()).rejects.toMatchObject({ status: 404 });
+  });
+});
