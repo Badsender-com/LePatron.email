@@ -149,6 +149,16 @@ const updatableOf = (block) =>
     return fields;
   }, {});
 
+// A saved block's content is the block alone: the palette builds its
+// `blockInformation` from the list entry each time it lists the blocks.
+const withoutBlockInformation = (content) => {
+  if (!content || typeof content !== 'object' || Array.isArray(content)) {
+    return content;
+  }
+  const { blockInformation: _blockInformation, ...block } = content;
+  return block;
+};
+
 // A block is read, changed or deleted through its group: the route checks the
 // caller belongs to the group named in the request, and this is what ties the
 // block to that same group.
@@ -173,10 +183,12 @@ async function assertTemplateInGroup(templateId, groupId) {
 async function addPersonalizedBlock(block, groupId, templateId, userId) {
   assertObjectIds(groupId, templateId);
   await assertTemplateInGroup(templateId, groupId);
-  await normalizeAndGuardBlockContent({ content: block.content, templateId });
+  const content = withoutBlockInformation(block.content);
+  await normalizeAndGuardBlockContent({ content, templateId });
 
   const newBlock = await PersonalizedBlocks.create({
     ...block,
+    content,
     _group: mongoose.Types.ObjectId(groupId),
     _user: mongoose.Types.ObjectId(userId),
     _template: mongoose.Types.ObjectId(templateId),
@@ -189,6 +201,9 @@ async function addPersonalizedBlock(block, groupId, templateId, userId) {
 async function updatePersonalizedBlock(id, groupId, updatedBlock) {
   assertObjectIds(id, groupId);
   const changes = updatableOf(updatedBlock);
+  if ('content' in changes) {
+    changes.content = withoutBlockInformation(changes.content);
+  }
 
   if (hasSyntheticBlock(changes.content)) {
     const existing = await PersonalizedBlocks.findOne(inGroup(id, groupId))
