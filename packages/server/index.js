@@ -25,6 +25,7 @@ const cluster = require('cluster');
 const config = require('./node.config.js');
 const { assertNoDevDefaults } = require('./config/dev-defaults.js');
 const { sessionCookieOptions, forceHttps } = require('./utils/https-only.js');
+const { shouldCompress } = require('./utils/compression-filter.js');
 const {
   isReturnPath,
   samlReturnPath,
@@ -174,19 +175,13 @@ if (cluster.isMaster) {
 
   // enable gzip compression
   // • file manager uploads are omitted by this
-  // • Events routes are omitted from this due to SSE's response cut
-  //   https://github.com/expressjs/compression#chunksize
-  const EVENT_ROUTE_REGEX = /\/events$/;
-  // The MCP endpoint streams its answers as server-sent events too.
-  const MCP_ROUTE_REGEX = /^\/mcp$/;
   app.use(
     compression({
       // • this param was used for compression to play gracefully with SSE
       //   but it doesn't solve our chunksize issues
       //   https://github.com/expressjs/compression/issues/86#issuecomment-245377396
       // flush: zlib.Z_SYNC_FLUSH,
-      filter: (req) =>
-        !EVENT_ROUTE_REGEX.test(req.path) && !MCP_ROUTE_REGEX.test(req.path),
+      filter: shouldCompress,
     })
   );
 
