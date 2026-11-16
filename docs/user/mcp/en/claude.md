@@ -26,9 +26,9 @@ A connector added on claude.ai is also available in Claude Desktop, with the sam
 
 In a conversation, turn LePatron on with the **+** button, then **Connectors**. Claude can then:
 
-- read Badsender's expertises and find the ones that apply to your request;
-- use Badsender's skills, which also show among the suggested commands;
-- send feedback to Badsender when you ask it to;
+- read the platform company's expertises and find the ones that apply to your request;
+- use the platform company's skills, which also show among the suggested commands;
+- send feedback to the platform company when you ask it to;
 - report a retex on a skill or an expertise, with your approval ([Retex](./retex.md)).
 
 ### Stop confirming each read

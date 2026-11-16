@@ -17,7 +17,7 @@ Les intitulés ci-dessous sont ceux de l'interface anglaise de Copilot Studio.
 1. Dans l'agent, ouvrir **Tools › Add a tool › New tool**, puis **Model Context Protocol**.
 2. Renseigner :
    - **Server name** : `LePatron` ;
-   - **Server description** : par exemple « Expertises et skills Badsender pour écrire et relire des emails ». L'agent s'en sert pour décider quand appeler LePatron ;
+   - **Server description** : par exemple « Expertises et skills LePatron pour écrire et relire des emails ». L'agent s'en sert pour décider quand appeler LePatron ;
    - **Server URL** : par exemple `https://app.lepatron.email/mcp`.
 3. Authentification : **OAuth 2.0**, puis l'un des deux types suivants.
 

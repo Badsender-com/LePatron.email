@@ -15,7 +15,7 @@ Two Microsoft products connect to LePatron. In both cases, the company's IT sets
 1. In the agent, open **Tools › Add a tool › New tool**, then **Model Context Protocol**.
 2. Fill in:
    - **Server name**: `LePatron`;
-   - **Server description**: for instance "Badsender expertises and skills to write and review emails". The agent uses it to decide when to call LePatron;
+   - **Server description**: for instance "LePatron expertises and skills to write and review emails". The agent uses it to decide when to call LePatron;
    - **Server URL**: for instance `https://app.lepatron.email/mcp`.
 3. Authentication: **OAuth 2.0**, then one of the two types below.
 
