@@ -66,6 +66,7 @@ const {
   listingGroupIdOf,
   resourceGroupIdOf,
   assertSameGroup,
+  refuseBootstrapAccount,
 } = require('../account/request-scope.js');
 const { testConnection } = require('../group/group-ftp.service.js');
 
@@ -1536,7 +1537,8 @@ async function duplicateWithTranslatedData({
 /**
  * Rename a mailing where it lies: read in the user's company (another
  * company's answers like one that does not exist), and renamed by whoever may
- * save it, in its own workspace or folder.
+ * save it, in its own workspace or folder. The bootstrap account is refused,
+ * as on every module write.
  *
  * @param {Object} params
  * @param {string} params.mailingId
@@ -1544,6 +1546,8 @@ async function duplicateWithTranslatedData({
  * @param {Object} user
  */
 async function renameMailing({ mailingId, mailingName }, user) {
+  // A module write: the bootstrap account stays in the settings.
+  refuseBootstrapAccount(user);
   if (typeof mailingName !== 'string' || mailingName === '') {
     throw new BadRequest(ERROR_CODES.NAME_NOT_PROVIDED);
   }
