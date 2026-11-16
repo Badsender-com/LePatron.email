@@ -71,14 +71,14 @@
               data-bind="attr: { title: $root.t('Click or drag to add this block to the template') }, tooltips: {}">
             </div>
             <span class="block-name"
-              data-bind="html: $root.t('__name__', { name: ko.utils.unwrapObservable(blockInformation.name) })">__name__</span>
+              data-bind="text: $root.t('__name__', { name: ko.utils.unwrapObservable(blockInformation.name) })">__name__</span>
             <div class="block-content-custom">
               <span class="block-content-custom-text"
-                data-bind="html: $root.t('__name__', { name: ko.utils.unwrapObservable(blockInformation.category) })">__name__</span>
+                data-bind="text: $root.t('__name__', { name: ko.utils.unwrapObservable(blockInformation.category) })">__name__</span>
             </div>
             <div class="block-content-custom">
               <span class="block-content-custom-text"
-                data-bind="html: $root.t('__name__', { name: ko.utils.unwrapObservable(blockInformation.userDetails.name) })">__name__</span>
+                data-bind="text: $root.t('__name__', { name: ko.utils.unwrapObservable(blockInformation.userDetails.name) })">__name__</span>
             </div>
           </div>
           <div class="addblockbutton custom">
