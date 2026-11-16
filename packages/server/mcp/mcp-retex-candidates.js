@@ -8,6 +8,9 @@
 // A part of the email, as stored: trimmed and in lower case (ADR 0021).
 const partOf = (part) => String(part).trim().toLowerCase();
 
+// The part of the email a retex names, or none: blank is none.
+const partOrNone = (part) => (part && partOf(part)) || null;
+
 // The same text, whatever its spacing and case: a quotation is stored so
 // too (`flatQuote`), for two of them to be matched in a query.
 const flat = (text) =>
@@ -58,7 +61,7 @@ function passageQuery(retex) {
 /**
  * The query of the open retex that may converge with this one: on the same
  * skill or expertise, those meeting its passage; about none, the same kind
- * of know-how and part of the email.
+ * of know-how, and the same part of the email when both name one.
  *
  * @param {Object} retex as reported, or as stored
  * @param {string} retexId left out
@@ -67,11 +70,14 @@ function passageQuery(retex) {
 function candidatesQuery(retex, retexId) {
   const others = { status: 'open', _id: { $ne: String(retexId) } };
   if (!retex.about) {
+    // The same kind of know-how; and the same part of the email, or none,
+    // when this one names a part.
+    const part = partOrNone(retex.part);
     return {
       ...others,
       about: null,
       category: String(retex.category),
-      part: partOf(retex.part),
+      ...(part && { $or: [{ part }, { part: null }] }),
     };
   }
   return {
@@ -82,4 +88,4 @@ function candidatesQuery(retex, retexId) {
   };
 }
 
-module.exports = { candidatesQuery, flat, partOf };
+module.exports = { candidatesQuery, flat, partOf, partOrNone };

@@ -293,7 +293,7 @@ _UI_: Divergence
 _Avoid_: Disagreement, error, bug
 
 **Complement**:
-A retex where the user brought what a skill or an expertise lacked for the case at hand, with where it comes from (experience, a source, a test). It may concern no existing skill or expertise, then a kind of know-how and a part of the email.
+A retex where the user brought what a skill or an expertise lacked for the case at hand, with where it comes from (experience, a source, a test). It may concern no existing skill or expertise, then a kind of know-how, and a part of the email when there is one.
 _UI_: Complément
 _Avoid_: Suggestion, wish, request
 
