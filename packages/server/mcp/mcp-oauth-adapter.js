@@ -1,5 +1,7 @@
 'use strict';
 
+// ESM only: Node 24 lets the app require it (ADR 0012).
+const { errors } = require('oidc-provider');
 const {
   collectionOf,
   storedId,
@@ -26,14 +28,15 @@ function payloadOf(record) {
 // for a stolen token, and the provider ends the connection.
 const REFRESH_REUSE_SECONDS = 30;
 
-// Whether a refresh token was consumed within REFRESH_REUSE_SECONDS: its
-// second use is then a client's, and the provider is told it was not
-// consumed.
-function isWithinReuse(name, payload) {
+// Whether a refresh token was consumed once, within REFRESH_REUSE_SECONDS:
+// its second use is then a client's, and the provider is told it was not
+// consumed. A third use is the provider's to refuse.
+function isWithinReuse(name, record) {
   return (
     name === 'RefreshToken' &&
-    typeof payload.consumed === 'number' &&
-    Math.floor(Date.now() / 1000) - payload.consumed < REFRESH_REUSE_SECONDS
+    record.consumptions === 1 &&
+    typeof record.consumed === 'number' &&
+    Math.floor(Date.now() / 1000) - record.consumed < REFRESH_REUSE_SECONDS
   );
 }
 
@@ -114,16 +117,15 @@ class McpOAuthAdapter {
 
   async find(id) {
     if (this.isClientRegisteredByHand(id)) return registeredClientMetadata(id);
-    const found = payloadOf(
-      await (await this.collection()).findOne({ _id: this.storedId(id) })
+    const record = await (await this.collection()).findOne({
+      _id: this.storedId(id),
+    });
+    const payload = payloadOf(
+      record && isWithinReuse(this.name, record)
+        ? { ...record, consumed: undefined }
+        : record
     );
-    if (!found) return found;
-    let payload = found;
-    if (isWithinReuse(this.name, found)) {
-      const { consumed: _consumed, ...unconsumed } = found;
-      payload = unconsumed;
-    }
-    return HASHED.has(this.name) ? { ...payload, jti: id } : payload;
+    return payload && HASHED.has(this.name) ? { ...payload, jti: id } : payload;
   }
 
   async findByUid(uid) {
@@ -136,13 +138,24 @@ class McpOAuthAdapter {
     return undefined;
   }
 
-  // When it was first consumed: traded again, a refresh token keeps the
-  // time of its first use (REFRESH_REUSE_SECONDS).
+  // When it was first consumed, and how many times. Traded again, a refresh
+  // token keeps the time of its first use (REFRESH_REUSE_SECONDS), and is
+  // traded twice at most: of requests sent at once, which all found it
+  // unconsumed, the third is refused.
   async consume(id) {
-    await (await this.collection()).updateOne(
+    const collection = await this.collection();
+    const first = await collection.updateOne(
       { _id: this.storedId(id), consumed: { $exists: false } },
-      { $set: { consumed: Math.floor(Date.now() / 1000) } }
+      { $set: { consumed: Math.floor(Date.now() / 1000), consumptions: 1 } }
     );
+    if (first.matchedCount === 1 || this.name !== 'RefreshToken') return;
+    const again = await collection.updateOne(
+      { _id: this.storedId(id), consumptions: 1 },
+      { $inc: { consumptions: 1 } }
+    );
+    if (again.matchedCount === 0) {
+      throw new errors.InvalidGrant('refresh token already used');
+    }
   }
 
   async destroy(id) {
