@@ -55,8 +55,8 @@ router.post('/move-many', GUARD_CAN(C.MAILING_ORGANIZE), mailings.moveMany);
 router.post(
   '/:mailingId/mosaico/send-test-mail',
   GUARD_CAN(C.MAILING_SEND_TEST),
-  limitTestSendsPerAccount,
   requireJsonBody,
+  limitTestSendsPerAccount,
   mailings.sendTestMail
 );
 router.post(
