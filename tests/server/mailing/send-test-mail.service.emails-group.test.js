@@ -6,6 +6,7 @@
 
 jest.mock('../../../packages/server/mailing/mailing.service.js', () => ({
   getMailNameAndCompanyByMailingIdAndUser: jest.fn(),
+  assertUserCanReadMailing: jest.fn(),
 }));
 jest.mock('../../../packages/server/emails-group/emails-group.service', () => ({
   getEmailsGroupOfGroup: jest.fn(),

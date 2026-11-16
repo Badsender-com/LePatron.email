@@ -883,7 +883,13 @@ async function getMailNameAndCompanyByMailingIdAndUser({ mailingId, user }) {
   const mailing = await Mailings.findOne(query)
     // `subject` so a test send can carry the real subject line rather than the
     // internal mailing name; the caller falls back on the name when it is empty.
-    .select({ name: 1, subject: 1, _company: 1 })
+    .select({
+      name: 1,
+      subject: 1,
+      _company: 1,
+      _workspace: 1,
+      _parentFolder: 1,
+    })
     .lean();
   if (!mailing) throw new NotFound(ERROR_CODES.MAILING_MISSING_SOURCE);
   return mailing;

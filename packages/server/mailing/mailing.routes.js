@@ -18,6 +18,20 @@ const mailingSearch = require('./mailing-search.controller.js');
 const { requireJsonBody } = require('../utils/require-json-body.js');
 const mailingMetadata = require('./mailing-metadata.controller.js');
 const translation = require('../translation/translation.controller.js');
+const { createRateLimiter } = require('../utils/rate-limit.js');
+const {
+  TEST_SENDS_PER_HOUR_PER_ACCOUNT,
+} = require('./send-test-mail.service.js');
+
+const HOUR = 60 * 60 * 1000;
+
+// A test send goes out through the platform's own mail server: bounded per
+// account, like the other sends to an inbox (account.routes.js).
+const limitTestSendsPerAccount = createRateLimiter({
+  windowMs: HOUR,
+  max: TEST_SENDS_PER_HOUR_PER_ACCOUNT,
+  keyOf: (req) => req.user && String(req.user.id),
+});
 
 // All routes below require an authenticated user AND the Email Builder module
 // to be enabled on the user's group (super admins bypass the flag check).
@@ -41,6 +55,7 @@ router.post('/move-many', GUARD_CAN(C.MAILING_ORGANIZE), mailings.moveMany);
 router.post(
   '/:mailingId/mosaico/send-test-mail',
   GUARD_CAN(C.MAILING_SEND_TEST),
+  limitTestSendsPerAccount,
   requireJsonBody,
   mailings.sendTestMail
 );
