@@ -102,6 +102,23 @@ describe('a refresh token already used', () => {
     );
   });
 
+  // Identifiers, never a token: whoever reads the logs finds the connection.
+  it('logs its second use, by its client and its grant', async () => {
+    const first = await connect();
+    await refresh(first.refresh_token);
+    const [{ grantId }] = oauth.oauthStore('RefreshToken').records;
+    later(10);
+
+    const retraded = (await refresh(first.refresh_token)).body;
+
+    const logged = logger.warn.mock.calls.flat().join('\n');
+    expect(logged).toContain('traded again');
+    expect(logged).toContain(CIMD_CLIENT.client_id);
+    expect(logged).toContain(grantId);
+    expect(logged).not.toContain(first.refresh_token);
+    expect(logged).not.toContain(retraded.refresh_token);
+  });
+
   it('logs why it refused it', async () => {
     const first = await connect();
     await refresh(first.refresh_token);

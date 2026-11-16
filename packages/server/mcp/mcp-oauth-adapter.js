@@ -13,6 +13,7 @@ const {
   isRegisteredByHand,
   registeredClientMetadata,
 } = require('./mcp-clients.js');
+const logger = require('../utils/logger.js');
 
 // The payload a record keeps, with when it was consumed, or nothing for a
 // record of another form.
@@ -156,6 +157,20 @@ class McpOAuthAdapter {
     if (again.matchedCount === 0) {
       throw new errors.InvalidGrant('refresh token already used');
     }
+    await this.logTradedAgain(id);
+  }
+
+  // Each second use is traced by its client and its grant, never the token:
+  // whoever reads the logs finds the connection it is of.
+  async logTradedAgain(id) {
+    const record = await (await this.collection()).findOne({
+      _id: this.storedId(id),
+    });
+    logger.warn(
+      `[mcp-oauth] a refresh token was traded again within ${REFRESH_REUSE_SECONDS} s of its first use: client ${
+        payloadOf(record)?.clientId
+      }, grant ${record?.grantId}`
+    );
   }
 
   async destroy(id) {
