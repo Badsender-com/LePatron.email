@@ -21,6 +21,9 @@ const { EmailTriggerValues } = require('../constant/email-trigger');
 const { resolveTrackingConfig } = require('../utils/resolve-tracking-config');
 const { HEAD_CSS_MAX_LENGTH } = require('../../shared/head-css/constants.js');
 const {
+  keepBlockInformationFields,
+} = require('../../shared/block-information.js');
+const {
   TEMPLATE_FLAG_PROJECTION,
   syntheticBlockFlagsOf,
 } = require('./synthetic-block-guard.js');
@@ -200,7 +203,7 @@ MailingSchema.methods.duplicate = function duplicate(_user) {
 
     const replaceRegexp = new RegExp(oldId, 'gm');
     data = data.replace(replaceRegexp, String(newId));
-    this.data = JSON.parse(data);
+    this.data = keepBlockInformationFields(JSON.parse(data));
     this.markModified('data');
   }
 

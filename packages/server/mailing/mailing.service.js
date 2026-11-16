@@ -60,6 +60,9 @@ const workspaceService = require('../workspace/workspace.service.js');
 const permissions = require('../account/permissions.js');
 const { CAPABILITIES } = require('../../shared/access/roles.js');
 const {
+  keepBlockInformationFields,
+} = require('../../shared/block-information.js');
+const {
   listingGroupIdOf,
   resourceGroupIdOf,
   assertSameGroup,
@@ -334,13 +337,16 @@ const MAILING_COPY_OMITTED_FIELDS = Object.freeze([
 /**
  * Strip from a mailing the fields a copy must not inherit. Shared by `copyMailing`
  * and `duplicateWithTranslatedData`, which used to carry the same list twice —
- * and so could drift apart on the next field added.
+ * and so could drift apart on the next field added. The blocks of the copy
+ * keep the fields of shared/block-information.js in their `blockInformation`.
  *
  * @param {Object} source a mailing as a plain object (`mailing.toObject()`)
  * @returns {Object} the copy, with the destination still to be set
  */
 function buildMailingCopy(source) {
-  return omit(source, MAILING_COPY_OMITTED_FIELDS);
+  const copy = omit(source, MAILING_COPY_OMITTED_FIELDS);
+  if (copy.data) copy.data = keepBlockInformationFields(copy.data);
+  return copy;
 }
 
 /**
@@ -1396,7 +1402,7 @@ async function duplicateWithTranslatedData({
 
   // Replace data with translated data
   if (translatedData) {
-    copy.data = translatedData;
+    copy.data = keepBlockInformationFields(translatedData);
   }
 
   // Set user info
