@@ -34,7 +34,7 @@ npx prettier --write <files>      # Format the files you touched
 - **Read first.** Before exploring the code for any task, read `GLOSSARY.md` and the ADRs in `docs/adr/` that touch the area. Use the glossary's terms in code, tests and issues. A change that contradicts an ADR says so explicitly.
 - **Rights.** Ask for a capability, never compare roles (see "Rights" below). A diff that touches rights gets the review in [docs/agents/rights-review.md](docs/agents/rights-review.md).
 - **One PR, one intent.** Agent instruction files go in their own PR ([docs/AI_POLICIES.md](docs/AI_POLICIES.md)).
-- **Public repository.** No client name, secret or unfixed vulnerability in an issue, a PR, a commit or a comment. A vulnerability found in a review goes to the user, not to GitHub.
+- **Public repository.** No client name, secret or vulnerability in an issue, a PR, a commit, a code comment or a test. A security fix names the behavior it brings, never the gap it closes or where traces of it remain: the gap stays open in production until the deploy. A vulnerability found in a review goes to the user, not to GitHub.
 - **Done means** `yarn test-ci` green, ESLint and Prettier clean on the touched files, and a test for each behavior the change adds or fixes (a bug fix starts with a failing test).
 - **English** in code, comments, logs and tests. French only in user-facing strings, which are always translated (`packages/ui/helpers/locales/`, `public/lang/badsender-*.js`).
 - **Files under 300 lines**, functions under 50. Split before going over.
