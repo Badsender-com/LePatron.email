@@ -155,3 +155,45 @@ describe('mailingService.copyMailing, access to the source', () => {
     expect(Mailings.create).not.toHaveBeenCalled();
   });
 });
+
+// Duplicating with a translation reads the source like a copy does; the copy
+// goes to the destination chosen, or back next to its source, and either way
+// the user writes there.
+describe('mailingService.duplicateWithTranslatedData, access to where the copy goes', () => {
+  const duplicate = (where = {}) =>
+    mailingService.duplicateWithTranslatedData({
+      mailingId: MAILING,
+      user,
+      newName: 'Newsletter EN',
+      ...where,
+    });
+  const inWorkspace = (workspace) =>
+    mockMailing({ _workspace: workspace._id, workspace: workspace._id });
+
+  it('puts the copy next to its source when the user writes there', async () => {
+    inWorkspace(destination);
+
+    await duplicate();
+
+    expect(Mailings.create).toHaveBeenCalledWith(
+      expect.objectContaining({ _workspace: destination._id })
+    );
+  });
+
+  it('refuses to put the copy next to its source where the user only reads', async () => {
+    inWorkspace(source);
+
+    await expect(duplicate()).rejects.toMatchObject({ status: 403 });
+    expect(Mailings.create).not.toHaveBeenCalled();
+  });
+
+  it('puts the copy in a workspace the user writes to, from one it reads', async () => {
+    inWorkspace(source);
+
+    await duplicate({ workspaceId: destination._id });
+
+    expect(Mailings.create).toHaveBeenCalledWith(
+      expect.objectContaining({ _workspace: destination._id })
+    );
+  });
+});
