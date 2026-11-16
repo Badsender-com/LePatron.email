@@ -13,7 +13,10 @@ const { green, red } = require('chalk');
 const config = require('../node.config.js');
 const fileManager = require('../common/file-manage.service.js');
 const { CacheImages } = require('../common/models.common.js');
-const { setServedFileHeaders } = require('./served-file-headers.js');
+const {
+  setServedFileHeaders,
+  isInlineImage,
+} = require('./served-file-headers.js');
 
 console.log('[IMAGES] config.images.cache', config.images.cache);
 
@@ -161,10 +164,12 @@ const isImageContentType = (contentType) =>
 // for what is actually a PNG. The browser then refuses to paint the response in
 // an `<img>`, the editor re-requests the same thumbnail on every re-render, and
 // a single open tab becomes thousands of requests per minute.
-// So when the extension doesn't already name an image type, ask the bytes.
+// So when the extension doesn't already name a raster image type, ask the
+// bytes. An `.svg` is asked too: the cached resize of an SVG is a PNG kept
+// under the source's name.
 const resolveContentType = async (imageName) => {
   const guessedContentType = mime.lookup(imageName);
-  if (isImageContentType(guessedContentType)) return guessedContentType;
+  if (isInlineImage(guessedContentType)) return guessedContentType;
 
   const probeStream = fileManager.streamImage(imageName);
   try {
