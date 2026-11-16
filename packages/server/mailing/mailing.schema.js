@@ -566,6 +566,13 @@ MailingSchema.statics.findOneForMosaico = async function findOneForMosaico(
     });
   if (!mailing) return mailing;
 
+  // The editor opens what the user may read, like the preview: the workspace
+  // or the folder holding the email, beyond its company (the query's own
+  // filter). Lazy require: the service reaches models.common, which reaches
+  // back here.
+  const mailingService = require('./mailing.service.js');
+  if (!(await mailingService.userCanReadMailing(user, mailing))) return null;
+
   // group is needed to check zip format
   // • a mailing without a group is from the "admin"
   // • so group configuration will be find on the template
@@ -610,8 +617,7 @@ MailingSchema.statics.findOneForMosaico = async function findOneForMosaico(
 
   // Whether a save from the editor would be accepted where the email lives
   // (its workspace or folder), the capability apart: the editor locks itself
-  // instead of offering a save the server refuses. Lazy require, as above.
-  const mailingService = require('./mailing.service.js');
+  // instead of offering a save the server refuses.
   const canWrite = await mailingService.userCanEditMailing(user, mailing);
 
   let redirectUrl = null;
