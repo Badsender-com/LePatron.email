@@ -62,9 +62,12 @@ async function write(entry, identity) {
  * @param {Object} [identity] who made it, when known (`identify`)
  */
 function recordCall(entry, identity) {
-  const writing = write(entry, identity);
+  // Whatever happens to the write, it leaves the writes pending, and what
+  // waits for them, a server that stops included, goes on.
+  const writing = write(entry, identity)
+    .finally(() => pending.delete(writing))
+    .catch((err) => logger.error('[mcp] the call log failed', err.message));
   pending.add(writing);
-  writing.then(() => pending.delete(writing));
 }
 
 /**
