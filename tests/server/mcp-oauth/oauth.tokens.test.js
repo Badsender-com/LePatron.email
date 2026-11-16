@@ -212,15 +212,6 @@ describe('token and refresh', () => {
       expect(response.body.refresh_token).not.toBe(first.refresh_token);
     });
 
-    it('refuses a refresh token already used', async () => {
-      const first = (await exchange(await codeFor())).body;
-      await refresh(first.refresh_token);
-
-      const again = await refresh(first.refresh_token);
-
-      expect(again.body.error).toBe('invalid_grant');
-    });
-
     // A super admin bound to the client group stays there after a refresh:
     // turning the client group's MCP access off stops the refreshed token.
     it('keeps the group the connection was bound to', async () => {

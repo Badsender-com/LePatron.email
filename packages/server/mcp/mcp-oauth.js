@@ -7,6 +7,7 @@ const { McpClients } = require('../common/models.common.js');
 const logger = require('../utils/logger.js');
 const { attachAuthorizationServer } = require('./mcp-connections.js');
 const { compareClientSecretsByDigest } = require('./mcp-oauth-adapter.js');
+const { logAuthorizationServer } = require('./mcp-oauth-log.js');
 const { SCOPES } = require('./mcp-identity.js');
 const {
   EXTRA_CLIENT_METADATA,
@@ -302,6 +303,7 @@ function createAuthorizationServer({
     }
   });
   attachAuthorizationServer(provider);
+  logAuthorizationServer(provider);
   provider.on('registration_create.success', (ctx, client) =>
     keepRegisteredClient(
       provider,

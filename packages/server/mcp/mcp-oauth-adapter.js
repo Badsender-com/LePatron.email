@@ -1,5 +1,7 @@
 'use strict';
 
+// ESM only: Node 24 lets the app require it (ADR 0012).
+const { errors } = require('oidc-provider');
 const {
   collectionOf,
   storedId,
@@ -11,6 +13,7 @@ const {
   isRegisteredByHand,
   registeredClientMetadata,
 } = require('./mcp-clients.js');
+const logger = require('../utils/logger.js');
 
 // The payload a record keeps, with when it was consumed, or nothing for a
 // record of another form.
@@ -18,6 +21,24 @@ function payloadOf(record) {
   if (!record || typeof record.payload !== 'string') return undefined;
   const payload = JSON.parse(record.payload);
   return record.consumed ? { ...payload, consumed: record.consumed } : payload;
+}
+
+// How long a refresh token just traded may be traded again (ADR 0012): two
+// requests of a client at once, or a retry when the answer was lost, send it
+// twice, the retries seen 10 seconds apart. Past it, a second use is taken
+// for a stolen token, and the provider ends the connection.
+const REFRESH_REUSE_SECONDS = 30;
+
+// Whether a refresh token was consumed once, within REFRESH_REUSE_SECONDS:
+// its second use is then a client's, and the provider is told it was not
+// consumed. A third use is the provider's to refuse.
+function isWithinReuse(name, record) {
+  return (
+    name === 'RefreshToken' &&
+    record.consumptions === 1 &&
+    typeof record.consumed === 'number' &&
+    Math.floor(Date.now() / 1000) - record.consumed < REFRESH_REUSE_SECONDS
+  );
 }
 
 // What MongoDB answers an insertion whose `_id` is taken.
@@ -97,8 +118,13 @@ class McpOAuthAdapter {
 
   async find(id) {
     if (this.isClientRegisteredByHand(id)) return registeredClientMetadata(id);
+    const record = await (await this.collection()).findOne({
+      _id: this.storedId(id),
+    });
     const payload = payloadOf(
-      await (await this.collection()).findOne({ _id: this.storedId(id) })
+      record && isWithinReuse(this.name, record)
+        ? { ...record, consumed: undefined }
+        : record
     );
     return payload && HASHED.has(this.name) ? { ...payload, jti: id } : payload;
   }
@@ -113,10 +139,37 @@ class McpOAuthAdapter {
     return undefined;
   }
 
+  // When it was first consumed, and how many times. Traded again, a refresh
+  // token keeps the time of its first use (REFRESH_REUSE_SECONDS), and is
+  // traded twice at most: of requests sent at once, which all found it
+  // unconsumed, the third is refused.
   async consume(id) {
-    await (await this.collection()).updateOne(
-      { _id: this.storedId(id) },
-      { $set: { consumed: Math.floor(Date.now() / 1000) } }
+    const collection = await this.collection();
+    const first = await collection.updateOne(
+      { _id: this.storedId(id), consumed: { $exists: false } },
+      { $set: { consumed: Math.floor(Date.now() / 1000), consumptions: 1 } }
+    );
+    if (first.matchedCount === 1 || this.name !== 'RefreshToken') return;
+    const again = await collection.updateOne(
+      { _id: this.storedId(id), consumptions: 1 },
+      { $inc: { consumptions: 1 } }
+    );
+    if (again.matchedCount === 0) {
+      throw new errors.InvalidGrant('refresh token already used');
+    }
+    await this.logTradedAgain(id);
+  }
+
+  // Each second use is traced by its client and its grant, never the token:
+  // whoever reads the logs finds the connection it is of.
+  async logTradedAgain(id) {
+    const record = await (await this.collection()).findOne({
+      _id: this.storedId(id),
+    });
+    logger.warn(
+      `[mcp-oauth] a refresh token was traded again within ${REFRESH_REUSE_SECONDS} s of its first use: client ${
+        payloadOf(record)?.clientId
+      }, grant ${record?.grantId}`
     );
   }
 
@@ -143,4 +196,8 @@ function compareClientSecretsByDigest(provider) {
   });
 }
 
-module.exports = { McpOAuthAdapter, compareClientSecretsByDigest };
+module.exports = {
+  McpOAuthAdapter,
+  compareClientSecretsByDigest,
+  REFRESH_REUSE_SECONDS,
+};

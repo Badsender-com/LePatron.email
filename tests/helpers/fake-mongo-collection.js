@@ -9,8 +9,9 @@
  * MongoDB it targets (before 5.0) would, and throws where they would.
  *
  * - `createIndex(keys, options)` is recorded in `indexes`.
- * - `updateOne(filter, update, { upsert })` takes `$set` and `$unset`; a
- *   dotted path in them reaches into an embedded document. With `upsert`, a
+ * - `updateOne(filter, update, { upsert })` takes `$set`, `$unset` and
+ *   `$inc` (a missing field counts from 0, any other than a number throws);
+ *   a dotted path in them reaches into an embedded document. With `upsert`, a
  *   filter that matches nothing inserts its equalities and the `$set`. It
  *   answers as the driver does: `matchedCount`, `modifiedCount`,
  *   `upsertedCount`, and the server's `result` (`{ n, nModified, ok }`).
@@ -88,9 +89,31 @@ function unsetPath(record, path) {
   if (isPlainObject(parent)) delete parent[last];
 }
 
+function getPath(record, path) {
+  return path
+    .split('.')
+    .reduce(
+      (node, key) => (isPlainObject(node) ? node[key] : undefined),
+      record
+    );
+}
+
+function applyIncrements(record, increments = {}) {
+  Object.entries(increments).forEach(([path, by]) => {
+    const value = getPath(record, path);
+    if (value !== undefined && typeof value !== 'number') {
+      throw Object.assign(
+        new Error('Cannot apply $inc to a value of non-numeric type.'),
+        { code: 14 }
+      );
+    }
+    setPath(record, path, (value || 0) + by);
+  });
+}
+
 function applyUpdate(record, update) {
   Object.keys(update).forEach((operator) => {
-    if (!['$set', '$unset'].includes(operator)) {
+    if (!['$set', '$unset', '$inc'].includes(operator)) {
       throw new Error(`fake collection: ${operator} is not supported`);
     }
   });
@@ -99,6 +122,7 @@ function applyUpdate(record, update) {
     setPath(record, path, value)
   );
   Object.keys(update.$unset || {}).forEach((path) => unsetPath(record, path));
+  applyIncrements(record, update.$inc);
 }
 
 // The equalities of a filter, which an upsert inserts.
