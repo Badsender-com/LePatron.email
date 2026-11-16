@@ -59,10 +59,10 @@ describe('profileService.checkIfUserIsAuthorizedToAccessProfile', () => {
     await expect(check(user)).resolves.toBeUndefined();
   });
 
-  it('refuses a member of another company', async () => {
+  it('answers a member of another company like a profile that does not exist', async () => {
     await expect(check(actor(DAVE))).rejects.toMatchObject({
-      status: 401,
-      message: ERROR_CODES.FORBIDDEN_PROFILE_ACCESS,
+      status: 404,
+      message: ERROR_CODES.PROFILE_NOT_FOUND,
     });
   });
 });
