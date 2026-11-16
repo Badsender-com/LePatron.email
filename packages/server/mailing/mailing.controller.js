@@ -585,6 +585,29 @@ async function bulkUpdate(req, res) {
     throw new UnprocessableEntity();
   }
 
+  const mailingQuery = {
+    _id: { $in: items.map(mongoose.Types.ObjectId) },
+    _company: mongoose.Types.ObjectId(companyId),
+  };
+
+  // The mailings of the user's group, each written only where the user may
+  // save it, as a single mailing is: one it may not save refuses the request
+  // before any tag or mailing is written.
+  const userMailings = await Mailings.find(mailingQuery).select({
+    _id: 1,
+    tags: 1,
+    _workspace: 1,
+    _parentFolder: 1,
+  });
+  // Once per location: a selection is often many mailings of one folder.
+  const checkedLocations = new Set();
+  for (const mailing of userMailings) {
+    const location = `${mailing._workspace}/${mailing._parentFolder}`;
+    if (checkedLocations.has(location)) continue;
+    checkedLocations.add(location);
+    await mailingService.assertUserCanEditMailing(req.user, mailing);
+  }
+
   // Find existing tags in the database
   const existingTags = await mongoose.models.Tag.find({
     label: { $in: tagsChanges.added },
@@ -607,17 +630,6 @@ async function bulkUpdate(req, res) {
       }))
     );
   }
-
-  const mailingQuery = {
-    _id: { $in: items.map(mongoose.Types.ObjectId) },
-    _company: mongoose.Types.ObjectId(companyId),
-  };
-
-  // Ensure mailings belong to the same group
-  const userMailings = await Mailings.find(mailingQuery).select({
-    _id: 1,
-    tags: 1,
-  });
 
   const updateQueries = userMailings.map(async (mailing) => {
     const originalTags = mailing.tags;
