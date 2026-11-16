@@ -5,6 +5,7 @@ const { XMLParser } = require('fast-xml-parser');
 
 const { Users, Groups } = require('../common/models.common.js');
 const { normalizeString } = require('../utils/model.js');
+const logger = require('../utils/logger.js');
 const { samlOptionsFor } = require('./saml-config.js');
 
 // SSO signs a person in through the identity provider of their own company,
@@ -138,7 +139,23 @@ async function accountOfResponse(req, profile) {
   return user;
 }
 
+// Where a sign-in through SSO that does not succeed lands: the login page,
+// which says it failed (its `sso` query).
+const SSO_FAILURE_REDIRECT = '/account/login?sso=failed';
+
+/**
+ * Express error middleware of the callback: a response the SAML library
+ * refuses sends the browser back like a response naming no account does. The
+ * reason is logged; the response, which names a person, is not.
+ */
+function refusedSamlResponse(error, req, res, _next) {
+  logger.warn('[SAML] response refused:', error && error.message);
+  res.redirect(SSO_FAILURE_REDIRECT);
+}
+
 module.exports = {
+  SSO_FAILURE_REDIRECT,
+  refusedSamlResponse,
   nameIdOf,
   samlOptionsForRequest,
   accountOfResponse,

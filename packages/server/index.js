@@ -25,7 +25,11 @@ const config = require('./node.config.js');
 const { assertNoDevDefaults } = require('./config/dev-defaults.js');
 const { sessionCookieOptions, forceHttps } = require('./utils/https-only.js');
 const { SAML_CALLBACK_PATH } = require('./account/saml-config.js');
-const { samlCallbackBody } = require('./account/saml-account.js');
+const {
+  samlCallbackBody,
+  refusedSamlResponse,
+  SSO_FAILURE_REDIRECT,
+} = require('./account/saml-account.js');
 const { sameOriginFraming } = require('./utils/frame-headers.js');
 const nuxtConfig = require('../../nuxt.config.js');
 const logger = require('./utils/logger.js');
@@ -280,7 +284,7 @@ if (cluster.isMaster) {
 
   // Where a sign-in through the identity provider that failed lands: the
   // login page, which says it failed (shared with the page's `sso` query).
-  const SSO_FAILED = '/account/login?sso=failed';
+  const SSO_FAILED = SSO_FAILURE_REDIRECT;
 
   app.get(
     '/account/SAML-login',
@@ -308,12 +312,9 @@ if (cluster.isMaster) {
       await updateSessionTracking(req, req.user);
       res.redirect('/');
     },
-    // A response that could not be read (signature, configuration…): the
-    // login page says so too, rather than an error page.
-    (err, req, res, _next) => {
-      console.error('SAML response refused', err);
-      return res.redirect(SSO_FAILED);
-    }
+    // A response that could not be read (signature, audience,
+    // configuration…): the login page says so too, rather than an error page.
+    refusedSamlResponse
   );
 
   // The administrator of the configuration signs in on the login page like
