@@ -3,16 +3,24 @@
 const { X509Certificate } = require('crypto');
 const { BadRequest } = require('http-errors');
 
+const config = require('../node.config.js');
 const ERROR_CODES = require('../constant/error-codes.js');
 
 // SAML configuration of a company: where its identity provider lives
 // (`entryPoint`), who we are to it (`issuer`), and the certificate it signs its
 // responses with (`idpCert`).
 //
-// The certificate is required: passport-saml 2.x verifies a response's
-// signature only when it is given a `cert`. A company without one has no usable
-// SSO — the login page does not offer it and the strategy gets no options —
-// rather than an SSO whose responses are not verified.
+// The certificate is required: a company without one has no usable SSO — the
+// login page does not offer it and the strategy gets no options — rather than
+// an SSO whose responses are not verified.
+
+// Where the identity provider posts its response (index.js mounts it).
+const SAML_CALLBACK_PATH = '/SAML-login/callback';
+
+// The scheme the site is served with: https everywhere but in development, as
+// the FORCE HTTPS middleware of index.js decides.
+const callbackUrl = () =>
+  `http${config.isDev ? '' : 's'}://${config.host}${SAML_CALLBACK_PATH}`;
 
 /**
  * The PEM form of a certificate pasted by a super admin, or '' to clear it.
@@ -68,19 +76,39 @@ function isSamlConfigured(group) {
 }
 
 /**
- * The passport-saml options for a company, or null when its SSO is not fully
- * configured — never options without a certificate.
+ * The SAML options for a company, or null when its SSO is not fully configured
+ * — never options without a certificate.
+ *
+ * The response, or its assertion, must be signed with the company's
+ * certificate: identity providers sign one or the other, or both, and each of
+ * them keeps signing a company in. The assertion must name the company's
+ * `issuer` as its audience.
+ *
+ * InResponseTo is not tied to a request we issued: the library remembers its
+ * requests in the memory of one process, and the response may reach another
+ * worker or instance; a sign-in started on the identity provider has none.
  *
  * @param {Object} [group]
- * @returns {{ entryPoint: string, issuer: string, cert: string }|null}
+ * @returns {Object|null}
  */
 function samlOptionsFor(group) {
   if (!isSamlConfigured(group)) return null;
   return {
     entryPoint: group.entryPoint,
     issuer: group.issuer,
-    cert: group.idpCert,
+    idpCert: group.idpCert,
+    audience: group.issuer,
+    callbackUrl: callbackUrl(),
+    wantAuthnResponseSigned: false,
+    wantAssertionsSigned: false,
+    validateInResponseTo: 'never',
+    rejectReplayedAssertions: false,
   };
 }
 
-module.exports = { normalizeIdpCert, isSamlConfigured, samlOptionsFor };
+module.exports = {
+  normalizeIdpCert,
+  isSamlConfigured,
+  samlOptionsFor,
+  SAML_CALLBACK_PATH,
+};

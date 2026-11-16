@@ -40,6 +40,7 @@
     "@easylogic/colorpicker": "1.9.64",
     "@kazupon/vue-i18n-loader": "0.5.0",
     "@mdi/font": "7.4.47",
+    "@node-saml/passport-saml": "5.1.1",
     "@nuxtjs/axios": "5.12.5",
     "@nuxtjs/style-resources": "1.0.0",
     "@nuxtjs/vuetify": "1.12.3",
@@ -98,7 +99,6 @@
     "parse5": "6.0.1",
     "passport": "0.4.1",
     "passport-local": "1.0.0",
-    "passport-saml": "2.0.4",
     "postcss-preset-env": "7.8.3",
     "probe-image-size": "4.0.0",
     "promisify-child-process": "3.1.1",
@@ -251,9 +251,7 @@
     "vue-server-renderer": "2.6.14",
     "@types/bson": "4.0.5",
     "@types/minimatch": "5.1.2",
-    "jsonwebtoken": "9.0.2",
-    "xml-crypto": "2.1.6",
-    "xmldom": "npm:@xmldom/xmldom@0.7.13"
+    "jsonwebtoken": "9.0.2"
   },
   "license": "GPL-3.0",
   "licenseurl": "https://www.gnu.org/licenses/gpl-3.0.en.html",

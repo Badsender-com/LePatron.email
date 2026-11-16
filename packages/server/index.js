@@ -20,6 +20,7 @@ const cluster = require('cluster');
 const config = require('./node.config.js');
 const { assertNoDevDefaults } = require('./config/dev-defaults.js');
 const { sessionCookieOptions, forceHttps } = require('./utils/https-only.js');
+const { SAML_CALLBACK_PATH } = require('./account/saml-config.js');
 const nuxtConfig = require('../../nuxt.config.js');
 const logger = require('./utils/logger.js');
 const versionRouter = require('./version/version.routes');
@@ -289,7 +290,7 @@ if (cluster.isMaster) {
   );
 
   app.post(
-    '/SAML-login/callback',
+    SAML_CALLBACK_PATH,
     bodyParser.urlencoded({ extended: false }),
     passport.authenticate('saml', { failureRedirect: SSO_FAILED }),
     async function (req, res) {

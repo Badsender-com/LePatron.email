@@ -23,7 +23,7 @@ const asciiLowercase = (value) =>
   value.replace(/[A-Z]/g, (letter) => letter.toLowerCase());
 
 // The parser leaves entities alone (no DOCTYPE expansion); the predefined ones
-// and character references are decoded here, as passport-saml reads them.
+// and character references are decoded here, as the SAML library reads them.
 const PREDEFINED_ENTITIES = {
   amp: '&',
   lt: '<',
@@ -83,7 +83,7 @@ function findAccount(email) {
 }
 
 /**
- * The passport-saml options for a request. Starting a sign-in, the login page
+ * The SAML options for a request. Starting a sign-in, the login page
  * names the account in the query string; on the callback, the account comes
  * from the response itself, never from the query string, which the sender of
  * the response chooses. Remembers on the request which company's certificate
@@ -103,8 +103,7 @@ async function samlOptionsForRequest(request) {
   if (!user) throw new Error('SAML provider not found');
 
   const group = await Groups.findOne({ _id: companyIdOf(user) });
-  // Never options without the identity provider's certificate: passport-saml
-  // verifies a response's signature only when it has one.
+  // Never options without the identity provider's certificate.
   const samlOptions = samlOptionsFor(group);
   if (!samlOptions) throw new Error('Provider informations not found');
 
@@ -117,7 +116,7 @@ async function samlOptionsForRequest(request) {
  * belongs to the company whose certificate checked the response.
  *
  * @param {Object} req the request `samlOptionsForRequest` read
- * @param {Object} profile the profile passport-saml read from the response
+ * @param {Object} profile the profile the SAML library read from the response
  * @returns {Promise<Object|null>}
  */
 async function accountOfResponse(req, profile) {
