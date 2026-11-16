@@ -17,9 +17,11 @@ jest.mock('../../../packages/server/mailing/mailing.service.js', () => ({
   resolveMailingTrackingContext: jest.fn(),
   findOne: jest.fn(),
   updateMailEspIds: jest.fn(),
+  assertUserCanEditMailing: jest.fn(),
 }));
 jest.mock('../../../packages/server/group/group.service.js', () => ({}));
 
+const { Forbidden } = require('http-errors');
 const { Profiles } = require('../../../packages/server/common/models.common');
 const EspProvider = require('../../../packages/server/esp/esp.service');
 const mailingService = require('../../../packages/server/mailing/mailing.service.js');
@@ -104,6 +106,32 @@ describe.each([
   beforeEach(() => {
     EspProvider.build.mockResolvedValue(provider);
     mailingService.findOne.mockResolvedValue({ espIds: [] });
+    mailingService.assertUserCanEditMailing.mockResolvedValue(undefined);
+  });
+
+  // The push records the campaign on the email (its espIds): it writes in the
+  // email, like saving it.
+  it('asks the rule of saving the email', async () => {
+    profileOf(CLIENT_GROUP);
+    mailingOf(CLIENT_GROUP);
+    const user = actor(FRANK);
+
+    await push(user);
+
+    expect(mailingService.assertUserCanEditMailing).toHaveBeenCalledWith(
+      user,
+      expect.objectContaining({ _id: mailingId })
+    );
+  });
+
+  it('pushes nothing when the user may not save the email', async () => {
+    profileOf(CLIENT_GROUP);
+    mailingOf(CLIENT_GROUP);
+    mailingService.assertUserCanEditMailing.mockRejectedValue(new Forbidden());
+
+    await expect(push(actor(FRANK))).rejects.toMatchObject({ status: 403 });
+    expect(EspProvider.build).not.toHaveBeenCalled();
+    expect(mailingService.updateMailEspIds).not.toHaveBeenCalled();
   });
 
   it('pushes the email through a profile of its company', async () => {
