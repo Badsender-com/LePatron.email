@@ -267,6 +267,10 @@ if (cluster.isMaster) {
   // routes and for the first server-rendered page.
   app.use(attachSelectedGroup);
 
+  // Where a sign-in through the identity provider that failed lands: the
+  // login page, which says it failed (shared with the page's `sso` query).
+  const SSO_FAILED = '/account/login?sso=failed';
+
   app.get(
     '/account/SAML-login',
     (req, res, next) => {
@@ -277,24 +281,27 @@ if (cluster.isMaster) {
       }
       next();
     },
-    passport.authenticate('saml', { failureRedirect: '/' }),
+    passport.authenticate('saml', { failureRedirect: SSO_FAILED }),
     (err, req, res, _next) => {
-      console.log({ err });
-      if (err) {
-        return res.redirect('/');
-      }
-      return res.redirect('/');
+      console.error('SAML sign-in could not start', err);
+      return res.redirect(SSO_FAILED);
     }
   );
 
   app.post(
     '/SAML-login/callback',
     bodyParser.urlencoded({ extended: false }),
-    passport.authenticate('saml', { failureRedirect: '/' }),
+    passport.authenticate('saml', { failureRedirect: SSO_FAILED }),
     async function (req, res) {
       // Update session tracking after SAML login
       await updateSessionTracking(req, req.user);
       res.redirect('/');
+    },
+    // A response that could not be read (signature, configuration…): the
+    // login page says so too, rather than an error page.
+    (err, req, res, _next) => {
+      console.error('SAML response refused', err);
+      return res.redirect(SSO_FAILED);
     }
   );
 

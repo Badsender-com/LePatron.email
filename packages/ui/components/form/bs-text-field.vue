@@ -117,6 +117,10 @@ export default {
       <template #message="{ message, key }">
         <span :id="key === 0 ? errorId : null">{{ message }}</span>
       </template>
+      <!-- At the end of the field: a button to show a password, say. -->
+      <template v-if="$slots.append" #append>
+        <slot name="append" />
+      </template>
     </v-text-field>
     <div v-if="hint && !hasError" :id="hintId" class="bs-text-field__hint">
       {{ hint }}
