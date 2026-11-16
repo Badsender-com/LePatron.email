@@ -149,7 +149,7 @@ const SSO_FAILURE_REDIRECT = '/account/login?sso=failed';
  * reason is logged; the response, which names a person, is not.
  */
 function refusedSamlResponse(error, req, res, _next) {
-  logger.warn('[SAML] response refused:', error && error.message);
+  logger.warn('[SAML] response refused:', error?.message);
   res.redirect(SSO_FAILURE_REDIRECT);
 }
 

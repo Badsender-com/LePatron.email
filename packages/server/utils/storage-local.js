@@ -2,7 +2,7 @@
 
 const fs = require('fs-extra');
 const path = require('path');
-const { Readable } = require('stream');
+const { Readable } = require('node:stream');
 
 const config = require('../node.config.js');
 const defer = require('../helpers/create-promise.js');

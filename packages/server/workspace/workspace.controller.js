@@ -139,7 +139,7 @@ async function updateWorkspace(req, res) {
       groupId: workspace._company,
       ...fields,
       _users: (Array.isArray(selectedUsers) ? selectedUsers : []).map(
-        (member) => member && member.id
+        (member) => member?.id
       ),
     });
     res.send();

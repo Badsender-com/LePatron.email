@@ -3,7 +3,6 @@
 const isEmail = require('validator/lib/isEmail');
 const ERROR_CODES = require('../constant/error-codes.js');
 const logger = require('../utils/logger.js');
-const { onlyUnique } = require('../utils/array.js');
 const mailingService = require('./mailing.service.js');
 const emailsGroupService = require('../emails-group/emails-group.service');
 const processMosaicoHtmlRender = require('../utils/process-mosaico-html-render.js');
@@ -61,7 +60,7 @@ async function sendTestMail({
     }
   }
 
-  adresses = adresses.filter(onlyUnique).filter((email) => !!email);
+  adresses = [...new Set(adresses)].filter((email) => !!email);
 
   if (adresses.length > MAX_TEST_RECIPIENTS) {
     throw new BadRequest(ERROR_CODES.TOO_MANY_TEST_RECIPIENTS);

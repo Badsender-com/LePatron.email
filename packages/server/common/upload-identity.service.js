@@ -112,7 +112,7 @@ function sniffHead(file, head) {
   try {
     return probe.sync(head);
   } catch (e) {
-    logger.log('[UPLOAD] unable to sniff', file && file.path, e.message);
+    logger.log('[UPLOAD] unable to sniff', file?.path, e.message);
     return null;
   }
 }
