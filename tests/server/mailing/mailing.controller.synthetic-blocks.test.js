@@ -155,12 +155,15 @@ describe('GET /mailings/:mailingId/preview', () => {
     expect(mailingService.previewMail).toHaveBeenCalledWith(MAILING_ID, user);
   });
 
-  // Opened directly in a tab, the document must not run in the app's origin.
-  it('serves the preview under a CSP sandbox', async () => {
+  // Opened directly in a tab, the document must not run in the app's origin;
+  // like every page, only the application frames it.
+  it('serves the preview under a CSP sandbox, framed by the application only', async () => {
     mailingService.previewMail.mockResolvedValue('<p>ok</p>');
 
     const { headers } = await preview();
 
-    expect(headers['Content-Security-Policy']).toBe('sandbox');
+    expect(headers['Content-Security-Policy']).toBe(
+      "sandbox; frame-ancestors 'self'"
+    );
   });
 });
