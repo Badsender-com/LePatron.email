@@ -197,3 +197,57 @@ describe('mailingService.duplicateWithTranslatedData, access to where the copy g
     );
   });
 });
+
+describe('mailingService.duplicateWithTranslatedData, the company of the copy', () => {
+  const superAdmin = { ...user, role: 'super_admin' };
+  const otherCompanyWorkspace = {
+    ...destination,
+    _id: '507f1f77bcf86cd799439013',
+    group: TENANT_B,
+  };
+  const duplicate = (where) =>
+    mailingService.duplicateWithTranslatedData({
+      mailingId: MAILING,
+      user: superAdmin,
+      newName: 'Newsletter EN',
+      ...where,
+    });
+
+  beforeEach(() => {
+    mockMailing({ _company: TENANT_A, _workspace: destination._id });
+  });
+
+  it('stays in the company of its source, in a chosen workspace', async () => {
+    workspaceService.getWorkspace.mockImplementation(async (id) =>
+      id === otherCompanyWorkspace._id ? otherCompanyWorkspace : destination
+    );
+
+    await expect(
+      duplicate({ workspaceId: otherCompanyWorkspace._id })
+    ).rejects.toMatchObject({ status: 403 });
+    expect(Mailings.create).not.toHaveBeenCalled();
+  });
+
+  it('stays in the company of its source, in a chosen folder', async () => {
+    folderService.hasAccess.mockResolvedValue(true);
+    folderService.getWorkspaceForFolder.mockResolvedValue(
+      otherCompanyWorkspace
+    );
+
+    await expect(duplicate({ folderId: FOLDER })).rejects.toMatchObject({
+      status: 403,
+    });
+    expect(Mailings.create).not.toHaveBeenCalled();
+  });
+
+  it('goes to a chosen folder of the same company', async () => {
+    folderService.hasAccess.mockResolvedValue(true);
+    folderService.getWorkspaceForFolder.mockResolvedValue(destination);
+
+    await duplicate({ folderId: FOLDER });
+
+    expect(Mailings.create).toHaveBeenCalledWith(
+      expect.objectContaining({ _parentFolder: FOLDER })
+    );
+  });
+});
