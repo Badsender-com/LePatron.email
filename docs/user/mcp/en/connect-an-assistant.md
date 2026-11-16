@@ -5,9 +5,9 @@ Your AI assistant (Claude, ChatGPT, Copilot…) can read LePatron on your behalf
 - Badsender's expertises and skills, to use them when you ask it to write or review an email;
 - your mailings: it lists them (by workspace, folder, author, tags or dates, with their status) and reads their text, or the HTML of their preview. Personalization variables, such as `{{firstname}}`, stay as they are. Claude, ChatGPT, Microsoft 365 Copilot and VS Code also show the email itself in the conversation, without running any script; images hosted outside LePatron, such as a template's logo on a CDN, show too: LePatron fetches and serves them itself. An image at an `http://` address rather than an `https://` one, an image it cannot fetch, or one that is neither a PNG, a JPEG, a GIF nor a WebP, shows as its alternative text. The email's tracking pixels are fetched like the other images.
 
-It does so with **your rights**, in **one company only**, the one you choose when connecting. It changes nothing in your emails, skills or settings: the only things it sends LePatron are your feedback, when you ask it to, and your retex, which you approve one by one ([Retex](./retex.md)).
+It does so with **your rights**, in **one company only**: yours, which the connection screen shows. It changes nothing in your emails, skills or settings: the only things it sends LePatron are your feedback, when you ask it to, and your retex, which you approve one by one ([Retex](./retex.md)).
 
-The one exception is for the platform company's team: a super admin connected to the platform company may let their assistant write, publish and open skills and expertises ([Publish from an assistant](./publish-from-an-assistant.md)).
+A super admin picks the company on the connection screen, among every company that has the MCP module and MCP access on; to work in another one, they connect the assistant again. An application a company registered by hand connects to that company only, for a super admin too. Whatever company is picked, a super admin's retex go to the platform company, without approving each one, and their assistant reads and dismisses those of every company ([Retex](./retex.md)). Last, connected to the platform company, a super admin may let their assistant write, publish and open skills and expertises ([Publish from an assistant](./publish-from-an-assistant.md)).
 
 The connection uses MCP (Model Context Protocol), which all these assistants support.
 
@@ -34,11 +34,12 @@ The connection uses MCP (Model Context Protocol), which all these assistants sup
    - which application asks for access;
    - which site you will be sent back to;
    - what it will be able to do;
-   - the company the connection will be bound to.
+   - the company the connection will be bound to;
+   - for a super admin, what the connection changes for them.
 3. Check the application's name. If the screen says the application "registered itself", only go on if you just started the connection from your assistant.
 4. Click **Allow**. You are sent back to your assistant, now connected.
 
-The consent screen shows at every new connection: that is where the company is chosen.
+The consent screen shows at every new connection: that is where a super admin picks the company; any other user sees their own there.
 
 Assistants installed on your computer, such as Cursor or Claude Code, connect through a `localhost` address: LePatron sends its answer back to your own machine. An assistant that asks to come back through an address of its own (`cursor://…`) is refused.
 

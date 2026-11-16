@@ -156,6 +156,11 @@ export default {
         (this.interaction?.writableGroupIds || []).includes(this.groupId)
       );
     },
+    // A super admin's connection differs (ADR 0021, ADR 0014): what it
+    // changes is told to them alone.
+    managesPlatform() {
+      return this.can(CAPABILITIES.PLATFORM_MANAGE);
+    },
     // Whoever cannot connect still sends the application its answer, while
     // the request stands.
     canDeny() {
@@ -411,6 +416,13 @@ export default {
             </div>
             <p class="bs-oauth-consent__hint">
               {{ $t('oauthConsent.groupHint') }}
+            </p>
+            <p
+              v-if="managesPlatform"
+              class="bs-oauth-consent__note bs-oauth-consent__super-admin"
+            >
+              <lucide-info :size="16" />
+              <span>{{ $t('oauthConsent.superAdminHint') }}</span>
             </p>
           </section>
 

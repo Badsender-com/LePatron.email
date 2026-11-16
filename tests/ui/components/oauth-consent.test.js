@@ -135,6 +135,43 @@ describe('the consent of a connected application', () => {
   });
 });
 
+// A super admin's connection differs from anyone else's (ADR 0021, ADR
+// 0014): their retex go to the platform company, they read the retex of
+// every company, and drafting is offered on the platform company only. Told
+// to them alone.
+describe('the consent of a super admin', () => {
+  const note = (vm) => vm.$el.querySelector('.bs-oauth-consent__super-admin');
+
+  it.each(Object.values(ROLES))(
+    'tells what changes for a super admin only, to a %s',
+    async (role) => {
+      const { vm } = mountConsent(['mcp:read'], { role });
+      await settle(vm);
+
+      if (roleCan(role, CAPABILITIES.PLATFORM_MANAGE)) {
+        expect(note(vm).textContent).toContain('oauthConsent.superAdminHint');
+      } else {
+        expect(note(vm)).toBeNull();
+      }
+    }
+  );
+
+  it.each([
+    [
+      'fr',
+      require('../../../packages/ui/helpers/locales/fr.js').default,
+      /entreprise plateforme/,
+    ],
+    [
+      'en',
+      require('../../../packages/ui/helpers/locales/en.js').default,
+      /platform company/,
+    ],
+  ])('says it in %s, naming the platform company', (_l, messages, name) => {
+    expect(messages.oauthConsent.superAdminHint).toMatch(name);
+  });
+});
+
 // What the consent API answers a refusal: its status, and the code the page
 // translates (ERROR_CODES.MCP_CONSENT_…).
 const refusal = (status, code) =>

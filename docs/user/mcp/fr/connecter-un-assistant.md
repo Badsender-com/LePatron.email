@@ -5,9 +5,9 @@ Votre assistant IA (Claude, ChatGPT, Copilot…) peut lire LePatron en votre nom
 - les expertises et les skills de Badsender, pour s'en servir quand vous lui demandez d'écrire ou de relire un email ;
 - vos mailings : il les liste (par workspace, dossier, auteur, tags ou dates, avec leur statut) et en lit le texte, ou le HTML de l'aperçu. Les variables de personnalisation, comme `{{firstname}}`, restent telles quelles. Claude, ChatGPT, Microsoft 365 Copilot et VS Code affichent aussi l'email lui-même dans la conversation, sans exécuter aucun script ; les images hébergées hors de LePatron, comme le logo d'un template sur un CDN, y apparaissent aussi : LePatron les récupère et les sert lui-même. Une image dont l'adresse commence par `http://` et non `https://`, une image qu'il ne peut pas récupérer, ou une image qui n'est ni un PNG, ni un JPEG, ni un GIF, ni un WebP, apparaît par son texte alternatif. Les pixels de suivi de l'email sont récupérés comme les autres images.
 
-Il le fait avec **vos droits**, dans **une seule entreprise**, celle que vous choisissez au moment de la connexion. Il ne modifie ni vos emails, ni les skills, ni vos réglages : il n'envoie à LePatron que vos avis, quand vous le lui demandez, et vos retours d'expérience, que vous approuvez un par un ([Retours d'expérience](./retours-d-experience.md)).
+Il le fait avec **vos droits**, dans **une seule entreprise** : la vôtre, que l'écran de connexion affiche. Il ne modifie ni vos emails, ni les skills, ni vos réglages : il n'envoie à LePatron que vos avis, quand vous le lui demandez, et vos retours d'expérience, que vous approuvez un par un ([Retours d'expérience](./retours-d-experience.md)).
 
-Seule exception, réservée à l'équipe de l'entreprise plateforme : un super admin connecté à l'entreprise plateforme peut autoriser son assistant à rédiger, publier et ouvrir les skills et les expertises ([Publier depuis un assistant](./publier-depuis-un-assistant.md)).
+Un super admin, lui, choisit l'entreprise sur l'écran de connexion, parmi toutes celles qui ont le module MCP et l'accès MCP activé ; pour travailler dans une autre, il connecte l'assistant de nouveau. Une application déclarée à la main par une entreprise ne se connecte qu'à elle, pour un super admin aussi. Quelle que soit l'entreprise choisie, les retours d'expérience d'un super admin vont à l'entreprise plateforme, sans approbation un par un, et son assistant lit et écarte ceux de toutes les entreprises ([Retours d'expérience](./retours-d-experience.md)). Enfin, connecté à l'entreprise plateforme, un super admin peut autoriser son assistant à rédiger, publier et ouvrir les skills et les expertises ([Publier depuis un assistant](./publier-depuis-un-assistant.md)).
 
 Cette connexion passe par le protocole MCP (Model Context Protocol), que ces assistants savent tous utiliser.
 
@@ -34,11 +34,12 @@ Cette connexion passe par le protocole MCP (Model Context Protocol), que ces ass
    - quelle application demande l'accès ;
    - vers quel site vous serez renvoyé ;
    - ce qu'elle pourra faire ;
-   - l'entreprise à laquelle la connexion sera liée.
+   - l'entreprise à laquelle la connexion sera liée ;
+   - pour un super admin, ce que la connexion change pour lui.
 3. Vérifiez le nom de l'application. Si l'écran précise que l'application « s'est enregistrée elle-même », ne continuez que si vous venez de lancer la connexion depuis votre assistant.
 4. Cliquez sur **Autoriser**. Vous revenez dans votre assistant, qui est connecté.
 
-L'écran de consentement s'affiche à chaque nouvelle connexion : c'est là que l'entreprise est choisie.
+L'écran de consentement s'affiche à chaque nouvelle connexion : c'est là qu'un super admin choisit l'entreprise ; tout autre utilisateur y voit la sienne.
 
 Les assistants installés sur votre ordinateur, comme Cursor ou Claude Code, se connectent par une adresse `localhost` : LePatron renvoie sa réponse sur votre propre machine. Un assistant qui demande à revenir par une adresse qui lui est propre (`cursor://…`) est refusé.
 
