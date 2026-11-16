@@ -1496,25 +1496,26 @@ async function duplicateWithTranslatedData({
   return copiedMailing;
 }
 
-async function renameMailing(
-  { mailingId, mailingName, workspaceId, parentFolderId },
-  user
-) {
-  if (!mailingName || mailingName === '') {
+/**
+ * Rename a mailing where it lies: read in the user's company (another
+ * company's answers like one that does not exist), and renamed by whoever may
+ * save it, in its own workspace or folder.
+ *
+ * @param {Object} params
+ * @param {string} params.mailingId
+ * @param {string} params.mailingName
+ * @param {Object} user
+ */
+async function renameMailing({ mailingId, mailingName }, user) {
+  if (typeof mailingName !== 'string' || mailingName === '') {
     throw new BadRequest(ERROR_CODES.NAME_NOT_PROVIDED);
   }
 
-  checkEitherWorkspaceOrFolderDefined(workspaceId, parentFolderId);
-
-  if (workspaceId) {
-    const workspace = await workspaceService.getWorkspace(workspaceId);
-    workspaceService.doesUserHaveWriteAccess(user, workspace);
-  } else {
-    await folderService.hasAccess(parentFolderId, user);
-  }
+  const mailing = await findOneForUser(mailingId, user);
+  await assertUserCanEditMailing(user, mailing);
 
   const updateResponse = await Mailings.updateOne(
-    { _id: mongoose.Types.ObjectId(mailingId) },
+    { _id: mailing._id },
     { name: mailingName }
   );
 

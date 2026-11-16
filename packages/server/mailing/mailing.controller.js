@@ -287,8 +287,7 @@ async function moveMany(req, res) {
  *
  * @apiParam {string} mailingId
  *
- * @apiParam (Body) {String} name
- * @apiParam (Body) {String} workspaceId
+ * @apiParam (Body) {String} mailingName
  *
  * @apiUse mailings
  */
@@ -297,13 +296,10 @@ async function rename(req, res) {
   const {
     user,
     params: { mailingId },
-    body: { mailingName, workspaceId, parentFolderId },
+    body: { mailingName },
   } = req;
 
-  await mailingService.renameMailing(
-    { mailingId, mailingName, workspaceId, parentFolderId },
-    user
-  );
+  await mailingService.renameMailing({ mailingId, mailingName }, user);
 
   res.status(204).send();
 }
