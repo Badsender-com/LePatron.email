@@ -79,4 +79,6 @@ What this epic deliberately does not do.
 
 Anything else: rollout, feature flag, i18n, white-label impact, open questions.
 
+Always one line on the MCP exposure settled at the grilling (now, later or never) and why. When it is "now", its tools or resources also appear in the user stories and the implementation decisions.
+
 </prd-template>
