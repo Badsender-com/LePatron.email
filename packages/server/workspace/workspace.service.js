@@ -297,8 +297,6 @@ function doesUserHaveReadAccess(user, workspace) {
     !isWorkspaceInGroup(workspace, user?.group?.id) &&
     !permissions.canManageGroup(user, workspace?.group)
   ) {
-    throw new NotFound(
-      `${ERROR_CODES.WORKSPACE_NOT_FOUND} : ${workspace.name}`
-    );
+    throw new NotFound(ERROR_CODES.WORKSPACE_NOT_FOUND);
   }
 }

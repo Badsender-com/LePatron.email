@@ -120,3 +120,19 @@ describe('assertAccess for a super admin (ADR 0002, amended)', () => {
     ).rejects.toMatchObject({ status: 404 });
   });
 });
+
+describe('reading a workspace of another company', () => {
+  it('answers not found, by its code alone', () => {
+    const workspace = { group: COMPANY_A, name: 'Campaigns of A' };
+
+    let thrown;
+    try {
+      workspaceService.doesUserHaveReadAccess(outsider, workspace);
+    } catch (error) {
+      thrown = error;
+    }
+
+    expect(thrown.status).toBe(404);
+    expect(thrown.message).toBe('WORKSPACE_NOT_FOUND');
+  });
+});
