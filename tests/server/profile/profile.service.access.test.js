@@ -18,10 +18,11 @@ jest.mock('../../../packages/server/mailing/mailing.service.js', () => ({
   findOne: jest.fn(),
   updateMailEspIds: jest.fn(),
   assertUserCanEditMailing: jest.fn(),
+  assertUserCanReadMailing: jest.fn(),
 }));
 jest.mock('../../../packages/server/group/group.service.js', () => ({}));
 
-const { Forbidden } = require('http-errors');
+const { Forbidden, NotFound } = require('http-errors');
 const { Profiles } = require('../../../packages/server/common/models.common');
 const EspProvider = require('../../../packages/server/esp/esp.service');
 const mailingService = require('../../../packages/server/mailing/mailing.service.js');
@@ -113,36 +114,40 @@ describe.each([
   beforeEach(() => {
     EspProvider.build.mockResolvedValue(provider);
     mailingService.findOne.mockResolvedValue({ espIds: [] });
-    mailingService.assertUserCanEditMailing.mockResolvedValue(undefined);
+    mailingService.assertUserCanReadMailing.mockResolvedValue(undefined);
+    // Never asked: a reviewer, who writes no email, exports (ADR 0004).
+    mailingService.assertUserCanEditMailing.mockRejectedValue(new Forbidden());
   });
 
-  // The push records the campaign on the email (its espIds): it writes in the
-  // email, like saving it.
-  it('asks the rule of saving the email', async () => {
+  // Exporting is open to every role (ADR 0004; rbac-refonte §3.6): the push
+  // asks the read rule of the email, not the rule of saving it.
+  it('asks the read rule of the email', async () => {
     profileOf(CLIENT_GROUP);
     mailingOf(CLIENT_GROUP);
     const user = actor(FRANK);
 
     await push(user);
 
-    expect(mailingService.assertUserCanEditMailing).toHaveBeenCalledWith(
+    expect(mailingService.assertUserCanReadMailing).toHaveBeenCalledWith(
       user,
       expect.objectContaining({ _id: mailingId })
     );
+    expect(mailingService.assertUserCanEditMailing).not.toHaveBeenCalled();
   });
 
-  it('pushes nothing when the user may not save the email', async () => {
+  it('pushes nothing when the user may not read the email', async () => {
     profileOf(CLIENT_GROUP);
     mailingOf(CLIENT_GROUP);
-    mailingService.assertUserCanEditMailing.mockRejectedValue(new Forbidden());
+    mailingService.assertUserCanReadMailing.mockRejectedValue(new NotFound());
 
-    await expect(push(actor(FRANK))).rejects.toMatchObject({ status: 403 });
+    await expect(push(actor(FRANK))).rejects.toMatchObject({ status: 404 });
     expect(EspProvider.build).not.toHaveBeenCalled();
     expect(mailingService.updateMailEspIds).not.toHaveBeenCalled();
   });
 
-  // Every role, for the scope of the profile: the route asks
-  // mailing.export, which every role holds.
+  // Every role, the reviewer included, pushes an email it may read, through a
+  // profile of the email's company: the route asks mailing.export, which every
+  // role holds (ADR 0004).
   const userOfRole = (role) => ({
     id: '507f1f77bcf86cd799439111',
     role,
@@ -218,7 +223,7 @@ describe('profileService.updateEspCampaign, the campaign updated', () => {
       _company: new mongoose.Types.ObjectId(CLIENT_GROUP),
       additionalApiData: { contentSendType: 'MAIL' },
     });
-    mailingService.assertUserCanEditMailing.mockResolvedValue(undefined);
+    mailingService.assertUserCanReadMailing.mockResolvedValue(undefined);
     EspProvider.build.mockResolvedValue({
       updateCampaignMail: jest.fn().mockResolvedValue('campaign-1'),
     });

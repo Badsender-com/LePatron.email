@@ -248,9 +248,10 @@ async function updateEspCampaign({
     user,
     freshTracking,
   });
-  // An update rewrites the ESP campaign of the email, the one recorded in its
-  // espIds: asked of whoever may save the email, in its workspace or folder.
-  await mailingService.assertUserCanEditMailing(user, mailing);
+  // Exporting is open to every role, the reviewer included, who writes no
+  // email (ADR 0004; rbac-refonte §3.6, item 3): the user reads the email,
+  // and updates the campaign recorded on it for this profile.
+  await mailingService.assertUserCanReadMailing(user, mailing);
   const profile = await findProfileForMailing({ user, profileId, mailing });
   assertCampaignOfMailing({ mailing, profileId, campaignId });
 
@@ -343,9 +344,10 @@ async function sendEspCampaign({
     user,
     freshTracking,
   });
-  // The push records the campaign on the email (its espIds): a write in the
-  // email, in its workspace or folder, like saving it.
-  await mailingService.assertUserCanEditMailing(user, mailing);
+  // Exporting is open to every role, the reviewer included, who writes no
+  // email (ADR 0004; rbac-refonte §3.6, item 3): the user reads the email,
+  // through a profile of its company.
+  await mailingService.assertUserCanReadMailing(user, mailing);
   const profile = await findProfileForMailing({ user, profileId, mailing });
 
   /*
