@@ -128,7 +128,9 @@ export default {
     class="bs-two-factor-setup"
     :eyebrow="eyebrow"
     :title="title"
+    :email="email"
     :loading="loading"
+    @change-account="$emit('change-account')"
   >
     <template #icon>
       <lucide-shield-check v-if="!setup" :size="26" />

@@ -15,7 +15,8 @@ const COOLDOWN_SECONDS = 30;
 export default {
   name: 'BsSendEmailCode',
   props: {
-    // The setup sends the first code itself: the link waits from the start.
+    // The first code already left (with the answer to the password, or at
+    // the setup's start): the link waits from the start.
     sentOnMount: { type: Boolean, default: false },
   },
   data() {
