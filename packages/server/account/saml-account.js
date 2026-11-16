@@ -1,5 +1,6 @@
 'use strict';
 
+const express = require('express');
 const { XMLParser } = require('fast-xml-parser');
 
 const { Users, Groups } = require('../common/models.common.js');
@@ -15,6 +16,17 @@ const companyIdOf = (user) => String(user._company?._id || user._company);
 
 // Far above any real response; a bigger one is not parsed at all.
 const MAX_RESPONSE_LENGTH = 256 * 1024;
+
+// The form the identity provider posts to the callback: the response, which
+// form encoding makes a few percent longer, and RelayState. Twice the length
+// a response is read at.
+const CALLBACK_BODY_LIMIT = 2 * MAX_RESPONSE_LENGTH;
+
+// The application reads JSON everywhere; this form, where it is posted only.
+const samlCallbackBody = express.urlencoded({
+  extended: false,
+  limit: CALLBACK_BODY_LIMIT,
+});
 
 // The account's email is stored lowercased. A NameID that only lowercases to
 // it through a non-ASCII letter (the Kelvin sign for "k", say) is another
@@ -126,4 +138,9 @@ async function accountOfResponse(req, profile) {
   return user;
 }
 
-module.exports = { nameIdOf, samlOptionsForRequest, accountOfResponse };
+module.exports = {
+  nameIdOf,
+  samlOptionsForRequest,
+  accountOfResponse,
+  samlCallbackBody,
+};

@@ -20,6 +20,7 @@ const {
   nameIdOf,
   samlOptionsForRequest,
   accountOfResponse,
+  samlCallbackBody,
 } = require('../../../packages/server/account/saml-account.js');
 const { createIdp } = require('../../helpers/saml-idp.js');
 
@@ -195,5 +196,42 @@ describe('nameIdOf', () => {
 
   it('reads nothing from something that is not a response', () => {
     expect(nameIdOf('not base64 xml')).toBeUndefined();
+  });
+});
+
+// The identity provider posts its response as a form, the only form the
+// application reads outside the editor's rename.
+describe('samlCallbackBody', () => {
+  const express = require('express');
+  const request = require('../../helpers/local-request.js');
+
+  function app() {
+    const server = express();
+    server.post('/callback', samlCallbackBody, (req, res) =>
+      res.json({ length: (req.body.SAMLResponse || '').length })
+    );
+    server.use((err, _req, res, _next) => res.sendStatus(err.status || 500));
+    return server;
+  }
+
+  it('reads a response as large as one that is read', async () => {
+    const samlResponse = 'A'.repeat(256 * 1024);
+
+    const res = await request(app())
+      .post('/callback')
+      .type('form')
+      .send({ SAMLResponse: samlResponse, RelayState: '/' });
+
+    expect(res.status).toBe(200);
+    expect(res.body.length).toBe(samlResponse.length);
+  });
+
+  it('refuses a form far larger than any response', async () => {
+    const res = await request(app())
+      .post('/callback')
+      .type('form')
+      .send({ SAMLResponse: 'A'.repeat(2 * 1024 * 1024) });
+
+    expect(res.status).toBe(413);
   });
 });
