@@ -141,35 +141,52 @@ describe.each([
     expect(mailingService.updateMailEspIds).not.toHaveBeenCalled();
   });
 
-  it('pushes the email through a profile of its company', async () => {
-    profileOf(CLIENT_GROUP);
-    mailingOf(CLIENT_GROUP);
-
-    await expect(push(actor(FRANK))).resolves.toMatchObject({ profileId });
-    expect(EspProvider.build).toHaveBeenCalled();
+  // Every role, for the scope of the profile: the route asks
+  // mailing.export, which every role holds.
+  const userOfRole = (role) => ({
+    id: '507f1f77bcf86cd799439111',
+    role,
+    group: { id: role === 'super_admin' ? PLATFORM_GROUP : CLIENT_GROUP },
   });
+  // Expected answer: [profile of the email's company, of another company].
+  const RIGHTS = [
+    ['super_admin', 'pushed', 403],
+    ['company_admin_tech', 'pushed', 404],
+    ['company_admin', 'pushed', 404],
+    ['regular_user', 'pushed', 404],
+    ['writer', 'pushed', 404],
+    ['reviewer', 'pushed', 404],
+  ];
 
-  it('refuses a profile of another company, like one that does not exist', async () => {
-    profileOf(PLATFORM_GROUP);
-    mailingOf(CLIENT_GROUP);
+  it.each(RIGHTS.map(([role, expected]) => [role, expected]))(
+    '%s: %s through a profile of the email company',
+    async (role) => {
+      profileOf(CLIENT_GROUP);
+      mailingOf(CLIENT_GROUP);
 
-    await expect(push(actor(FRANK))).rejects.toMatchObject({
-      status: 404,
-      message: ERROR_CODES.PROFILE_NOT_FOUND,
-    });
-    expect(EspProvider.build).not.toHaveBeenCalled();
-  });
+      await expect(push(userOfRole(role))).resolves.toMatchObject({
+        profileId,
+      });
+      expect(EspProvider.build).toHaveBeenCalled();
+    }
+  );
 
-  it("refuses a super admin a profile of another company than the email's", async () => {
-    profileOf(PLATFORM_GROUP);
-    mailingOf(CLIENT_GROUP);
+  it.each(RIGHTS.map(([role, , status]) => [role, status]))(
+    '%s: %i through a profile of another company',
+    async (role, status) => {
+      profileOf(PLATFORM_GROUP);
+      mailingOf(CLIENT_GROUP);
 
-    await expect(push(actor(ALICE))).rejects.toMatchObject({
-      status: 403,
-      message: ERROR_CODES.FORBIDDEN_RESOURCE_OR_ACTION,
-    });
-    expect(EspProvider.build).not.toHaveBeenCalled();
-  });
+      await expect(push(userOfRole(role))).rejects.toMatchObject({
+        status,
+        message:
+          status === 404
+            ? ERROR_CODES.PROFILE_NOT_FOUND
+            : ERROR_CODES.FORBIDDEN_RESOURCE_OR_ACTION,
+      });
+      expect(EspProvider.build).not.toHaveBeenCalled();
+    }
+  );
 });
 
 describe('profileService.updateEspCampaign, the campaign updated', () => {
