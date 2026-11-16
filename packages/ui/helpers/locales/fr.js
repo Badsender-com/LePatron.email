@@ -1966,6 +1966,7 @@ export default {
       feature: 'Fonctionnalité',
       groupId: 'Identifiant de l\'entreprise',
       includeNonProductive: 'Inclure les tests (playground, poc.*)',
+      noMatch: 'Aucun élément ne correspond aux filtres.',
     },
     categories: {
       redaction: 'Rédaction',

@@ -82,6 +82,15 @@ export default {
         `${s.title || ''} ${s.skillId || ''}`.toLowerCase().includes(q)
       );
     },
+    // An empty list then says nothing matches, not that nothing exists.
+    filtered() {
+      return Boolean(
+        (this.search || '').trim() ||
+          this.filterCategory ||
+          this.filterStatus ||
+          this.onlyUsedByFeature
+      );
+    },
     // Only what has an active version can be exported (ADR 0018).
     tableItems() {
       return this.filteredItems.map((item) => ({
@@ -305,7 +314,11 @@ export default {
         <div class="text-center pa-6">
           <lucide-sparkles :size="48" class="grey--text text--lighten-1" />
           <p class="text-body-1 grey--text mt-4">
-            {{ $t('aiSkills.skill.noSkills') }}
+            {{
+              filtered
+                ? $t('aiSkills.filters.noMatch')
+                : $t('aiSkills.skill.noSkills')
+            }}
           </p>
         </div>
       </template>

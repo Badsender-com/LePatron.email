@@ -101,6 +101,16 @@ export default {
     selectedIds() {
       return exportableOf(this.selected).map((item) => item.expertiseId);
     },
+    // An empty list then says nothing matches, not that nothing exists.
+    filtered() {
+      return Boolean(
+        (this.search || '').trim() ||
+          this.filterCategory ||
+          this.filterStatus ||
+          this.filterScope ||
+          this.onlyUsedByFeature
+      );
+    },
     filteredItems() {
       // `clearable` sets this.search to null on clear — guard the trim.
       const q = (this.search || '').trim().toLowerCase();
@@ -332,7 +342,11 @@ export default {
         <div class="text-center pa-6">
           <lucide-book-open :size="48" class="grey--text text--lighten-1" />
           <p class="text-body-1 grey--text mt-4">
-            {{ $t('aiSkills.expertise.noExpertise') }}
+            {{
+              filtered
+                ? $t('aiSkills.filters.noMatch')
+                : $t('aiSkills.expertise.noExpertise')
+            }}
           </p>
         </div>
       </template>

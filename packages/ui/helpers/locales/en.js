@@ -1938,6 +1938,7 @@ export default {
       feature: 'Feature',
       groupId: 'Company ID',
       includeNonProductive: 'Include tests (playground, poc.*)',
+      noMatch: 'No item matches the filters.',
     },
     categories: {
       redaction: 'Copywriting',
