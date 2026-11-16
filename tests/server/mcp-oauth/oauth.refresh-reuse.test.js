@@ -119,16 +119,34 @@ describe('a refresh token already used', () => {
     expect(logged).not.toContain(retraded.refresh_token);
   });
 
-  it('logs why it refused it', async () => {
+  it('logs why it refused it, by its client and its grant', async () => {
     const first = await connect();
     await refresh(first.refresh_token);
+    const [{ grantId }] = oauth.oauthStore('RefreshToken').records;
     later(31);
 
     await refresh(first.refresh_token);
 
-    expect(logger.warn).toHaveBeenCalledWith(
-      expect.stringContaining('refresh token already used')
-    );
+    const refusal = logger.warn.mock.calls
+      .flat()
+      .find((line) => line.includes('refresh token already used'));
+    expect(refusal).toContain(CIMD_CLIENT.client_id);
+    expect(refusal).toContain(grantId);
+  });
+
+  it('logs the end of the connection, by its client and its grant', async () => {
+    const first = await connect();
+    await refresh(first.refresh_token);
+    const [{ grantId }] = oauth.oauthStore('RefreshToken').records;
+    later(31);
+
+    await refresh(first.refresh_token);
+
+    const ended = logger.warn.mock.calls
+      .flat()
+      .find((line) => line.includes('ended a connection'));
+    expect(ended).toContain(CIMD_CLIENT.client_id);
+    expect(ended).toContain(grantId);
   });
 });
 

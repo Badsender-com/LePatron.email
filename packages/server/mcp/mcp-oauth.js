@@ -7,6 +7,7 @@ const { McpClients } = require('../common/models.common.js');
 const logger = require('../utils/logger.js');
 const { attachAuthorizationServer } = require('./mcp-connections.js');
 const { compareClientSecretsByDigest } = require('./mcp-oauth-adapter.js');
+const { logAuthorizationServer } = require('./mcp-oauth-log.js');
 const { SCOPES } = require('./mcp-identity.js');
 const {
   EXTRA_CLIENT_METADATA,
@@ -302,15 +303,7 @@ function createAuthorizationServer({
     }
   });
   attachAuthorizationServer(provider);
-  // Why a token request was refused, never what it carried: a refresh token
-  // used twice past 30 seconds ends the connection, and the trace says so.
-  provider.on('grant.error', (ctx, error) =>
-    logger.warn(
-      `[mcp-oauth] a token request was refused: ${
-        error.error_detail || error.error_description || error.message
-      }`
-    )
-  );
+  logAuthorizationServer(provider);
   provider.on('registration_create.success', (ctx, client) =>
     keepRegisteredClient(
       provider,
