@@ -89,7 +89,7 @@ async function create(req, res) {
 
 /**
  * @api {get} /templates/:templateId template
- * @apiPermission user
+ * @apiPermission admin
  * @apiName GetTemplate
  * @apiGroup Templates
  *
@@ -100,7 +100,7 @@ async function create(req, res) {
 
 async function read(req, res) {
   const { templateId } = req.params;
-  // Bounded to the caller's company, as the markup is (super admins read any).
+  // Bounded to the caller's company like the markup, whatever the route's guard.
   const query = modelsUtils.addGroupFilter(req.user, { _id: templateId });
   const template = await Templates.findOne(query).populate({
     path: '_company',
