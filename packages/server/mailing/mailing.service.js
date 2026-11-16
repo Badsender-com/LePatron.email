@@ -78,6 +78,8 @@ module.exports = {
   findOneForUser,
   assertUserCanEditMailing,
   userCanEditMailing,
+  assertUserCanReadMailing,
+  userCanReadMailing,
   buildMailingCopy,
   renameMailing,
   deleteMailing,
@@ -304,6 +306,40 @@ async function assertUserCanEditMailing(user, mailing) {
 async function userCanEditMailing(user, mailing) {
   try {
     await assertUserCanEditMailing(user, mailing);
+    return true;
+  } catch (error) {
+    if (error.status === 403 || error.status === 404) return false;
+    throw error;
+  }
+}
+
+/**
+ * Reading a mailing (its preview, its gallery, the source of a copy): any user
+ * of the company of the workspace that holds it, member or not, whatever the
+ * company's "access to all workspaces" setting
+ * (docs/plans/preview-non-member-workspace.md). The mailing itself is loaded
+ * in the user's company first (`addGroupFilter`, `findOneForUser`).
+ *
+ * @param {Object} user
+ * @param {Object} mailing with its `_workspace` and `_parentFolder`
+ * @throws {NotFound} when the workspace is outside the user's reach
+ */
+async function assertUserCanReadMailing(user, mailing) {
+  if (permissions.can(user, CAPABILITIES.PLATFORM_MANAGE)) return;
+  const workspace = await getOwningWorkspace(mailing);
+  if (workspace) workspaceService.doesUserHaveReadAccess(user, workspace);
+}
+
+/**
+ * The same rule as `assertUserCanReadMailing`, as an answer.
+ *
+ * @param {Object} user
+ * @param {Object} mailing
+ * @returns {Promise<boolean>}
+ */
+async function userCanReadMailing(user, mailing) {
+  try {
+    await assertUserCanReadMailing(user, mailing);
     return true;
   } catch (error) {
     if (error.status === 403 || error.status === 404) return false;
@@ -1289,13 +1325,7 @@ async function copyMailing(mailingId, destination, user) {
   // mailing out of it. We therefore only require READ access on the source
   // workspace — `folderService.hasAccess` would require workspace membership
   // (write), which wrongly blocked read-only users copying from a folder.
-  // A mailing lives in either a workspace or a folder (never both); when it is
-  // in a folder, resolve the owning workspace to run the same read check.
-  const sourceWorkspace = await getOwningWorkspace(mailing);
-
-  if (sourceWorkspace) {
-    workspaceService.doesUserHaveReadAccess(user, sourceWorkspace);
-  }
+  await assertUserCanReadMailing(user, mailing);
 
   // `findOne` returns a Mongoose document whose real data lives in an internal
   // `_doc`; running lodash `omit` on it directly does not reliably strip the
@@ -1541,14 +1571,9 @@ async function previewMail(mailingId, user) {
     _parentFolder: 1,
   }).lean();
   if (!mailWithPreview) throw new NotFound(ERROR_CODES.MAILING_NOT_FOUND);
-  // A READ, like the source of a copy: any user of the company may preview a
-  // mailing of any of its workspaces, member or not, whatever the company's
-  // "access to all workspaces" setting. The preview is how a user picks a
+  // A READ, like the source of a copy: the preview is how a user picks a
   // mailing to copy, and a preview URL can be shared with a colleague.
-  if (!permissions.can(user, CAPABILITIES.PLATFORM_MANAGE)) {
-    const workspace = await getOwningWorkspace(mailWithPreview);
-    if (workspace) workspaceService.doesUserHaveReadAccess(user, workspace);
-  }
+  await assertUserCanReadMailing(user, mailWithPreview);
   // Its own code, after the access check: the UI tells "not generated yet" from
   // a refusal, and only a reader allowed in learns that there is no preview.
   if (!mailWithPreview.previewHtml)

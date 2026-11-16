@@ -1,14 +1,15 @@
 'use strict';
 
 // The gallery of a mailing or a template, as the editor reads and writes it:
-// the list, the rename of a label, the uploads. Serving and resizing the
-// images themselves stays in image.controller.js.
+// the list, the rename of a label, the uploads, the removal of an image.
+// Serving and resizing the images themselves stays in image.controller.js.
 
 const asyncHandler = require('express-async-handler');
 const createError = require('http-errors');
 
 const fileManager = require('../common/file-manage.service.js');
 const imageService = require('./image.service');
+const galleryAccess = require('./gallery-access.js');
 const mailingService = require('../mailing/mailing.service.js');
 const ERROR_CODES = require('../constant/error-codes.js');
 const logger = require('../utils/logger.js');
@@ -22,6 +23,7 @@ module.exports = {
   updateLabel: asyncHandler(updateLabel),
   create: asyncHandler(create),
   createFromUrl: asyncHandler(createFromUrl),
+  destroy: asyncHandler(destroy),
 };
 
 /**
@@ -41,6 +43,7 @@ module.exports = {
 // …are handled separately in wireframes.js#update
 async function list(req, res) {
   const { mongoId } = req.params;
+  await galleryAccess.assertCanReadGallery(req.user, mongoId);
 
   // The whole gallery: the editor searches, filters and sorts it itself,
   // with packages/shared/gallery/filter.js.
@@ -82,7 +85,7 @@ async function updateLabel(req, res) {
   }
 
   // renaming writes in the gallery's parent: the same scope as editing it
-  await imageService.assertCanEditGallery(req.user, mongoId);
+  await galleryAccess.assertCanEditGallery(req.user, mongoId);
 
   const gallery = await imageService.renameLabel(
     mongoId,
@@ -108,6 +111,7 @@ async function updateLabel(req, res) {
 // upload & update gallery
 async function create(req, res) {
   const { mongoId } = req.params;
+  await galleryAccess.assertCanWriteGallery(req.user, mongoId);
   const multipartOptions = {
     prefix: mongoId,
     formatter: 'editor',
@@ -146,10 +150,11 @@ async function createFromUrl(req, res) {
   // Authorize the target gallery before doing anything else. `mongoId` is a
   // mailing id (the content-feed modal always passes currentMailing().id):
   // findOneForUser validates the ObjectId format — so a crafted value can't
-  // reach the filename builder in image.service — and enforces group
-  // ownership, so a user can't write into another group's gallery. Throws
-  // NotFound on both invalid and cross-tenant ids.
+  // reach the filename builder in image.service — and reads the mailing in
+  // the user's group only; then the import writes in its gallery like an
+  // upload does.
   await mailingService.findOneForUser(mongoId, req.user);
+  await galleryAccess.assertCanWriteGallery(req.user, mongoId);
 
   let uploadedFile;
   try {
@@ -163,4 +168,24 @@ async function createFromUrl(req, res) {
   }
 
   res.json({ files: [uploadedFile] });
+}
+
+// destroy an image is not a real deletion…
+// …because those images can be still used inside creations:
+//  - cache can be inactive
+//  - if active: we are not sure that cropped images are cached
+//  - even though every cropped images are cached
+//    an image can be used at it's original size (no cropped image cache)
+// so:
+//  - we just flag this image in the gallery table as not visible
+async function destroy(req, res) {
+  if (!req.xhr) throw new createError.NotImplemented();
+  const { imageName } = req.params;
+  const match = /^([a-f\d]{24})-/.exec(imageName);
+  if (!match) throw new createError.UnprocessableEntity();
+  const mongoId = match[1];
+
+  await galleryAccess.assertCanWriteGallery(req.user, mongoId);
+  const gallery = await imageService.destroy(mongoId, imageName);
+  res.send({ files: gallery.files });
 }

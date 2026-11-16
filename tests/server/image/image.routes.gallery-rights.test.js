@@ -1,12 +1,16 @@
 'use strict';
 
-// Who may rename the label of a gallery image, played through the real route.
-// The capability is gallery.manage, held by every role (ADR 0004: every role
-// may use the image gallery). The scope is the gallery's parent: the gallery
-// of an email follows the email's write scope, the same check as saving the
-// email (its workspace, or the workspace of its folder); the gallery of a
-// template follows the rule for editing a template (PUT /templates/:id, which
-// asks for platform.manage).
+// Who may list, upload to, delete from and rename the label of a gallery,
+// played through the real routes. The capability of a write is
+// gallery.manage, held by every role (ADR 0004: every role may use the image
+// gallery). The scope is the gallery's parent:
+// - the gallery of an email is listed by whoever may read the email, like its
+//   preview, and written by whoever may save the email (its workspace, or the
+//   workspace of its folder);
+// - the gallery of a template is listed and written, uploads and deletions,
+//   by the users of the template's company, as the editor offers them with
+//   any email built on it; renaming a label follows the rule for editing a
+//   template (PUT /templates/:id, which asks for platform.manage).
 //
 // The real mailing, workspace and folder services run; the models answer like
 // MongoDB would: findOne honours `_id` and `_company`.
@@ -51,7 +55,8 @@ const WORKSPACE_ID = '507f1f77bcf86cd799439d01';
 const FOLDER_ID = '507f1f77bcf86cd799439e01';
 const PARENT_ID = '507f1f77bcf86cd799439055';
 const IMAGE_NAME = `${PARENT_ID}-0123456789abcdef.png`;
-const LABEL_URL = `/api/images/gallery/${PARENT_ID}/${IMAGE_NAME}/label`;
+const GALLERY_URL = `/api/images/gallery/${PARENT_ID}`;
+const LABEL_URL = `${GALLERY_URL}/${IMAGE_NAME}/label`;
 
 const userOfRole = (role) => ({
   id: USER_ID,
@@ -61,11 +66,13 @@ const userOfRole = (role) => ({
 const bootstrapAccount = { id: config.admin.id, name: 'admin' };
 
 let router;
+let imageService;
 beforeAll(() => {
   router = require('../../../packages/server/image/image.routes.js');
+  imageService = require('../../../packages/server/image/image.service.js');
 });
 
-function renameAs(user) {
+function appAs(user) {
   const server = express();
   server.use(express.json());
   server.use((req, _res, next) => {
@@ -76,8 +83,11 @@ function renameAs(user) {
   server.use((err, _req, res, _next) => {
     res.status(err.status || 500).json({ message: err.message });
   });
-  return request(server).patch(LABEL_URL).send({ label: 'Renamed' });
+  return request(server);
 }
+
+const renameAs = (user) =>
+  appAs(user).patch(LABEL_URL).send({ label: 'Renamed' });
 
 const findIn = (documents) => (query) =>
   Promise.resolve(
@@ -95,6 +105,7 @@ function workspaceOf(group, member) {
   const workspace = {
     _id: WORKSPACE_ID,
     _company: group,
+    group,
     _users: member ? [USER_ID] : [],
   };
   Workspaces.exists.mockResolvedValue(true);
@@ -246,4 +257,147 @@ describe('the scope of the rename', () => {
     parentIs({ collection: 'template', _id: PARENT_ID, _company: GROUP });
     await expectAnswer(bootstrapAccount, 200);
   });
+});
+
+// ---------------------------------------------------------------------------
+// Listing, uploading to and deleting from a gallery
+// ---------------------------------------------------------------------------
+
+const ACTS = {
+  list: {
+    call: (user) => appAs(user).get(GALLERY_URL),
+    done: () => Galleries.findOne,
+  },
+  upload: {
+    call: (user) => appAs(user).post(GALLERY_URL),
+    done: () => imageService.storeInGallery,
+  },
+  delete: {
+    call: (user) =>
+      appAs(user)
+        .delete(`/api/images/${IMAGE_NAME}`)
+        .set('X-Requested-With', 'XMLHttpRequest'),
+    done: () => Galleries.findOneAndUpdate,
+  },
+};
+
+async function expectAct(act, user, status) {
+  const res = await ACTS[act].call(user);
+  expect(res.status).toBe(status);
+  if (status === 403) {
+    expect(res.body.message).toBe(ERROR_CODES.FORBIDDEN_GALLERY_ACCESS);
+    expect(ACTS[act].done()).not.toHaveBeenCalled();
+  } else {
+    expect(ACTS[act].done()).toHaveBeenCalled();
+  }
+}
+
+describe('the other acts on a gallery', () => {
+  beforeEach(() => {
+    Galleries.findOne.mockResolvedValue({ files: [] });
+    Galleries.findOneAndUpdate.mockResolvedValue({ files: [] });
+    jest.spyOn(imageService, 'storeInGallery').mockResolvedValue([]);
+  });
+
+  afterEach(() => {
+    jest.restoreAllMocks();
+  });
+
+  // Expected answer for each role when listing the gallery of an email:
+  // [member of its workspace, not a member of it, email of another group].
+  const EMAIL_LIST_RIGHTS = [
+    [ROLES.SUPER_ADMIN, 200, 200, 200],
+    [ROLES.GROUP_ADMIN_TECH, 200, 200, 403],
+    [ROLES.GROUP_ADMIN, 200, 200, 403],
+    [ROLES.REGULAR_USER, 200, 200, 403],
+    [ROLES.WRITER, 200, 200, 403],
+    [ROLES.REVIEWER, 200, 200, 403],
+  ];
+
+  describe.each([
+    ['list', EMAIL_LIST_RIGHTS],
+    ['upload', EMAIL_RIGHTS],
+    ['delete', EMAIL_RIGHTS],
+  ])('%s in the gallery of an email', (act, rights) => {
+    describe.each([
+      ['in a workspace', false],
+      ['in a folder', true],
+    ])('%s', (_where, inFolder) => {
+      it.each(column(rights, 1))(
+        '%s: %i as a member of the workspace',
+        async (role, status) => {
+          emailIn(GROUP, { member: true, inFolder });
+          await expectAct(act, userOfRole(role), status);
+        }
+      );
+
+      it.each(column(rights, 2))(
+        '%s: %i outside the workspace',
+        async (role, status) => {
+          emailIn(GROUP, { member: false, inFolder });
+          await expectAct(act, userOfRole(role), status);
+        }
+      );
+
+      it.each(column(rights, 3))(
+        '%s: %i in another group',
+        async (role, status) => {
+          emailIn(OTHER_GROUP, { member: true, inFolder });
+          await expectAct(act, userOfRole(role), status);
+        }
+      );
+    });
+  });
+
+  // Expected answer for each role: [template of its group, of another group].
+  const TEMPLATE_GALLERY_RIGHTS = [
+    [ROLES.SUPER_ADMIN, 200, 200],
+    [ROLES.GROUP_ADMIN_TECH, 200, 403],
+    [ROLES.GROUP_ADMIN, 200, 403],
+    [ROLES.REGULAR_USER, 200, 403],
+    [ROLES.WRITER, 200, 403],
+    [ROLES.REVIEWER, 200, 403],
+  ];
+
+  describe.each(['list', 'upload', 'delete'])(
+    '%s in the gallery of a template',
+    (act) => {
+      const templateOf = (group) =>
+        parentIs({ collection: 'template', _id: PARENT_ID, _company: group });
+
+      it.each(column(TEMPLATE_GALLERY_RIGHTS, 1))(
+        '%s: %i in its group',
+        async (role, status) => {
+          templateOf(GROUP);
+          await expectAct(act, userOfRole(role), status);
+        }
+      );
+
+      it.each(column(TEMPLATE_GALLERY_RIGHTS, 2))(
+        '%s: %i in another group',
+        async (role, status) => {
+          templateOf(OTHER_GROUP);
+          await expectAct(act, userOfRole(role), status);
+        }
+      );
+    }
+  );
+
+  it.each(['list', 'upload', 'delete'])(
+    '%s answers a parent that does not exist like one of another group',
+    async (act) => {
+      parentIs({ collection: 'none' });
+
+      await expectAct(act, userOfRole(ROLES.REGULAR_USER), 403);
+    }
+  );
+
+  it.each(['list', 'upload', 'delete'])(
+    'lets the bootstrap account %s in the gallery of an email of any group',
+    async (act) => {
+      emailIn(OTHER_GROUP, { member: false });
+
+      await expectAct(act, bootstrapAccount, 200);
+    }
+  );
 });

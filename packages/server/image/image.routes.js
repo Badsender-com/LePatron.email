@@ -53,7 +53,7 @@ router.patch(
   gallery.updateLabel
 );
 router.get('/:imageName', images.read);
-router.delete('/:imageName', GUARD_CAN(C.GALLERY_MANAGE), images.destroy);
+router.delete('/:imageName', GUARD_CAN(C.GALLERY_MANAGE), gallery.destroy);
 
 // catch anything and forward to error handler
 router.use((req, res, next) => {
