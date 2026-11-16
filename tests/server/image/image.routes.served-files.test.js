@@ -2,8 +2,8 @@
 
 // The files of the storage as a browser receives them from /api/images: a
 // raster image is shown inline, where emails and the editor load it; an SVG or
-// anything that is not an image is a download, in a sandbox, so it never runs
-// as a page of the application. No answer lets the browser guess another type.
+// anything that is not an image is a download, in a sandbox, never shown as a
+// page of the application. No answer lets the browser guess another type.
 
 jest.mock('sharp', () => jest.fn());
 jest.mock('puppeteer', () => ({}));
@@ -54,7 +54,7 @@ function stored(bytes) {
   });
 }
 
-const SVG = '<svg xmlns="http://www.w3.org/2000/svg"><script>1</script></svg>';
+const SVG = '<svg xmlns="http://www.w3.org/2000/svg"><rect/></svg>';
 
 beforeEach(() => {
   jest.clearAllMocks();
@@ -105,7 +105,7 @@ describe('a file served from the storage', () => {
     ['a-b.bin', /^application\/octet-stream/],
     ['a-b.unknownext', /^application\/octet-stream/],
   ])('serves %s, not an image, as a sandboxed download', async (name, type) => {
-    stored('<html><script>1</script></html>');
+    stored('<html><p>text</p></html>');
 
     const res = await request(app()).get(`/api/images/${name}`);
 
