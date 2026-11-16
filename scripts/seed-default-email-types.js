@@ -101,11 +101,8 @@ function planEmailTypeSeeding(companies, existingEmailTypes) {
 }
 
 async function main() {
-  console.log(
-    `Connecting to ${databaseHost(
-      config.database
-    )} (dry-run=${DRY}, lang=${LANG})…`
-  );
+  const host = databaseHost(config.database);
+  console.log(`Connecting to ${host} (dry-run=${DRY}, lang=${LANG})…`);
   await mongoose.connect(config.database, {
     useNewUrlParser: true,
     useUnifiedTopology: true,

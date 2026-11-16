@@ -76,8 +76,6 @@ function planScenarioMigration(scenarios, categoryOf) {
 }
 
 async function main() {
-  // Never log the connection string: it carries the credentials
-  // (AGENTS.md § Logging). The host alone is enough to tell environments apart.
   console.log(
     `Connecting to ${databaseHost(config.database)} (dry-run=${DRY})…`
   );
