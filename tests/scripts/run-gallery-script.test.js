@@ -21,7 +21,6 @@ const {
 } = require('../../scripts/gallery/run-gallery-script.js');
 const {
   parseArgs,
-  databaseHosts,
   redact,
   DEFAULT_CONCURRENCY,
 } = require('../../scripts/gallery/command-line.js');
@@ -140,16 +139,6 @@ describe('run-gallery-script', () => {
 
   // The connection string carries the database password.
   describe('never prints the credentials', () => {
-    it('names the hosts only', () => {
-      expect(databaseHosts(URI_WITH_CREDENTIALS)).toBe('db.example.test:27017');
-      expect(
-        databaseHosts('mongodb://u:p@h1:27017,h2:27017/app?replicaSet=rs0')
-      ).toBe('h1:27017,h2:27017');
-      expect(databaseHosts('mongodb+srv://u:p@cluster.example.test/app')).toBe(
-        'cluster.example.test'
-      );
-    });
-
     it('scrubs an error message that quotes the URI back', () => {
       const message = redact(`cannot reach ${URI_WITH_CREDENTIALS}`);
       expect(message).not.toContain('s3cr3t-password');
@@ -166,7 +155,7 @@ describe('run-gallery-script', () => {
 
       await runGalleryScript(failing, { argv: CONFIRMED });
 
-      expect(output()).toContain('db.example.test:27017');
+      expect(output()).toContain('db.example.test:27017/app');
       expect(output()).not.toContain('s3cr3t-password');
     });
 
@@ -197,7 +186,8 @@ describe('run-gallery-script', () => {
 
       await runGalleryScript(script(), { argv: ['--dry-run'] });
 
-      expect(output()).toContain('Database: "app" on db.example.test:27017');
+      expect(output()).toContain('Connecting to db.example.test:27017/app…');
+      expect(output()).toContain('Database: "app"');
     });
 
     // The override of the database did not apply: the run reached another one.
