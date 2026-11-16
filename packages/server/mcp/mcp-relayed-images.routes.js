@@ -7,6 +7,7 @@ const { isSigned } = require('./mcp-relayed-image-address.js');
 const {
   relayedImage,
   cachedRelayedImage,
+  RELAYED_IMAGE_TYPES,
 } = require('./mcp-relayed-image-fetch.js');
 
 const ONE_DAY = 86400;
@@ -45,14 +46,21 @@ const signedUrlOf = (req) => {
   return url && isSigned(url, req.params.signature) ? url : null;
 };
 
+// The type an image is answered with, taken from the types relayed, never
+// from the image: one of another type is no image.
+const answeredTypeOf = (image) =>
+  image &&
+  Object.values(RELAYED_IMAGE_TYPES).find((type) => type === image.type);
+
 function answer(res, image, { withBody }) {
-  if (!image) {
+  const type = answeredTypeOf(image);
+  if (!type) {
     res.set('Cache-Control', `public, max-age=${NO_IMAGE_SECONDS}`);
     res.status(404).end();
     return;
   }
   res.set({
-    'Content-Type': image.type,
+    'Content-Type': type,
     'Content-Length': String(image.bytes.length),
     'Cache-Control': `public, max-age=${ONE_DAY}`,
   });

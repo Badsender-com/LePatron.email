@@ -134,3 +134,42 @@ describe('the route of the relayed images', () => {
     expect(line).not.toMatch(/secret|logo\.png/);
   });
 });
+
+// The type answered comes from the types relayed, never from the image.
+describe('an image of a type not relayed', () => {
+  const FETCH = '../../../packages/server/mcp/mcp-relayed-image-fetch.js';
+  const HTML = Buffer.from('<script>alert(1)</script>');
+
+  afterEach(() => jest.dontMock(FETCH));
+
+  it('is answered as no image', async () => {
+    let address;
+    let router;
+    jest.isolateModules(() => {
+      jest.doMock(FETCH, () => ({
+        ...jest.requireActual(FETCH),
+        relayedImage: async () => ({ type: 'text/html', bytes: HTML }),
+        cachedRelayedImage: () => ({ type: 'text/html', bytes: HTML }),
+      }));
+      address = require('../../../packages/server/mcp/mcp-relayed-image-address.js');
+      router = require('../../../packages/server/mcp/mcp-relayed-images.routes.js');
+    });
+    const app = express();
+    app.use('/api/relayed-images', router);
+    const relayed = new URL(address.relayedUrlOf(LOGO));
+    const path = relayed.pathname + relayed.search;
+
+    const got = await request(app).get(path);
+    const head = await request(app).head(path);
+
+    for (const res of [got, head]) {
+      expect(res.status).toBe(404);
+      expect(res.headers['content-type']).toBeUndefined();
+      expect(res.headers['x-content-type-options']).toBe('nosniff');
+      expect(res.headers['content-security-policy']).toBe(
+        "default-src 'none'; sandbox"
+      );
+    }
+    expect(got.text || '').not.toContain('script');
+  });
+});

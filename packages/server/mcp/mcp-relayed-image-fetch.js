@@ -20,20 +20,28 @@ const CACHE_TTL_MS = 10 * 60 * 1000;
 // memory up to 5 MB. Past it, a new image is answered as none.
 const MAX_FETCHES_IN_FLIGHT = 20;
 
+// The only types a relayed image is answered with.
+const RELAYED_IMAGE_TYPES = Object.freeze({
+  PNG: 'image/png',
+  JPEG: 'image/jpeg',
+  GIF: 'image/gif',
+  WEBP: 'image/webp',
+});
+
 // The type of an image, read from its first bytes; null for anything else,
 // an SVG included.
 function imageTypeOf(bytes) {
   const starts = (...signature) =>
     signature.every((byte, i) => bytes[i] === byte);
   if (starts(0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a))
-    return 'image/png';
-  if (starts(0xff, 0xd8, 0xff)) return 'image/jpeg';
-  if (starts(0x47, 0x49, 0x46, 0x38)) return 'image/gif';
+    return RELAYED_IMAGE_TYPES.PNG;
+  if (starts(0xff, 0xd8, 0xff)) return RELAYED_IMAGE_TYPES.JPEG;
+  if (starts(0x47, 0x49, 0x46, 0x38)) return RELAYED_IMAGE_TYPES.GIF;
   if (
     starts(0x52, 0x49, 0x46, 0x46) &&
     bytes.slice(8, 12).toString('ascii') === 'WEBP'
   ) {
-    return 'image/webp';
+    return RELAYED_IMAGE_TYPES.WEBP;
   }
   return null;
 }
@@ -131,5 +139,6 @@ module.exports = {
   cachedRelayedImage,
   fetchRelayedImage,
   imageTypeOf,
+  RELAYED_IMAGE_TYPES,
   MAX_FETCHES_IN_FLIGHT,
 };
