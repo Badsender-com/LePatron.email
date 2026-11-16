@@ -30,7 +30,9 @@ import {
 // Several drafts published at once from a list (ADR 0019): the server finds
 // the draft of each selected item, one guard covers everything they touch
 // when a feature uses one, run on the server and read again until it is
-// done, then each is published and the report says how.
+// done, then each is published and the report says how. The list hears of
+// the publication (`published`) once the dialog is closed on its report:
+// it then clears its selection, which holds this component on the page.
 export default {
   name: 'BsAiPublishDrafts',
   components: {
@@ -57,6 +59,8 @@ export default {
       error: '',
       // Which opening of the dialog a run being read belongs to.
       opening: 0,
+      // The report the list has not heard of yet.
+      unannounced: null,
     };
   },
   computed: {
@@ -136,9 +140,14 @@ export default {
       this.$refs.modal.open();
       this.plan = await this.post('plan');
     },
-    // Closed, the dialog stops reading the run; the server keeps it.
+    // Closed, the dialog stops reading the run; the server keeps it. Closed
+    // on its report, it tells the list, once.
     letGo() {
       this.opening += 1;
+      const report = this.unannounced;
+      if (!report) return;
+      this.unannounced = null;
+      this.$emit('published', report);
     },
     async runGuard() {
       const { opening } = this;
@@ -164,7 +173,7 @@ export default {
       });
       if (!report) return;
       this.report = report;
-      this.$emit('published', report);
+      this.unannounced = report;
     },
     async cancel() {
       if (!(await this.post('cancel', { guardKey: this.guard.key }))) return;
