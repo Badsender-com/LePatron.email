@@ -100,6 +100,10 @@ module.exports = {
     "Ces images n'ont pas pu être déposées dans __host__ : __images__. L'export est annulé ; vérifiez qu'elles s'affichent et pèsent moins de 16 Mo.",
   'download-image-host-credentials-refused':
     "__host__ refuse ses identifiants : l'export est annulé. Demandez à l'admin technique de les vérifier dans les intégrations.",
+  'download-image-host-folder-unavailable':
+    "Le dossier racine est introuvable dans __host__ : l'export est annulé. Demandez à l'admin technique de choisir un dossier dans les intégrations.",
+  'download-image-host-down':
+    "__host__ ne répond pas ou est surchargé : l'export est annulé. Réessayez dans quelques minutes.",
   'download-image-host-unavailable':
     "__host__ n'est plus disponible pour l'export. Demandez à l'admin technique de tester la connexion dans les intégrations.",
 

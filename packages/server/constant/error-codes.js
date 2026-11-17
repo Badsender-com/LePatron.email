@@ -49,6 +49,11 @@ module.exports = {
   // ADR 0028: the image host refused its credentials during an export; the
   // integration is marked invalid and leaves the export menu.
   IMAGE_HOST_CREDENTIALS_REFUSED: 'IMAGE_HOST_CREDENTIALS_REFUSED',
+  // ADR 0028: the email's folder could not be found or created on the image
+  // host (its root folder deleted there, most likely).
+  IMAGE_HOST_FOLDER_UNAVAILABLE: 'IMAGE_HOST_FOLDER_UNAVAILABLE',
+  // ADR 0028: the image host is unreachable, overloaded or failing.
+  IMAGE_HOST_UNAVAILABLE: 'IMAGE_HOST_UNAVAILABLE',
   HTML_CODE_BLOCK_TOO_LARGE: 'HTML_CODE_BLOCK_TOO_LARGE',
   HTML_CODE_BLOCK_DISABLED: 'HTML_CODE_BLOCK_DISABLED',
   HEAD_CSS_TOO_LARGE: 'HEAD_CSS_TOO_LARGE',

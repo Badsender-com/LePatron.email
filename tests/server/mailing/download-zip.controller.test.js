@@ -44,12 +44,13 @@ describe('the download route, when the export fails', () => {
 
   it('names the images the image host could not take', async () => {
     const error = new Error('IMAGE_HOST_UPLOAD_FAILED');
+    error.status = 502;
     error.images = ['https://cdn.client.example.com/brand/logo.gif'];
     mailingService.downloadZip.mockRejectedValue(error);
 
     const res = await call();
 
-    expect(res.status).toHaveBeenCalledWith(500);
+    expect(res.status).toHaveBeenCalledWith(502);
     expect(res.json).toHaveBeenCalledWith({
       errorCode: 'IMAGE_HOST_UPLOAD_FAILED',
       images: ['https://cdn.client.example.com/brand/logo.gif'],
@@ -57,12 +58,13 @@ describe('the download route, when the export fails', () => {
   });
 
   it('answers the code alone otherwise, as before', async () => {
-    mailingService.downloadZip.mockRejectedValue(
-      new Error('EXPORT_IMAGES_NOT_TRANSFERRED')
-    );
+    const error = new Error('EXPORT_IMAGES_NOT_TRANSFERRED');
+    error.status = 500;
+    mailingService.downloadZip.mockRejectedValue(error);
 
     const res = await call();
 
+    expect(res.status).toHaveBeenCalledWith(500);
     expect(res.json).toHaveBeenCalledWith({
       errorCode: 'EXPORT_IMAGES_NOT_TRANSFERRED',
     });

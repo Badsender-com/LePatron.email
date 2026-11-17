@@ -27,6 +27,7 @@ const {
   validateIntegrationConfig,
   validateApiHost,
   isHostChange,
+  configChangesValidation,
 } = require('./integration.validation.js');
 
 module.exports = {
@@ -149,6 +150,14 @@ async function updateIntegration({
     validatedConfig = validateIntegrationConfig(provider, {});
   }
 
+  const validatedOn =
+    validatedConfig !== undefined &&
+    configChangesValidation(
+      provider || integration.provider,
+      integration.config,
+      validatedConfig
+    );
+
   // Apply only fields explicitly provided in the request
   if (name !== undefined) integration.name = name;
   if (type !== undefined) integration.type = type;
@@ -163,7 +172,8 @@ async function updateIntegration({
   if (
     apiKey !== undefined ||
     apiHost !== undefined ||
-    productId !== undefined
+    productId !== undefined ||
+    validatedOn
   ) {
     integration.validationStatus = 'pending';
     integration.lastValidatedAt = null;

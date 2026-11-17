@@ -67,7 +67,11 @@ describe('the Emarsys provider against the fake Emarsys', () => {
     expect(url).toBe(`${fake.base}/custloads/123/${id}_hero.png`);
     const served = Buffer.from(await (await fetch(url)).arrayBuffer());
     expect(served.equals(PNG)).toBe(true);
-    await expect(host.fileExists(id)).resolves.toBe(true);
+    await expect(host.findFile(id)).resolves.toMatchObject({
+      id,
+      folder: folder.id,
+      url,
+    });
   });
 
   it('no longer finds a file deleted from the fake Media Database', async () => {
@@ -80,7 +84,7 @@ describe('the Emarsys provider against the fake Emarsys', () => {
 
     fake.state.files.delete(id);
 
-    await expect(host.fileExists(id)).resolves.toBe(false);
+    await expect(host.findFile(id)).resolves.toBeNull();
   });
 
   it('asks one token for images put at the same time', async () => {
@@ -97,5 +101,26 @@ describe('the Emarsys provider against the fake Emarsys', () => {
     expect(
       fake.state.folders.filter((f) => f.name === 'parallel')
     ).toHaveLength(1);
+  });
+
+  // Emarsys allows 50 token requests a minute per client: a saved
+  // integration keeps its token from one export to the next.
+  it('shares the token of a saved integration across exports', async () => {
+    const saved = (secret) =>
+      new EmarsysProvider({
+        _id: '507f1f77bcf86cd799439c01',
+        type: 'asset_hosting',
+        provider: 'emarsys',
+        apiKey: secret,
+        config: { clientId: 'fake-client', rootFolderId: 1000 },
+      });
+    const before = fake.state.counters.tokens;
+
+    await saved('fake-secret').listFolders();
+    await saved('fake-secret').listFolders();
+    expect(fake.state.counters.tokens - before).toBe(1);
+
+    // A changed secret is not answered with the former one's token.
+    await expect(saved('wrong').validateCredentials()).resolves.toBe(false);
   });
 });

@@ -312,6 +312,20 @@ export default {
           @blur="$v.form.provider.$touch()"
         />
 
+        <!-- Before the secret, as Emarsys shows them (ADR 0028) -->
+        <bs-text-field
+          v-if="hasImageHostFields"
+          :value="form.config.clientId"
+          :label="$t('integrations.emarsys.clientId')"
+          :hint="$t('integrations.emarsys.clientIdHint')"
+          :error-messages="imageHostErrors.clientId"
+          :disabled="loading"
+          required
+          @input="
+            form.config = { ...form.config, clientId: ($event || '').trim() }
+          "
+        />
+
         <div v-if="isApiKeyRequired" class="bs-text-field">
           <label class="bs-text-field__label">
             {{ apiKeyLabel }}

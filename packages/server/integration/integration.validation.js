@@ -11,6 +11,7 @@ const {
 const { MODEL_ID_PATTERN } = require('../ai-feature/ai-feature.validation.js');
 
 module.exports = {
+  configChangesValidation,
   normalizeProductId,
   assertApiKeyResent,
   validateIntegrationConfig,
@@ -200,4 +201,19 @@ function validateIntegrationConfig(provider, config) {
     }
   }
   return config;
+}
+
+/**
+ * Whether new settings change what the provider is validated on: for an
+ * image host, its client ID or its root folder (ADR 0028). A test done with
+ * the former ones says nothing of the new ones.
+ * @param {string} provider
+ * @param {Object} before the stored config
+ * @param {Object} after the config being saved
+ * @returns {boolean}
+ */
+function configChangesValidation(provider, before = {}, after = {}) {
+  return (REQUIRED_CONFIG_BY_PROVIDER[provider] || []).some(
+    (key) => String((before || {})[key]) !== String((after || {})[key])
+  );
 }

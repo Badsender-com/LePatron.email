@@ -23,7 +23,7 @@ describe('reading the source of an image', () => {
   beforeAll(async () => {
     server = http.createServer((req, res) => {
       requests.push(req.url);
-      if (req.url === '/redirect-to-loopback') {
+      if (req.url.endsWith('/redirect-to-loopback')) {
         res.writeHead(302, { Location: `http://127.0.0.1:${port}/hero.png` });
         return res.end();
       }
@@ -45,12 +45,23 @@ describe('reading the source of an image', () => {
     config.host = 'lepatron.example.com';
   });
 
-  it('reads our own images directly', async () => {
+  it('reads the images of our own gallery directly', async () => {
     config.host = `127.0.0.1:${port}`;
 
-    const content = await readSource(`http://127.0.0.1:${port}/hero.png`);
+    const content = await readSource(
+      `http://127.0.0.1:${port}/api/images/hero.png`
+    );
 
     expect(content.equals(PNG)).toBe(true);
+  });
+
+  it('gives the rest of our own host no exemption', async () => {
+    config.host = `127.0.0.1:${port}`;
+
+    await expect(
+      readSource(`http://127.0.0.1:${port}/admin/secret`)
+    ).rejects.toThrow();
+    expect(requests).toEqual([]);
   });
 
   it('refuses a private address written as an IP', async () => {
@@ -78,14 +89,32 @@ describe('reading the source of an image', () => {
     config.host = `127.0.0.1:${port}`;
 
     await expect(
-      readSource(`http://127.0.0.1:${port}/redirect-to-loopback`)
-    ).resolves.toBeDefined();
+      readSource(`http://127.0.0.1:${port}/api/images/redirect-to-loopback`)
+    ).rejects.toThrow();
 
     config.host = `localhost:${port}`;
     requests = [];
     await expect(
-      readSource(`http://localhost:${port}/redirect-to-loopback`)
+      readSource(`http://localhost:${port}/api/images/redirect-to-loopback`)
     ).rejects.toThrow();
-    expect(requests).toEqual(['/redirect-to-loopback']);
+    expect(requests).toEqual(['/api/images/redirect-to-loopback']);
+  });
+});
+
+describe("the email's folder on the image host", () => {
+  const {
+    emailFolderName,
+  } = require('../../../packages/server/mailing/export-to-image-host.js');
+
+  it('is the email name and a short identifier', () => {
+    expect(
+      emailFolderName({ _id: '507f1f77bcf86cd799439055', name: 'Soldes été' })
+    ).toBe('soldes-ete-439055');
+  });
+
+  it('stays readable when the name has nothing the slug keeps', () => {
+    expect(
+      emailFolderName({ _id: '507f1f77bcf86cd799439055', name: '???' })
+    ).toBe('email-439055');
   });
 });
