@@ -371,7 +371,7 @@ describe('Emarsys provider: checking a file', () => {
     jest.clearAllMocks();
   });
 
-  it('finds a file still in the Media Database', async () => {
+  it('finds a file still in the Media Database, with its folder', async () => {
     fakeEmarsys({
       files: {
         77: {
@@ -385,12 +385,16 @@ describe('Emarsys provider: checking a file', () => {
       },
     });
 
-    await expect(makeProvider().fileExists('77')).resolves.toBe(true);
+    await expect(makeProvider().findFile('77')).resolves.toEqual({
+      id: '77',
+      folder: 4400,
+      url: 'https://link.example.net/custloads/123/77_hero.png',
+    });
   });
 
   it('does not find a file someone deleted', async () => {
     fakeEmarsys();
 
-    await expect(makeProvider().fileExists('77')).resolves.toBe(false);
+    await expect(makeProvider().findFile('77')).resolves.toBeNull();
   });
 });

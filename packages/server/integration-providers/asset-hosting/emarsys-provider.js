@@ -1,6 +1,7 @@
 'use strict';
 
 const BaseProvider = require('../base-provider.js');
+const crypto = require('crypto');
 const fetch = require('node-fetch');
 const { guardedFetch, toProviderError } = require('../provider-http.js');
 const { emarsysEndpoints } = require('./emarsys-endpoints.js');
@@ -9,6 +10,10 @@ const {
   ProviderError,
   PROVIDER_ERROR_CODES: CODES,
 } = require('../provider-error.js');
+
+// The tokens of saved integrations, kept until they expire across exports:
+// Emarsys allows 50 token requests a minute per client (ADR 0028).
+const SHARED_TOKENS = new Map();
 
 const TIMEOUT_MS = 15000;
 // An upload carries up to 16 MB, base64-encoded.
@@ -39,6 +44,15 @@ class EmarsysProvider extends BaseProvider {
     // The token being asked: calls made at the same time wait for it rather
     // than each asking their own.
     this.pendingToken = null;
+    // A saved integration shares its token across exports, for the
+    // credentials it was asked with: a changed secret asks a new one.
+    this.tokenCacheKey = integration._id
+      ? [
+          String(integration._id),
+          this.clientId,
+          crypto.createHash('sha256').update(String(this.apiKey)).digest('hex'),
+        ].join(':')
+      : null;
     // The emails' folders found or created, by name: the images of one export
     // are put in parallel, and must not each create the folder.
     this.folderIds = new Map();
@@ -50,6 +64,9 @@ class EmarsysProvider extends BaseProvider {
    * @returns {Promise<boolean>}
    */
   async validateCredentials() {
+    // A test asks Emarsys, never a token kept from before: credentials
+    // revoked since must read as refused.
+    this.ignoreSharedToken = true;
     try {
       await this.listFolders();
       return true;
@@ -84,9 +101,12 @@ class EmarsysProvider extends BaseProvider {
    */
   async putImage({ folderName, filename, content }) {
     if (content.length > MAX_IMAGE_BYTES) {
-      throw new ProviderError(
-        `Emarsys: ${filename} is over the 16 MB limit`,
-        CODES.API_ERROR
+      throw withStatus(
+        new ProviderError(
+          `Emarsys: ${filename} is over the 16 MB limit`,
+          CODES.API_ERROR
+        ),
+        413
       );
     }
     const folder = await this.emailFolderId(folderName);
@@ -115,19 +135,22 @@ class EmarsysProvider extends BaseProvider {
   }
 
   /**
-   * Whether a file put earlier is still in the Media Database: someone may
-   * have deleted it there. Anything but a clear answer reads as "not found",
-   * and the image is put again; refused credentials still throw.
+   * A file put earlier, as the Media Database has it now: someone may have
+   * deleted it there, or it may be in another folder than the email's
+   * current one. Anything but a clear answer reads as "not found", and the
+   * image is put again; refused credentials still throw.
    * @param {string} fileId
-   * @returns {Promise<boolean>}
+   * @returns {Promise<{ id: string, folder: number, url: string } | null>}
    */
-  async fileExists(fileId) {
+  async findFile(fileId) {
     try {
       const file = await this.callApi(
         'GET',
         `/file/${encodeURIComponent(String(fileId))}`
       );
-      return !!(file && file.url);
+      return file && file.url
+        ? { id: String(file.id), folder: file.folder, url: file.url }
+        : null;
     } catch (error) {
       if (
         error instanceof ProviderError &&
@@ -135,7 +158,7 @@ class EmarsysProvider extends BaseProvider {
       ) {
         throw error;
       }
-      return false;
+      return null;
     }
   }
 
@@ -172,6 +195,15 @@ class EmarsysProvider extends BaseProvider {
 
   async getToken() {
     if (this.token && Date.now() < this.tokenExpiresAt) return this.token;
+    const shared =
+      this.tokenCacheKey &&
+      !this.ignoreSharedToken &&
+      SHARED_TOKENS.get(this.tokenCacheKey);
+    if (shared && Date.now() < shared.expiresAt) {
+      this.token = shared.token;
+      this.tokenExpiresAt = shared.expiresAt;
+      return this.token;
+    }
     if (!this.pendingToken) {
       this.pendingToken = this.requestToken().finally(() => {
         this.pendingToken = null;
@@ -202,11 +234,14 @@ class EmarsysProvider extends BaseProvider {
       label: 'Emarsys token',
     });
     if (!response.ok) {
-      throw new ProviderError(
-        `Emarsys token request failed: ${response.status}`,
-        response.status === 400 || response.status === 401
-          ? CODES.INVALID_CREDENTIALS
-          : CODES.API_ERROR
+      throw withStatus(
+        new ProviderError(
+          `Emarsys token request failed: ${response.status}`,
+          response.status === 400 || response.status === 401
+            ? CODES.INVALID_CREDENTIALS
+            : CODES.API_ERROR
+        ),
+        response.status
       );
     }
     const body = await readJson(response, 'Emarsys token');
@@ -218,7 +253,16 @@ class EmarsysProvider extends BaseProvider {
     }
     const lifetimeMs = (Number(body.expires_in) || 3600) * 1000;
     this.token = body.access_token;
-    this.tokenExpiresAt = Date.now() + lifetimeMs - TOKEN_MARGIN_MS;
+    // Never past the token's own life: a short-lived token would otherwise
+    // be asked again at each call.
+    this.tokenExpiresAt =
+      Date.now() + Math.max(lifetimeMs / 2, lifetimeMs - TOKEN_MARGIN_MS);
+    if (this.tokenCacheKey) {
+      SHARED_TOKENS.set(this.tokenCacheKey, {
+        token: this.token,
+        expiresAt: this.tokenExpiresAt,
+      });
+    }
     return this.token;
   }
 
@@ -255,6 +299,7 @@ class EmarsysProvider extends BaseProvider {
     if (response.status === 401) {
       // Revoked meanwhile: the next call asks a new one.
       this.token = null;
+      if (this.tokenCacheKey) SHARED_TOKENS.delete(this.tokenCacheKey);
       throw new ProviderError(
         `${label}: unauthorized`,
         CODES.INVALID_CREDENTIALS
@@ -262,15 +307,26 @@ class EmarsysProvider extends BaseProvider {
     }
     const body = await readJson(response, label);
     if (!response.ok || body.replyCode !== 0) {
-      throw new ProviderError(
-        `${label} failed: ${response.status} ${body.replyCode ?? ''} ${
-          body.replyText ?? ''
-        }`.trim(),
-        CODES.API_ERROR
+      // The status tells a refused request (4xx: this image) from a host
+      // that is down or overloaded (429, 5xx: every image alike). A non-zero
+      // replyCode under a 200 reads as a refusal.
+      throw withStatus(
+        new ProviderError(
+          `${label} failed: ${response.status} ${body.replyCode ?? ''} ${
+            body.replyText ?? ''
+          }`.trim(),
+          CODES.API_ERROR
+        ),
+        response.ok ? 400 : response.status
       );
     }
     return body.data;
   }
+}
+
+function withStatus(error, status) {
+  error.status = status;
+  return error;
 }
 
 async function readJson(response, label) {

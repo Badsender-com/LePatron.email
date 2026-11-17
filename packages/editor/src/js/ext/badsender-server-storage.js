@@ -5,7 +5,7 @@ const console = require('console');
 const $ = require('jquery');
 const ko = require('knockout');
 const _omit = require('lodash.omit');
-const { escapeHtml } = require('./comments-utils.js');
+const { escapeHtml } = require('./image-host-menu.js');
 const {
   EDITOR_ONLY_METADATA_KEYS,
 } = require('../utils/editor-only-metadata-keys');
@@ -286,15 +286,27 @@ function loader(opts) {
 }
 
 // The export to an image host failed (ADR 0028). The answer is a blob, as the
-// request expects a ZIP: read back as JSON, it names the images the host could
-// not take, when that is why.
+// request expects a ZIP: read back as JSON, it says why, and names the images
+// the host could not take when that is why.
+const IMAGE_HOST_MESSAGES = {
+  IMAGE_HOST_CREDENTIALS_REFUSED: 'download-image-host-credentials-refused',
+  IMAGE_HOST_NOT_AVAILABLE: 'download-image-host-unavailable',
+  IMAGE_HOST_FOLDER_UNAVAILABLE: 'download-image-host-folder-unavailable',
+  IMAGE_HOST_UNAVAILABLE: 'download-image-host-down',
+};
+
+// Kept until closed: it names files, or asks to tell a tech admin.
+const LASTING = { timeOut: 0, extendedTimeOut: 0, closeButton: true };
+
 function notifyImageHostError(viewModel, imageHost, xhr) {
+  // toastr renders HTML: the names come from the integration and the
+  // email's URLs.
+  var host = escapeHtml(imageHost.name);
+  var notify = function (key, params) {
+    viewModel.notifier.error(viewModel.t(key, params), '', LASTING);
+  };
   var fallback = function () {
-    viewModel.notifier.error(
-      viewModel.t('download-image-host-error', {
-        host: escapeHtml(imageHost.name),
-      })
-    );
+    notify('download-image-host-error', { host: host });
   };
   var body = xhr && xhr.response;
   if (!body || typeof body.text !== 'function') return fallback();
@@ -302,20 +314,8 @@ function notifyImageHostError(viewModel, imageHost, xhr) {
     .text()
     .then(function (text) {
       var answer = JSON.parse(text);
-      if (answer.errorCode === 'IMAGE_HOST_CREDENTIALS_REFUSED') {
-        viewModel.notifier.error(
-          viewModel.t('download-image-host-credentials-refused', {
-            host: escapeHtml(imageHost.name),
-          })
-        );
-        return;
-      }
-      if (answer.errorCode === 'IMAGE_HOST_NOT_AVAILABLE') {
-        viewModel.notifier.error(
-          viewModel.t('download-image-host-unavailable', {
-            host: escapeHtml(imageHost.name),
-          })
-        );
+      if (IMAGE_HOST_MESSAGES[answer.errorCode]) {
+        notify(IMAGE_HOST_MESSAGES[answer.errorCode], { host: host });
         return;
       }
       if (!Array.isArray(answer.images) || !answer.images.length) {
@@ -324,14 +324,10 @@ function notifyImageHostError(viewModel, imageHost, xhr) {
       var names = answer.images.map(function (url) {
         return url.split('?')[0].split('/').pop();
       });
-      viewModel.notifier.error(
-        // toastr renders HTML: the names come from the integration and the
-        // email's URLs.
-        viewModel.t('download-image-host-images-error', {
-          host: escapeHtml(imageHost.name),
-          images: escapeHtml(names.join(', ')),
-        })
-      );
+      notify('download-image-host-images-error', {
+        host: host,
+        images: escapeHtml(names.join(', ')),
+      });
     })
     .catch(fallback);
 }

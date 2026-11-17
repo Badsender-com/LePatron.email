@@ -101,20 +101,40 @@ function hostedImageStore() {
   return docs;
 }
 
-/** The image host the integration stands for: what it holds and received. */
+/**
+ * The image host the integration stands for: what it holds and received.
+ * Its folders are named after the email under `host.root`, which a test
+ * changes as a tech admin would change the root folder.
+ */
 function fakeImageHost() {
-  const host = { files: {}, puts: [] };
+  const host = { files: {}, puts: [], root: 'root-a' };
   let nextId = 1;
+  const folderOf = (folderName) => `${host.root}/${folderName}`;
+  host.emailFolderId = jest.fn(async (folderName) => folderOf(folderName));
   host.putImage = jest.fn(async ({ folderName, filename, content }) => {
     const id = String(nextId++);
     const url = `https://link.example.net/custloads/123/${id}_${filename}`;
-    host.files[id] = { folderName, filename, content, url };
+    host.files[id] = { folder: folderOf(folderName), filename, content, url };
     host.puts.push({ folderName, filename, content });
     return { id, url };
   });
-  host.fileExists = jest.fn(async (id) => id in host.files);
+  host.findFile = jest.fn(async (id) =>
+    host.files[id]
+      ? { id, folder: host.files[id].folder, url: host.files[id].url }
+      : null
+  );
   ProviderFactory.createProvider.mockReturnValue(host);
   return host;
+}
+
+/** An error of the host, as the provider raises them. */
+function hostError(status, code = 'PROVIDER_API_ERROR') {
+  const {
+    ProviderError,
+  } = require('../../../packages/server/integration-providers/provider-error.js');
+  const error = new ProviderError(`host answered ${status}`, code);
+  error.status = status;
+  return error;
 }
 
 /** The images the HTML loads, by URL. Anything else answers 404. */
@@ -315,6 +335,35 @@ describe('downloading the ZIP with an image host', () => {
     });
   });
 
+  // The root folder deleted in Emarsys: no image is at fault.
+  it('says when the email folder cannot be found or created, naming no image', async () => {
+    const host = fakeImageHost();
+    host.emailFolderId.mockRejectedValue(hostError(400));
+
+    const failure = await exportZip().catch((error) => error);
+
+    expect(failure.message).toBe('IMAGE_HOST_FOLDER_UNAVAILABLE');
+    expect(failure.images).toBeUndefined();
+    expect(host.putImage).not.toHaveBeenCalled();
+  });
+
+  it.each([
+    ['failing', 503],
+    ['overloaded', 429],
+    ['unreachable', undefined],
+  ])(
+    'says when the image host is %s, naming no image',
+    async (_label, status) => {
+      const host = fakeImageHost();
+      host.putImage.mockRejectedValue(hostError(status));
+
+      const failure = await exportZip().catch((error) => error);
+
+      expect(failure.message).toBe('IMAGE_HOST_UNAVAILABLE');
+      expect(failure.images).toBeUndefined();
+    }
+  );
+
   // Every image would fail alike: the export says the connection is refused,
   // and the integration leaves the export menu until a tech admin tests it.
   it('stops at refused credentials, and marks the image host invalid', async () => {
@@ -353,7 +402,7 @@ describe('downloading the ZIP with an image host', () => {
       const host = fakeImageHost();
       givenIntegration(overrides);
 
-      await expect(exportZip()).rejects.toThrow();
+      await expect(exportZip()).rejects.toThrow('IMAGE_HOST_NOT_AVAILABLE');
       expect(host.putImage).not.toHaveBeenCalled();
     }
   );
@@ -462,6 +511,29 @@ describe('exporting the same email again to an image host', () => {
     expect(host.putImage).toHaveBeenCalledTimes(1);
     const [{ url }] = Object.values(host.files);
     expect(html.split(url)).toHaveLength(3);
+  });
+
+  // The folder follows the email's name: a renamed email gets all of its
+  // images in its new folder, not the new ones alone.
+  it('puts the images again in the folder of a renamed email', async () => {
+    const host = fakeImageHost();
+    await exportZip(mailing({ name: 'Soldes été' }));
+
+    await exportZip(mailing({ name: 'Soldes hiver' }));
+
+    expect(host.putImage).toHaveBeenCalledTimes(4);
+    const lastFolders = host.puts.slice(2).map((put) => put.folderName);
+    expect(new Set(lastFolders)).toEqual(new Set(['soldes-hiver-439055']));
+  });
+
+  it('puts the images again under a changed root folder', async () => {
+    const host = fakeImageHost();
+    await exportZip();
+    host.root = 'root-b';
+
+    await exportZip();
+
+    expect(host.putImage).toHaveBeenCalledTimes(4);
   });
 
   it('never shares a hosted image between two emails', async () => {

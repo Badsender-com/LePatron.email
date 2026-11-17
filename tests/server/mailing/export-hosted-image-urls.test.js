@@ -91,6 +91,28 @@ describe('rewriting the hosted images of an email', () => {
     );
   });
 
+  it('does not rewrite again a hosted URL that holds another relative path', () => {
+    const urls = new Map([
+      ['images/a.png', 'https://cdn.example.com/images/b.png'],
+      ['images/b.png', 'https://cdn.example.com/x/b.png'],
+    ]);
+
+    expect(rewriteHostedImages('<img src="images/a.png">', urls)).toBe(
+      '<img src="https://cdn.example.com/images/b.png">'
+    );
+  });
+
+  it('rewrites a longer name sharing the start of a shorter one', () => {
+    const urls = new Map([
+      ['images/a.png', 'https://cdn.example.com/a.png'],
+      ['images/a.png.webp', 'https://cdn.example.com/a.png.webp'],
+    ]);
+
+    expect(rewriteHostedImages('<img src="images/a.png.webp">', urls)).toBe(
+      '<img src="https://cdn.example.com/a.png.webp">'
+    );
+  });
+
   it('leaves alone what is not in the map', () => {
     const html = '<img src="images/other.png"><a href="https://example.com">';
 

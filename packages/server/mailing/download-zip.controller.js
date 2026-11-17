@@ -77,8 +77,13 @@ async function downloadZip(req, res, next) {
   } catch (error) {
     console.error('Error while downloading zip', { error });
     // An image host that failed names the images, for the editor to say which
-    // ones (ADR 0028).
-    return res.status(500).json({
+    // ones (ADR 0028). The status of an image host's error says what it is
+    // (403 unavailable, 502 the host); any other export error stays a 500.
+    const status =
+      String(error.message).startsWith('IMAGE_HOST_') && error.status
+        ? error.status
+        : 500;
+    return res.status(status).json({
       errorCode: error.message,
       ...(Array.isArray(error.images) ? { images: error.images } : {}),
     });

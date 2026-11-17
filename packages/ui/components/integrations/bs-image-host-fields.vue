@@ -1,21 +1,21 @@
 <script>
 /**
- * BsImageHostFields - the client ID of an image host account, and the root
- * folder its emails' folders are created under (ADR 0028).
+ * BsImageHostFields - the root folder of an image host account, under which
+ * its emails' folders are created (ADR 0028). The client ID it lists the
+ * folders with is a field of the form, before the secret.
  *
  * The folders come from the account itself: from the credentials being typed
  * for a new integration, from the stored secret when editing one (loaded as
  * the form opens). Emits the whole config object.
  */
 import * as apiRoutes from '~/helpers/api-routes.js';
-import BsTextField from '~/components/form/bs-text-field';
 import BsSelect from '~/components/form/bs-select';
 import { folderOptions } from './image-host-folders.js';
 import { FolderSync } from 'lucide-vue';
 
 export default {
   name: 'BsImageHostFields',
-  components: { BsTextField, BsSelect, LucideFolderSync: FolderSync },
+  components: { BsSelect, LucideFolderSync: FolderSync },
   props: {
     value: { type: Object, default: () => ({}) },
     provider: { type: String, required: true },
@@ -23,7 +23,7 @@ export default {
     apiKey: { type: String, default: '' },
     /** Set when editing: the server then uses the stored secret. */
     integrationId: { type: String, default: null },
-    /** { clientId: [], rootFolderId: [] }, from the form's validation. */
+    /** { rootFolderId: [] }, from the form's validation. */
     errors: { type: Object, default: () => ({}) },
     disabled: { type: Boolean, default: false },
   },
@@ -51,6 +51,13 @@ export default {
       return this.rootFolderMissing
         ? [this.$t('integrations.emarsys.rootFolderMissing')]
         : this.errors.rootFolderId;
+    },
+    // Says what to do before the folders can be chosen.
+    folderPlaceholder() {
+      if (this.folders) return '';
+      return this.canLoad
+        ? this.$t('integrations.emarsys.rootFolderPlaceholderReady')
+        : this.$t('integrations.emarsys.rootFolderPlaceholder');
     },
     folderItems() {
       if (this.folders) return folderOptions(this.folders);
@@ -114,25 +121,13 @@ export default {
 
 <template>
   <div class="bs-image-host-fields">
-    <bs-text-field
-      :value="value.clientId"
-      :label="$t('integrations.emarsys.clientId')"
-      :hint="$t('integrations.emarsys.clientIdHint')"
-      :error-messages="errors.clientId"
-      :disabled="disabled"
-      required
-      @input="update('clientId', ($event || '').trim())"
-    />
-
     <div class="bs-image-host-fields__folder">
       <bs-select
         :value="value.rootFolderId"
         :items="folderItems"
         :label="$t('integrations.emarsys.rootFolder')"
         :hint="$t('integrations.emarsys.rootFolderHint')"
-        :placeholder="
-          folders ? '' : $t('integrations.emarsys.rootFolderPlaceholder')
-        "
+        :placeholder="folderPlaceholder"
         :error-messages="folderErrors"
         :disabled="disabled || !folders"
         required

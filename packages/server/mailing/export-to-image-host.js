@@ -66,12 +66,15 @@ async function findImageHost({ integrationId, companyId }) {
  */
 function emailFolderName(mailing) {
   const shortId = String(mailing._id).slice(-6).toLowerCase();
-  return `${getName(mailing.name)}-${shortId}`;
+  // A name made of characters the slug drops still gets a readable folder.
+  return `${getName(mailing.name) || 'email'}-${shortId}`;
 }
 
+// Our own gallery's images only: the rest of our host gets no exemption.
 function isOwnImage(imageUrl) {
   try {
-    return new URL(imageUrl).host === config.host;
+    const { host, pathname } = new URL(imageUrl);
+    return host === config.host && pathname.startsWith('/api/images/');
   } catch (error) {
     return false;
   }
@@ -90,18 +93,22 @@ function assertPublicLiteral(url) {
 
 /**
  * The bytes of an image. Redirects are followed by hand, each hop checked as
- * the first one: node-fetch would follow one to a literal private IP.
+ * the first one: node-fetch would follow one to a literal private IP. One
+ * deadline for the whole chain, not one per hop.
  * @param {string} imageUrl
  * @returns {Promise<Buffer>}
  */
 async function readSource(imageUrl) {
+  const deadline = Date.now() + SOURCE_TIMEOUT_MS;
   let current = imageUrl;
   for (let hop = 0; hop <= MAX_REDIRECTS; hop += 1) {
     const own = isOwnImage(current);
     if (!own) assertPublicLiteral(current);
+    const remaining = deadline - Date.now();
+    if (remaining <= 0) throw new Error('source timed out');
     const response = await fetch(current, {
       redirect: 'manual',
-      timeout: SOURCE_TIMEOUT_MS,
+      timeout: remaining,
       size: SOURCE_MAX_BYTES,
       agent: own
         ? undefined
@@ -112,6 +119,10 @@ async function readSource(imageUrl) {
         ? response.headers.get('location')
         : null;
     if (location) {
+      // Read off, so that the socket is freed for the next hop.
+      if (response.body && typeof response.body.resume === 'function') {
+        response.body.resume();
+      }
       current = new URL(location, current).href;
       continue;
     }
@@ -142,13 +153,32 @@ async function putImagesOnHost({ integration, mailingId, folderName, images }) {
     if (!byName.has(image.name)) byName.set(image.name, image);
   });
   const queue = [...byName.values()];
+
+  // The email's folder first, once: a root folder deleted in Emarsys, or a
+  // host that is down, is no image's fault.
+  let folderId;
+  try {
+    folderId = await host.emailFolderId(folderName);
+  } catch (error) {
+    if (hostFailureOf(error) === 'credentials') {
+      return refuseCredentials(integration);
+    }
+    logger.error('[EXPORT] image host folder unavailable', {
+      folderName,
+      error: error.message,
+    });
+    throw new BadGateway(ERROR_CODES.IMAGE_HOST_FOLDER_UNAVAILABLE);
+  }
+
   const hostedUrls = new Map();
   // By content: two names of the same bytes are put once, even at the same
   // time, and share one hosted image.
   const urlsByHash = new Map();
 
-  // A hosted image of this email with the same content is reused, once the
-  // host says it still has it; otherwise the image is put, and remembered.
+  // A hosted image of this email with the same content is reused when the
+  // host still has it in the email's current folder; otherwise the image is
+  // put, and remembered. A renamed email, or a changed root folder, gets all
+  // of its images in its new folder.
   async function hostedUrlFor(image, content) {
     const hash = crypto.createHash('sha256').update(content).digest('hex');
     if (!urlsByHash.has(hash)) {
@@ -159,7 +189,10 @@ async function putImagesOnHost({ integration, mailingId, folderName, images }) {
           hash,
         };
         const known = await HostedImages.findOne(key).lean();
-        if (known && (await host.fileExists(known.fileId))) return known.url;
+        if (known) {
+          const file = await host.findFile(known.fileId);
+          if (file && String(file.folder) === String(folderId)) return file.url;
+        }
         const { id, url } = await host.putImage({
           folderName,
           filename: image.name,
@@ -176,7 +209,7 @@ async function putImagesOnHost({ integration, mailingId, folderName, images }) {
   }
 
   const failed = [];
-  let credentialsRefused = false;
+  let hostFailure = null;
 
   async function worker() {
     while (queue.length) {
@@ -186,13 +219,12 @@ async function putImagesOnHost({ integration, mailingId, folderName, images }) {
         const url = await hostedUrlFor(image, content);
         hostedUrls.set(relativeImagePath(image.name), url);
       } catch (error) {
-        if (
-          error instanceof ProviderError &&
-          error.code === PROVIDER_ERROR_CODES.INVALID_CREDENTIALS
-        ) {
+        const failure = hostFailureOf(error);
+        if (failure) {
           // Every image would fail alike: stop here.
-          credentialsRefused = true;
+          hostFailure = hostFailure === 'credentials' ? hostFailure : failure;
           queue.length = 0;
+          logger.error('[EXPORT] image host failed', { error: error.message });
           return;
         }
         logger.error('[EXPORT] image not put on the image host', {
@@ -207,14 +239,8 @@ async function putImagesOnHost({ integration, mailingId, folderName, images }) {
     Array.from({ length: Math.min(CONCURRENCY, queue.length) }, worker)
   );
 
-  if (credentialsRefused) {
-    // Until a tech admin tests it again, the export menu no longer offers it.
-    await Integrations.updateOne(
-      { _id: integration._id },
-      { $set: { validationStatus: 'invalid' } }
-    );
-    throw new BadGateway(ERROR_CODES.IMAGE_HOST_CREDENTIALS_REFUSED);
-  }
+  if (hostFailure === 'credentials') return refuseCredentials(integration);
+  if (hostFailure) throw new BadGateway(ERROR_CODES.IMAGE_HOST_UNAVAILABLE);
   if (failed.length) {
     const error = new BadGateway(ERROR_CODES.IMAGE_HOST_UPLOAD_FAILED);
     error.images = images
@@ -223,6 +249,32 @@ async function putImagesOnHost({ integration, mailingId, folderName, images }) {
     throw error;
   }
   return hostedUrls;
+}
+
+/**
+ * Whether an error is the host's rather than an image's: refused
+ * credentials, or a host unreachable, overloaded (429) or failing (5xx). A
+ * request the host refused (4xx), or a source that could not be read, is the
+ * image's.
+ * @returns {'credentials' | 'unavailable' | null}
+ */
+function hostFailureOf(error) {
+  if (!(error instanceof ProviderError)) return null;
+  if (error.code === PROVIDER_ERROR_CODES.INVALID_CREDENTIALS) {
+    return 'credentials';
+  }
+  const { status } = error;
+  if (!status || status === 429 || status >= 500) return 'unavailable';
+  return null;
+}
+
+async function refuseCredentials(integration) {
+  // Until a tech admin tests it again, the export menu no longer offers it.
+  await Integrations.updateOne(
+    { _id: integration._id },
+    { $set: { validationStatus: 'invalid' } }
+  );
+  throw new BadGateway(ERROR_CODES.IMAGE_HOST_CREDENTIALS_REFUSED);
 }
 
 async function rememberHostedImage({ key, known, fileId, url }) {

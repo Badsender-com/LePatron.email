@@ -1,5 +1,6 @@
 'use strict';
 
+const { imageHostMenuItems } = require('./image-host-menu.js');
 var ko = require('knockout');
 var url = require('url');
 var slugFilename = require('../../../../server/helpers/slug-filename.js');
@@ -60,8 +61,9 @@ function downloadOptions(opts) {
     viewModel.cdnButtonLabel = opts.download.cdnButtonLabel;
     viewModel.downloadFtp = opts.download.ftpImages;
     viewModel.ftpButtonLabel = opts.download.ftpButtonLabel;
-    // The company's image hosts (ADR 0028), offered by name: [{ id, name }].
-    viewModel.imageHosts = opts.download.imageHosts || [];
+    // The company's image hosts (ADR 0028), offered by name, the label
+    // escaped for the button: [{ id, name, label }].
+    viewModel.imageHosts = imageHostMenuItems(opts.download.imageHosts);
     viewModel.hasAdobeProfile = ko.computed(function () {
       return Array.isArray(viewModel.profiles()) &&
             viewModel.profiles().some(function (p) {

@@ -46,17 +46,15 @@ function hostedUrlsUnderEndpoint({ endpointBase, folderName, imageNames }) {
  * @returns {string}
  */
 function rewriteHostedImages(html, hostedUrls) {
-  let rewritten = html;
-  hostedUrls.forEach((hostedUrl, relativePath) => {
-    // Escaped: an image named `hero(1).png` opened a regex group and was
-    // never rewritten. A function as replacement, so that a `$` in the URL is
-    // not read as a back-reference.
-    rewritten = rewritten.replace(
-      new RegExp(_.escapeRegExp(relativePath), 'g'),
-      () => hostedUrl
-    );
-  });
-  return rewritten;
+  if (hostedUrls.size === 0) return html;
+  // One pass: a hosted URL holding `images/<another name>` is not rewritten
+  // again. Escaped: an image named `hero(1).png` opened a regex group and was
+  // never rewritten. Longest first, so `images/a.png` does not take the
+  // start of `images/a.png.webp`. A function as replacement, so that a `$`
+  // in the URL is not read as a back-reference.
+  const paths = [...hostedUrls.keys()].sort((a, b) => b.length - a.length);
+  const pattern = new RegExp(paths.map(_.escapeRegExp).join('|'), 'g');
+  return html.replace(pattern, (relativePath) => hostedUrls.get(relativePath));
 }
 
 module.exports = {

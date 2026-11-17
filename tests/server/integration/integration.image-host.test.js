@@ -333,3 +333,55 @@ describe('an Emarsys integration: deleting it', () => {
     expect(Object.values(filter).map(String)).toContain(String(INTEGRATION));
   });
 });
+
+// A test done with a client ID or a root folder says nothing of others: the
+// export menu offers only validated image hosts.
+describe('an Emarsys integration: editing its settings', () => {
+  function stored() {
+    const integration = {
+      _id: INTEGRATION,
+      name: 'Emarsys – Brand A',
+      type: 'asset_hosting',
+      provider: 'emarsys',
+      apiKey: 'secret',
+      config: CONFIG,
+      _company: COMPANY,
+      validationStatus: 'valid',
+      lastValidatedAt: new Date(),
+      save: jest.fn().mockResolvedValue(undefined),
+    };
+    Integrations.findById.mockResolvedValue(integration);
+    return integration;
+  }
+
+  beforeEach(() => {
+    jest.clearAllMocks();
+  });
+
+  it.each([
+    ['client ID', { ...CONFIG, clientId: 'client-789' }],
+    ['root folder', { ...CONFIG, rootFolderId: 4300 }],
+  ])('puts it back to pending when its %s changes', async (_label, config) => {
+    const integration = stored();
+
+    await integrationService.updateIntegration({
+      integrationId: String(INTEGRATION),
+      config,
+    });
+
+    expect(integration.validationStatus).toBe('pending');
+  });
+
+  it('keeps it validated when only its name changes', async () => {
+    const integration = stored();
+    Integrations.exists.mockResolvedValue(false);
+
+    await integrationService.updateIntegration({
+      integrationId: String(INTEGRATION),
+      name: 'Emarsys – Brand B',
+      config: CONFIG,
+    });
+
+    expect(integration.validationStatus).toBe('valid');
+  });
+});
