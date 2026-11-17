@@ -12,6 +12,7 @@ const MistralProvider = require('./ai/mistral-provider');
 const InfomaniakProvider = require('./ai/infomaniak-provider');
 const DeepLProvider = require('./ai/deepl-provider');
 const RssProvider = require('./data-feed/rss-provider');
+const EmarsysProvider = require('./asset-hosting/emarsys-provider');
 
 /**
  * Map of provider identifiers to their implementations
@@ -28,6 +29,7 @@ const PROVIDER_MAP = {
   [IntegrationProviders.INFOMANIAK]: InfomaniakProvider,
   [IntegrationProviders.DEEPL]: DeepLProvider,
   [IntegrationProviders.RSS]: RssProvider,
+  [IntegrationProviders.EMARSYS]: EmarsysProvider,
 };
 
 /**

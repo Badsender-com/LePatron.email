@@ -72,8 +72,7 @@ function emarsysAnswers({ token = 200 } = {}) {
   });
 }
 
-// Turned on by #1613 (a tech admin connects an Emarsys account)
-describe.skip('an Emarsys integration: what may be stored', () => {
+describe('an Emarsys integration: what may be stored', () => {
   const Integration = mongoose.model(
     'IntegrationImageHostTest',
     IntegrationSchema
@@ -164,8 +163,7 @@ describe.skip('an Emarsys integration: what may be stored', () => {
   });
 });
 
-// Turned on by #1613 (a tech admin connects an Emarsys account)
-describe.skip('an Emarsys integration: testing its credentials', () => {
+describe('an Emarsys integration: testing its credentials', () => {
   beforeEach(() => {
     jest.clearAllMocks();
     Integrations.findById.mockResolvedValue({
@@ -203,6 +201,111 @@ describe.skip('an Emarsys integration: testing its credentials', () => {
       expect.anything(),
       expect.objectContaining({ validationStatus: 'invalid' })
     );
+  });
+});
+
+// The tech admin picks the root folder from the folders of the account, before
+// the integration is saved (its credentials typed) or while editing it (its
+// secret stored, never sent back to the screen).
+describe('an Emarsys integration: listing the folders of the account', () => {
+  const OTHER_COMPANY = new mongoose.Types.ObjectId();
+  const basicOf = (clientId, secret) =>
+    `Basic ${Buffer.from(`${clientId}:${secret}`).toString('base64')}`;
+  const tokenAuthorization = () =>
+    fetch.mock.calls.find(([url]) => url.startsWith('https://auth.'))[1].headers
+      .Authorization;
+
+  function stored(overrides = {}) {
+    Integrations.findById.mockResolvedValue({
+      _id: INTEGRATION,
+      type: 'asset_hosting',
+      provider: 'emarsys',
+      apiKey: 'stored-secret',
+      config: CONFIG,
+      _company: COMPANY,
+      ...overrides,
+    });
+  }
+
+  beforeEach(() => {
+    jest.clearAllMocks();
+    emarsysAnswers();
+  });
+
+  it('lists them from credentials not saved yet', async () => {
+    const folders = await integrationService.listImageHostFolders({
+      groupId: String(COMPANY),
+      provider: 'emarsys',
+      apiKey: 'typed-secret',
+      config: { clientId: 'client-123' },
+    });
+
+    expect(folders).toEqual([{ id: 4200, parent: 0, name: 'LePatron' }]);
+    expect(tokenAuthorization()).toBe(basicOf('client-123', 'typed-secret'));
+  });
+
+  it('lists them with the stored secret, when editing', async () => {
+    stored();
+
+    await integrationService.listImageHostFolders({
+      groupId: String(COMPANY),
+      integrationId: String(INTEGRATION),
+    });
+
+    expect(tokenAuthorization()).toBe(basicOf('client-123', 'stored-secret'));
+  });
+
+  it('takes the client ID and the secret being typed over the stored ones', async () => {
+    stored();
+
+    await integrationService.listImageHostFolders({
+      groupId: String(COMPANY),
+      integrationId: String(INTEGRATION),
+      apiKey: 'new-secret',
+      config: { clientId: 'client-789' },
+    });
+
+    expect(tokenAuthorization()).toBe(basicOf('client-789', 'new-secret'));
+  });
+
+  it('refuses an integration of another company, and sends its secret nowhere', async () => {
+    stored({ _company: OTHER_COMPANY });
+
+    await expect(
+      integrationService.listImageHostFolders({
+        groupId: String(COMPANY),
+        integrationId: String(INTEGRATION),
+      })
+    ).rejects.toThrow();
+    expect(fetch).not.toHaveBeenCalled();
+  });
+
+  it.each([
+    ['a provider that is not an image host', { provider: 'openai' }],
+    ['no provider', {}],
+  ])('refuses %s', async (_label, request) => {
+    await expect(
+      integrationService.listImageHostFolders({
+        groupId: String(COMPANY),
+        apiKey: 'typed-secret',
+        config: { clientId: 'client-123' },
+        ...request,
+      })
+    ).rejects.toThrow('INTEGRATION_CONFIG_INVALID');
+    expect(fetch).not.toHaveBeenCalled();
+  });
+
+  it('says when Emarsys refuses the credentials', async () => {
+    emarsysAnswers({ token: 401 });
+
+    await expect(
+      integrationService.listImageHostFolders({
+        groupId: String(COMPANY),
+        provider: 'emarsys',
+        apiKey: 'wrong',
+        config: { clientId: 'client-123' },
+      })
+    ).rejects.toMatchObject({ code: 'PROVIDER_INVALID_CREDENTIALS' });
   });
 });
 

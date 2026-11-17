@@ -11,6 +11,7 @@ const {
   Conflict,
   InternalServerError,
   Unauthorized,
+  BadRequest,
 } = require('http-errors');
 const logger = require('../utils/logger.js');
 const ERROR_CODES = require('../constant/error-codes.js');
@@ -18,6 +19,7 @@ const permissions = require('../account/permissions.js');
 const groupService = require('../group/group.service.js');
 const ProviderFactory = require('../integration-providers/provider-factory.js');
 const IntegrationTypes = require('../constant/integration-type.js');
+const IntegrationProviders = require('../constant/integration-provider.js');
 const {
   normalizeProductId,
   assertApiKeyResent,
@@ -38,7 +40,11 @@ module.exports = {
   validateCredentials,
   checkIfUserIsAuthorizedToAccessIntegration,
   countDashboardsForIntegration,
+  listImageHostFolders,
 };
+
+// The providers of the image host type (ADR 0028).
+const IMAGE_HOST_PROVIDERS = [IntegrationProviders.EMARSYS];
 
 /**
  * Check if user has access to integration
@@ -137,8 +143,9 @@ async function updateIntegration({
     );
   } else if (providerChanged) {
     // The old provider's settings mean nothing to the new one, and were only
-    // ever checked against the old one.
-    validatedConfig = {};
+    // ever checked against the old one. Refused when the new one cannot work
+    // without settings (an Emarsys root folder).
+    validatedConfig = validateIntegrationConfig(provider, {});
   }
 
   // Apply only fields explicitly provided in the request
@@ -335,4 +342,55 @@ async function validateCredentials({ integrationId, apiKey, apiHost }) {
   });
 
   return isValid;
+}
+
+/**
+ * The folders of an image host's account, for the tech admin to pick the root
+ * folder from: before the integration is saved, from the credentials being
+ * typed; while editing it, from its stored secret, which never goes back to
+ * the screen. What is being typed wins over what is stored.
+ *
+ * @param {Object} params
+ * @param {string} params.groupId the company the request is made for
+ * @param {string} [params.integrationId] the integration being edited
+ * @param {string} [params.provider] the provider, for a new integration
+ * @param {string} [params.apiKey] the secret being typed
+ * @param {Object} [params.config] the settings being typed (`clientId`)
+ * @returns {Promise<Array<{ id: number, parent: number, name: string }>>}
+ * @throws {BadRequest} INTEGRATION_CONFIG_INVALID for a provider that is not an
+ *   image host
+ * @throws {ProviderError} when the host refuses the credentials or fails
+ */
+async function listImageHostFolders({
+  groupId,
+  integrationId,
+  provider,
+  apiKey,
+  config,
+}) {
+  let stored = null;
+  if (integrationId) {
+    stored = await findById(integrationId);
+    // The stored secret leaves for its own company's account only.
+    if (String(stored._company) !== String(groupId)) {
+      throw new NotFound(ERROR_CODES.INTEGRATION_NOT_FOUND);
+    }
+  }
+
+  const providerName = stored ? stored.provider : provider;
+  if (!IMAGE_HOST_PROVIDERS.includes(providerName)) {
+    throw new BadRequest(ERROR_CODES.INTEGRATION_CONFIG_INVALID);
+  }
+  const clientId = config?.clientId || stored?.config?.clientId;
+  // The client ID goes into a header: checked by the rule that guards what is
+  // stored, the root folder aside since it is what is being chosen.
+  validateIntegrationConfig(providerName, { clientId, rootFolderId: 1 });
+
+  const host = ProviderFactory.createProvider({
+    type: IntegrationTypes.ASSET_HOSTING,
+    provider: providerName,
+    apiKey: apiKey || stored?.apiKey,
+    config: { clientId },
+  });
+  return host.listFolders();
 }

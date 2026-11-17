@@ -28,6 +28,14 @@ router.post(
   integrations.createIntegration
 );
 
+// List the folders of an image host account, to pick the root folder from
+// (a POST: the secret being typed travels in the body)
+router.post(
+  '/groups/:groupId/image-host-folders',
+  GUARD_GROUP_ADMIN_TECH,
+  integrations.listImageHostFolders
+);
+
 // Get single integration
 router.get(
   '/:integrationId',

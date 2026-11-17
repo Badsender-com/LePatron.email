@@ -345,6 +345,10 @@ export function integrationModels(integrationId) {
   return `/integrations/${integrationId}/models`;
 }
 
+export function integrationImageHostFolders(groupId) {
+  return `/integrations/groups/${groupId}/image-host-folders`;
+}
+
 export function integrationDashboardCount(integrationId) {
   return `/integrations/${integrationId}/dashboard-count`;
 }

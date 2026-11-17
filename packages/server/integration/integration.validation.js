@@ -123,6 +123,11 @@ const CONFIG_VALUE_CHECKS = {
   apiVersion: (value) =>
     typeof value === 'string' && /^\d{4}-\d{2}-\d{2}(-preview)?$/.test(value),
   boolean: (value) => typeof value === 'boolean',
+  // An OAuth client ID of the Emarsys API: sent in a header, so no free text.
+  emarsysClientId: (value) =>
+    typeof value === 'string' && /^[A-Za-z0-9._:@-]{1,128}$/.test(value),
+  // A folder of the Emarsys Media Database.
+  folderId: (value) => Number.isSafeInteger(value) && value > 0,
 };
 
 const OPENAI_COMPATIBLE_CONFIG = {
@@ -148,6 +153,13 @@ const CONFIG_FIELDS_BY_PROVIDER = {
   openai_compatible: OPENAI_COMPATIBLE_CONFIG,
   scaleway: OPENAI_COMPATIBLE_CONFIG,
   ovh: OPENAI_COMPATIBLE_CONFIG,
+  emarsys: { clientId: 'emarsysClientId', rootFolderId: 'folderId' },
+};
+
+// The keys a provider cannot work without. The root folder is required, so
+// that no image is ever put at the root of the Media Database (ADR 0028).
+const REQUIRED_CONFIG_BY_PROVIDER = {
+  emarsys: ['clientId', 'rootFolderId'],
 };
 
 /**
@@ -162,8 +174,19 @@ const CONFIG_FIELDS_BY_PROVIDER = {
  * @throws {BadRequest} INTEGRATION_CONFIG_INVALID
  */
 function validateIntegrationConfig(provider, config) {
-  if (config === undefined || config === null) return {};
+  const required = REQUIRED_CONFIG_BY_PROVIDER[provider] || [];
+  if (config === undefined || config === null) {
+    if (required.length) {
+      throw new BadRequest(ERROR_CODES.INTEGRATION_CONFIG_INVALID);
+    }
+    return {};
+  }
   if (typeof config !== 'object' || Array.isArray(config)) {
+    throw new BadRequest(ERROR_CODES.INTEGRATION_CONFIG_INVALID);
+  }
+  if (
+    required.some((key) => config[key] === undefined || config[key] === null)
+  ) {
     throw new BadRequest(ERROR_CODES.INTEGRATION_CONFIG_INVALID);
   }
 

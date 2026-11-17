@@ -75,6 +75,7 @@ module.exports = {
   getModels: asyncHandler(getModels),
   getDashboardCount: asyncHandler(getDashboardCount),
   getFeedItems: asyncHandler(getFeedItems),
+  listImageHostFolders: asyncHandler(listImageHostFolders),
   // exported for testing
   toIntegrationDto,
 };
@@ -416,4 +417,44 @@ function resolveDefaultModel(provider) {
   } catch (error) {
     return null;
   }
+}
+
+/**
+ * @api {post} /integrations/groups/:groupId/image-host-folders List the folders of an image host account
+ * @apiPermission groupAdminTech
+ * @apiName ListImageHostFolders
+ * @apiGroup Integrations
+ * @apiDescription A POST, because the secret being typed travels in the body.
+ *
+ * @apiParam {String} groupId Group ID
+ * @apiBody {String} [integrationId] the integration being edited, whose stored secret is used
+ * @apiBody {String} [provider] the provider of a new integration (`emarsys`)
+ * @apiBody {String} [apiKey] the secret being typed
+ * @apiBody {Object} [config] the settings being typed (`clientId`)
+ *
+ * @apiSuccess {Object[]} folders `{ id, parent, name }`
+ */
+async function listImageHostFolders(req, res) {
+  const { user, params, body } = req;
+  const { groupId } = params;
+
+  await groupService.checkIfUserIsAuthorizedToAccessGroup({ user, groupId });
+
+  let folders;
+  try {
+    folders = await integrationService.listImageHostFolders({
+      groupId,
+      ...pick(body, ['integrationId', 'provider', 'apiKey', 'config']),
+    });
+  } catch (error) {
+    if (!(error instanceof ProviderError)) throw error;
+    logger.error('Failed to list image host folders:', error.message);
+    // The code only: the message may carry what the host answered. Never a
+    // 401: the screen reads it as its own session expired and signs out,
+    // where the host only refused the credentials being typed.
+    const status = error.httpStatus === 401 ? 422 : error.httpStatus;
+    throw createError(status, error.code);
+  }
+
+  res.json({ folders });
 }

@@ -33,6 +33,12 @@ export const providerCategories = {
     icon: 'rss',
     order: 4,
   },
+  imageHost: {
+    key: 'imageHost',
+    labelKey: 'integrations.categories.imageHost',
+    icon: 'image-up',
+    order: 5,
+  },
 };
 
 /**
@@ -176,6 +182,20 @@ export const providerConfigs = {
     apiHostRequired: true,
     showProductId: false,
   },
+
+  // Image hosts of the export (ADR 0028)
+  emarsys: {
+    category: 'imageHost',
+    type: 'asset_hosting',
+    apiKeyLabelKey: 'integrations.emarsys.apiKeyLabel',
+    apiKeyPlaceholderKey: 'integrations.emarsys.apiKeyPlaceholder',
+    showProductId: false,
+    // The client ID and the root folder, picked from the account's folders.
+    imageHostFields: true,
+    // Only a validated image host is offered in the editor's export menu:
+    // tested as soon as it is saved, so it does not wait for a click.
+    validateOnSave: true,
+  },
 };
 
 /**
@@ -207,6 +227,8 @@ export const providerLabels = {
   deepl: 'DeepL',
   // Content feed
   rss: 'RSS',
+  // Image host
+  emarsys: 'Emarsys',
 };
 
 /**

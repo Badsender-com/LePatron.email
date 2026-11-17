@@ -18,6 +18,8 @@ module.exports = {
   DEEPL: 'deepl',
   // Data feed providers
   RSS: 'rss',
+  // Image host providers (ADR 0028)
+  EMARSYS: 'emarsys',
   // Future providers
   // SMARTCAT: 'smartcat',
   // LOOKER: 'looker',
