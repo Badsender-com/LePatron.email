@@ -5,6 +5,12 @@ const {
   OWN_IMAGES_URL_REGEX,
   IMAGE_FILE_URL_REGEX,
 } = require('./export-image-urls.js');
+const {
+  IMAGES_FOLDER,
+  relativeImagePath,
+  hostedUrlsUnderEndpoint,
+  rewriteHostedImages,
+} = require('./export-hosted-image-urls.js');
 const mongoose = require('mongoose');
 const { isBootstrapAccount } = require('../account/bootstrap-account.js');
 const {
@@ -37,8 +43,6 @@ const {
   resolveTrackingConfig,
   validateRequiredTrackingParams,
 } = require('../utils/resolve-tracking-config');
-
-const IMAGES_FOLDER = 'images';
 
 const createPromise = require('../helpers/create-promise.js');
 const processMosaicoHtmlRender = require('../utils/process-mosaico-html-render.js');
@@ -970,21 +974,16 @@ async function replaceImageWithFTPEndpointBaseInProcessedHtml({
   const endpointBase = cdnDownload
     ? `${cdnProtocol}${cdnEndPoint}`
     : `${ftpEndPointProtocol}${ftpEndPoint}`;
-  const endpointPath = `${endpointBase}${
-    endpointBase.substr(endpointBase.length - 1) === '/' ? '' : '/'
-  }${name}`;
-
-  let htmlProcessedWithFtp = processedHtml;
-
-  relativesImagesNames.forEach((imageName) => {
-    const imgRegex = new RegExp(`${IMAGES_FOLDER}/${imageName}`, 'g');
-    htmlProcessedWithFtp = htmlProcessedWithFtp.replace(
-      imgRegex,
-      `${endpointPath}/${imageName}`
-    );
+  const { hostedUrls, endpointPath } = hostedUrlsUnderEndpoint({
+    endpointBase,
+    folderName: name,
+    imageNames: relativesImagesNames,
   });
+  const htmlProcessedWithFtp = rewriteHostedImages(processedHtml, hostedUrls);
 
-  return { htmlProcessedWithFtp, endpointBase };
+  // endpointPath was read by the CDN notice and never returned: the notice
+  // listed `undefined/hero.png`.
+  return { htmlProcessedWithFtp, endpointBase, endpointPath };
 }
 
 // This will either add images to archive ( zip file ) or upload an image depending on the value of the cdnDownload and regularDownload
@@ -1089,7 +1088,7 @@ async function handleRelativeOrFtpImages({
   distinctImages.forEach((imgUrl) => {
     const escImgUrl = _.escapeRegExp(imgUrl);
     const imageName = getImageName(imgUrl);
-    const relativeUrl = `${IMAGES_FOLDER}/${imageName}`;
+    const relativeUrl = relativeImagePath(imageName);
     relativesImagesNames.push(imageName);
     const search = new RegExp(escImgUrl, 'g');
     html = html.replace(search, relativeUrl);
