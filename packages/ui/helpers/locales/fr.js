@@ -975,6 +975,7 @@ export default {
       rootFolder: 'Dossier racine de la Media Database',
       rootFolderHint: 'Chaque email exporté y aura son propre sous-dossier.',
       rootFolderPlaceholder: 'Aucun dossier chargé',
+      rootFolderMissing: 'Le dossier enregistré n\'existe plus dans ce compte : choisissez-en un autre.',
       folderNumber: 'Dossier n° {id}',
       loadFolders: 'Charger les dossiers',
       reloadFolders: 'Recharger',

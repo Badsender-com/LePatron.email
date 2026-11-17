@@ -86,3 +86,27 @@ describe('starting in development or in the tests', () => {
     ).not.toThrow();
   });
 });
+
+// A fake Emarsys on the developer's machine (scripts/fake-emarsys.js) stands
+// in for the real API: outside development, it would send the credentials of
+// an integration somewhere else than Emarsys.
+describe('the fake Emarsys of development', () => {
+  it('refuses to start with it outside development, naming its variable', () => {
+    expect(() =>
+      assertProductionSecrets(
+        configured({ emarsysFakeUrl: 'http://localhost:3800' })
+      )
+    ).toThrow(/lepatron_emarsysFakeUrl/);
+  });
+
+  it.each(['development', 'test'])('starts with it in %s', (NODE_ENV) => {
+    expect(() =>
+      assertProductionSecrets({
+        NODE_ENV,
+        sessionSecret: DEFAULTS.sessionSecret,
+        admin: { password: 'admin' },
+        emarsysFakeUrl: 'http://localhost:3800',
+      })
+    ).not.toThrow();
+  });
+});

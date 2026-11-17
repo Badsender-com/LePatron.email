@@ -1,16 +1,14 @@
 'use strict';
 
 const BaseProvider = require('../base-provider.js');
+const fetch = require('node-fetch');
 const { guardedFetch, toProviderError } = require('../provider-http.js');
+const { emarsysEndpoints } = require('./emarsys-endpoints.js');
+const config = require('../../node.config.js');
 const {
   ProviderError,
   PROVIDER_ERROR_CODES: CODES,
 } = require('../provider-error.js');
-
-// The Emarsys API v3, authenticated with OpenID Connect (ADR 0028). Both hosts
-// are fixed: an admin gives credentials, never an address.
-const TOKEN_URL = 'https://auth.emarsys.net/oauth2/token';
-const API_URL = 'https://api.emarsys.net/api/v3';
 
 const TIMEOUT_MS = 15000;
 // An upload carries up to 16 MB, base64-encoded.
@@ -30,6 +28,8 @@ const TOKEN_MARGIN_MS = 60 * 1000;
 class EmarsysProvider extends BaseProvider {
   constructor(integration) {
     super(integration);
+    // The Emarsys API, or the fake Emarsys of a developer's machine.
+    this.endpoints = emarsysEndpoints(config);
     this.clientId = this.config.clientId;
     this.rootFolderId = this.config.rootFolderId;
     // Kept by the instance: Emarsys allows 50 token requests a minute per
@@ -190,7 +190,7 @@ class EmarsysProvider extends BaseProvider {
     const basic = Buffer.from(`${this.clientId}:${this.apiKey}`).toString(
       'base64'
     );
-    const response = await guardedFetch(TOKEN_URL, {
+    const response = await this.send(this.endpoints.tokenUrl, {
       method: 'POST',
       headers: {
         Authorization: `Basic ${basic}`,
@@ -226,10 +226,22 @@ class EmarsysProvider extends BaseProvider {
    * One call to the API: resolves with its `data`, throws a ProviderError on
    * an HTTP error or a non-zero `replyCode`.
    */
+  /**
+   * One HTTP call, guarded against private addresses; the fake Emarsys of a
+   * developer's machine is the one address it must reach on the machine
+   * itself (emarsys-endpoints.js).
+   */
+  send(url, { method, headers, body, timeoutMs, label }) {
+    if (this.endpoints.isDevFake) {
+      return fetch(url, { method, headers, body, timeout: timeoutMs });
+    }
+    return guardedFetch(url, { method, headers, body, timeoutMs, label });
+  }
+
   async callApi(method, path, payload, { timeoutMs = TIMEOUT_MS } = {}) {
     const token = await this.getToken();
     const label = `Emarsys ${method} ${path}`;
-    const response = await guardedFetch(`${API_URL}${path}`, {
+    const response = await this.send(`${this.endpoints.apiUrl}${path}`, {
       method,
       headers: {
         Authorization: `Bearer ${token}`,

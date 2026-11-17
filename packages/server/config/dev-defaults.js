@@ -13,6 +13,13 @@ const ENV_NAMES = {
   'admin.password': 'lepatron_admin__password',
 };
 
+// Settings for a developer's machine only, refused anywhere else whatever
+// their value: the fake Emarsys (scripts/fake-emarsys.js) would receive the
+// credentials of the integrations instead of Emarsys.
+const DEV_ONLY_SETTINGS = {
+  emarsysFakeUrl: 'lepatron_emarsysFakeUrl',
+};
+
 // Named explicitly: an unset NODE_ENV reads as development in node.config.js,
 // and must not skip the check (`yarn dev` sets it, packages/server/nodemon.json).
 const DEFAULTS_ALLOWED_IN = ['development', 'test'];
@@ -30,6 +37,15 @@ const valueAt = (config, dotted) =>
  */
 function assertNoDevDefaults(config, nodeEnv) {
   if (DEFAULTS_ALLOWED_IN.includes(nodeEnv)) return;
+  const devOnly = Object.keys(DEV_ONLY_SETTINGS).filter((key) =>
+    valueAt(config, key)
+  );
+  if (devOnly.length > 0) {
+    throw new Error(
+      `Unset ${devOnly.map((key) => DEV_ONLY_SETTINGS[key]).join(', ')}: ` +
+        'it is for a developer machine only, the server does not start on it.'
+    );
+  }
   const left = Object.keys(DEFAULTS).filter(
     (key) => !valueAt(config, key) || valueAt(config, key) === DEFAULTS[key]
   );

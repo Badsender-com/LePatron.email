@@ -37,6 +37,21 @@ export default {
     canLoad() {
       return !!this.value.clientId && (!!this.apiKey || !!this.integrationId);
     },
+    // The saved root folder is not among the account's: deleted in Emarsys,
+    // or another account's after the credentials changed.
+    rootFolderMissing() {
+      const { rootFolderId } = this.value;
+      return (
+        !!this.folders &&
+        !!rootFolderId &&
+        !this.folders.some((folder) => folder.id === rootFolderId)
+      );
+    },
+    folderErrors() {
+      return this.rootFolderMissing
+        ? [this.$t('integrations.emarsys.rootFolderMissing')]
+        : this.errors.rootFolderId;
+    },
     folderItems() {
       if (this.folders) return folderOptions(this.folders);
       // Before the folders are loaded, the chosen one still shows.
@@ -118,7 +133,7 @@ export default {
         :placeholder="
           folders ? '' : $t('integrations.emarsys.rootFolderPlaceholder')
         "
-        :error-messages="errors.rootFolderId"
+        :error-messages="folderErrors"
         :disabled="disabled || !folders"
         required
         @input="update('rootFolderId', $event)"
