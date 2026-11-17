@@ -112,8 +112,7 @@ function fakeEmarsys({
 const apiRequests = (state) =>
   state.requests.filter((r) => r.url.startsWith(API));
 
-// Turned on by #1613 (a tech admin connects an Emarsys account)
-describe.skip('Emarsys provider: credentials and folders', () => {
+describe('Emarsys provider: credentials and folders', () => {
   let EmarsysProvider;
 
   beforeAll(() => {

@@ -906,6 +906,7 @@ export default {
       aiGeneration: 'IA - Génération',
       aiTranslation: 'IA - Traduction',
       contentFeed: 'Flux de contenu',
+      imageHost: 'Hébergeur d\'images',
     },
     statusLabels: {
       valid: 'Validé',
@@ -965,6 +966,25 @@ export default {
     },
     rss: {
       apiHostHint: 'URL publique du flux RSS ou Atom'
+    },
+    emarsys: {
+      apiKeyLabel: 'Secret client (client secret)',
+      apiKeyPlaceholder: 'Le secret qu\'Emarsys n\'affiche qu\'une fois',
+      clientId: 'Identifiant client (client ID)',
+      clientIdHint: 'Dans Emarsys : Management > Security Settings > API Credentials, avec l\'authentification OpenID Connect.',
+      rootFolder: 'Dossier racine de la Media Database',
+      rootFolderHint: 'Chaque email exporté y aura son propre sous-dossier.',
+      rootFolderPlaceholder: 'Aucun dossier chargé',
+      folderNumber: 'Dossier n° {id}',
+      loadFolders: 'Charger les dossiers',
+      reloadFolders: 'Recharger',
+      errors: {
+        PROVIDER_INVALID_CREDENTIALS: 'Emarsys refuse ces identifiants. Vérifiez le client ID et le secret.',
+        PROVIDER_CONFIG_ERROR: 'Saisissez le client ID et le secret avant de charger les dossiers.',
+        PROVIDER_TIMEOUT: 'Emarsys ne répond pas. Réessayez dans un instant.',
+        INTEGRATION_CONFIG_INVALID: 'Ce client ID n\'a pas le format attendu.',
+        default: 'Impossible de charger les dossiers d\'Emarsys. Réessayez dans un instant.',
+      },
     },
     models: {
       fastEconomical: 'rapide, économique',

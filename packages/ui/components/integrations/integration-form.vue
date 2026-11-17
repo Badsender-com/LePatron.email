@@ -9,6 +9,7 @@ import {
 import BsTextField from '~/components/form/bs-text-field';
 import BsSelect from '~/components/form/bs-select';
 import BsIntegrationConfigFields from './bs-integration-config-fields';
+import BsImageHostFields from './bs-image-host-fields';
 import { Eye, EyeOff } from 'lucide-vue';
 
 export default {
@@ -17,6 +18,7 @@ export default {
     BsTextField,
     BsSelect,
     BsIntegrationConfigFields,
+    BsImageHostFields,
     LucideEye: Eye,
     LucideEyeOff: EyeOff,
   },
@@ -103,6 +105,21 @@ export default {
     configFields() {
       return this.selectedProviderConfig.configFields || [];
     },
+    hasImageHostFields() {
+      return this.selectedProviderConfig.imageHostFields === true;
+    },
+    imageHostErrors() {
+      const config = this.$v.form.config;
+      if (!config) return {};
+      const errorsOf = (key) =>
+        config[key].$dirty && !config[key].required
+          ? [this.$t('global.errors.required')]
+          : [];
+      return {
+        clientId: errorsOf('clientId'),
+        rootFolderId: errorsOf('rootFolderId'),
+      };
+    },
     // Mirrors the server: pointing a stored key at a new host requires the key
     // itself, so that nobody redirects a key they could not read.
     apiHostChanged() {
@@ -173,6 +190,12 @@ export default {
     if (this.mustUseHttps) {
       rules.form.apiHost = {
         https: (value) => !value || /^https:\/\//i.test(value.trim()),
+      };
+    }
+    if (this.hasImageHostFields) {
+      rules.form.config = {
+        clientId: { required },
+        rootFolderId: { required },
       };
     }
     if (this.showProductIdField) {
@@ -247,7 +270,7 @@ export default {
       }
 
       // Only for providers with settings: the others keep what they have.
-      if (this.configFields.length > 0) {
+      if (this.configFields.length > 0 || this.hasImageHostFields) {
         data.config = { ...this.form.config };
       }
 
@@ -328,6 +351,16 @@ export default {
             {{ $t('integrations.apiKeyHintEdit') }}
           </div>
         </div>
+
+        <bs-image-host-fields
+          v-if="hasImageHostFields"
+          v-model="form.config"
+          :provider="form.provider"
+          :api-key="form.apiKey"
+          :integration-id="isEdit ? integration._id : null"
+          :errors="imageHostErrors"
+          :disabled="loading"
+        />
 
         <bs-text-field
           v-if="showProductIdField"

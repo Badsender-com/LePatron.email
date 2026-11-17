@@ -5,6 +5,7 @@ import * as apiRoutes from '~/helpers/api-routes.js';
 import {
   getProviderLabel,
   getProviderCategory,
+  getProviderFormConfig,
 } from '~/components/integrations/provider-configs';
 import BsIntegrationForm from '~/components/integrations/integration-form.vue';
 import BsDataTable from '~/components/data-table/bs-data-table.vue';
@@ -17,6 +18,7 @@ import {
   Bot,
   Languages,
   Rss,
+  ImageUp,
 } from 'lucide-vue';
 
 // Icon mapping from Lucide icon names to components
@@ -25,6 +27,7 @@ const CATEGORY_ICON_MAP = {
   bot: Bot,
   languages: Languages,
   rss: Rss,
+  'image-up': ImageUp,
   puzzle: Puzzle,
 };
 
@@ -44,6 +47,9 @@ export default {
   data() {
     return {
       loading: false,
+      // Remounts the form at each opening, so that nothing loaded for one
+      // integration (an image host's folders) shows for the next.
+      formKey: 0,
       integrations: [],
       providers: [],
       types: [],
@@ -107,11 +113,13 @@ export default {
 
     openCreateForm() {
       this.editingIntegration = null;
+      this.formKey += 1;
       this.showForm = true;
     },
 
     openEditForm(integration) {
       this.editingIntegration = { ...integration };
+      this.formKey += 1;
       this.showForm = true;
     },
 
@@ -121,10 +129,11 @@ export default {
     },
 
     async saveIntegration(data) {
+      let saved;
       try {
         this.loading = true;
         if (this.editingIntegration) {
-          await this.$axios.$put(
+          saved = await this.$axios.$put(
             apiRoutes.integrationsItem(this.editingIntegration._id),
             data
           );
@@ -133,7 +142,10 @@ export default {
             color: 'success',
           });
         } else {
-          await this.$axios.$post(apiRoutes.integrations(this.groupId), data);
+          saved = await this.$axios.$post(
+            apiRoutes.integrations(this.groupId),
+            data
+          );
           this.showSnackbar({
             text: this.$t('integrations.created'),
             color: 'success',
@@ -142,6 +154,7 @@ export default {
         this.closeForm();
         await this.fetchData();
       } catch (error) {
+        saved = null;
         const errorResponse = error.response && error.response.data;
         this.showSnackbar({
           text: this.translateServerError(errorResponse),
@@ -149,6 +162,12 @@ export default {
         });
       } finally {
         this.loading = false;
+      }
+      // Tested at once where an untested integration is not offered (an image
+      // host in the export menu): the admin learns now that the credentials
+      // fail, not when a user exports.
+      if (saved && getProviderFormConfig(saved.provider).validateOnSave) {
+        await this.validateIntegration(saved);
       }
     },
 
@@ -376,6 +395,7 @@ export default {
     <!-- Form Dialog -->
     <v-dialog v-model="showForm" max-width="600" persistent>
       <bs-integration-form
+        :key="formKey"
         :integration="editingIntegration"
         :providers="providers"
         :loading="loading"

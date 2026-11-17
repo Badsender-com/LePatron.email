@@ -1100,6 +1100,7 @@ export default {
       aiGeneration: 'AI - Generation',
       aiTranslation: 'AI - Translation',
       contentFeed: 'Content Feed',
+      imageHost: 'Image host',
     },
     statusLabels: {
       valid: 'Valid',
@@ -1159,6 +1160,25 @@ export default {
     },
     rss: {
       apiHostHint: 'Public RSS or Atom feed URL'
+    },
+    emarsys: {
+      apiKeyLabel: 'Client secret',
+      apiKeyPlaceholder: 'The secret Emarsys shows only once',
+      clientId: 'Client ID',
+      clientIdHint: 'In Emarsys: Management > Security Settings > API Credentials, with OpenID Connect authentication.',
+      rootFolder: 'Media Database root folder',
+      rootFolderHint: 'Each exported email gets a folder of its own inside it.',
+      rootFolderPlaceholder: 'No folder loaded',
+      folderNumber: 'Folder #{id}',
+      loadFolders: 'Load folders',
+      reloadFolders: 'Reload',
+      errors: {
+        PROVIDER_INVALID_CREDENTIALS: 'Emarsys refuses these credentials. Check the client ID and the secret.',
+        PROVIDER_CONFIG_ERROR: 'Enter the client ID and the secret before loading the folders.',
+        PROVIDER_TIMEOUT: 'Emarsys does not answer. Try again in a moment.',
+        INTEGRATION_CONFIG_INVALID: 'This client ID does not have the expected format.',
+        default: 'The Emarsys folders could not be loaded. Try again in a moment.',
+      },
     },
     models: {
       fastEconomical: 'fast, economical',
