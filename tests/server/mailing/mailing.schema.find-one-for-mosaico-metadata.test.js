@@ -19,6 +19,14 @@ jest.mock('../../../packages/server/ai-feature/ai-feature.service', () => ({
 jest.mock('../../../packages/server/mailing/mailing.service.js', () => ({
   userCanEditMailing: jest.fn().mockResolvedValue(true),
 }));
+// The image hosts the export menu offers: none here, tested with the menu
+// (mailing.schema.find-one-for-mosaico-image-hosts.test.js).
+jest.mock(
+  '../../../packages/server/integration/integration.service.js',
+  () => ({
+    findActiveByGroupAndType: jest.fn().mockResolvedValue([]),
+  })
+);
 // The policy itself lives in mailing-metadata.service.js, which findOneForMosaico
 // delegates to; it reads the taxonomy through models.common like the rest of that
 // service, so that is what these tests stub.

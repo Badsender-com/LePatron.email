@@ -90,6 +90,14 @@ module.exports = {
   'dl-btn-regular': 'Standard download',
   'dl-btn-cdn': 'zip with CDN',
   'download-ftp-error': 'Image export error (sFTP server)',
+  'download-image-host-error':
+    'The images could not be put on __host__. Try again in a moment.',
+  'download-image-host-images-error':
+    'These images could not be put on __host__: __images__. The export is cancelled; check that they display and weigh less than 16 MB.',
+  'download-image-host-credentials-refused':
+    '__host__ refuses its credentials: the export is cancelled. Ask the tech admin to check them in the integrations.',
+  'download-image-host-unavailable':
+    '__host__ is no longer available for the export. Ask the tech admin to test the connection in the integrations.',
 
   // Editor interface
   'editor-title': 'LePatron - Image editor',

@@ -40,6 +40,15 @@ module.exports = {
   ARCHIVE_IS_NULL: 'ARCHIVE_IS_NULL',
   HTML_IS_NULL: 'HTML_IS_NULL',
   EXPORT_IMAGES_NOT_TRANSFERRED: 'EXPORT_IMAGES_NOT_TRANSFERRED',
+  // ADR 0028: the image host chosen for an export is not one of the company's
+  // active, validated image hosts.
+  IMAGE_HOST_NOT_AVAILABLE: 'IMAGE_HOST_NOT_AVAILABLE',
+  // ADR 0028: some images could not be put on the image host; the export
+  // fails as a whole, naming them.
+  IMAGE_HOST_UPLOAD_FAILED: 'IMAGE_HOST_UPLOAD_FAILED',
+  // ADR 0028: the image host refused its credentials during an export; the
+  // integration is marked invalid and leaves the export menu.
+  IMAGE_HOST_CREDENTIALS_REFUSED: 'IMAGE_HOST_CREDENTIALS_REFUSED',
   HTML_CODE_BLOCK_TOO_LARGE: 'HTML_CODE_BLOCK_TOO_LARGE',
   HTML_CODE_BLOCK_DISABLED: 'HTML_CODE_BLOCK_DISABLED',
   HEAD_CSS_TOO_LARGE: 'HEAD_CSS_TOO_LARGE',

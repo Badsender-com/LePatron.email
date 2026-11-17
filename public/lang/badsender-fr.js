@@ -94,6 +94,14 @@ module.exports = {
   'dl-btn-cdn': 'images ICOU',
   'download-ftp-error':
     "Erreur lors de l'export des images (hébergement sur serveur sFTP)",
+  'download-image-host-error':
+    "Les images n'ont pas pu être déposées dans __host__. Réessayez dans un instant.",
+  'download-image-host-images-error':
+    "Ces images n'ont pas pu être déposées dans __host__ : __images__. L'export est annulé ; vérifiez qu'elles s'affichent et pèsent moins de 16 Mo.",
+  'download-image-host-credentials-refused':
+    "__host__ refuse ses identifiants : l'export est annulé. Demandez à l'admin technique de les vérifier dans les intégrations.",
+  'download-image-host-unavailable':
+    "__host__ n'est plus disponible pour l'export. Demandez à l'admin technique de tester la connexion dans les intégrations.",
 
   // Editor interface
   'editor-title': "LePatron - Éditeur d'image",

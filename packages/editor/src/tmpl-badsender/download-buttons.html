@@ -20,7 +20,7 @@
   />
   <input type="hidden" name="html" id="downloadHtmlTextarea" />
 
-  <!-- ko ifnot: $root.downloadCdn || $root.downloadFtp || $root.hasAdobeProfile -->
+  <!-- ko ifnot: $root.downloadCdn || $root.downloadFtp || $root.hasAdobeProfile || $root.imageHosts.length -->
   <a
     title="Download template"
     href="javascript:void(0)"
@@ -40,7 +40,7 @@
   </a>
   <!-- /ko -->
 
-<!-- ko if: $root.downloadCdn || $root.downloadFtp || $root.hasAdobeProfile -->
+<!-- ko if: $root.downloadCdn || $root.downloadFtp || $root.hasAdobeProfile || $root.imageHosts.length -->
   <p
     class="download-form__btn-menu"
     data-bind="
@@ -96,6 +96,23 @@
         }"
     >
       DOWNLOAD FTP
+    </a>
+    <!-- /ko -->
+
+    <!-- The company's image hosts, by name (ADR 0028) -->
+    <!-- ko foreach: $root.imageHosts -->
+    <a
+      href="javascript:void(0)"
+      data-bind="
+        click: function (){ $root.download.execute({forCdn: false, forFtp: false, imageHost: $data}) },
+        clickBubble: false,
+        button: {
+          disabled: !$root.download.enabled(),
+          icons: { primary: 'lucide lucide-fw lucide-cloud-upload' },
+          label: name,
+        }"
+    >
+      DOWNLOAD IMAGE HOST
     </a>
     <!-- /ko -->
 
