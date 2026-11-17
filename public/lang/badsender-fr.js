@@ -104,6 +104,14 @@ module.exports = {
     "Le dossier racine est introuvable dans __host__ : l'export est annulé. Demandez à l'admin technique de choisir un dossier dans les intégrations.",
   'download-image-host-down':
     "__host__ ne répond pas ou est surchargé : l'export est annulé. Réessayez dans quelques minutes.",
+  'image-host-export-title': 'Export vers __host__',
+  'image-host-export-close': 'Fermer',
+  'image-host-export-starting': "Préparation de l'export…",
+  'image-host-export-progress': 'Dépôt des images : __done__ / __total__',
+  'image-host-export-downloading': 'Téléchargement du zip…',
+  'image-host-export-done': 'Export vers __host__ terminé',
+  'image-host-export-interrupted':
+    "L'export a été interrompu. Relancez-le : les images déjà déposées ne seront pas renvoyées.",
   'download-image-host-unavailable':
     "__host__ n'est plus disponible pour l'export. Demandez à l'admin technique de tester la connexion dans les intégrations.",
 

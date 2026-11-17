@@ -1,11 +1,11 @@
 'use strict';
 
-// The ZIP download with an image host (ADR 0028): the export puts every image
-// of the email on the host, and returns a ZIP holding the HTML alone, every
-// image pointing at the URL the host gave.
+// The export to an image host (ADR 0028): it puts every image of the email on
+// the host, and gives the HTML the ZIP holds alone, every image pointing at
+// the URL the host gave.
 //
-// Driven through `mailingService.downloadZip`, the function the download route
-// hands the request to (the route only adds the archive and the HTTP answer).
+// Driven through `mailingService.prepareImageHostExport`, which the export job
+// starts with and runs (ADR 0029, tested with the job).
 // The image host is faked behind the provider factory: its contract with
 // Emarsys is tested with the provider. The sources of the images are faked
 // behind node-fetch. The stores (emails, companies, integrations, hosted
@@ -242,20 +242,15 @@ describe('downloading the ZIP with an image host', () => {
     jest
       .spyOn(mailingService, 'getMailByMailingIdAndUser')
       .mockResolvedValue(email);
-    const entries = [];
-    const archive = {
-      append: jest.fn((content, { name, prefix = '' }) => {
-        entries.push({ path: `${prefix}${name}`, content: String(content) });
-      }),
-    };
-    await mailingService.downloadZip({
+    const prepared = await mailingService.prepareImageHostExport({
       mailingId: email.id,
       html,
-      archive,
       user,
-      downloadOptions: options,
+      ...options,
     });
-    return entries;
+    const { prefix, name, html: exported } = await prepared.run();
+    // What the ZIP of the job holds (ADR 0029).
+    return [{ path: `${prefix}${name}.html`, content: exported }];
   }
 
   it('returns a ZIP holding the HTML alone', async () => {
@@ -437,18 +432,13 @@ describe('exporting the same email again to an image host', () => {
     jest
       .spyOn(mailingService, 'getMailByMailingIdAndUser')
       .mockResolvedValue(email);
-    const entries = [];
-    await mailingService.downloadZip({
+    const prepared = await mailingService.prepareImageHostExport({
       mailingId: email.id,
       html: HTML,
-      archive: {
-        append: (content, { name }) =>
-          entries.push({ name, content: String(content) }),
-      },
       user,
-      downloadOptions: { hostingIntegrationId: String(INTEGRATION) },
+      hostingIntegrationId: String(INTEGRATION),
     });
-    return entries[0].content;
+    return (await prepared.run()).html;
   }
 
   it('puts nothing again when nothing changed, and gives the same HTML', async () => {

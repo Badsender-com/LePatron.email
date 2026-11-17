@@ -18,6 +18,7 @@ const mailingSearch = require('./mailing-search.controller.js');
 const { requireJsonBody } = require('../utils/require-json-body.js');
 const mailingMetadata = require('./mailing-metadata.controller.js');
 const translation = require('../translation/translation.controller.js');
+const imageHostExports = require('./image-host-export.controller.js');
 
 // All routes below require an authenticated user AND the Email Builder module
 // to be enabled on the user's group (super admins bypass the flag check).
@@ -30,6 +31,18 @@ router.get('/search', GUARD_USER, mailingSearch.search);
 // Must be declared before the '/:mailingId' routes below, otherwise "tags"
 // would be captured as a mailingId.
 router.get('/tags', GUARD_USER, mailings.listTags);
+// An export to an image host, run as a job (ADR 0029): read by the user who
+// started it only, checked by the job store. Before the '/:mailingId' routes.
+router.get(
+  '/image-host-exports/:jobId',
+  GUARD_CAN(C.MAILING_EXPORT),
+  imageHostExports.status
+);
+router.get(
+  '/image-host-exports/:jobId/zip',
+  GUARD_CAN(C.MAILING_EXPORT),
+  imageHostExports.zip
+);
 router.post('', GUARD_CAN(C.MAILING_CREATE), mailings.create);
 router.patch('/:mailingId', GUARD_CAN(C.MAILING_ORGANIZE), mailings.rename);
 router.get('/:mailingId/preview', GUARD_USER, mailings.previewHtml);
@@ -49,6 +62,13 @@ router.post(
   GUARD_CAN(C.MAILING_EXPORT),
   requireJsonBody,
   mailings.downloadZip
+);
+
+router.post(
+  '/:mailingId/mosaico/image-host-exports',
+  GUARD_CAN(C.MAILING_EXPORT),
+  requireJsonBody,
+  imageHostExports.start
 );
 
 router.post(

@@ -24,6 +24,7 @@ const { CommentSchema } = require('../comment/comment.schema.js');
 const IntegrationSchema = require('../integration/integration.schema.js');
 const DashboardSchema = require('../dashboard/dashboard.schema.js');
 const HostedImageSchema = require('../mailing/hosted-image.schema.js');
+const ImageHostExportJobSchema = require('../mailing/image-host-export-job.schema.js');
 const AIFeatureConfigSchema = require('../ai-feature/ai-feature.schema.js');
 const TranslationJobSchema = require('../translation/translation-job.schema.js');
 const FeedMappingSchema = require('../feed-mapping/feed-mapping.schema.js');
@@ -75,6 +76,10 @@ const Dashboards = mongoose.model(modelNames.DashboardModel, DashboardSchema);
 const HostedImages = mongoose.model(
   modelNames.HostedImageModel,
   HostedImageSchema
+);
+const ImageHostExportJobs = mongoose.model(
+  modelNames.ImageHostExportJobModel,
+  ImageHostExportJobSchema
 );
 const AIFeatureConfigs = mongoose.model(
   modelNames.AIFeatureConfigModel,
@@ -135,6 +140,7 @@ module.exports = {
   Integrations,
   Dashboards,
   HostedImages,
+  ImageHostExportJobs,
   AIFeatureConfigs,
   TranslationJobs,
   FeedMappings,

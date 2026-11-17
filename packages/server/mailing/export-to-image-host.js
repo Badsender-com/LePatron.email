@@ -141,11 +141,19 @@ async function readSource(imageUrl) {
  * @param {*} params.mailingId the email, whose hosted images are reused
  * @param {string} params.folderName
  * @param {Array<{ url: string, name: string }>} params.images
+ * @param {function({ done: number, total: number }): void} [params.onProgress]
+ *   told each time an image is on the host (ADR 0029)
  * @returns {Promise<Map<string, string>>} relative path → hosted URL
  * @throws {BadGateway} IMAGE_HOST_UPLOAD_FAILED, its `images` the source URLs
  *   that failed, when one image or more could not be put on the host
  */
-async function putImagesOnHost({ integration, mailingId, folderName, images }) {
+async function putImagesOnHost({
+  integration,
+  mailingId,
+  folderName,
+  images,
+  onProgress = () => {},
+}) {
   const host = ProviderFactory.createProvider(integration);
   // One upload per name: two URLs of the same name share one relative path.
   const byName = new Map();
@@ -153,6 +161,8 @@ async function putImagesOnHost({ integration, mailingId, folderName, images }) {
     if (!byName.has(image.name)) byName.set(image.name, image);
   });
   const queue = [...byName.values()];
+  const total = queue.length;
+  let done = 0;
 
   // The email's folder first, once: a root folder deleted in Emarsys, or a
   // host that is down, is no image's fault.
@@ -218,6 +228,8 @@ async function putImagesOnHost({ integration, mailingId, folderName, images }) {
         const content = await readSource(image.url);
         const url = await hostedUrlFor(image, content);
         hostedUrls.set(relativeImagePath(image.name), url);
+        done += 1;
+        await onProgress({ done, total });
       } catch (error) {
         const failure = hostFailureOf(error);
         if (failure) {
