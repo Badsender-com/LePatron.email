@@ -152,3 +152,14 @@ _Avoid_: Allowed workspace, my workspace
 What the email search looks through: the emails sitting directly in the current location, or every email of the user's accessible workspaces, in any folder.
 _UI_: Dossier courant, Tous mes espaces de travail
 _Avoid_: Search mode, global search (in UI text)
+
+### Export
+
+**Image host**:
+An external service where the export puts an email's images, so that the downloaded HTML loads them from there. An FTP server, a CDN and an Emarsys Media Database are image hosts.
+_UI_: Hébergeur d'images
+_Avoid_: Image hosting integration, media server, upload target
+
+**Hosted image**:
+An image of an email already put on an image host, recognised by its content so that a later export of the same email does not put it there again.
+_Avoid_: Uploaded image, cached image
