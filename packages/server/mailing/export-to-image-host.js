@@ -4,12 +4,13 @@
 // host, in a folder of the email's own, and the HTML is rewritten from the
 // URLs the host returns (export-hosted-image-urls.js).
 
+const crypto = require('crypto');
 const net = require('net');
 const http = require('http');
 const https = require('https');
 const fetch = require('node-fetch');
 const { BadGateway, Forbidden } = require('http-errors');
-const { Integrations } = require('../common/models.common.js');
+const { Integrations, HostedImages } = require('../common/models.common.js');
 const ProviderFactory = require('../integration-providers/provider-factory.js');
 const {
   ProviderError,
@@ -126,13 +127,14 @@ async function readSource(imageUrl) {
  * Puts the images on the host, a few at a time.
  * @param {Object} params
  * @param {Object} params.integration the image host
+ * @param {*} params.mailingId the email, whose hosted images are reused
  * @param {string} params.folderName
  * @param {Array<{ url: string, name: string }>} params.images
  * @returns {Promise<Map<string, string>>} relative path → hosted URL
  * @throws {BadGateway} IMAGE_HOST_UPLOAD_FAILED, its `images` the source URLs
  *   that failed, when one image or more could not be put on the host
  */
-async function putImagesOnHost({ integration, folderName, images }) {
+async function putImagesOnHost({ integration, mailingId, folderName, images }) {
   const host = ProviderFactory.createProvider(integration);
   // One upload per name: two URLs of the same name share one relative path.
   const byName = new Map();
@@ -141,6 +143,38 @@ async function putImagesOnHost({ integration, folderName, images }) {
   });
   const queue = [...byName.values()];
   const hostedUrls = new Map();
+  // By content: two names of the same bytes are put once, even at the same
+  // time, and share one hosted image.
+  const urlsByHash = new Map();
+
+  // A hosted image of this email with the same content is reused, once the
+  // host says it still has it; otherwise the image is put, and remembered.
+  async function hostedUrlFor(image, content) {
+    const hash = crypto.createHash('sha256').update(content).digest('hex');
+    if (!urlsByHash.has(hash)) {
+      const pending = (async () => {
+        const key = {
+          _integration: integration._id,
+          _mailing: mailingId,
+          hash,
+        };
+        const known = await HostedImages.findOne(key).lean();
+        if (known && (await host.fileExists(known.fileId))) return known.url;
+        const { id, url } = await host.putImage({
+          folderName,
+          filename: image.name,
+          content,
+        });
+        await rememberHostedImage({ key, known, fileId: id, url });
+        return url;
+      })();
+      // A failure is not shared: an image of another name retries.
+      pending.catch(() => urlsByHash.delete(hash));
+      urlsByHash.set(hash, pending);
+    }
+    return urlsByHash.get(hash);
+  }
+
   const failed = [];
   let credentialsRefused = false;
 
@@ -149,11 +183,7 @@ async function putImagesOnHost({ integration, folderName, images }) {
       const image = queue.shift();
       try {
         const content = await readSource(image.url);
-        const { url } = await host.putImage({
-          folderName,
-          filename: image.name,
-          content,
-        });
+        const url = await hostedUrlFor(image, content);
         hostedUrls.set(relativeImagePath(image.name), url);
       } catch (error) {
         if (
@@ -193,6 +223,21 @@ async function putImagesOnHost({ integration, folderName, images }) {
     throw error;
   }
   return hostedUrls;
+}
+
+async function rememberHostedImage({ key, known, fileId, url }) {
+  if (known) {
+    // Deleted from the host and put back: the record follows the new file.
+    await HostedImages.updateOne({ _id: known._id }, { $set: { fileId, url } });
+    return;
+  }
+  try {
+    await HostedImages.create({ ...key, fileId, url });
+  } catch (error) {
+    // Two exports of the email at the same time: the other one remembered
+    // it first, and this file is as good as its.
+    if (error.code !== 11000) throw error;
+  }
 }
 
 module.exports = {

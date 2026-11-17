@@ -649,6 +649,7 @@ async function downloadZip({
     // The ZIP holds the HTML alone, every image loaded from the host.
     const hostedUrls = await putImagesOnHost({
       integration: imageHost,
+      mailingId: mailing._id,
       folderName: emailFolderName(mailing),
       images: collectedImages,
     });

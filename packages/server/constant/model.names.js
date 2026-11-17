@@ -22,6 +22,7 @@ module.exports = Object.freeze({
   // Integrations
   IntegrationModel: 'Integration',
   DashboardModel: 'Dashboard',
+  HostedImageModel: 'HostedImage',
   AIFeatureConfigModel: 'AIFeatureConfig',
   FeedMappingModel: 'FeedMapping',
   // Translation

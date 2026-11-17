@@ -359,8 +359,7 @@ describe('downloading the ZIP with an image host', () => {
   );
 });
 
-// Turned on by #1615 (a re-export only uploads what changed)
-describe.skip('exporting the same email again to an image host', () => {
+describe('exporting the same email again to an image host', () => {
   let mailingService;
   let store;
 
@@ -449,6 +448,20 @@ describe.skip('exporting the same email again to an image host', () => {
     );
     expect(first).toContain(firstHero.url);
     expect(second).not.toContain(firstHero.url);
+  });
+
+  it('puts once an image loaded under two names', async () => {
+    const host = fakeImageHost();
+    sources({
+      [HERO]: Buffer.from('same-bytes'),
+      [LOGO]: Buffer.from('same-bytes'),
+    });
+
+    const html = await exportZip();
+
+    expect(host.putImage).toHaveBeenCalledTimes(1);
+    const [{ url }] = Object.values(host.files);
+    expect(html.split(url)).toHaveLength(3);
   });
 
   it('never shares a hosted image between two emails', async () => {

@@ -309,8 +309,7 @@ describe('an Emarsys integration: listing the folders of the account', () => {
   });
 });
 
-// Turned on by #1615 (a re-export only uploads what changed)
-describe.skip('an Emarsys integration: deleting it', () => {
+describe('an Emarsys integration: deleting it', () => {
   beforeEach(() => {
     jest.clearAllMocks();
     Integrations.findById.mockResolvedValue({

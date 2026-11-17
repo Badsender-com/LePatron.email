@@ -4,6 +4,7 @@ const {
   Integrations,
   AIFeatureConfigs,
   Dashboards,
+  HostedImages,
 } = require('../common/models.common');
 const { Types } = require('mongoose');
 const {
@@ -194,6 +195,12 @@ async function deleteIntegration({ integrationId }) {
       `Deleted ${dashboardResult.deletedCount} dashboard(s) for integration ${integrationId}`
     );
   }
+
+  // An image host's hosted images mean nothing without it. The files stay
+  // on the host: they may be in campaigns already sent (ADR 0028).
+  await HostedImages.deleteMany({
+    _integration: Types.ObjectId(integrationId),
+  });
 
   const result = await Integrations.deleteOne({
     _id: Types.ObjectId(integrationId),
