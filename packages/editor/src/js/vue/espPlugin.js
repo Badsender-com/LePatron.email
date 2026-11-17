@@ -1,6 +1,9 @@
 const Vue = require('vue/dist/vue.common');
 const EspComponent = require('./components/esp/esp-send-mail');
 const { TestModalComponent } = require('./components/send-test/test-modal');
+const {
+  ImageHostExportModalComponent,
+} = require('./components/image-host-export/image-host-export-modal');
 
 module.exports = {
   viewModel(vm, ko) {},
@@ -11,6 +14,7 @@ module.exports = {
       components: {
         EspComponent,
         TestModalComponent,
+        ImageHostExportModalComponent,
       },
       data: () => ({
         viewModel: vm,
@@ -19,6 +23,7 @@ module.exports = {
         <div>
           <esp-form :vm="viewModel"></esp-form>
           <test-modal-component :vm="viewModel"></test-modal-component>
+          <image-host-export-modal-component :vm="viewModel"></image-host-export-modal-component>
         </div>
       `,
     });

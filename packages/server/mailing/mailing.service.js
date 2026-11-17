@@ -104,6 +104,7 @@ module.exports = {
   downloadMultipleZip,
   validateMailExist,
   processHtmlWithFTPOption,
+  prepareImageHostExport,
   updateMailEspIds,
   getMailByMailingIdAndUser,
   getGroupByCompanyId,
@@ -584,11 +585,13 @@ async function downloadZip({
 
   const mailing = await this.getMailByMailingIdAndUser({ mailingId, user });
 
+  // An image host is a job of its own (ADR 0029, prepareImageHostExport): the
+  // ZIP download stays regular, CDN or FTP.
+  // eslint-disable-next-line no-unused-vars
+  const { hostingIntegrationId, ...zipOptions } = downloadOptions || {};
   const {
     cdnDownload,
     regularDownload,
-    imageHostDownload,
-    hostingIntegrationId,
     prefix,
     ftpServerParams,
     cdnProtocol,
@@ -597,16 +600,8 @@ async function downloadZip({
     group,
   } = await extractFTPparams({
     mailing,
-    downloadOptions,
+    downloadOptions: zipOptions,
   });
-
-  // Checked before anything is put anywhere.
-  const imageHost = imageHostDownload
-    ? await findImageHost({
-        integrationId: hostingIntegrationId,
-        companyId: group._id,
-      })
-    : null;
 
   const {
     tracking: trackingCtx,
@@ -620,14 +615,12 @@ async function downloadZip({
 
   const {
     relativesImagesNames,
-    collectedImages,
     archive: processedImageArchive,
     html: relativeImagesHtml,
   } = await handleRelativeOrFtpImages({
     html: htmlWithTracking,
     cdnDownload,
     regularDownload,
-    imageHostDownload,
     archive,
     prefix,
     ftpServerParams,
@@ -645,18 +638,6 @@ async function downloadZip({
       prefix,
       name: `${name}.html`,
     });
-  } else if (imageHost) {
-    // The ZIP holds the HTML alone, every image loaded from the host.
-    const hostedUrls = await putImagesOnHost({
-      integration: imageHost,
-      mailingId: mailing._id,
-      folderName: emailFolderName(mailing),
-      images: collectedImages,
-    });
-    processedImageArchive.append(
-      rewriteHostedImages(processedHtml, hostedUrls),
-      { prefix, name: `${name}.html` }
-    );
   } else {
     const {
       htmlProcessedWithFtp,
@@ -701,6 +682,84 @@ async function downloadZip({
   }
 
   return { archive: processedImageArchive, name };
+}
+
+/**
+ * The export to an image host (ADR 0028), checked at once and run later as a
+ * job (ADR 0029): the rights on the email, the image host and the required
+ * tracking parameters are checked here, before the job is started, so that
+ * their failures answer the request itself.
+ *
+ * @param {Object} params
+ * @param {string} params.mailingId
+ * @param {string} params.html the HTML the editor exports
+ * @param {Object} params.user
+ * @param {string} params.hostingIntegrationId
+ * @param {Object} [params.freshTracking] the tracking typed in the editor
+ * @returns {Promise<{ mailingId: *, integrationId: *, imageCount: number,
+ *   run: function(function({ done: number, total: number }): void):
+ *     Promise<{ prefix: string, name: string, html: string }> }>}
+ */
+async function prepareImageHostExport({
+  mailingId,
+  html,
+  user,
+  hostingIntegrationId,
+  freshTracking,
+}) {
+  const mailing = await this.getMailByMailingIdAndUser({ mailingId, user });
+  const { prefix, name, group } = await extractFTPparams({
+    mailing,
+    downloadOptions: { hostingIntegrationId },
+  });
+  const imageHost = await findImageHost({
+    integrationId: hostingIntegrationId,
+    companyId: group._id,
+  });
+
+  const {
+    tracking: trackingCtx,
+    groupTrackingConfig,
+  } = await resolveMailingTrackingContext(mailing, freshTracking, group);
+  const { html: htmlWithTracking } = handleTrackingData({
+    html,
+    tracking: trackingCtx,
+    groupTrackingConfig,
+  });
+  const {
+    collectedImages,
+    html: relativeImagesHtml,
+  } = await handleRelativeOrFtpImages({
+    html: htmlWithTracking,
+    cdnDownload: false,
+    regularDownload: false,
+    imageHostDownload: true,
+    prefix,
+    ftpServerParams: {},
+    name,
+  });
+  const processedHtml = processMosaicoHtmlRender(relativeImagesHtml);
+
+  return {
+    mailingId: mailing._id,
+    integrationId: imageHost._id,
+    imageCount: new Set(collectedImages.map((image) => image.name)).size,
+    // The ZIP holds the HTML alone, every image loaded from the host.
+    run: async (onProgress) => {
+      const hostedUrls = await putImagesOnHost({
+        integration: imageHost,
+        mailingId: mailing._id,
+        folderName: emailFolderName(mailing),
+        images: collectedImages,
+        onProgress,
+      });
+      return {
+        prefix,
+        name,
+        html: rewriteHostedImages(processedHtml, hostedUrls),
+      };
+    },
+  };
 }
 
 // This function will be used to find out recurrent names inside a array of type Array<{mailing, name}>[]

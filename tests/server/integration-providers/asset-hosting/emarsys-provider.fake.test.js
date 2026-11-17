@@ -123,4 +123,25 @@ describe('the Emarsys provider against the fake Emarsys', () => {
     // A changed secret is not answered with the former one's token.
     await expect(saved('wrong').validateCredentials()).resolves.toBe(false);
   });
+
+  // A token kept from before may have been revoked, or the fake restarted:
+  // that is no reason to read the credentials as refused.
+  it('asks a new token when the one it kept is refused, once', async () => {
+    const saved = () =>
+      new EmarsysProvider({
+        _id: '507f1f77bcf86cd799439c02',
+        type: 'asset_hosting',
+        provider: 'emarsys',
+        apiKey: 'fake-secret',
+        config: { clientId: 'fake-client', rootFolderId: 1000 },
+      });
+    await saved().listFolders();
+    fake.state.tokens.clear();
+    const before = fake.state.counters.tokens;
+
+    await expect(saved().listFolders()).resolves.toEqual(
+      expect.arrayContaining([{ id: 1000, parent: 0, name: 'LePatron' }])
+    );
+    expect(fake.state.counters.tokens - before).toBe(1);
+  });
 });

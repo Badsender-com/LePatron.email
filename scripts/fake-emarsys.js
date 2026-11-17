@@ -11,7 +11,7 @@
  *
  * Credentials it accepts: client ID `fake-client`, secret `fake-secret`
  * (FAKE_EMARSYS_CLIENT_ID, FAKE_EMARSYS_SECRET); anything else is refused, to
- * try that path too. Its folders: `LePatron` (1000), `Marque A` (1001) and
+ * try that path too. FAKE_EMARSYS_UPLOAD_DELAY_MS slows each upload down. Its folders: `LePatron` (1000), `Marque A` (1001) and
  * `Marque A / Emails` (1002).
  *
  * It keeps everything in memory, and serves what it stored at
@@ -30,6 +30,8 @@ const path = require('path');
 const PORT = Number(process.env.FAKE_EMARSYS_PORT) || 3800;
 const CLIENT_ID = process.env.FAKE_EMARSYS_CLIENT_ID || 'fake-client';
 const SECRET = process.env.FAKE_EMARSYS_SECRET || 'fake-secret';
+// Slows each upload down, to watch an export's progress (ADR 0029).
+const UPLOAD_DELAY_MS = Number(process.env.FAKE_EMARSYS_UPLOAD_DELAY_MS) || 0;
 const MAX_IMAGE_BYTES = 16 * 1024 * 1024;
 const MAX_BODY_BYTES = 32 * 1024 * 1024;
 
@@ -170,6 +172,9 @@ function createFakeEmarsys({ port = PORT } = {}) {
 
     if (route === 'POST /api/v3/file') {
       const { filename, file, folder } = JSON.parse(await readBody(req));
+      if (UPLOAD_DELAY_MS) {
+        await new Promise((resolve) => setTimeout(resolve, UPLOAD_DELAY_MS));
+      }
       const content = Buffer.from(file || '', 'base64');
       if (!filename || !content.length) {
         return fail(res, 400, 10001, 'Missing file');

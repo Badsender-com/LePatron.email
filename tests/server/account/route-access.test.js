@@ -91,6 +91,7 @@ const ROLE_ROUTES = {
   'PUT /api/mailings/:mailingId/mosaico': C.MAILING_EDIT_CONTENT,
   'POST /api/mailings/:mailingId/mosaico/send-test-mail': C.MAILING_SEND_TEST,
   'POST /api/mailings/:mailingId/mosaico/download-zip': C.MAILING_EXPORT,
+  'POST /api/mailings/:mailingId/mosaico/image-host-exports': C.MAILING_EXPORT,
   'POST /api/mailings/download-multiple-zip': C.MAILING_EXPORT,
   'POST /api/profiles/:mailingId/send-campaign-mail': C.MAILING_EXPORT,
   'POST /api/folders': C.FOLDER_MANAGE,

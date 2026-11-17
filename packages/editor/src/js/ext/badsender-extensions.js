@@ -64,6 +64,9 @@ function downloadOptions(opts) {
     // The company's image hosts (ADR 0028), offered by name, the label
     // escaped for the button: [{ id, name, label }].
     viewModel.imageHosts = imageHostMenuItems(opts.download.imageHosts);
+    // The export to an image host under way, followed by its modal
+    // (ADR 0029): { host, html, tracking } once started.
+    viewModel.imageHostExport = ko.observable(null);
     viewModel.hasAdobeProfile = ko.computed(function () {
       return Array.isArray(viewModel.profiles()) &&
             viewModel.profiles().some(function (p) {

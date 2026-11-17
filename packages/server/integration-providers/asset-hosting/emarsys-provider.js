@@ -282,7 +282,13 @@ class EmarsysProvider extends BaseProvider {
     return guardedFetch(url, { method, headers, body, timeoutMs, label });
   }
 
-  async callApi(method, path, payload, { timeoutMs = TIMEOUT_MS } = {}) {
+  async callApi(
+    method,
+    path,
+    payload,
+    { timeoutMs = TIMEOUT_MS } = {},
+    retried = false
+  ) {
     const token = await this.getToken();
     const label = `Emarsys ${method} ${path}`;
     const response = await this.send(`${this.endpoints.apiUrl}${path}`, {
@@ -297,9 +303,14 @@ class EmarsysProvider extends BaseProvider {
       label,
     });
     if (response.status === 401) {
-      // Revoked meanwhile: the next call asks a new one.
+      // The token, not the credentials, may be what is refused: revoked, or
+      // kept from before. A new one is asked once; refused again, or refused
+      // the token itself, the credentials are.
       this.token = null;
       if (this.tokenCacheKey) SHARED_TOKENS.delete(this.tokenCacheKey);
+      if (!retried) {
+        return this.callApi(method, path, payload, { timeoutMs }, true);
+      }
       throw new ProviderError(
         `${label}: unauthorized`,
         CODES.INVALID_CREDENTIALS

@@ -100,6 +100,14 @@ module.exports = {
     'The root folder cannot be found in __host__: the export is cancelled. Ask the tech admin to choose a folder in the integrations.',
   'download-image-host-down':
     '__host__ is not answering or is overloaded: the export is cancelled. Try again in a few minutes.',
+  'image-host-export-title': 'Export to __host__',
+  'image-host-export-close': 'Close',
+  'image-host-export-starting': 'Preparing the export…',
+  'image-host-export-progress': 'Uploading images: __done__ / __total__',
+  'image-host-export-downloading': 'Downloading the zip…',
+  'image-host-export-done': 'Export to __host__ done',
+  'image-host-export-interrupted':
+    'The export was interrupted. Start it again: the images already uploaded will not be sent again.',
   'download-image-host-unavailable':
     '__host__ is no longer available for the export. Ask the tech admin to test the connection in the integrations.',
 

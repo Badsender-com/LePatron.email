@@ -20,6 +20,19 @@ function sendTestEmails({ mailingId }) {
   return `${prefixApi}/mailings/${mailingId}/mosaico/send-test-mail`;
 }
 
+// The export to an image host, run as a job (ADR 0029).
+function startImageHostExport({ mailingId }) {
+  return `${prefixApi}/mailings/${mailingId}/mosaico/image-host-exports`;
+}
+
+function imageHostExport({ jobId }) {
+  return `${prefixApi}/mailings/image-host-exports/${encodeURIComponent(jobId)}`;
+}
+
+function imageHostExportZip({ jobId }) {
+  return `${imageHostExport({ jobId })}/zip`;
+}
+
 function createPersonalizedBlock() {
   return `${prefixApi}/personalized-blocks`;
 }
@@ -84,4 +97,7 @@ module.exports = {
   uploadGalleryImageFromUrl,
   renameGalleryImageLabel,
   readStoredImage,
+  startImageHostExport,
+  imageHostExport,
+  imageHostExportZip,
 };
