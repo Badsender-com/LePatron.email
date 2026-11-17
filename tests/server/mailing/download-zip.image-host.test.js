@@ -23,7 +23,11 @@ jest.mock('../../../packages/server/common/models.common.js', () => ({
   Galleries: {},
   Folders: {},
   Groups: { findById: jest.fn() },
-  Integrations: { findById: jest.fn(), findOne: jest.fn() },
+  Integrations: {
+    findById: jest.fn(),
+    findOne: jest.fn(),
+    updateOne: jest.fn(() => ({ then: (resolve) => resolve({}) })),
+  },
   HostedImages: {},
 }));
 jest.mock(
@@ -185,8 +189,7 @@ const HTML = `<html><body>
 <table background="${LOGO}"><tr><td>Hello</td></tr></table>
 </body></html>`;
 
-// Turned on by #1614 (a user exports an email to Emarsys)
-describe.skip('downloading the ZIP with an image host', () => {
+describe('downloading the ZIP with an image host', () => {
   let mailingService;
 
   beforeAll(() => {
@@ -310,6 +313,32 @@ describe.skip('downloading the ZIP with an image host', () => {
       message: 'IMAGE_HOST_UPLOAD_FAILED',
       images: [LOGO],
     });
+  });
+
+  // Every image would fail alike: the export says the connection is refused,
+  // and the integration leaves the export menu until a tech admin tests it.
+  it('stops at refused credentials, and marks the image host invalid', async () => {
+    const host = fakeImageHost();
+    const {
+      ProviderError,
+      PROVIDER_ERROR_CODES,
+    } = require('../../../packages/server/integration-providers/provider-error.js');
+    host.putImage.mockRejectedValue(
+      new ProviderError(
+        'Emarsys token request failed: 401',
+        PROVIDER_ERROR_CODES.INVALID_CREDENTIALS
+      )
+    );
+
+    const failure = await exportZip().catch((error) => error);
+
+    expect(failure.message).toBe('IMAGE_HOST_CREDENTIALS_REFUSED');
+    // The images are not at fault: none is named.
+    expect(failure.images).toBeUndefined();
+    expect(models.Integrations.updateOne).toHaveBeenCalledWith(
+      { _id: INTEGRATION },
+      { $set: { validationStatus: 'invalid' } }
+    );
   });
 
   it.each([

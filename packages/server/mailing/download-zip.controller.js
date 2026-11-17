@@ -29,6 +29,7 @@ function isHttpUrl(uri) {
  *
  * @apiParam (Body) {String} html the HTML output get in mosaico by `viewModel.exportHTML()`
  * @apiParam (Body) {Boolean} downLoadForCdn wether or not images should point to a CDN<br> Depends on group configuration
+ * @apiParam (Body) {String} [hostingIntegrationId] an image host of the company to put the images on (ADR 0028)
  *
  */
 
@@ -75,7 +76,12 @@ async function downloadZip(req, res, next) {
     processedArchive.finalize();
   } catch (error) {
     console.error('Error while downloading zip', { error });
-    return res.status(500).json({ errorCode: error.message });
+    // An image host that failed names the images, for the editor to say which
+    // ones (ADR 0028).
+    return res.status(500).json({
+      errorCode: error.message,
+      ...(Array.isArray(error.images) ? { images: error.images } : {}),
+    });
   }
 }
 

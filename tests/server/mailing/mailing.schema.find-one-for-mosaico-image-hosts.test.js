@@ -139,8 +139,7 @@ function context(integrations = INTEGRATIONS) {
   };
 }
 
-// Turned on by #1614 (a user exports an email to Emarsys)
-describe.skip("the editor's export menu and the company's image hosts", () => {
+describe("the editor's export menu and the company's image hosts", () => {
   beforeEach(() => {
     jest.clearAllMocks();
   });

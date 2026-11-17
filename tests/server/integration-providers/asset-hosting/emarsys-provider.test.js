@@ -196,6 +196,21 @@ describe('Emarsys provider: credentials and folders', () => {
 
   // Emarsys allows 50 token requests a minute per client: one export puts
   // dozens of images, so the token is kept until it expires.
+  // An export puts several images at once: the first calls must not each ask
+  // their own token.
+  it('asks the token once for calls made at the same time', async () => {
+    const emarsys = fakeEmarsys();
+    const provider = makeProvider();
+
+    await Promise.all([
+      provider.listFolders(),
+      provider.listFolders(),
+      provider.listFolders(),
+    ]);
+
+    expect(emarsys.requests.filter((r) => r.url === TOKEN_URL)).toHaveLength(1);
+  });
+
   it('asks the token once for several calls', async () => {
     const emarsys = fakeEmarsys();
     const provider = makeProvider();
@@ -208,8 +223,7 @@ describe('Emarsys provider: credentials and folders', () => {
   });
 });
 
-// Turned on by #1614 (a user exports an email to Emarsys)
-describe.skip('Emarsys provider: putting an image', () => {
+describe('Emarsys provider: putting an image', () => {
   let EmarsysProvider;
   let ProviderError;
 
@@ -267,6 +281,27 @@ describe.skip('Emarsys provider: putting an image', () => {
 
     expect(emarsys.folders).toHaveLength(2);
     expect(Object.values(emarsys.files)[0].folder).toBe(4400);
+  });
+
+  // An export puts its images in parallel.
+  it("creates the email's folder once for images put at the same time", async () => {
+    const emarsys = fakeEmarsys();
+    const provider = makeProvider();
+
+    await Promise.all(
+      ['hero.png', 'logo.png', 'footer.png'].map((filename) =>
+        provider.putImage({
+          folderName: 'soldes-ete-3f9a2c',
+          filename,
+          content: PNG,
+        })
+      )
+    );
+
+    expect(
+      emarsys.folders.filter((f) => f.name === 'soldes-ete-3f9a2c')
+    ).toHaveLength(1);
+    expect(Object.values(emarsys.files)).toHaveLength(3);
   });
 
   it('returns the file identifier and the absolute URL Emarsys gives for it', async () => {

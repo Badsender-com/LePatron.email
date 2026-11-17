@@ -11,6 +11,11 @@ const {
   hostedUrlsUnderEndpoint,
   rewriteHostedImages,
 } = require('./export-hosted-image-urls.js');
+const {
+  findImageHost,
+  emailFolderName,
+  putImagesOnHost,
+} = require('./export-to-image-host.js');
 const mongoose = require('mongoose');
 const { isBootstrapAccount } = require('../account/bootstrap-account.js');
 const {
@@ -582,6 +587,8 @@ async function downloadZip({
   const {
     cdnDownload,
     regularDownload,
+    imageHostDownload,
+    hostingIntegrationId,
     prefix,
     ftpServerParams,
     cdnProtocol,
@@ -592,6 +599,14 @@ async function downloadZip({
     mailing,
     downloadOptions,
   });
+
+  // Checked before anything is put anywhere.
+  const imageHost = imageHostDownload
+    ? await findImageHost({
+        integrationId: hostingIntegrationId,
+        companyId: group._id,
+      })
+    : null;
 
   const {
     tracking: trackingCtx,
@@ -605,12 +620,14 @@ async function downloadZip({
 
   const {
     relativesImagesNames,
+    collectedImages,
     archive: processedImageArchive,
     html: relativeImagesHtml,
   } = await handleRelativeOrFtpImages({
     html: htmlWithTracking,
     cdnDownload,
     regularDownload,
+    imageHostDownload,
     archive,
     prefix,
     ftpServerParams,
@@ -628,6 +645,17 @@ async function downloadZip({
       prefix,
       name: `${name}.html`,
     });
+  } else if (imageHost) {
+    // The ZIP holds the HTML alone, every image loaded from the host.
+    const hostedUrls = await putImagesOnHost({
+      integration: imageHost,
+      folderName: emailFolderName(mailing),
+      images: collectedImages,
+    });
+    processedImageArchive.append(
+      rewriteHostedImages(processedHtml, hostedUrls),
+      { prefix, name: `${name}.html` }
+    );
   } else {
     const {
       htmlProcessedWithFtp,
@@ -709,6 +737,12 @@ async function downloadMultipleZip({
   user,
 }) {
   logger.log('Calling downloadMultipleZip');
+  // The email listing offers no image host yet (ADR 0028): its downloads stay
+  // regular, CDN or FTP.
+  // eslint-disable-next-line no-unused-vars
+  const { hostingIntegrationId, ...listDownloadOptions } =
+    downloadOptions || {};
+  downloadOptions = listDownloadOptions;
   if (!Array.isArray(mailingIds) || mailingIds.length === 0) {
     throw new InternalServerError(ERROR_CODES.MAILING_MISSING_SOURCE);
   }
@@ -930,16 +964,26 @@ async function extractFTPparams({
 
   // const $ = cheerio.load(html)
 
+  // An image host chosen for the export (ADR 0028) excludes the CDN and the
+  // FTP: the images go to one place.
+  const hostingIntegrationId = downloadOptions.hostingIntegrationId || null;
+  const imageHostDownload = !!hostingIntegrationId;
   const cdnDownload =
-    downloadMailingWithCdnImages && downloadOptions.downLoadForCdn;
+    !imageHostDownload &&
+    downloadMailingWithCdnImages &&
+    downloadOptions.downLoadForCdn;
   const ftpDownload =
-    downloadMailingWithFtpImages && downloadOptions.downLoadForFtp;
-  const regularDownload = !cdnDownload && !ftpDownload;
+    !imageHostDownload &&
+    downloadMailingWithFtpImages &&
+    downloadOptions.downLoadForFtp;
+  const regularDownload = !cdnDownload && !ftpDownload && !imageHostDownload;
 
   // Image
   return {
     cdnDownload,
     regularDownload,
+    imageHostDownload,
+    hostingIntegrationId,
     prefix,
     ftpServerParams: {
       ftpEndPointProtocol,
@@ -991,6 +1035,7 @@ async function handleRelativeOrFtpImages({
   html,
   cdnDownload,
   regularDownload,
+  imageHostDownload = false,
   archive,
   prefix,
   ftpServerParams,
@@ -1136,7 +1181,9 @@ async function handleRelativeOrFtpImages({
     });
 
     await Promise.all(imagesRequest);
-  } else {
+  } else if (!imageHostDownload) {
+    // An image host puts the images itself, once the HTML is final
+    // (downloadZip): only the FTP is left here.
     const connectionTest = await testConnection({
       downloadMailingWithFtpImages: true,
       ftpHost,
@@ -1176,7 +1223,16 @@ async function handleRelativeOrFtpImages({
     }
   }
 
-  return { relativesImagesNames, archive, html };
+  return {
+    relativesImagesNames,
+    // Each distinct image with its source URL, for an image host to read it.
+    collectedImages: distinctImages.map((url) => ({
+      url,
+      name: getImageName(url),
+    })),
+    archive,
+    html,
+  };
 }
 
 // Resolve the tracking context for a mailing: fetch group + template, build

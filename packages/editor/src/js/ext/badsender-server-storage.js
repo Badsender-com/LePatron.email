@@ -5,6 +5,7 @@ const console = require('console');
 const $ = require('jquery');
 const ko = require('knockout');
 const _omit = require('lodash.omit');
+const { escapeHtml } = require('./comments-utils.js');
 const {
   EDITOR_ONLY_METADATA_KEYS,
 } = require('../utils/editor-only-metadata-keys');
@@ -230,7 +231,14 @@ function loader(opts) {
 
       viewModel.notifier.info(viewModel.t('Downloading...'));
 
+      // Kept to read the error answer: with a blob expected, jQuery hands the
+      // error callback no body.
+      var request;
       $.ajax({
+        xhr: function () {
+          request = new window.XMLHttpRequest();
+          return request;
+        },
         url: viewModel.metadata.url.zip,
         method: 'POST',
         contentType: 'application/json',
@@ -239,6 +247,9 @@ function loader(opts) {
           filename: viewModel.metadata.name(),
           downLoadForCdn: downloadOptions.forCdn,
           downLoadForFtp: downloadOptions.forFtp,
+          hostingIntegrationId: downloadOptions.imageHost
+            ? downloadOptions.imageHost.id
+            : undefined,
           // Send the live tracking state from the builder so the backend
           // validates / rewrites against the latest values rather than the
           // last saved snapshot in mailing.data.tracking.
@@ -256,7 +267,11 @@ function loader(opts) {
           window.URL.revokeObjectURL(url);
         },
         error: function() {
-          viewModel.notifier.error(viewModel.t('download-ftp-error'));
+          if (!downloadOptions.imageHost) {
+            viewModel.notifier.error(viewModel.t('download-ftp-error'));
+            return;
+          }
+          notifyImageHostError(viewModel, downloadOptions.imageHost, request);
         },
         complete: function() {
           downloadCmd.enabled(true);
@@ -268,6 +283,57 @@ function loader(opts) {
     viewModel.test = testCmd;
     viewModel.download = downloadCmd;
   };
+}
+
+// The export to an image host failed (ADR 0028). The answer is a blob, as the
+// request expects a ZIP: read back as JSON, it names the images the host could
+// not take, when that is why.
+function notifyImageHostError(viewModel, imageHost, xhr) {
+  var fallback = function () {
+    viewModel.notifier.error(
+      viewModel.t('download-image-host-error', {
+        host: escapeHtml(imageHost.name),
+      })
+    );
+  };
+  var body = xhr && xhr.response;
+  if (!body || typeof body.text !== 'function') return fallback();
+  body
+    .text()
+    .then(function (text) {
+      var answer = JSON.parse(text);
+      if (answer.errorCode === 'IMAGE_HOST_CREDENTIALS_REFUSED') {
+        viewModel.notifier.error(
+          viewModel.t('download-image-host-credentials-refused', {
+            host: escapeHtml(imageHost.name),
+          })
+        );
+        return;
+      }
+      if (answer.errorCode === 'IMAGE_HOST_NOT_AVAILABLE') {
+        viewModel.notifier.error(
+          viewModel.t('download-image-host-unavailable', {
+            host: escapeHtml(imageHost.name),
+          })
+        );
+        return;
+      }
+      if (!Array.isArray(answer.images) || !answer.images.length) {
+        return fallback();
+      }
+      var names = answer.images.map(function (url) {
+        return url.split('?')[0].split('/').pop();
+      });
+      viewModel.notifier.error(
+        // toastr renders HTML: the names come from the integration and the
+        // email's URLs.
+        viewModel.t('download-image-host-images-error', {
+          host: escapeHtml(imageHost.name),
+          images: escapeHtml(names.join(', ')),
+        })
+      );
+    })
+    .catch(fallback);
 }
 
 module.exports = loader;

@@ -17,6 +17,7 @@ const {
 } = require('../constant/model.names');
 const logger = require('../utils/logger.js');
 const AIFeatureTypes = require('../constant/ai-feature-type');
+const IntegrationTypes = require('../constant/integration-type.js');
 const { EmailTriggerValues } = require('../constant/email-trigger');
 const { resolveTrackingConfig } = require('../utils/resolve-tracking-config');
 const { HEAD_CSS_MAX_LENGTH } = require('../../shared/head-css/constants.js');
@@ -614,6 +615,21 @@ MailingSchema.statics.findOneForMosaico = async function findOneForMosaico(
   const mailingService = require('./mailing.service.js');
   const canWrite = await mailingService.userCanEditMailing(user, mailing);
 
+  // The image hosts the export menu offers (ADR 0028): only those switched on
+  // and validated when last tested, by name. Lazy require, as above.
+  const integrationService = require('../integration/integration.service.js');
+  const imageHosts = (
+    await integrationService.findActiveByGroupAndType({
+      groupId,
+      type: IntegrationTypes.ASSET_HOSTING,
+    })
+  )
+    .filter((integration) => integration.validationStatus === 'valid')
+    .map((integration) => ({
+      id: String(integration._id),
+      name: integration.name,
+    }));
+
   let redirectUrl = null;
 
   // The bootstrap account stays in the settings; a super admin goes back to
@@ -662,6 +678,7 @@ MailingSchema.statics.findOneForMosaico = async function findOneForMosaico(
         cdnButtonLabel: group.cdnButtonLabel,
         ftpImages: group.downloadMailingWithFtpImages,
         ftpButtonLabel: group.ftpButtonLabel,
+        imageHosts,
       },
       trackingConfig: resolveTrackingConfig(group, mailing._wireframe),
       fileuploadConfig: {
@@ -700,6 +717,7 @@ MailingSchema.statics.findOneForMosaico = async function findOneForMosaico(
       cdnButtonLabel: group.cdnButtonLabel,
       ftpImages: group.downloadMailingWithFtpImages,
       ftpButtonLabel: group.ftpButtonLabel,
+      imageHosts,
     },
     // Mosaico absolutely need an object as `data`
     data: mailing.data || {},
