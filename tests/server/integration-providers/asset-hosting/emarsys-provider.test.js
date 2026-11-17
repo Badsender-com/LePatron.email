@@ -352,8 +352,7 @@ describe('Emarsys provider: putting an image', () => {
   });
 });
 
-// Turned on by #1615 (a re-export only uploads what changed)
-describe.skip('Emarsys provider: checking a file', () => {
+describe('Emarsys provider: checking a file', () => {
   let EmarsysProvider;
 
   beforeAll(() => {

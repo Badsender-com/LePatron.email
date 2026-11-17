@@ -114,6 +114,31 @@ class EmarsysProvider extends BaseProvider {
     return { id, url: file.url };
   }
 
+  /**
+   * Whether a file put earlier is still in the Media Database: someone may
+   * have deleted it there. Anything but a clear answer reads as "not found",
+   * and the image is put again; refused credentials still throw.
+   * @param {string} fileId
+   * @returns {Promise<boolean>}
+   */
+  async fileExists(fileId) {
+    try {
+      const file = await this.callApi(
+        'GET',
+        `/file/${encodeURIComponent(String(fileId))}`
+      );
+      return !!(file && file.url);
+    } catch (error) {
+      if (
+        error instanceof ProviderError &&
+        error.code === CODES.INVALID_CREDENTIALS
+      ) {
+        throw error;
+      }
+      return false;
+    }
+  }
+
   emailFolderId(folderName) {
     if (!this.folderIds.has(folderName)) {
       const pending = this.findOrCreateFolder(folderName).catch((error) => {

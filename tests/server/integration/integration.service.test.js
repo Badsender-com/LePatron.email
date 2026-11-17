@@ -16,6 +16,9 @@ jest.mock('../../../packages/server/common/models.common', () => ({
   Dashboards: {
     deleteMany: jest.fn(),
   },
+  HostedImages: {
+    deleteMany: jest.fn().mockResolvedValue({ deletedCount: 0 }),
+  },
 }));
 
 jest.mock('../../../packages/server/group/group.service', () => ({
