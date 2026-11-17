@@ -287,6 +287,7 @@
     "code:fix": "yarn code:lint --fix && yarn code:pretty",
     "test": "jest --watch",
     "block-builder:compile": "node scripts/compile-block-builder-components.js",
+    "fake:emarsys": "node scripts/fake-emarsys.js",
     "block-builder:gallery": "node scripts/build-block-builder-gallery.js",
     "test-ci": "jest",
     "check-skills": "node scripts/check-skill-usage.js --dry",

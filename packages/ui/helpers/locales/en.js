@@ -1169,6 +1169,7 @@ export default {
       rootFolder: 'Media Database root folder',
       rootFolderHint: 'Each exported email gets a folder of its own inside it.',
       rootFolderPlaceholder: 'No folder loaded',
+      rootFolderMissing: 'The saved folder no longer exists in this account: choose another one.',
       folderNumber: 'Folder #{id}',
       loadFolders: 'Load folders',
       reloadFolders: 'Reload',
