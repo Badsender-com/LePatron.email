@@ -43,7 +43,8 @@ export default {
     // The group's, which a template's exceptions are laid over.
     generalSettings: { type: Object, default: null },
     groupId: { type: String, default: '' },
-    // Saves the payload; returns a promise.
+    // Saves the payload; returns a promise of the server's answer, which
+    // the `saved` event passes on.
     save: { type: Function, required: true },
   },
   data() {
@@ -203,12 +204,14 @@ export default {
     async submit() {
       this.loading = true;
       try {
-        await this.save(this.payload);
+        const response = await this.save(this.payload);
         this.showSnackbar({
           text: this.$t('qualitySettings.snackbars.updated'),
           color: 'success',
         });
-        this.$emit('saved');
+        // The server's answer: what is stored now, saves made meanwhile to
+        // other checks included.
+        this.$emit('saved', response);
       } catch (error) {
         this.showSnackbar({
           text: this.$t(qualitySettingsErrorKeyFor(error)),

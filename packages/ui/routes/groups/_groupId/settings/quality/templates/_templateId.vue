@@ -107,15 +107,13 @@ export default {
       );
     },
 
-    async refresh() {
-      const templates = await fetchTemplates({
-        $axios: this.$axios,
-        params: this.$route.params,
-      });
-      // A failed refetch keeps what is shown: the save itself went through.
-      if (!templates) return;
-      this.template =
-        templates.find((t) => t.id === this.$route.params.templateId) || null;
+    // The PUT answers with the template's settings as stored now: nothing
+    // to refetch.
+    onSaved(response) {
+      this.template = {
+        ...this.template,
+        qualitySettings: (response && response.qualitySettings) || null,
+      };
     },
   },
 };
@@ -155,7 +153,7 @@ export default {
             :save="saveTemplate"
             @changes="unsavedChanges = $event"
             @exceptions="ownIds = $event"
-            @saved="refresh"
+            @saved="onSaved"
           />
 
           <section class="applied">
