@@ -22,8 +22,9 @@ const remoteCheck = (status) => (rule) => ({
 });
 
 // A check listed by both runs (a local rule with a second look at the
-// server's answer) is listed once: failed if either run found something.
-const STATUS_RANK = { passed: 0, error: 1, failed: 2 };
+// server's answer) is listed once: failed if either run found something, else
+// not run if the second look could not run, so never passed on half a look.
+const STATUS_RANK = { passed: 0, error: 1, cancelled: 1, failed: 2 };
 function mergeChecks(local, remote) {
   const byId = new Map(local.map((check) => [check.ruleId, check]));
   const added = [];
@@ -78,6 +79,16 @@ function createRemoteChecks(options) {
   let pending = null;
   // The local results the server's checks complete.
   let lastLocal = null;
+
+  // A run the server did not answer: its checks are listed as not run, and
+  // so is a local check whose second look had images to read, rather than
+  // passed on the images it saw alone.
+  function unanswered(local, status) {
+    const late = askedLateRules(local).map(remoteCheck(status));
+    return mergeChecks(local.checks, late).concat(
+      listed.map(remoteCheck(status))
+    );
+  }
 
   // The server's rules, and the local ones whose second look asked it,
   // read its answer on the context of the local pass (parsed once).
@@ -157,7 +168,7 @@ function createRemoteChecks(options) {
         if (remoteApi.isCancel(err)) {
           const cancelled = {
             ...asLocal,
-            checks: local.checks.concat(listed.map(remoteCheck('cancelled'))),
+            checks: unanswered(local, 'cancelled'),
           };
           if (isCurrent(id)) {
             state.checks(cancelled.checks);
@@ -169,7 +180,7 @@ function createRemoteChecks(options) {
         // may not even be configured: it is left out.
         const outcome = {
           findings: local.findings,
-          checks: local.checks.concat(listed.map(remoteCheck('error'))),
+          checks: unanswered(local, 'error'),
           status: 'error',
           failure: remoteApi.isTooFrequent(err) ? 'too-frequent' : 'failed',
         };
@@ -187,15 +198,11 @@ function createRemoteChecks(options) {
     abortPending();
     if (state.remoteStatus() !== 'running') return;
     // Not run, and said so: they never count as passed.
-    if (lastLocal) {
-      state.checks(
-        lastLocal.checks.concat(listed.map(remoteCheck('cancelled')))
-      );
-    }
+    if (lastLocal) state.checks(unanswered(lastLocal, 'cancelled'));
     state.remoteStatus('idle');
   }
 
   return { run, cancel, abortPending, listedCount: listed.length };
 }
 
-module.exports = { createRemoteChecks, listedRemoteRules };
+module.exports = { createRemoteChecks, listedRemoteRules, mergeChecks };
