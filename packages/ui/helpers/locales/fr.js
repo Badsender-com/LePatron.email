@@ -151,7 +151,8 @@ export default {
   },
   global: {
     saveOutcome: {
-        failed: 'Modification non enregistrée.',
+      saved: 'Enregistré',
+      failed: 'Modification non enregistrée.',
       retry: 'Réessayer',
     },
     states: { on: 'Activé', off: 'Désactivé' },
