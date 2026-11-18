@@ -4,6 +4,7 @@ const {
   displayBlockingFindings,
   displayWaitingForChecks,
 } = require('../badsender-control-quality');
+const remoteApi = require('./quality-remote');
 
 // The quality gate of the exports (the download with its FTP or CDN push,
 // the ESP send; ADR 0009): the one place that decides whether an email may
@@ -49,13 +50,48 @@ const verdictOf = ({
 });
 
 /**
+ * The run of the checks for one export, with what the gate does with it.
+ * @param {Object} quality - viewModel.quality
+ * @param {Object} runs - what the review gives the gate (quality-review.js)
+ * @param {Object} options - `html`, the HTML about to leave; `quiet`
+ * @returns {Object} `local`: the run's local results; `remote`: the promise
+ *   of its outcome once the server answered (remote-checks.js) when the
+ *   export waits for it, null otherwise; `cancel()`: abandons the run;
+ *   `giveUp()`: stops waiting for the server, its checks listed as
+ *   cancelled; `present()`: shows the run's results in the drawer, without
+ *   asking the server again; `isCurrent()`: whether the drawer shows them.
+ */
+function exportRun(quality, runs, options) {
+  const cancel = remoteApi.createCancel();
+  const run = runs.start({ ...options, cancel });
+  let latest = { ...run.local, status: 'idle', failure: null };
+  run.remote.then((outcome) => {
+    latest = outcome;
+  });
+  const isCurrent = () => runs.isCurrent(run.id);
+  return {
+    local: run.local,
+    remote: run.waits ? run.remote : null,
+    isCurrent,
+    cancel() {
+      if (isCurrent()) quality.cancel();
+      cancel.cancel();
+    },
+    giveUp: () => cancel.cancel(),
+    present: () => runs.present(run, latest),
+  };
+}
+
+/**
  * Adds `viewModel.quality.gate` and `viewModel.quality.gating`, after the
  * review (quality-review.js).
  * @param {Object} viewModel
  * @param {Object} ko - knockout
- * @param {Object} [deps] - injectable for tests
+ * @param {Object} deps - `runs`, from the review; the rest injectable for
+ *   tests
  */
-function installQualityGate(viewModel, ko, deps = {}) {
+function installQualityGate(viewModel, ko, deps) {
+  const { runs } = deps;
   const defer = deps.defer || ((fn) => setTimeout(fn, 0));
   const serverWaitMs = deps.serverWaitMs || SERVER_WAIT_MS;
   const showBlocking = deps.displayBlockingFindings || displayBlockingFindings;
@@ -122,7 +158,7 @@ function installQualityGate(viewModel, ko, deps = {}) {
   function decide({ html, quiet = false }) {
     let run;
     try {
-      run = quality.runForExport({ html, quiet });
+      run = exportRun(quality, runs, { html, quiet });
     } catch (err) {
       console.error('Quality review failed', err);
       return Promise.resolve(verdictOf());

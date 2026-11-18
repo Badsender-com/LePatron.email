@@ -227,75 +227,6 @@ function installQualityReview(viewModel, ko, deps = {}) {
     },
 
     /**
-     * Runs the checks on the HTML an export is about to send, for the export
-     * gate (quality-gate.js): the local ones at once, the server's alongside.
-     * @param {Object} options
-     * @param {string} options.html - the HTML already exported
-     * @param {boolean} [options.quiet] - the drawer does not open on the
-     *   results (before an ESP send)
-     * @returns {Object} `local`: this run's local results; `remote`: the
-     *   promise of its outcome once the server answered (remote-checks.js),
-     *   when one of the server's checks blocks and it is asked, null
-     *   otherwise; `cancel()`: abandons the run; `giveUp()`: stops waiting
-     *   for the server, its checks listed as not run; `present()`: shows
-     *   this run's results in the drawer; `isCurrent()`: whether the drawer
-     *   shows them.
-     */
-    runForExport({ html, quiet = false } = {}) {
-      const id = ++runId;
-      runVersion = contentVersion;
-      const cancel = remoteApi.createCancel();
-      let started;
-      try {
-        started = runAll(
-          id,
-          { html },
-          // A gate needs the server's answer even if a later run starts.
-          { silent: quiet, answer: remoteBlocking, cancel }
-        );
-      } catch (err) {
-        settle();
-        throw err;
-      }
-      if (!quiet) surface(id);
-      const isCurrent = () => id === runId;
-      const ran = { version: runVersion, at: ranAt() };
-      let latest = { ...started.local, status: 'idle', failure: null };
-      started.remote.then((outcome) => {
-        latest = outcome;
-      });
-      return {
-        local: started.local,
-        remote:
-          remoteBlocking && remoteStatus() === 'running'
-            ? started.remote
-            : null,
-        isCurrent,
-        cancel() {
-          if (isCurrent()) viewModel.quality.cancel();
-          cancel.cancel();
-        },
-        giveUp: () => cancel.cancel(),
-        present() {
-          // Another run took the drawer since: this one's results come back,
-          // computed on the HTML that left, without asking the server again.
-          if (!isCurrent()) {
-            runId++;
-            remote.abortPending();
-            findings(latest.findings);
-            checks(latest.checks);
-            ranAt(ran.at);
-            resultVersion = ran.version;
-            remoteStatus(latest.status);
-            remoteError(latest.failure);
-            status(freshness());
-          }
-          surface(runId);
-        },
-      };
-    },
-
-    /**
      * Reviews the HTML a test is about to send. Never blocks the send:
      * the HTML is taken at once, the checks run after the click, a failure is
      * logged, and the server's checks come back in the background.
@@ -320,7 +251,51 @@ function installQualityReview(viewModel, ko, deps = {}) {
     },
   };
 
-  installQualityGate(viewModel, ko, deps);
+  // What the export gate (quality-gate.js) needs of the runs: start one on
+  // the HTML about to leave, and show its results again after the export.
+  const runs = {
+    start({ html, quiet = false, cancel }) {
+      const id = ++runId;
+      runVersion = contentVersion;
+      let started;
+      try {
+        // A gate needs the server's answer even if a later run starts.
+        const remoteOptions = { silent: quiet, answer: remoteBlocking, cancel };
+        started = runAll(id, { html }, remoteOptions);
+      } catch (err) {
+        settle();
+        throw err;
+      }
+      if (!quiet) surface(id);
+      return {
+        ...started,
+        id,
+        version: runVersion,
+        at: ranAt(),
+        // The export waits: a check of the server blocks, and it was asked.
+        waits: remoteBlocking && remoteStatus() === 'running',
+      };
+    },
+    isCurrent: (id) => id === runId,
+    // A run another one replaced in the drawer gets it back, then the drawer
+    // opens when there is something to fix.
+    present(run, latest) {
+      if (run.id !== runId) {
+        runId++;
+        remote.abortPending();
+        findings(latest.findings);
+        checks(latest.checks);
+        ranAt(run.at);
+        resultVersion = run.version;
+        remoteStatus(latest.status);
+        remoteError(latest.failure);
+        status(freshness());
+      }
+      surface(runId);
+    },
+  };
+
+  installQualityGate(viewModel, ko, { ...deps, runs });
 }
 
 module.exports = { installQualityReview };
