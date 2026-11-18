@@ -55,24 +55,24 @@ LePatron.email dispose d'un système de contrôle qualité réparti entre le cli
 
 ### Fichiers impliqués
 
-| Fichier                                                      | Rôle                            | Couche  |
-| ------------------------------------------------------------ | ------------------------------- | ------- |
-| `packages/editor/src/js/ext/quality/`                        | Moteur et règles du QC          | Client  |
-| `packages/editor/src/js/ext/badsender-control-quality.js`    | Modale des blocages             | Client  |
-| `packages/editor/src/js/ext/quality/quality-review.js`       | État du panneau, appels serveur | Client  |
-| `packages/editor/src/js/vue/components/quality-drawer/`      | Panneau « Tester votre email »  | Client  |
-| `packages/server/mailing/quality-resources.service.js`       | Liens et images mesurés         | Serveur |
-| `packages/server/mailing/mailing-quality.service.js`         | Résultats ignorés               | Serveur |
-| `packages/server/share-link/`                                | Lien de partage public          | Serveur |
-| `packages/editor/src/js/ext/badsender-server-storage.js`     | Intégration QC à l'export       | Client  |
-| `packages/editor/src/js/vue/components/esp/esp-send-mail.js` | QC avant envoi ESP              | Client  |
-| `packages/server/mailing/mailing.service.js`                 | Validations métier              | Serveur |
-| `packages/server/mailing/download-zip.controller.js`         | Export ZIP                      | Serveur |
-| `packages/server/mailing/send-test-mail.service.js`          | Validation emails test          | Serveur |
-| `packages/server/profile/profile.service.js`                 | Validation profils ESP          | Serveur |
-| `packages/server/utils/process-mosaico-html-render.js`       | Processing HTML                 | Serveur |
-| `packages/server/utils/download-zip-markdown.js`             | Notices export                  | Serveur |
-| `packages/editor/src/js/converter/checkmodel.js`             | Validation modèle données       | Client  |
+| Fichier                                                      | Rôle                                    | Couche  |
+| ------------------------------------------------------------ | --------------------------------------- | ------- |
+| `packages/editor/src/js/ext/quality/`                        | Moteur et règles du QC                  | Client  |
+| `packages/editor/src/js/ext/badsender-control-quality.js`    | Modales de la porte (attente, blocages) | Client  |
+| `packages/editor/src/js/ext/quality/quality-review.js`       | État du panneau, appels serveur         | Client  |
+| `packages/editor/src/js/vue/components/quality-drawer/`      | Panneau « Tester votre email »          | Client  |
+| `packages/server/mailing/quality-resources.service.js`       | Liens et images mesurés                 | Serveur |
+| `packages/server/mailing/mailing-quality.service.js`         | Résultats ignorés                       | Serveur |
+| `packages/server/share-link/`                                | Lien de partage public                  | Serveur |
+| `packages/editor/src/js/ext/badsender-server-storage.js`     | Intégration QC à l'export               | Client  |
+| `packages/editor/src/js/vue/components/esp/esp-send-mail.js` | QC avant envoi ESP                      | Client  |
+| `packages/server/mailing/mailing.service.js`                 | Validations métier                      | Serveur |
+| `packages/server/mailing/download-zip.controller.js`         | Export ZIP                              | Serveur |
+| `packages/server/mailing/send-test-mail.service.js`          | Validation emails test                  | Serveur |
+| `packages/server/profile/profile.service.js`                 | Validation profils ESP                  | Serveur |
+| `packages/server/utils/process-mosaico-html-render.js`       | Processing HTML                         | Serveur |
+| `packages/server/utils/download-zip-markdown.js`             | Notices export                          | Serveur |
+| `packages/editor/src/js/converter/checkmodel.js`             | Validation modèle données               | Client  |
 
 ---
 
@@ -137,7 +137,7 @@ Les seuils sont ceux de la revue d'équipe du 1er octobre 2026. Le catalogue dé
 
 ### Affichage
 
-Le panneau « Tester votre email » (`vue/components/quality-drawer/`) remplace la bannière du lot 1. Il groupe les résultats par sévérité (erreurs, warnings, infos, réussis), et chaque résultat propose « Aller au bloc », « Ajouter un commentaire » (pré-rempli, rien n'est publié sans l'utilisateur) et « Ignorer ». Un résultat ignoré est enregistré sur le mailing par son empreinte (`PATCH /api/mailings/:mailingId/quality-ignores`) et revient si son contenu change. Le téléchargement et l'envoi ESP lancent le contrôle et ouvrent le panneau ; ce qui bloque dépend des réglages du groupe et du template (voir ci-dessous), et `viewModel.quality.gate()` le liste dans une modale (`displayBlockingFindings()`). Sans réglage, seul le tracking obligatoire est bloquant. Tous les exports passent par ce seul point d'entrée (`ext/quality/quality-gate.js`) : attente du serveur bornée à 30 s avec un bouton « Annuler », et un avertissement quand les liens et les images n'ont pas pu être vérifiés. L'onglet « Envoi de test » du panneau envoie un test et crée les liens de partage.
+Le panneau « Tester votre email » (`vue/components/quality-drawer/`) remplace la bannière du lot 1. Il groupe les résultats par sévérité (erreurs, warnings, infos, réussis), et chaque résultat propose « Aller au bloc », « Ajouter un commentaire » (pré-rempli, rien n'est publié sans l'utilisateur) et « Ignorer ». Un résultat ignoré est enregistré sur le mailing par son empreinte (`PATCH /api/mailings/:mailingId/quality-ignores`) et revient si son contenu change. Le téléchargement et l'envoi ESP lancent le contrôle. Le téléchargement ouvre le panneau quand il y a quelque chose à corriger ; l'envoi ESP ne l'ouvre avant l'envoi que sur ce qui bloque, et après l'envoi sur ce qui reste à corriger, à partir du contrôle fait au choix du profil (`present()`, sans redemander au serveur). Ce qui bloque dépend des réglages du groupe et du template (voir ci-dessous), et `viewModel.quality.gate()` le liste dans une modale (`displayBlockingFindings()`). Sans réglage, seul le tracking obligatoire est bloquant. Tous les exports depuis l'éditeur passent par ce seul point d'entrée (`ext/quality/quality-gate.js`) : attente du serveur bornée à 30 s avec un bouton « Annuler », un avertissement quand les liens et les images n'ont pas pu être vérifiés, et l'export envoyé est celui qui a été contrôlé. Le téléchargement groupé depuis la liste des mailings n'y passe pas (#1629). L'onglet « Envoi de test » du panneau envoie un test et crée les liens de partage.
 
 ### Réglages par groupe et par template (epic #1193, ADR 0009)
 
@@ -148,7 +148,7 @@ Chaque contrôle a un état par groupe : **Désactivé**, **Actif** ou **Bloquan
 - **Résolution** : `resolveQualitySettings(group, template)` donne, pour chaque contrôle et chaque seuil, la valeur du template, sinon celle du groupe, sinon le défaut. L'éditeur la reçoit dans `metadata.qualitySettings`.
 - **Éditeur** : un contrôle désactivé n'est ni lancé ni listé, et le panneau dit combien le sont. Les règles lisent leurs seuils dans `ctx.config.quality`, et les messages les citent.
 - **Blocage** :
-  - les résultats d'un contrôle bloquant portent `blocking` et ne peuvent pas être ignorés ;
+  - un contrôle bloquant ne bloque que sur son niveau le plus grave (`levels.js`) : seuls ces résultats portent `blocking` et ne peuvent pas être ignorés ; ses niveaux inférieurs restent des résultats qui ne bloquent pas ;
   - `viewModel.quality.gate({ html })` arrête le téléchargement et l'envoi ESP (avant l'ouverture du formulaire) et liste ce qui bloque dans une modale ;
   - un contrôle serveur bloquant fait attendre la réponse du serveur. Seul un résultat sûr bloque, un échec du serveur jamais ;
   - côté serveur, seul le tracking obligatoire est revérifié, et seulement s'il est bloquant pour le mailing : réglage du template, sinon de l'entreprise, sinon le défaut (`resolveMailingTrackingContext`). Désactivé ou seulement actif, les paramètres manquants passent et les autres paramètres de tracking s'appliquent quand même. Les autres blocages ne s'appliquent que dans l'éditeur.
