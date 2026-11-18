@@ -102,14 +102,33 @@ export default {
       continue: 'Continuer vers LePatron',
     },
     group: {
+      sectionTitle: 'Sécurité',
+      sectionDescription: 'Comment les membres de l’entreprise se connectent.',
       title: 'Double authentification',
       description:
         'Chaque membre de l’entreprise saisit un code après son mot de passe. Ceux qui ne l’ont pas encore configurée le feront à leur prochaine connexion.',
       switch: 'Exiger la double authentification',
+      on: 'Exigée',
+      off: 'Non exigée',
+      progress:
+        'Configurée par {n} membre sur {total} | Configurée par {n} membres sur {total}',
       saml: 'Cette entreprise se connecte en SSO : la double authentification relève de son fournisseur d’identité.',
-      updated: 'Paramètre enregistré',
-      required: 'Exigée pour tous les membres.',
-      notRequired: 'Non exigée.',
+      saved: 'Enregistré',
+      failed: 'Modification non enregistrée.',
+      retry: 'Réessayer',
+      confirmOn: {
+        title: 'Exiger la double authentification ?',
+        pending:
+          '{n} membre sur {total} ne l’a pas encore configurée. | {n} membres sur {total} ne l’ont pas encore configurée.',
+        everyone:
+          'Chaque membre la configurera à sa prochaine connexion. Les sessions déjà ouvertes ne sont pas interrompues.',
+        action: 'Exiger la double authentification',
+      },
+      confirmOff: {
+        title: 'Ne plus exiger la double authentification ?',
+        body: 'Les membres pourront se connecter avec leur seul mot de passe.',
+        action: 'Ne plus exiger',
+      },
       managedByTech: 'Seul un administrateur technique peut modifier ce paramètre.',
     },
     users: {

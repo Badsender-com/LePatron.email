@@ -373,6 +373,10 @@ export default {
       </template>
     </v-card>
 
+    <!-- Cards of the settings that save on their own (security): the danger
+         zone stays last, nothing goes under it. -->
+    <slot name="before-danger-zone" />
+
     <!-- ==================== DANGER ZONE ==================== -->
     <v-card
       v-if="canManagePlatform && isEdit"
