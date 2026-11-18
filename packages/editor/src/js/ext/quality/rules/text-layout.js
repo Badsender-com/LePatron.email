@@ -83,6 +83,7 @@ module.exports = {
   id: 'text-layout',
   category: 'accessibility',
   severity: 'info',
+  levels: ['info', 'warning'],
   titleKey: 'Text layout',
   passKey: 'No text is justified, overlaps or is centred at length',
   run(ctx) {

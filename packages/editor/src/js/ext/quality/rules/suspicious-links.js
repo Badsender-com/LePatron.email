@@ -77,6 +77,7 @@ module.exports = {
   id: 'suspicious-links',
   category: 'content',
   severity: 'warning',
+  levels: ['info', 'warning'],
   titleKey: 'Link domains',
   passKey: 'No link points to a suspicious domain',
   run(ctx) {

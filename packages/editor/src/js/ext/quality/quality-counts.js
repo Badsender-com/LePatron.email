@@ -14,7 +14,7 @@ function createCounts(ko, { active, checks }) {
       () => active().filter((f) => severities.includes(f.severity)).length
     );
   // What the toolbar badge counts: what should be fixed, not the infos,
-  // unless they block an export.
+  // unless they block an export (a blocking check whose only level is info).
   const issueCount = ko.pureComputed(
     () =>
       active().filter(

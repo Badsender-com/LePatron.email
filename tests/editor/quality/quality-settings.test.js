@@ -6,8 +6,9 @@
 
 // The editor applies the quality settings of the mailing (epic #1193, ADR
 // 0009): a check that is off is neither run nor listed, the thresholds in force
-// are applied and quoted, and a finding of a blocking check stops the download
-// and the ESP send and cannot be ignored.
+// are applied and quoted, and a finding at the most severe level of a blocking
+// check stops the download and the ESP send and cannot be ignored (its lower
+// levels: blocking-levels.test.js).
 
 const ko = require('knockout');
 const {
@@ -149,7 +150,8 @@ describe('a blocking check', () => {
     expect(verdict.blocked).toBe(false);
   });
 
-  it('is counted on the toolbar badge, even as an info', () => {
+  // Its only level is info: every finding blocks (blocking-levels.test.js).
+  it('is counted on the toolbar badge, even as an info when it blocks', () => {
     const vm = fakeViewModel(textBlock('<p>Hi</p>'));
     const finding = {
       ruleId: 'headings',

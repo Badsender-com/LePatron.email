@@ -35,6 +35,7 @@ module.exports = {
   id: 'color-contrast',
   category: 'accessibility',
   severity: 'warning',
+  levels: ['warning', 'error'],
   titleKey: 'Colour contrast',
   passKey: 'Every coloured text reads against its background',
   run(ctx) {

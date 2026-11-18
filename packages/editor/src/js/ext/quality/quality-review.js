@@ -75,8 +75,9 @@ function installQualityReview(viewModel, ko, deps = {}) {
   // The review of an export that could not open the drawer said so once.
   let notifiedRun = 0;
 
-  // A finding of a blocking check cannot be ignored: an ignore stored before
-  // the check became blocking no longer hides it (ADR 0009).
+  // A finding that blocks cannot be ignored: an ignore stored before its
+  // check became blocking no longer hides it (ADR 0009). The lower levels of
+  // a blocking check do not block: their ignores still hold.
   const isIgnored = (finding) =>
     !finding.blocking && ignores.has(finding.fingerprint);
   const active = ko.pureComputed(() => findings().filter((f) => !isIgnored(f)));

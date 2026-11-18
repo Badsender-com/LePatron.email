@@ -22,6 +22,7 @@ module.exports = {
   id: 'domain-blocklists',
   category: 'content',
   severity: 'warning',
+  levels: ['info', 'warning'],
   titleKey: 'Blocklisted domains',
   remote: true,
   // What the editor sends the server for it (resources.js).

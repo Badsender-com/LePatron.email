@@ -50,6 +50,7 @@ module.exports = {
   id: 'dangerous-links',
   category: 'content',
   severity: 'error',
+  levels: ['info', 'error'],
   titleKey: 'Dangerous links',
   remote: true,
   // What the editor sends the server for it (resources.js).

@@ -43,6 +43,7 @@ const domainBlocklists = require('./rules/domain-blocklists');
 const dangerousLinks = require('./rules/dangerous-links');
 const { collectResources } = require('./resources');
 const { checkStateOf } = require('./settings');
+const { isMostSevere } = require('./levels');
 
 // Order is the order checks are listed in; severity grouping happens in the UI.
 const DEFAULT_RULES = [
@@ -109,17 +110,21 @@ function hashString(value) {
  */
 function completeFinding(rule, finding, ctx) {
   const blockId = finding.blockId || null;
-  // A finding of a blocking check stops the download and the ESP send (ADR
-  // 0009), unless the rule says it is not sure (a server answer that may be a
-  // robot refusal, not a broken page).
+  const severity = finding.severity || rule.severity;
+  // A blocking check stops the download and the ESP send on its most severe
+  // level only (ADR 0009): its lower levels warn about what is often a
+  // choice. Never when the rule says it is not sure (a server answer that may
+  // be a robot refusal, not a broken page).
   const blocking =
-    checkStateOf(ctx, rule.id) === 'blocking' && !finding.uncertain;
+    checkStateOf(ctx, rule.id) === 'blocking' &&
+    isMostSevere(rule, severity) &&
+    !finding.uncertain;
   const propertyPath = finding.propertyPath || null;
   return {
     ruleId: rule.id,
     category: rule.category,
     titleKey: rule.titleKey,
-    severity: finding.severity || rule.severity,
+    severity,
     messageKey: finding.messageKey,
     params: finding.params || {},
     blockId,

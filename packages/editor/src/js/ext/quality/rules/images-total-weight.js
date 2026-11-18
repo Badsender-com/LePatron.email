@@ -23,6 +23,7 @@ module.exports = {
   id: 'images-total-weight',
   category: 'performance',
   severity: 'warning',
+  levels: ['warning', 'error'],
   titleKey: 'Total image weight',
   remote: true,
   // What the editor sends the server for it (resources.js).
