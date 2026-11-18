@@ -55,7 +55,7 @@ export default {
         <template #before-danger-zone>
           <bs-group-two-factor-option
             v-if="group.id"
-            class="mt-3"
+            class="mt-6"
             :group="group"
             @update="group.requireTwoFactor = $event.requireTwoFactor"
           />
