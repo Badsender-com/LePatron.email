@@ -1,7 +1,5 @@
 'use strict';
 
-const { readTrackingUrls } = require('../context');
-
 /**
  * The required tracking keys (as defined by the group config) that have no
  * value among the tracking values the client filled in.
@@ -24,14 +22,6 @@ function missingRequiredKeys(cfg, trackingUrls) {
   return requiredKeys.filter((k) => !filled.has(k));
 }
 
-// Download and ESP send call it directly too: a missing key blocks them.
-function checkRequiredTrackingParams(viewModel) {
-  return missingRequiredKeys(
-    viewModel && viewModel.metadata && viewModel.metadata.trackingConfig,
-    readTrackingUrls(viewModel)
-  );
-}
-
 module.exports = {
   id: 'tracking-params',
   category: 'content',
@@ -52,5 +42,4 @@ module.exports = {
       },
     ];
   },
-  checkRequiredTrackingParams,
 };
