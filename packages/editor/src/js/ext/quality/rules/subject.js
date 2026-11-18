@@ -43,6 +43,7 @@ module.exports = {
   id: 'subject',
   category: 'copy',
   severity: 'warning',
+  levels: ['info', 'warning'],
   titleKey: 'quality-title-subject',
   passKey: 'The subject is filled in and __count__ characters long',
   // The ESP holds the subject: nothing to pass, the check is not listed.

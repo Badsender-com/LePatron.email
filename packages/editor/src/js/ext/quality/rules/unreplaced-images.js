@@ -23,6 +23,7 @@ module.exports = {
   id: 'unreplaced-images',
   category: 'content',
   severity: 'error',
+  levels: ['warning', 'error'],
   titleKey: 'quality-title-images',
   passKey: 'Every image has been replaced',
   run(ctx) {

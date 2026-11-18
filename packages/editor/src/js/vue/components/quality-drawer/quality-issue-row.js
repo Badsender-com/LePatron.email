@@ -30,7 +30,8 @@ const QualityIssueRow = Vue.component('QualityIssueRow', {
     isFinding() {
       return Boolean(this.item.finding);
     },
-    // A finding of a blocking check: it stops the export, and cannot be ignored.
+    // A finding at the most severe level of a blocking check: it stops the
+    // export, and cannot be ignored.
     isBlocking() {
       return Boolean(this.item.finding && this.item.finding.blocking);
     },

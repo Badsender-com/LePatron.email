@@ -40,6 +40,7 @@ module.exports = {
   id: 'preheader',
   category: 'copy',
   severity: 'warning',
+  levels: ['info', 'warning'],
   titleKey: 'quality-title-preheader',
   passKey: 'The preheader is filled in and __count__ characters long',
   // A template without a preheader has nothing to pass: the check is not listed.

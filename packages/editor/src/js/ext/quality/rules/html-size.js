@@ -20,6 +20,7 @@ module.exports = {
   id: 'html-size',
   category: 'technical',
   severity: 'warning',
+  levels: ['info', 'warning'],
   titleKey: 'Email weight',
   passKey: 'Exported HTML weighs __size__ KB, under the __max__ limit',
   GMAIL_CLIPPING_BYTES,

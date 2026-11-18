@@ -39,6 +39,7 @@ module.exports = {
   id: 'broken-links',
   category: 'content',
   severity: 'error',
+  levels: ['info', 'error'],
   titleKey: 'Broken links',
   remote: true,
   // What the editor sends the server for it (resources.js).

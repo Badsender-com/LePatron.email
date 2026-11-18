@@ -25,6 +25,7 @@ module.exports = {
   id: 'insecure-urls',
   category: 'technical',
   severity: 'info',
+  levels: ['info', 'warning'],
   titleKey: 'Secure addresses',
   passKey: 'Every link and image uses https',
   run(ctx) {
