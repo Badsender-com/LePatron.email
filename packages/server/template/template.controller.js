@@ -246,12 +246,17 @@ async function updateTrackingConfig(req, res) {
  *
  * @apiParam (Body) {Object} checks `{ [checkId]: { state?, thresholds? } }`;
  *   `null` brings a setting back to the group's (ADR 0009)
+ * @apiSuccess {Object} qualitySettings the template's settings, as stored
  */
 async function updateQualitySettings(req, res) {
   const { templateId } = req.params;
   const { user } = req;
-  const template = await Templates.findById(templateId);
-  if (!template) throw new createError.NotFound();
+  // Only what the check and the write need: a template's markup weighs
+  // megabytes.
+  const template = await Templates.findById(templateId)
+    .select('_company qualitySettings')
+    .lean();
+  if (!template) throw new createError.NotFound(ERROR_CODES.TEMPLATE_NOT_FOUND);
   // A company admin only touches the templates of their own company, a super
   // admin any template.
   if (!permissions.canManageGroup(user, template._company)) {
@@ -260,20 +265,22 @@ async function updateQualitySettings(req, res) {
   // What the template does not set follows its group: thresholds that go
   // together are checked against the group's values.
   const group = template._company
-    ? await Groups.findById(template._company).select('qualitySettings')
+    ? await Groups.findById(template._company).select('qualitySettings').lean()
     : null;
   const { checks } = resolveQualitySettings(group, null);
   const inherited = Object.fromEntries(
     Object.entries(checks).map(([id, check]) => [id, check.thresholds])
   );
-  template.qualitySettings = sanitizeQualitySettings(
+  const qualitySettings = sanitizeQualitySettings(
     req.body,
     template.qualitySettings,
     inherited
   );
-  template.markModified('qualitySettings');
-  await template.save();
-  res.json(template);
+  await Templates.updateOne(
+    { _id: template._id },
+    { $set: { qualitySettings } }
+  );
+  res.json({ qualitySettings });
 }
 
 /**

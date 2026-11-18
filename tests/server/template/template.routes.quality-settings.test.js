@@ -1,33 +1,231 @@
 'use strict';
 
-// A company admin may override the quality settings of their own group's
-// templates (epic #1193): that rests on two lines, the route's guard, and the
-// controller's own-group check (template.controller.quality-settings.test.js).
-// The guard is read off the real router, compared by identity.
+// PUT /templates/:templateId/quality-settings as a client calls it: the real
+// router, guards and controller, over models that apply the projection they
+// are asked for, as MongoDB would (epic #1193, ADR 0009). A company admin may
+// override the quality settings of their own company's templates: the route's
+// guard lets company admins through, the controller checks the company.
 
-// The controller pulls image processing in (sharp); only its handlers' names
-// matter to the router.
+jest.mock('puppeteer', () => ({}));
+jest.mock('../../../packages/server/common/models.common.js', () => ({
+  Templates: { findById: jest.fn(), updateOne: jest.fn() },
+  Groups: { findById: jest.fn() },
+  Mailings: {},
+  Galleries: {},
+  Users: {},
+}));
+jest.mock('../../../packages/server/common/file-manage.service.js', () => ({}));
 jest.mock(
-  '../../../packages/server/template/template.controller.js',
-  () =>
-    new Proxy(
-      {},
-      { get: (_target, name) => (name === '__esModule' ? false : jest.fn()) }
-    )
+  '../../../packages/server/template/generate-preview.controller.js',
+  () => {
+    const answer = (req, res) => res.json({});
+    return {
+      previewMarkup: answer,
+      generatePreviews: answer,
+      previewEvents: answer,
+    };
+  }
 );
+jest.mock('../../../packages/server/utils/logger.js', () => ({
+  log: jest.fn(),
+  info: jest.fn(),
+  warn: jest.fn(),
+  error: jest.fn(),
+}));
 
+const express = require('express');
+const request = require('../../helpers/local-request.js');
+
+const {
+  Templates,
+  Groups,
+} = require('../../../packages/server/common/models.common.js');
+const { ROLES } = require('../../../packages/shared/access/roles.js');
+const { actorFrom } = require('../../helpers/super-admin-fixtures.js');
 const {
   GUARD_GROUP_ADMIN,
 } = require('../../../packages/server/account/auth.guard.js');
 const { routeInspector } = require('../../helpers/express-router.js');
-const router = require('../../../packages/server/template/template.routes.js');
 
-const { guardsOf } = routeInspector(router);
+const OWN_GROUP = '507f1f77bcf86cd799439b01';
+const OTHER_GROUP = '507f1f77bcf86cd799439b02';
+const OWN_TEMPLATE = '507f1f77bcf86cd799439c01';
+const OTHER_TEMPLATE = '507f1f77bcf86cd799439c02';
+const MISSING_TEMPLATE = '507f1f77bcf86cd799439c04';
 
-describe('PUT /templates/:templateId/quality-settings — guard', () => {
+// A template's markup weighs megabytes: it must never be read nor sent back.
+const HEAVY_MARKUP = `<html>${'x'.repeat(5 * 1024 * 1024)}</html>`;
+
+const GROUPS = {
+  [OWN_GROUP]: {
+    _id: OWN_GROUP,
+    enableEmailBuilder: true,
+    qualitySettings: { checks: { subject: { thresholds: { tooLong: 80 } } } },
+  },
+  [OTHER_GROUP]: { _id: OTHER_GROUP, enableEmailBuilder: true },
+};
+
+const template = (_id, _company) => ({
+  _id,
+  name: 'Newsletter',
+  _company,
+  markup: HEAVY_MARKUP,
+  qualitySettings: { checks: { headings: { state: 'off' } } },
+});
+const TEMPLATES = {
+  [OWN_TEMPLATE]: template(OWN_TEMPLATE, OWN_GROUP),
+  [OTHER_TEMPLATE]: template(OTHER_TEMPLATE, OTHER_GROUP),
+};
+
+// `findById(id).select('a b').lean()`, keeping only the selected fields; what
+// each read selected is kept in `selections`.
+const selections = [];
+function projected(store, id) {
+  return {
+    select: (fields) => ({
+      lean: () => {
+        selections.push([store, fields]);
+        const doc = store[String(id)];
+        if (!doc) return Promise.resolve(null);
+        const kept = ['_id', ...fields.split(' ')];
+        return Promise.resolve(
+          Object.fromEntries(
+            Object.entries(doc).filter(([key]) => kept.includes(key))
+          )
+        );
+      },
+    }),
+  };
+}
+
+const userWith = (role, group = OWN_GROUP) =>
+  actorFrom({
+    _id: '507f1f77bcf86cd799439101',
+    name: 'Someone',
+    role,
+    _company: group,
+  });
+
+let router;
+beforeAll(() => {
+  // required here, once the stand-ins above are in place
+  router = require('../../../packages/server/template/template.routes.js');
+});
+
+function app(user) {
+  const server = express();
+  server.use(express.json());
+  server.use((req, _res, next) => {
+    req.user = user;
+    next();
+  });
+  server.use('/api/templates', router);
+  // the shape index.js gives a client
+  server.use((err, _req, res, _next) => {
+    res.status(err.status || 500).json({ message: err.message });
+  });
+  return server;
+}
+
+// Valid on any template, whatever its group sets.
+const BODY = { checks: { 'emoji-placement': { state: 'off' } } };
+// 70 is over the default tooLong, under the own group's 80.
+const LONG_SUBJECT = { checks: { subject: { thresholds: { long: 70 } } } };
+const put = (user, templateId, body = BODY) =>
+  request(app(user))
+    .put(`/api/templates/${templateId}/quality-settings`)
+    .send(body);
+
+beforeEach(() => {
+  jest.clearAllMocks();
+  selections.length = 0;
+  Templates.findById.mockImplementation((id) => projected(TEMPLATES, id));
+  Templates.updateOne.mockResolvedValue({ acknowledged: true });
+  Groups.findById.mockImplementation((id) => projected(GROUPS, id));
+});
+
+describe('PUT /api/templates/:templateId/quality-settings — guard', () => {
   it('is open to company admins, the controller checking the group', () => {
-    expect(guardsOf('put', '/:templateId/quality-settings')).toEqual([
-      GUARD_GROUP_ADMIN,
+    expect(
+      routeInspector(router).guardsOf('put', '/:templateId/quality-settings')
+    ).toEqual([GUARD_GROUP_ADMIN]);
+  });
+
+  it("refuses a company admin of another company on this company's template", async () => {
+    const res = await put(
+      userWith(ROLES.GROUP_ADMIN, OTHER_GROUP),
+      OWN_TEMPLATE
+    );
+
+    expect(res.status).toBe(403);
+    expect(Templates.updateOne).not.toHaveBeenCalled();
+  });
+
+  it('answers not found for a template that does not exist', async () => {
+    const res = await put(userWith(ROLES.SUPER_ADMIN), MISSING_TEMPLATE);
+
+    expect(res.status).toBe(404);
+    expect(res.body.message).toBe('TEMPLATE_NOT_FOUND');
+  });
+});
+
+describe('PUT /api/templates/:templateId/quality-settings — payload', () => {
+  it('reads only what the check and the write need, never the markup', async () => {
+    await put(userWith(ROLES.GROUP_ADMIN), OWN_TEMPLATE);
+
+    const templateReads = selections.filter(([store]) => store === TEMPLATES);
+    expect(templateReads).toHaveLength(1);
+    expect(templateReads[0][1].split(' ').sort()).toEqual([
+      '_company',
+      'qualitySettings',
     ]);
+  });
+
+  it("answers with the template's quality settings only", async () => {
+    const res = await put(
+      userWith(ROLES.GROUP_ADMIN),
+      OWN_TEMPLATE,
+      LONG_SUBJECT
+    );
+
+    expect(res.status).toBe(200);
+    expect(res.body).toEqual({
+      qualitySettings: {
+        checks: {
+          headings: { state: 'off' },
+          subject: { thresholds: { long: 70 } },
+        },
+      },
+    });
+    expect(res.text.length).toBeLessThan(1024);
+  });
+
+  it('writes the merged settings, and nothing else, on that template', async () => {
+    await put(userWith(ROLES.GROUP_ADMIN), OWN_TEMPLATE, LONG_SUBJECT);
+
+    expect(Templates.updateOne).toHaveBeenCalledWith(
+      { _id: OWN_TEMPLATE },
+      {
+        $set: {
+          qualitySettings: {
+            checks: {
+              headings: { state: 'off' },
+              subject: { thresholds: { long: 70 } },
+            },
+          },
+        },
+      }
+    );
+  });
+
+  it("checks the order against the group's values", async () => {
+    // 90 is over the group's tooLong of 80.
+    const res = await put(userWith(ROLES.GROUP_ADMIN), OWN_TEMPLATE, {
+      checks: { subject: { thresholds: { long: 90 } } },
+    });
+
+    expect(res.status).toBe(422);
+    expect(res.body.message).toBe('INVALID_QUALITY_SETTINGS');
+    expect(Templates.updateOne).not.toHaveBeenCalled();
   });
 });
