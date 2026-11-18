@@ -19,6 +19,9 @@ const {
 const {
   installQualityReview,
 } = require('../../../packages/editor/src/js/ext/quality/quality-review.js');
+const {
+  mergeChecks,
+} = require('../../../packages/editor/src/js/ext/quality/remote-checks.js');
 const { vmWith, remoteOf } = require('./remote-fixtures');
 
 const KB = 1024;
@@ -184,5 +187,99 @@ describe('what the second look asks the server', () => {
       images: [],
       checks: [],
     });
+  });
+});
+
+describe('the second look, when it cannot read the answer', () => {
+  it('lists the format check as not run when the server fails, never as passed', async () => {
+    const vm = editor({
+      checkResources: () => Promise.reject(new Error('500')),
+    });
+    vm.quality.run();
+    await flush();
+    expect(formatsOf(vm).checks.map((c) => c.status)).toEqual(['error']);
+  });
+
+  it('keeps a local finding failed when the server fails', async () => {
+    const vm = editor({
+      blockHtml: `<img src="https://cdn.test/hero.webp"><img src="${src}">`,
+      checkResources: () => Promise.reject(new Error('500')),
+    });
+    vm.quality.run();
+    await flush();
+    expect(formatsOf(vm).checks).toEqual([
+      expect.objectContaining({ status: 'failed', count: 1 }),
+    ]);
+  });
+
+  it('lists the format check as cancelled when the run is stopped', async () => {
+    const vm = editor({ checkResources: () => new Promise(() => {}) });
+    vm.quality.run();
+    await flush();
+    vm.quality.cancel();
+    expect(formatsOf(vm).checks.map((c) => c.status)).toEqual(['cancelled']);
+  });
+
+  it('lists the format check as not run when its second look throws', async () => {
+    const images = {};
+    Object.defineProperty(images, src, {
+      enumerable: true,
+      get() {
+        throw new Error('unreadable answer');
+      },
+    });
+    const vm = editor({
+      checkResources: () => Promise.resolve(remoteOf({ images })),
+    });
+    vm.quality.run();
+    await flush();
+    expect(vm.quality.remoteStatus()).toBe('done');
+    expect(formatsOf(vm)).toEqual({
+      findings: [],
+      checks: [expect.objectContaining({ status: 'error' })],
+    });
+  });
+});
+
+describe('mergeChecks', () => {
+  const check = (ruleId, status, count = 0) => ({ ruleId, status, count });
+
+  it('lists a check of both runs once, failed with both counts', () => {
+    expect(
+      mergeChecks([check(FORMATS, 'failed', 1)], [check(FORMATS, 'failed', 1)])
+    ).toEqual([check(FORMATS, 'failed', 2)]);
+  });
+
+  it('fails a check the local run passed and the second look did not', () => {
+    expect(
+      mergeChecks([check(FORMATS, 'passed')], [check(FORMATS, 'failed', 1)])
+    ).toEqual([check(FORMATS, 'failed', 1)]);
+  });
+
+  it('never leaves passed a check whose second look could not run', () => {
+    expect(
+      mergeChecks(
+        [check(FORMATS, 'passed'), check('subject', 'passed')],
+        [check(FORMATS, 'error')]
+      )
+    ).toEqual([check(FORMATS, 'error'), check('subject', 'passed')]);
+    expect(
+      mergeChecks([check(FORMATS, 'passed')], [check(FORMATS, 'cancelled')])
+    ).toEqual([check(FORMATS, 'cancelled')]);
+  });
+
+  it('keeps a local failure over a second look that could not run', () => {
+    expect(
+      mergeChecks([check(FORMATS, 'failed', 1)], [check(FORMATS, 'error')])
+    ).toEqual([check(FORMATS, 'failed', 1)]);
+  });
+
+  it('adds the checks only the server runs after the local ones', () => {
+    expect(
+      mergeChecks(
+        [check('subject', 'passed')],
+        [check('broken-links', 'error')]
+      )
+    ).toEqual([check('subject', 'passed'), check('broken-links', 'error')]);
   });
 });
