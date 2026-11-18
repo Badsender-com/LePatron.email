@@ -355,27 +355,24 @@ export default {
           </v-expand-transition>
         </bs-form-section>
       </v-card-text>
-
-      <template v-if="canManagePlatform">
-        <v-divider />
-        <v-card-actions>
-          <v-spacer />
-          <v-btn
-            elevation="0"
-            color="accent"
-            :loading="loading"
-            :disabled="disabled || loading"
-            @click="onSubmit"
-          >
-            {{ $t('global.save') }}
-          </v-btn>
-        </v-card-actions>
-      </template>
     </v-card>
 
-    <!-- Cards of the settings that save on their own (security): the danger
-         zone stays last, nothing goes under it. -->
+    <!-- Cards of the settings that save on their own (security). -->
     <slot name="before-danger-zone" />
+
+    <!-- The form's save comes after them, and the danger zone stays last:
+         nothing goes under it. -->
+    <div v-if="canManagePlatform" class="group-form__actions">
+      <v-btn
+        elevation="0"
+        color="accent"
+        :loading="loading"
+        :disabled="disabled || loading"
+        @click="onSubmit"
+      >
+        {{ $t('global.save') }}
+      </v-btn>
+    </div>
 
     <!-- ==================== DANGER ZONE ==================== -->
     <v-card
@@ -427,6 +424,12 @@ export default {
 </template>
 
 <style lang="scss" scoped>
+.group-form__actions {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 16px;
+}
+
 // A PEM certificate is read line by line: monospace keeps it recognisable.
 .group-form__idp-cert ::v-deep textarea {
   font-family: monospace;
