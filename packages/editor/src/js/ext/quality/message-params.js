@@ -77,4 +77,21 @@ function formatParams(
   );
 }
 
-module.exports = { pageLocale, kbSize, formatParams };
+/**
+ * The text of a finding or of a passed check, as its reader sees it: its
+ * parameters written for the reader, then translated. Whatever shows one goes
+ * through here: a weight handed to the translation as it is reads
+ * "[object Object]".
+ * @param {Function} t - translation (viewModel.t)
+ * @param {string} key - messageKey of a finding, passKey of a check
+ * @param {Object} [params] - its params, or passParams
+ * @param {Object} [options]
+ * @param {string} [options.locale] - the reader's language, the page's by
+ *   default
+ * @returns {string}
+ */
+function messageText(t, key, params, { locale } = {}) {
+  return t(key, formatParams(params, { locale, t }));
+}
+
+module.exports = { pageLocale, kbSize, formatParams, messageText };

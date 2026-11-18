@@ -1,5 +1,5 @@
 const { CATEGORY_KEYS } = require('./quality-meta');
-const { formatParams } = require('../../../ext/quality/message-params');
+const { messageText } = require('../../../ext/quality/message-params');
 
 // The rows of the quality drawer, built from what the engine returns: one per
 // finding, and one per check that passed or could not run.
@@ -18,7 +18,9 @@ function findingItems(findings, t, locale) {
       id: `${finding.fingerprint}#${seen[finding.fingerprint]}`,
       severity: finding.severity,
       title: t(finding.titleKey),
-      description: t(finding.messageKey, formatParams(finding.params, { locale, t })),
+      description: messageText(t, finding.messageKey, finding.params, {
+        locale,
+      }),
       category: t(CATEGORY_KEYS[finding.category]),
       blockId: finding.blockId,
       blockLabel: finding.blockLabel,
@@ -30,7 +32,7 @@ function findingItems(findings, t, locale) {
 // What a check with no finding says of itself.
 function checkDescription(check, t, locale) {
   if (check.status === 'passed') {
-    return t(check.passKey, formatParams(check.passParams, { locale, t }));
+    return messageText(t, check.passKey, check.passParams, { locale });
   }
   if (check.status === 'cancelled') return t('This check was cancelled');
   return t('This check could not run');
