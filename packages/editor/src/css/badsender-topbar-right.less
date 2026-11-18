@@ -1,0 +1,152 @@
+////////
+// TOP BAR — its right (boards « Topbar allégée »): the preview, the gallery,
+// the history, then Save and Export. Native buttons, out of jQuery UI; the
+// export menu itself is in badsender-topbar.less.
+////////
+
+#toolbar {
+  // ===== THE RIGHT OF THE TOP BAR (boards « Topbar allégée ») =====
+  // The preview, the gallery, the history, then Save and Export: groups set
+  // apart by a thin rule.
+  .topbar-right {
+    display: flex;
+    flex: none;
+    align-items: center;
+    gap: 2px;
+    padding: 0 10px 0 4px;
+  }
+
+  .topbar-separator {
+    width: 1px;
+    height: 22px;
+    margin: 0 6px;
+    background: rgba(255, 255, 255, 0.16);
+  }
+
+  .topbar-segmented {
+    display: flex;
+    gap: 2px;
+    padding: 3px;
+    border-radius: 8px;
+    background: rgba(255, 255, 255, 0.08);
+
+    &__item {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 30px;
+      height: 28px;
+      padding: 0;
+      border: 0;
+      border-radius: 6px;
+      background: transparent;
+      color: var(--white);
+      font-size: 15px;
+      opacity: 0.7;
+      cursor: pointer;
+
+      &:hover {
+        opacity: 1;
+        background: rgba(255, 255, 255, 0.12);
+      }
+
+      // A shade over the board's .22: 3:1 against the group's ground.
+      &.is-active {
+        opacity: 1;
+        background: rgba(255, 255, 255, 0.3);
+      }
+    }
+  }
+
+  .topbar-icon-button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    padding: 0;
+    border: 0;
+    border-radius: 6px;
+    background: transparent;
+    color: rgba(255, 255, 255, 0.85);
+    font-size: 17px;
+    cursor: pointer;
+
+    &:hover:not(:disabled) {
+      color: var(--white);
+      background: rgba(255, 255, 255, 0.12);
+    }
+
+    &.is-active {
+      color: var(--white);
+      background: rgba(255, 255, 255, 0.22);
+    }
+
+    &:disabled {
+      opacity: 0.45;
+      cursor: default;
+    }
+  }
+
+  .topbar-actions {
+    display: flex;
+    gap: 6px;
+    padding-left: 2px;
+  }
+
+  // Save and Export: white on the accent, as everywhere in the app.
+  .topbar-button {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    height: 34px;
+    margin: 0;
+    padding: 0 14px;
+    border: 0;
+    border-radius: 7px;
+    background: var(--accent);
+    color: var(--white);
+    font-family: inherit;
+    font-size: 13px;
+    font-weight: 600;
+    line-height: 1;
+    white-space: nowrap;
+    cursor: pointer;
+
+    > .lucide {
+      font-size: 15px;
+    }
+
+    &:hover {
+      filter: brightness(0.92);
+    }
+
+    // Kept focusable when it cannot act (Save in review mode): its title
+    // says why.
+    &[aria-disabled='true'],
+    &:disabled {
+      background: rgba(255, 255, 255, 0.12);
+      color: rgba(255, 255, 255, 0.5);
+      filter: none;
+      cursor: not-allowed;
+    }
+  }
+
+  .topbar-segmented__item,
+  .topbar-icon-button,
+  .topbar-button {
+    &:focus-visible {
+      outline: 2px solid var(--white);
+      outline-offset: 2px;
+    }
+  }
+
+  .topbar-sr {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    white-space: nowrap;
+  }
+}

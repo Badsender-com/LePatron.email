@@ -1,0 +1,201 @@
+////////
+// QUALITY DRAWER — result list: severity groups, rows, buttons.
+// Imported inside `#toolquality { }` by badsender-quality-drawer.less, which
+// also declares the @qc-* variables used here.
+////////
+
+// ===== Groups and rows (boards q2, q3) =====
+// A group: a chevron, its name and its count; its findings as cards.
+.qc-group {
+  padding: 0 16px;
+}
+
+.qc-group__header {
+  margin: 0;
+  padding: 12px 0 8px;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.qc-group__label {
+  color: var(--gray-800);
+}
+
+.qc-group__count {
+  font-weight: 500;
+  color: var(--gray-600);
+}
+
+.qc-group__chevron {
+  color: var(--gray-700);
+}
+
+.qc-group [role='region'] {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.qc-row {
+  border: 1px solid var(--gray-200);
+  border-radius: @qc-radius-card;
+  background: var(--white);
+
+  &--expanded {
+    border-color: var(--gray-300);
+    background: var(--gray-50);
+
+    // Grey text one shade darker on grey.
+    .qc-row__block,
+    .qc-row__desc { color: var(--gray-700); }
+  }
+
+  &__head {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    width: 100%;
+    padding: 8px 10px;
+    border: 0;
+    background: transparent;
+    text-align: left;
+    color: inherit;
+    cursor: pointer;
+
+    // It opens: what to do with the finding is inside.
+    &:hover {
+      background: var(--gray-50);
+    }
+
+    &:focus-visible {
+      outline: 2px solid var(--primary);
+      outline-offset: -2px;
+    }
+  }
+
+  &__icon {
+    flex-shrink: 0;
+    margin-top: 1px;
+    font-size: 16px;
+  }
+
+  &__main {
+    flex: 1;
+    min-width: 0;
+  }
+
+  &__line {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 6px;
+  }
+
+  &__title {
+    font-weight: 600;
+    color: var(--gray-900);
+  }
+
+  &__block {
+    color: var(--gray-600);
+  }
+
+  // A finding of a blocking check: it stops the download and the ESP send.
+  &__blocking {
+    padding: 1px 6px;
+    border-radius: @qc-radius;
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--white);
+    background: @qc-error-text;
+  }
+
+  &__desc {
+    display: block;
+    margin-top: 2px;
+    overflow: hidden;
+    font-size: 12px;
+    color: var(--gray-700);
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  &__category {
+    flex: none;
+    padding: 1px 6px;
+    border-radius: @qc-radius;
+    background: var(--gray-100);
+    color: var(--gray-800);
+    font-size: 11px;
+    font-weight: 500;
+  }
+
+  &__panel {
+    padding: 0 12px 12px 38px;
+  }
+
+  &__full {
+    margin: 0 0 10px;
+    line-height: 1.5;
+    color: var(--gray-800);
+    overflow-wrap: anywhere;
+  }
+
+  &__actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+}
+
+// ===== Ignored findings =====
+.qc-row--ignored {
+  .qc-row__title,
+  .qc-row__desc,
+  .qc-row__icon {
+    color: var(--gray-600);
+  }
+}
+
+.qc-group__toggle {
+  display: flex;
+  flex: 1;
+  align-items: center;
+  gap: 8px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+
+  &:focus-visible {
+    outline: 2px solid var(--primary);
+    outline-offset: 2px;
+  }
+}
+
+// "Ignored. Undo", under the list for a few seconds.
+.qc-undo {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 8px 16px;
+  border-top: 1px solid var(--gray-200);
+  background: var(--gray-50);
+  font-size: 12px;
+  color: var(--gray-800);
+}
+
+// "Checking links and images…": the server's checks, after the others.
+.qc-remote {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+  padding: 8px 16px;
+  border-top: 1px solid var(--gray-200);
+  font-size: 12px;
+  color: var(--gray-700);
+}

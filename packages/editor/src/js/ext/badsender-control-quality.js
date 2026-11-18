@@ -1,180 +1,13 @@
-const _ = require('lodash');
 const $ = require('jquery');
+const {
+  checkRequiredTrackingParams,
+} = require('./quality/rules/tracking-params');
 
-function formatBlockName(blockName) {
-  return _.startCase(blockName.replace('Block', ''))
-}
-
-function getAlertText(blockName, type, missingText) {
-  return `Block ${blockName} ${type} - ${missingText}`
-}
-
-function isElementEmpty(element) {
-  const imageEmpty = 'data:image/gif;base64,R0lGODlhAQABAIAAAP///wAAACH5BAEAAAAALAAAAAABAAEAAAICRAEAOw==';
-  const pngEmpty = 'https://live.lepatron.email/clarins/mastertemplate/bg.png';
-  return element === null || element === '' || element === 'none' || element === imageEmpty || element === pngEmpty;
-}
-
-function getErrorsForControlQuality(viewModel) {
-  checkAndDisplaySizeWarning(viewModel)
-  const htmlToExport = viewModel.exportHTML()
-  const parsedHtml = $.parseHTML(htmlToExport);
-  const extraItems = [];
-  const itemsForBackgroundImage = viewModel?.content()?.mainBlocks()?.blocks()
-    .filter(block => {
-      if (block()?.bgOptions &&
-          block()?.bgOptions()?.outlookBgImageVisible &&
-          block()?.bgOptions()?.outlookBgImage
-        ) {
-        if (block()?.bgOptions()?.outlookBgImageVisible()) {
-          const hasAlert = isElementEmpty(block()?.bgOptions()?.outlookBgImage());
-          if (hasAlert) {
-            return true;
-          }
-        }
-      }
-      if (block()?.bgOptions &&
-          block()?.bgOptions()?.mobileBgImageChoice &&
-          block()?.bgOptions()?.mobileBgimage
-        ) {
-        if (block()?.bgOptions()?.mobileBgImageChoice() === 'mobile') {
-          const hasAlert = isElementEmpty(block()?.bgOptions()?.mobileBgimage());
-          if (hasAlert) {
-            return true;
-          }
-        }
-      }
-      if (block()?.bgOptions &&
-          (block()?.bgOptions()?.bgImageChoice || block()?.bgOptions()?.bgImageVisible) &&
-          block()?.bgOptions()?.bgimage
-        ) {
-        if (block()?.bgOptions()?.bgImageChoice && block()?.bgOptions()?.bgImageChoice() === 'custom' ||
-          block()?.bgOptions()?.bgImageVisible && block()?.bgOptions()?.bgImageVisible()
-        ) {
-          const hasAlert = isElementEmpty(block()?.bgOptions()?.bgimage());
-          if (hasAlert) {
-            return true;
-          }
-        }
-      }
-
-      return false;
-    })
-    .map(block => {
-      if (block()?.bgOptions) {
-        if (block()?.bgOptions()?.outlookBgImageVisible && block()?.bgOptions()?.outlookBgImageVisible()) {
-          const hasToAddNewItem = isElementEmpty(block()?.bgOptions()?.outlookBgImage());
-          if (hasToAddNewItem) {
-            extraItems.push(getAlertText(formatBlockName(block().type()), 'Outlook', viewModel.t('Missing background image')));
-          }
-        }
-        if (block()?.bgOptions()?.mobileBgImageChoice && block()?.bgOptions()?.mobileBgImageChoice() === 'mobile') {
-          const hasToAddNewItem = isElementEmpty(block()?.bgOptions()?.mobileBgimage());
-          if (hasToAddNewItem) {
-            extraItems.push(getAlertText(formatBlockName(block().type()), 'Mobile', viewModel.t('Missing background image')));
-          }
-        }
-        if (block()?.bgOptions()?.bgImageChoice && block()?.bgOptions()?.bgImageChoice() === 'custom' ||
-          block()?.bgOptions()?.bgImageVisible && block()?.bgOptions()?.bgImageVisible()
-        ) {
-          const hasToAddNewItem = isElementEmpty(block()?.bgOptions()?.bgimage());
-          if (hasToAddNewItem) {
-            extraItems.push(getAlertText(formatBlockName(block().type()), '', viewModel.t('Missing background image')));
-          }
-        }
-        return null;
-      }
-      return newItem;
-    })
-    .filter(block => block && block !== null);
-
-  const itemsForLinks = $(parsedHtml)
-    .find('a[href="#toreplace"]')
-    .toArray()
-    .map(e => `${e.textContent?.trim() ? `${viewModel.t('Missing link label:')} ${e.textContent?.trim()}` : viewModel.t('Picture with no link')}`);
-
-  return itemsForBackgroundImage.concat(itemsForLinks).concat(extraItems);
-}
-
-function displayErrors (errors, viewModel) {
-  $('.error-message').remove();
-
-  const $errorMessageTitle = $(`<h3>${viewModel.t('Your email was successfully exported')}</h3>`);
-  const $errorMessageDescription = $(`<p>${viewModel.t('We noticed some missing details while executing quality controls:')}</p>`);
-  // As text, never as markup: an error line quotes the label of a link, which is
-  // the email's own content — an HTML code block can put anything there, and
-  // `textContent` has already decoded its entities.
-  const $errorLines = errors.map(error => $('<li></li>').text(error));
-  const $errorsDiv = $('<ul></ul>').append($errorLines);
-
-  const $errorMessageDiv = $('<div class="error-message"></div>');
-  $errorMessageDiv.insertBefore('replacedbody');
-  $errorMessageDiv.append($errorMessageTitle, $errorMessageDescription, $errorsDiv);
-}
-
-function checkAndDisplaySizeWarning(viewModel) {
-
-  const sizeThreshold = 102 * 1024;   // 102KB in octets
-  const htmlToExport = viewModel.exportHTML();
-  const exportedHtmlSize = new Blob([htmlToExport]).size; // to calculate the size of the exported HTML in octets
-
-  if (exportedHtmlSize > sizeThreshold) {
-    displaySizeWarning(viewModel);
-  } else {
-    // Remove any existing size warning message
-    $('.size-warning-message').remove();
-  }
-}
-
-function displaySizeWarning(viewModel) {
-  // Remove any existing size warning message
-  $('.size-warning-message').remove();
-
-  // Define the default English messages with keys for translation
-  const warningTitleKey = 'Excessive Size';
-  const warningDescriptionKey = 'The exported HTML exceeds 102KB, which may result in clipping email on Gmail.';
-
-  // Construct the warning message elements with translation keys
-  const $warningMessageTitle = $(`<h3>${viewModel.t(warningTitleKey)}</h3>`);
-  const $warningMessageDescription = $(`<p>${viewModel.t(warningDescriptionKey)}</p>`);
-
-  // Create the warning message container with styling
-  const $warningMessageDiv = $('<div class="size-warning-message"></div>');
-
-  // Insert the warning message before the specified body location
-  $warningMessageDiv.insertBefore('replacedbody');
-  // Append the title and description to the container
-  $warningMessageDiv.append($warningMessageTitle, $warningMessageDescription);
-}
-
-
-
-
-/**
- * Returns the list of required tracking keys (as defined by the group config)
- * that have no value set in vm.content().tracking().trackingUrls.
- */
-function checkRequiredTrackingParams(viewModel) {
-  const cfg = viewModel && viewModel.metadata && viewModel.metadata.trackingConfig;
-  if (!cfg || !cfg.enabled || !Array.isArray(cfg.params)) return [];
-  const requiredKeys = cfg.params
-    .filter((p) => p && p.required)
-    .map((p) => p.key);
-  if (requiredKeys.length === 0) return [];
-
-  let trackingUrls = [];
-  try {
-    trackingUrls = viewModel.content().tracking().trackingUrls() || [];
-  } catch (_e) {
-    trackingUrls = [];
-  }
-  const filled = new Set(
-    trackingUrls
-      .filter((tu) => tu && tu.key && tu.value && String(tu.value).length > 0)
-      .map((tu) => tu.key)
-  );
-  return requiredKeys.filter((k) => !filled.has(k));
-}
+// What blocks an export. The quality settings of the mailing make checks
+// blocking (ADR 0009): the download and the ESP send stop while one of their
+// findings remains, and this modal lists them; the drawer shows them too.
+// displayTrackingError is the older modal of the required tracking parameters,
+// kept for the ESP send until it goes through the same gate (#1201).
 
 /**
  * Display a blocking-style modal when required tracking params are missing.
@@ -244,9 +77,80 @@ function displayTrackingError(missingKeys, viewModel) {
   $overlay.find('.tracking-modal__close').focus();
 }
 
+const escapeText = (s) =>
+  String(s).replace(/[&<>"']/g, (c) => ({
+    '&': '&amp;',
+    '<': '&lt;',
+    '>': '&gt;',
+    '"': '&quot;',
+    "'": '&#39;',
+  }[c]));
+
+/**
+ * Lists the findings that stop the download or the ESP send. Everything is
+ * escaped: a message may quote the email's own content (a link label).
+ * @param {Array} findings - findings with `blocking`, as the engine returns them
+ * @param {Object} viewModel - for its translations
+ */
+function displayBlockingFindings(findings, viewModel) {
+  $('.bs-modal-overlay.blocking-modal').remove();
+  const t = (key, params) => viewModel.t(key, params);
+  const items = findings
+    .map((finding) => {
+      const where = finding.blockLabel ? ` · ${finding.blockLabel}` : '';
+      return `<li class="blocking-modal__item"><strong>${escapeText(
+        t(finding.titleKey)
+      )}</strong>${escapeText(where)}<br>${escapeText(
+        t(finding.messageKey, finding.params)
+      )}</li>`;
+    })
+    .join('');
+
+  const $overlay = $(`
+    <div class="bs-modal-overlay tracking-modal blocking-modal small-modal" role="dialog" aria-modal="true" aria-labelledby="blocking-modal-title">
+      <div class="bs-modal-container">
+        <div class="bs-modal-card">
+          <div class="bs-modal-content-wrapper">
+            <div class="modal-content">
+              <h5 id="blocking-modal-title">${escapeText(
+                t('This email cannot leave yet')
+              )}</h5>
+              <div class="tracking-modal__alert">
+                <span>${escapeText(
+                  t('Your quality settings make these checks blocking: fix them before downloading or sending the email.')
+                )}</span>
+              </div>
+              <ul class="blocking-modal__list">${items}</ul>
+            </div>
+            <div class="modal-footer">
+              <button type="button" class="btn waves-effect waves-light blocking-modal__close">${escapeText(
+                t('Close')
+              )}</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  `);
+
+  const close = () => {
+    $overlay.remove();
+    $(document).off('keydown.bsBlockingModal');
+  };
+  $overlay.on('click', (evt) => {
+    if (evt.target === $overlay[0]) close();
+  });
+  $overlay.on('click', '.blocking-modal__close', close);
+  $(document).on('keydown.bsBlockingModal', (evt) => {
+    if (evt.key === 'Escape') close();
+  });
+
+  $('body').append($overlay);
+  $overlay.find('.blocking-modal__close').focus();
+}
+
 module.exports = {
-  getErrorsForControlQuality,
-  displayErrors,
   checkRequiredTrackingParams,
   displayTrackingError,
-}
+  displayBlockingFindings,
+};

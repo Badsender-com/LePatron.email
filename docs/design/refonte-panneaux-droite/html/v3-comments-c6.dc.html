@@ -1,0 +1,88 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<title>Validation levée par un nouveau commentaire</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap">
+<style>
+body{margin:0}
+a{color:#093040}a:hover{color:#00acdc}
+.p{width:360px;height:680px;background:#fff;border:1px solid #e5e7eb;border-radius:10px;display:flex;flex-direction:column;overflow:hidden;box-sizing:border-box;font-family:'Inter',-apple-system,'Segoe UI',sans-serif;color:#111827;font-size:13px;line-height:1.5}
+.ph{height:52px;flex-shrink:0;display:flex;align-items:center;gap:8px;padding:0 8px 0 16px;border-bottom:1px solid #e5e7eb}
+.pt{font-size:15px;font-weight:600;color:#093040}
+.pb{flex:1;min-height:0;overflow:hidden;padding:16px;display:flex;flex-direction:column;gap:12px}
+.pf{flex-shrink:0;border-top:1px solid #e5e7eb;background:#f9fafb;padding:12px 16px;display:flex;flex-direction:column;gap:8px}
+.ib{width:32px;height:32px;border:none;border-radius:5px;background:transparent;color:#6b7280;display:inline-flex;align-items:center;justify-content:center;padding:0;font:inherit}
+.ia{width:28px;height:28px;border:none;border-radius:5px;background:transparent;color:#6b7280;display:inline-flex;align-items:center;justify-content:center;padding:0;font:inherit}
+.cnt{min-width:18px;height:18px;padding:0 5px;box-sizing:border-box;border-radius:9px;background:#00acdc;color:#fff;font-size:11px;font-weight:700;display:inline-flex;align-items:center;justify-content:center;line-height:1}
+.chip{height:28px;padding:0 10px;box-sizing:border-box;border-radius:999px;display:inline-flex;align-items:center;gap:6px;font-size:12.5px;font-weight:500;background:#fff;border:1px solid #e5e7eb;color:#374151;font-family:inherit}
+.chip-on{background:rgba(0,172,220,0.10);border-color:#00acdc;color:#093040}
+.card{border:1px solid #e5e7eb;border-radius:7px;padding:12px;display:flex;flex-direction:column;gap:6px;background:#fff}
+.who{font-size:13px;font-weight:600}
+.when{font-size:11.5px;color:#6b7280}
+.tag{font-size:11px;font-weight:500;color:#374151;background:#f3f4f6;border-radius:5px;padding:2px 6px;white-space:nowrap}
+.ctx{display:flex;align-items:center;gap:6px;font-size:12px;color:#6b7280}
+.sel{height:30px;padding:0 8px 0 10px;border:1px solid #e5e7eb;border-radius:5px;background:#fff;display:inline-flex;align-items:center;gap:6px;font-family:inherit;font-size:12.5px;color:#111827;box-sizing:border-box}
+.sel .k{color:#6b7280}
+.btn{height:36px;padding:0 14px;border-radius:5px;font-family:inherit;font-size:13px;font-weight:500;display:inline-flex;align-items:center;gap:7px;box-sizing:border-box}
+.btn-p{background:#00acdc;color:#fff;border:1px solid #00acdc}
+.btn-s{background:#fff;color:#111827;border:1px solid #e5e7eb}
+.ta{min-height:60px;box-sizing:border-box;border:1px solid #e5e7eb;border-radius:5px;background:#fff;padding:8px 10px;font-size:13px;color:#9ca3af}
+</style>
+</helmet>
+<div class="p" style="width: 360px; height: 680px">
+<div class="ph"><span class="pt">Commentaires</span><span class="cnt" aria-label="1 non résolu">1</span><div style="flex: 1"></div><button class="ib" aria-label="Fermer le panneau"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 6 6 18"></path><path d="m6 6 12 12"></path></svg></button></div>
+
+<div class="pb">
+<div style="display: flex; gap: 6px" role="group" aria-label="Afficher">
+<button class="chip chip-on" aria-pressed="true">Tous · 2</button>
+<button class="chip" aria-pressed="false" disabled style="color: #9ca3af; background: #f9fafb">Aucun bloc sélectionné</button>
+</div>
+
+<div class="card">
+<div style="display: flex; align-items: center; gap: 8px"><span class="who">Thomas Bernard</span><span class="when">à l'instant</span><div style="flex: 1"></div><span class="tag">Général</span></div>
+<div class="ctx"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect width="20" height="16" x="2" y="4" rx="2"></rect><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"></path></svg><span>Tout l'email</span></div>
+<div style="color: #1f2937">Merci, parfait pour moi !</div>
+<div style="display: flex; align-items: center; gap: 2px; margin: 0 -6px">
+<button class="ia" aria-label="Répondre"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="9 17 4 12 9 7"></polyline><path d="M20 18v-2a4 4 0 0 0-4-4H4"></path></svg></button>
+<button class="ia" aria-label="Résoudre"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"></path></svg></button>
+</div>
+</div>
+
+<div style="display: flex; gap: 10px; align-items: flex-start">
+<span style="width: 28px; height: 28px; border-radius: 14px; background: #f3f4f6; display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#6b7280" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 6 7 17l-5-5"></path><path d="m22 10-7.5 7.5L13 16"></path></svg></span>
+<div style="flex: 1; display: flex; flex-direction: column; gap: 4px">
+<div style="font-size: 13px; color: #374151"><strong style="font-weight: 600; color: #111827">Léa Dupont</strong> a approuvé l'email <span class="when">· il y a 1 h</span></div>
+<div style="font-size: 12.5px; color: #374151; display: flex; gap: 6px; align-items: flex-start; padding: 8px 10px; border-radius: 7px; background: rgba(255,180,0,0.12)"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#a15c00" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex-shrink: 0; margin-top: 2px"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"></path><path d="M12 9v4"></path><path d="M12 17h.01"></path></svg><span>Validation levée par le commentaire de Thomas Bernard. L'email doit être approuvé à nouveau.</span></div>
+</div>
+</div>
+</div>
+
+<div class="pf">
+<div class="ta">Écrire un commentaire…</div>
+<button class="sel" aria-label="Cible du commentaire : tout l'email" style="width: 100%"><span class="k">Sur</span><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#6b7280" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect width="20" height="16" x="2" y="4" rx="2"></rect><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"></path></svg><span style="font-weight: 500">Tout l'email</span><span style="flex: 1"></span><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#6b7280" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"></path></svg></button>
+<div style="display: flex; align-items: center; gap: 6px">
+<button class="sel"><span class="k">Type</span>Général<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#6b7280" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"></path></svg></button>
+<button class="sel"><span class="k">Priorité</span>Info<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#6b7280" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"></path></svg></button>
+</div>
+<div style="border-top: 1px solid #e5e7eb; margin: 4px -16px 0; padding: 10px 16px 0; display: flex; justify-content: flex-end; gap: 8px">
+<button class="btn btn-s"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#2e7d32" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 6 7 17l-5-5"></path><path d="m22 10-7.5 7.5L13 16"></path></svg>Approuver l'email</button>
+<button class="btn btn-p">Ajouter</button>
+</div>
+</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":360,"height":680}}'>
+class Component extends DCLogic {
+renderVals() {
+return {};
+}
+}
+</script>
+</body>
+</html>

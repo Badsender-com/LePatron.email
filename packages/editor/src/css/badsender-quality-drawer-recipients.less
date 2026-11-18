@@ -1,0 +1,120 @@
+////////
+// QUALITY DRAWER — the « Destinataires » field of the send test tab:
+// addresses and a saved list as chips (recipients-field.js). Imported inside
+// `#toolquality { }` by badsender-quality-drawer.less.
+////////
+
+// ===== The one « Destinataires » field (board q4) =====
+.qc-recipients {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+
+  // Spaced by the field's gap, not Mosaico's `.mo p` margins; the count,
+  // kept in the page for its live region, takes no room while empty.
+  .qc-field__help {
+    margin: 0;
+
+    &:empty { margin-top: -6px; }
+  }
+
+  &__box {
+    display: flex;
+    flex-wrap: wrap;
+    align-content: flex-start;
+    gap: 6px;
+    // One line, growing with its chips (board q4).
+    min-height: 38px;
+    box-sizing: border-box;
+    padding: 6px 8px;
+    border: 1px solid var(--gray-300);
+    border-radius: @qc-radius;
+    background: var(--white);
+    cursor: text;
+
+    // A text field: its border turns to the accent, as the left bar's.
+    &:focus-within {
+      border-color: var(--accent);
+      outline: none;
+    }
+
+    &--invalid {
+      border-color: @qc-error;
+    }
+  }
+
+  &__chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    height: 24px;
+    padding: 0 4px 0 8px;
+    border-radius: @qc-radius-pill;
+    font-size: 12px;
+    background: var(--gray-100);
+    color: var(--gray-900);
+  }
+
+  &__remove {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 18px;
+    height: 18px;
+    padding: 0;
+    border: 0;
+    border-radius: 50%;
+    background: transparent;
+    color: var(--gray-700);
+    cursor: pointer;
+
+    &:hover { background: var(--gray-200); }
+
+    &:focus-visible {
+      outline: 2px solid var(--primary);
+      outline-offset: 1px;
+    }
+  }
+
+  &__input {
+    flex: 1;
+    min-width: 120px;
+    height: 28px;
+    margin: 0;
+    padding: 0 4px;
+    border: 0;
+    outline: none;
+    background: transparent;
+    font: inherit;
+  }
+
+  &__lists {
+    position: absolute;
+    z-index: 10;
+    top: 100%;
+    right: 0;
+    left: 0;
+    margin: 4px 0 0;
+    padding: 4px;
+    border: 1px solid var(--gray-200);
+    border-radius: @qc-radius;
+    background: var(--white);
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.12);
+    list-style: none;
+  }
+
+  &__option {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 10px;
+    border-radius: 4px;
+    cursor: pointer;
+
+    &[aria-selected='true'] {
+      background: color-mix(in srgb, var(--accent) 14%, var(--white));
+    }
+  }
+}
+

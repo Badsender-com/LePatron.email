@@ -1,0 +1,69 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<title>Tester l'email · points à corriger, un bloquant</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap">
+<style>
+body{margin:0}
+a{color:#093040}a:hover{color:#00acdc}
+.p{width:360px;height:680px;background:#fff;border:1px solid #e5e7eb;border-radius:10px;display:flex;flex-direction:column;overflow:hidden;box-sizing:border-box;font-family:'Inter',-apple-system,'Segoe UI',sans-serif;color:#111827;font-size:13px;line-height:1.5}
+.ph{height:52px;flex-shrink:0;display:flex;align-items:center;gap:8px;padding:0 8px 0 16px;border-bottom:1px solid #e5e7eb}
+.pt{font-size:15px;font-weight:600;color:#093040}
+.pb{flex:1;min-height:0;overflow:hidden;padding:16px;display:flex;flex-direction:column;gap:10px}
+.pf{flex-shrink:0;border-top:1px solid #e5e7eb;background:#f9fafb;padding:12px 16px;display:flex;align-items:center;justify-content:flex-end;gap:8px}
+.ib{width:32px;height:32px;border:none;border-radius:5px;background:transparent;color:#6b7280;display:inline-flex;align-items:center;justify-content:center;padding:0;font:inherit}
+.btn{height:36px;padding:0 14px;border-radius:5px;font-family:inherit;font-size:13px;font-weight:500;display:inline-flex;align-items:center;gap:7px;box-sizing:border-box}
+.btn-p{background:#00acdc;color:#fff;border:1px solid #00acdc}
+.btn-s{background:#fff;color:#111827;border:1px solid #e5e7eb}
+.seg{display:flex;padding:3px;background:#f3f4f6;border-radius:7px;gap:2px}
+.si{flex:1;height:30px;border:none;border-radius:5px;background:transparent;font-family:inherit;font-size:12.5px;font-weight:500;color:#6b7280;display:inline-flex;align-items:center;justify-content:center;gap:6px}
+.si-on{background:#fff;color:#111827;box-shadow:0 1px 2px rgba(13,43,62,0.06)}
+.gh{display:flex;align-items:center;gap:8px;width:100%;background:none;border:none;padding:6px 0 2px;font-family:inherit;font-size:12px;font-weight:600;color:#374151;text-align:left}
+.gh .c{font-weight:500;color:#6b7280}
+.it{display:flex;gap:10px;align-items:flex-start;padding:8px 10px;border:1px solid #e5e7eb;border-radius:7px;background:#fff;width:100%;box-sizing:border-box;font-family:inherit;text-align:left}
+.it .t{font-weight:600;font-size:13px;color:#111827}
+.it .d{font-size:12px;color:#6b7280}
+.tag{font-size:11px;font-weight:500;color:#374151;background:#f3f4f6;border-radius:5px;padding:1px 6px;white-space:nowrap}
+.blk{font-size:11px;font-weight:600;color:#ffffff;background:#b42318;border-radius:5px;padding:1px 6px;white-space:nowrap}
+</style>
+</helmet>
+<div class="p" style="width: 360px; height: 680px">
+<div class="ph"><span class="pt">Tester l'email</span><div style="flex: 1"></div><button class="ib" aria-label="Fermer le panneau"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 6 6 18"></path><path d="m6 6 12 12"></path></svg></button></div>
+<div class="pb">
+<div class="seg" role="tablist"><button class="si si-on" role="tab" aria-selected="true">Contrôle qualité</button><button class="si" role="tab" aria-selected="false">Envoi de test</button></div>
+
+<div role="status" style="display: flex; flex-direction: column; gap: 4px; padding: 10px 12px; border-radius: 7px; background: rgba(240,78,35,0.08); border: 1px solid rgba(240,78,35,0.30)">
+<span style="font-weight: 600; display: inline-flex; gap: 6px; align-items: center"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#b42318" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect width="18" height="11" x="3" y="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>Pas prêt : 5 points à corriger, dont 1 bloquant</span>
+<span style="font-size: 12px; color: #374151">Tant que le bloquant reste, l'email ne peut être ni téléchargé ni envoyé à l'ESP.</span>
+</div>
+
+<button class="gh" aria-expanded="true"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"></path></svg>Erreurs <span class="c">3</span></button>
+<button class="it"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#b42318" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex-shrink: 0; margin-top: 2px"><circle cx="12" cy="12" r="10"></circle><line x1="12" x2="12" y1="8" y2="12"></line><line x1="12" x2="12.01" y1="16" y2="16"></line></svg><span style="flex: 1; display: flex; flex-direction: column; gap: 2px"><span style="display: flex; gap: 6px; align-items: center; flex-wrap: wrap"><span class="t">Paramètres de tracking</span><span class="blk">Bloquant</span></span><span class="d">Manquants sur 4 liens</span></span><span class="tag">Contenu</span></button>
+<button class="it"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#b42318" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex-shrink: 0; margin-top: 2px"><circle cx="12" cy="12" r="10"></circle><line x1="12" x2="12" y1="8" y2="12"></line><line x1="12" x2="12.01" y1="16" y2="16"></line></svg><span style="flex: 1; display: flex; flex-direction: column; gap: 2px"><span class="t">Images <span style="font-weight: 400; color: #6b7280">· Articles</span></span><span class="d">Image d'exemple non remplacée</span></span><span class="tag">Contenu</span></button>
+<button class="it"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#b42318" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex-shrink: 0; margin-top: 2px"><circle cx="12" cy="12" r="10"></circle><line x1="12" x2="12" y1="8" y2="12"></line><line x1="12" x2="12.01" y1="16" y2="16"></line></svg><span style="flex: 1; display: flex; flex-direction: column; gap: 2px"><span class="t">Images <span style="font-weight: 400; color: #6b7280">· Toparticle</span></span><span class="d">Image d'exemple non remplacée</span></span><span class="tag">Contenu</span></button>
+
+<button class="gh" aria-expanded="true"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"></path></svg>Avertissements <span class="c">2</span></button>
+<button class="it"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#a15c00" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex-shrink: 0; margin-top: 2px"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"></path><path d="M12 9v4"></path><path d="M12 17h.01"></path></svg><span style="flex: 1; display: flex; flex-direction: column; gap: 2px"><span class="t">Objet</span><span class="d">L'email n'a pas d'objet</span></span><span class="tag">Rédaction</span></button>
+<button class="it"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#a15c00" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex-shrink: 0; margin-top: 2px"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"></path><path d="M12 9v4"></path><path d="M12 17h.01"></path></svg><span style="flex: 1; display: flex; flex-direction: column; gap: 2px"><span class="t">Adresses des liens <span style="font-weight: 400; color: #6b7280">· Articles</span></span><span class="d">Adresse incomplète : « toreplace »</span></span><span class="tag">Contenu</span></button>
+
+<button class="gh" aria-expanded="false"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6"></path></svg>Infos <span class="c">4</span></button>
+<button class="gh" aria-expanded="false"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6"></path></svg>Réussis <span class="c">26</span></button>
+</div>
+<div class="pf"><button class="btn btn-s"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"></path><path d="M21 3v5h-5"></path><path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"></path><path d="M8 16H3v5"></path></svg>Relancer</button><button class="btn btn-p">Envoyer un test</button></div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":360,"height":680}}'>
+class Component extends DCLogic {
+renderVals() {
+return {};
+}
+}
+</script>
+</body>
+</html>

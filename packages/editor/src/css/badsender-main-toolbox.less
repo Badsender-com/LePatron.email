@@ -106,12 +106,6 @@
     }
   }
 
-  // Fully read-only (reviewer): one message, no tabs to choose between. The
-  // tab list is only hidden, never removed, so jQuery UI Tabs keeps its index.
-  #tooltabs:has(.toolbox-readonly-overlay--all) .tooltabs__list {
-    display: none;
-  }
-
   .toolbox-readonly-overlay {
     display: flex;
     align-items: flex-start;
@@ -134,34 +128,6 @@
     }
   }
 
-  .tooltabs__top-bar {
-    display: flex;
-    height: @topbar-height;
-  }
-  .tooltabs__list {
-    flex: 1 1 auto;
-  }
-  // Back link - navigates back to mailings list
-  .tooltabs__back-link {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: @topbar-height;
-    height: @topbar-height;
-    color: white;
-    text-decoration: none;
-    transition: background-color 150ms ease-out;
-
-    &:hover {
-      background-color: rgba(255, 255, 255, 0.1);
-    }
-
-    .lucide {
-      font-size: 20px;
-    }
-  }
-
-  // Legacy logo support (kept for backwards compatibility)
   .tooltabs__top-logo {
     height: @topbar-height;
     object-fit: contain;

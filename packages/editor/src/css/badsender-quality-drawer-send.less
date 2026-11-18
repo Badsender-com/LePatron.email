@@ -1,0 +1,241 @@
+////////
+// QUALITY DRAWER — tabs and the "Send a test" tab.
+// Imported inside `#toolquality { }` by badsender-quality-drawer.less, which
+// also declares the @qc-* variables used here. Fields follow the editor's
+// metadata fields (badsender-email-metadata.less): 12px label, 40px input.
+////////
+
+// ===== Tabs =====
+// In the nav of the panel's shell, which places it.
+.qc-tabs {
+  display: flex;
+  gap: 2px;
+  padding: 3px;
+  border-radius: @qc-radius-card;
+  background: var(--gray-100);
+}
+
+.qc-tab {
+  display: inline-flex;
+  flex: 1;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  height: 30px;
+  padding: 0 12px;
+  border: 0;
+  border-radius: @qc-radius;
+  background: transparent;
+  color: var(--gray-700);
+  font-size: @qc-font-sm;
+  font-weight: 500;
+  cursor: pointer;
+
+  &--active {
+    background: var(--white);
+    color: var(--primary);
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.06);
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--primary);
+    outline-offset: 1px;
+  }
+}
+
+// Each tab fills the rest of the drawer, its list scrolling inside.
+.qc-drawer__tabpanel,
+.qc-panel {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.qc-drawer__tabpanel {
+  margin-top: 12px;
+}
+
+// ===== "Send a test" tab =====
+.qc-send {
+  // The shell's body scrolls; « Envoyer le test » is its foot.
+  padding: 0 16px 16px;
+
+  &__form {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    margin-top: 16px;
+  }
+
+  // As tall as the fields above it.
+  &__submit {
+    height: 40px;
+  }
+}
+
+.qc-field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+
+  &__label {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--gray-700);
+  }
+
+  &__input {
+    box-sizing: border-box;
+    width: 100%;
+    height: 40px;
+    padding: 0 12px;
+    border: 1px solid var(--gray-300);
+    border-radius: 4px;
+    background: var(--white);
+    color: var(--gray-900);
+    font-family: inherit;
+    font-size: 0.875rem;
+
+    &:focus {
+      border-color: var(--accent);
+      outline: none;
+    }
+
+    &--invalid {
+      border-color: @qc-error;
+    }
+  }
+
+  &__help {
+    font-size: 12px;
+    line-height: 1.45;
+    color: var(--gray-600);
+
+    &--error {
+      color: @qc-error;
+    }
+  }
+}
+
+// The saved list select looks like the recipients field above it, not
+// like the modals' select it is imported from.
+.simple-select__input {
+  border: 1px solid var(--gray-300);
+  color: var(--gray-900);
+
+  &:hover {
+    border-color: var(--gray-400);
+  }
+
+  &:focus {
+    padding: 0 36px 0 12px;
+    border-width: 1px;
+    border-color: var(--accent);
+    outline: none;
+  }
+}
+
+// ===== "Share a preview", under the send form =====
+.qc-share {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: 16px;
+  padding-top: 16px;
+  border-top: 1px solid var(--gray-200);
+
+  &__title {
+    margin: 0;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--gray-900);
+  }
+
+  // Spaced by the gap, not Mosaico's `.mo p` margins.
+  .qc-field__help { margin: 0; }
+
+  &__url {
+    display: flex;
+    align-items: flex-end;
+    gap: 8px;
+  }
+
+  // « Valable [7 jours] ……… [Créer un lien] » on one line (board q4).
+  &__create {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  &__expiry {
+    flex-direction: row;
+    flex: 1;
+    align-items: center;
+    gap: 8px;
+
+    // At the width of its value, the arrow inside it.
+    .simple-select {
+      display: inline-block;
+    }
+
+    .simple-select__input {
+      width: auto;
+      height: 34px;
+      font-size: 13px;
+    }
+  }
+
+  &__button {
+    flex-shrink: 0;
+    height: 36px;
+  }
+
+  &__url &__button {
+    height: 40px;
+  }
+
+  &__created {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    padding: 12px;
+    border-radius: @qc-radius;
+    background: @qc-tint-success;
+  }
+
+  &__list {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  &__item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    padding: 8px 0;
+    border-top: 1px solid var(--gray-200);
+    font-size: 12px;
+  }
+
+  &__meta {
+    color: var(--gray-700);
+  }
+
+  // Expired while the tab was shown: said, nothing left to do with it.
+  &__item--expired &__meta {
+    color: var(--gray-600);
+  }
+}
+
+// Beside « Désactiver le lien »: it is for good (decision 5).
+.qc-share__definitive {
+  font-size: 12px;
+  color: var(--gray-700);
+}
+
+.qc-share__title:focus {
+  outline: none;
+}

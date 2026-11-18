@@ -1053,6 +1053,17 @@ Based on the versafix-1 template, these are commonly available blocks:
 | `preheaderBlock` | Preheader text area          |
 | `footerBlock`    | Footer with unsubscribe      |
 
+### Header and footer block names matter to the quality control
+
+The quality control (`packages/editor/src/js/ext/quality/`) tolerates a smaller font
+size (12 px instead of 14 px) in the header and footer of an email, where legal
+mentions and preheaders live. It recognizes those blocks **by their type name**: a
+type that starts with `header`, `preheader` or `footer`, or ends with `header`,
+`footer`, `headerBlock` or `footerBlock` (case-insensitive). `headerBlock`,
+`preheaderBlock`, `footerBlock` and `footer-legal` qualify; `HeaderAndText` or
+`sectionHeader` do not, on purpose: they are content blocks. Name your blocks
+accordingly, or the 14 px threshold applies.
+
 ### Where the preheader actually lives
 
 The property is always named `preheaderText`, but **its location varies from one
@@ -1074,6 +1085,18 @@ templates fit neither. It is also the reason the preheader is **not** part of th
 email metadata this phase introduced — the metadata endpoint writes mailing fields,
 and reaching into the template's own `data` would mean settling on a declaration
 convention first.
+
+What relies on these names, so a template that wants them must keep them:
+
+- **Quality control and text generation** read and write the preheader at either
+  location above. `preheaderVisible: false` counts as no preheader: a generated one
+  is then offered to copy instead.
+- **The AI icon of the preheader field** (« Actions IA », ADR 0010) is placed in the
+  label of the property editor whose input is bound to `value: preheaderText`.
+  Mosaico offers no slot per property, so the binding is the only hook: a template
+  that renames the property, or uses per-market variants, shows no icon.
+- **Selecting a block named `preheaderBlock`** in the canvas makes the AI panel offer
+  the preheader's actions.
 
 ---
 

@@ -28,11 +28,20 @@ function handleCreationName(viewModel) {
     viewModel.titleMode('edit');
   };
 
+  // Back to the name's button, re-created when the form goes.
+  function focusName() {
+    setTimeout(function () {
+      var button = document.querySelector('.creation-name__button');
+      if (button) button.focus();
+    }, 0);
+  }
+
   viewModel.cancelEditCreationName = function (data, event) {
     console.log('cancelEditCreationName');
     viewModel.metadata.name(originalValue);
     originalValue = '';
     viewModel.titleMode('show');
+    focusName();
   };
 
   viewModel.saveEditCreationName = function (data, event) {
@@ -56,6 +65,7 @@ function handleCreationName(viewModel) {
       complete: function () {
         originalValue = '';
         viewModel.titleMode('show');
+        focusName();
       },
     });
   };

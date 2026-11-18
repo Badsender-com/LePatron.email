@@ -93,7 +93,9 @@ function toProviderError(error, label) {
 /** Default reading of an HTTP status, for providers speaking OpenAI's. */
 function mapHttpStatusToCode(status) {
   if (status === 401) return CODES.INVALID_CREDENTIALS;
-  if (status === 429) return CODES.QUOTA_EXCEEDED;
+  // 402: the account's credits or billing ran out (prepaid Gemini, OpenAI
+  // billing). Like a rate limit, retrying will not help until someone acts.
+  if (status === 402 || status === 429) return CODES.QUOTA_EXCEEDED;
   return CODES.API_ERROR;
 }
 

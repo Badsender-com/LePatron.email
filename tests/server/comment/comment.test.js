@@ -27,6 +27,17 @@ describe('Comment Service', () => {
   // Helper to create mock ObjectId
   const mockObjectId = () => new mongoose.Types.ObjectId();
 
+  // The two reads of an email: whole, to place a block (creating a comment),
+  // or light, to check the access (ADR 0020).
+  const found = (mailing) => ({
+    populate: jest.fn().mockResolvedValue(mailing),
+    select: jest.fn().mockReturnValue({
+      populate: jest.fn().mockReturnValue({
+        lean: jest.fn().mockResolvedValue(mailing),
+      }),
+    }),
+  });
+
   // Helper to mock mailing access verification
   const mockMailingAccess = (mailingId, groupId, mailingData = {}) => {
     const mockMailing = {
@@ -35,17 +46,13 @@ describe('Comment Service', () => {
       data: { mainBlocks: { blocks: [] } },
       ...mailingData,
     };
-    Mailings.findById = jest.fn().mockReturnValue({
-      populate: jest.fn().mockResolvedValue(mockMailing),
-    });
+    Mailings.findById = jest.fn().mockReturnValue(found(mockMailing));
     return mockMailing;
   };
 
   // Helper to mock mailing not found
   const mockMailingNotFound = () => {
-    Mailings.findById = jest.fn().mockReturnValue({
-      populate: jest.fn().mockResolvedValue(null),
-    });
+    Mailings.findById = jest.fn().mockReturnValue(found(null));
   };
 
   // Helper to create a test user with company access
@@ -100,7 +107,7 @@ describe('Comment Service', () => {
     });
 
     describe('decision', () => {
-      const createWith = async (fields) => {
+      const createWith = async (fields, role) => {
         const mailingId = mockObjectId();
         const groupId = mockObjectId();
         const commentId = mockObjectId();
@@ -112,17 +119,20 @@ describe('Comment Service', () => {
           populate: jest.fn().mockReturnThis(),
           lean: jest.fn().mockResolvedValue({ _id: commentId }),
         });
+        // No blocking comment open (ADR 0020, tests/server/comment/approval.test.js).
+        Comments.countDocuments = jest.fn().mockResolvedValue(0);
 
         await commentService.createComment({
           mailingId: mailingId.toString(),
-          user: createTestUser(mockObjectId(), groupId),
+          user: { ...createTestUser(mockObjectId(), groupId), role },
           text: 'Test comment',
           ...fields,
         });
       };
 
       it('should create a comment carrying an approval decision', async () => {
-        await createWith({ decision: COMMENT_DECISIONS.APPROVED });
+        // Approving takes mailing.approve: a reviewer's (ADR 0020).
+        await createWith({ decision: COMMENT_DECISIONS.APPROVED }, 'reviewer');
 
         expect(Comments.create).toHaveBeenCalledWith(
           expect.objectContaining({ decision: COMMENT_DECISIONS.APPROVED })

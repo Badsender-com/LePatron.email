@@ -66,6 +66,20 @@ class ProviderFactory {
   }
 
   /**
+   * Whether a provider can write text from a prompt, which every skill needs.
+   * Translation-only engines (DeepL) cannot.
+   * @param {string} provider Provider identifier
+   * @returns {boolean}
+   */
+  static canGenerateText(provider) {
+    const ProviderClass = PROVIDER_MAP[provider];
+    return (
+      Boolean(ProviderClass) &&
+      typeof ProviderClass.prototype.chatComplete === 'function'
+    );
+  }
+
+  /**
    * Check if a provider is supported
    * @param {string} provider Provider identifier
    * @returns {boolean} True if provider is supported

@@ -5,7 +5,15 @@ dist/
 *.min.*
 
 # Per packages overrides
-packages/editor/
+packages/editor/*
+!packages/editor/src/
+packages/editor/src/*
+!packages/editor/src/js/
+packages/editor/src/js/*
+!packages/editor/src/js/ext/
+packages/editor/src/js/ext/*
+# The quality control is new code written to the repository's style: formatted.
+!packages/editor/src/js/ext/quality/
 
 packages/documentation/.vuepress/dist/
 packages/documentation/api/

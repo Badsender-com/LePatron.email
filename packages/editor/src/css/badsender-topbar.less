@@ -1,11 +1,32 @@
 #toolbar {
-  padding: 0 0 0 5px;
+  // Back, the name, then the right of the bar (boards « Éditeur v2 »).
+  padding: 0 0 0 8px;
   display: flex;
+  align-items: center;
+  gap: 4px;
   background: var(--v-primary-base);
 
-  .leftButtons {
-    border-right: 1px solid var(--v-primary-lighten2);
-    border-left: 1px solid var(--v-primary-lighten2);
+  .topbar-back {
+    display: inline-flex;
+    flex: none;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    border-radius: 6px;
+    color: rgba(255, 255, 255, 0.85);
+    font-size: 17px;
+    text-decoration: none;
+
+    &:hover {
+      background: rgba(255, 255, 255, 0.1);
+      color: white;
+    }
+
+    &:focus-visible {
+      outline: 2px solid white;
+      outline-offset: 1px;
+    }
   }
 
   // Undo / Redo count indicator — overlaid on the top-right corner of the
@@ -17,8 +38,8 @@
   }
   .undo-count-badge {
     position: absolute;
-    top: 2px;
-    right: 2px;
+    top: 0;
+    right: 0;
     display: inline-flex;
     align-items: center;
     justify-content: center;
@@ -35,10 +56,6 @@
     pointer-events: none;
     z-index: 1;
   }
-  .rightButtons {
-    display: flex;
-  }
-
   .ui-button {
     line-height: 36px;
     color: white;
@@ -48,19 +65,6 @@
     padding: 0 .75em;
     text-transform: none;
     font-weight: 500;
-
-    &.primaryButton {
-      color: white;
-      background-color: var(--v-primary-base);
-      border-bottom: 3px solid var(--v-accent-base);
-
-      &:hover,
-      &.pressed {
-        color: white;
-        background-color: var(--v-accent-base);
-        border-bottom: 3px solid var(--v-accent-base);
-      }
-    }
 
     .ui-icon,
     .ui-button-text {
@@ -85,39 +89,6 @@
       color: var(--v-accent-base);
       background-color: var(--v-primary-base);
       border-bottom: 3px solid var(--v-accent-base);
-    }
-  }
-    
-  // NAME INPUT
-  .creation-name {
-    flex: 1 1 auto;
-    display: flex;
-    border-width: 0;
-
-    .ui-button {
-      margin-right: 0;
-      text-align: center;
-      font-weight: normal;
-    }
-
-    input {
-      color: var(--v-accent-lighten1);
-      background: none;
-      padding-left: 7px;
-      border: 0;
-      outline: 0;
-      text-align: center;
-    }
-
-    p,
-    input {
-      flex: 1 1 auto;
-    }
-
-    // Title that cannot be renamed (reviewer): plain text, no button hover.
-    &.creation-name--readonly .ui-button {
-      pointer-events: none;
-      cursor: default;
     }
   }
 }
@@ -147,7 +118,8 @@
   pointer-events: none;
   position: absolute;
   right: 0;
-  top: calc(@topbar-height + 4px);
+  // From the bottom of « Exporter », not of the bar.
+  top: calc(100% + 6px);
   width: max-content;
   min-width: 180px;
   background: rgba(255, 255, 255, 0.95);
@@ -227,12 +199,10 @@
 }
 
 .download-form:hover .download-form__menu,
+.download-form__menu.is-open,
 .download-form__menu:hover {
   opacity: 1;
   pointer-events: initial;
-}
-#toolbar .download-form__btn-menu {
-  margin: 0;
 }
 // MOBILE PREVIEW
 // • revert some styles from mosaico
@@ -243,11 +213,6 @@
 
       .fa {
         font-size: 1.25rem;
-      }
-    }
-    .ui-button[for='showGallery'] {
-      .ui-icon {
-        margin-right: 0;
       }
     }
   }

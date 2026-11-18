@@ -41,6 +41,9 @@ const McpCallLogSchema = require('../mcp/mcp-call-log.schema.js');
 const McpClientSchema = require('../mcp/mcp-client.schema.js');
 const McpConnectionSchema = require('../mcp/mcp-connection.schema.js');
 const McpRetexSchema = require('../mcp/mcp-retex.schema.js');
+const ShareLinkSchema = require('../share-link/share-link.schema.js');
+const { QualityBudgetSchema } = require('../mailing/quality-budget.schema.js');
+const AIUsageCounterSchema = require('../ai-usage/ai-usage-counter.schema.js');
 
 /// ///
 // EXPORTS
@@ -142,6 +145,15 @@ const McpConnections = mongoose.model(
   McpConnectionSchema
 );
 const McpRetexes = mongoose.model(modelNames.McpRetexModel, McpRetexSchema);
+const ShareLinks = mongoose.model(modelNames.ShareLinkModel, ShareLinkSchema);
+const QualityBudgets = mongoose.model(
+  modelNames.QualityBudgetModel,
+  QualityBudgetSchema
+);
+const AIUsageCounters = mongoose.model(
+  modelNames.AIUsageCounterModel,
+  AIUsageCounterSchema
+);
 
 module.exports = {
   mongoose,
@@ -161,6 +173,8 @@ module.exports = {
   Galleries,
   Tags,
   Comments,
+  ShareLinks,
+  QualityBudgets,
   Integrations,
   Dashboards,
   AIFeatureConfigs,
@@ -181,4 +195,5 @@ module.exports = {
   McpClients,
   McpConnections,
   McpRetexes,
+  AIUsageCounters,
 };
