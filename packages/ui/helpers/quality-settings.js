@@ -18,16 +18,25 @@ export function checksByCategory() {
   }));
 }
 
+// The server's code for a change to a check of the technical settings
+// (TECH_CHECKS) by a user who cannot set them. Read from ERROR_CODES once
+// the UI's copy of the codes has it.
+const FORBIDDEN_TECH_QUALITY_CHECK =
+  ERROR_CODES.FORBIDDEN_TECH_QUALITY_CHECK || 'FORBIDDEN_TECH_QUALITY_CHECK';
+
+const MESSAGES = {
+  [FORBIDDEN_TECH_QUALITY_CHECK]: 'qualitySettings.snackbars.forbidden',
+  [ERROR_CODES.INVALID_QUALITY_SETTINGS]: 'qualitySettings.snackbars.invalid',
+};
+
 /**
- * The snackbar text key for a failed save. A refusal is a change to a check
- * of the technical settings (TECH_CHECKS), the route already letting the
- * user reach the page.
+ * The snackbar text key for a failed save: its own message for the codes the
+ * page knows, the generic one for anything else (another refusal included).
  */
 export function qualitySettingsErrorKeyFor(error) {
   const response = (error && error.response) || {};
-  const data = response.data || {};
-  if (response.status === 403) return 'qualitySettings.snackbars.forbidden';
-  return data.message === ERROR_CODES.INVALID_QUALITY_SETTINGS
-    ? 'qualitySettings.snackbars.invalid'
+  const code = (response.data || {}).message;
+  return Object.prototype.hasOwnProperty.call(MESSAGES, code)
+    ? MESSAGES[code]
     : 'qualitySettings.snackbars.error';
 }

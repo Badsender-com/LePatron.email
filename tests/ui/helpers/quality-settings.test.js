@@ -25,10 +25,22 @@ describe('quality settings page helpers', () => {
     );
   });
 
-  it('says why a refused save was refused', () => {
-    const refused = { response: { status: 403, data: {} } };
+  it('says why a change to a tech admin check was refused', () => {
+    const refused = {
+      response: {
+        status: 403,
+        data: { message: 'FORBIDDEN_TECH_QUALITY_CHECK' },
+      },
+    };
     expect(qualitySettingsErrorKeyFor(refused)).toBe(
       'qualitySettings.snackbars.forbidden'
+    );
+  });
+
+  it('gives any other refusal the generic message', () => {
+    const refused = { response: { status: 403, data: {} } };
+    expect(qualitySettingsErrorKeyFor(refused)).toBe(
+      'qualitySettings.snackbars.error'
     );
   });
 });
