@@ -1716,6 +1716,8 @@ export default {
       stateOwn: 'State: this template\'s own.',
       restoreState: 'Restore the general setting',
       equalToGeneral: 'This value equals the general setting but will no longer follow its changes. | This value equals the general setting but will no longer follow its changes. | These {count} values equal the general setting but will no longer follow its changes.',
+      keptBy: '{count} template keeps its own value: {names}. | {count} templates keep their own value: {names}.',
+      keptByOthers: '{count} other | {count} others',
     },
   },
   emailBuilderSettings: {

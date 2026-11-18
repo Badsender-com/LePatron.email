@@ -9,6 +9,8 @@ import {
   emptyException,
   recommendedOf,
   generalOf,
+  settingsOfDrafts,
+  templatesKeepingOwn,
 } from '~/helpers/quality-exceptions.js';
 import { exceptionsPayload, fieldErrors } from '~/helpers/quality-save.js';
 import { qualitySettingsErrorKeyFor } from '~/helpers/quality-settings.js';
@@ -42,6 +44,9 @@ export default {
     // The group's, which a template's exceptions are laid over.
     generalSettings: { type: Object, default: null },
     groupId: { type: String, default: '' },
+    // The group's templates, on the general page: an unsaved change says
+    // which of them keep their own value.
+    templates: { type: Array, default: () => [] },
     // Saves the payload; returns a promise of the server's answer, which
     // the `saved` event passes on.
     save: { type: Function, required: true },
@@ -70,6 +75,26 @@ export default {
     },
     ids() {
       return CATALOGUE_ORDER.filter((id) => this.drafts[id]);
+    },
+    // The exceptions as edited, as if saved: what the page shows applying.
+    draftSettings() {
+      return settingsOfDrafts(this.drafts);
+    },
+    // By check, the names of the templates its unsaved change will not
+    // reach.
+    keptBy() {
+      if (!this.isGeneral || !this.templates.length) return {};
+      return Object.fromEntries(
+        this.ids.map((id) => [
+          id,
+          templatesKeepingOwn(
+            id,
+            this.draftSettings,
+            this.settings,
+            this.templates
+          ).map((template) => template.name),
+        ])
+      );
     },
     payload() {
       return exceptionsPayload(this.level, this.drafts, this.saved);
@@ -122,6 +147,12 @@ export default {
       immediate: true,
       handler(count) {
         this.$emit('changes', count);
+      },
+    },
+    draftSettings: {
+      immediate: true,
+      handler(settings) {
+        this.$emit('draft-settings', settings);
       },
     },
     // The checks this level sets, as edited: a template's page lists the
@@ -250,6 +281,7 @@ export default {
           :base="baseOf(id)"
           :base-text="isGeneral ? '' : baseText(id)"
           :errors="errors[id]"
+          :kept-by="keptBy[id] || []"
           :group-id="groupId"
           :disabled="loading"
           :locked="lockedIds.includes(id)"

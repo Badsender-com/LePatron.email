@@ -1308,6 +1308,8 @@ export default {
       stateOwn: 'État : propre à ce template.',
       restoreState: 'Rétablir le réglage général',
       equalToGeneral: 'Cette valeur égale le réglage général mais ne suivra plus ses changements. | Cette valeur égale le réglage général mais ne suivra plus ses changements. | Ces {count} valeurs égalent le réglage général mais ne suivront plus ses changements.',
+      keptBy: '{count} template garde sa propre valeur : {names}. | {count} templates gardent leur propre valeur : {names}.',
+      keptByOthers: '{count} autre | {count} autres',
     },
   },
   emailBuilderSettings: {
