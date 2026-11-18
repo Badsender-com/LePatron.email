@@ -9,9 +9,9 @@ const { kbSize } = require('../message-params');
 // (team decision of 1 October 2026; threshold `maxKb`, set by the quality
 // settings). Passing means under the threshold, so the threshold exactly is
 // reported.
-// A group may set its threshold above Gmail's limit: past the threshold it is
-// warned of both, and between the two Gmail's clipping is only an info, the
-// threshold being the group's own choice.
+// A company may set its threshold above Gmail's limit: past the threshold it
+// is warned of both, and between the two Gmail's clipping is only an info,
+// the threshold being the company's own choice.
 const GMAIL_CLIPPING_BYTES = 102 * 1024;
 
 const kbOf = (bytes) => Math.ceil(bytes / 1024);
