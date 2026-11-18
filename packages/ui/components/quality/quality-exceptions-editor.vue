@@ -186,6 +186,14 @@ export default {
       this.drafts = { ...this.drafts, [id]: exception };
     },
 
+    // A template's state back to the general setting: its thresholds stay.
+    restoreState(id) {
+      this.drafts = {
+        ...this.drafts,
+        [id]: { ...this.drafts[id], state: null },
+      };
+    },
+
     setThreshold(id, name, value) {
       const exception = this.drafts[id];
       this.drafts = {
@@ -247,6 +255,7 @@ export default {
           :disabled="loading"
           :locked="lockedIds.includes(id)"
           @state="setState(id, $event)"
+          @restore-state="restoreState(id)"
           @threshold="(name, value) => setThreshold(id, name, value)"
           @remove="remove(id)"
         />

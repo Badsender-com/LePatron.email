@@ -12,6 +12,7 @@ import {
   exceptionCount,
   blocksFrom,
   adjustmentsOf,
+  valuesEqualToBase,
 } from '~/helpers/quality-exceptions.js';
 
 // The "Contrôle qualité" page shows exceptions only (ADR 0009, admin design
@@ -116,6 +117,22 @@ describe('what applies', () => {
         base
       )
     ).toBe(false);
+  });
+
+  it("names a template's values equal to the general ones", () => {
+    // Kept on save (D3), but they will not follow the general settings.
+    const base = generalOf(general)['merge-tags'];
+    expect(
+      valuesEqualToBase({ state: 'blocking', thresholds: {} }, base)
+    ).toEqual(['state']);
+    const subject = generalOf(general).subject;
+    expect(
+      valuesEqualToBase(
+        { state: 'blocking', thresholds: { long: '40', tooLong: 70 } },
+        subject
+      )
+    ).toEqual(['long']);
+    expect(valuesEqualToBase(emptyException('subject'), subject)).toEqual([]);
   });
 
   it('tells an unsaved change, an empty field and null alike', () => {

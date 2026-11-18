@@ -1265,6 +1265,10 @@ export default {
       loadError: 'Les réglages du contrôle qualité n\'ont pas pu être chargés.',
       retry: 'Réessayer',
       backToTemplates: 'Retour à la liste des templates',
+      stateGeneral: 'État : réglage général.',
+      stateOwn: 'État : propre à ce template.',
+      restoreState: 'Rétablir le réglage général',
+      equalToGeneral: 'Cette valeur égale le réglage général mais ne suivra plus ses changements. | Cette valeur égale le réglage général mais ne suivra plus ses changements. | Ces {count} valeurs égalent le réglage général mais ne suivront plus ses changements.',
     },
   },
   emailBuilderSettings: {

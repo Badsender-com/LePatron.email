@@ -1459,6 +1459,10 @@ export default {
       loadError: 'The quality control settings could not be loaded.',
       retry: 'Try again',
       backToTemplates: 'Back to the templates list',
+      stateGeneral: 'State: general setting.',
+      stateOwn: 'State: this template\'s own.',
+      restoreState: 'Restore the general setting',
+      equalToGeneral: 'This value equals the general setting but will no longer follow its changes. | This value equals the general setting but will no longer follow its changes. | These {count} values equal the general setting but will no longer follow its changes.',
     },
   },
   emailBuilderSettings: {
