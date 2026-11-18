@@ -159,11 +159,12 @@ _Measured in November 2026 on `packages/ui` (counts are of occurrences found in 
 
 ### DEBT-016: Patterns the design system does not describe
 
-|               |                                                                                                                      |
-| ------------- | -------------------------------------------------------------------------------------------------------------------- |
-| **Severity**  | Low                                                                                                                  |
-| **Current**   | `v-alert` (24 uses), `v-tooltip` (48), `v-tabs` (8) and `v-chip` outside the tag list (72) follow Vuetify's defaults |
-| **Direction** | A sheet each, decided with the design system's owner, then a pass over the uses                                      |
+|               |                                                                                                               |
+| ------------- | ------------------------------------------------------------------------------------------------------------- |
+| **Severity**  | Low                                                                                                           |
+| **Current**   | `v-tabs` (8 uses, in capitals: see DEBT-017) and `v-chip` outside the tag list (72) follow Vuetify's defaults |
+| **Direction** | A sheet each, decided with the design system's owner, then a pass over the uses                               |
+| **Done**      | Alerts (24 uses) and tooltips (48): see the Resolved section                                                  |
 
 ---
 
@@ -179,6 +180,15 @@ _Measured in November 2026 on `packages/ui` (counts are of occurrences found in 
 ---
 
 ## Resolved Debts
+
+### DEBT-020: Alerts and tooltips on Vuetify's defaults
+
+|              |                                                                                                                                                                                                  |
+| ------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| **Resolved** | November 2026: `feedback.scss` gives every `v-alert` one anatomy by tone (soft ground, 1px frame, icon in the ink, text in `gray-900`) and every `v-tooltip` the dark label of the design system |
+| **Was**      | 24 alerts in four variants (solid, outlined, text, left bar) and tooltips in Vuetify's translucent gray                                                                                          |
+
+---
 
 ### DEBT-005: Non-centralized modals
 
