@@ -1437,11 +1437,14 @@ export default {
     },
     addException: 'Add an exception',
     exceptionCount: 'No exception | {count} exception | {count} exceptions',
+    labelValue: '{label}: {value}',
     general: {
       intro: 'Every check applies to all your templates with its recommended values. Add an exception only for a check you want to turn off, make blocking, or whose thresholds you want to change.',
       others: 'The other checks apply their recommended values.',
       empty: 'No exception: every check applies its recommended values.',
-      emptyDetail: 'All are on, except "Required tracking parameters", blocking.',
+      emptyDetail: 'All are on, except {others}.',
+      emptyDetailAll: 'All are on.',
+      defaultStateOf: '"{name}", {state}',
     },
     reference: {
       toggle: 'See the {count} checks and what applies',
