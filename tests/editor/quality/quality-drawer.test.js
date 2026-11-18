@@ -20,6 +20,8 @@ const {
 } = require('../../../packages/editor/src/js/ext/quality/quality-review.js');
 const { fakeViewModel } = require('./fake-view-model');
 const { CAPABILITIES } = require('../../../packages/shared/access/roles.js');
+const en = require('../../../public/lang/badsender-en.js');
+const fr = require('../../../public/lang/badsender-fr.js');
 
 Vue.config.productionTip = false;
 Vue.config.devtools = false;
@@ -49,11 +51,24 @@ let changeContent = () => {};
 
 // `user` as the editor loads it: null until known. `canEdit` stands for the
 // right to edit the content (ext/user-can.js), which ignoring takes.
+// `strings`, a language of public/lang, translates the drawer as the editor
+// does; `qualitySettings`, the mailing's resolved quality settings.
 async function mountDrawer(
   result,
-  { ignoreUrl = '/api/m1/ignores', user = { id: 'u1' }, canEdit = true } = {}
+  {
+    ignoreUrl = '/api/m1/ignores',
+    user = { id: 'u1' },
+    canEdit = true,
+    strings,
+    qualitySettings,
+  } = {}
 ) {
   const vm = fakeViewModel({ blocks: [{ id: 'b1', type: 'heroBlock' }] });
+  if (strings) {
+    const fill = vm.t;
+    vm.t = (key, params) => fill(strings[key] || key, params);
+  }
+  if (qualitySettings) vm.metadata.qualitySettings = qualitySettings;
   vm.currentUser = ko.observable(user);
   vm.userCan = (capability) =>
     !!vm.currentUser() &&
@@ -509,6 +524,27 @@ describe('QualityDrawer', () => {
     await Vue.nextTick();
     expect(el.querySelector('.qc-remote--error').textContent).toContain(
       'Too many checks in a short time'
+    );
+  });
+
+  it('says how many checks the company or the template turned off', async () => {
+    const off = { state: 'off', thresholds: {} };
+    const qualitySettings = {
+      checks: { headings: off, 'emoji-placement': off },
+    };
+    const textIn = async (strings) => {
+      const { el } = await mountDrawer(
+        { findings: [], checks: [] },
+        { strings, qualitySettings }
+      );
+      return el.querySelector('.qc-turned-off').textContent.trim();
+    };
+
+    expect(await textIn(fr)).toBe(
+      '2 contrôle(s) désactivé(s) par votre entreprise ou ce template'
+    );
+    expect(await textIn(en)).toBe(
+      '2 checks turned off by your company or this template'
     );
   });
 
