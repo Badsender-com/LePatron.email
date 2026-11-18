@@ -12,7 +12,7 @@ export default {
   components: { BsDataTable, ChevronDown },
   mixins: [mixinQualityTexts],
   props: {
-    // The group's `qualitySettings`, as saved.
+    // The group's `qualitySettings` as edited: unsaved changes included.
     settings: { type: Object, default: null },
   },
   data() {

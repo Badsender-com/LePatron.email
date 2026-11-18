@@ -163,6 +163,55 @@ export function generalOf(groupSettings) {
 }
 
 /**
+ * Exceptions as edited, in the shape of a level's stored settings: what the
+ * page shows as applying before it is saved. Only valid numbers count.
+ * @param {Object} drafts the exceptions as edited, by check
+ * @returns {{ checks: Object }}
+ */
+export function settingsOfDrafts(drafts) {
+  return {
+    checks: Object.fromEntries(
+      Object.keys(drafts).map((id) => [
+        id,
+        {
+          state: isSet(drafts[id].state) ? drafts[id].state : null,
+          thresholds: ownThresholds(drafts[id]),
+        },
+      ])
+    ),
+  };
+}
+
+/**
+ * The templates an unsaved change of a general setting will not reach: those
+ * that set their own value of what changed, or one the new general value
+ * contradicts (their own wins, effectiveOf).
+ * @param {string} id
+ * @param {Object} drafted the general settings as edited (settingsOfDrafts)
+ * @param {Object} saved the general settings as stored
+ * @param {Object[]} templates the group's, with their `qualitySettings`
+ * @returns {Object[]} those templates
+ */
+export function templatesKeepingOwn(id, drafted, saved, templates) {
+  const before = generalOf(saved)[id];
+  const after = generalOf(drafted)[id];
+  const names = thresholdNames(id).filter(
+    (name) => before.thresholds[name] !== after.thresholds[name]
+  );
+  const stateChanged = before.state !== after.state;
+  if (!names.length && !stateChanged) return [];
+  return templates.filter((template) => {
+    const exception = exceptionsOf(template.qualitySettings)[id];
+    if (!exception) return false;
+    if (stateChanged && isSet(exception.state)) return true;
+    if (names.some((name) => isSet(exception.thresholds[name]))) return true;
+    return adjustmentsOf(id, exception, after).some((adjustment) =>
+      names.includes(adjustment.threshold)
+    );
+  });
+}
+
+/**
  * Whether two exceptions set the same values, an empty field and `null`
  * alike: what the card compares to tell an unsaved change.
  */

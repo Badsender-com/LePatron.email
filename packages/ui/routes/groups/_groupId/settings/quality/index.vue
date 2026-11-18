@@ -45,6 +45,8 @@ export default {
       templates: [],
       loadError: false,
       reloading: false,
+      // The general settings as edited, saved or not.
+      draftSettings: null,
       tab: TABS.includes(this.$route.query.tab)
         ? this.$route.query.tab
         : 'general',
@@ -175,13 +177,13 @@ export default {
             :level="level"
             :settings="group.qualitySettings || null"
             :group-id="group.id || ''"
+            :templates="templates"
             :save="saveGeneral"
             @changes="unsavedChanges = $event"
+            @draft-settings="draftSettings = $event"
             @saved="onSaved"
           />
-          <bs-quality-reference-table
-            :settings="group.qualitySettings || null"
-          />
+          <bs-quality-reference-table :settings="draftSettings" />
         </div>
         <bs-quality-templates-table
           v-else

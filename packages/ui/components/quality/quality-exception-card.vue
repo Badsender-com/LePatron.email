@@ -17,6 +17,9 @@ import BsQualityExceptionNotes from '~/components/quality/quality-exception-note
 import BsQualityThresholdField from '~/components/quality/quality-threshold-field.vue';
 
 const STATES = ['off', 'on', 'blocking'];
+// How many templates keeping their own value the card names, the others
+// counted.
+const KEPT_BY_NAMES = 5;
 
 // One exception: a check whose state or thresholds differ from what applies
 // below it (the recommended values, or the general settings on a template).
@@ -41,6 +44,9 @@ export default {
     // "Réglage général : …", on a template only.
     baseText: { type: String, default: '' },
     errors: { type: Object, default: () => ({}) },
+    // In the general settings, the names of the templates that keep their
+    // own value of what this unsaved change sets.
+    keptBy: { type: Array, default: () => [] },
     groupId: { type: String, default: '' },
     disabled: { type: Boolean, default: false },
     // A check of the technical settings, which this user cannot set.
@@ -99,6 +105,20 @@ export default {
         ? 0
         : valuesEqualToBase(this.exception, this.base).length;
     },
+    keptByText() {
+      const count = this.keptBy.length;
+      if (!count) return '';
+      const shown = this.keptBy.slice(0, KEPT_BY_NAMES);
+      if (count > shown.length) {
+        shown.push(
+          this.$tc('qualitySettings.page.keptByOthers', count - shown.length)
+        );
+      }
+      const names = new Intl.ListFormat(this.$i18n.locale, {
+        type: 'conjunction',
+      }).format(shown);
+      return this.$tc('qualitySettings.page.keptBy', count, { count, names });
+    },
     ownState() {
       return !this.isGeneral && Boolean(this.exception.state);
     },
@@ -113,6 +133,7 @@ export default {
         this.showThresholds ||
         this.adjustments.length > 0 ||
         this.equalToGeneral > 0 ||
+        this.keptBy.length > 0 ||
         this.changesNothing ||
         this.applied.state !== 'on' ||
         hasNote(this.checkId)
@@ -252,6 +273,7 @@ export default {
       >
         {{ adjustment.text }}
       </p>
+      <p v-if="keptByText" class="qx-card__kept">{{ keptByText }}</p>
       <div v-if="showThresholds" class="qx-card__thresholds">
         <bs-quality-threshold-field
           v-for="name in thresholdNames"
@@ -361,7 +383,8 @@ export default {
     color: var(--gray-700);
   }
 
-  &__adjusted {
+  &__adjusted,
+  &__kept {
     color: var(--gray-700);
   }
 
