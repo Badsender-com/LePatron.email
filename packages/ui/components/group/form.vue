@@ -293,6 +293,7 @@ export default {
         <bs-form-section
           v-if="canManagePlatform || $slots['security-rows']"
           last
+          class="group-form__security"
         >
           <template #icon>
             <lucide-shield-check :size="20" />
@@ -452,6 +453,12 @@ export default {
 </template>
 
 <style lang="scss" scoped>
+// The last section of the card keeps a gap above the divider of the save bar
+// (the layout zeroes the padding of `.v-card__text`, and `last` the margin).
+.group-form__security.bs-form-section--last {
+  margin-bottom: 1.5rem;
+}
+
 // A PEM certificate is read line by line: monospace keeps it recognisable.
 .group-form__idp-cert ::v-deep textarea {
   font-family: monospace;
