@@ -125,6 +125,9 @@ export default {
     isServer() {
       return isServerCheck(this.checkId);
     },
+    onlineTipId() {
+      return `qx-online-tip-${this.checkId}`;
+    },
     showThresholds() {
       return this.thresholdNames.length > 0 && this.applied.state !== 'off';
     },
@@ -167,12 +170,24 @@ export default {
           <span class="qx-card__category">{{ categoryName(checkId) }}</span>
           <v-tooltip v-if="isServer" bottom max-width="320">
             <template #activator="{ on, attrs }">
-              <v-chip x-small outlined v-bind="attrs" v-on="on">
+              <v-chip
+                x-small
+                outlined
+                tabindex="0"
+                :aria-describedby="onlineTipId"
+                v-bind="attrs"
+                v-on="on"
+              >
                 {{ $t('qualitySettings.card.online') }}
               </v-chip>
             </template>
             {{ $t('qualitySettings.card.onlineTip') }}
           </v-tooltip>
+          <!-- The tooltip is only rendered once open: what a screen reader
+               reads on focus lives here. -->
+          <span v-if="isServer" :id="onlineTipId" class="d-sr-only">
+            {{ $t('qualitySettings.card.onlineTip') }}
+          </span>
           <v-chip v-if="isDirty" x-small class="qx-card__unsaved">
             <span class="qx-card__unsaved-dot" />
             {{

@@ -1,4 +1,5 @@
 <script>
+import { mapGetters } from 'vuex';
 import { EyeOff, Lock, Plus } from 'lucide-vue';
 import * as acls from '~/helpers/pages-acls.js';
 import * as apiRoutes from '~/helpers/api-routes.js';
@@ -16,6 +17,8 @@ import BsPageHeader from '~/components/layout/bs-page-header.vue';
 import BsBreadcrumb from '~/components/layout/bs-breadcrumb.vue';
 import BsModalConfirm from '~/components/modal-confirm.vue';
 import BsQualityExceptionsEditor from '~/components/quality/quality-exceptions-editor.vue';
+import { CAN, USER } from '~/store/user';
+import { CAPABILITIES } from '../../../../../../../shared/access/roles.js';
 
 const CATALOGUE_ORDER = Object.keys(CHECKS);
 
@@ -62,9 +65,15 @@ export default {
     };
   },
   head() {
-    return { title: this.settingsTitle };
+    const parts = [this.$t('qualitySettings.title'), this.settingsTitle];
+    if (this.template) parts.unshift(this.template.name);
+    return { title: parts.join(' · ') };
   },
   computed: {
+    ...mapGetters(USER, { can: CAN }),
+    showGroupBadge() {
+      return this.can(CAPABILITIES.PLATFORM_MANAGE) && this.group.name;
+    },
     level() {
       return TEMPLATE;
     },
@@ -169,6 +178,12 @@ export default {
           </nuxt-link>
         </p>
         <template v-else>
+          <div class="quality-template__heading">
+            <h1 class="quality-template__title">{{ template.name }}</h1>
+            <v-chip v-if="showGroupBadge" small outlined color="accent">
+              {{ group.name }}
+            </v-chip>
+          </div>
           <p class="quality-intro">
             {{ $t('qualitySettings.template.intro') }}
           </p>
@@ -185,9 +200,9 @@ export default {
           />
 
           <section class="applied">
-            <h3 class="applied__title">
+            <h2 class="applied__title">
               {{ $t('qualitySettings.template.applied') }}
-            </h3>
+            </h2>
             <i18n
               v-if="appliedGeneral.length"
               path="qualitySettings.template.appliedFrom"
@@ -243,6 +258,20 @@ export default {
 </template>
 
 <style lang="scss" scoped>
+.quality-template__heading {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 12px;
+}
+
+.quality-template__title {
+  margin: 0;
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: var(--gray-900);
+}
+
 .quality-intro {
   margin: 8px 0 16px;
   font-size: 0.875rem;

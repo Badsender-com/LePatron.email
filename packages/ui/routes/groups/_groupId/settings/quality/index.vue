@@ -150,7 +150,7 @@ export default {
       v-if="!loadError"
       :key="tabsKey"
       :value="tab"
-      class="hub-tabs quality-tabs"
+      class="hub-tabs"
       background-color="transparent"
       @change="onTab"
     >
@@ -161,7 +161,7 @@ export default {
     </v-tabs>
     <v-divider />
     <v-container fluid>
-      <div class="settings-content quality-content">
+      <div class="settings-content">
         <v-alert v-if="loadError" type="error" outlined role="alert">
           {{ $t('qualitySettings.page.loadError') }}
           <template #append>
@@ -206,14 +206,6 @@ export default {
 </template>
 
 <style lang="scss" scoped>
-.quality-tabs {
-  padding: 0 24px;
-}
-
-.quality-content {
-  padding: 0 24px;
-}
-
 .quality-intro {
   margin: 8px 0 16px;
   font-size: 0.875rem;
