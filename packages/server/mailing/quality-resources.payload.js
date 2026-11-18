@@ -4,6 +4,7 @@ const createError = require('http-errors');
 
 const ERROR_CODES = require('../constant/error-codes.js');
 const { RESOURCES } = require('../../shared/quality/limits.js');
+const { SERVER_TASKS } = require('../../shared/quality/checks.js');
 const { PURPOSES } = require('./quality-limits.js');
 
 // What the editor may send for the server's quality checks
@@ -16,18 +17,10 @@ const MAX_IMAGES = RESOURCES.maxImages;
 const MAX_URL_LENGTH = RESOURCES.maxUrlLength;
 
 // The editor's checks this run serves, and what each has the server do: visit
-// the links, ask Web Risk, ask the blocklists, download the images.
-const REMOTE_CHECKS = Object.freeze({
-  'broken-links': 'linkProbes',
-  'dangerous-links': 'webRisk',
-  'domain-blocklists': 'blocklists',
-  'image-weight': 'images',
-  'images-total-weight': 'images',
-  'oversized-images': 'images',
-  // The editor's own check, judged on the type of an image whose address
-  // names no format: the server downloads that image.
-  'unsupported-image-formats': 'images',
-});
+// the links, ask Web Risk, ask the blocklists, download the images. Each check
+// of the shared catalogue says it, a local one with a second look included.
+const REMOTE_CHECKS = SERVER_TASKS;
+
 function invalid() {
   return new createError.UnprocessableEntity(
     ERROR_CODES.INVALID_QUALITY_RESOURCES
