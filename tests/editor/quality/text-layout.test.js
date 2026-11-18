@@ -147,7 +147,7 @@ describe('text-layout', () => {
     const OVERLAP =
       'Line height under __min__ (__ratio__): the lines overlap: __text__';
     const UNDER_MINIMUM =
-      'Line height of __ratio__, under the minimum of __min__ set for your emails: __text__';
+      'Line height of __ratio__: under the minimum of __min__ set for your emails: __text__';
 
     // The text block of richTextFindings, with the group's settings.
     function findingsUnder(minLineHeight, longText) {
@@ -188,6 +188,25 @@ describe('text-layout', () => {
       expect(
         findingsUnder(1.5, '<p style="line-height:1">Readable</p>')
       ).toEqual([expect.objectContaining({ messageKey: UNDER_MINIMUM })]);
+    });
+
+    it('rounds the ratio down, so it never reads as the minimum', () => {
+      expect(
+        findingsUnder(1, '<p style="line-height:0.995">Tight</p>')
+      ).toEqual([
+        expect.objectContaining({
+          messageKey: OVERLAP,
+          params: expect.objectContaining({ ratio: 0.99 }),
+        }),
+      ]);
+      expect(
+        findingsUnder(1.5, '<p style="line-height:1.499">Readable</p>')[0]
+          .params.ratio
+      ).toBe(1.49);
+      expect(
+        findingsUnder(1, '<p style="line-height:0.29">Squashed</p>')[0].params
+          .ratio
+      ).toBe(0.29);
     });
 
     it('keeps the fingerprint of the line height, whatever the message', () => {
