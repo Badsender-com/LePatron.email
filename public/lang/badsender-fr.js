@@ -836,6 +836,10 @@ module.exports = {
     'GIF lourd (__size__ Ko) : restez sous __max__',
   'Heavy image (__size__ KB): keep it under __max__':
     'Image lourde (__size__ Ko) : restez sous __max__',
+  'Heavy GIF (at least __size__ KB): keep it under __max__':
+    'GIF lourd (au moins __size__ Ko) : restez sous __max__',
+  'Heavy image (at least __size__ KB): keep it under __max__':
+    'Image lourde (au moins __size__ Ko) : restez sous __max__',
   'Total image weight': 'Poids total des images',
   'Images weigh __size__ KB in all, under __max__':
     'Les images pèsent __size__ Ko au total, sous la limite de __max__',

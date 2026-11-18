@@ -120,9 +120,27 @@ describe('image weight', () => {
     expect(
       findings.map((f) => [f.messageKey, f.params.size, f.params.max])
     ).toEqual([
-      ['Heavy image (__size__ KB): keep it under __max__', '800', { kb: 500 }],
-      ['Heavy GIF (__size__ KB): keep it under __max__', '1500', { kb: 1024 }],
+      ['Heavy image (__size__ KB): keep it under __max__', 800, { kb: 500 }],
+      ['Heavy GIF (__size__ KB): keep it under __max__', 1500, { kb: 1024 }],
     ]);
+  });
+
+  it('says "at least" of a weight the server stopped reading at its cap', () => {
+    const src = 'https://cdn.test/huge.jpg';
+    const findingFor = (atLeast) =>
+      check(
+        imageWeight,
+        img(src),
+        images({
+          [src]: { state: 'ok', bytes: 5000 * KB, type: 'jpg', atLeast },
+        })
+      ).findings[0];
+    expect(findingFor(true)).toMatchObject({
+      messageKey: 'Heavy image (at least __size__ KB): keep it under __max__',
+      params: { size: 5000 },
+    });
+    // The same fault on the same image: an ignore made before still holds.
+    expect(findingFor(true).fingerprint).toBe(findingFor(false).fingerprint);
   });
 
   it('warns about an image the export cannot download', () => {

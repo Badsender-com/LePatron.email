@@ -810,6 +810,10 @@ module.exports = {
     'Heavy GIF (__size__ KB): keep it under __max__',
   'Heavy image (__size__ KB): keep it under __max__':
     'Heavy image (__size__ KB): keep it under __max__',
+  'Heavy GIF (at least __size__ KB): keep it under __max__':
+    'Heavy GIF (at least __size__ KB): keep it under __max__',
+  'Heavy image (at least __size__ KB): keep it under __max__':
+    'Heavy image (at least __size__ KB): keep it under __max__',
   'Total image weight': 'Total image weight',
   'Images weigh __size__ KB in all, under __max__':
     'Images weigh __size__ KB in all, under __max__',

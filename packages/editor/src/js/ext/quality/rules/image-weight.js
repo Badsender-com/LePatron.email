@@ -9,8 +9,26 @@ const { kbSize } = require('../message-params');
 // the ceiling of one image at 500 KB; an animated GIF gets 1 MB (thresholds
 // `maxKb` and `maxGifKb`, set by the quality settings).
 
-const kb = (result) =>
-  `${Math.round(result.bytes / 1024)}${result.atLeast ? '+' : ''}`;
+const kb = (result) => Math.round(result.bytes / 1024);
+
+// The server stops reading an image past its download cap: then the weight
+// is a floor, and the message says "at least".
+const HEAVY = {
+  gif: {
+    exact: 'Heavy GIF (__size__ KB): keep it under __max__',
+    atLeast: 'Heavy GIF (at least __size__ KB): keep it under __max__',
+  },
+  image: {
+    exact: 'Heavy image (__size__ KB): keep it under __max__',
+    atLeast: 'Heavy image (at least __size__ KB): keep it under __max__',
+  },
+};
+
+const heavy = (result, type, max) => ({
+  kind: 'heavy',
+  messageKey: HEAVY[type][result.atLeast ? 'atLeast' : 'exact'],
+  params: { size: kb(result), max: kbSize(max) },
+});
 
 const isGif = (result, src) =>
   result.type === 'gif' || /\.gif($|\?)/i.test(src || '');
@@ -28,22 +46,10 @@ function problemOf(ctx, image, result) {
   }
   if (isGif(result, image.src)) {
     const maxGif = thresholdOf(ctx, 'image-weight', 'maxGifKb');
-    return result.bytes > maxGif * 1024
-      ? {
-          kind: 'heavy',
-          messageKey: 'Heavy GIF (__size__ KB): keep it under __max__',
-          params: { size: kb(result), max: kbSize(maxGif) },
-        }
-      : null;
+    return result.bytes > maxGif * 1024 ? heavy(result, 'gif', maxGif) : null;
   }
   const max = thresholdOf(ctx, 'image-weight', 'maxKb');
-  return result.bytes > max * 1024
-    ? {
-        kind: 'heavy',
-        messageKey: 'Heavy image (__size__ KB): keep it under __max__',
-        params: { size: kb(result), max: kbSize(max) },
-      }
-    : null;
+  return result.bytes > max * 1024 ? heavy(result, 'image', max) : null;
 }
 
 // "unverifiable": an address the server refuses to reach (a private
