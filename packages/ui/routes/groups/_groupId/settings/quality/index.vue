@@ -102,16 +102,13 @@ export default {
       );
     },
 
-    // Refetched rather than patched locally: the saved state is what the
-    // server returns.
-    async refreshGroup() {
-      const { group } = await safeFetchGroup({
-        $axios: this.$axios,
-        params: this.$route.params,
-        store: this.$store,
-        app: { i18n: this.$i18n },
-      });
-      this.group = group;
+    // The group as the server returns it after the save: its settings are
+    // what is stored now, nothing to refetch.
+    onSaved(group) {
+      this.group = {
+        ...this.group,
+        qualitySettings: (group && group.qualitySettings) || null,
+      };
     },
   },
 };
@@ -162,7 +159,7 @@ export default {
             :group-id="group.id || ''"
             :save="saveGeneral"
             @changes="unsavedChanges = $event"
-            @saved="refreshGroup"
+            @saved="onSaved"
           />
           <bs-quality-reference-table
             :settings="group.qualitySettings || null"
