@@ -39,8 +39,18 @@ export default {
     hintId() {
       return `qx-hint-${this.checkId}-${this.name}`;
     },
-    errors() {
-      return this.error ? [this.$t(this.error.key, this.error.params)] : [];
+    errorId() {
+      return `qx-error-${this.checkId}-${this.name}`;
+    },
+    errorText() {
+      if (!this.error) return '';
+      const params = Object.fromEntries(
+        Object.entries(this.error.params || {}).map(([key, value]) => [
+          key,
+          typeof value === 'number' ? this.formatNumber(value) : value,
+        ])
+      );
+      return this.$t(this.error.key, params);
     },
     hint() {
       return this.$t(
@@ -48,10 +58,18 @@ export default {
           ? 'qualitySettings.card.recommendedHint'
           : 'qualitySettings.card.generalHint',
         {
-          value: this.baseValue,
-          min: this.threshold.min,
-          max: this.threshold.max,
+          value: this.formatNumber(this.baseValue),
+          min: this.formatNumber(this.threshold.min),
+          max: this.formatNumber(this.threshold.max),
         }
+      );
+    },
+    restoreLabel() {
+      return this.$t(
+        this.baseIsRecommended
+          ? 'qualitySettings.card.restoreRecommended'
+          : 'qualitySettings.card.restoreGeneral',
+        { value: this.formatNumber(this.baseValue) }
       );
     },
   },
@@ -68,7 +86,7 @@ export default {
       :error="Boolean(error)"
       :disabled="disabled"
       :data-threshold="`${checkId}.${name}`"
-      :aria-describedby="hintId"
+      :aria-describedby="error ? errorId : hintId"
       :aria-invalid="error ? 'true' : 'false'"
       type="number"
       :step="threshold.unit === 'ratio' ? 0.1 : 1"
@@ -87,20 +105,27 @@ export default {
         />
       </template>
     </v-text-field>
-    <div
-      :id="hintId"
-      class="qx-threshold__hint"
-      :class="{ 'qx-threshold__hint--error': error }"
-    >
-      {{ errors.length ? errors[0] : hint }}
-      <a
-        v-if="canRestore && !disabled && !errors.length"
-        class="qx-threshold__restore"
-        href="#"
-        @click.prevent="$emit('input', null)"
+    <div class="qx-threshold__hint">
+      <!-- An alert inserted is read out: the error of a value is heard as
+           it is typed, the hint is only read with the field. -->
+      <span
+        v-if="error"
+        :id="errorId"
+        role="alert"
+        class="qx-threshold__error"
+        >{{ errorText }}</span
       >
-        {{ $t('qualitySettings.card.restore', { value: baseValue }) }}
-      </a>
+      <span v-else :id="hintId">{{ hint }}</span>
+      <v-btn
+        v-if="canRestore && !disabled"
+        x-small
+        text
+        color="primary"
+        class="qx-threshold__restore"
+        @click="$emit('input', null)"
+      >
+        {{ restoreLabel }}
+      </v-btn>
     </div>
   </div>
 </template>
@@ -120,16 +145,18 @@ export default {
     color: var(--gray-700);
   }
 
-  &__hint--error {
+  &__error {
     color: var(--v-error-base);
   }
 
   &__restore {
-    color: var(--v-accent-base);
+    text-transform: none;
+    letter-spacing: normal;
   }
 
+  // 5.7:1 on white: a placeholder holds the value that applies.
   ::v-deep input::placeholder {
-    color: rgba(0, 0, 0, 0.5) !important;
+    color: var(--gray-700) !important;
     opacity: 1;
   }
 

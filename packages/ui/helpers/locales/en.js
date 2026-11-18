@@ -1474,7 +1474,9 @@ export default {
       recommendedHint: 'Recommended: {value}, from {min} to {max}',
       generalHint: 'General setting: {value}, from {min} to {max}',
       restore: 'Restore {value}',
-      recommended: 'Recommended value: {value}',
+      restoreRecommended: 'Back to the recommended value ({value})',
+      restoreGeneral: 'Back to the general setting ({value})',
+      recommended: 'Recommended values: {value}',
       general: 'General setting: {value}',
     },
     blocksOn: {
