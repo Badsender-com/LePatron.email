@@ -13,19 +13,18 @@ import {
   isServerCheck,
 } from '~/helpers/quality-exceptions.js';
 import mixinQualityTexts from '~/helpers/mixins/mixin-quality-texts.js';
+import BsQualityExceptionInheritance from '~/components/quality/quality-exception-inheritance.vue';
 import BsQualityExceptionNotes from '~/components/quality/quality-exception-notes.vue';
 import BsQualityThresholdField from '~/components/quality/quality-threshold-field.vue';
 
 const STATES = ['off', 'on', 'blocking'];
-// How many templates keeping their own value the card names, the others
-// counted.
-const KEPT_BY_NAMES = 5;
 
 // One exception: a check whose state or thresholds differ from what applies
 // below it (the recommended values, or the general settings on a template).
 export default {
   name: 'BsQualityExceptionCard',
   components: {
+    BsQualityExceptionInheritance,
     BsQualityExceptionNotes,
     BsQualityThresholdField,
     EyeOff,
@@ -67,19 +66,7 @@ export default {
     },
     adjustments() {
       if (this.isGeneral || this.applied.state === 'off') return [];
-      return adjustmentsOf(this.checkId, this.exception, this.base).map(
-        (adjustment) => ({
-          name: adjustment.threshold,
-          text: this.$t('qualitySettings.page.adjusted', {
-            level:
-              this.thresholdShort(this.checkId, adjustment.threshold) ||
-              this.$t('qualitySettings.thresholdsShort.default'),
-            inherited: adjustment.inherited,
-            value: adjustment.value,
-            unit: this.unitName(this.checkId, adjustment.threshold),
-          }),
-        })
-      );
+      return adjustmentsOf(this.checkId, this.exception, this.base);
     },
     isGeneral() {
       return this.level === GENERAL;
@@ -104,20 +91,6 @@ export default {
       return this.isGeneral
         ? 0
         : valuesEqualToBase(this.exception, this.base).length;
-    },
-    keptByText() {
-      const count = this.keptBy.length;
-      if (!count) return '';
-      const shown = this.keptBy.slice(0, KEPT_BY_NAMES);
-      if (count > shown.length) {
-        shown.push(
-          this.$tc('qualitySettings.page.keptByOthers', count - shown.length)
-        );
-      }
-      const names = new Intl.ListFormat(this.$i18n.locale, {
-        type: 'conjunction',
-      }).format(shown);
-      return this.$tc('qualitySettings.page.keptBy', count, { count, names });
     },
     ownState() {
       return !this.isGeneral && Boolean(this.exception.state);
@@ -270,9 +243,6 @@ export default {
     </div>
 
     <div v-if="hasBody" class="qx-card__body">
-      <p v-if="equalToGeneral" class="qx-card__equal" role="status">
-        {{ $tc('qualitySettings.page.equalToGeneral', equalToGeneral) }}
-      </p>
       <bs-quality-exception-notes
         :check-id="checkId"
         :level="level"
@@ -281,14 +251,12 @@ export default {
         :group-id="groupId"
         :locked="locked"
       />
-      <p
-        v-for="adjustment in adjustments"
-        :key="`adjusted-${adjustment.name}`"
-        class="qx-card__adjusted"
-      >
-        {{ adjustment.text }}
-      </p>
-      <p v-if="keptByText" class="qx-card__kept">{{ keptByText }}</p>
+      <bs-quality-exception-inheritance
+        :check-id="checkId"
+        :adjustments="adjustments"
+        :equal-count="equalToGeneral"
+        :kept-by="keptBy"
+      />
       <div v-if="showThresholds" class="qx-card__thresholds">
         <bs-quality-threshold-field
           v-for="name in thresholdNames"
@@ -396,17 +364,6 @@ export default {
     margin: 2px 0 0;
     font-size: 0.75rem;
     color: var(--gray-700);
-  }
-
-  &__adjusted,
-  &__kept {
-    color: var(--gray-700);
-  }
-
-  &__equal {
-    padding: 8px 12px;
-    border-radius: 4px;
-    background: var(--surface-muted, #f5f5f5);
   }
 
   &__restore {
