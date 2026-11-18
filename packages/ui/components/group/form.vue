@@ -238,6 +238,7 @@ export default {
             </div>
             <v-switch
               v-model="localModel.enableEmailBuilder"
+              color="accent"
               hide-details
               :disabled="disabled"
               class="module-card__switch"
@@ -268,6 +269,7 @@ export default {
             </div>
             <v-switch
               v-model="localModel.enableCrmIntelligence"
+              color="accent"
               hide-details
               :disabled="disabled"
               class="module-card__switch"
@@ -288,6 +290,7 @@ export default {
           </template>
           <v-switch
             v-model="localModel.userHasAccessToAllWorkspaces"
+            color="accent"
             :label="$t('forms.group.userHasAccessToAllWorkspaces')"
             hide-details
             :disabled="disabled"
@@ -308,6 +311,7 @@ export default {
 
           <v-switch
             v-model="useSamlAuthentication"
+            color="accent"
             :label="$t('forms.group.enableSaml')"
             hide-details
             :disabled="disabled"
