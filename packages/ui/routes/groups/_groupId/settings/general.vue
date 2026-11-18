@@ -51,13 +51,16 @@ export default {
         :disabled="loading"
         :loading="loading"
         @submit="updateGroup"
-      />
-      <bs-group-two-factor-option
-        v-if="group.id"
-        class="mt-6"
-        :group="group"
-        @update="group.requireTwoFactor = $event.requireTwoFactor"
-      />
+      >
+        <template #before-danger-zone>
+          <bs-group-two-factor-option
+            v-if="group.id"
+            class="mt-3"
+            :group="group"
+            @update="group.requireTwoFactor = $event.requireTwoFactor"
+          />
+        </template>
+      </bs-group-form>
     </v-container>
   </div>
 </template>
