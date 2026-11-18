@@ -9,20 +9,13 @@ import fr from '~/helpers/locales/fr.js';
 const SHARED = require('../../../packages/shared/quality/checks.js');
 
 /**
- * The settings page has its own copy of the check catalogue, the Nuxt app
- * having no import path into packages/shared. A check, a bound or a default
- * changed on one side only would let the page offer a value the server refuses
- * with a 422, or hide a check the editor runs.
+ * The settings pages read the catalogue the editor and the server read, and
+ * lay it out by category, with a label for everything they show.
  */
-describe('the settings page copy of the check catalogue', () => {
-  it('has the same check states', () => {
-    expect(CHECK_STATES).toEqual(SHARED.CHECK_STATES);
-  });
-
-  it('has the same checks, categories, defaults and bounds', () => {
-    expect(JSON.parse(JSON.stringify(CHECKS))).toEqual(
-      JSON.parse(JSON.stringify(SHARED.CHECKS))
-    );
+describe('the settings pages check catalogue', () => {
+  it('is the shared one', () => {
+    expect(CHECKS).toBe(SHARED.CHECKS);
+    expect(CHECK_STATES).toBe(SHARED.CHECK_STATES);
   });
 
   it('lists every category its checks belong to', () => {
