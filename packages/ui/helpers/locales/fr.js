@@ -506,6 +506,7 @@ export default {
     filters: {
       title: 'Filtres',
       createdBetween: 'Créé entre',
+      resetSearch: 'Réinitialiser la recherche',
       datePlaceholder: 'JJ/MM/AAAA',
       to: 'au',
       allTemplates: 'Tous les templates',
