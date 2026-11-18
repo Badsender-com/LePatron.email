@@ -168,7 +168,7 @@ _UI_: Contrôle qualité
 _Avoid_: Scan, audit
 
 **Rule**:
-One check the quality control knows, in `ext/quality/rules/`: an id, a category, a default severity, a title and a "passed" message. A local rule runs in the browser on the export; a remote rule judges what the server measured (link states, image weights, threat lists); an optional rule is listed only when the platform is configured for it.
+One check the quality control knows, in `ext/quality/rules/`: an id, a category, a default severity, a title and a "passed" message. A local rule runs in the browser on the export; a remote rule judges what the server measured (link states, image weights, threat lists); a local rule with a second look also reads the server's answer once it comes (the image formats rule, for an address that names no format), never blocks on it, and asks the server only while a remote rule reads the same images; an optional rule is listed only when the platform is configured for it.
 _UI_: Contrôle
 
 **Check**:
