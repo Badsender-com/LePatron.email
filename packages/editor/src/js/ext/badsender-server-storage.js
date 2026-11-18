@@ -187,16 +187,23 @@ function loader(opts) {
       // greys out before they run.
       if (!downloadCmd.enabled()) return;
       downloadCmd.enabled(false);
-      const html = viewModel.exportHTML();
       // The quality gate of the same export the ZIP is built from
-      // (ext/quality/quality-gate.js, ADR 0009).
-      viewModel.quality.gate({ html, target: 'download' }).then(({ leaves }) => {
-        if (leaves) download(html, downloadOptions);
-        else downloadCmd.enabled(true);
-      });
+      // (ext/quality/quality-gate.js, ADR 0009). Taken at the click, with the
+      // tracking it goes with: an edit made while the checks run does not
+      // leave unchecked.
+      const exported = {
+        html: viewModel.exportHTML(),
+        tracking: ko.toJS(viewModel.content().tracking),
+      };
+      viewModel.quality
+        .gate({ html: exported.html, target: 'download' })
+        .then(({ leaves }) => {
+          if (leaves) download(exported, downloadOptions);
+          else downloadCmd.enabled(true);
+        });
     };
 
-    function download(html, downloadOptions) {
+    function download({ html, tracking }, downloadOptions) {
       downloadCmd.enabled(false);
 
       viewModel.notifier.info(viewModel.t('Downloading...'));
@@ -210,10 +217,10 @@ function loader(opts) {
           filename: viewModel.metadata.name(),
           downLoadForCdn: downloadOptions.forCdn,
           downLoadForFtp: downloadOptions.forFtp,
-          // Send the live tracking state from the builder so the backend
-          // validates / rewrites against the latest values rather than the
-          // last saved snapshot in mailing.data.tracking.
-          tracking: ko.toJS(viewModel.content().tracking),
+          // The live tracking state from the builder, as it was checked, so
+          // the backend validates / rewrites against it rather than the last
+          // saved snapshot in mailing.data.tracking.
+          tracking,
         }),
         xhrFields: { responseType: 'blob' },
         success: function(blob) {
