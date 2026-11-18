@@ -19,8 +19,8 @@
   font-family: inherit;
   font-size: 14px;
   font-weight: 500;
-  text-transform: uppercase;
-  letter-spacing: 0.025em;
+  /* sentence case, never uppercase */
+  letter-spacing: 0.01em;
   cursor: pointer;
   border: none;
   transition: all 0.2s;

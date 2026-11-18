@@ -5,6 +5,14 @@
   font-family: 'Inter', sans-serif;
 }
 
+// Buttons are written in sentence case, never in capitals (design system:
+// Btn, "No uppercase"). Vuetify's default is upper case and a wide tracking;
+// the size and weight of each button stay its own.
+.v-application .v-btn {
+  text-transform: none;
+  letter-spacing: 0.01em;
+}
+
 body {
   font-family: 'Inter', sans-serif;
 }
