@@ -148,7 +148,8 @@ export default {
   },
   global: {
     saveOutcome: {
-        failed: 'Change not saved.',
+      saved: 'Saved',
+      failed: 'Change not saved.',
       retry: 'Try again',
     },
     states: { on: 'On', off: 'Off' },
