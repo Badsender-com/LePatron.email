@@ -57,31 +57,45 @@ function cached(key, compute, isDefinitive, ttlMs = CACHE_TTL_MS) {
   return value;
 }
 
+// Why a run is asked: the quality drawer ('review', also an editor that does
+// not say), or the gate of an export ('export'). Each has its own count, so
+// re-running the drawer cannot use up what an export needs.
+const PURPOSES = Object.freeze(['review', 'export']);
+
 const runs = new Map(); // userKey -> { done: Promise, waiting: boolean }
-const recentRuns = windowCounter({
-  windowMs: RUN_WINDOW_MS,
-  limit: RUNS_PER_WINDOW,
-});
+const recentRuns = Object.fromEntries(
+  PURPOSES.map((purpose) => [
+    purpose,
+    windowCounter({ windowMs: RUN_WINDOW_MS, limit: RUNS_PER_WINDOW }),
+  ])
+);
 
 const settled = (promise) => promise.then(noop, noop);
 function noop() {}
 
 /**
- * One run at a time per user, and RUNS_PER_WINDOW runs per RUN_WINDOW_MS.
+ * One run at a time per user, whatever its purpose, and RUNS_PER_WINDOW runs
+ * per RUN_WINDOW_MS for each purpose.
  *
  * A second run of the same user (a second tab, an export during a run) waits
  * for the first one rather than being refused, for QUEUE_WAIT_MS at most:
  * then, or when a run is already waiting, QUALITY_CHECK_RUNNING, which the
  * editor retries. Waiting longer would let the run end past the editor's own
  * timeout. QUALITY_CHECKS_TOO_FREQUENT counts every run that got in, waiting
- * ones included.
+ * ones included, in the count of their purpose.
+ *
+ * The purpose is the client's word: claiming one or the other at will
+ * doubles the runs a user gets, never more.
+ * @param {string} userKey
+ * @param {string} [purpose] - one of PURPOSES, 'review' when undefined
+ * @param {Function} work
  */
-async function throttled(userKey, work) {
+async function throttled(userKey, purpose = 'review', work) {
   const previous = runs.get(userKey);
   if (previous && previous.waiting) {
     throw new createError.TooManyRequests(ERROR_CODES.QUALITY_CHECK_RUNNING);
   }
-  if (!recentRuns.hit(userKey)) {
+  if (!recentRuns[purpose].hit(userKey)) {
     throw new createError.TooManyRequests(
       ERROR_CODES.QUALITY_CHECKS_TOO_FREQUENT
     );
@@ -161,7 +175,7 @@ const timeLeft = (run, ceiling) =>
 function clearForTests() {
   cache.clear();
   runs.clear();
-  recentRuns.clear();
+  Object.values(recentRuns).forEach((counter) => counter.clear());
 }
 
 module.exports = {
@@ -177,5 +191,6 @@ module.exports = {
   RUNS_PER_WINDOW,
   RUN_WINDOW_MS,
   QUEUE_WAIT_MS,
+  PURPOSES,
   clearForTests,
 };
