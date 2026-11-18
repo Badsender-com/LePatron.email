@@ -149,7 +149,8 @@ async function listTaxonomyItemsForGroup(req, res) {
  * @apiParam (Body) {String} [type=emailType]
  * @apiParam (Body) {String} label
  * @apiParam (Body) {String} [description] what this typology means for the company
- * @apiParam (Body) {String} [canonicalType] mapping onto the AI skills vocabulary
+ * @apiParam (Body) {String} [canonicalType] the identifier a template compares
+ * @apiParam (Body) {String} [doctrineType] an email type's doctrine type, or null
  * @apiParam (Body) {Boolean} [isActive]
  * @apiParam (Body) {Number} [order]
  *

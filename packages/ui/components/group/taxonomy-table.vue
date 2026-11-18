@@ -24,8 +24,7 @@ export default {
     // The empty slot has to tell the two apart: "you have none" and "we could
     // not read them" lead to opposite actions.
     loadError: { type: Boolean, default: false },
-    // The email type maps a value onto the doctrine's six types; any other
-    // dimension shows the value's own identifier.
+    // An email type shows its doctrine type beside its identifier (ADR-0030).
     isEmailType: { type: Boolean, default: true },
     // Rows ordered by drag and drop, or Alt + arrows on a grip: emits
     // `reorder` with every id in the new order (ADR-0026).
@@ -67,11 +66,17 @@ export default {
 
       headers.push(
         {
-          text: this.isEmailType
-            ? this.$t('taxonomy.table.canonicalType')
-            : this.$t('taxonomy.values.form.identifier'),
+          text: this.$t('taxonomy.values.form.identifier'),
           value: 'canonicalType',
         },
+        ...(this.isEmailType
+          ? [
+              {
+                text: this.$t('taxonomy.table.doctrineType'),
+                value: 'doctrineType',
+              },
+            ]
+          : []),
         ...(canReorder
           ? []
           : [{ text: this.$t('taxonomy.table.order'), value: 'order' }]),
@@ -115,11 +120,9 @@ export default {
         this.items.findIndex((item) => item.id === target)
       );
     },
-    canonicalTypeLabel(item) {
-      const key = canonicalTypeLabelKey(item.canonicalType);
-      // An unknown value is shown as-is rather than as a missing i18n key: the
-      // server accepts any string here on purpose.
-      return key ? this.$t(key) : item.canonicalType;
+    doctrineTypeLabel(item) {
+      const key = canonicalTypeLabelKey(item.doctrineType);
+      return key ? this.$t(key) : item.doctrineType;
     },
   },
 };
@@ -186,11 +189,13 @@ export default {
     </template>
 
     <template #item.canonicalType="{ item }">
-      <code v-if="item.canonicalType && !isEmailType">
-        {{ item.canonicalType }}
-      </code>
-      <v-chip v-else-if="item.canonicalType" small outlined color="accent">
-        {{ canonicalTypeLabel(item) }}
+      <code v-if="item.canonicalType">{{ item.canonicalType }}</code>
+      <span v-else class="taxonomy-table__empty-cell">—</span>
+    </template>
+
+    <template #item.doctrineType="{ item }">
+      <v-chip v-if="item.doctrineType" small outlined color="accent">
+        {{ doctrineTypeLabel(item) }}
       </v-chip>
       <span v-else class="taxonomy-table__empty-cell">—</span>
     </template>

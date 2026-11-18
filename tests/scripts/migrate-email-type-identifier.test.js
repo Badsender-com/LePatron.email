@@ -42,7 +42,7 @@ const migrate = (emailTypes, plan) =>
   }));
 
 // Turned on by #1633 (the doctrine type of an email type is a field of its own)
-describe.skip('migrate email types: doctrine type', () => {
+describe('migrate email types: doctrine type', () => {
   let planEmailTypeMigration;
 
   beforeAll(() => {

@@ -28,7 +28,8 @@ const {
  *   `emailType`)
  * @apiSuccess {String} label the label shown to users, freely editable
  * @apiSuccess {String} description the company's own definition of this item
- * @apiSuccess {String} canonicalType optional mapping onto the AI skills vocabulary
+ * @apiSuccess {String} canonicalType the identifier a template compares
+ * @apiSuccess {String} doctrineType for an email type, the doctrine type it maps onto
  * @apiSuccess {Boolean} isActive
  * @apiSuccess {Number} order
  * @apiSuccess {Boolean} isDefault the company's default value of its dimension
@@ -78,6 +79,13 @@ const TaxonomyItemSchema = Schema(
       type: String,
       set: trimOptionalString,
       maxlength: TaxonomyLimits.CANONICAL_TYPE,
+    },
+    // The doctrine type an email type maps onto (ADR-0030): one of the six of
+    // the Badsender classification, beside its identifier. `null` once an admin
+    // or the migration said "none"; absent on a value never migrated.
+    doctrineType: {
+      type: String,
+      default: undefined,
     },
     // Soft disable: an item still referenced by mailings must keep resolving, so
     // it is deactivated rather than deleted.
