@@ -17,4 +17,10 @@ const SHARE_LINK_EXPIRY = Object.freeze({
   defaultDays: 7,
 });
 
-module.exports = { RESOURCES, SHARE_LINK_EXPIRY };
+// Gmail clips any email whose HTML is over 102 KB: what follows, the footer
+// and the open tracking pixel, hides behind "Message clipped". The editor's
+// email weight rule warns of it, and the settings page when a company sets
+// its weight threshold above it.
+const GMAIL_CLIPPING_BYTES = 102 * 1024;
+
+module.exports = { RESOURCES, SHARE_LINK_EXPIRY, GMAIL_CLIPPING_BYTES };
