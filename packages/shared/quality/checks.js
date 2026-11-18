@@ -4,15 +4,19 @@
  * The quality control's checks, as a group's quality settings see them
  * (docs/adr/0009-quality-settings-per-group-and-template.md).
  *
- * One table for the editor, which runs the checks (ext/quality/rules), and the
- * server, which validates a group's or a template's settings: a setting the
- * server accepts is always one the editor knows. The admin page keeps a copy,
- * pinned by a sync test.
+ * One table for the editor, which runs the checks (ext/quality/rules), the
+ * server, which validates a group's or a template's settings, and the admin
+ * pages, which edit them: a setting the server accepts is always one the
+ * editor knows and the pages offer.
  *
  * Each check has its category (as the editor's rule declares it), a default
  * state and, when it has some, thresholds with their default, bounds and unit.
  * The defaults are the quality control as it was before groups could set it:
  * every check on, the required tracking parameters blocking.
+ *
+ * No syntax that needs a Babel helper here (spread, destructuring, classes,
+ * `for...of`): the UI's build compiles this file, and an injected helper
+ * import would turn it into a module that can no longer use `module.exports`.
  */
 
 const CHECK_STATES = Object.freeze(['off', 'on', 'blocking']);
@@ -119,13 +123,12 @@ const CHECKS = Object.freeze({
   }),
 });
 
-const defaultThresholds = (checkId) =>
-  Object.fromEntries(
-    Object.entries(CHECKS[checkId].thresholds).map(([name, threshold]) => [
-      name,
-      threshold.default,
-    ])
+const defaultThresholds = (checkId) => {
+  const thresholds = CHECKS[checkId].thresholds;
+  return Object.fromEntries(
+    Object.keys(thresholds).map((name) => [name, thresholds[name].default])
   );
+};
 
 /**
  * The resolved settings of a group or template that set nothing: every check
