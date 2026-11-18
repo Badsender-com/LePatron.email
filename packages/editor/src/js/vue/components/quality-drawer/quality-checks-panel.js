@@ -3,7 +3,7 @@ const _ = require('lodash');
 const { QualityGroup } = require('./quality-group');
 const { QualitySummary } = require('./quality-summary');
 const { SEVERITY_ORDER, SEVERITY_META } = require('./quality-meta');
-const { findingItems, checkItems } = require('./quality-items');
+const { findingItems, checkItems, rowPanelId } = require('./quality-items');
 const { commentDraftFor } = require('./quality-actions');
 const { goToBlock, findBlockById } = require('../../../ext/block-navigation');
 
@@ -39,6 +39,8 @@ const QualityChecksPanel = Vue.component('QualityChecksPanel', {
     ignoredFindings: { type: Array, default: () => [] },
     checks: { type: Array, default: () => [] },
     ranAt: { type: Date, default: null },
+    // `{ fingerprint }`: the finding whose row to unfold and show.
+    focus: { type: Object, default: null },
     // The user's role may not ignore (quality-drawer.js).
     ignoreLocked: { type: Boolean, default: false },
   },
@@ -108,6 +110,21 @@ const QualityChecksPanel = Vue.component('QualityChecksPanel', {
     },
   },
   watch: {
+    focus(target) {
+      const item = target && this.items.find(
+        (i) => i.finding && i.finding.fingerprint === target.fingerprint
+      );
+      if (!item) return;
+      this.openGroups[item.severity] = true;
+      this.expandedId = item.id;
+      this.$nextTick(() => {
+        const panel = document.getElementById(rowPanelId(item.id));
+        const row = panel && panel.closest('.qc-row');
+        if (!row) return;
+        if (row.scrollIntoView) row.scrollIntoView({ block: 'nearest' });
+        row.querySelector('.qc-row__head').focus();
+      });
+    },
     items(items) {
       const all = items.concat(this.ignoredItems);
       if (!all.some((item) => item.id === this.expandedId)) {

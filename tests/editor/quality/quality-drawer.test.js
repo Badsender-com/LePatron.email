@@ -257,6 +257,34 @@ describe('QualityDrawer', () => {
     expect(block.classList.contains('qc-highlight--error')).toBe(true);
   });
 
+  it('unfolds the row a blocking modal leads to, in its folded group, with the focus', async () => {
+    const info = {
+      ...linkFinding,
+      ruleId: 'headings',
+      severity: 'info',
+      blocking: true,
+      fingerprint: 'headings|b1|-|y',
+    };
+    const { vm, el } = await mountDrawer({
+      findings: [linkFinding, info],
+      checks: [],
+    });
+    vm.quality.run();
+    await Vue.nextTick();
+    Element.prototype.scrollIntoView.mockClear();
+
+    vm.quality.reveal(info);
+    await Vue.nextTick();
+    await Vue.nextTick();
+
+    expect(vm.showQuality()).toBe(true);
+    const expanded = el.querySelectorAll('.qc-row--expanded');
+    expect(expanded).toHaveLength(1);
+    expect(expanded[0].closest('.qc-group--info')).not.toBeNull();
+    expect(expanded[0].contains(document.activeElement)).toBe(true);
+    expect(Element.prototype.scrollIntoView).toHaveBeenCalled();
+  });
+
   it('warns when the block is in the model but not on the canvas', async () => {
     jest.useFakeTimers();
     const { vm, el } = await mountDrawer({

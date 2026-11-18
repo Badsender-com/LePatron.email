@@ -60,6 +60,13 @@ function checkItems(checks, t, locale) {
     }));
 }
 
+/**
+ * The id of a row's unfolded panel, unique in the page.
+ * @param {string} itemId - `id` of a row
+ * @returns {string}
+ */
+const rowPanelId = (itemId) => `qc-row-${itemId.replace(/[^\w-]/g, '_')}`;
+
 const pad = (n) => String(n).padStart(2, '0');
 
 /**
@@ -72,4 +79,4 @@ function formatTime(date) {
   return `${pad(date.getHours())}:${pad(date.getMinutes())}`;
 }
 
-module.exports = { findingItems, checkItems, formatTime };
+module.exports = { findingItems, checkItems, formatTime, rowPanelId };
