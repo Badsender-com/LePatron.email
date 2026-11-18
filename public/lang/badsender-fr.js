@@ -740,6 +740,8 @@ module.exports = {
     'Texte justifié : les espaces irréguliers entre les mots gênent la lecture : __text__',
   'Line height under __min__ (__ratio__): the lines overlap: __text__':
     'Interligne inférieur à __min__ (__ratio__) : les lignes se chevauchent : __text__',
+  'Line height of __ratio__, under the minimum of __min__ set for your emails: __text__':
+    'Interligne de __ratio__, sous le minimum de __min__ fixé pour vos emails : __text__',
   'Centred text over about three lines is hard to read: align long texts to the left':
     'Un texte centré de plus de trois lignes environ se lit mal : alignez les textes longs à gauche',
   'Visible links': 'Liens visibles',
