@@ -207,7 +207,10 @@ function assertTechChecksAllowed(user, stored, next) {
  * change made in between.
  *
  * Stored settings of another shape are replaced as a whole: there is no path
- * to write into.
+ * to write into. So is `null`, which a super admin may have stored by hand:
+ * MongoDB refuses to create a field inside it. Only settings never stored
+ * (undefined) or an object whose `checks` is missing or an object take
+ * writes check by check.
  *
  * @param {Object} [stored] the settings stored on the group or template
  * @param {{ checks: Object }} next the settings sanitizeQualitySettings merged
@@ -217,7 +220,6 @@ function qualitySettingsUpdate(stored, next) {
   const isObject = (value) =>
     value !== null && typeof value === 'object' && !Array.isArray(value);
   const writable =
-    stored === null ||
     stored === undefined ||
     (isObject(stored) &&
       (stored.checks === undefined || isObject(stored.checks)));

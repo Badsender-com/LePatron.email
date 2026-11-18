@@ -143,6 +143,18 @@ describe('PUT /groups/:groupId — check states', () => {
     expect(payload.group.name).toBe('Company A');
   });
 
+  // A super admin may have stored null by hand: MongoDB refuses a field
+  // created inside it.
+  it('replaces settings stored as null as a whole', async () => {
+    const payload = await update({
+      stored: { qualitySettings: null },
+      body: { qualitySettings: { checks: { headings: { state: 'off' } } } },
+    });
+    expect(payload.$set).toEqual({
+      qualitySettings: { checks: { headings: { state: 'off' } } },
+    });
+  });
+
   it('writes nothing for null settings', async () => {
     const payload = await update({ body: { qualitySettings: null } });
     expect(payload).not.toHaveProperty('$set');

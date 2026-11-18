@@ -293,4 +293,18 @@ describe('qualitySettingsUpdate', () => {
       $set: { qualitySettings: next },
     });
   });
+
+  // MongoDB refuses to create `checks` inside a null field: a write check by
+  // check would answer a 500.
+  it.each([
+    ['null settings', null],
+    ['null checks', { checks: null }],
+    ['checks of another shape', { checks: 'odd' }],
+    ['a number', 3],
+  ])('replaces %s as a whole', (_, stored) => {
+    const next = { checks: { headings: { state: 'off' } } };
+    expect(qualitySettingsUpdate(stored, next)).toEqual({
+      $set: { qualitySettings: next },
+    });
+  });
 });

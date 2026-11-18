@@ -202,6 +202,20 @@ describe('PUT /templates/:templateId/quality-settings', () => {
     });
   });
 
+  // A super admin may have stored null by hand: MongoDB refuses a field
+  // created inside it.
+  it('replaces settings stored as null as a whole', async () => {
+    const { writes, saved } = await put({
+      user: groupAdminOf(GROUP_ID),
+      stored: null,
+      body: { checks: { headings: { state: 'off' } } },
+    });
+    expect(writes).toEqual({
+      $set: { qualitySettings: { checks: { headings: { state: 'off' } } } },
+    });
+    expect(saved).toEqual({ checks: { headings: { state: 'off' } } });
+  });
+
   it('writes nothing when nothing changes', async () => {
     const { writes, res } = await put({
       user: groupAdminOf(GROUP_ID),
