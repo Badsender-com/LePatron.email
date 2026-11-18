@@ -95,6 +95,19 @@ describe('image-only-email', () => {
     expect(fingerprintOf('Hi')).toBe(fingerprintOf('Hello there'));
   });
 
+  it('still warns about an email of images alone at the lowest minimum, 1', () => {
+    const html = exportOf({ b1: '<img src="a.jpg">' });
+    const vm = fakeViewModel({ blocks, html });
+    vm.metadata.qualitySettings = {
+      checks: {
+        'image-only-email': { state: 'on', thresholds: { minTextLength: 1 } },
+      },
+    };
+    expect(
+      runQualityChecks(vm, { rules: [imageOnlyEmail] }).findings
+    ).toHaveLength(1);
+  });
+
   it('stays silent with real text, or without images', () => {
     const text = `<p>${'Our new collection is here. '.repeat(5)}</p>`;
     expect(findingsIn(imageOnlyEmail, `<img src="a.jpg">${text}`)).toEqual([]);

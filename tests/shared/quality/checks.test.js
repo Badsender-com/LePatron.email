@@ -72,6 +72,10 @@ describe('the shared check catalogue', () => {
     });
   });
 
+  it('never lets a minimum of text be set so low the check cannot fire', () => {
+    expect(CHECKS['image-only-email'].thresholds.minTextLength.min).toBe(1);
+  });
+
   it('gives the resolved defaults the editor gets when nothing is set', () => {
     const settings = defaultQualitySettings();
     expect(settings.checks['tracking-params']).toEqual({
