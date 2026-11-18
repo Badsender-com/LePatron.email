@@ -362,7 +362,9 @@ export default {
     <div class="dashboards-table">
       <!-- Table Header -->
       <div class="dashboards-table__header">
-        <div class="dashboards-table__col dashboards-table__col--order">#</div>
+        <div class="dashboards-table__col dashboards-table__col--order">
+          #
+        </div>
         <div class="dashboards-table__col dashboards-table__col--name">
           {{ $t('global.name') }}
         </div>
@@ -759,6 +761,14 @@ export default {
   display: flex;
   align-items: center;
   padding-top: 0.5rem;
+}
+
+.modal-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.5rem;
+  padding: 1rem 0;
 }
 
 .bs-textarea {

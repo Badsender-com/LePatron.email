@@ -11,7 +11,7 @@
  * Usage:
  * <bs-modal-form
  *   ref="modal"
- *   :title="$t('global.newMail')"
+ *   :title="$t('modal.title')"
  *   :submit-label="$t('global.create')"
  *   :loading="isLoading"
  *   @submit="handleSubmit"
@@ -124,16 +124,17 @@ export default {
     :persistent="persistent || loading"
     class="bs-modal-form"
   >
-    <v-card>
-      <v-card-title>
+    <v-card class="bs-modal-form__card">
+      <v-card-title class="bs-modal-form__title">
         {{ title }}
       </v-card-title>
 
-      <v-card-text>
+      <v-card-text class="bs-modal-form__content">
         <form @submit.prevent="onSubmit">
           <slot />
 
-          <div class="modal-actions">
+          <div class="bs-modal-form__actions">
+            <v-spacer />
             <v-btn text color="primary" :disabled="loading" @click="onCancel">
               {{ computedCancelLabel }}
             </v-btn>
@@ -153,3 +154,32 @@ export default {
     </v-card>
   </v-dialog>
 </template>
+
+<style lang="scss" scoped>
+.bs-modal-form {
+  &__card {
+    border-radius: 8px;
+  }
+
+  &__title {
+    font-size: 1.25rem;
+    font-weight: 500;
+    color: rgba(0, 0, 0, 0.87);
+    padding: 1.25rem 1.5rem 0.75rem;
+  }
+
+  &__content {
+    padding: 0.5rem 1.5rem 1.25rem !important;
+  }
+
+  &__actions {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    padding-top: 1rem;
+    margin-top: 0.5rem;
+    border-top: 1px solid rgba(0, 0, 0, 0.12);
+    gap: 0.5rem;
+  }
+}
+</style>

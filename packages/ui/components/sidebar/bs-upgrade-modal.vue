@@ -1,22 +1,22 @@
 <template>
   <v-dialog v-model="visible" max-width="500">
     <v-card>
-      <v-card-title>
+      <v-card-title class="text-h6 primary--text">
         {{ $t('sidebar.upgradeRequired') }}
       </v-card-title>
 
       <v-card-text>
-        <p class="mb-4">
+        <p class="text-body-1 mb-4">
           {{ $t('sidebar.upgradeMessage', { module: moduleName }) }}
         </p>
-        <p class="bs-dialog-note">
+        <p class="text-body-2 grey--text">
           {{ $t('sidebar.contactAdmin') }}
         </p>
       </v-card-text>
 
       <v-card-actions>
         <v-spacer />
-        <v-btn text color="primary" @click="visible = false">
+        <v-btn text @click="visible = false">
           {{ $t('global.cancel') }}
         </v-btn>
         <v-btn color="accent" :href="contactUrl" target="_blank" elevation="0">

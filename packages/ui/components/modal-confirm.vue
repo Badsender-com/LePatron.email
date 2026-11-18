@@ -51,7 +51,7 @@ export default {
     class="bs-modal-confirm"
     @click:outside="onClickOutside"
   >
-    <v-card>
+    <v-card flat tile>
       <v-card-title class="bs-modal-confirm__title">
         <span v-if="$slots.titlePrefix" class="bs-modal-confirm__title-icon">
           <slot name="titlePrefix" />

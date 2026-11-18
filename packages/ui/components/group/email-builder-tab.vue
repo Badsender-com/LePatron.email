@@ -1,10 +1,9 @@
 <script>
+import { mapMutations } from 'vuex';
 import isEqual from 'lodash/isEqual';
 import { groupsItem } from '~/helpers/api-routes.js';
 import { emailMetadataErrorKeyFor } from '~/helpers/taxonomy.js';
-import BsGroupFeatureSwitch from '~/components/group/feature-switch.vue';
-import mixinInlineOutcome from '~/helpers/mixins/mixin-inline-outcome.js';
-import BsSaveOutcome from '~/components/layout/bs-save-outcome.vue';
+import { PAGE, SHOW_SNACKBAR } from '~/store/page.js';
 
 function emptyConfig() {
   return {
@@ -15,11 +14,6 @@ function emptyConfig() {
 
 export default {
   name: 'BsGroupEmailBuilderTab',
-  components: {
-    BsSaveOutcome,
-    BsGroupFeatureSwitch,
-  },
-  mixins: [mixinInlineOutcome],
   props: {
     group: { type: Object, required: true },
   },
@@ -64,6 +58,8 @@ export default {
     },
   },
   methods: {
+    ...mapMutations(PAGE, { showSnackbar: SHOW_SNACKBAR }),
+
     onEnabledChange(value) {
       this.config.enabled = Boolean(value);
     },
@@ -76,12 +72,18 @@ export default {
         await this.$axios.$put(groupsItem({ groupId: this.group.id }), {
           emailMetadata: this.config,
         });
-        this.markSaved();
+        this.showSnackbar({
+          text: this.$t('emailBuilderSettings.snackbars.updated'),
+          color: 'success',
+        });
         this.$emit('update');
       } catch (error) {
         // Never the raw server message: it is an error code, or an untranslated
         // developer sentence.
-        this.markFailed(this.$t(emailMetadataErrorKeyFor(error)));
+        this.showSnackbar({
+          text: this.$t(emailMetadataErrorKeyFor(error)),
+          color: 'error',
+        });
       } finally {
         this.loading = false;
       }
@@ -95,24 +97,23 @@ export default {
     <!-- One section per group of settings: `requiredFields` and the rest of the
          module's options land here as siblings, not as a rewrite of the page. -->
     <section class="settings-section">
-      <div class="settings-section__header">
-        <div>
-          <h3 class="settings-section__title">
-            {{ $t('emailBuilderSettings.metadata.sectionTitle') }}
-          </h3>
-          <p class="settings-section__description">
-            {{ $t('emailBuilderSettings.metadata.sectionDescription') }}
-          </p>
-        </div>
-        <bs-group-feature-switch
-          :value="Boolean(config.enabled)"
-          :label="$t('emailBuilderSettings.metadata.enabled')"
-          :on-text="$t('emailBuilderSettings.metadata.on')"
-          :off-text="$t('emailBuilderSettings.metadata.off')"
-          :disabled="loading"
-          @change="onEnabledChange"
-        />
-      </div>
+      <h3 class="settings-section__title">
+        {{ $t('emailBuilderSettings.metadata.sectionTitle') }}
+      </h3>
+      <p class="settings-section__description">
+        {{ $t('emailBuilderSettings.metadata.sectionDescription') }}
+      </p>
+
+      <v-switch
+        :input-value="config.enabled"
+        :label="$t('emailBuilderSettings.metadata.enabled')"
+        :disabled="loading"
+        color="accent"
+        inset
+        hide-details
+        class="settings-section__switch"
+        @change="onEnabledChange"
+      />
 
       <p class="settings-section__hint">
         {{ $t('emailBuilderSettings.metadata.enabledHint') }}
@@ -130,11 +131,6 @@ export default {
     </section>
 
     <div class="settings-actions">
-      <bs-save-outcome
-        :outcome="outcome"
-        :detail="outcomeDetail"
-        @retry="onSubmit"
-      />
       <v-btn
         color="accent"
         elevation="0"
@@ -163,11 +159,8 @@ export default {
     margin-bottom: 1rem;
   }
 
-  &__header {
-    display: flex;
-    align-items: flex-start;
-    justify-content: space-between;
-    gap: 1rem;
+  &__switch {
+    margin-top: 0;
   }
 
   &__hint {
@@ -194,9 +187,7 @@ export default {
 
 .settings-actions {
   display: flex;
-  align-items: center;
   justify-content: flex-end;
-  gap: 1rem;
   margin-top: 2rem;
   padding-top: 1rem;
   border-top: 1px solid var(--gray-300);

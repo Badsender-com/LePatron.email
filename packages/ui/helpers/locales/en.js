@@ -99,30 +99,14 @@ export default {
       continue: 'Continue to LePatron',
     },
     group: {
-      sectionTitle: 'Security',
-      sectionDescription: 'How the members of the company sign in.',
       title: 'Two-factor authentication',
       description:
         'Every member of the company enters a code after their password. Those who have not set it up yet will do so at their next sign-in.',
       switch: 'Require two-factor authentication',
-      on: 'Required',
-      off: 'Not required',
-      progress:
-        'Set up by {n} member out of {total} | Set up by {n} members out of {total}',
       saml: 'This company signs in with SSO: two-factor authentication belongs to its identity provider.',
-      confirmOn: {
-        title: 'Require two-factor authentication?',
-        pending:
-          '{n} member out of {total} has not set it up yet. | {n} members out of {total} have not set it up yet.',
-        everyone:
-          'Each member will set it up at their next sign-in. Sessions already open are not interrupted.',
-        action: 'Require two-factor authentication',
-      },
-      confirmOff: {
-        title: 'Stop requiring two-factor authentication?',
-        body: 'Members will be able to sign in with their password alone.',
-        action: 'Stop requiring',
-      },
+      updated: 'Setting saved',
+      required: 'Required of every member.',
+      notRequired: 'Not required.',
       managedByTech: 'Only a technical administrator can change this setting.',
     },
     users: {
@@ -147,12 +131,6 @@ export default {
     emailSent: 'An email was sent',
   },
   global: {
-    saveOutcome: {
-      saved: 'Saved',
-      failed: 'Change not saved.',
-      retry: 'Try again',
-    },
-    states: { on: 'On', off: 'Off' },
     errors: {
       typeCampagneRequired: 'Campaign type is required.',
       errorOccured: 'Oops! An error has occurred :(',
@@ -236,7 +214,6 @@ export default {
     newTemplate: 'Add a template',
     newFolder: 'New folder',
     parentLocation: 'Location',
-    company: 'Company | Companies',
     template: 'Template | Templates',
     mailing: 'Email | Emails',
     newMailing: 'New email',
@@ -317,8 +294,6 @@ export default {
   forms: {
     group: {
       sections: {
-        security: 'Security',
-        securityDescription: 'Members’ access to the workspaces and how they sign in.',
         generalInfo: 'General information',
         imageHosting: 'Image hosting',
         authentication: 'Authentication',
@@ -328,7 +303,6 @@ export default {
         companyInfo: 'Company information',
         companyInfoDescription: 'Enter the main information about the company.',
       },
-      saml: { name: 'SAML authentication', on: 'On', off: 'Off' },
       enableSaml: 'Enable SAML authentication',
       entryPointHint: 'Login URL provided by your identity provider',
       issuerHint: 'Unique identifier for your application at the provider',
@@ -523,21 +497,14 @@ export default {
     filters: {
       title: 'Filters',
       createdBetween: 'Created between',
-      resetSearch: 'Reset the search',
-      datePlaceholder: 'MM/DD/YYYY',
-      to: 'to',
-      allTemplates: 'All templates',
-      allTags: 'All tags',
       updatedBetween: 'Updated between',
       and: 'and',
-      searchPlaceholder: 'Search an email by name',
+      searchPlaceholder: 'Search by name...',
       startDate: 'Start date',
       endDate: 'End date',
     },
     search: {
-      scope: 'In',
-      allWorkspacesHint:
-        'Results from your {n} workspaces. The Location column shows where each email is.',
+      scope: 'Search in',
       currentFolder: 'Current folder',
       allWorkspaces: 'All my workspaces',
       location: 'Location',
@@ -823,6 +790,10 @@ export default {
     validation: {
       emptyKey: 'Key is required',
       duplicateKey: 'This key is duplicated',
+    },
+    snackbars: {
+      updated: 'Tracking configuration saved.',
+      error: 'An error occurred while saving.',
     },
     builder: {
       requiredMissing: 'Required tracking parameters are missing',
@@ -1205,8 +1176,6 @@ export default {
       sectionDescription:
         'Lets your team set a subject, a planned send date and an email type on each email, instead of retyping them on every send.',
       enabled: 'Enable email metadata',
-      on: 'On',
-      off: 'Off',
       enabledHint:
         'While the option is off, these fields appear nowhere and the API refuses them; data already entered is kept.',
       taxonomyAction: 'Manage email types',
@@ -1215,6 +1184,7 @@ export default {
     },
     snackbars: {
       invalid: 'The settings sent were not accepted.',
+      updated: 'Email Builder settings updated',
       error: 'Could not update the settings',
     },
   },

@@ -9,6 +9,7 @@ import { ACL_USER } from '~/helpers/pages-acls.js';
 import { Plus } from 'lucide-vue';
 import MailingsTable from '~/routes/mailings/__partials/mailings-table';
 import MailingsSearchTable from '~/routes/mailings/__partials/mailings-search-table';
+import MailingsSearchScope from '~/routes/mailings/__partials/mailings-search-scope';
 import MailingsFilters from '~/routes/mailings/__partials/mailings-filters';
 import MailingsBreadcrumbs from '~/routes/mailings/__partials/mailings-breadcrumbs';
 import MailingsSelectionActions from '~/routes/mailings/__partials/mailings-selection-actions';
@@ -38,6 +39,7 @@ export default {
   components: {
     MailingsTable,
     MailingsSearchTable,
+    MailingsSearchScope,
     MailingsFilters,
     MailingsSelectionActions,
     BsMailingsModalNew,
@@ -220,6 +222,7 @@ export default {
             "
             type="table"
           >
+            <mailings-search-scope />
             <mailings-filters
               ref="filters"
               :tags="tags"

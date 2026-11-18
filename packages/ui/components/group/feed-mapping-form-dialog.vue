@@ -290,7 +290,7 @@ export default {
 <template>
   <v-card>
     <v-card-title>
-      {{ title }}
+      <span class="headline">{{ title }}</span>
     </v-card-title>
 
     <v-card-text>
@@ -425,6 +425,14 @@ export default {
 </template>
 
 <style lang="scss" scoped>
+.modal-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.5rem;
+  padding: 1rem;
+}
+
 .feed-mapping-no-fields {
   margin-top: 0.5rem;
 }

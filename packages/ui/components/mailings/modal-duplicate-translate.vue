@@ -597,11 +597,11 @@ export default {
         </template>
       </v-card-text>
 
-      <v-divider />
+      <v-divider class="mt-4" />
 
       <v-card-actions>
         <v-spacer />
-        <v-btn v-if="!translating" text color="primary" @click="close">
+        <v-btn v-if="!translating" text @click="close">
           {{ $t('global.cancel') }}
         </v-btn>
         <v-btn

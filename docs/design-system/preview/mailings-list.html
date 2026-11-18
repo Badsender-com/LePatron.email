@@ -354,122 +354,64 @@
       cursor: pointer;
     }
 
-    /* Filters panel - Target (search always visible, filters one click away) */
-    .filters-panel {
+    /* Filter bar - Target (always visible) */
+    .filter-bar {
       background: var(--white);
       border: 1px solid var(--gray-200);
-      border-radius: 8px;
-      padding: 1rem;
+      border-radius: 4px;
+      padding: 0.75rem 1rem;
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
       margin-bottom: 1rem;
     }
 
-    .filters-panel .search {
-      display: flex;
-      align-items: center;
-      gap: 0.5rem;
-      max-width: 520px;
-      height: 40px;
-      padding: 0 0.75rem;
-      border: 1px solid var(--field-border, var(--gray-300));
+    .filter-bar .new-btn {
+      background: var(--accent);
+      color: white;
+      border: none;
+      padding: 0.5rem 0.75rem;
       border-radius: 4px;
-      font-size: 0.8rem;
-      color: var(--gray-500);
-    }
-
-    .filters-panel .row {
+      font-size: 0.75rem;
+      font-weight: 500;
+      cursor: pointer;
       display: flex;
       align-items: center;
-      flex-wrap: wrap;
-      gap: 0.5rem;
-      margin-top: 0.75rem;
-      font-size: 0.8rem;
-      color: var(--gray-600);
+      gap: 0.25rem;
+      white-space: nowrap;
     }
 
-    /* Segmented control: gray track, chosen segment raised in white */
-    .segmented {
-      display: inline-flex;
-      padding: 3px;
-      margin-right: 0.5rem;
-      background: var(--gray-200);
-      border-radius: 8px;
-    }
-
-    .segmented span {
-      padding: 0 0.75rem;
-      line-height: 28px;
-      border-radius: 6px;
-      font-weight: 500;
-      color: var(--gray-700, var(--gray-600));
-    }
-
-    .segmented span.active {
-      background: var(--white);
-      color: var(--gray-900);
-      font-weight: 600;
-      box-shadow: 0 1px 2px rgba(0, 0, 0, 0.16), 0 0 0 1px var(--gray-200);
-    }
-
-    .filters-panel .btn {
-      display: inline-flex;
-      align-items: center;
-      gap: 0.375rem;
-      height: 34px;
-      padding: 0 0.75rem;
+    .filter-bar .search {
+      flex: 1;
+      max-width: 200px;
+      padding: 0.375rem 0.75rem;
       border: 1px solid var(--gray-300);
       border-radius: 4px;
-      background: var(--white);
-      color: var(--gray-900);
-      font-size: 0.8rem;
-      font-weight: 500;
-    }
-
-    .filters-panel .btn.active {
-      border-color: var(--accent);
-      background: rgba(0, 172, 220, 0.08);
-    }
-
-    .filters-panel .count {
-      min-width: 18px;
-      padding: 0 5px;
-      border-radius: 9px;
-      background: var(--primary);
-      color: white;
-      font-size: 0.7rem;
-      line-height: 18px;
-      text-align: center;
-    }
-
-    .filters-panel .hint {
-      margin: 0.75rem 0 0;
       font-size: 0.75rem;
-      color: var(--gray-600);
     }
 
-    .filters-panel .fields {
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(200px, 280px));
-      gap: 1rem;
-      margin-top: 1rem;
-      padding-top: 1rem;
-      border-top: 1px solid var(--gray-200);
-      font-size: 0.8rem;
-    }
-
-    .filters-panel .fields label {
-      display: block;
-      margin-bottom: 0.375rem;
-      font-weight: 600;
-      color: var(--gray-900);
-    }
-
-    .filters-panel .fields .control {
-      height: 36px;
-      padding: 0 0.625rem;
-      border: 1px solid var(--field-border, var(--gray-300));
+    .filter-bar .filter-select {
+      padding: 0.375rem 0.5rem;
+      border: 1px solid var(--gray-300);
       border-radius: 4px;
-      line-height: 36px;
-      color: var(--gray-500);
+      font-size: 0.75rem;
+      min-width: 100px;
+    }
+
+    .filter-bar .clear-btn {
+      background: transparent;
+      color: var(--gray-600);
+      border: none;
+      padding: 0.375rem 0.5rem;
+      font-size: 0.75rem;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 0.25rem;
+    }
+
+    .filter-bar .clear-btn:hover {
+      color: var(--error);
     }
 
     /* Data table */
@@ -972,36 +914,26 @@
                 <span class="current">OLD</span>
               </div>
 
-              <!-- Filters panel: search always visible, scope beside it,
-                   filters one click away. NEW EMAIL stays in the page header. -->
-              <div class="filters-panel">
-                <div class="search">
-                  <span class="material-icons" style="font-size:16px">search</span>
-                  Rechercher un email par nom
-                </div>
-                <div class="row">
-                  Dans
-                  <span class="segmented">
-                    <span class="active">Dossier courant</span>
-                    <span>Tous mes espaces de travail</span>
-                  </span>
-                  <span class="btn active">
-                    <span class="material-icons" style="font-size:14px">filter_alt</span>
-                    Filtres <span class="count">2</span>
-                    <span class="material-icons" style="font-size:14px">expand_less</span>
-                  </span>
-                  <span class="btn">
-                    <span class="material-icons" style="font-size:14px">refresh</span>
-                    Réinitialiser
-                  </span>
-                </div>
-                <p class="hint">Résultats dans vos 11 espaces de travail. La colonne Emplacement indique où se trouve chaque email.</p>
-                <div class="fields">
-                  <div><label>Templates</label><div class="control">Tous les templates</div></div>
-                  <div><label>Tags</label><div class="control">Tous les tags</div></div>
-                  <div><label>Créé entre</label><div class="control">JJ/MM/AAAA &nbsp; au &nbsp; JJ/MM/AAAA</div></div>
-                  <div><label>Mis à jour entre</label><div class="control">JJ/MM/AAAA &nbsp; au &nbsp; JJ/MM/AAAA</div></div>
-                </div>
+              <!-- Always visible filter bar with NEW EMAIL button -->
+              <div class="filter-bar">
+                <button class="new-btn">
+                  <span class="material-icons" style="font-size:14px">add</span>
+                  NEW EMAIL
+                </button>
+                <input type="text" class="search" placeholder="Search...">
+                <select class="filter-select">
+                  <option>Template</option>
+                </select>
+                <select class="filter-select">
+                  <option>Tags</option>
+                </select>
+                <select class="filter-select">
+                  <option>Date</option>
+                </select>
+                <button class="clear-btn">
+                  <span class="material-icons" style="font-size:14px">close</span>
+                  Clear
+                </button>
               </div>
 
               <div class="data-table">
@@ -1160,7 +1092,7 @@
       <div class="benefits-grid">
         <div class="benefit-card">
           <h4><span class="material-icons">search</span> Discoverability</h4>
-          <p>Recherche toujours visible, filtres à un clic, portée de la recherche explicite.</p>
+          <p>Filtres toujours visibles, pas besoin de chercher comment filtrer.</p>
         </div>
         <div class="benefit-card">
           <h4><span class="material-icons">speed</span> Efficacité</h4>
@@ -1176,7 +1108,7 @@
         </div>
         <div class="benefit-card">
           <h4><span class="material-icons">touch_app</span> Contextuel</h4>
-          <p>Portée « Dossier courant / Tous mes espaces » toujours dite à côté du champ.</p>
+          <p>"NEW EMAIL" visible dans la zone de contenu, lié au folder actif.</p>
         </div>
         <div class="benefit-card">
           <h4><span class="material-icons">auto_awesome</span> Moderne</h4>

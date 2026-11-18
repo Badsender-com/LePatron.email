@@ -8,8 +8,6 @@ import BsTextField from '~/components/form/bs-text-field.vue';
 import BsSelect from '~/components/form/bs-select.vue';
 import BsModalConfirmForm from '~/components/modal-confirm-form.vue';
 import BsFormSection from '~/components/layout/bs-form-section.vue';
-import BsGroupSettingCard from '~/components/group/setting-card.vue';
-import BsGroupFeatureSwitch from '~/components/group/feature-switch.vue';
 import {
   FileText,
   Upload,
@@ -32,8 +30,6 @@ export default {
     BsSelect,
     BsModalConfirmForm,
     BsFormSection,
-    BsGroupSettingCard,
-    BsGroupFeatureSwitch,
     LucideFileText: FileText,
     LucideUpload: Upload,
     LucideImage: ImageIcon,
@@ -595,47 +591,63 @@ export default {
           {{ $t('templates.advancedOptionsDescription') }}
         </template>
 
-        <bs-group-setting-card>
-          <template #icon><lucide-code2 :size="28" /></template>
-          <template #name>{{ $t('templates.htmlBlock.name') }}</template>
-          <template #description>
-            {{ $t('templates.htmlBlock.description') }}
-          </template>
-          <template v-if="localTemplate.htmlBlockEnabled" #hint>
-            {{ $t('templates.htmlBlock.hint') }}
-          </template>
-          <template #control>
-            <bs-group-feature-switch
-              v-model="localTemplate.htmlBlockEnabled"
-              :label="$t('templates.htmlBlock.name')"
-              :on-text="$t('global.states.on')"
-              :off-text="$t('global.states.off')"
-              :disabled="disabled"
-            />
-          </template>
-        </bs-group-setting-card>
+        <div class="option-card">
+          <div class="option-card__content">
+            <div class="option-card__icon">
+              <lucide-code2 :size="28" color="#00acdc" />
+            </div>
+            <div class="option-card__info">
+              <div class="option-card__name">
+                {{ $t('templates.htmlBlock.name') }}
+              </div>
+              <div class="option-card__description">
+                {{ $t('templates.htmlBlock.description') }}
+              </div>
+              <div
+                v-if="localTemplate.htmlBlockEnabled"
+                class="option-card__hint"
+              >
+                {{ $t('templates.htmlBlock.hint') }}
+              </div>
+            </div>
+          </div>
+          <v-switch
+            v-model="localTemplate.htmlBlockEnabled"
+            hide-details
+            :disabled="disabled"
+            class="option-card__switch"
+          />
+        </div>
 
         <!-- Independent of the one above: a client can be given the builder,
              and its guard rails, without being handed raw HTML. -->
-        <bs-group-setting-card>
-          <template #icon><lucide-layout-template :size="28" /></template>
-          <template #name>{{ $t('templates.blockBuilder.name') }}</template>
-          <template #description>
-            {{ $t('templates.blockBuilder.description') }}
-          </template>
-          <template v-if="localTemplate.blockBuilderEnabled" #hint>
-            {{ $t('templates.blockBuilder.hint') }}
-          </template>
-          <template #control>
-            <bs-group-feature-switch
-              v-model="localTemplate.blockBuilderEnabled"
-              :label="$t('templates.blockBuilder.name')"
-              :on-text="$t('global.states.on')"
-              :off-text="$t('global.states.off')"
-              :disabled="disabled"
-            />
-          </template>
-        </bs-group-setting-card>
+        <div class="option-card">
+          <div class="option-card__content">
+            <div class="option-card__icon">
+              <lucide-layout-template :size="28" color="#00acdc" />
+            </div>
+            <div class="option-card__info">
+              <div class="option-card__name">
+                {{ $t('templates.blockBuilder.name') }}
+              </div>
+              <div class="option-card__description">
+                {{ $t('templates.blockBuilder.description') }}
+              </div>
+              <div
+                v-if="localTemplate.blockBuilderEnabled"
+                class="option-card__hint"
+              >
+                {{ $t('templates.blockBuilder.hint') }}
+              </div>
+            </div>
+          </div>
+          <v-switch
+            v-model="localTemplate.blockBuilderEnabled"
+            hide-details
+            :disabled="disabled"
+            class="option-card__switch"
+          />
+        </div>
       </bs-form-section>
 
       <!-- Preview Section (only in edit mode with markup) -->
@@ -692,6 +704,64 @@ export default {
 <style lang="scss" scoped>
 // Same visual language as the group form's module cards
 // (packages/ui/components/group/form.vue).
+.option-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1rem;
+  background-color: #fff;
+  border: 1px solid rgba(0, 0, 0, 0.12);
+  border-radius: 8px;
+  transition: border-color 0.2s ease;
+
+  &:hover {
+    border-color: rgba(0, 172, 220, 0.4);
+  }
+
+  &__content {
+    display: flex;
+    align-items: flex-start;
+    gap: 1rem;
+  }
+
+  &__icon {
+    width: 48px;
+    height: 48px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-color: rgba(0, 172, 220, 0.1);
+    border-radius: 8px;
+    flex-shrink: 0;
+  }
+
+  &__info {
+    display: flex;
+    flex-direction: column;
+  }
+
+  &__name {
+    font-weight: 500;
+    font-size: 1rem;
+    color: rgba(0, 0, 0, 0.87);
+  }
+
+  &__description {
+    font-size: 0.875rem;
+    color: rgba(0, 0, 0, 0.6);
+    margin-top: 0.25rem;
+  }
+
+  &__hint {
+    font-size: 0.75rem;
+    color: rgba(0, 0, 0, 0.5);
+    margin-top: 0.5rem;
+  }
+
+  &__switch {
+    flex-shrink: 0;
+  }
+}
 
 // Textarea styling (matches design system)
 .bs-textarea {

@@ -4,18 +4,16 @@ import { activeFiltersCount, isSearchingAll } from '~/utils/mailing-search';
 import { TEMPLATE } from '~/store/template';
 import { mapState } from 'vuex';
 import debounce from 'lodash/debounce';
-import MailingsDateField from '~/routes/mailings/__partials/mailings-date-field';
-import MailingsSearchScope from '~/routes/mailings/__partials/mailings-search-scope';
-import { Search, Filter, ChevronDown, RotateCcw, Calendar } from 'lucide-vue';
+import BsTextField from '~/components/form/bs-text-field.vue';
+import BsSelect from '~/components/form/bs-select.vue';
+import { Filter, RotateCcw, Calendar } from 'lucide-vue';
 
 export default {
   name: 'MailingsFilters',
   components: {
-    MailingsDateField,
-    MailingsSearchScope,
-    LucideSearch: Search,
+    BsTextField,
+    BsSelect,
     LucideFilter: Filter,
-    LucideChevronDown: ChevronDown,
     LucideRotateCcw: RotateCcw,
     LucideCalendar: Calendar,
   },
@@ -25,29 +23,19 @@ export default {
   data() {
     return {
       templatesIsLoading: true,
-      expanded: false,
-      dateRanges: [
-        { key: 'createdAt', label: 'createdBetween' },
-        { key: 'updatedAt', label: 'updatedBetween' },
-      ],
+      pickerCreatedStart: false,
+      pickerCreatedEnd: false,
+      pickerUpdatedStart: false,
+      pickerUpdatedEnd: false,
     };
   },
   computed: {
-    ...mapState(FOLDER, ['filters', 'workspacesHasRight']),
+    ...mapState(FOLDER, ['filters']),
     ...mapState(TEMPLATE, ['templates']),
-    searchingAll() {
-      return isSearchingAll(this.$route.query);
-    },
-    // The panel's own filters: a narrowed list must say why, and filters
-    // carry over a change of search scope (ADR 0007). The name has its own
-    // field, cleared where it is typed.
-    panelFilters() {
-      // eslint-disable-next-line no-unused-vars
-      const { name, ...rest } = this.filters;
-      return rest;
-    },
+    // Shown on the collapsed panel: filters carry over a change of search
+    // scope, and a narrowed list must say why (ADR 0007).
     activeCount() {
-      return activeFiltersCount(this.panelFilters);
+      return activeFiltersCount(this.filters);
     },
   },
   watch: {
@@ -64,18 +52,8 @@ export default {
     },
   },
 
-  // One debounce per instance (a method would lose its `cancel`).
-  created() {
-    this.debouncedNameChange = debounce((value) => {
-      this.commitFilterChangeToStore({ name: value });
-    }, 300);
-  },
-  beforeDestroy() {
-    this.debouncedNameChange.cancel();
-  },
-
   methods: {
-    clearFilters() {
+    reset() {
       this.$store.commit(`${FOLDER}/${SET_FILTERS}`, {
         name: '',
         templates: [],
@@ -85,29 +63,11 @@ export default {
         updatedAtEnd: '',
         tags: [],
       });
-    },
-    reset() {
-      this.clearFilters();
       this.$emit('on-refresh', { pagination: { page: 1 } });
     },
-    // The bar's "Réinitialiser" resets the whole search: name, filters and
-    // scope. Leaving "all workspaces" is a route change, which reloads the
-    // list on its own.
-    resetSearch() {
-      if (!this.searchingAll) return this.reset();
-      this.clearFilters();
-      const query = { ...this.$route.query };
-      delete query.scope;
-      this.$router.push({ query });
-    },
-    // Escape empties the name field only, scope and filters kept.
-    clearName() {
-      this.debouncedNameChange.cancel();
-      this.commitFilterChangeToStore({ name: '' });
-    },
-    handleNameChange(value) {
-      this.debouncedNameChange(value);
-    },
+    handleNameChange: debounce(function (value) {
+      this.commitFilterChangeToStore({ name: value });
+    }, 300),
     handleFilterChange(filterKey, filterValue) {
       this.commitFilterChangeToStore({ [filterKey]: filterValue });
     },
@@ -120,303 +80,355 @@ export default {
   },
 };
 </script>
+
 <template>
-  <section
-    class="filters-panel"
-    role="search"
-    :aria-label="$t('mailings.filters.title')"
-  >
-    <v-text-field
-      :value="filters.name"
-      :placeholder="$t('mailings.filters.searchPlaceholder')"
-      :aria-label="$t('mailings.filters.searchPlaceholder')"
-      class="filters-panel__search"
-      outlined
-      dense
-      clearable
-      hide-details
-      @input="handleNameChange"
-      @keydown.esc.prevent="clearName"
-    >
-      <template #prepend-inner>
-        <lucide-search :size="16" aria-hidden="true" />
-      </template>
-    </v-text-field>
-
-    <div class="filters-panel__row">
-      <mailings-search-scope />
-      <button
-        type="button"
-        class="filters-panel__button"
-        :class="{ 'filters-panel__button--active': activeCount > 0 }"
-        :aria-expanded="String(expanded)"
-        aria-controls="mailings-filters-content"
-        @click="expanded = !expanded"
-      >
-        <lucide-filter :size="14" aria-hidden="true" />
-        {{ $t('mailings.filters.title') }}
-        <span v-if="activeCount" class="filters-panel__count">
-          {{ activeCount }}
-        </span>
-        <lucide-chevron-down
-          :size="14"
-          aria-hidden="true"
-          class="filters-panel__chevron"
-          :class="{ 'filters-panel__chevron--open': expanded }"
-        />
-      </button>
-      <button
-        v-if="activeCount"
-        type="button"
-        class="filters-panel__button"
-        :aria-label="$t('mailings.filters.resetSearch')"
-        @click="resetSearch"
-      >
-        <lucide-rotate-ccw :size="14" aria-hidden="true" />
-        {{ $t('global.reset') }}
-      </button>
-    </div>
-
-    <p v-if="searchingAll" class="filters-panel__hint">
-      {{
-        $t('mailings.search.allWorkspacesHint', {
-          n: workspacesHasRight.length,
-        })
-      }}
-    </p>
-
-    <v-expand-transition>
-      <div v-show="expanded" id="mailings-filters-content" class="filters-form">
-        <div class="filters-form__grid">
-          <div class="filters-form__field">
-            <label for="mailings-filter-templates">
-              {{ $tc('global.template', 2) }}
-            </label>
-            <v-select
-              id="mailings-filter-templates"
+  <v-expansion-panels accordion focusable flat class="filters-panel">
+    <v-expansion-panel>
+      <v-expansion-panel-header class="filters-panel__header">
+        <div class="d-flex align-center">
+          <lucide-filter :size="18" class="mr-2" />
+          {{ $t(`mailings.filters.title`) }}
+          <v-chip
+            v-if="activeCount"
+            x-small
+            color="accent"
+            text-color="white"
+            class="ml-2"
+          >
+            {{
+              $tc('mailings.search.activeFilters', activeCount, {
+                n: activeCount,
+              })
+            }}
+          </v-chip>
+        </div>
+        <template #actions>
+          <v-icon>$expand</v-icon>
+        </template>
+      </v-expansion-panel-header>
+      <v-expansion-panel-content class="filters-panel__content">
+        <div class="filters-form">
+          <div class="filters-form__row">
+            <bs-text-field
+              :value="filters.name"
+              :label="$t(`global.name`)"
+              :placeholder="$t('mailings.filters.searchPlaceholder')"
+              clearable
+              dense
+              @input="handleNameChange"
+            />
+            <bs-select
               :value="filters.templates"
+              :label="$tc(`global.template`, 2)"
               :items="templates"
-              :placeholder="$t('mailings.filters.allTemplates')"
               item-text="name"
               item-value="id"
-              persistent-placeholder
-              outlined
-              dense
               multiple
               clearable
-              hide-details
+              dense
               @input="(value) => handleFilterChange('templates', value)"
             />
-          </div>
-          <div class="filters-form__field">
-            <label for="mailings-filter-tags">{{ $t('global.tags') }}</label>
-            <v-select
-              id="mailings-filter-tags"
+            <bs-select
               :value="filters.tags"
+              :label="$t(`global.tags`)"
               :items="tags"
-              :placeholder="$t('mailings.filters.allTags')"
-              persistent-placeholder
-              outlined
-              dense
               multiple
               clearable
-              hide-details
+              dense
               @input="(value) => handleFilterChange('tags', value)"
             />
           </div>
-          <fieldset
-            v-for="range in dateRanges"
-            :key="range.key"
-            class="filters-form__field"
-          >
-            <legend>
-              <lucide-calendar :size="14" aria-hidden="true" />
-              {{ $t(`mailings.filters.${range.label}`) }}
-            </legend>
-            <div class="filters-form__range">
-              <mailings-date-field
-                :value="filters[`${range.key}Start`]"
-                :label="`${$t(`mailings.filters.${range.label}`)} ${$t(
-                  'mailings.filters.startDate'
-                )}`"
-                @input="
-                  (value) => handleFilterChange(`${range.key}Start`, value)
-                "
-              />
-              <span>{{ $t('mailings.filters.to') }}</span>
-              <mailings-date-field
-                :value="filters[`${range.key}End`]"
-                :label="`${$t(`mailings.filters.${range.label}`)} ${$t(
-                  'mailings.filters.endDate'
-                )}`"
-                @input="(value) => handleFilterChange(`${range.key}End`, value)"
-              />
+
+          <div class="filters-form__row filters-form__row--dates">
+            <div class="filters-form__date-group">
+              <span class="filters-form__date-label">
+                <lucide-calendar :size="14" class="mr-1" />
+                {{ $t(`mailings.filters.createdBetween`) }}
+              </span>
+              <div class="filters-form__date-inputs">
+                <v-menu
+                  v-model="pickerCreatedStart"
+                  :close-on-content-click="false"
+                  :nudge-right="40"
+                  transition="scale-transition"
+                  offset-y
+                  min-width="290px"
+                >
+                  <template #activator="{ on }">
+                    <bs-text-field
+                      :value="filters.createdAtStart"
+                      :placeholder="$t('mailings.filters.startDate')"
+                      clearable
+                      dense
+                      readonly
+                      v-on="on"
+                      @input="
+                        (value) => handleFilterChange('createdAtStart', value)
+                      "
+                    />
+                  </template>
+                  <v-date-picker
+                    :value="filters.createdAtStart"
+                    no-title
+                    @input="
+                      (value) => handleFilterChange('createdAtStart', value)
+                    "
+                  />
+                </v-menu>
+                <span class="filters-form__date-separator">-</span>
+                <v-menu
+                  v-model="pickerCreatedEnd"
+                  :close-on-content-click="false"
+                  :nudge-right="40"
+                  transition="scale-transition"
+                  offset-y
+                  min-width="290px"
+                >
+                  <template #activator="{ on }">
+                    <bs-text-field
+                      :value="filters.createdAtEnd"
+                      :placeholder="$t('mailings.filters.endDate')"
+                      clearable
+                      dense
+                      readonly
+                      v-on="on"
+                      @input="
+                        (value) => handleFilterChange('createdAtEnd', value)
+                      "
+                    />
+                  </template>
+                  <v-date-picker
+                    :value="filters.createdAtEnd"
+                    no-title
+                    @input="
+                      (value) => handleFilterChange('createdAtEnd', value)
+                    "
+                  />
+                </v-menu>
+              </div>
             </div>
-          </fieldset>
+
+            <div class="filters-form__date-group">
+              <span class="filters-form__date-label">
+                <lucide-calendar :size="14" class="mr-1" />
+                {{ $t(`mailings.filters.updatedBetween`) }}
+              </span>
+              <div class="filters-form__date-inputs">
+                <v-menu
+                  v-model="pickerUpdatedStart"
+                  :close-on-content-click="false"
+                  :nudge-right="40"
+                  transition="scale-transition"
+                  offset-y
+                  min-width="290px"
+                >
+                  <template #activator="{ on }">
+                    <bs-text-field
+                      :value="filters.updatedAtStart"
+                      :placeholder="$t('mailings.filters.startDate')"
+                      clearable
+                      dense
+                      readonly
+                      v-on="on"
+                      @input="
+                        (value) => handleFilterChange('updatedAtStart', value)
+                      "
+                    />
+                  </template>
+                  <v-date-picker
+                    :value="filters.updatedAtStart"
+                    no-title
+                    @input="
+                      (value) => handleFilterChange('updatedAtStart', value)
+                    "
+                  />
+                </v-menu>
+                <span class="filters-form__date-separator">-</span>
+                <v-menu
+                  v-model="pickerUpdatedEnd"
+                  :close-on-content-click="false"
+                  :nudge-right="40"
+                  transition="scale-transition"
+                  offset-y
+                  min-width="290px"
+                >
+                  <template #activator="{ on }">
+                    <bs-text-field
+                      :value="filters.updatedAtEnd"
+                      :placeholder="$t('mailings.filters.endDate')"
+                      clearable
+                      dense
+                      readonly
+                      v-on="on"
+                      @input="
+                        (value) => handleFilterChange('updatedAtEnd', value)
+                      "
+                    />
+                  </template>
+                  <v-date-picker
+                    :value="filters.updatedAtEnd"
+                    no-title
+                    @input="
+                      (value) => handleFilterChange('updatedAtEnd', value)
+                    "
+                  />
+                </v-menu>
+              </div>
+            </div>
+          </div>
+
+          <div class="filters-form__actions">
+            <v-btn text color="primary" @click="reset">
+              <lucide-rotate-ccw :size="16" class="mr-1" />
+              {{ $t(`global.reset`) }}
+            </v-btn>
+          </div>
         </div>
-      </div>
-    </v-expand-transition>
-  </section>
+      </v-expansion-panel-content>
+    </v-expansion-panel>
+  </v-expansion-panels>
 </template>
 
 <style lang="scss" scoped>
+/* =========================================================================
+   BsDataTable Filters Panel — LePatron Design System v1.0
+   Based on: /tmp/lepatron-design-v2/project/preview/components-data-table.html
+   ========================================================================= */
+
 .filters-panel {
-  padding: 16px;
+  border: 1px solid rgba(0, 0, 0, 0.12); // --gray-300
+  border-radius: 10px; // --r-md
+  overflow: hidden;
   margin-bottom: 16px;
-  background: #fff;
-  border: 1px solid var(--gray-300);
-  border-radius: 10px;
 
-  // Fields keep a reachable width on a wide screen: the card stretches with
-  // the table, its controls do not.
-  &__search {
-    max-width: 520px;
-
-    ::v-deep .v-input__slot {
-      min-height: 38px !important;
-    }
-
-    // Vuetify sets the icon from the top of the field: it sits on the text's
-    // middle line instead.
-    ::v-deep .v-input__prepend-inner {
-      display: flex;
-      align-items: center;
-      align-self: center;
-      margin-top: 0 !important;
-      padding-right: 8px;
-      color: var(--gray-600);
-    }
-  }
-
-  &__row {
-    display: flex;
-    align-items: center;
-    flex-wrap: wrap;
-    gap: 8px;
-    margin-top: 12px;
-
-    // The scope and the buttons sit together, near the field they refine.
-    > :first-child {
-      margin-right: 8px;
-    }
-  }
-
-  &__button {
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    height: 38px;
-    padding: 0 12px;
-    border: 1px solid var(--gray-300);
-    border-radius: 4px;
-    background: #fff;
-    color: var(--v-primary-base);
+  &__header {
+    background: rgba(0, 0, 0, 0.02); // --gray-50
     font-size: 13px;
     font-weight: 500;
-    cursor: pointer;
+    color: rgba(0, 0, 0, 0.87); // --gray-900
+    min-height: 52px; // BsDataTable toolbar height
+    padding: 0 16px;
+    transition: background 0.15s ease-out;
 
     &:hover {
-      background: var(--gray-50);
-    }
-
-    &--active {
-      border-color: var(--v-accent-base);
-      background: rgba(0, 172, 220, 0.08);
+      background: rgba(0, 0, 0, 0.04); // --gray-100
     }
   }
 
-  &__count {
-    min-width: 18px;
-    padding: 0 5px;
-    border-radius: 9px;
-    background: var(--v-primary-base);
-    color: #fff;
-    font-size: 11px;
-    line-height: 18px;
-    text-align: center;
-  }
+  &__content {
+    background: rgba(0, 0, 0, 0.02); // --gray-50 (BsDataTable spec)
+    border-top: 1px solid rgba(0, 0, 0, 0.08); // --gray-200
 
-  &__chevron {
-    transition: transform 0.15s ease-out;
-
-    &--open {
-      transform: rotate(180deg);
+    ::v-deep .v-expansion-panel-content__wrap {
+      padding: 16px; // BsDataTable filters padding
     }
-  }
-
-  &__hint {
-    margin: 12px 0 0;
-    font-size: 12px;
-    color: var(--gray-600);
   }
 }
 
 .filters-form {
-  margin-top: 16px;
-  padding-top: 16px;
-  border-top: 1px solid var(--gray-200);
-
-  &__grid {
+  /* Grid 3 columns like BsDataTable spec */
+  &__row {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(200px, 280px));
-    gap: 16px;
-  }
+    grid-template-columns: repeat(3, 1fr);
+    gap: 12px 16px; // BsDataTable spec: 12px row gap, 16px column gap
+    margin-bottom: 8px;
 
-  &__field {
-    min-width: 0;
-    margin: 0;
-    padding: 0;
-    border: none;
-
-    label,
-    legend {
-      display: flex;
-      align-items: center;
-      gap: 4px;
-      margin-bottom: 6px;
-      padding: 0;
-      font-size: 13px;
-      font-weight: 500;
-      color: var(--gray-700);
-    }
-
-    legend {
-      font-weight: 500;
-      color: var(--gray-700);
+    &--dates {
+      grid-template-columns: repeat(2, 1fr);
     }
   }
 
-  &__range {
-    display: grid;
-    grid-template-columns: 1fr auto 1fr;
+  &__date-group {
+    display: flex;
+    flex-direction: column;
+    gap: 4px; // BsDataTable label-to-control gap
+  }
+
+  &__date-label {
+    display: flex;
     align-items: center;
-    gap: 8px;
-    font-size: 12px;
-    color: var(--gray-600);
+    font-size: 11px; // BsDataTable filters label size
+    font-weight: 600;
+    color: rgba(0, 0, 0, 0.54); // --gray-700
+    letter-spacing: 0.02em;
   }
 
-  ::v-deep .v-input__slot {
-    min-height: 38px !important;
-    font-size: 13px;
+  &__date-inputs {
+    display: flex;
+    align-items: flex-start;
+    gap: 6px; // BsDataTable range gap
+
+    .bs-text-field {
+      flex: 1;
+      margin-bottom: 0;
+    }
+
+    /* BsDataTable filter input styles */
+    ::v-deep .v-input__slot {
+      height: 32px !important; // BsDataTable filter input height
+      min-height: 32px !important;
+      padding: 0 10px !important;
+      background: #fff !important;
+      border: 1px solid rgba(0, 0, 0, 0.12) !important; // --gray-300
+      border-radius: 4px !important; // --r-sm
+      cursor: pointer;
+      font-size: 12px !important;
+      transition: border 0.15s ease-out, box-shadow 0.15s ease-out;
+
+      &:hover {
+        border-color: rgba(0, 0, 0, 0.2) !important;
+      }
+    }
+
+    ::v-deep .v-input--is-focused .v-input__slot {
+      border-color: var(--v-accent-base) !important;
+      box-shadow: 0 0 0 3px rgba(0, 172, 220, 0.15) !important;
+    }
   }
 
-  // A native date field has a width of its own: let it shrink with its column.
-  &__range ::v-deep .v-input {
-    min-width: 0;
+  &__date-separator {
+    display: flex;
+    align-items: center;
+    height: 32px; // Match input height
+    color: rgba(0, 0, 0, 0.38); // --gray-500
+    font-size: 11px; // BsDataTable range separator size
   }
 
-  &__range ::v-deep input {
-    min-width: 0;
-    font-size: 12px;
-  }
+  /* Reset button (BsDataTable spec) */
+  &__actions {
+    grid-column: 1 / -1; // Span all columns
+    display: flex;
+    justify-content: flex-end;
+    padding-top: 4px; // BsDataTable filters footer padding
 
-  &__range ::v-deep .v-input__slot {
-    padding: 0 8px !important;
+    ::v-deep .v-btn {
+      display: inline-flex !important;
+      align-items: center !important;
+      gap: 4px !important;
+      background: transparent !important;
+      padding: 4px 8px !important;
+      min-width: auto !important;
+      height: auto !important;
+      border-radius: 4px !important; // --r-sm
+      font-size: 12px !important;
+      color: rgba(0, 0, 0, 0.54) !important; // --gray-700
+      text-transform: none !important;
+      letter-spacing: normal !important;
+
+      &:hover {
+        background: rgba(0, 0, 0, 0.08) !important; // --gray-200
+        color: rgba(0, 0, 0, 0.87) !important; // --gray-900
+      }
+    }
   }
 }
 
-@media (max-width: 600px) {
-  .filters-form__grid {
+@media (max-width: 960px) {
+  .filters-form__row {
+    grid-template-columns: 1fr;
+  }
+
+  .filters-form__row--dates {
     grid-template-columns: 1fr;
   }
 }

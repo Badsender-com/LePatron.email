@@ -86,22 +86,3 @@ export function initialsOfEmail(email) {
     words.length > 1 ? words[0][0] + words[1][0] : words[0].slice(0, 2);
   return letters.toUpperCase();
 }
-
-/**
- * How many accounts of a company have set up two-factor authentication, out of
- * those that can sign in: a deactivated account cannot, so it is not counted.
- * (Who exactly a "member" is, for the page of the members' two-factor
- * authentication, is for that feature to settle.)
- *
- * @param {Object[]} users the users of the company, as the API lists them
- * @returns {{total: number, configured: number, waiting: number}}
- */
-export function countTwoFactorSetups(users) {
-  const accounts = (users || []).filter((user) => !user.isDeactivated);
-  const configured = accounts.filter((user) => user.twoFactorMethod).length;
-  return {
-    total: accounts.length,
-    configured,
-    waiting: accounts.length - configured,
-  };
-}

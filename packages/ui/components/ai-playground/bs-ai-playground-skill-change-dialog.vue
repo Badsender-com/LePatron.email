@@ -35,10 +35,10 @@ export default {
       </v-card-text>
       <v-card-actions>
         <v-spacer />
-        <v-btn text color="primary" @click="$emit('keep-json')">
+        <v-btn text @click="$emit('keep-json')">
           {{ $t('aiPlayground.input.skillChangeKeepJson') }}
         </v-btn>
-        <v-btn color="error" elevation="0" @click="$emit('proceed')">
+        <v-btn color="error" text @click="$emit('proceed')">
           {{ $t('aiPlayground.input.skillChangeProceed') }}
         </v-btn>
       </v-card-actions>

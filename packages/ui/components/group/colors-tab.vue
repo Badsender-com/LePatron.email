@@ -1,7 +1,6 @@
 <script>
 import BsColorScheme from '~/components/group/color-scheme';
 import BsFormSection from '~/components/layout/bs-form-section.vue';
-import BsSaveOutcome from '~/components/layout/bs-save-outcome.vue';
 import { Palette } from 'lucide-vue';
 
 export default {
@@ -9,7 +8,6 @@ export default {
   components: {
     BsColorScheme,
     BsFormSection,
-    BsSaveOutcome,
     LucidePalette: Palette,
   },
   props: {
@@ -25,8 +23,6 @@ export default {
       type: Boolean,
       default: false,
     },
-    outcome: { type: String, default: null },
-    outcomeDetail: { type: String, default: '' },
   },
   computed: {
     colorScheme: {
@@ -74,12 +70,6 @@ export default {
     <v-divider />
     <v-card-actions>
       <v-spacer />
-      <bs-save-outcome
-        :outcome="outcome"
-        :detail="outcomeDetail"
-        class="mr-4"
-        @retry="onSave"
-      />
       <v-btn
         color="accent"
         elevation="0"
