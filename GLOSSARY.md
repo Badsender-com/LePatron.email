@@ -376,5 +376,5 @@ _Avoid_: Limit, setting
 
 **Quality settings**:
 The state and thresholds of every rule for a company. A template overrides them one by one; whatever it does not set is inherited from its company.
-_UI_: Réglages du contrôle qualité ; Hérité de l'entreprise, Propre au template
+_UI_: Réglages du contrôle qualité
 _Avoid_: QC config, quality configuration
