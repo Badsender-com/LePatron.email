@@ -53,6 +53,9 @@ const OWN_TEMPLATE = '507f1f77bcf86cd799439c01';
 const OTHER_TEMPLATE = '507f1f77bcf86cd799439c02';
 const ORPHAN_TEMPLATE = '507f1f77bcf86cd799439c03';
 const MISSING_TEMPLATE = '507f1f77bcf86cd799439c04';
+// A template whose group moved a threshold past the template's own since.
+const MOVED_GROUP = '507f1f77bcf86cd799439b03';
+const MOVED_TEMPLATE = '507f1f77bcf86cd799439c05';
 
 // A template's markup weighs megabytes: it must never be read nor sent back.
 const HEAVY_MARKUP = `<html>${'x'.repeat(5 * 1024 * 1024)}</html>`;
@@ -64,6 +67,11 @@ const GROUPS = {
     qualitySettings: { checks: { subject: { thresholds: { tooLong: 80 } } } },
   },
   [OTHER_GROUP]: { _id: OTHER_GROUP, enableEmailBuilder: true },
+  [MOVED_GROUP]: {
+    _id: MOVED_GROUP,
+    enableEmailBuilder: true,
+    qualitySettings: { checks: { subject: { thresholds: { tooLong: 45 } } } },
+  },
 };
 
 const template = (_id, _company) => ({
@@ -78,6 +86,11 @@ const TEMPLATES = {
   [OTHER_TEMPLATE]: template(OTHER_TEMPLATE, OTHER_GROUP),
   // A template no company holds yet: only a super admin reaches it.
   [ORPHAN_TEMPLATE]: template(ORPHAN_TEMPLATE, undefined),
+  // long 50 was set when the group's tooLong was 60; it is 45 now.
+  [MOVED_TEMPLATE]: {
+    ...template(MOVED_TEMPLATE, MOVED_GROUP),
+    qualitySettings: { checks: { subject: { thresholds: { long: 50 } } } },
+  },
 };
 
 // `findById(id).select('a b').lean()`, keeping only the selected fields; what
@@ -240,6 +253,34 @@ describe('PUT /api/templates/:templateId/quality-settings — payload', () => {
     // 90 is over the group's tooLong of 80.
     const res = await put(userWith(ROLES.GROUP_ADMIN), OWN_TEMPLATE, {
       checks: { subject: { thresholds: { long: 90 } } },
+    });
+
+    expect(res.status).toBe(422);
+    expect(res.body.message).toBe('INVALID_QUALITY_SETTINGS');
+    expect(Templates.updateOne).not.toHaveBeenCalled();
+  });
+});
+
+describe('PUT /api/templates/:templateId/quality-settings — a group that moved since', () => {
+  const superAdmin = userWith(ROLES.SUPER_ADMIN);
+
+  it("accepts the template's settings sent back unchanged", async () => {
+    const res = await put(superAdmin, MOVED_TEMPLATE, {
+      checks: {
+        subject: { thresholds: { long: 50, tooLong: null } },
+        headings: { state: 'off' },
+      },
+    });
+
+    expect(res.status).toBe(200);
+    expect(res.body.qualitySettings.checks.subject).toEqual({
+      thresholds: { long: 50 },
+    });
+  });
+
+  it('refuses a new value of the template that contradicts the group', async () => {
+    const res = await put(superAdmin, MOVED_TEMPLATE, {
+      checks: { subject: { thresholds: { long: 55, tooLong: null } } },
     });
 
     expect(res.status).toBe(422);
