@@ -2,13 +2,13 @@
 import { EyeOff, Lock, Plus } from 'lucide-vue';
 import * as acls from '~/helpers/pages-acls.js';
 import * as apiRoutes from '~/helpers/api-routes.js';
-import { safeFetchGroup } from '~/helpers/safe-fetch-group';
 import { CHECKS } from '~/helpers/constants/quality-checks.js';
 import {
   TEMPLATE,
   exceptionsOf,
   generalOf,
 } from '~/helpers/quality-exceptions.js';
+import { loadQualitySettings } from '~/helpers/quality-settings.js';
 import mixinSettingsTitle from '~/helpers/mixins/mixin-settings-title.js';
 import mixinUnsavedChanges from '~/helpers/mixins/mixin-unsaved-changes.js';
 import mixinQualityTexts from '~/helpers/mixins/mixin-quality-texts.js';
@@ -22,17 +22,15 @@ const CATALOGUE_ORDER = Object.keys(CHECKS);
 // A template's own exceptions, over the general settings of its group
 // (docs/adr/0009-quality-settings-per-group-and-template.md). The template is
 // looked up among its group's: an address naming another group's template
-// finds nothing. Resolves with null when the list cannot be read.
-async function fetchTemplates(nuxtContext) {
-  try {
-    const response = await nuxtContext.$axios.$get(
-      apiRoutes.groupsItemTemplates(nuxtContext.params)
-    );
-    return response.items || [];
-  } catch (error) {
-    console.error('[Quality] Failed to load the templates:', error);
-    return null;
-  }
+// finds nothing. A list that cannot be read is a load error, never a
+// template not found: one asks to try again, the other to go back.
+async function loadPage(nuxtContext) {
+  const { group, templates, loadError } = await loadQualitySettings(
+    nuxtContext
+  );
+  const template =
+    templates.find((t) => t.id === nuxtContext.params.templateId) || null;
+  return { group, template, loadError };
 }
 
 export default {
@@ -50,19 +48,18 @@ export default {
   meta: {
     acl: acls.ACL_GROUP_MANAGE,
   },
-  async asyncData(nuxtContext) {
-    const [groupData, templates] = await Promise.all([
-      safeFetchGroup(nuxtContext),
-      fetchTemplates(nuxtContext),
-    ]);
-    const template =
-      (templates || []).find((t) => t.id === nuxtContext.params.templateId) ||
-      null;
-    return { ...groupData, template };
+  asyncData(nuxtContext) {
+    return loadPage(nuxtContext);
   },
   data() {
-    // The checks the template sets, as edited (saved or not).
-    return { group: {}, template: null, ownIds: [] };
+    return {
+      group: {},
+      template: null,
+      loadError: false,
+      reloading: false,
+      // The checks the template sets, as edited (saved or not).
+      ownIds: [],
+    };
   },
   head() {
     return { title: this.settingsTitle };
@@ -74,12 +71,15 @@ export default {
     qualityRoute() {
       return `/groups/${this.$route.params.groupId}/settings/quality`;
     },
+    templatesRoute() {
+      return `${this.qualityRoute}?tab=templates`;
+    },
     breadcrumb() {
       return [
         { text: this.$t('qualitySettings.title'), to: this.qualityRoute },
         {
           text: this.$tc('global.template', 2),
-          to: `${this.qualityRoute}?tab=templates`,
+          to: this.templatesRoute,
         },
         { text: this.template ? this.template.name : '…', to: null },
       ];
@@ -98,6 +98,23 @@ export default {
     },
   },
   methods: {
+    async reload() {
+      this.reloading = true;
+      try {
+        Object.assign(
+          this,
+          await loadPage({
+            $axios: this.$axios,
+            params: this.$route.params,
+            store: this.$store,
+            app: { i18n: this.$i18n },
+          })
+        );
+      } finally {
+        this.reloading = false;
+      }
+    },
+
     saveTemplate(payload) {
       return this.$axios.$put(
         apiRoutes.templatesItemQualitySettings({
@@ -137,8 +154,19 @@ export default {
     </bs-page-header>
     <v-container fluid>
       <div class="settings-content">
-        <p v-if="!template" class="quality-intro">
+        <v-alert v-if="loadError" type="error" outlined role="alert">
+          {{ $t('qualitySettings.page.loadError') }}
+          <template #append>
+            <v-btn text color="error" :loading="reloading" @click="reload">
+              {{ $t('qualitySettings.page.retry') }}
+            </v-btn>
+          </template>
+        </v-alert>
+        <p v-else-if="!template" class="quality-intro">
           {{ $t('qualitySettings.template.notFound') }}
+          <nuxt-link :to="templatesRoute">
+            {{ $t('qualitySettings.page.backToTemplates') }}
+          </nuxt-link>
         </p>
         <template v-else>
           <p class="quality-intro">
