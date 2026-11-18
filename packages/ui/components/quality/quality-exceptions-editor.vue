@@ -266,7 +266,7 @@ export default {
 <template>
   <div class="qx-editor">
     <template v-if="ids.length">
-      <h3 class="qx-editor__title">{{ title }}</h3>
+      <h2 class="qx-editor__title">{{ title }}</h2>
       <p v-if="isGeneral" class="qx-editor__subtitle">
         {{ $t('qualitySettings.general.others') }}
       </p>
