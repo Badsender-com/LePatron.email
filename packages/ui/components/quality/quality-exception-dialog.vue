@@ -115,7 +115,7 @@ export default {
       <v-divider />
       <v-card-actions>
         <v-spacer />
-        <v-btn text color="accent" @click="$emit('input', false)">
+        <v-btn text color="primary" @click="$emit('input', false)">
           {{ $t('global.cancel') }}
         </v-btn>
       </v-card-actions>
