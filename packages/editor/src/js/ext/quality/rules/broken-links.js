@@ -3,9 +3,9 @@
 const { checkableLinks, remoteLink } = require('../resources');
 
 // Checked by the server (POST /mailings/:id/quality/resources): it follows the
-// redirects and reports how the page answers. A broken page is an error; a site
-// that refuses robots or answers too slowly is only worth a look, since a
-// reader may well see the page.
+// redirects and reports how the page answers. A page gone is an error; a site
+// that refuses robots, answers too slowly or fails for a moment (a 500) is only
+// worth a look, since a reader may well see the page.
 function messageOf(result) {
   if (result.state === 'broken') {
     return result.httpStatus
