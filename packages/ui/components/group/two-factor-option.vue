@@ -1,11 +1,11 @@
 <script>
 import { mapGetters } from 'vuex';
-import { ShieldCheck, Check } from 'lucide-vue';
+import { Smartphone, Check } from 'lucide-vue';
 
 import { groupsItem, groupsItemUsers } from '~/helpers/api-routes.js';
 import { CAN, USER } from '~/store/user';
 import { CAPABILITIES } from '../../../shared/access/roles.js';
-import BsSettingsRow from '~/components/layout/bs-settings-row.vue';
+import BsGroupSettingCard from '~/components/group/setting-card.vue';
 import BsGroupFeatureSwitch from '~/components/group/feature-switch.vue';
 import BsModalConfirm from '~/components/modal-confirm.vue';
 
@@ -13,17 +13,18 @@ import BsModalConfirm from '~/components/modal-confirm.vue';
 const SAVED_FOR_MS = 4000;
 
 // Every member of the group signs in with a second factor (ADR 0008).
-// Saved on its own, the Security card of the company settings (design
-// system, CompanySettings): the change is confirmed with its impact, and its
-// outcome is read where it was made, under the option, never in a toast.
+// The last row of the Security section of the company settings (design
+// system, CompanySettings). Unlike the rows above it, it is saved on its own:
+// the change is confirmed with its impact, and its outcome is read where it
+// was made, under the option, never in a toast.
 // A technical setting: a company admin reads it, a tech admin switches it.
 export default {
   name: 'BsGroupTwoFactorOption',
   components: {
-    BsSettingsRow,
+    BsGroupSettingCard,
     BsGroupFeatureSwitch,
     BsModalConfirm,
-    LucideShieldCheck: ShieldCheck,
+    LucideSmartphone: Smartphone,
     LucideCheck: Check,
   },
   props: {
@@ -128,73 +129,60 @@ export default {
 </script>
 
 <template>
-  <section class="bs-group-two-factor" aria-labelledby="two-factor-section">
-    <header class="bs-group-two-factor__header">
-      <span class="bs-group-two-factor__tile" aria-hidden="true">
-        <lucide-shield-check :size="20" />
-      </span>
-      <div>
-        <h3 id="two-factor-section" class="bs-group-two-factor__title">
-          {{ $t('twoFactor.group.sectionTitle') }}
-        </h3>
-        <p class="bs-group-two-factor__description">
-          {{ $t('twoFactor.group.sectionDescription') }}
-        </p>
-      </div>
-    </header>
-
-    <ul class="bs-group-two-factor__rows">
-      <bs-settings-row title-id="two-factor-title">
-        <template #title>{{ $t('twoFactor.group.title') }}</template>
-        <template #description>
-          <template v-if="isSaml">{{ $t('twoFactor.group.saml') }}</template>
-          <template v-else>
-            {{ $t('twoFactor.group.description') }}
-            <span v-if="total" class="d-block mt-2">
-              <!-- At 0% the empty track reads as a divider: the sentence
-                   alone says nobody has set it up. -->
-              <v-progress-linear
-                v-if="configured > 0"
-                :value="progress"
-                color="primary"
-                background-color="grey lighten-2"
-                height="4"
-                rounded
-                aria-hidden="true"
-              />
-              <span class="bs-group-two-factor__progress">
-                {{
-                  $tc('twoFactor.group.progress', configured, {
-                    n: configured,
-                    total,
-                  })
-                }}
-              </span>
+  <div class="bs-group-two-factor">
+    <bs-group-setting-card title-id="two-factor-title">
+      <template #icon><lucide-smartphone :size="28" /></template>
+      <template #name>{{ $t('twoFactor.group.title') }}</template>
+      <template #description>
+        <template v-if="isSaml">{{ $t('twoFactor.group.saml') }}</template>
+        <template v-else>
+          {{ $t('twoFactor.group.description') }}
+          <span v-if="total" class="d-block mt-2">
+            <!-- At 0% the empty track reads as a divider: the sentence
+                 alone says nobody has set it up. -->
+            <v-progress-linear
+              v-if="configured > 0"
+              :value="progress"
+              color="primary"
+              background-color="grey lighten-2"
+              height="4"
+              rounded
+              aria-hidden="true"
+            />
+            <span class="bs-group-two-factor__progress">
+              {{
+                $tc('twoFactor.group.progress', configured, {
+                  n: configured,
+                  total,
+                })
+              }}
             </span>
-            <span v-if="!canSwitch" class="d-block mt-2">
-              {{ $t('twoFactor.group.managedByTech') }}
-            </span>
-            <!-- The outcome sits on the option: read where it was made. -->
-            <span
-              v-if="outcome === 'saved'"
-              class="bs-group-two-factor__outcome bs-group-two-factor__outcome--saved"
-              role="status"
-            >
-              <lucide-check :size="14" aria-hidden="true" />
-              {{ $t('twoFactor.group.saved') }}
-            </span>
-            <span
-              v-else-if="outcome === 'failed'"
-              class="bs-group-two-factor__outcome bs-group-two-factor__outcome--failed"
-              role="alert"
-            >
-              {{ $t('twoFactor.group.failed') }}
-              <button type="button" @click="ask(asked)">
-                {{ $t('twoFactor.group.retry') }}
-              </button>
-            </span>
-          </template>
+          </span>
+          <span v-if="!canSwitch" class="d-block mt-2">
+            {{ $t('twoFactor.group.managedByTech') }}
+          </span>
+          <!-- The outcome sits on the option: read where it was made. -->
+          <span
+            v-if="outcome === 'saved'"
+            class="bs-group-two-factor__outcome bs-group-two-factor__outcome--saved"
+            role="status"
+          >
+            <lucide-check :size="14" aria-hidden="true" />
+            {{ $t('twoFactor.group.saved') }}
+          </span>
+          <span
+            v-else-if="outcome === 'failed'"
+            class="bs-group-two-factor__outcome bs-group-two-factor__outcome--failed"
+            role="alert"
+          >
+            {{ $t('twoFactor.group.failed') }}
+            <button type="button" @click="ask(asked)">
+              {{ $t('twoFactor.group.retry') }}
+            </button>
+          </span>
         </template>
+      </template>
+      <template #control>
         <template v-if="!isSaml">
           <bs-group-feature-switch
             v-if="canSwitch"
@@ -217,8 +205,8 @@ export default {
             }}
           </span>
         </template>
-      </bs-settings-row>
-    </ul>
+      </template>
+    </bs-group-setting-card>
 
     <bs-modal-confirm
       ref="confirmOnDialog"
@@ -248,68 +236,16 @@ export default {
     >
       {{ $t('twoFactor.group.confirmOff.body') }}
     </bs-modal-confirm>
-  </section>
+  </div>
 </template>
 
 <style lang="scss" scoped>
-// A feature card of the design system (FeatureCard): white, a 1px border, no
-// shadow; its rows are SettingsRows.
+// The card is the last row of its section: the section spaces it, not the card.
+.bs-group-two-factor ::v-deep .bs-group-setting-card {
+  margin-bottom: 0;
+}
+
 .bs-group-two-factor {
-  background: #fff;
-  border: 1px solid var(--gray-300);
-  border-radius: 10px;
-  max-width: 880px;
-
-  &__header {
-    display: flex;
-    align-items: center;
-    gap: 16px;
-    padding: 20px 24px;
-  }
-
-  &__tile {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    flex: none;
-    width: 40px;
-    height: 40px;
-    border-radius: 7px;
-    background: var(--tint-accent);
-    color: var(--v-accent-darken1);
-  }
-
-  &__title {
-    margin: 0;
-    font-size: 16px;
-    font-weight: 600;
-    color: var(--gray-900);
-  }
-
-  &__description {
-    margin: 0;
-    font-size: 13px;
-    color: var(--gray-600);
-  }
-
-  &__rows {
-    margin: 0;
-    padding: 0;
-    list-style: none;
-    border-top: 1px solid var(--gray-200);
-
-    // A row inside a flush card (design system, SettingsRow): 16px / 24px,
-    // aligned with the header. The hairline under the header is the card's;
-    // the row draws its own only from the second one.
-    ::v-deep .bs-settings-row {
-      padding: 16px 24px;
-
-      &:first-child {
-        border-top: none;
-      }
-    }
-  }
-
   &__progress {
     display: block;
     margin-top: 6px;

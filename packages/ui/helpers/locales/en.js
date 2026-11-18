@@ -313,6 +313,8 @@ export default {
   forms: {
     group: {
       sections: {
+        security: 'Security',
+        securityDescription: 'Members’ access to the workspaces and how they sign in.',
         generalInfo: 'General information',
         imageHosting: 'Image hosting',
         authentication: 'Authentication',
@@ -322,6 +324,8 @@ export default {
         companyInfo: 'Company information',
         companyInfoDescription: 'Enter the main information about the company.',
       },
+      states: { on: 'On', off: 'Off' },
+      saml: { name: 'SAML authentication', on: 'On', off: 'Off' },
       enableSaml: 'Enable SAML authentication',
       entryPointHint: 'Login URL provided by your identity provider',
       issuerHint: 'Unique identifier for your application at the provider',

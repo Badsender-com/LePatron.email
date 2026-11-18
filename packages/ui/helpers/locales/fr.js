@@ -317,6 +317,8 @@ export default {
   forms: {
     group: {
       sections: {
+        security: 'Sécurité',
+        securityDescription: 'L’accès des membres aux workspaces et la façon dont ils se connectent.',
         generalInfo: 'Informations générales',
         imageHosting: 'Hébergement des images',
         authentication: 'Authentification',
@@ -326,6 +328,8 @@ export default {
         companyInfo: 'Informations de l\'entreprise',
         companyInfoDescription: 'Renseignez les informations principales de l\'entreprise.',
       },
+      states: { on: 'Activé', off: 'Désactivé' },
+      saml: { name: 'Authentification SAML', on: 'Activée', off: 'Désactivée' },
       enableSaml: 'Activer l\'authentification SAML',
       entryPointHint: 'URL de connexion fournie par votre fournisseur d\'identité',
       issuerHint: 'Identifiant unique de votre application chez le fournisseur',
