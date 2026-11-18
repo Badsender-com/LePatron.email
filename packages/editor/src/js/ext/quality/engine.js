@@ -93,7 +93,10 @@ const REMOTE_RULES = [
 ];
 
 // Local rules with a second look once the server has answered (`remoteRun`):
-// their findings join the check the local run already listed.
+// their findings join the check the local run already listed. They are
+// uncertain, so never blocking, and no export waits for them (only a blocking
+// server check makes it wait). They ask the server nothing of their own: only
+// while one of its checks reading the same images is on (resources.js).
 const LATE_RULES = DEFAULT_RULES.filter(
   (rule) => rule.remoteRun
 ).map((rule) => ({ ...rule, run: rule.remoteRun }));
@@ -323,5 +326,5 @@ module.exports = {
   // The drawer announces how many checks it runs.
   DEFAULT_RULES,
   REMOTE_RULES,
-  SERVER_ANSWER_RULES,
+  LATE_RULES,
 };

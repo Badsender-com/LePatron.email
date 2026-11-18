@@ -56,7 +56,10 @@ function checkableImages(ctx) {
  * the blocklists is not visited when "broken-links" is off).
  * A local check with a second look on the server's answer reads only some
  * images (`remoteImages`, the format of an image whose address names none):
- * it is named, and its images sent, only when it has some.
+ * it is named only when it has some, and only while a server check reads the
+ * images. The server downloads them for that check anyway; on its own, the
+ * second look would have it call an image host (a countdown, a personalised
+ * image) the admin stopped by turning the image checks off.
  * @param {Object} ctx
  * @param {Array<{ id: string, reads?: string,
  *   remoteImages?: function(Object): Array<{ src: string }> }>} rules - the
@@ -71,19 +74,20 @@ function collectResources(ctx, rules) {
   const links = reads.has('links')
     ? _.uniq(checkableLinks(ctx).map((link) => link.href))
     : [];
-  const someImages = rules
+  const someImages = (reads.has('images') ? rules : [])
     .filter((rule) => rule.remoteImages)
     .map((rule) => ({
       id: rule.id,
       srcs: rule.remoteImages(ctx).map((image) => image.src),
     }))
     .filter(({ srcs }) => srcs.length > 0);
-  const images = _.uniq(
-    (reads.has('images')
-      ? checkableImages(ctx).map((image) => image.src)
-      : []
-    ).concat(...someImages.map(({ srcs }) => srcs))
-  );
+  const images = reads.has('images')
+    ? _.uniq(
+        checkableImages(ctx)
+          .map((image) => image.src)
+          .concat(...someImages.map(({ srcs }) => srcs))
+      )
+    : [];
   return {
     links: links.slice(0, MAX_LINKS),
     images: images.slice(0, MAX_IMAGES).map((url) => ({ url })),
