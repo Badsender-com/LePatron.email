@@ -294,6 +294,17 @@ export default {
     padding: 0;
     list-style: none;
     border-top: 1px solid var(--gray-200);
+
+    // A row inside a flush card (design system, SettingsRow): 16px / 24px,
+    // aligned with the header. The hairline under the header is the card's;
+    // the row draws its own only from the second one.
+    ::v-deep .bs-settings-row {
+      padding: 16px 24px;
+
+      &:first-child {
+        border-top: none;
+      }
+    }
   }
 
   &__progress {
