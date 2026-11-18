@@ -192,6 +192,40 @@ describe('waiting for a blocking check of the server', () => {
   });
 });
 
+describe('the focus while a modal of the gate is open', () => {
+  const tab = (shiftKey = false) =>
+    document.dispatchEvent(
+      new KeyboardEvent('keydown', { key: 'Tab', shiftKey, bubbles: true })
+    );
+
+  it('cannot go back to the editor while the export waits', () => {
+    const editorField = document.createElement('input');
+    document.body.appendChild(editorField);
+    const vm = editor({ checks: { 'broken-links': BLOCKING } });
+    vm.quality.gate({ html: withLink.html });
+    const cancel = $('.quality-wait-modal__cancel');
+    expect(document.activeElement).toBe(cancel);
+
+    editorField.focus();
+    expect(document.activeElement).toBe(cancel);
+    tab();
+    expect(document.activeElement).toBe(cancel);
+  });
+
+  it('loops over the buttons of the blocking modal', async () => {
+    const email = emailOf('<a href="#toreplace">Shop now</a>');
+    const vm = editor({ email, checks: { 'unfilled-links': BLOCKING } });
+    await vm.quality.gate({ html: email.html });
+    const close = $('.blocking-modal__close');
+    const reveal = $('.blocking-modal__reveal');
+    expect(document.activeElement).toBe(close);
+    tab(true);
+    expect(document.activeElement).toBe(reveal);
+    tab();
+    expect(document.activeElement).toBe(close);
+  });
+});
+
 describe('a local finding that blocks', () => {
   it('shows the modal at once, without waiting for the server', async () => {
     const email = emailOf(
