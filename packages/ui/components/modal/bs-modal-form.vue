@@ -11,7 +11,7 @@
  * Usage:
  * <bs-modal-form
  *   ref="modal"
- *   :title="$t('modal.title')"
+ *   :title="$t('global.newMail')"
  *   :submit-label="$t('global.create')"
  *   :loading="isLoading"
  *   @submit="handleSubmit"

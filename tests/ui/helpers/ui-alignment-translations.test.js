@@ -37,6 +37,8 @@ const FILES = [
   'components/group/colors-tab.vue',
   'components/template/template-tracking-tab.vue',
   'components/sidebar/bs-upgrade-modal.vue',
+  'components/template/form.vue',
+  'components/mailings/modal-transfer.vue',
   'routes/mailings/__partials/mailings-filters.vue',
   'routes/mailings/__partials/mailings-date-field.vue',
   'routes/mailings/__partials/mailings-search-scope.vue',
