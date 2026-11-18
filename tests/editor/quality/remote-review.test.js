@@ -40,6 +40,7 @@ describe('what is sent to the server', () => {
     expect(resources).toEqual({
       links: ['https://brand.com/a'],
       images: [{ url: 'https://cdn.brand.com/hero.jpg' }],
+      checks: REMOTE_RULES.map((rule) => rule.id),
     });
   });
 
@@ -92,6 +93,7 @@ describe('what is sent to the server, with checks turned off', () => {
     expect(resourcesOf(vmTurningOff(LINK_CHECKS))).toEqual({
       links: [],
       images: [{ url: 'https://cdn.brand.com/hero.jpg' }],
+      checks: IMAGE_CHECKS,
     });
   });
 
@@ -99,12 +101,22 @@ describe('what is sent to the server, with checks turned off', () => {
     expect(resourcesOf(vmTurningOff(IMAGE_CHECKS))).toEqual({
       links: ['https://brand.com/a'],
       images: [],
+      checks: LINK_CHECKS,
     });
   });
 
   it('still sends the links while one check that reads them is on', () => {
     const vm = vmTurningOff(['broken-links', 'domain-blocklists']);
     expect(resourcesOf(vm).links).toEqual(['https://brand.com/a']);
+  });
+
+  // The server visits the links only for "broken-links": the links sent for
+  // the other link checks must not be visited.
+  it('names the checks still on, so the server runs only theirs', () => {
+    const { checks } = resourcesOf(vmTurningOff(['broken-links']));
+    expect(checks).toEqual(
+      ['dangerous-links', 'domain-blocklists'].concat(IMAGE_CHECKS)
+    );
   });
 
   it('sends only the images to the review when the link checks are off', async () => {
@@ -118,7 +130,11 @@ describe('what is sent to the server, with checks turned off', () => {
     await new Promise((resolve) => setTimeout(resolve, 0));
     expect(checkResources).toHaveBeenCalledWith(
       '/x',
-      { links: [], images: [{ url: 'https://cdn.brand.com/hero.jpg' }] },
+      {
+        links: [],
+        images: [{ url: 'https://cdn.brand.com/hero.jpg' }],
+        checks: IMAGE_CHECKS,
+      },
       expect.anything()
     );
   });
@@ -130,7 +146,7 @@ describe('what is sent to the server, with checks turned off', () => {
     installQualityReview(vm, ko, { defer: (fn) => fn(), checkResources });
 
     vm.quality.run();
-    expect(resourcesOf(vm)).toEqual({ links: [], images: [] });
+    expect(resourcesOf(vm)).toEqual({ links: [], images: [], checks: [] });
     expect(checkResources).not.toHaveBeenCalled();
     expect(vm.quality.remoteStatus()).toBe('idle');
   });
@@ -169,6 +185,7 @@ describe('the review, with the server', () => {
       {
         links: ['https://brand.com/x'],
         images: [],
+        checks: REMOTE_RULES.map((rule) => rule.id),
       },
       expect.objectContaining({ cancelToken: expect.anything() })
     );
