@@ -15,13 +15,13 @@ const {
   REMOTE_RULES,
 } = require('../../../packages/editor/src/js/ext/quality/engine.js');
 const {
-  formatParams,
+  messageText,
 } = require('../../../packages/editor/src/js/ext/quality/message-params.js');
 const {
   CHECKS,
   defaultQualitySettings,
 } = require('../../../packages/shared/quality/checks.js');
-const { copyViewModel, exportOf } = require('./fake-view-model');
+const { copyViewModel, exportOf, fakeViewModel } = require('./fake-view-model');
 const { remoteOf } = require('./remote-fixtures');
 
 const STRINGS = {
@@ -41,10 +41,13 @@ const translator = (strings) => (key, params = {}) =>
   );
 
 // What the drawer shows (quality-items.js).
-const readable = (lang, key, params) => {
-  const t = translator(STRINGS[lang]);
-  return t(key, formatParams(params, { locale: lang, t }));
-};
+const readable = (lang, key, params) =>
+  messageText(translator(STRINGS[lang]), key, params, { locale: lang });
+
+// A translation with no strings that pastes each value as it gets it, as
+// viewModel.tt does: whatever shows a message through messageText with it
+// must still get text, never "[object Object]".
+const naiveT = fakeViewModel().t;
 
 const FAULTY_TEXT = [
   '<p style="text-align:justify;line-height:0.9;font-size:9px">',
@@ -243,6 +246,11 @@ describe.each(CASES)(
             expect(text).not.toContain('[object Object]');
             expect(text).not.toContain('undefined');
           });
+        });
+        messages.forEach(([key, params]) => {
+          const text = messageText(naiveT, key, params, { locale: 'en' });
+          expect(text).not.toMatch(UNREPLACED);
+          expect(text).not.toContain('[object Object]');
         });
       }
     );
