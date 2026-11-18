@@ -4,6 +4,8 @@ import { templatesItemTrackingConfig } from '~/helpers/api-routes.js';
 import { PAGE, SHOW_SNACKBAR } from '~/store/page.js';
 import BsTextField from '~/components/form/bs-text-field.vue';
 import { Trash2 } from 'lucide-vue';
+import BsGroupFeatureSwitch from '~/components/group/feature-switch.vue';
+import BsSettingsRow from '~/components/layout/bs-settings-row.vue';
 
 function emptyConfig() {
   return {
@@ -17,6 +19,8 @@ function emptyConfig() {
 export default {
   name: 'TemplateTrackingTab',
   components: {
+    BsGroupFeatureSwitch,
+    BsSettingsRow,
     BsTextField,
     LucideTrash2: Trash2,
   },
@@ -241,15 +245,19 @@ export default {
       </v-radio>
     </v-radio-group>
 
-    <v-switch
-      :input-value="localConfig.restrictValues"
-      :label="$t('trackingConfig.restrictValues')"
-      :disabled="!localConfig.enabled"
-      color="accent"
-      hide-details
-      class="mt-2"
-      @change="onRestrictValuesChange"
-    />
+    <ul class="template-tracking__rows">
+      <bs-settings-row title-id="template-tracking-restrict-title">
+        <template #title>{{ $t('trackingConfig.restrictValues') }}</template>
+        <bs-group-feature-switch
+          :value="Boolean(localConfig.restrictValues)"
+          :label="$t('trackingConfig.restrictValues')"
+          :on-text="$t('global.states.on')"
+          :off-text="$t('global.states.off')"
+          :disabled="!localConfig.enabled"
+          @change="onRestrictValuesChange"
+        />
+      </bs-settings-row>
+    </ul>
 
     <div v-if="localConfig.enabled" class="params-table mt-4">
       <div class="params-table__header">
@@ -363,6 +371,12 @@ export default {
 </template>
 
 <style lang="scss" scoped>
+.template-tracking__rows {
+  margin: 8px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
 .template-tracking {
   &__description {
     color: rgba(0, 0, 0, 0.6);

@@ -9,10 +9,12 @@ import BsTextField from '~/components/form/bs-text-field';
 import BsSelect from '~/components/form/bs-select';
 import BsFormSection from '~/components/layout/bs-form-section.vue';
 import { Package, Server, Cloud } from 'lucide-vue';
+import BsGroupFeatureSwitch from '~/components/group/feature-switch.vue';
 
 export default {
   name: 'BsExportOptionsTab',
   components: {
+    BsGroupFeatureSwitch,
     BsFtpSettings,
     BsTextField,
     BsSelect,
@@ -150,14 +152,14 @@ export default {
           <template #description>
             {{ $t('exportOptions.sections.ftpHostingDescription') }}
           </template>
-
-          <v-switch
-            v-model="localGroup.downloadMailingWithFtpImages"
-            color="accent"
-            :label="$t('forms.group.exportFtp')"
-            hide-details
-            class="mb-4"
-          />
+          <template #header-actions>
+            <bs-group-feature-switch
+              v-model="localGroup.downloadMailingWithFtpImages"
+              :label="$t('forms.group.exportFtp')"
+              :on-text="$t('global.states.on')"
+              :off-text="$t('global.states.off')"
+            />
+          </template>
 
           <v-expand-transition>
             <div v-if="localGroup.downloadMailingWithFtpImages">
@@ -182,14 +184,14 @@ export default {
           <template #description>
             {{ $t('exportOptions.sections.cdnHostingDescription') }}
           </template>
-
-          <v-switch
-            v-model="localGroup.downloadMailingWithCdnImages"
-            color="accent"
-            :label="$t('forms.group.exportCdn')"
-            hide-details
-            class="mb-4"
-          />
+          <template #header-actions>
+            <bs-group-feature-switch
+              v-model="localGroup.downloadMailingWithCdnImages"
+              :label="$t('forms.group.exportCdn')"
+              :on-text="$t('global.states.on')"
+              :off-text="$t('global.states.off')"
+            />
+          </template>
 
           <v-expand-transition>
             <div v-if="localGroup.downloadMailingWithCdnImages">
