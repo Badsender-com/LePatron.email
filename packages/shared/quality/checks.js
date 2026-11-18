@@ -52,7 +52,8 @@ const CHECKS = Object.freeze({
   'alt-redundant': on(),
   'emoji-placement': on(),
   'unnamed-image-links': on(),
-  'image-only-email': on({ minTextLength: t(100, 0, 5000, 'characters') }),
+  // At 0 the check could never fire: any text is at least 0 characters long.
+  'image-only-email': on({ minTextLength: t(100, 1, 5000, 'characters') }),
   // Content
   'tracking-params': Object.freeze({
     defaultState: 'blocking',
