@@ -151,7 +151,10 @@ export default {
           <template v-else>
             {{ $t('twoFactor.group.description') }}
             <span v-if="total" class="d-block mt-2">
+              <!-- At 0% the empty track reads as a divider: the sentence
+                   alone says nobody has set it up. -->
               <v-progress-linear
+                v-if="configured > 0"
                 :value="progress"
                 color="primary"
                 background-color="grey lighten-2"
