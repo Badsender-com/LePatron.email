@@ -54,12 +54,14 @@ module.exports = {
   },
   // Once the server answered: an address that names no format (a CDN's
   // /img/12345) is judged by the type the server read in the image it
-  // weighed. Not sure, so never blocking: a CDN may send a reader's client
-  // another format than the one the server got. Not judged: an image the
-  // server could not read (unreachable, or over its size cap, with no type),
-  // and every one when the server fails, the check then keeping its local
-  // status.
-  // What it has the server read (resources.js): only those images.
+  // weighed. The server asks for the image with `Accept: */*`, as a client
+  // that takes any format, so its answer is a fair guess of what readers
+  // get; a CDN may still pick the format per client, and these findings
+  // never block, out of prudence. Not judged: an image the server could not
+  // read (unreachable, or over its size cap, with no type). When the server
+  // fails, the check is listed as not run (remote-checks.js).
+  // What it has the server read (resources.js): only those images, and only
+  // while a server check reads the images.
   remoteImages: unnamedImages,
   remoteRun(ctx) {
     return unnamedImages(ctx)
