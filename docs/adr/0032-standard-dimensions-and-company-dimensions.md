@@ -27,4 +27,4 @@ A company dimension may hang under the email type, whose values are real values,
 
 What a governance rule attaches to, one value or a combination of values, is deliberately left to the governance module. The taxonomy exposes dimensions, values and their resolution, and has no notion of a rule.
 
-The existing taxonomy data is experimental. It is dropped rather than migrated.
+The existing taxonomy data is experimental. It is dropped rather than migrated. Email types, already in production, are the exception: ADR-0030 migrates them.
