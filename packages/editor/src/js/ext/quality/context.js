@@ -78,7 +78,4 @@ function buildContext(viewModel, html, remote) {
   };
 }
 
-module.exports = {
-  buildContext,
-  readTrackingUrls,
-};
+module.exports = { buildContext };
