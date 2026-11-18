@@ -721,8 +721,8 @@ module.exports = {
     'Justified text: word gaps get harder to read: __text__',
   'Line height under __min__ (__ratio__): the lines overlap: __text__':
     'Line height under __min__ (__ratio__): the lines overlap: __text__',
-  'Line height of __ratio__, under the minimum of __min__ set for your emails: __text__':
-    'Line height of __ratio__, under the minimum of __min__ set for your emails: __text__',
+  'Line height of __ratio__: under the minimum of __min__ set for your emails: __text__':
+    'Line height of __ratio__: under the minimum of __min__ set for your emails: __text__',
   'Centred text over about three lines is hard to read: align long texts to the left':
     'Centred text over about three lines is hard to read: align long texts to the left',
   'Visible links': 'Visible links',

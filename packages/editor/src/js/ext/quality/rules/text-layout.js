@@ -30,6 +30,11 @@ function lineHeightRatio(value, element) {
   return px !== null && fontPx ? px / fontPx : null;
 }
 
+// A ratio as the message quotes it, two decimals at most, rounded down: a
+// ratio under the minimum must never read as the minimum itself, nor 0.995
+// as 1 next to "the lines overlap". The epsilon keeps 0.29 from reading 0.28.
+const quotedRatio = (ratio) => Math.floor(ratio * 100 + 1e-9) / 100;
+
 const isCentred = (value) => /^center/i.test(String(value || '').trim());
 
 // The length of the text that is drawn centred by this element: its own text
@@ -106,10 +111,10 @@ module.exports = {
             messageKey:
               ratio < 1
                 ? 'Line height under __min__ (__ratio__): the lines overlap: __text__'
-                : 'Line height of __ratio__, under the minimum of __min__ set for your emails: __text__',
+                : 'Line height of __ratio__: under the minimum of __min__ set for your emails: __text__',
             severity: 'warning',
             params: {
-              ratio: Math.round(ratio * 100) / 100,
+              ratio: quotedRatio(ratio),
               min: minLineHeight,
             },
           };
