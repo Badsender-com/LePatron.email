@@ -21,7 +21,7 @@ const { EmailTriggerValues } = require('../constant/email-trigger');
 const { resolveTrackingConfig } = require('../utils/resolve-tracking-config');
 const {
   resolveQualitySettings,
-} = require('../utils/resolve-quality-settings.js');
+} = require('../../shared/quality/resolve-quality-settings.js');
 const { HEAD_CSS_MAX_LENGTH } = require('../../shared/head-css/constants.js');
 const {
   keepBlockInformationFields,

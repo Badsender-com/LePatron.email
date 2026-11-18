@@ -26,7 +26,7 @@ const {
 } = require('../utils/sanitize-quality-settings.js');
 const {
   resolveQualitySettings,
-} = require('../utils/resolve-quality-settings.js');
+} = require('../../shared/quality/resolve-quality-settings.js');
 const {
   sanitizeTrackingConfig,
 } = require('../utils/resolve-tracking-config.js');
