@@ -181,11 +181,15 @@ async function update(req, res) {
   const template = await Templates.findById(templateId);
   if (!template) throw new createError.NotFound();
   // custom update function
+  // The quality settings and the tracking each have their own route, which
+  // validates them: never written raw from here.
   const updatedTemplate = _.assignIn(
     template,
     _.omit(normalizeMultipartBooleans(body, MULTIPART_BOOLEAN_FIELDS), [
       'images',
       'assets',
+      'qualitySettings',
+      'trackingConfig',
     ])
   );
   updatedTemplate.assets = _.assign(
