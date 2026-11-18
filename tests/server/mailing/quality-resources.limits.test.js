@@ -239,4 +239,24 @@ describe('throttle', () => {
       message: 'QUALITY_CHECKS_TOO_FREQUENT',
     });
   });
+
+  it("counts the exports' runs apart from the drawer's", async () => {
+    const d = deps({ probe: jest.fn(async () => ({ status: 200 })) });
+    for (let i = 0; i < RUNS_PER_WINDOW; i += 1) {
+      await run({ links: [] }, d);
+    }
+    // The drawer used up its runs: an export still gets its own.
+    for (let i = 0; i < RUNS_PER_WINDOW; i += 1) {
+      await run({ links: [], purpose: 'export' }, d);
+    }
+    await expect(
+      run({ links: [], purpose: 'export' }, d)
+    ).rejects.toMatchObject({
+      status: 429,
+      message: 'QUALITY_CHECKS_TOO_FREQUENT',
+    });
+    await expect(
+      run({ links: [], purpose: 'review' }, d)
+    ).rejects.toMatchObject({ status: 429 });
+  });
 });

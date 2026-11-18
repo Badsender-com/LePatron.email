@@ -29,6 +29,17 @@ describe('validateResourcesPayload', () => {
     });
   });
 
+  it('keeps the purpose of the run, only when sent', () => {
+    expect(validateResourcesPayload({ links: [], purpose: 'export' })).toEqual({
+      links: [],
+      images: [],
+      purpose: 'export',
+    });
+    expect(validateResourcesPayload({ links: [] })).not.toHaveProperty(
+      'purpose'
+    );
+  });
+
   it.each([
     ['another key', { links: [], extra: 1 }],
     ['a non-web scheme', { links: ['javascript:alert(1)'] }],
@@ -37,6 +48,8 @@ describe('validateResourcesPayload', () => {
     ['too many links', { links: Array(MAX_LINKS + 1).fill('https://a.test') }],
     ['an overlong URL', { links: [`https://a.test/${'x'.repeat(2100)}`] }],
     ['a list that is not one', { links: 'https://a.test' }],
+    ['an unknown purpose', { links: [], purpose: 'bulk' }],
+    ['a purpose that is not a word', { links: [], purpose: ['export'] }],
   ])('refuses %s', (label, body) => {
     expect(() => validateResourcesPayload(body)).toThrow(
       expect.objectContaining({

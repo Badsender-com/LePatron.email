@@ -1,9 +1,7 @@
 'use strict';
 
-const createError = require('http-errors');
 const { zipObject } = require('lodash');
 
-const ERROR_CODES = require('../constant/error-codes.js');
 const logger = require('../utils/logger.js');
 const { probeUrl } = require('../utils/url-probe.js');
 const { workerCount } = require('../utils/worker-count.js');
@@ -19,15 +17,23 @@ const {
   CONCURRENCY,
   RUNS_PER_WINDOW,
   RUN_WINDOW_MS,
+  PURPOSES,
   clearForTests,
 } = require('./quality-limits.js');
+const {
+  validateResourcesPayload,
+  REMOTE_CHECKS,
+  MAX_LINKS,
+  MAX_IMAGES,
+} = require('./quality-resources.payload.js');
 
 /**
  * What the quality checks need from the outside world: whether the links of an
  * email answer (quality-links.service.js), what its images weigh once the
  * export has processed them (quality-images.service.js), and what blocklists
  * and Google Web Risk say of its links (quality-threats.service.js). This
- * module validates what the editor sends, and runs the four within the bounds.
+ * module runs the four within the bounds, on what the editor sent and
+ * quality-resources.payload.js validated.
  *
  * The editor decides which links and images are the client's (it knows the
  * template); the server only measures them. Any logged-in user can have the
@@ -36,7 +42,7 @@ const {
  *   - per run: number of addresses, parallel requests, one deadline (what is
  *     left past it is "unverifiable"), a budget of bytes downloaded;
  *   - per user: one run at a time (a second one waits a few seconds), and 20
- *     runs per 10 minutes;
+ *     runs per 10 minutes for the drawer, 20 more for the exports' gate;
  *   - per worker: a ceiling on link probes and on image downloads in
  *     parallel (every in-memory bound is per worker, see quality-limits.js);
  *   - for the whole cluster: a daily budget of Web Risk lookups per company,
@@ -47,24 +53,9 @@ const {
  * fixing one link should not fetch the forty others again.
  */
 
-const { RESOURCES } = require('../../shared/quality/limits.js');
-
-const MAX_LINKS = RESOURCES.maxLinks;
-const MAX_IMAGES = RESOURCES.maxImages;
-const MAX_URL_LENGTH = RESOURCES.maxUrlLength;
 // Short enough to answer before a hosting router gives up on the request.
 const RUN_DEADLINE_MS = 20000;
 
-// The editor's checks this run serves, and what each has the server do: visit
-// the links, ask Web Risk, ask the blocklists, download the images.
-const REMOTE_CHECKS = Object.freeze({
-  'broken-links': 'linkProbes',
-  'dangerous-links': 'webRisk',
-  'domain-blocklists': 'blocklists',
-  'image-weight': 'images',
-  'images-total-weight': 'images',
-  'oversized-images': 'images',
-});
 const ALL_TASKS = Object.freeze({
   linkProbes: true,
   webRisk: true,
@@ -87,75 +78,6 @@ function tasksOf(checks) {
   );
 }
 
-// ----- Payload
-
-function invalid() {
-  return new createError.UnprocessableEntity(
-    ERROR_CODES.INVALID_QUALITY_RESOURCES
-  );
-}
-
-function checkUrl(value) {
-  if (typeof value !== 'string' || !value || value.length > MAX_URL_LENGTH) {
-    throw invalid();
-  }
-  let parsed;
-  try {
-    parsed = new URL(value);
-  } catch (e) {
-    throw invalid();
-  }
-  if (parsed.protocol !== 'http:' && parsed.protocol !== 'https:') {
-    throw invalid();
-  }
-  // As sent, credentials included: the editor finds its results back by the
-  // address it asked for. What is fetched is `withoutCredentials(value)`.
-  return value;
-}
-
-function checkIds(value) {
-  if (!Array.isArray(value)) throw invalid();
-  value.forEach((id) => {
-    if (typeof id !== 'string' || !Object.hasOwn(REMOTE_CHECKS, id)) {
-      throw invalid();
-    }
-  });
-  return [...new Set(value)];
-}
-
-const PAYLOAD_KEYS = ['links', 'images', 'checks'];
-
-/**
- * @param {Object} body - `{ links: string[], images: [{ url }], checks? }`,
- *   `checks` the editor's checks that are on among REMOTE_CHECKS
- * @returns {{ links: string[], images: string[], checks?: string[] }}
- *   distinct, bounded; `checks` only when sent
- * @throws 422 INVALID_QUALITY_RESOURCES on anything else
- */
-function validateResourcesPayload(body) {
-  if (!body || typeof body !== 'object' || Array.isArray(body)) throw invalid();
-  const keys = Object.keys(body);
-  if (keys.some((key) => !PAYLOAD_KEYS.includes(key))) throw invalid();
-  const links = body.links || [];
-  const images = body.images || [];
-  if (!Array.isArray(links) || !Array.isArray(images)) throw invalid();
-  if (links.length > MAX_LINKS || images.length > MAX_IMAGES) throw invalid();
-  const checks =
-    body.checks === undefined ? {} : { checks: checkIds(body.checks) };
-  return {
-    ...checks,
-    links: [...new Set(links.map(checkUrl))],
-    images: [
-      ...new Set(
-        images.map((image) => {
-          if (!image || typeof image !== 'object') throw invalid();
-          return checkUrl(image.url);
-        })
-      ),
-    ],
-  };
-}
-
 // ----- Run
 
 const DEFAULT_DEPS = {
@@ -175,7 +97,9 @@ function logBounds() {
   logger.log('[QUALITY] resource check bounds', {
     workers: workerCount(),
     perWorker: {
-      runsPerUser: `${RUNS_PER_WINDOW} per ${RUN_WINDOW_MS / 60000} min`,
+      runsPerUser: `${RUNS_PER_WINDOW} per ${
+        RUN_WINDOW_MS / 60000
+      } min, for each of ${PURPOSES.join(', ')}`,
       linkProbes: links.MAX_LINK_PROBES,
       imageDownloads: images.MAX_IMAGE_DOWNLOADS,
     },
@@ -206,8 +130,8 @@ function cutShortOnAbort(run, signal) {
  * query without "domain-blocklists", no image downloaded without an image
  * check. What is skipped answers as a check that has not run.
  *
- * @param {{ links: string[], images: string[], checks?: string[] }} resources
- *   validated
+ * @param {{ links: string[], images: string[], checks?: string[],
+ *   purpose?: string }} resources validated
  * @param {Object} context
  * @param {string} context.userKey - one run at a time for this key
  * @param {string} context.cacheScope - answers are shared within this scope
@@ -228,7 +152,7 @@ function checkResources(
   // gives up after its own timeout, whatever the server was doing.
   const run = { deadline: Date.now() + RUN_DEADLINE_MS, bytes: 0 };
   cutShortOnAbort(run, signal);
-  return throttled(userKey, async () => {
+  return throttled(userKey, resources.purpose, async () => {
     const key = (kind, value) => `${cacheScope}|${kind}|${value}`;
     const tasks = tasksOf(resources.checks);
     const probed = tasks.linkProbes ? resources.links : [];

@@ -73,6 +73,9 @@ async function updateQualityIgnores(req, res) {
  *   images-total-weight and oversized-images: only theirs run (links visited
  *   for broken-links only, Web Risk for dangerous-links, blocklists for
  *   domain-blocklists, images downloaded for an image check). Left out, all run.
+ * @apiParam (Body) {String} [purpose] `review` (the quality drawer, the
+ *   default) or `export` (the gate of a download or an ESP send): each has
+ *   its own count of runs.
  *
  * @apiSuccess {Object} links by address: `{ state: ok|broken|unverifiable,
  *   httpStatus?, reason? }`
@@ -87,7 +90,7 @@ async function updateQualityIgnores(req, res) {
  *
  * @apiDescription Reading the email is enough: nothing is stored. One run at a
  *   time per user, a second one waiting its turn (a third is a 429
- *   `QUALITY_CHECK_RUNNING`), and 20 per 10 minutes (429
+ *   `QUALITY_CHECK_RUNNING`), and 20 per 10 minutes for each purpose (429
  *   `QUALITY_CHECKS_TOO_FREQUENT`); anything else in the body, or too many
  *   addresses, is a 422 `INVALID_QUALITY_RESOURCES`. A request the client
  *   closes before the answer fetches nothing more.
