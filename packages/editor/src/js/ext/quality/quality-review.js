@@ -257,8 +257,14 @@ function installQualityReview(viewModel, ko, deps = {}) {
       runVersion = contentVersion;
       let started;
       try {
-        // A gate needs the server's answer even if a later run starts.
-        const remoteOptions = { silent: quiet, answer: remoteBlocking, cancel };
+        // A gate needs the server's answer even if a later run starts; its
+        // runs have their own count on the server.
+        const remoteOptions = {
+          silent: quiet,
+          answer: remoteBlocking,
+          cancel,
+          purpose: 'export',
+        };
         started = runAll(id, { html }, remoteOptions);
       } catch (err) {
         settle();

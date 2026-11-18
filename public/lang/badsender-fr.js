@@ -579,8 +579,8 @@ module.exports = {
     "L'export continue dès qu'ils sont vérifiés, d'ici __seconds__ secondes environ.",
   'The links and images could not be checked: check them yourself before the email leaves.':
     "Les liens et les images n'ont pas pu être vérifiés : vérifiez-les vous-même avant que l'email parte.",
-  'Too many checks in a short time: the links and images were not checked. Check them yourself before the email leaves.':
-    "Trop de contrôles en peu de temps : les liens et les images n'ont pas été vérifiés. Vérifiez-les vous-même avant que l'email parte.",
+  'quality-gate-too-frequent':
+    'Trop de vérifications en peu de temps : réessayez dans quelques minutes.',
   'The quality checks of this email are still running: wait for them to finish':
     "Le contrôle qualité de cet email est en cours : attendez qu'il se termine",
   '__count__ checks turned off by your company or this template':
