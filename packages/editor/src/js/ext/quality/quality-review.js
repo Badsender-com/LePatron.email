@@ -1,13 +1,13 @@
 'use strict';
 
 const engine = require('./engine');
-const { hasResources } = require('./resources');
 const { createIgnores } = require('./quality-ignores');
 const { createCounts } = require('./quality-counts');
 const remoteApi = require('./quality-remote');
 const { watchContent } = require('./content-watch');
 const { checkStateOf } = require('./settings');
-const { displayBlockingFindings } = require('../badsender-control-quality');
+const { installQualityGate } = require('./quality-gate');
+const { createRemoteChecks, listedRemoteRules } = require('./remote-checks');
 
 const { runQualityChecks, DEFAULT_RULES, REMOTE_RULES } = engine;
 
@@ -20,17 +20,6 @@ const { runQualityChecks, DEFAULT_RULES, REMOTE_RULES } = engine;
 //   remoteError: why the server's checks did not run: 'too-frequent' | 'failed'
 // Findings the team ignored are kept apart (quality-ignores.js).
 
-// The server's checks that are always listed; a blocklist is only where the
-// platform subscribed to one.
-const listedRemoteRules = REMOTE_RULES.filter((rule) => !rule.optional);
-
-const remoteCheck = (status) => (rule) => ({
-  ruleId: rule.id,
-  category: rule.category,
-  titleKey: rule.titleKey,
-  status,
-});
-
 /**
  * Adds `viewModel.showQuality` and `viewModel.quality` to the editor.
  * @param {Object} viewModel
@@ -39,8 +28,7 @@ const remoteCheck = (status) => (rule) => ({
  */
 function installQualityReview(viewModel, ko, deps = {}) {
   const run = deps.run || runQualityChecks;
-  // The remote rules run on the context of the local pass (parsed once):
-  // `runRules(ctx, rules)` of the engine.
+  // `runRules(ctx, rules)` of the engine (remote-checks.js).
   const runRules = deps.runRules || engine.runRules;
   // Lets the drawer paint its "running" state before a synchronous run.
   const defer = deps.defer || ((fn) => setTimeout(fn, 0));
@@ -53,12 +41,6 @@ function installQualityReview(viewModel, ko, deps = {}) {
   const settings = { config: { quality: metadata.qualitySettings || null } };
   const isOn = (rule) => checkStateOf(settings, rule.id) !== 'off';
   const localRules = DEFAULT_RULES.filter(isOn);
-  const remoteRules = listedRemoteRules.filter(isOn);
-  const turnedOffCount =
-    DEFAULT_RULES.length +
-    listedRemoteRules.length -
-    localRules.length -
-    remoteRules.length;
   const t = (key, params) => (viewModel.t ? viewModel.t(key, params) : key);
   const notify = (level, message) => {
     if (viewModel.notifier && viewModel.notifier[level]) {
@@ -72,6 +54,7 @@ function installQualityReview(viewModel, ko, deps = {}) {
   const ranAt = ko.observable(null);
   const remoteStatus = ko.observable('idle');
   const remoteError = ko.observable(null);
+  const focus = ko.observable(null);
   const ignores = createIgnores({
     ko,
     url: metadata.url && metadata.url.qualityIgnores,
@@ -84,12 +67,6 @@ function installQualityReview(viewModel, ko, deps = {}) {
   });
   // Bumped by every run and cancel: a result that comes back late is dropped.
   let runId = 0;
-  // The server runs one check at a time per user: a request waits for the
-  // previous one, and is not sent at all if a newer run replaced it.
-  let inFlight = Promise.resolve();
-  let cancelRemote = null;
-  // The local results the server's checks complete.
-  let lastLocal = null;
   // Each change of the email bumps the content version; results carry the
   // version they were computed on, and are stale as soon as they differ.
   let contentVersion = 0;
@@ -150,75 +127,22 @@ function installQualityReview(viewModel, ko, deps = {}) {
     viewModel.quality.open('checks');
   }
 
-  function remoteResults(local, remote) {
-    if (local.ctx && typeof runRules === 'function') {
-      local.ctx.remote = remote;
-      return runRules(local.ctx, REMOTE_RULES);
-    }
-    // An engine that hands no context back: the export is read again.
-    return run(viewModel, { html: local.html, rules: REMOTE_RULES, remote });
-  }
-
-  // The server's checks, on the export the local ones just read. Their
-  // results join the others when they come back, unless a newer run started.
-  // Resolves with this run's findings from the server ([] when it was not
-  // asked or failed); `answer`: asked even when a later run replaced this one,
-  // for a gate that waits on it.
-  function runRemote(id, local, { silent = false, answer = false } = {}) {
-    // The answer to the previous run would be dropped: aborted rather than
-    // waited for, it frees the server's turn for this one. Never the one a
-    // gate waits on.
-    if (cancelRemote) cancelRemote.cancel();
-    // Nothing to ask the server when every check it serves is off.
-    const remoteOn = REMOTE_RULES.some(isOn);
-    if (!resourcesUrl || !remoteOn || !hasResources(local.resources)) {
-      if (id === runId) remoteStatus('idle');
-      return Promise.resolve([]);
-    }
-    lastLocal = local;
-    remoteStatus('running');
-    remoteError(null);
-    const cancel = remoteApi.createCancel();
-    cancelRemote = answer ? null : cancel;
-    const request = inFlight
-      .catch(() => {})
-      .then(() =>
-        id === runId || answer
-          ? checkResources(resourcesUrl, local.resources, {
-              cancelToken: cancel.token,
-            })
-          : null
-      );
-    inFlight = request;
-    return request
-      .then((remote) => {
-        if (remote === null) return [];
-        const result = remoteResults(local, remote);
-        if (id !== runId) return result.findings;
-        findings(local.findings.concat(result.findings));
-        checks(local.checks.concat(result.checks));
-        remoteStatus('done');
-        if (!silent) surface(id);
-        return result.findings;
-      })
-      .catch((err) => {
-        if (id !== runId) return [];
-        console.error('Quality checks on the server failed', err);
-        // Listed as checks that could not run, never as passed. A blocklist
-        // may not even be configured: it is left out.
-        checks(local.checks.concat(remoteRules.map(remoteCheck('error'))));
-        remoteError(remoteApi.isTooFrequent(err) ? 'too-frequent' : 'failed');
-        remoteStatus('error');
-        return [];
-      });
-  }
+  const remote = createRemoteChecks({
+    state: { findings, checks, remoteStatus, remoteError },
+    isCurrent: (id) => id === runId,
+    surface,
+    isOn,
+    url: resourcesUrl,
+    checkResources,
+    run: (options) => run(viewModel, options),
+    runRules,
+  });
 
   // Runs the local checks at once, then the server's in the background; the
   // promise settles once the server answered (or failed).
   function runAll(id, options, remoteOptions) {
     const local = apply(run(viewModel, options));
-    const remote = runRemote(id, local, remoteOptions);
-    return { local, remote };
+    return { local, remote: remote.run(id, local, remoteOptions) };
   }
 
   function start(id, options, { silent } = {}) {
@@ -236,7 +160,7 @@ function installQualityReview(viewModel, ko, deps = {}) {
     });
   }
 
-  // A check the server runs is blocking: an export must wait for its answer.
+  // A check the server runs is blocking: an export waits for its answer.
   const remoteBlocking = REMOTE_RULES.some(
     (rule) => checkStateOf(settings, rule.id) === 'blocking'
   );
@@ -256,9 +180,15 @@ function installQualityReview(viewModel, ko, deps = {}) {
     remoteStatus,
     remoteError,
     // Blocklists are left out: they only run where they are configured.
-    ruleCount: localRules.length + (resourcesUrl ? remoteRules.length : 0),
+    ruleCount: localRules.length + (resourcesUrl ? remote.listedCount : 0),
     // How many checks the quality settings turned off, for the drawer to say.
-    turnedOffCount: ko.pureComputed(() => turnedOffCount),
+    turnedOffCount: ko.pureComputed(
+      () =>
+        DEFAULT_RULES.length +
+        listedRemoteRules.length -
+        localRules.length -
+        remote.listedCount
+    ),
     // The findings still to deal with, and those the team chose to ignore.
     activeFindings: active,
     ignoredFindings: ko.pureComputed(() => findings().filter(isIgnored)),
@@ -270,9 +200,15 @@ function installQualityReview(viewModel, ko, deps = {}) {
       viewModel.showQuality(true);
     },
 
-    // Whether the export just gated waits for the server's checks: one of
-    // them blocks, and the email has links or images to ask about.
-    waitsForServer: () => remoteBlocking && remoteStatus() === 'running',
+    // The row of a finding the drawer is asked to show (`reveal`).
+    focus,
+
+    /** Opens the drawer on the row of a finding, unfolded. */
+    reveal(finding) {
+      // A new object each time: the same finding shown twice moves there twice.
+      focus({ fingerprint: finding && finding.fingerprint });
+      viewModel.quality.open('checks');
+    },
 
     ignore: (finding) =>
       finding.blocking ? Promise.resolve() : ignores.set(finding, true),
@@ -285,65 +221,81 @@ function installQualityReview(viewModel, ko, deps = {}) {
     /** Stops the run: the request to the server is aborted. */
     cancel() {
       runId++;
-      if (cancelRemote) cancelRemote.cancel();
-      if (remoteStatus() === 'running') {
-        // Not run, and said so: they never count as passed.
-        if (lastLocal) {
-          checks(
-            lastLocal.checks.concat(remoteRules.map(remoteCheck('cancelled')))
-          );
-        }
-        remoteStatus('idle');
-      }
+      remote.cancel();
       settle();
     },
 
     /**
-     * Decides whether an export may leave: runs the checks on the HTML about
-     * to leave, opens the drawer when there is something to see, and, when a
-     * finding of a blocking check remains, lists them in a modal. The export
-     * is stopped by the caller on `blocked`. A failure of the checks never
-     * blocks.
-     * @param {Object} [options] - `html`: the HTML already exported
-     * @returns {Promise<{ blocked: boolean, findings: Array }>}
+     * Runs the checks on the HTML an export is about to send, for the export
+     * gate (quality-gate.js): the local ones at once, the server's alongside.
+     * @param {Object} options
+     * @param {string} options.html - the HTML already exported
+     * @param {boolean} [options.quiet] - the drawer does not open on the
+     *   results (before an ESP send)
+     * @returns {Object} `local`: this run's local results; `remote`: the
+     *   promise of its outcome once the server answered (remote-checks.js),
+     *   when one of the server's checks blocks and it is asked, null
+     *   otherwise; `cancel()`: abandons the run; `giveUp()`: stops waiting
+     *   for the server, its checks listed as not run; `present()`: shows
+     *   this run's results in the drawer; `isCurrent()`: whether the drawer
+     *   shows them.
      */
-    gate(options = {}) {
-      const { quiet = false, ...runOptions } = options;
+    runForExport({ html, quiet = false } = {}) {
       const id = ++runId;
       runVersion = contentVersion;
+      const cancel = remoteApi.createCancel();
       let started;
       try {
-        started = runAll(id, runOptions, {
-          // Quiet: before an ESP send, the drawer only opens on what blocks.
-          silent: quiet,
+        started = runAll(
+          id,
+          { html },
           // A gate needs the server's answer even if a later run starts.
-          answer: remoteBlocking,
-        });
+          { silent: quiet, answer: remoteBlocking, cancel }
+        );
       } catch (err) {
-        console.error('Quality review failed', err);
         settle();
-        return Promise.resolve({ blocked: false, findings: [] });
+        throw err;
       }
       if (!quiet) surface(id);
-      // The verdict is this run's own, never what a later run left in the
-      // drawer: its local findings, and the server's when one of its checks
-      // blocks (a failure of the server never blocks: runRemote resolves
-      // with nothing). A blocking finding cannot be ignored.
-      const waited = remoteBlocking ? started.remote : Promise.resolve([]);
-      return waited.then((remoteFindings) => {
-        const blocking = started.local.findings
-          .concat(remoteFindings)
-          .filter((finding) => finding.blocking);
-        if (quiet && blocking.length && id === runId) {
-          viewModel.quality.open('checks');
-        }
-        if (blocking.length) displayBlockingFindings(blocking, viewModel);
-        return { blocked: blocking.length > 0, findings: blocking };
+      const isCurrent = () => id === runId;
+      const ran = { version: runVersion, at: ranAt() };
+      let latest = { ...started.local, status: 'idle', failure: null };
+      started.remote.then((outcome) => {
+        latest = outcome;
       });
+      return {
+        local: started.local,
+        remote:
+          remoteBlocking && remoteStatus() === 'running'
+            ? started.remote
+            : null,
+        isCurrent,
+        cancel() {
+          if (isCurrent()) viewModel.quality.cancel();
+          cancel.cancel();
+        },
+        giveUp: () => cancel.cancel(),
+        present() {
+          // Another run took the drawer since: this one's results come back,
+          // computed on the HTML that left, without asking the server again.
+          if (!isCurrent()) {
+            runId++;
+            remote.abortPending();
+            findings(latest.findings);
+            checks(latest.checks);
+            ranAt(ran.at);
+            resultVersion = ran.version;
+            remoteStatus(latest.status);
+            remoteError(latest.failure);
+            status(freshness());
+          }
+          surface(runId);
+        },
+      };
     },
 
     /**
-     * Reviews the HTML an export is about to send. Never blocks the export:
+     * Reviews the HTML a test is about to send. Never blocks the send:
      * the HTML is taken at once, the checks run after the click, a failure is
      * logged, and the server's checks come back in the background.
      * @param {Object} [options]
@@ -366,6 +318,8 @@ function installQualityReview(viewModel, ko, deps = {}) {
       return null;
     },
   };
+
+  installQualityGate(viewModel, ko, deps);
 }
 
 module.exports = { installQualityReview };

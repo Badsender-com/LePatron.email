@@ -182,6 +182,10 @@ describe('a blocking check', () => {
 
 describe('a blocking check run by the server', () => {
   const link = textBlock('<a href="https://brand.test/gone">Our offer</a>');
+  // The gate's modals stay in the page once shown.
+  afterEach(() => {
+    document.body.innerHTML = '';
+  });
 
   function review(answer) {
     const vm = withSettings(link, {
@@ -240,7 +244,7 @@ describe('a blocking check run by the server', () => {
         })
     );
     const verdict = vm.quality.gate({ html: link.html });
-    expect(vm.quality.waitsForServer()).toBe(true);
+    expect(document.querySelector('.quality-wait-modal')).not.toBeNull();
     vm.quality.cancel();
     // The request leaves on the next tick, behind any earlier one.
     await new Promise((resolve) => setTimeout(resolve, 0));
@@ -254,9 +258,12 @@ describe('a blocking check run by the server', () => {
   });
 
   it('does not wait when the email has nothing to ask the server', async () => {
-    const vm = review(jest.fn());
-    vm.quality.gate({ html: textBlock('<p>Hi</p>').html });
-    expect(vm.quality.waitsForServer()).toBe(false);
+    const ask = jest.fn();
+    const vm = review(ask);
+    const verdict = vm.quality.gate({ html: textBlock('<p>Hi</p>').html });
+    expect(document.querySelector('.quality-wait-modal')).toBeNull();
+    expect((await verdict).leaves).toBe(true);
+    expect(ask).not.toHaveBeenCalled();
   });
 });
 

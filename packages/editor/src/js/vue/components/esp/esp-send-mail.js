@@ -7,10 +7,6 @@ const { ModalComponent } = require('../modal/modalComponent');
 const { getEspIds } = require('../../utils/apis');
 const { SEND_MODE } = require('../../constant/send-mode');
 const { ESP_TYPE } = require('../../constant/esp-type');
-const {
-  checkRequiredTrackingParams,
-  displayTrackingError,
-} = require('../../../ext/badsender-control-quality');
 
 const {
   getCampaignDetail,
@@ -34,8 +30,6 @@ const EspComponent = Vue.component('EspForm', {
     mailingId: null,
     isLoading: false,
     isLoadingExport: false,
-    // The quality checks run before the form opens: one profile at a time.
-    isChecking: false,
     selectedProfile: null,
     type: SEND_MODE.CREATION,
     campaignId: null,
@@ -61,6 +55,11 @@ const EspComponent = Vue.component('EspForm', {
           return 'SendinBlueComponent';
       }
     },
+  },
+  created() {
+    // The quality gate's verdict on the profile picked, kept out of Vue's
+    // reactivity: its findings are the engine's.
+    this.qualityVerdict = null;
   },
   mounted() {
     this.mailingId = this.vm?.metadata?.id;
@@ -160,42 +159,21 @@ const EspComponent = Vue.component('EspForm', {
         });
     },
     async handleProfileSelect(profile) {
-      // Pre-flight: the quality checks run BEFORE the ESP form opens, on the
+      // Pre-flight: the quality gate runs BEFORE the ESP form opens, on the
       // HTML as it would leave, so the user doesn't fill in campaign details
-      // only to be told the email cannot leave. A finding of a blocking check
-      // (the required tracking parameters by default) stops here, listed in a
-      // modal; the drawer only opens on what blocks (ADR 0009). The backend
-      // re-checks the tracking parameters (profile.service
-      // .assertRequiredTrackingParamsFilled), when that check is blocking.
-      if (this.vm.quality) {
-        if (this.isChecking) return;
-        this.isChecking = true;
-        try {
-          const verdict = this.vm.quality.gate({
-            html: this.vm.exportHTML(),
-            quiet: true,
-          });
-          // Said only when the server is actually asked, and one of its
-          // checks blocks.
-          if (this.vm.quality.waitsForServer()) {
-            this.vm.notifier.info(this.vm.t('Checking links and images…'));
-          }
-          const { blocked } = await verdict;
-          if (blocked) return;
-        } catch (err) {
-          console.error('Quality gate failed', err);
-          this.vm.notifier.error(this.vm.t('error-server'));
-          return;
-        } finally {
-          this.isChecking = false;
-        }
-      } else {
-        const missingTracking = checkRequiredTrackingParams(this.vm);
-        if (missingTracking.length > 0) {
-          displayTrackingError(missingTracking, this.vm);
-          return;
-        }
-      }
+      // only to be told the email cannot leave (ext/quality/quality-gate.js,
+      // ADR 0009). The profile shows as being checked meanwhile
+      // (download-buttons.html). The backend re-checks the tracking
+      // parameters (profile.service.assertRequiredTrackingParamsFilled), when
+      // that check is blocking.
+      const verdict = await this.vm.quality.gate({
+        html: this.vm.exportHTML(),
+        quiet: true,
+        target: profile,
+      });
+      if (!verdict.leaves) return;
+      // The form blocks the editor: the email sent is the one just checked.
+      this.qualityVerdict = verdict;
       this.selectedProfile = profile;
       this.fetchData().then(() => {
         this.checkIfAlreadySendMailWithProfile();
@@ -266,12 +244,13 @@ const EspComponent = Vue.component('EspForm', {
             this.fetchedProfile?.contentSendType?.toString().toLowerCase() +
             '-success-esp-send';
           this.vm.notifier.success(this.vm.t(successText));
-          // Judge the HTML that was sent rather than export the email again,
-          // and never let the review stand in the way of the send confirmation.
+          // What is left to fix shows in the drawer (#1201): the results of
+          // the gate, on the same HTML, without asking the server again. Never
+          // in the way of the send confirmation.
           try {
-            if (this.vm.quality) this.vm.quality.review({ html: unprocessedHtml });
+            if (this.qualityVerdict) this.qualityVerdict.present();
           } catch (err) {
-            console.error('Quality review failed', err);
+            console.error('Showing the quality results failed', err);
           }
           this.closeModal();
         })

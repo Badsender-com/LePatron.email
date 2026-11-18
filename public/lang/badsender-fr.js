@@ -572,8 +572,17 @@ module.exports = {
   '__count__ checks': '__count__ contrôles',
   Blocking: 'Bloquant',
   'This email cannot leave yet': 'Cet email ne peut pas encore partir',
-  'Your quality settings make these checks blocking: fix them before downloading or sending the email.':
-    "Vos réglages du contrôle qualité rendent ces contrôles bloquants : corrigez-les avant de télécharger ou d'envoyer l'email.",
+  'Your company made these checks blocking: fix them before downloading or sending the email.':
+    "Votre entreprise a rendu ces contrôles bloquants : corrigez-les avant de télécharger ou d'envoyer l'email.",
+  'See in the quality control': 'Voir dans le contrôle qualité',
+  'The export goes on once they are checked, within about __seconds__ seconds.':
+    "L'export continue dès qu'ils sont vérifiés, d'ici __seconds__ secondes environ.",
+  'The links and images could not be checked: check them yourself before the email leaves.':
+    "Les liens et les images n'ont pas pu être vérifiés : vérifiez-les vous-même avant que l'email parte.",
+  'Too many checks in a short time: the links and images were not checked. Check them yourself before the email leaves.':
+    "Trop de contrôles en peu de temps : les liens et les images n'ont pas été vérifiés. Vérifiez-les vous-même avant que l'email parte.",
+  'The quality checks of this email are still running: wait for them to finish':
+    "Le contrôle qualité de cet email est en cours : attendez qu'il se termine",
   '__count__ checks turned off by your company or this template':
     '__count__ contrôle(s) désactivé(s) par votre entreprise ou ce template',
   'Running checks…': 'Contrôle en cours…',

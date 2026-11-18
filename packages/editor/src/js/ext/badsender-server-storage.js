@@ -10,10 +10,6 @@ const {
 } = require('../utils/editor-only-metadata-keys');
 const { errorKeyFor } = require('../utils/email-metadata');
 const { saveErrorKeyFor } = require('./synthetic-blocks/save-error.js');
-const {
-  checkRequiredTrackingParams,
-  displayTrackingError,
-} = require('../ext/badsender-control-quality');
 
 function getData(viewModel) {
   // gather meta
@@ -187,55 +183,18 @@ function loader(opts) {
 
     const dlDefault = { forCdn: false, forFtp: false };
     downloadCmd.execute = function downloadMail(downloadOptions = dlDefault) {
-      const html = viewModel.exportHTML();
-
-      // ====================================
-      // Quality review of the same export the ZIP is built from: the drawer
-      // opens when there is something to see; a finding of a blocking check
-      // (the required tracking parameters by default) stops the download and
-      // is listed in a modal (ADR 0009).
-      if (!viewModel.quality) {
-        const missingTracking = checkRequiredTrackingParams(viewModel);
-        if (missingTracking.length > 0) {
-          displayTrackingError(missingTracking, viewModel);
-          document.getElementById('main-wysiwyg-area').scrollTo({
-            behavior: 'smooth',
-            top: 0,
-          });
-          return;
-        }
-        download(html, downloadOptions);
-        return;
-      }
-      // One export at a time: the button waits for the checks' verdict.
+      // One export at a time: the button waits for the checks' verdict, and
+      // greys out before they run.
       if (!downloadCmd.enabled()) return;
       downloadCmd.enabled(false);
-      const verdict = gate(html);
-      // Said only when the server is actually asked, and one of its checks
-      // blocks.
-      if (viewModel.quality.waitsForServer && viewModel.quality.waitsForServer()) {
-        viewModel.notifier.info(viewModel.t('Checking links and images…'));
-      }
-      verdict.then(({ blocked }) => {
-        if (blocked) downloadCmd.enabled(true);
-        else download(html, downloadOptions);
+      const html = viewModel.exportHTML();
+      // The quality gate of the same export the ZIP is built from
+      // (ext/quality/quality-gate.js, ADR 0009).
+      viewModel.quality.gate({ html, target: 'download' }).then(({ leaves }) => {
+        if (leaves) download(html, downloadOptions);
+        else downloadCmd.enabled(true);
       });
     };
-
-    // A failure of the checks never blocks: the download goes on.
-    function gate(html) {
-      const notBlocked = (err) => {
-        console.error('Quality review failed', err);
-        return { blocked: false };
-      };
-      try {
-        return Promise.resolve(viewModel.quality.gate({ html })).catch(
-          notBlocked
-        );
-      } catch (err) {
-        return Promise.resolve(notBlocked(err));
-      }
-    }
 
     function download(html, downloadOptions) {
       downloadCmd.enabled(false);

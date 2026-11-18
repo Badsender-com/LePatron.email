@@ -5,8 +5,9 @@
 'use strict';
 
 // How the quality review is wired into the editor: the plugin that mounts the
-// drawer next to the comments panel, and the two exports that review what
-// they send (download, ESP): a failure of the checks never blocks them.
+// drawer next to the comments panel, and the two exports that go through its
+// gate (download, ESP): what blocks stops them, a failure of the checks never
+// does.
 
 jest.mock('axios', () => ({
   get: jest.fn(() => Promise.resolve({ data: { items: [] } })),
@@ -15,8 +16,8 @@ jest.mock('axios', () => ({
 jest.mock(
   '../../../packages/editor/src/js/ext/badsender-control-quality',
   () => ({
-    checkRequiredTrackingParams: () => [],
-    displayTrackingError: jest.fn(),
+    displayBlockingFindings: jest.fn(),
+    displayWaitingForChecks: jest.fn(() => ({ close: jest.fn() })),
   })
 );
 
@@ -82,18 +83,24 @@ describe('the download command', () => {
 
   const flush = () => new Promise((resolve) => setTimeout(resolve, 0));
 
-  it('gates the very HTML the ZIP is built from, and goes on even if the checks throw', async () => {
-    const gate = jest.fn(() => {
-      throw new Error('boom');
+  it('greys the button before the checks run, then gates the very HTML the ZIP is built from', async () => {
+    let deferred;
+    const run = jest.fn(() => ({ findings: [], checks: [] }));
+    const vm = editorWithReview(undefined);
+    installQualityReview(vm, ko, {
+      run,
+      defer: (fn) => (deferred = fn),
+      watchContent: () => () => {},
     });
-    const vm = editorWithReview(jest.fn());
-    vm.quality.gate = gate;
     serverStorage({ metadata: vm.metadata })(vm);
 
     vm.download.execute();
+    expect(vm.download.enabled()).toBe(false);
+    expect(run).not.toHaveBeenCalled();
+    deferred();
     await flush();
 
-    expect(gate).toHaveBeenCalledWith({
+    expect(run.mock.calls[0][1]).toEqual({
       html: vm.exportHTML.mock.results[0].value,
     });
     expect(ajax).toHaveBeenCalledTimes(1);
@@ -103,17 +110,33 @@ describe('the download command', () => {
     expect(vm.exportHTML).toHaveBeenCalledTimes(1);
   });
 
-  it('does not download when a blocking check has a finding', async () => {
+  it('goes on when the checks throw', async () => {
+    const vm = editorWithReview(undefined);
+    installQualityReview(vm, ko, {
+      run: () => {
+        throw new Error('boom');
+      },
+      defer: (fn) => fn(),
+      watchContent: () => () => {},
+    });
+    serverStorage({ metadata: vm.metadata })(vm);
+
+    vm.download.execute();
+    await flush();
+
+    expect(ajax).toHaveBeenCalledTimes(1);
+  });
+
+  it('does not download when the gate keeps the email, and gives the button back', async () => {
     const vm = editorWithReview(jest.fn());
-    vm.quality.gate = jest.fn(() =>
-      Promise.resolve({ blocked: true, findings: [{ ruleId: 'x' }] })
-    );
+    vm.quality.gate = jest.fn(() => Promise.resolve({ leaves: false }));
     serverStorage({ metadata: vm.metadata })(vm);
 
     vm.download.execute();
     await flush();
 
     expect(ajax).not.toHaveBeenCalled();
+    expect(vm.download.enabled()).toBe(true);
   });
 
   it('carries no test command: sending a test lives in the drawer', () => {
@@ -144,32 +167,74 @@ describe('the ESP send', () => {
   const {
     EspComponent,
   } = require('../../../packages/editor/src/js/vue/components/esp/esp-send-mail.js');
+  const { handleProfileSelect, submitEsp } = EspComponent.options.methods;
 
-  it('reviews the HTML that was sent, and confirms the send even if the review throws', async () => {
-    jest.spyOn(console, 'error').mockImplementation(() => {});
-    const review = jest.fn(() => {
-      throw new Error('boom');
-    });
-    const vm = editorWithReview(review);
-    const closeModal = jest.fn();
-    const self = {
+  // The component as its methods see it.
+  function espForm(vm, rest = {}) {
+    return {
       vm,
       type: 'creation',
       campaignId: null,
-      fetchedProfile: { id: 'p1', type: 'SENDINBLUE', contentSendType: 'mail' },
-      closeModal,
       isLoadingExport: false,
+      qualityVerdict: null,
+      fetchData: jest.fn(() => Promise.resolve()),
+      checkIfAlreadySendMailWithProfile: jest.fn(),
+      fetchProfileData: jest.fn(),
+      openModal: jest.fn(),
+      closeModal: jest.fn(),
+      ...rest,
     };
+  }
 
-    await EspComponent.options.methods.submitEsp.call(self, {});
+  beforeEach(() => {
+    jest.spyOn(console, 'error').mockImplementation(() => {});
+    axios.post.mockClear();
+  });
+  afterEach(() => {
+    jest.restoreAllMocks();
+  });
+
+  it('opens the form only when the gate lets the email leave, the profile shown as being checked', async () => {
+    const vm = editorWithReview(jest.fn());
+    const profile = { id: 'p1', type: 'SENDINBLUE' };
+    vm.quality.gate = jest.fn(() => Promise.resolve({ leaves: false }));
+    const kept = espForm(vm);
+    await handleProfileSelect.call(kept, profile);
+    expect(vm.quality.gate).toHaveBeenCalledWith({
+      html: vm.exportHTML.mock.results[0].value,
+      quiet: true,
+      target: profile,
+    });
+    expect(kept.openModal).not.toHaveBeenCalled();
+    expect(kept.selectedProfile).toBeUndefined();
+
+    const verdict = { leaves: true, present: jest.fn() };
+    vm.quality.gate = jest.fn(() => Promise.resolve(verdict));
+    const opened = espForm(vm);
+    await handleProfileSelect.call(opened, profile);
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    expect(opened.selectedProfile).toBe(profile);
+    expect(opened.qualityVerdict).toBe(verdict);
+    expect(opened.openModal).toHaveBeenCalled();
+  });
+
+  it("shows the gate's own results after the send, and confirms the send even if that throws", async () => {
+    const vm = editorWithReview(jest.fn());
+    const present = jest.fn(() => {
+      throw new Error('boom');
+    });
+    const self = espForm(vm, {
+      fetchedProfile: { id: 'p1', type: 'SENDINBLUE', contentSendType: 'mail' },
+      qualityVerdict: { leaves: true, present },
+    });
+
+    await submitEsp.call(self, {});
     await new Promise((resolve) => setTimeout(resolve, 0));
 
-    expect(review).toHaveBeenCalledWith({
-      html: vm.exportHTML.mock.results[0].value,
-    });
+    expect(present).toHaveBeenCalledTimes(1);
+    expect(vm.quality.review).not.toHaveBeenCalled();
     expect(vm.notifier.success).toHaveBeenCalled();
-    expect(closeModal).toHaveBeenCalled();
+    expect(self.closeModal).toHaveBeenCalled();
     expect(axios.post).toHaveBeenCalledTimes(1);
-    console.error.mockRestore();
   });
 });

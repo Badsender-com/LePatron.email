@@ -33,10 +33,22 @@ const isTooFrequent = (err) =>
   Boolean(err && err.response && err.response.status === 429) &&
   errorCodeOf(err) === CHECKS_TOO_FREQUENT;
 
-/** A handle to abort the request: `{ token, cancel() }`. */
+/**
+ * A handle to abort the request: `{ token, cancel() }`. The token is made on
+ * first use: an export holds one whether or not the server gets asked.
+ */
 function createCancel() {
-  const source = axios.CancelToken.source();
-  return { token: source.token, cancel: () => source.cancel('cancelled') };
+  let source = null;
+  const sourceOf = () => {
+    source = source || axios.CancelToken.source();
+    return source;
+  };
+  return {
+    get token() {
+      return sourceOf().token;
+    },
+    cancel: () => sourceOf().cancel('cancelled'),
+  };
 }
 
 const wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
