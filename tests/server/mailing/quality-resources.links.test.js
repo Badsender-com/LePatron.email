@@ -17,9 +17,10 @@ describe('links', () => {
     [200, 'ok'],
     [404, 'broken'],
     [410, 'broken'],
-    [500, 'broken'],
     [403, 'unverifiable'],
     [429, 'unverifiable'],
+    // A server error may be gone within minutes: not a definitive answer.
+    [500, 'unverifiable'],
     // Cloudflare's challenge, a proxy's bad moment, LinkedIn to robots.
     [503, 'unverifiable'],
     [502, 'unverifiable'],
@@ -69,6 +70,13 @@ describe('links', () => {
     });
     await run({ links: ['https://slow.test'] }, d);
     await run({ links: ['https://slow.test'] }, d);
+    expect(d.probe).toHaveBeenCalledTimes(2);
+  });
+
+  it('asks again a link whose server failed', async () => {
+    const d = deps({ probe: jest.fn(async () => ({ status: 500 })) });
+    await run({ links: ['https://a.test'] }, d);
+    await run({ links: ['https://a.test'] }, d);
     expect(d.probe).toHaveBeenCalledTimes(2);
   });
 

@@ -25,15 +25,16 @@ const linkProbes = limiter(MAX_LINK_PROBES);
 /**
  * How a link answers:
  *   - ok: a 2xx at the end of the redirects;
- *   - broken: the page is gone (404, 410), or the server fails on it (500).
- *     Every reader would hit it;
+ *   - broken: the page is gone (404, 410). Every reader would hit it;
  *   - unverifiable: anything a robot meets and a reader may not: 401, 403,
  *     429, 503 (Cloudflare's challenge), 502 and 504 (a proxy having a bad
- *     moment), LinkedIn's 999. Only worth a look.
+ *     moment), LinkedIn's 999; and a 500, since a server error may be gone
+ *     within minutes and a server rule blocks only on a definitive answer
+ *     (ADR 0009). Only worth a look.
  */
 function linkState({ status }) {
   if (status >= 200 && status < 300) return { state: 'ok', httpStatus: status };
-  if (status === 404 || status === 410 || status === 500) {
+  if (status === 404 || status === 410) {
     return { state: 'broken', httpStatus: status };
   }
   return { state: 'unverifiable', httpStatus: status };

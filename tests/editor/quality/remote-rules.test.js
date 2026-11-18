@@ -47,6 +47,11 @@ describe('broken-links', () => {
       'Link could not be checked (__status__), check it by hand: __label__',
     ],
     [
+      { state: 'unverifiable', httpStatus: 500 },
+      'info',
+      'Link could not be checked (__status__), check it by hand: __label__',
+    ],
+    [
       { state: 'unverifiable', reason: 'timeout' },
       'info',
       'Link did not answer in time, check it by hand: __label__',
@@ -77,6 +82,24 @@ describe('broken-links', () => {
     expect(fingerprintFor({ state: 'unverifiable', httpStatus: 403 })).not.toBe(
       fingerprintFor({ state: 'broken', httpStatus: 404 })
     );
+  });
+
+  it('blocks on a link surely gone only, when the check blocks', () => {
+    const blocks = (result) => {
+      const vm = vmWith(html);
+      vm.metadata.qualitySettings = {
+        checks: { 'broken-links': { state: 'blocking' } },
+      };
+      return runQualityChecks(vm, {
+        rules: [brokenLinks],
+        remote: remoteOf({ links: { 'https://brand.com/x': result } }),
+      }).findings[0].blocking;
+    };
+    expect(blocks({ state: 'broken', httpStatus: 404 })).toBe(true);
+    expect(blocks({ state: 'broken', reason: 'not-found' })).toBe(true);
+    // A server error may be gone within minutes: a reader may see the page.
+    expect(blocks({ state: 'unverifiable', httpStatus: 500 })).toBe(false);
+    expect(blocks({ state: 'unverifiable', reason: 'timeout' })).toBe(false);
   });
 
   it('is not listed when no link was checked', () => {
