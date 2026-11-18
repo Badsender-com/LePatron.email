@@ -139,6 +139,21 @@ describe('a run, for the checks the editor names', () => {
     }
   });
 
+  // The editor's format check judges an image whose address names no format
+  // by the type the server reads in it.
+  it('downloads the images for the image format check', async () => {
+    const d = configured();
+    const result = await run(resources(['unsupported-image-formats']), d);
+
+    expect(asked(d)).toEqual({
+      linkVisited: false,
+      imageDownloaded: true,
+      webRisk: false,
+      blocklists: false,
+    });
+    expect(Object.keys(result.images)).toEqual([IMAGE]);
+  });
+
   it('does nothing for an empty list', async () => {
     const d = configured();
     await run(resources([]), d);

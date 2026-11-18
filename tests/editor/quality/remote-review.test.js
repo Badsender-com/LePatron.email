@@ -409,9 +409,32 @@ describe('the format of an image whose address names none', () => {
     installQualityReview(vm, ko, { defer: (fn) => fn(), checkResources });
     vm.quality.run();
     await flush();
-    expect(checkResources).toHaveBeenCalled();
+    // That image only, for the format check alone: the server downloads it.
+    expect(checkResources).toHaveBeenCalledWith(
+      '/x',
+      {
+        links: [],
+        images: [{ url: src }],
+        checks: ['unsupported-image-formats'],
+      },
+      expect.anything()
+    );
     expect(formatsOf(vm).findings.map((f) => f.params.format)).toEqual([
       'WEBP',
     ]);
+  });
+
+  it('asks the server nothing for an image whose address names its format', () => {
+    const vm = vmWith('<img src="https://cdn.test/hero.webp" width="600">');
+    vm.metadata.qualitySettings = {
+      checks: Object.fromEntries(
+        REMOTE_RULES.map((rule) => [rule.id, { state: 'off', thresholds: {} }])
+      ),
+    };
+    expect(runQualityChecks(vm, { rules: [] }).resources).toEqual({
+      links: [],
+      images: [],
+      checks: [],
+    });
   });
 });

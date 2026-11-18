@@ -28,6 +28,10 @@ function formatOf(image) {
   return ext ? ext[1].toLowerCase() : null;
 }
 
+// The images whose address names no format: the server reads their type.
+const unnamedImages = (ctx) =>
+  checkableImages(ctx).filter((image) => !formatOf(image));
+
 const MESSAGE_KEY =
   'Image format not shown by every email client (__format__): prefer JPG, PNG or GIF';
 
@@ -55,9 +59,10 @@ module.exports = {
   // server could not read (unreachable, or over its size cap, with no type),
   // and every one when the server fails, the check then keeping its local
   // status.
+  // What it has the server read (resources.js): only those images.
+  remoteImages: unnamedImages,
   remoteRun(ctx) {
-    return checkableImages(ctx)
-      .filter((image) => !formatOf(image))
+    return unnamedImages(ctx)
       .map((image) => ({ image, result: remoteImage(ctx, image.src) }))
       .filter(
         ({ result }) =>

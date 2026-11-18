@@ -176,12 +176,15 @@ const NO_RESOURCES = Object.freeze({ links: [], images: [] });
 // on the local pass as on the server's, and what it reads is not sent.
 const isOff = (ctx, rule) => checkStateOf(ctx, rule.id) === 'off';
 
-// What the server's checks still on need. Never in the way of the local checks.
+// What the checks still on that read the server's answer need: the server's
+// own, and a local one's second look. Never in the way of the local checks.
 function resourcesOf(ctx) {
   try {
     return collectResources(
       ctx,
-      REMOTE_RULES.filter((rule) => !isOff(ctx, rule))
+      SERVER_ANSWER_RULES.filter(
+        (rule) => (rule.reads || rule.remoteImages) && !isOff(ctx, rule)
+      )
     );
   } catch (err) {
     console.error('Quality checks could not list the links and images', err);
