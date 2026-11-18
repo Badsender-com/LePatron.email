@@ -1,10 +1,12 @@
 <script>
 import { ShieldCheck } from 'lucide-vue';
+import mixinQualityTexts from '~/helpers/mixins/mixin-quality-texts.js';
 
 // What a level with no exception shows: nothing differs from what applies.
 export default {
   name: 'BsQualityExceptionsEmpty',
   components: { ShieldCheck },
+  mixins: [mixinQualityTexts],
   props: {
     isGeneral: { type: Boolean, default: true },
   },
@@ -22,7 +24,7 @@ export default {
       }}
     </p>
     <p v-if="isGeneral" class="qx-empty__detail">
-      {{ $t('qualitySettings.general.emptyDetail') }}
+      {{ defaultStatesText() }}
     </p>
     <v-btn color="accent" outlined @click="$emit('add')">
       {{ $t('qualitySettings.addException') }}

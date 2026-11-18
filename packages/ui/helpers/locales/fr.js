@@ -990,11 +990,14 @@ export default {
     },
     addException: 'Ajouter une exception',
     exceptionCount: 'Aucune exception | {count} exception | {count} exceptions',
+    labelValue: '{label} : {value}',
     general: {
       intro: 'Tous les contrôles s\'appliquent à tous vos templates avec les valeurs recommandées. Ajoutez une exception seulement pour un contrôle que vous voulez désactiver, rendre bloquant ou dont vous voulez changer les seuils.',
       others: 'Les autres contrôles appliquent les valeurs recommandées.',
       empty: 'Aucune exception : tous les contrôles appliquent les valeurs recommandées.',
-      emptyDetail: 'Tous sont actifs, sauf « Paramètres de tracking obligatoires », bloquant.',
+      emptyDetail: 'Tous sont actifs, sauf {others}.',
+      emptyDetailAll: 'Tous sont actifs.',
+      defaultStateOf: '« {name} », {state}',
     },
     reference: {
       toggle: 'Voir les {count} contrôles et ce qui s\'applique',
