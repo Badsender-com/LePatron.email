@@ -124,16 +124,20 @@ describe('what applies', () => {
 });
 
 describe('blocking', () => {
-  // Any finding of a blocking check blocks, whatever its severity (ADR 0009):
-  // a pair blocks from its lower level.
-  it('blocks a pair from its lower level, as it applies', () => {
+  // Only the most severe level of a blocking check blocks (ADR 0009): a
+  // subject of 55 characters, over the info level only, still goes out.
+  it('blocks a pair past its most severe level, as it applies', () => {
     expect(blocksFrom('subject', { long: 45, tooLong: 80 })).toEqual({
-      name: 'long',
-      value: 45,
+      name: 'tooLong',
+      value: 80,
+    });
+    expect(blocksFrom('preheader', { long: 100, tooLong: 140 })).toEqual({
+      name: 'tooLong',
+      value: 140,
     });
     expect(
       blocksFrom('images-total-weight', { warningKb: 500, errorKb: 1024 })
-    ).toEqual({ name: 'warningKb', value: 500 });
+    ).toEqual({ name: 'errorKb', value: 1024 });
   });
 
   it('says nothing more for a check without a pair', () => {
