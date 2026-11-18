@@ -61,12 +61,14 @@ function createRemoteChecks(options) {
   // waited for, it frees the server's turn for the next one.
   const abortPending = () => pending && pending.cancel();
 
-  function ask(id, local, cancel, answer) {
+  function ask(id, local, { cancel, answer, purpose }) {
+    // An export's runs are counted apart from the drawer's on the server.
+    const body = purpose ? { ...local.resources, purpose } : local.resources;
     const request = inFlight
       .catch(() => {})
       .then(() =>
         isCurrent(id) || answer
-          ? checkResources(url, local.resources, { cancelToken: cancel.token })
+          ? checkResources(url, body, { cancelToken: cancel.token })
           : null
       );
     inFlight = request;
@@ -79,13 +81,15 @@ function createRemoteChecks(options) {
    * @param {Object} local - its local results
    * @param {Object} [runOptions] - `silent`: never opens the drawer;
    *   `answer`: asked even when a later run replaced this one, for a gate
-   *   that waits on it, and aborted only through its own `cancel`
+   *   that waits on it, and aborted only through its own `cancel`;
+   *   `purpose`: 'export' for the gate of an export (quality-limits.js on
+   *   the server), left out for the drawer
    * @returns {Promise<Object>} what the run ends up with: `findings` and
    *   `checks`, the local ones and the server's; `status`: 'idle' (not
    *   asked) | 'done' | 'error'; `failure`: 'too-frequent' | 'failed' | null
    */
   function run(id, local, runOptions = {}) {
-    const { silent = false, answer = false } = runOptions;
+    const { silent = false, answer = false, purpose } = runOptions;
     const cancel = runOptions.cancel || remoteApi.createCancel();
     abortPending();
     const asLocal = { ...local, status: 'idle', failure: null };
@@ -97,7 +101,7 @@ function createRemoteChecks(options) {
     state.remoteStatus('running');
     state.remoteError(null);
     pending = answer ? null : cancel;
-    return ask(id, local, cancel, answer)
+    return ask(id, local, { cancel, answer, purpose })
       .then((remote) => {
         if (remote === null) return asLocal;
         const result = evaluate(local, remote);

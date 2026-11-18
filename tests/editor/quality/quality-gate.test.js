@@ -31,8 +31,11 @@ const { remoteOf } = require('./remote-fixtures');
 const GONE = 'https://brand.test/gone';
 const UNCHECKED =
   'The links and images could not be checked: check them yourself before the email leaves.';
-const TOO_FREQUENT =
-  'Too many checks in a short time: the links and images were not checked. Check them yourself before the email leaves.';
+// The server's refusal once the user ran too many checks.
+const tooFrequent = () =>
+  Object.assign(new Error('429'), {
+    response: { status: 429, data: { message: 'QUALITY_CHECKS_TOO_FREQUENT' } },
+  });
 const BLOCKING = { state: 'blocking', thresholds: {} };
 
 const emailOf = (longText) => ({
@@ -141,21 +144,30 @@ describe('waiting for a blocking check of the server', () => {
     expect(console.error).not.toHaveBeenCalled();
   });
 
-  it('lets the email leave with a notice when the user ran too many checks', async () => {
-    const tooFrequent = Object.assign(new Error('429'), {
-      response: {
-        status: 429,
-        data: { message: 'QUALITY_CHECKS_TOO_FREQUENT' },
-      },
-    });
-    const vm = editor({ checks, answer: () => Promise.reject(tooFrequent) });
-    const { leaves, unchecked } = await vm.quality.gate({
-      html: withLink.html,
-    });
-    expect(leaves).toBe(true);
-    expect(unchecked).toBe('too-frequent');
-    expect(vm.notifier.warning).toHaveBeenCalledWith(TOO_FREQUENT);
+  it('keeps the email when the user ran too many checks, and says to try again later', async () => {
+    const vm = editor({ checks, answer: () => Promise.reject(tooFrequent()) });
+    const { leaves, refused } = await vm.quality.gate({ html: withLink.html });
+    expect(leaves).toBe(false);
+    expect(refused).toBe(true);
+    expect(vm.notifier.error).toHaveBeenCalledWith('quality-gate-too-frequent');
+    expect(vm.notifier.warning).not.toHaveBeenCalled();
+    expect($('.quality-wait-modal')).toBeNull();
+    // Listed as checks that could not run, never as passed.
+    const brokenLinks = vm.quality
+      .checks()
+      .find((check) => check.ruleId === 'broken-links');
+    expect(brokenLinks.status).toBe('error');
     expect(vm.quality.remoteError()).toBe('too-frequent');
+  });
+
+  it("asks the server on the exports' own count, the drawer on its", async () => {
+    const answer = jest.fn(() => Promise.resolve(remoteOf()));
+    const vm = editor({ checks, answer });
+    await vm.quality.gate({ html: withLink.html });
+    expect(answer.mock.calls[0][1].purpose).toBe('export');
+    vm.quality.run();
+    await flush();
+    expect(answer.mock.calls[1][1]).not.toHaveProperty('purpose');
   });
 
   it('lets the email leave with a notice when the server fails', async () => {
@@ -223,6 +235,20 @@ describe('the focus while a modal of the gate is open', () => {
     expect(document.activeElement).toBe(reveal);
     tab();
     expect(document.activeElement).toBe(close);
+  });
+});
+
+describe('too many checks, without a blocking check of the server', () => {
+  it('changes nothing: the export does not wait for the server', async () => {
+    const vm = editor({
+      checks: { 'broken-links': { state: 'on', thresholds: {} } },
+      answer: () => Promise.reject(tooFrequent()),
+    });
+    const { leaves } = await vm.quality.gate({ html: withLink.html });
+    await flush();
+    expect(leaves).toBe(true);
+    expect(vm.notifier.error).not.toHaveBeenCalled();
+    expect(vm.notifier.warning).not.toHaveBeenCalled();
   });
 });
 

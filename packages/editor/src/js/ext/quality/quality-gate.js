@@ -11,21 +11,20 @@ const remoteApi = require('./quality-remote');
 // leave. A finding of a blocking check stops it and is listed in a modal; a
 // failure of the checks never does. When a check the server runs is
 // blocking, the export waits for the server, about 30 seconds at most, and
-// can be cancelled meanwhile; past that, or when the server refuses or
-// fails, the email leaves with a notice that its links and images were not
-// checked. There is no way past a blocking finding.
+// can be cancelled meanwhile; past that, or when the server fails, the email
+// leaves with a notice that its links and images were not checked. When the
+// user ran too many checks, it does not leave: the server's runs for exports
+// have their own count, which re-running the drawer cannot use up. There is
+// no way past a blocking finding.
 
 // The server stops its own run at 20 s (quality-resources.service.js); the
 // rest covers a turn behind another tab's run and the way there and back.
 const SERVER_WAIT_MS = 30000;
 const MS_PER_SECOND = 1000;
 
-const UNCHECKED_KEYS = {
-  'too-frequent':
-    'Too many checks in a short time: the links and images were not checked. Check them yourself before the email leaves.',
-  default:
-    'The links and images could not be checked: check them yourself before the email leaves.',
-};
+const UNCHECKED_KEY =
+  'The links and images could not be checked: check them yourself before the email leaves.';
+const TOO_FREQUENT_KEY = 'quality-gate-too-frequent';
 
 const blockingOf = (findings) => findings.filter((finding) => finding.blocking);
 
@@ -33,17 +32,19 @@ const verdictOf = ({
   blocked = false,
   cancelled = false,
   busy = false,
+  refused = false,
   unchecked = null,
   findings = [],
   present = () => {},
 } = {}) => ({
   // The only question the exports ask.
-  leaves: !blocked && !cancelled && !busy,
+  leaves: !blocked && !cancelled && !busy && !refused,
   blocked,
   cancelled,
   busy,
-  // Why the server's checks did not count: 'timeout' | 'too-frequent' |
-  // 'failed', or null.
+  // The server refused to check: the user ran too many checks.
+  refused,
+  // Why the server's checks did not count: 'timeout' | 'failed', or null.
   unchecked,
   findings,
   present,
@@ -172,12 +173,12 @@ function installQualityGate(viewModel, ko, deps) {
       if (outcome.cancelled) return verdictOf({ cancelled: true });
       const blocking = blockingOf(outcome.findings || []);
       if (blocking.length) return stop(run, blocking, quiet);
-      if (outcome.failure) {
-        notify(
-          'warning',
-          t(UNCHECKED_KEYS[outcome.failure] || UNCHECKED_KEYS.default)
-        );
+      // A blocking check the server could not run: nothing leaves.
+      if (outcome.failure === 'too-frequent') {
+        notify('error', t(TOO_FREQUENT_KEY));
+        return verdictOf({ refused: true });
       }
+      if (outcome.failure) notify('warning', t(UNCHECKED_KEY));
       return verdictOf({ unchecked: outcome.failure, present: run.present });
     });
   }
@@ -192,7 +193,8 @@ function installQualityGate(viewModel, ko, deps) {
    * @param {*} [options.target] - what is exported, shown as being checked
    *   through `gating` (the ESP profile)
    * @returns {Promise<Object>} never rejects: `leaves`, and why not
-   *   (`blocked` with its `findings`, `cancelled`, `busy`); `unchecked`;
+   *   (`blocked` with its `findings`, `cancelled`, `busy`, `refused`);
+   *   `unchecked`;
    *   `present()` opens the drawer on this run's results
    */
   function gate(options = {}) {
