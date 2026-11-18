@@ -9,8 +9,11 @@
 
 const {
   formatParams,
+  kbSize,
   pageLocale,
 } = require('../../../packages/editor/src/js/ext/quality/message-params.js');
+const en = require('../../../public/lang/badsender-en.js');
+const fr = require('../../../public/lang/badsender-fr.js');
 const {
   findingItems,
   checkItems,
@@ -39,6 +42,30 @@ describe('formatParams', () => {
     expect(
       formatParams({ label: '1.5 offer', size: '512+' }, { locale: 'fr' })
     ).toEqual({ label: '1.5 offer', size: '512+' });
+  });
+
+  describe('a weight in KB', () => {
+    // The editor's translation: the strings of the language, then the params.
+    const translator = (strings) => (key, params) =>
+      Object.keys(params).reduce(
+        (text, name) => text.replace(`__${name}__`, params[name]),
+        strings[key]
+      );
+    const weight = (kb, locale, strings) =>
+      formatParams({ max: kbSize(kb) }, { locale, t: translator(strings) }).max;
+
+    it('reads in MB when it is a whole number of them', () => {
+      expect(weight(1024, 'en', en)).toBe('1 MB');
+      expect(weight(2048, 'en', en)).toBe('2 MB');
+      expect(weight(1024, 'fr', fr)).toBe('1 Mo');
+      expect(weight(10240, 'fr', fr)).toBe('10 Mo');
+    });
+
+    it('reads in KB otherwise', () => {
+      expect(weight(500, 'en', en)).toBe('500 KB');
+      expect(weight(1500, 'en', en)).toBe('1,500 KB');
+      expect(spaced(weight(1500, 'fr', fr))).toBe('1 500 Ko');
+    });
   });
 
   it('takes the language of the page by default', () => {

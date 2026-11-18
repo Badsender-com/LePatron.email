@@ -2,6 +2,7 @@
 
 const { checkableImages, remoteImage } = require('../resources');
 const { thresholdOf } = require('../settings');
+const { kbSize } = require('../message-params');
 
 // Weighed by the server on the image the export ships: for LePatron's images,
 // the resized or cropped one the export downloads. Deliverability guides put
@@ -30,8 +31,8 @@ function problemOf(ctx, image, result) {
     return result.bytes > maxGif * 1024
       ? {
           kind: 'heavy',
-          messageKey: 'Heavy GIF (__size__ KB): keep it under __max__ KB',
-          params: { size: kb(result), max: maxGif },
+          messageKey: 'Heavy GIF (__size__ KB): keep it under __max__',
+          params: { size: kb(result), max: kbSize(maxGif) },
         }
       : null;
   }
@@ -39,8 +40,8 @@ function problemOf(ctx, image, result) {
   return result.bytes > max * 1024
     ? {
         kind: 'heavy',
-        messageKey: 'Heavy image (__size__ KB): keep it under __max__ KB',
-        params: { size: kb(result), max },
+        messageKey: 'Heavy image (__size__ KB): keep it under __max__',
+        params: { size: kb(result), max: kbSize(max) },
       }
     : null;
 }
@@ -59,10 +60,10 @@ module.exports = {
   titleKey: 'Image weight',
   remote: true,
   enabled: (ctx) => measured(ctx).length > 0,
-  passKey: 'Images checked: __count__, each under __max__ KB',
+  passKey: 'Images checked: __count__, each under __max__',
   passParams: (ctx) => ({
     count: new Set(measured(ctx).map(({ image }) => image.src)).size,
-    max: thresholdOf(ctx, 'image-weight', 'maxKb'),
+    max: kbSize(thresholdOf(ctx, 'image-weight', 'maxKb')),
   }),
   run(ctx) {
     return measured(ctx)

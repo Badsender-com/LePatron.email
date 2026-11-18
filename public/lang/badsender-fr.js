@@ -556,8 +556,8 @@ module.exports = {
     "Image d'exemple du template non remplacée",
   'Missing Outlook background image': 'Image de fond Outlook manquante',
   'Missing mobile background image': 'Image de fond mobile manquante',
-  'Exported HTML weighs __size__ KB: keep it under __max__ KB, Gmail clips emails over 102 KB once the ESP adds its tracking':
-    "Le HTML exporté pèse __size__ Ko : restez sous __max__ Ko, Gmail coupe les emails de plus de 102 Ko une fois le tracking de l'ESP ajouté",
+  'Exported HTML weighs __size__ KB: keep it under __max__, Gmail clips emails over 102 KB once the ESP adds its tracking':
+    "Le HTML exporté pèse __size__ Ko : restez sous __max__, Gmail coupe les emails de plus de 102 Ko une fois le tracking de l'ESP ajouté",
   'Required tracking parameters missing: __keys__':
     'Paramètres de tracking obligatoires manquants : __keys__',
   'Test email': "Tester l'email",
@@ -596,8 +596,8 @@ module.exports = {
   'Every background image turned on is set':
     'Toutes les images de fond activées sont renseignées',
   'Email weight': "Poids de l'email",
-  'Exported HTML weighs __size__ KB, under the __max__ KB limit':
-    'Le HTML exporté pèse __size__ Ko, sous la limite de __max__ Ko',
+  'Exported HTML weighs __size__ KB, under the __max__ limit':
+    'Le HTML exporté pèse __size__ Ko, sous la limite de __max__',
   'Link addresses': 'Adresses des liens',
   'Every link address is well formed':
     'Toutes les adresses de liens sont bien formées',
@@ -824,19 +824,21 @@ module.exports = {
   'Link could not be checked, check it by hand: __label__':
     "Le lien n'a pas pu être vérifié, vérifiez-le vous-même : __label__",
   'Image weight': 'Poids des images',
-  'Images checked: __count__, each under __max__ KB':
-    'Images vérifiées : __count__, chacune sous __max__ Ko',
+  'Images checked: __count__, each under __max__':
+    'Images vérifiées : __count__, chacune sous __max__',
   'Image could not be downloaded: the export will leave it out (__name__)':
     "Image impossible à télécharger : l'export la laissera de côté (__name__)",
-  'Heavy GIF (__size__ KB): keep it under __max__ KB':
-    'GIF lourd (__size__ Ko) : restez sous __max__ Ko',
-  'Heavy image (__size__ KB): keep it under __max__ KB':
-    'Image lourde (__size__ Ko) : restez sous __max__ Ko',
+  'Heavy GIF (__size__ KB): keep it under __max__':
+    'GIF lourd (__size__ Ko) : restez sous __max__',
+  'Heavy image (__size__ KB): keep it under __max__':
+    'Image lourde (__size__ Ko) : restez sous __max__',
   'Total image weight': 'Poids total des images',
-  'Images weigh __size__ KB in all, under __max__ KB':
-    'Les images pèsent __size__ Ko au total, sous les __max__ Ko',
-  'Images weigh __size__ KB in all: over __max__ KB':
-    'Les images pèsent __size__ Ko au total : plus de __max__ Ko',
+  'Images weigh __size__ KB in all, under __max__':
+    'Les images pèsent __size__ Ko au total, sous la limite de __max__',
+  'Images weigh __size__ KB in all: over __max__':
+    'Les images pèsent __size__ Ko au total : plus de __max__',
+  '__size__ KB': '__size__ Ko',
+  '__size__ MB': '__size__ Mo',
   'Image dimensions': 'Dimensions des images',
   'No image is much larger than it is shown':
     "Aucune image n'est beaucoup plus grande que sa taille d'affichage",
