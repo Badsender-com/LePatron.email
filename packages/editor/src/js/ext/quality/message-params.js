@@ -36,6 +36,19 @@ const untranslated = (key, params) =>
     key
   );
 
+// One formatter per language: the drawer formats every row of every run.
+const formatters = new Map();
+function numberFormat(locale) {
+  const key = locale || '';
+  if (!formatters.has(key)) {
+    formatters.set(
+      key,
+      new Intl.NumberFormat(locale, { maximumFractionDigits: 2 })
+    );
+  }
+  return formatters.get(key);
+}
+
 /**
  * @param {Object} params - what the rule quotes
  * @param {Object} options
@@ -48,7 +61,7 @@ function formatParams(
   params,
   { locale = pageLocale(), t = untranslated } = {}
 ) {
-  const numbers = new Intl.NumberFormat(locale, { maximumFractionDigits: 2 });
+  const numbers = numberFormat(locale);
   const format = (value) => {
     if (typeof value === 'number' && Number.isFinite(value)) {
       return numbers.format(value);

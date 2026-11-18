@@ -68,6 +68,15 @@ describe('formatParams', () => {
     });
   });
 
+  it('builds one number formatter per language, not one per row', () => {
+    const spy = jest.spyOn(Intl, 'NumberFormat');
+    formatParams({ n: 1 }, { locale: 'de' });
+    formatParams({ n: 2 }, { locale: 'de' });
+    expect(formatParams({ n: 1.5 }, { locale: 'de' })).toEqual({ n: '1,5' });
+    expect(spy).toHaveBeenCalledTimes(1);
+    spy.mockRestore();
+  });
+
   it('takes the language of the page by default', () => {
     document.documentElement.lang = 'fr';
     expect(pageLocale()).toBe('fr');
