@@ -210,17 +210,6 @@ export default {
       @blur="$v.form.description.$touch()"
     />
 
-    <bs-select
-      v-if="isEmailType"
-      v-model="form.doctrineType"
-      :label="$t('taxonomy.form.doctrineType')"
-      :items="doctrineTypeItems"
-      :placeholder="$t('taxonomy.form.doctrineTypeNone')"
-      :hint="$t('taxonomy.form.doctrineTypeHint')"
-      :disabled="loading"
-      persistent-hint
-      clearable
-    />
     <bs-text-field
       :value="form.canonicalType"
       :label="$t('taxonomy.values.form.identifier')"
@@ -239,6 +228,18 @@ export default {
       :previous="initialIdentifier"
       :next="form.canonicalType || ''"
       @keep="form.canonicalType = initialIdentifier"
+    />
+
+    <bs-select
+      v-if="isEmailType"
+      v-model="form.doctrineType"
+      :label="$t('taxonomy.form.doctrineType')"
+      :items="doctrineTypeItems"
+      :placeholder="$t('taxonomy.form.doctrineTypeNone')"
+      :hint="$t('taxonomy.form.doctrineTypeHint')"
+      :disabled="loading"
+      persistent-hint
+      clearable
     />
 
     <bs-taxonomy-code-field
