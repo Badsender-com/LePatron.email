@@ -7,7 +7,7 @@
 
 const {
   REMOTE_RULES,
-  SERVER_ANSWER_RULES,
+  LATE_RULES,
 } = require('../../../packages/editor/src/js/ext/quality/engine.js');
 const {
   CHECKS,
@@ -26,15 +26,13 @@ describe("the editor's server checks and the catalogue", () => {
   });
 
   it('reads the server answer in exactly the checks that ask the server something', () => {
-    expect(idsOf(SERVER_ANSWER_RULES)).toEqual(
+    expect(idsOf(REMOTE_RULES.concat(LATE_RULES))).toEqual(
       Object.keys(SERVER_TASKS).sort()
     );
   });
 
   it('never makes the export wait for a local check with a second look', () => {
-    const late = SERVER_ANSWER_RULES.filter(
-      (rule) => !REMOTE_RULES.includes(rule)
-    );
+    const late = LATE_RULES;
     expect(idsOf(late)).toEqual(['unsupported-image-formats']);
     late.forEach((rule) => {
       expect(CHECKS[rule.id].server.awaited).toBe(false);
