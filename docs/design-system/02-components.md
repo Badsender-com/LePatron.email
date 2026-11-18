@@ -711,7 +711,29 @@ Inline link with trailing or leading icon.
 
 ---
 
-## Notifications (Snackbar)
+## Feedback after an action: inline or toast
+
+Two kinds of feedback, and **the one to use depends on what was done**:
+
+| What was done                                                                                   | Feedback                                                       |
+| ----------------------------------------------------------------------------------------------- | -------------------------------------------------------------- |
+| **A setting was saved** (a switch, a settings tab, the company form): a value that stays        | **Inline**, where it was made: `BsSaveOutcome`. Never a toast. |
+| **An action on a record** (create, delete, send, duplicate, translate): something that happened | A **toast** (snackbar), see below.                             |
+
+### Inline: `BsSaveOutcome`
+
+`packages/ui/components/layout/bs-save-outcome.vue`, with the `mixinInlineOutcome` mixin (`markSaved()`, `markFailed(detail)`).
+
+- **Saved**: a Lucide `Check` and "Enregistré", 13px / 500 in `--success-ink`, announced (`role="status"`, a live region always in the page), gone after **4 seconds**.
+- **Failed**: "Modification non enregistrée." in `--danger-ink` (`role="alert"`), then what the page knows ("Le nom est déjà pris"), then an underlined **"Réessayer"** that does the save again. It stays until the next try. The switch of a failed change goes back to its saved state.
+- **Where**: next to the control that was used. A switch: under the sentence of its row (`BsGroupFeatureSwitch` in a `BsGroupSettingCard`). A form with a save button: **to the left of the button**, in the same bar.
+- Validation stays on the fields; this is only the outcome of the save.
+
+Pages that use it: the company form, the colors, the export options, the email builder settings, the tracking (global and per template), and the two-factor option.
+
+### Toast: the snackbar
+
+For an action on a record, not for a setting.
 
 ```css
 .snackbar {

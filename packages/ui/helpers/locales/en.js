@@ -110,9 +110,6 @@ export default {
       progress:
         'Set up by {n} member out of {total} | Set up by {n} members out of {total}',
       saml: 'This company signs in with SSO: two-factor authentication belongs to its identity provider.',
-      saved: 'Saved',
-      failed: 'Change not saved.',
-      retry: 'Try again',
       confirmOn: {
         title: 'Require two-factor authentication?',
         pending:
@@ -150,6 +147,10 @@ export default {
     emailSent: 'An email was sent',
   },
   global: {
+    saveOutcome: {
+        failed: 'Change not saved.',
+      retry: 'Try again',
+    },
     states: { on: 'On', off: 'Off' },
     errors: {
       typeCampagneRequired: 'Campaign type is required.',
@@ -821,10 +822,6 @@ export default {
       emptyKey: 'Key is required',
       duplicateKey: 'This key is duplicated',
     },
-    snackbars: {
-      updated: 'Tracking configuration saved.',
-      error: 'An error occurred while saving.',
-    },
     builder: {
       requiredMissing: 'Required tracking parameters are missing',
       requiredMissingDescription:
@@ -1216,7 +1213,6 @@ export default {
     },
     snackbars: {
       invalid: 'The settings sent were not accepted.',
-      updated: 'Email Builder settings updated',
       error: 'Could not update the settings',
     },
   },

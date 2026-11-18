@@ -1,10 +1,10 @@
 <script>
-import { mapMutations } from 'vuex';
 import isEqual from 'lodash/isEqual';
 import { groupsItem } from '~/helpers/api-routes.js';
 import { emailMetadataErrorKeyFor } from '~/helpers/taxonomy.js';
-import { PAGE, SHOW_SNACKBAR } from '~/store/page.js';
 import BsGroupFeatureSwitch from '~/components/group/feature-switch.vue';
+import mixinInlineOutcome from '~/helpers/mixins/mixin-inline-outcome.js';
+import BsSaveOutcome from '~/components/layout/bs-save-outcome.vue';
 
 function emptyConfig() {
   return {
@@ -16,8 +16,10 @@ function emptyConfig() {
 export default {
   name: 'BsGroupEmailBuilderTab',
   components: {
+    BsSaveOutcome,
     BsGroupFeatureSwitch,
   },
+  mixins: [mixinInlineOutcome],
   props: {
     group: { type: Object, required: true },
   },
@@ -62,8 +64,6 @@ export default {
     },
   },
   methods: {
-    ...mapMutations(PAGE, { showSnackbar: SHOW_SNACKBAR }),
-
     onEnabledChange(value) {
       this.config.enabled = Boolean(value);
     },
@@ -76,18 +76,12 @@ export default {
         await this.$axios.$put(groupsItem({ groupId: this.group.id }), {
           emailMetadata: this.config,
         });
-        this.showSnackbar({
-          text: this.$t('emailBuilderSettings.snackbars.updated'),
-          color: 'success',
-        });
+        this.markSaved();
         this.$emit('update');
       } catch (error) {
         // Never the raw server message: it is an error code, or an untranslated
         // developer sentence.
-        this.showSnackbar({
-          text: this.$t(emailMetadataErrorKeyFor(error)),
-          color: 'error',
-        });
+        this.markFailed(this.$t(emailMetadataErrorKeyFor(error)));
       } finally {
         this.loading = false;
       }
@@ -136,6 +130,11 @@ export default {
     </section>
 
     <div class="settings-actions">
+      <bs-save-outcome
+        :outcome="outcome"
+        :detail="outcomeDetail"
+        @retry="onSubmit"
+      />
       <v-btn
         color="accent"
         elevation="0"
@@ -195,7 +194,9 @@ export default {
 
 .settings-actions {
   display: flex;
+  align-items: center;
   justify-content: flex-end;
+  gap: 1rem;
   margin-top: 2rem;
   padding-top: 1rem;
   border-top: 1px solid var(--gray-300);
