@@ -64,8 +64,18 @@ export default {
     },
   },
 
+  // One debounce per instance (a method would lose its `cancel`).
+  created() {
+    this.debouncedNameChange = debounce((value) => {
+      this.commitFilterChangeToStore({ name: value });
+    }, 300);
+  },
+  beforeDestroy() {
+    this.debouncedNameChange.cancel();
+  },
+
   methods: {
-    reset() {
+    clearFilters() {
       this.$store.commit(`${FOLDER}/${SET_FILTERS}`, {
         name: '',
         templates: [],
@@ -75,11 +85,29 @@ export default {
         updatedAtEnd: '',
         tags: [],
       });
+    },
+    reset() {
+      this.clearFilters();
       this.$emit('on-refresh', { pagination: { page: 1 } });
     },
-    handleNameChange: debounce(function (value) {
-      this.commitFilterChangeToStore({ name: value });
-    }, 300),
+    // The bar's "Réinitialiser" resets the whole search: name, filters and
+    // scope. Leaving "all workspaces" is a route change, which reloads the
+    // list on its own.
+    resetSearch() {
+      if (!this.searchingAll) return this.reset();
+      this.clearFilters();
+      const query = { ...this.$route.query };
+      delete query.scope;
+      this.$router.push({ query });
+    },
+    // Escape empties the name field only, scope and filters kept.
+    clearName() {
+      this.debouncedNameChange.cancel();
+      this.commitFilterChangeToStore({ name: '' });
+    },
+    handleNameChange(value) {
+      this.debouncedNameChange(value);
+    },
     handleFilterChange(filterKey, filterValue) {
       this.commitFilterChangeToStore({ [filterKey]: filterValue });
     },
@@ -108,6 +136,7 @@ export default {
       clearable
       hide-details
       @input="handleNameChange"
+      @keydown.esc.prevent="clearName"
     >
       <template #prepend-inner>
         <lucide-search :size="16" aria-hidden="true" />
@@ -140,7 +169,8 @@ export default {
         v-if="activeCount"
         type="button"
         class="filters-panel__button"
-        @click="reset"
+        :aria-label="$t('mailings.filters.resetSearch')"
+        @click="resetSearch"
       >
         <lucide-rotate-ccw :size="14" aria-hidden="true" />
         {{ $t('global.reset') }}
@@ -234,8 +264,8 @@ export default {
   padding: 16px;
   margin-bottom: 16px;
   background: #fff;
-  border: 1px solid var(--gray-200);
-  border-radius: 8px;
+  border: 1px solid var(--gray-300);
+  border-radius: 10px;
 
   // Fields keep a reachable width on a wide screen: the card stretches with
   // the table, its controls do not.
@@ -243,7 +273,7 @@ export default {
     max-width: 520px;
 
     ::v-deep .v-input__slot {
-      min-height: 40px !important;
+      min-height: 38px !important;
     }
 
     // Vuetify sets the icon from the top of the field: it sits on the text's
@@ -275,12 +305,12 @@ export default {
     display: inline-flex;
     align-items: center;
     gap: 6px;
-    height: 34px;
+    height: 38px;
     padding: 0 12px;
     border: 1px solid var(--gray-300);
     border-radius: 4px;
     background: #fff;
-    color: var(--gray-900);
+    color: var(--v-primary-base);
     font-size: 13px;
     font-weight: 500;
     cursor: pointer;
@@ -346,8 +376,8 @@ export default {
       margin-bottom: 6px;
       padding: 0;
       font-size: 13px;
-      font-weight: 600;
-      color: var(--gray-900);
+      font-weight: 500;
+      color: var(--gray-700);
     }
 
     legend {
@@ -366,7 +396,7 @@ export default {
   }
 
   ::v-deep .v-input__slot {
-    min-height: 36px !important;
+    min-height: 38px !important;
     font-size: 13px;
   }
 

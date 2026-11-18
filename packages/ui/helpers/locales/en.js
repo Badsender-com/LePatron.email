@@ -497,6 +497,7 @@ export default {
     filters: {
       title: 'Filters',
       createdBetween: 'Created between',
+      resetSearch: 'Reset the search',
       datePlaceholder: 'MM/DD/YYYY',
       to: 'to',
       allTemplates: 'All templates',
