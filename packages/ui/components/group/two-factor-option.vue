@@ -7,7 +7,6 @@ import { CAN, USER } from '~/store/user';
 import { CAPABILITIES } from '../../../shared/access/roles.js';
 import BsGroupSettingCard from '~/components/group/setting-card.vue';
 import BsGroupFeatureSwitch from '~/components/group/feature-switch.vue';
-import BsModalConfirm from '~/components/modal-confirm.vue';
 
 // How long "Enregistré" stays under the option.
 const SAVED_FOR_MS = 4000;
@@ -23,7 +22,6 @@ export default {
   components: {
     BsGroupSettingCard,
     BsGroupFeatureSwitch,
-    BsModalConfirm,
     LucideSmartphone: Smartphone,
     LucideCheck: Check,
   },
@@ -37,6 +35,10 @@ export default {
       outcome: null,
       // The value asked for, kept until it is confirmed (or tried again).
       asked: null,
+      // The confirmation dialog; `confirmed` tells closing it by the action
+      // from closing it any other way (cancel, Escape, a click outside).
+      confirming: false,
+      confirmed: false,
       members: [],
       // Bumped to draw the switch back on the saved state after a refusal:
       // the browser already flipped it.
@@ -71,6 +73,11 @@ export default {
       return this.total ? Math.round((this.configured / this.total) * 100) : 0;
     },
   },
+  watch: {
+    confirming(open) {
+      if (!open && !this.confirmed) this.cancel();
+    },
+  },
   async created() {
     await this.loadMembers();
   },
@@ -93,8 +100,13 @@ export default {
     ask(value) {
       this.asked = Boolean(value);
       this.outcome = null;
-      const dialog = value ? 'confirmOnDialog' : 'confirmOffDialog';
-      this.$refs[dialog].open();
+      this.confirmed = false;
+      this.confirming = true;
+    },
+    confirm() {
+      this.confirmed = true;
+      this.confirming = false;
+      this.save();
     },
     // Cancelled: the switch goes back to what is saved.
     cancel() {
@@ -208,38 +220,63 @@ export default {
       </template>
     </bs-group-setting-card>
 
-    <bs-modal-confirm
-      ref="confirmOnDialog"
-      :title="$t('twoFactor.group.confirmOn.title')"
-      :action-label="$t('twoFactor.group.confirmOn.action')"
-      action-button-color="primary"
-      @confirm="save"
-      @cancel="cancel"
-    >
-      <template v-if="waiting > 0">
-        {{
-          $tc('twoFactor.group.confirmOn.pending', waiting, {
-            n: waiting,
-            total,
-          })
-        }}
-      </template>
-      {{ $t('twoFactor.group.confirmOn.everyone') }}
-    </bs-modal-confirm>
-    <bs-modal-confirm
-      ref="confirmOffDialog"
-      :title="$t('twoFactor.group.confirmOff.title')"
-      :action-label="$t('twoFactor.group.confirmOff.action')"
-      action-button-color="primary"
-      @confirm="save"
-      @cancel="cancel"
-    >
-      {{ $t('twoFactor.group.confirmOff.body') }}
-    </bs-modal-confirm>
+    <!-- The dialog of the app's other confirmations (integrations, ...). -->
+    <v-dialog v-model="confirming" max-width="500">
+      <v-card>
+        <v-card-title>
+          <span class="headline">
+            {{
+              asked
+                ? $t('twoFactor.group.confirmOn.title')
+                : $t('twoFactor.group.confirmOff.title')
+            }}
+          </span>
+        </v-card-title>
+        <v-card-text>
+          <p v-if="asked">
+            <template v-if="waiting > 0">
+              {{
+                $tc('twoFactor.group.confirmOn.pending', waiting, {
+                  n: waiting,
+                  total,
+                })
+              }}
+            </template>
+            {{ $t('twoFactor.group.confirmOn.everyone') }}
+          </p>
+          <p v-else>{{ $t('twoFactor.group.confirmOff.body') }}</p>
+        </v-card-text>
+        <v-divider />
+        <div class="modal-actions">
+          <v-btn text color="primary" @click="confirming = false">
+            {{ $t('global.cancel') }}
+          </v-btn>
+          <v-btn
+            :color="asked ? 'accent' : 'error'"
+            elevation="0"
+            @click="confirm"
+          >
+            {{
+              asked
+                ? $t('twoFactor.group.confirmOn.action')
+                : $t('twoFactor.group.confirmOff.action')
+            }}
+          </v-btn>
+        </div>
+      </v-card>
+    </v-dialog>
   </div>
 </template>
 
 <style lang="scss" scoped>
+.modal-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.5rem;
+  padding: 1rem;
+}
+
 // The card is the last row of its section: the section spaces it, not the card.
 .bs-group-two-factor ::v-deep .bs-group-setting-card {
   margin-bottom: 0;
