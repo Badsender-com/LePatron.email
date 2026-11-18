@@ -7,7 +7,7 @@ const { orderedThresholds } = require('../settings');
 // Truncation, not performance: subject length does not change read rates
 // (Return Path, 9 million subjects). Team decision of 1 October 2026: under 40
 // characters ideally, never over 60 (thresholds `long` and `tooLong`, set by
-// the group's quality settings).
+// the company's quality settings).
 
 // Reply and forward prefixes, in the languages our clients write in. Gmail
 // asks not to fake them. A prefix of one or two letters must end the word
