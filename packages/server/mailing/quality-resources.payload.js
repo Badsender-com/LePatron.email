@@ -24,6 +24,9 @@ const REMOTE_CHECKS = Object.freeze({
   'image-weight': 'images',
   'images-total-weight': 'images',
   'oversized-images': 'images',
+  // The editor's own check, judged on the type of an image whose address
+  // names no format: the server downloads that image.
+  'unsupported-image-formats': 'images',
 });
 function invalid() {
   return new createError.UnprocessableEntity(

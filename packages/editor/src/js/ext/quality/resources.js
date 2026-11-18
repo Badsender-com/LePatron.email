@@ -54,24 +54,42 @@ function checkableImages(ctx) {
  * still fetched by the server, and leaves the client's site a visit. The
  * checks themselves go along: the server runs only theirs (a link sent for
  * the blocklists is not visited when "broken-links" is off).
+ * A local check with a second look on the server's answer reads only some
+ * images (`remoteImages`, the format of an image whose address names none):
+ * it is named, and its images sent, only when it has some.
  * @param {Object} ctx
- * @param {Array<{ id: string, reads: string }>} rules - the server's checks
- *   that will run, each naming what it reads: 'links' or 'images'
+ * @param {Array<{ id: string, reads?: string,
+ *   remoteImages?: function(Object): Array<{ src: string }> }>} rules - the
+ *   checks that will run on the server's answer, each naming what it reads:
+ *   'links' or 'images', or the images it reads
  * @returns {{ links: string[], images: Array<{ url: string }>,
  *   checks: string[] }}
  */
 function collectResources(ctx, rules) {
-  const reads = new Set(rules.map((rule) => rule.reads));
+  const serverRules = rules.filter((rule) => !rule.remoteImages);
+  const reads = new Set(serverRules.map((rule) => rule.reads));
   const links = reads.has('links')
     ? _.uniq(checkableLinks(ctx).map((link) => link.href))
     : [];
-  const images = reads.has('images')
-    ? _.uniq(checkableImages(ctx).map((image) => image.src))
-    : [];
+  const someImages = rules
+    .filter((rule) => rule.remoteImages)
+    .map((rule) => ({
+      id: rule.id,
+      srcs: rule.remoteImages(ctx).map((image) => image.src),
+    }))
+    .filter(({ srcs }) => srcs.length > 0);
+  const images = _.uniq(
+    (reads.has('images')
+      ? checkableImages(ctx).map((image) => image.src)
+      : []
+    ).concat(...someImages.map(({ srcs }) => srcs))
+  );
   return {
     links: links.slice(0, MAX_LINKS),
     images: images.slice(0, MAX_IMAGES).map((url) => ({ url })),
-    checks: rules.map((rule) => rule.id),
+    checks: serverRules
+      .map((rule) => rule.id)
+      .concat(someImages.map(({ id }) => id)),
   };
 }
 
