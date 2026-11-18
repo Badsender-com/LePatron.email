@@ -253,13 +253,15 @@ export function fieldErrors(id, exception, base, lastEdited = null) {
 }
 
 /**
- * Where a blocking check with a pair of levels starts to block: any of its
- * findings blocks, whatever its severity (ADR 0009), so from its lower level.
+ * Where a blocking check with a pair of levels starts to block: only its
+ * most severe level blocks (ADR 0009), and the catalogue lists a pair lowest
+ * first (`ordered`: an info then a warning, a warning then an error), so past
+ * its higher threshold. Under it, a finding is shown and the export goes on.
  * @returns {{ name: string, value: number }|null}
  */
 export function blocksFrom(id, thresholds) {
   const [pair] = CHECKS[id].ordered || [];
-  return pair ? { name: pair[0], value: thresholds[pair[0]] } : null;
+  return pair ? { name: pair[1], value: thresholds[pair[1]] } : null;
 }
 
 /**
