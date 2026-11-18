@@ -1299,6 +1299,9 @@ export default {
       'images-total-weight': 'Poids total des images',
       'oversized-images': 'Dimensions des images',
     },
+    page: {
+      adjusted: 'Seuil « {level} » du réglage général ({inherited} {unit}) ajusté à {value} {unit} par ce template.',
+    },
   },
   emailBuilderSettings: {
     title: 'Réglages Email Builder',
