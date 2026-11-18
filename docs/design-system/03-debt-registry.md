@@ -121,14 +121,11 @@ This ensures gradual, low-risk convergence without requiring dedicated refactori
 
 ---
 
-### DEBT-010: Uppercase button labels
-
-|               |                                                                                                              |
-| ------------- | ------------------------------------------------------------------------------------------------------------ |
-| **Severity**  | Medium                                                                                                       |
-| **Current**   | Vuetify's `text-transform: uppercase` on every `v-btn` outside the dialogs ("ENREGISTRER", "CRÉER UN EMAIL") |
-| **Target**    | Sentence case, 14px / 500, as the design system's `Btn` ("No uppercase"); already so inside dialogs          |
-| **Direction** | One global rule on `.v-btn`, once the pages are reviewed; the dialogs already follow it                      |
+---------- | ------------------------------------------------------------------------------------------------------------ |
+| **Severity** | Medium |
+| **Current** | Vuetify's `text-transform: uppercase` on every `v-btn` outside the dialogs ("ENREGISTRER", "CRÉER UN EMAIL") |
+| **Target** | Sentence case, 14px / 500, as the design system's `Btn` ("No uppercase"); already so inside dialogs |
+| **Direction** | One global rule on `.v-btn`, once the pages are reviewed; the dialogs already follow it |
 
 ---
 
@@ -145,7 +142,12 @@ This ensures gradual, low-risk convergence without requiring dedicated refactori
 
 ## Resolved Debts
 
-_No debts have been fully resolved yet._
+### DEBT-010: Uppercase button labels
+
+|              |                                                                                                           |
+| ------------ | --------------------------------------------------------------------------------------------------------- |
+| **Resolved** | November 2026: one global rule on `.v-btn` (`index.scss`), sentence case and `0.01em` tracking everywhere |
+| **Was**      | Vuetify's `text-transform: uppercase` on every button ("ENREGISTRER", "CRÉER UN EMAIL")                   |
 
 ---
 

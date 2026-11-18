@@ -17,9 +17,6 @@
 // `BsModalConfirm` / `BsModalForm` come out the same. No dialog restyles
 // itself: if one must differ, the design system decides it first.
 //
-// Buttons keep the app's casing outside dialogs for now: the design system
-// writes them in sentence case ("No uppercase"), a change that is not made
-// page by page.
 // =============================================================================
 
 // The scrim of a modal: the primary color, at Vuetify's own 46%.
@@ -118,7 +115,8 @@
     }
   }
 
-  // Buttons: sentence case, 14px / 500, 36px, the radius of the controls.
+  // Buttons: 14px / 500, 36px, the radius of the controls (their casing is the
+  // app's: see index.scss).
   .v-card__actions .v-btn,
   .modal-actions .v-btn {
     height: 36px;
@@ -126,8 +124,6 @@
     border-radius: var(--r-sm);
     font-size: 14px;
     font-weight: 500;
-    letter-spacing: 0.01em;
-    text-transform: none;
   }
 
   // The `text` button of the design system is in the primary color.
