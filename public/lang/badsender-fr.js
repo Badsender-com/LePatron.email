@@ -558,9 +558,9 @@ module.exports = {
   'Missing mobile background image': 'Image de fond mobile manquante',
   'Exported HTML weighs __size__ KB: keep it under __max__, Gmail clips emails over 102 KB once the ESP adds its tracking':
     "Le HTML exporté pèse __size__ Ko : restez sous __max__, Gmail coupe les emails de plus de 102 Ko une fois le tracking de l'ESP ajouté",
-  'Exported HTML weighs __size__ KB, over the limit of __max__ set for your emails. Gmail will also clip it, as it does every email over 102 KB: the footer and the open tracking pixel are hidden behind "Message clipped"':
-    'Le HTML exporté pèse __size__ Ko, au-delà de la limite de __max__ fixée pour vos emails. Gmail le coupera aussi, comme tout email de plus de 102 Ko : le pied de page et le pixel de suivi des ouvertures sont masqués derrière « Message tronqué »',
-  'Exported HTML weighs __size__ KB: Gmail will clip this email, as it does every email over 102 KB; the footer and the open tracking pixel are hidden behind "Message clipped"':
+  'Exported HTML weighs __size__ KB, over the limit of __max__ set for your emails. Gmail will also clip it, as it does every email over 102 KB: the footer and the open tracking pixel will be hidden behind "Message clipped"':
+    'Le HTML exporté pèse __size__ Ko, au-delà de la limite de __max__ fixée pour vos emails. Gmail le coupera aussi, comme tout email de plus de 102 Ko : le pied de page et le pixel de suivi des ouvertures seront masqués derrière « Message tronqué »',
+  'Exported HTML weighs __size__ KB: Gmail will clip this email, as it does every email over 102 KB; the footer and the open tracking pixel will be hidden behind "Message clipped"':
     'Le HTML exporté pèse __size__ Ko : Gmail coupera cet email, comme tout email de plus de 102 Ko ; le pied de page et le pixel de suivi des ouvertures seront masqués derrière « Message tronqué »',
   'Required tracking parameters missing: __keys__':
     'Paramètres de tracking obligatoires manquants : __keys__',

@@ -542,10 +542,10 @@ module.exports = {
   'Missing mobile background image': 'Missing mobile background image',
   'Exported HTML weighs __size__ KB: keep it under __max__, Gmail clips emails over 102 KB once the ESP adds its tracking':
     'Exported HTML weighs __size__ KB: keep it under __max__, Gmail clips emails over 102 KB once the ESP adds its tracking',
-  'Exported HTML weighs __size__ KB, over the limit of __max__ set for your emails. Gmail will also clip it, as it does every email over 102 KB: the footer and the open tracking pixel are hidden behind "Message clipped"':
-    'Exported HTML weighs __size__ KB, over the limit of __max__ set for your emails. Gmail will also clip it, as it does every email over 102 KB: the footer and the open tracking pixel are hidden behind "Message clipped"',
-  'Exported HTML weighs __size__ KB: Gmail will clip this email, as it does every email over 102 KB; the footer and the open tracking pixel are hidden behind "Message clipped"':
-    'Exported HTML weighs __size__ KB: Gmail will clip this email, as it does every email over 102 KB; the footer and the open tracking pixel are hidden behind "Message clipped"',
+  'Exported HTML weighs __size__ KB, over the limit of __max__ set for your emails. Gmail will also clip it, as it does every email over 102 KB: the footer and the open tracking pixel will be hidden behind "Message clipped"':
+    'Exported HTML weighs __size__ KB, over the limit of __max__ set for your emails. Gmail will also clip it, as it does every email over 102 KB: the footer and the open tracking pixel will be hidden behind "Message clipped"',
+  'Exported HTML weighs __size__ KB: Gmail will clip this email, as it does every email over 102 KB; the footer and the open tracking pixel will be hidden behind "Message clipped"':
+    'Exported HTML weighs __size__ KB: Gmail will clip this email, as it does every email over 102 KB; the footer and the open tracking pixel will be hidden behind "Message clipped"',
   'Required tracking parameters missing: __keys__':
     'Required tracking parameters missing: __keys__',
   'Test email': 'Test email',
