@@ -1,6 +1,6 @@
 'use strict';
 
-const { REMOTE_RULES, SERVER_ANSWER_RULES } = require('./engine');
+const { REMOTE_RULES, LATE_RULES } = require('./engine');
 const { hasResources } = require('./resources');
 const remoteApi = require('./quality-remote');
 
@@ -45,6 +45,13 @@ function mergeChecks(local, remote) {
   return local.map((check) => byId.get(check.ruleId)).concat(added);
 }
 
+// The local checks whose second look asked the server: named in the request
+// only when they had images to read (resources.js).
+function askedLateRules(local) {
+  const named = (local.resources && local.resources.checks) || [];
+  return LATE_RULES.filter((rule) => named.includes(rule.id));
+}
+
 /**
  * @param {Object} options
  * @param {Object} options.state - the review's observables: `findings`,
@@ -63,28 +70,25 @@ function createRemoteChecks(options) {
   const { state, isCurrent, surface, isOn, url } = options;
   const { checkResources, runRules, run: runEngine } = options;
   const listed = listedRemoteRules.filter(isOn);
-  // Nothing to ask the server when every check reading its answer is off:
-  // asked as soon as one is on, a server check or a local one with a second
-  // look (the format of an image without an extension).
-  const anyOn = SERVER_ANSWER_RULES.some(isOn);
+  // Nothing to ask the server when every one of its checks is off: a local
+  // check with a second look (the format of an image without an extension)
+  // asks nothing on its own (resources.js).
+  const anyOn = REMOTE_RULES.some(isOn);
   let inFlight = Promise.resolve();
   let pending = null;
   // The local results the server's checks complete.
   let lastLocal = null;
 
-  // The server's rules, and the local ones with a second look at its answer,
-  // read it on the context of the local pass (parsed once).
+  // The server's rules, and the local ones whose second look asked it,
+  // read its answer on the context of the local pass (parsed once).
   function evaluate(local, answer) {
+    const rules = REMOTE_RULES.concat(askedLateRules(local));
     if (local.ctx && typeof runRules === 'function') {
       local.ctx.remote = answer;
-      return runRules(local.ctx, SERVER_ANSWER_RULES);
+      return runRules(local.ctx, rules);
     }
     // An engine that hands no context back: the export is read again.
-    return runEngine({
-      html: local.html,
-      rules: SERVER_ANSWER_RULES,
-      remote: answer,
-    });
+    return runEngine({ html: local.html, rules, remote: answer });
   }
 
   // The answer to the previous run would be dropped: aborted rather than

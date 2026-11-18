@@ -9,7 +9,8 @@ const {
   installQualityReview,
 } = require('../../../packages/editor/src/js/ext/quality/quality-review.js');
 const {
-  SERVER_ANSWER_RULES,
+  REMOTE_RULES,
+  LATE_RULES,
 } = require('../../../packages/editor/src/js/ext/quality/engine.js');
 
 const finding = (severity) => ({ severity, fingerprint: severity });
@@ -338,13 +339,30 @@ describe("the server's checks", () => {
       expect.objectContaining({ cancelToken: expect.anything() })
     );
     expect(run).toHaveBeenCalledTimes(1);
-    // The server's rules, and the local ones with a second look at its answer.
-    expect(runRules).toHaveBeenCalledWith(ctx, SERVER_ANSWER_RULES);
+    // The server's rules; a local second look only when the request named it.
+    expect(runRules).toHaveBeenCalledWith(ctx, REMOTE_RULES);
     expect(ctx.remote).toBe(remote);
     expect(vm.quality.remoteStatus()).toBe('done');
     expect(vm.quality.findings().map((f) => f.ruleId)).toEqual([
       'broken-links',
     ]);
+  });
+
+  it('runs the second look of a local rule when the request named it', async () => {
+    const checkResources = jest.fn(() => Promise.resolve({ links: {} }));
+    const { vm, flush, ctx, runRules } = setupRemote(checkResources);
+    resources.checks = LATE_RULES.map((rule) => rule.id);
+    try {
+      vm.quality.run();
+      flush();
+      await tick();
+      expect(runRules).toHaveBeenCalledWith(
+        ctx,
+        REMOTE_RULES.concat(LATE_RULES)
+      );
+    } finally {
+      delete resources.checks;
+    }
   });
 
   it('opens the drawer after an export on what the server finds, with the badge rule', async () => {
