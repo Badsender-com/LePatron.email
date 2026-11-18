@@ -153,6 +153,7 @@ export default {
     emailSent: 'L\'email a bien été envoyé',
   },
   global: {
+    states: { on: 'Activé', off: 'Désactivé' },
     errors: {
       typeCampagneRequired: 'Le type de campagne est requis.',
       errorOccured: 'Oups ! Une erreur est survenue :(',
@@ -328,7 +329,6 @@ export default {
         companyInfo: 'Informations de l\'entreprise',
         companyInfoDescription: 'Renseignez les informations principales de l\'entreprise.',
       },
-      states: { on: 'Activé', off: 'Désactivé' },
       saml: { name: 'Authentification SAML', on: 'Activée', off: 'Désactivée' },
       enableSaml: 'Activer l\'authentification SAML',
       entryPointHint: 'URL de connexion fournie par votre fournisseur d\'identité',
@@ -1012,6 +1012,8 @@ export default {
       sectionDescription:
         'Permet de renseigner un objet, une date d\'envoi prévue et une typologie sur chaque email, au lieu de les ressaisir à chaque envoi.',
       enabled: 'Activer les métadonnées des emails',
+      on: 'Activées',
+      off: 'Désactivées',
       enabledHint:
         'Lorsque l\'option est désactivée, ces champs n\'apparaissent nulle part et l\'API les refuse ; les données déjà saisies sont conservées.',
       taxonomyAction: 'Gérer les typologies',

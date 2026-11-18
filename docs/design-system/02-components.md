@@ -786,13 +786,19 @@ Implementation: `group/form.vue` (the section), `group/setting-card.vue` (the ca
 - **Double authentification** saves on its own. Its sentence is followed by how many members have set it up ("Configurée par N membres sur M", with a bar once N > 0). Turning it on or off is **confirmed with its impact** ("N membres sur M ne l'ont pas encore configurée"); in the app's usual dialog (rounded card, title, text, hairline, "Annuler" and the action in the accent, red to stop requiring); the action carries the verb ("Exiger la double authentification", "Ne plus exiger"). Cancelling, Escape or a click outside puts the switch back on what is saved.
 - Its outcome is read **on the option**, never in a toast: "Enregistré" with a check (13px 500 success-ink, `role="status"`, gone after 4 seconds); on failure the switch returns to its saved state and the card says "Modification non enregistrée." in danger-ink with an underlined "Réessayer" (`role="alert"`).
 - A company admin reads the state and is told that only a tech admin changes it; a SAML company leaves two-factor to its identity provider.
-- **Not built yet**: the "Membres sans double authentification" row and the `MfaMembers` sub-page (reminders, CSV export), the lockout guard ("Configurer la mienne": a member sets it up at sign-in, there is no account page for it), and the "Modules activés" cards, which keep their own markup and could take `setting-card`.
+- **Not built yet**: the "Membres sans double authentification" row and the `MfaMembers` sub-page (reminders, CSV export), and the lockout guard ("Configurer la mienne": a member sets it up at sign-in, there is no account page for it).
 
 ---
 
 ## Toggle / Switch
 
 > **In the Vue app**: one look everywhere, the Vuetify `v-switch` with `color="accent"`. No `inset` pill, no `color="primary"` (navy): the spec below is the visual intent (accent thumb when on).
+>
+> **Which switch where**
+>
+> - **A setting of a page** (a module, an option, a toggle of a settings tab): `BsGroupFeatureSwitch`, which says its state in words ("Activé / Désactivé", "Exigée / Non exigée") to the switch's left. On a `BsGroupSettingCard` (icon tile, name, sentence), in the `header-actions` slot of a `BsFormSection`, or in a `BsSettingsRow`. The off track barely stands out from white: **the word carries the state, never drop it**.
+> - **A field of a form** (the "Actif" of an integration, in a dialog) and **a filter** (the logs' "Masquer les tests"): a labelled `v-switch` in the accent, the label being the field's.
+> - **A toggle in a table row** (a user's access to a workspace): a bare dense `v-switch`; the column header names it.
 
 ```css
 .toggle-track {

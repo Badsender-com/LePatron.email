@@ -25,6 +25,9 @@ export default {
           <div class="bs-group-setting-card__description">
             <slot name="description" />
           </div>
+          <div v-if="$slots.hint" class="bs-group-setting-card__hint">
+            <slot name="hint" />
+          </div>
         </div>
       </div>
       <div class="bs-group-setting-card__control">
@@ -96,6 +99,15 @@ export default {
     font-size: 0.875rem;
     color: rgba(0, 0, 0, 0.6);
     margin-top: 0.25rem;
+  }
+
+  &__hint {
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+    margin-top: 0.5rem;
+    font-size: 0.75rem;
+    color: rgba(0, 0, 0, 0.5);
   }
 
   &__control {
