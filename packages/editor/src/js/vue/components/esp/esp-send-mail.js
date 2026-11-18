@@ -57,9 +57,10 @@ const EspComponent = Vue.component('EspForm', {
     },
   },
   created() {
-    // The quality gate's verdict on the profile picked, kept out of Vue's
-    // reactivity: its findings are the engine's.
-    this.qualityVerdict = null;
+    // The export the quality gate checked when the profile was picked, and
+    // its verdict, kept out of Vue's reactivity: its findings are the
+    // engine's.
+    this.checkedExport = null;
   },
   mounted() {
     this.mailingId = this.vm?.metadata?.id;
@@ -166,14 +167,16 @@ const EspComponent = Vue.component('EspForm', {
       // (download-buttons.html). The backend re-checks the tracking
       // parameters (profile.service.assertRequiredTrackingParamsFilled), when
       // that check is blocking.
+      const html = this.vm.exportHTML();
+      const tracking = ko.toJS(this.vm.content().tracking);
       const verdict = await this.vm.quality.gate({
-        html: this.vm.exportHTML(),
+        html,
         quiet: true,
         target: profile,
       });
       if (!verdict.leaves) return;
-      // The form blocks the editor: the email sent is the one just checked.
-      this.qualityVerdict = verdict;
+      // What leaves is what was checked, even if the email changed since.
+      this.checkedExport = { html, tracking, verdict };
       this.selectedProfile = profile;
       this.fetchData().then(() => {
         this.checkIfAlreadySendMailWithProfile();
@@ -207,26 +210,26 @@ const EspComponent = Vue.component('EspForm', {
       if (!this.vm?.metadata?.url?.sendCampaignMail) {
         return;
       }
-      // Tracking pre-check is done in handleProfileSelect, before this modal
-      // opens. The backend also re-validates (profile.service
-      // .assertRequiredTrackingParamsFilled). No need to re-check here: the
-      // tracking panel isn't accessible while this modal is open, so the
-      // state cannot have drifted.
+      // The quality gate ran in handleProfileSelect, before this modal
+      // opened: the HTML and the tracking it checked are the ones sent, never
+      // a new export. The backend also re-validates the tracking parameters
+      // (profile.service.assertRequiredTrackingParamsFilled).
+      if (!this.checkedExport) return;
+      const { html, tracking, verdict } = this.checkedExport;
 
       this.isLoadingExport = true;
-      const unprocessedHtml = this.vm.exportHTML();
 
       axios
         .post(this.vm.metadata.url.sendCampaignMail, {
-          html: unprocessedHtml,
+          html,
           actionType: this.type,
           profileId: this.fetchedProfile?.id,
           type: this.fetchedProfile.type,
           contentSentType: this.fetchedProfile.contentSentType,
           campaignId: this.campaignId,
-          // Live tracking state from the builder — used by the backend to
-          // validate / rewrite UTMs without requiring a prior Save.
-          tracking: ko.toJS(this.vm.content().tracking),
+          // The builder's tracking state, as checked — used by the backend
+          // to validate / rewrite UTMs without requiring a prior Save.
+          tracking,
           espSendingMailData: {
             campaignMailName: data?.campaignMailName,
             adobe: {
@@ -248,7 +251,7 @@ const EspComponent = Vue.component('EspForm', {
           // the gate, on the same HTML, without asking the server again. Never
           // in the way of the send confirmation.
           try {
-            if (this.qualityVerdict) this.qualityVerdict.present();
+            verdict.present();
           } catch (err) {
             console.error('Showing the quality results failed', err);
           }

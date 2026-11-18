@@ -110,6 +110,29 @@ describe('the download command', () => {
     expect(vm.exportHTML).toHaveBeenCalledTimes(1);
   });
 
+  it('downloads the HTML and the tracking the checks saw, even if the email changes meanwhile', async () => {
+    let deferred;
+    const vm = editorWithReview(undefined);
+    const tracking = ko.observable({ utm_source: 'checked' });
+    vm.content = () => ({ tracking });
+    installQualityReview(vm, ko, {
+      run: () => ({ findings: [], checks: [] }),
+      defer: (fn) => (deferred = fn),
+      watchContent: () => () => {},
+    });
+    serverStorage({ metadata: vm.metadata })(vm);
+
+    vm.download.execute();
+    vm.exportHTML.mockReturnValue('<p>edited during the checks</p>');
+    tracking({ utm_source: 'edited' });
+    deferred();
+    await flush();
+
+    const sent = JSON.parse(ajax.mock.calls[0][0].data);
+    expect(sent.html).toBe(vm.exportHTML.mock.results[0].value);
+    expect(sent.tracking).toEqual({ utm_source: 'checked' });
+  });
+
   it('goes on when the checks throw', async () => {
     const vm = editorWithReview(undefined);
     installQualityReview(vm, ko, {
@@ -176,7 +199,7 @@ describe('the ESP send', () => {
       type: 'creation',
       campaignId: null,
       isLoadingExport: false,
-      qualityVerdict: null,
+      checkedExport: null,
       fetchData: jest.fn(() => Promise.resolve()),
       checkIfAlreadySendMailWithProfile: jest.fn(),
       fetchProfileData: jest.fn(),
@@ -214,7 +237,8 @@ describe('the ESP send', () => {
     await handleProfileSelect.call(opened, profile);
     await new Promise((resolve) => setTimeout(resolve, 0));
     expect(opened.selectedProfile).toBe(profile);
-    expect(opened.qualityVerdict).toBe(verdict);
+    expect(opened.checkedExport.verdict).toBe(verdict);
+    expect(opened.checkedExport.html).toBe(vm.exportHTML.mock.results[1].value);
     expect(opened.openModal).toHaveBeenCalled();
   });
 
@@ -225,7 +249,11 @@ describe('the ESP send', () => {
     });
     const self = espForm(vm, {
       fetchedProfile: { id: 'p1', type: 'SENDINBLUE', contentSendType: 'mail' },
-      qualityVerdict: { leaves: true, present },
+      checkedExport: {
+        html: '<p>checked</p>',
+        tracking: {},
+        verdict: { leaves: true, present },
+      },
     });
 
     await submitEsp.call(self, {});
@@ -236,5 +264,29 @@ describe('the ESP send', () => {
     expect(vm.notifier.success).toHaveBeenCalled();
     expect(self.closeModal).toHaveBeenCalled();
     expect(axios.post).toHaveBeenCalledTimes(1);
+  });
+
+  it('sends the HTML and the tracking the gate checked, never a new export', async () => {
+    const vm = editorWithReview(jest.fn());
+    const tracking = ko.observable({ utm_source: 'checked' });
+    vm.content = () => ({ tracking });
+    const profile = { id: 'p1', type: 'SENDINBLUE' };
+    vm.quality.gate = jest.fn(() =>
+      Promise.resolve({ leaves: true, present: jest.fn() })
+    );
+    const self = espForm(vm, {
+      fetchedProfile: { id: 'p1', type: 'SENDINBLUE', contentSendType: 'mail' },
+    });
+    await handleProfileSelect.call(self, profile);
+    const checked = vm.exportHTML.mock.results[0].value;
+    vm.exportHTML.mockReturnValue('<p>edited after the checks</p>');
+    tracking({ utm_source: 'edited' });
+
+    await submitEsp.call(self, {});
+
+    const sent = axios.post.mock.calls[0][1];
+    expect(sent.html).toBe(checked);
+    expect(sent.tracking).toEqual({ utm_source: 'checked' });
+    expect(vm.exportHTML).toHaveBeenCalledTimes(1);
   });
 });
