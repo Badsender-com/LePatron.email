@@ -1025,9 +1025,9 @@ body {
   }
 }
 
-// Tracking-required modal: reuses the editor's existing .bs-modal-* framework
-// (see badsender-modal.less). Only the inline alert and key chips inside
-// .modal-content are added here.
+// The modals of the quality gate (ext/badsender-control-quality.js): they
+// reuse the editor's .bs-modal-* framework (see badsender-modal.less); only
+// the inline alert and the wait's layout are added here.
 .tracking-modal {
   // The modal is appended to <body>, which has no explicit font-family — it
   // would inherit the browser default (serif) instead of the editor's Inter
@@ -1047,30 +1047,19 @@ body {
     line-height: 1.5;
     color: rgba(0, 0, 0, 0.75);
   }
+}
 
-  .tracking-modal__alert-icon {
-    color: #f04e23;
-    flex-shrink: 0;
-    margin-top: 1px;
-    display: inline-flex;
-  }
+.quality-wait-modal .modal-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  text-align: center;
 
-  .tracking-modal__keys {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 6px;
-  }
-
-  .tracking-modal__key {
-    display: inline-block;
-    padding: 4px 10px;
-    background: rgba(240, 78, 35, 0.1);
-    border: 1px solid rgba(240, 78, 35, 0.3);
-    color: #c43d1c;
-    border-radius: 4px;
-    font-family: ui-monospace, 'SF Mono', Menlo, monospace;
+  .quality-wait-modal__text {
+    margin: 0;
     font-size: 13px;
-    font-weight: 500;
+    color: rgba(0, 0, 0, 0.6);
   }
 }
 
