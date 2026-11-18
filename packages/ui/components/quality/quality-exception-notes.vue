@@ -1,5 +1,7 @@
 <script>
 import { Lock } from 'lucide-vue';
+import { CHECKS } from '~/helpers/constants/quality-checks.js';
+import { GMAIL_CLIPPING_BYTES } from '../../../shared/quality/limits.js';
 import {
   GENERAL,
   blocksFrom,
@@ -8,8 +10,13 @@ import {
 } from '~/helpers/quality-exceptions.js';
 import mixinQualityTexts from '~/helpers/mixins/mixin-quality-texts.js';
 
+const BYTES_PER_KB = 1024;
+// The checks that judge the email's metadata: an email without them gives
+// them nothing to read.
+const METADATA_CHECKS = ['subject', 'preheader'];
+
 // What an exception card says under its header: an exception that changes
-// nothing yet, what its state does, and the check's own note.
+// nothing yet, what its state does, and the check's own notes.
 export default {
   name: 'BsQualityExceptionNotes',
   components: { Lock },
@@ -35,10 +42,33 @@ export default {
         ? this.$t(`qualitySettings.notes.${this.checkId}`)
         : '';
     },
+    // What the check's settings may hide: past Gmail's limit, an email is
+    // clipped whatever its threshold says; without metadata, a subject
+    // check has nothing to judge.
+    warnings() {
+      if (this.applied.state === 'off') return [];
+      const warnings = [];
+      const { maxKb } = this.applied.thresholds;
+      if (
+        this.checkId === 'html-size' &&
+        maxKb * BYTES_PER_KB > GMAIL_CLIPPING_BYTES
+      ) {
+        warnings.push(
+          this.$t('qualitySettings.notes.gmailClipping', {
+            limit: this.formatNumber(GMAIL_CLIPPING_BYTES / BYTES_PER_KB),
+          })
+        );
+      }
+      if (METADATA_CHECKS.includes(this.checkId)) {
+        warnings.push(this.$t('qualitySettings.notes.metadata'));
+      }
+      return warnings;
+    },
     trackingRoute() {
       return `/groups/${this.groupId}/settings/tracking`;
     },
     blockingText() {
+      const id = this.checkId;
       const parts = [
         this.$t(
           this.isGeneral
@@ -46,25 +76,47 @@ export default {
             : 'qualitySettings.card.blockingTemplate'
         ),
       ];
-      const from = blocksFrom(this.checkId, this.applied.thresholds);
-      if (from) {
+      const from = blocksFrom(id, this.applied.thresholds);
+      const fromParams = from && this.levelParams(from.name);
+      // A server check says where it blocks in its own cases.
+      if (from && !isServerCheck(id)) {
+        parts.push(this.$t('qualitySettings.card.blocksFrom', fromParams));
+      }
+      const lower = from && this.lowerLevelOf(from.name);
+      if (lower) {
         parts.push(
-          this.$t('qualitySettings.card.blocksFrom', {
-            value: from.value,
-            unit: this.unitName(this.checkId, from.name),
-            level: this.thresholdShort(this.checkId, from.name),
-          })
+          this.$t('qualitySettings.card.lowerShown', this.levelParams(lower))
         );
       }
-      if (isServerCheck(this.checkId)) {
+      if (isServerCheck(id)) {
         parts.push(
           this.$t('qualitySettings.card.blocksOn', {
-            cases: this.$t(`qualitySettings.blocksOn.${this.checkId}`),
+            cases: this.$t(`qualitySettings.blocksOn.${id}`, fromParams || {}),
           }),
+          this.$t(`qualitySettings.unverifiable.${id}`),
           this.$t('qualitySettings.serverWait')
         );
       }
+      if (id === 'unsupported-image-formats') {
+        parts.push(this.$t('qualitySettings.notes.unnamedImages'));
+      }
       return parts.join(' ');
+    },
+  },
+  methods: {
+    // { value, unit, level } of one threshold, as it applies.
+    levelParams(name) {
+      return {
+        value: this.formatNumber(this.applied.thresholds[name]),
+        unit: this.unitName(this.checkId, name),
+        level: this.thresholdShort(this.checkId, name),
+      };
+    },
+
+    // The level below the one that blocks, which still shows its findings.
+    lowerLevelOf(name) {
+      const [pair] = CHECKS[this.checkId].ordered || [];
+      return pair && pair[1] === name ? pair[0] : null;
     },
   },
 };
@@ -87,6 +139,9 @@ export default {
     <p v-if="applied.state === 'blocking'" class="qx-notes__blocking">
       <lock :size="14" class="qx-notes__lock" />
       <span>{{ blockingText }}</span>
+    </p>
+    <p v-for="warning in warnings" :key="warning" class="qx-notes__note">
+      {{ warning }}
     </p>
     <p v-if="note" class="qx-notes__note">
       {{ note }}

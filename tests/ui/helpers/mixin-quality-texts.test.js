@@ -1,5 +1,5 @@
 import mixinQualityTexts from '~/helpers/mixins/mixin-quality-texts.js';
-import { CHECKS } from '~/helpers/constants/quality-checks.js';
+import { CHECKS, SERVER_CHECKS } from '~/helpers/constants/quality-checks.js';
 import en from '~/helpers/locales/en.js';
 import fr from '~/helpers/locales/fr.js';
 
@@ -89,4 +89,33 @@ describe('the quality settings texts', () => {
       });
     }
   );
+});
+
+describe('what a blocking check of the server says', () => {
+  it.each(['en', 'fr'])(
+    'says, in %s, what each one blocks on and what it never blocks on',
+    (locale) => {
+      const strings = LOCALES[locale].qualitySettings;
+      SERVER_CHECKS.forEach((id) => {
+        expect(typeof strings.blocksOn[id]).toBe('string');
+        expect(typeof strings.unverifiable[id]).toBe('string');
+      });
+    }
+  );
+
+  it.each(['en', 'fr'])(
+    'never says, in %s, that a server error blocks',
+    (locale) => {
+      const strings = LOCALES[locale].qualitySettings;
+      expect(strings.blocksOn['broken-links']).not.toMatch(/500/);
+      expect(strings.unverifiable['broken-links']).toMatch(/500/);
+    }
+  );
+
+  it.each([
+    ['en', /30/],
+    ['fr', /30/],
+  ])('gives, in %s, the longest wait of an export', (locale, wait) => {
+    expect(LOCALES[locale].qualitySettings.serverWait).toMatch(wait);
+  });
 });
