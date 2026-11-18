@@ -1,5 +1,6 @@
 import isEqual from 'lodash/isEqual';
 import { CHECKS, SERVER_CHECKS } from '~/helpers/constants/quality-checks.js';
+import { templateThresholds } from '../../shared/quality/resolve-quality-settings.js';
 
 // The "Contrôle qualité" page shows exceptions only
 // (docs/adr/0009-quality-settings-per-group-and-template.md). Three levels:
@@ -98,19 +99,50 @@ export function exceptionCount(settings) {
   return Object.keys(exceptionsOf(settings)).length;
 }
 
-/** What an exception applies: its own values, the base's for the rest. */
-export function effectiveOf(exception, base) {
+// The thresholds an exception sets, as numbers: what the server would store.
+function ownThresholds(exception) {
+  const thresholds = (exception && exception.thresholds) || {};
+  return Object.fromEntries(
+    Object.entries(thresholds)
+      .map(([name, value]) => [name, toNumber(value)])
+      .filter(([, value]) => Number.isFinite(value))
+  );
+}
+
+/**
+ * What an exception applies: its own values, the base's for the rest. On a
+ * template (`checkId` given), resolved as the server resolves it: its own
+ * threshold wins over an inherited one it contradicts
+ * (packages/shared/quality/resolve-quality-settings.js).
+ * @param {Object} [exception]
+ * @param {{ state: string, thresholds: Object }} base
+ * @param {string} [checkId] a template's check
+ */
+export function effectiveOf(exception, base, checkId = null) {
   const ex = exception || {};
   const thresholds = ex.thresholds || {};
   return {
     state: isSet(ex.state) ? ex.state : base.state,
-    thresholds: Object.fromEntries(
-      Object.entries(base.thresholds).map(([name, value]) => [
-        name,
-        isSet(thresholds[name]) ? Number(thresholds[name]) : value,
-      ])
-    ),
+    thresholds: checkId
+      ? templateThresholds(checkId, base.thresholds, ownThresholds(ex))
+          .thresholds
+      : Object.fromEntries(
+          Object.entries(base.thresholds).map(([name, value]) => [
+            name,
+            isSet(thresholds[name]) ? Number(thresholds[name]) : value,
+          ])
+        ),
   };
+}
+
+/**
+ * The inherited thresholds a template's exception brings to its own value,
+ * so that the card can say so.
+ * @returns {Array<{ threshold: string, inherited: number, value: number }>}
+ */
+export function adjustmentsOf(checkId, exception, base) {
+  return templateThresholds(checkId, base.thresholds, ownThresholds(exception))
+    .adjustments;
 }
 
 /**
@@ -214,13 +246,29 @@ export function exceptionsPayload(level, drafts, saved) {
 
 /**
  * The errors of an exception's thresholds, by name: a value outside its
- * bounds, or a pair out of order. A pair is compared on what applies (the
- * exception's value, else the base's), and its error goes on the field
- * edited last, else on the higher level.
+ * bounds, or a pair out of order. As the server does, a pair is checked only
+ * when the edit changes one of its values: a template's saved value may face
+ * an inherited one its group moved since, and then wins (effectiveOf). A pair
+ * is compared on what is set (the exception's value, else the base's), and
+ * its error goes on the field edited last, else on the higher level.
+ * @param {string} id
+ * @param {Object} exception as edited
+ * @param {Object} base what applies without it
+ * @param {string|null} [lastEdited] the threshold edited last
+ * @param {Object|null} [saved] the exception as stored
  * @returns {Object<string, { key: string, params: Object }>}
  */
-export function fieldErrors(id, exception, base, lastEdited = null) {
+export function fieldErrors(
+  id,
+  exception,
+  base,
+  lastEdited = null,
+  saved = null
+) {
   const thresholds = (exception && exception.thresholds) || {};
+  const savedThresholds = (saved && saved.thresholds) || {};
+  const changed = (name) =>
+    toNumber(thresholds[name]) !== toNumber(savedThresholds[name]);
   const errors = {};
   thresholdNames(id).forEach((name) => {
     if (!isSet(thresholds[name])) return;
@@ -236,6 +284,7 @@ export function fieldErrors(id, exception, base, lastEdited = null) {
   const applied = effectiveOf(exception, base).thresholds;
   (CHECKS[id].ordered || []).forEach(([low, high]) => {
     if (errors[low] || errors[high] || applied[low] <= applied[high]) return;
+    if (!changed(low) && !changed(high)) return;
     const owned = [low, high].filter((name) => isSet(thresholds[name]));
     if (!owned.length) return;
     let target = low;

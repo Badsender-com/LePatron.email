@@ -85,7 +85,8 @@ export default {
             id,
             this.drafts[id],
             this.baseOf(id),
-            this.lastEdited[id]
+            this.lastEdited[id],
+            this.saved[id] || null
           ),
         ])
       );

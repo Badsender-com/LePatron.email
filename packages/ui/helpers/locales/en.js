@@ -1454,6 +1454,9 @@ export default {
       'images-total-weight': 'Total image weight',
       'oversized-images': 'Image dimensions',
     },
+    page: {
+      adjusted: 'General "{level}" threshold ({inherited} {unit}) brought to {value} {unit} by this template.',
+    },
   },
   emailBuilderSettings: {
     title: 'Email Builder settings',

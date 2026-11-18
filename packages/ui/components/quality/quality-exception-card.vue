@@ -3,6 +3,7 @@ import { EyeOff, Lock, Trash2 } from 'lucide-vue';
 import { CHECKS } from '~/helpers/constants/quality-checks.js';
 import {
   GENERAL,
+  adjustmentsOf,
   effectiveOf,
   matchesBase,
   sameException,
@@ -47,8 +48,30 @@ export default {
     states() {
       return STATES;
     },
+    // On a template, as the server resolves it: its own threshold wins over
+    // an inherited one it contradicts.
     applied() {
-      return effectiveOf(this.exception, this.base);
+      return effectiveOf(
+        this.exception,
+        this.base,
+        this.isGeneral ? null : this.checkId
+      );
+    },
+    adjustments() {
+      if (this.isGeneral || this.applied.state === 'off') return [];
+      return adjustmentsOf(this.checkId, this.exception, this.base).map(
+        (adjustment) => ({
+          name: adjustment.threshold,
+          text: this.$t('qualitySettings.page.adjusted', {
+            level:
+              this.thresholdShort(this.checkId, adjustment.threshold) ||
+              this.$t('qualitySettings.thresholdsShort.default'),
+            inherited: adjustment.inherited,
+            value: adjustment.value,
+            unit: this.unitName(this.checkId, adjustment.threshold),
+          }),
+        })
+      );
     },
     isGeneral() {
       return this.level === GENERAL;
@@ -71,6 +94,7 @@ export default {
     hasBody() {
       return (
         this.showThresholds ||
+        this.adjustments.length > 0 ||
         this.changesNothing ||
         this.applied.state !== 'on' ||
         hasNote(this.checkId)
@@ -182,6 +206,13 @@ export default {
         :group-id="groupId"
         :locked="locked"
       />
+      <p
+        v-for="adjustment in adjustments"
+        :key="`adjusted-${adjustment.name}`"
+        class="qx-card__adjusted"
+      >
+        {{ adjustment.text }}
+      </p>
       <div v-if="showThresholds" class="qx-card__thresholds">
         <bs-quality-threshold-field
           v-for="name in thresholdNames"
@@ -288,6 +319,10 @@ export default {
   &__base {
     margin: 2px 0 0;
     font-size: 0.75rem;
+    color: var(--gray-700);
+  }
+
+  &__adjusted {
     color: var(--gray-700);
   }
 

@@ -11,6 +11,7 @@ import {
   fieldErrors,
   exceptionCount,
   blocksFrom,
+  adjustmentsOf,
 } from '~/helpers/quality-exceptions.js';
 
 // The "Contrôle qualité" page shows exceptions only (ADR 0009, admin design
@@ -82,6 +83,23 @@ describe('what applies', () => {
         base
       )
     ).toEqual({ state: 'blocking', thresholds: { long: 45, tooLong: 80 } });
+  });
+
+  it("resolves a template's exception as the server does", () => {
+    // The template's "too long" of 50 wins over a general "long" of 70.
+    const base = generalOf({
+      checks: { subject: { thresholds: { long: 70 } } },
+    }).subject;
+    const ex = { state: null, thresholds: { long: null, tooLong: '50' } };
+    expect(effectiveOf(ex, base, 'subject')).toEqual({
+      state: 'on',
+      thresholds: { long: 50, tooLong: 50 },
+    });
+    expect(adjustmentsOf('subject', ex, base)).toEqual([
+      { threshold: 'long', inherited: 70, value: 50 },
+    ]);
+    // In order, nothing moves.
+    expect(adjustmentsOf('subject', ex, recommendedOf('subject'))).toEqual([]);
   });
 
   it('tells an exception that changes nothing', () => {
@@ -182,6 +200,31 @@ describe('the errors of a field', () => {
     });
     expect(fieldErrors('subject', ex, base, 'long')).toEqual({
       long: { key: 'qualitySettings.orderErrorHigh', params: { value: 50 } },
+    });
+  });
+
+  it('checks a pair only when the edit changes one of its values', () => {
+    // Saved with the general "long" at 40; the company then moved it to 70.
+    const moved = generalOf({
+      checks: { subject: { thresholds: { long: 70 } } },
+    }).subject;
+    const saved = { state: null, thresholds: { long: null, tooLong: 50 } };
+    expect(fieldErrors('subject', saved, moved, null, saved)).toEqual({});
+    // Another change to the same exception still saves, as the server
+    // accepts it: the value sent back as it is is not checked again.
+    const edited = { ...saved, state: 'blocking' };
+    expect(fieldErrors('subject', edited, moved, null, saved)).toEqual({});
+    expect(
+      exceptionsPayload('template', { subject: edited }, { subject: saved })
+    ).toEqual({
+      checks: {
+        subject: { state: 'blocking', thresholds: { long: null, tooLong: 50 } },
+      },
+    });
+    // Changing the value itself is checked against what is inherited.
+    const changed = { state: null, thresholds: { long: null, tooLong: 55 } };
+    expect(fieldErrors('subject', changed, moved, 'tooLong', saved)).toEqual({
+      tooLong: { key: 'qualitySettings.orderError', params: { value: 70 } },
     });
   });
 
