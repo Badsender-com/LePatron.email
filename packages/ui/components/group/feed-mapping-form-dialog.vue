@@ -423,3 +423,72 @@ export default {
     </div>
   </v-card>
 </template>
+
+<style lang="scss" scoped>
+.feed-mapping-no-fields {
+  margin-top: 0.5rem;
+}
+
+.feed-mapping-column {
+  padding: 0.75rem;
+  margin-bottom: 0.75rem;
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  border-radius: 4px;
+
+  &__label {
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    color: rgba(0, 0, 0, 0.6);
+    margin-bottom: 0.5rem;
+  }
+}
+
+.feed-mapping-fields-table {
+  width: 100%;
+  max-height: 320px;
+  overflow-y: auto;
+  display: block;
+  border-collapse: collapse;
+
+  thead,
+  tbody {
+    display: block;
+  }
+
+  tr {
+    display: flex;
+    align-items: center;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+  }
+
+  th,
+  td {
+    padding: 6px 8px;
+  }
+
+  th {
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    color: rgba(0, 0, 0, 0.5);
+  }
+
+  &__field {
+    flex: 1 1 auto;
+    font-family: monospace;
+    font-size: 0.8rem;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  td:last-child,
+  th:last-child {
+    flex: 0 0 220px;
+  }
+
+  tr.is-mapped {
+    background: rgba(0, 172, 220, 0.06);
+  }
+}
+</style>
