@@ -4,6 +4,7 @@ import { Smartphone } from 'lucide-vue';
 
 import { groupsItem, groupsItemUsers } from '~/helpers/api-routes.js';
 import { CAN, USER } from '~/store/user';
+import { countTwoFactorSetups } from '~/helpers/two-factor.js';
 import { CAPABILITIES } from '../../../shared/access/roles.js';
 import BsGroupSettingCard from '~/components/group/setting-card.vue';
 import BsSaveOutcome from '~/components/layout/bs-save-outcome.vue';
@@ -57,14 +58,17 @@ export default {
       const { entryPoint, issuer, idpCert } = this.group;
       return Boolean(entryPoint && issuer && idpCert);
     },
+    counts() {
+      return countTwoFactorSetups(this.members);
+    },
     total() {
-      return this.members.length;
+      return this.counts.total;
     },
     configured() {
-      return this.members.filter((member) => member.twoFactorMethod).length;
+      return this.counts.configured;
     },
     waiting() {
-      return this.total - this.configured;
+      return this.counts.waiting;
     },
     progress() {
       return this.total ? Math.round((this.configured / this.total) * 100) : 0;
