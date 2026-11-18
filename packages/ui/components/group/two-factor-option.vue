@@ -224,13 +224,11 @@ export default {
     <v-dialog v-model="confirming" max-width="500">
       <v-card>
         <v-card-title>
-          <span class="headline">
-            {{
-              asked
-                ? $t('twoFactor.group.confirmOn.title')
-                : $t('twoFactor.group.confirmOff.title')
-            }}
-          </span>
+          {{
+            asked
+              ? $t('twoFactor.group.confirmOn.title')
+              : $t('twoFactor.group.confirmOff.title')
+          }}
         </v-card-title>
         <v-card-text>
           <p v-if="asked">
@@ -267,58 +265,3 @@ export default {
     </v-dialog>
   </div>
 </template>
-
-<style lang="scss" scoped>
-.modal-actions {
-  display: flex;
-  align-items: center;
-  justify-content: flex-end;
-  gap: 0.5rem;
-  padding: 1rem;
-}
-
-// The card is the last row of its section: the section spaces it, not the card.
-.bs-group-two-factor ::v-deep .bs-group-setting-card {
-  margin-bottom: 0;
-}
-
-.bs-group-two-factor {
-  &__progress {
-    display: block;
-    margin-top: 6px;
-    font-size: 13px;
-  }
-
-  &__state {
-    font-size: 13px;
-    font-weight: 500;
-    color: var(--gray-600);
-
-    &--on {
-      color: #2e7d32;
-    }
-  }
-
-  &__outcome {
-    display: flex;
-    align-items: center;
-    gap: 4px;
-    margin-top: 8px;
-    font-size: 13px;
-    font-weight: 500;
-
-    &--saved {
-      color: #2e7d32;
-    }
-
-    &--failed {
-      color: #c53a12;
-
-      button {
-        text-decoration: underline;
-        font-weight: 500;
-      }
-    }
-  }
-}
-</style>
