@@ -12,6 +12,7 @@ import BsTextarea from '~/components/form/bs-textarea.vue';
 import BsSelect from '~/components/form/bs-select';
 import BsFormSection from '~/components/layout/bs-form-section.vue';
 import BsGroupSettingCard from '~/components/group/setting-card.vue';
+import BsSaveOutcome from '~/components/layout/bs-save-outcome.vue';
 import BsGroupFeatureSwitch from '~/components/group/feature-switch.vue';
 import { escapeHtml } from '~/helpers/escape-html';
 import {
@@ -36,6 +37,7 @@ export default {
     BsSelect,
     BsFormSection,
     BsGroupSettingCard,
+    BsSaveOutcome,
     BsGroupFeatureSwitch,
     LucidePalette: Palette,
     LucideLineChart: LineChart,
@@ -55,6 +57,9 @@ export default {
     flat: { type: Boolean, default: false },
     disabled: { type: Boolean, default: false },
     loading: { type: Boolean, default: false },
+    // The outcome of the last save, read at the foot of the form.
+    outcome: { type: String, default: null },
+    outcomeDetail: { type: String, default: '' },
   },
   data() {
     return {
@@ -377,6 +382,12 @@ export default {
         <v-divider />
         <v-card-actions>
           <v-spacer />
+          <bs-save-outcome
+            :outcome="outcome"
+            :detail="outcomeDetail"
+            class="mr-4"
+            @retry="onSubmit"
+          />
           <v-btn
             elevation="0"
             color="accent"
