@@ -13,6 +13,8 @@ const defaultQualitySettings = catalogue.defaultQualitySettings;
 
 const own = (object, key) =>
   Boolean(object) && Object.prototype.hasOwnProperty.call(object, key);
+// Not `typeof value === 'object'`: Babel wraps that comparison in a helper.
+const isObject = (value) => Boolean(value) && Object(value) === value;
 
 /**
  * The quality settings a mailing gets: for every check and every threshold,
@@ -98,15 +100,12 @@ function templateThresholds(checkId, inherited, ownThresholds) {
 // without the sanitizer, and only catalogue keys may be applied.
 function settingOf(checks, checkId) {
   const setting = checks[checkId];
-  if (!own(CHECKS, checkId) || !setting || typeof setting !== 'object') {
+  if (!own(CHECKS, checkId) || !isObject(setting)) {
     return null;
   }
   return {
     state: CHECK_STATES.includes(setting.state) ? setting.state : null,
-    thresholds:
-      setting.thresholds && typeof setting.thresholds === 'object'
-        ? setting.thresholds
-        : {},
+    thresholds: isObject(setting.thresholds) ? setting.thresholds : {},
   };
 }
 
@@ -150,7 +149,7 @@ function checksOf(owner) {
   const settings =
     raw && typeof raw.toObject === 'function' ? raw.toObject() : raw;
   const checks = settings && settings.checks;
-  return checks && typeof checks === 'object' ? checks : {};
+  return isObject(checks) ? checks : {};
 }
 
 module.exports = {
