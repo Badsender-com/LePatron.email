@@ -143,6 +143,61 @@ describe('text-layout', () => {
     ).toHaveLength(1);
   });
 
+  describe('under a minimum line height set above 1', () => {
+    const OVERLAP =
+      'Line height under __min__ (__ratio__): the lines overlap: __text__';
+    const UNDER_MINIMUM =
+      'Line height of __ratio__, under the minimum of __min__ set for your emails: __text__';
+
+    // The text block of richTextFindings, with the group's settings.
+    function findingsUnder(minLineHeight, longText) {
+      const vm = fakeViewModel({
+        blocks: [{ id: 'b1', type: 'textBlock', longText }],
+        blockDefs: [{ type: 'textBlock', longText: '<p>Sample</p>' }],
+        html: exportOf({ b1: longText }),
+      });
+      vm.metadata.qualitySettings = {
+        checks: {
+          'text-layout': { state: 'on', thresholds: { minLineHeight } },
+        },
+      };
+      return runQualityChecks(vm, { rules: [textLayout] }).findings;
+    }
+
+    it('says the lines overlap only under 1', () => {
+      expect(
+        findingsUnder(1.5, '<p style="line-height:0.9">Tight</p>')
+      ).toEqual([
+        expect.objectContaining({
+          messageKey: OVERLAP,
+          params: expect.objectContaining({ ratio: 0.9, min: 1.5 }),
+        }),
+      ]);
+    });
+
+    it('says the line height is under the minimum set, from 1 up', () => {
+      expect(
+        findingsUnder(1.5, '<p style="line-height:1.2">Readable</p>')
+      ).toEqual([
+        expect.objectContaining({
+          messageKey: UNDER_MINIMUM,
+          severity: 'warning',
+          params: expect.objectContaining({ ratio: 1.2, min: 1.5 }),
+        }),
+      ]);
+      expect(
+        findingsUnder(1.5, '<p style="line-height:1">Readable</p>')
+      ).toEqual([expect.objectContaining({ messageKey: UNDER_MINIMUM })]);
+    });
+
+    it('keeps the fingerprint of the line height, whatever the message', () => {
+      const text = '<p style="line-height:0.9">Tight</p>';
+      expect(findingsUnder(1.5, text)[0].fingerprint).toBe(
+        richTextFindings(textLayout, text)[0].fingerprint
+      );
+    });
+  });
+
   it('leaves short centred text alone', () => {
     expect(
       richTextFindings(textLayout, '<p style="text-align:center">Our offer</p>')

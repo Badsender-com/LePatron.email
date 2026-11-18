@@ -101,8 +101,12 @@ module.exports = {
         if (typeof ratio === 'number' && ratio < minLineHeight) {
           return {
             ...decl,
+            // Lines overlap under 1 only: above it, the group asks for more
+            // room than the type needs, and the message says just that.
             messageKey:
-              'Line height under __min__ (__ratio__): the lines overlap: __text__',
+              ratio < 1
+                ? 'Line height under __min__ (__ratio__): the lines overlap: __text__'
+                : 'Line height of __ratio__, under the minimum of __min__ set for your emails: __text__',
             severity: 'warning',
             params: {
               ratio: Math.round(ratio * 100) / 100,
