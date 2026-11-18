@@ -62,15 +62,27 @@ describe('the shared check catalogue', () => {
     expect(CHECKS[id].thresholds[name].default).toBe(value);
   });
 
-  it('bounds every threshold around its default', () => {
-    Object.values(CHECKS).forEach((check) => {
-      Object.values(check.thresholds || {}).forEach((threshold) => {
-        expect(threshold.min).toBeLessThanOrEqual(threshold.default);
-        expect(threshold.max).toBeGreaterThanOrEqual(threshold.default);
-        expect(typeof threshold.unit).toBe('string');
-      });
-    });
-  });
+  // Read before beforeAll: it.each needs the list when the tests are declared.
+  const {
+    CHECKS: CATALOGUE,
+  } = require('../../../packages/shared/quality/checks.js');
+  const THRESHOLDS = Object.entries(CATALOGUE).flatMap(([id, check]) =>
+    Object.entries(check.thresholds).map(([name, threshold]) => [
+      id,
+      name,
+      threshold,
+    ])
+  );
+
+  it.each(THRESHOLDS)(
+    'bounds %s %s around its default, with a unit',
+    (id, name, threshold) => {
+      expect(threshold.min).toBeLessThan(threshold.max);
+      expect(threshold.default).toBeGreaterThanOrEqual(threshold.min);
+      expect(threshold.default).toBeLessThanOrEqual(threshold.max);
+      expect(typeof threshold.unit).toBe('string');
+    }
+  );
 
   it('never lets a minimum of text be set so low the check cannot fire', () => {
     expect(CHECKS['image-only-email'].thresholds.minTextLength.min).toBe(1);
