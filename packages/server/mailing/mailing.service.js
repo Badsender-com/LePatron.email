@@ -39,13 +39,25 @@ const {
 } = require('../utils/resolve-tracking-config');
 
 const IMAGES_FOLDER = 'images';
+// Images read at the same time for a ZIP.
+const ZIP_IMAGE_CONCURRENCY = 6;
 
-const createPromise = require('../helpers/create-promise.js');
+/** Runs `task` on each item, `limit` at a time. */
+async function mapWithConcurrency(items, limit, task) {
+  const queue = [...items];
+  const worker = async () => {
+    while (queue.length) await task(queue.shift());
+  };
+  await Promise.all(
+    Array.from({ length: Math.min(limit, queue.length) }, worker)
+  );
+}
+
 const processMosaicoHtmlRender = require('../utils/process-mosaico-html-render.js');
 const { sanitizePreviewHtml } = require('../utils/preview-html-sanitizer.js');
 const Ftp = require('./ftp-client.service.js');
 
-const request = require('request');
+const { readImageSource } = require('../utils/image-source.js');
 
 const fileManager = require('../common/file-manage.service.js');
 const modelsUtils = require('../utils/model.js');
@@ -1109,34 +1121,27 @@ async function handleRelativeOrFtpImages({
     throw new InternalServerError(ERROR_CODES.EXPORT_IMAGES_NOT_TRANSFERRED);
   }
 
-  // Pipe all images BUT don't add errored images
+  // Add all images BUT the ones that could not be read. Read through
+  // readImageSource: these URLs are written by the email's authors, and what
+  // they answer goes back in the ZIP.
   if (cdnDownload || regularDownload) {
-    const imagesRequest = distinctImages.map((imageUrl) => {
-      const imageName = getImageName(imageUrl);
-      const defer = createPromise();
-      const imgRequest = request(imageUrl);
-
-      imgRequest.on('response', (response) => {
-        // only happen images with a code of 200
-        if (response.statusCode === 200) {
-          archive.append(imgRequest, {
+    await mapWithConcurrency(
+      distinctImages,
+      ZIP_IMAGE_CONCURRENCY,
+      async (imageUrl) => {
+        try {
+          const { content } = await readImageSource(imageUrl);
+          archive.append(content, {
             prefix: `${prefix}${IMAGES_FOLDER}/`,
-            name: imageName,
+            name: getImageName(imageUrl),
           });
+        } catch (imgError) {
+          console.log('[ZIP] error during downloading', imageUrl);
+          console.log(imgError.message);
+          // just don't add this errored image to the archive
         }
-        defer.resolve();
-      });
-      imgRequest.on('error', (imgError) => {
-        console.log('[ZIP] error during downloading', imageUrl);
-        console.log(imgError);
-        // still resolve, just don't add this errored image to the archive
-        defer.resolve();
-      });
-
-      return defer;
-    });
-
-    await Promise.all(imagesRequest);
+      }
+    );
   } else {
     const connectionTest = await testConnection({
       downloadMailingWithFtpImages: true,

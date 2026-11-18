@@ -6,9 +6,8 @@
 // listed as soon as its bytes are written, a new gallery is seeded from that
 // listing, and a push is skipped when the name is already there.
 
-jest.mock('node-fetch');
-jest.mock('../../../packages/server/utils/outbound-host.js', () => ({
-  assertOutboundHostAllowed: jest.fn().mockResolvedValue(undefined),
+jest.mock('../../../packages/server/utils/image-source.js', () => ({
+  readImageSource: jest.fn(),
 }));
 jest.mock('../../../packages/server/common/models.common.js', () => {
   const { createFakeGalleries } = require('../../helpers/fake-galleries.js');
@@ -28,7 +27,9 @@ jest.mock('../../../packages/server/common/file-manage.service.js', () => {
   };
 });
 
-const fetch = require('node-fetch');
+const {
+  readImageSource,
+} = require('../../../packages/server/utils/image-source.js');
 const formatName = require('../../../packages/server/helpers/format-filename-for-jquery-fileupload.js');
 const {
   Galleries,
@@ -246,10 +247,9 @@ describe('imageService.createFromUrl into a new gallery', () => {
   ]);
 
   beforeEach(() =>
-    fetch.mockResolvedValue({
-      ok: true,
-      headers: { get: () => 'image/png' },
-      buffer: () => Promise.resolve(png),
+    readImageSource.mockResolvedValue({
+      content: png,
+      contentType: 'image/png',
     })
   );
 

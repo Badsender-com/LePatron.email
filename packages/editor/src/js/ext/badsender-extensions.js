@@ -1,5 +1,6 @@
 'use strict';
 
+const { escapeHtml } = require('../utils/escape-html.js');
 var ko = require('knockout');
 var url = require('url');
 var slugFilename = require('../../../../server/helpers/slug-filename.js');
@@ -56,10 +57,14 @@ function configExtendTinyMce(opts) {
 
 function downloadOptions(opts) {
   return function setDownloadOptions(viewModel) {
+    // The labels a company admin types reach jQuery UI's button, which
+    // writes them as HTML: escaped here, and the profiles' names in the
+    // template (download-buttons.html).
+    viewModel.escapeLabel = escapeHtml;
     viewModel.downloadCdn = opts.download.cdnImages;
-    viewModel.cdnButtonLabel = opts.download.cdnButtonLabel;
+    viewModel.cdnButtonLabel = escapeHtml(opts.download.cdnButtonLabel);
     viewModel.downloadFtp = opts.download.ftpImages;
-    viewModel.ftpButtonLabel = opts.download.ftpButtonLabel;
+    viewModel.ftpButtonLabel = escapeHtml(opts.download.ftpButtonLabel);
     viewModel.hasAdobeProfile = ko.computed(function () {
       return Array.isArray(viewModel.profiles()) &&
             viewModel.profiles().some(function (p) {

@@ -3,8 +3,6 @@
 const crypto = require('crypto');
 const { PassThrough } = require('stream');
 const mime = require('mime-types');
-const fetch = require('node-fetch');
-const AbortController = require('abort-controller');
 const createError = require('http-errors');
 
 const {
@@ -15,7 +13,7 @@ const {
 const fileManager = require('../common/file-manage.service.js');
 const uploadIdentity = require('../common/upload-identity.service.js');
 const formatName = require('../helpers/format-filename-for-jquery-fileupload.js');
-const { assertOutboundHostAllowed } = require('../utils/outbound-host.js');
+const { readImageSource } = require('../utils/image-source.js');
 const modelsUtils = require('../utils/model.js');
 const mailingService = require('../mailing/mailing.service.js');
 const permissions = require('../account/permissions.js');
@@ -207,25 +205,13 @@ function fileNameOfUrl(imageUrl) {
  * @returns {Promise<{name: string, url: string, deleteUrl: string, thumbnailUrl: string}>}
  */
 async function createFromUrl(mongoId, imageUrl) {
-  // SSRF guard — see integration-providers for the same rule applied to
-  // feed URLs; this is a second untrusted URL (an item's image link).
-  await assertOutboundHostAllowed(imageUrl);
-
-  const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), DOWNLOAD_TIMEOUT_MS);
-
-  let buffer;
-  let contentType;
-  try {
-    const response = await fetch(imageUrl, { signal: controller.signal });
-    if (!response.ok) {
-      throw new Error(`Image download failed with status ${response.status}`);
-    }
-    contentType = response.headers.get('content-type');
-    buffer = await response.buffer();
-  } finally {
-    clearTimeout(timeoutId);
-  }
+  // An untrusted URL (an item's image link): read through readImageSource,
+  // which checks each address it connects to and each redirect, where a
+  // check of the first host alone let a redirect reach a private address.
+  const { content: buffer, contentType } = await readImageSource(imageUrl, {
+    timeoutMs: DOWNLOAD_TIMEOUT_MS,
+    maxBytes: MAX_IMAGE_BYTES,
+  });
 
   if (buffer.length === 0) {
     throw new Error('Downloaded image is empty');
