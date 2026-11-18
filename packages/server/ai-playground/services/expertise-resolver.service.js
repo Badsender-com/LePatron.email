@@ -114,8 +114,11 @@ function normaliseFilter(source = {}) {
  */
 async function previewFilter(source) {
   const filter = normaliseFilter(source);
+  // As the runner reads it: no email type chosen filters nothing.
   const matches = await expertiseRepo.findApplicable({
     ...filter,
+    emailType: filter.emailType || undefined,
+    language: filter.language || undefined,
     everyAudience: true,
   });
   return {

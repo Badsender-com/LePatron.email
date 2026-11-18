@@ -74,7 +74,16 @@ function planEmailTypeMigration({ emailTypes = [], dimensions = [] }) {
         : null;
     }
     if (Object.keys(set).length > 0) {
-      updates.push({ id: item._id, company: item._company, set });
+      updates.push({
+        id: item._id,
+        company: item._company,
+        set,
+        // What the run replaces, so the dry run says what each value loses.
+        was: {
+          canonicalType: item.canonicalType,
+          doctrineType: item.doctrineType,
+        },
+      });
     }
   });
 
@@ -150,12 +159,14 @@ async function main() {
     });
 
     for (const update of updates) {
-      const what = JSON.stringify(update.set);
+      const what = `${JSON.stringify(update.was)} → ${JSON.stringify(
+        update.set
+      )}`;
       if (DRY) {
-        console.log(`[dry] company ${update.company}: ${update.id} ← ${what}`);
+        console.log(`[dry] company ${update.company}: ${update.id}: ${what}`);
       } else {
         await TaxonomyItems.updateOne({ _id: update.id }, { $set: update.set });
-        console.log(`company ${update.company}: ${update.id} ← ${what}`);
+        console.log(`company ${update.company}: ${update.id}: ${what}`);
       }
     }
     reservedNameTaken.forEach((company) =>

@@ -48,6 +48,7 @@ export default {
       // The identifier saved, and whether changing it was confirmed.
       initialIdentifier: null,
       identifierConfirmed: false,
+      initialDoctrineType: undefined,
     };
   },
   validations: {
@@ -135,6 +136,7 @@ export default {
       this.serverIdentifierError = null;
       this.identifierTouched = false;
       this.initialIdentifier = (item && item.canonicalType) || null;
+      this.initialDoctrineType = item ? item.doctrineType : undefined;
       this.identifierConfirmed = false;
       this.form = valueFormFor(item, suggestedOrder);
       this.$v.$reset();
@@ -162,6 +164,7 @@ export default {
         role: this.role,
         isNew: !this.editingId,
         isEmailType: this.isEmailType,
+        initialDoctrineType: this.initialDoctrineType,
       });
       if (this.identifierChanged) {
         payload.confirmIdentifierChange = this.identifierConfirmed;

@@ -40,8 +40,9 @@ const isStandard = (dimension) =>
  *   `trigger` and `_taxonomyItems`
  * @param {string} [params.lang] the reader's language, for the trigger's words
  * @returns {Promise<{dimensions: Object[], missing: string[], language:
- *   (string|null), locale: (string|null), doctrineType: (string|null), text:
- *   string}>}
+ *   (string|null), locale: (string|null), doctrineType: (string|null),
+ *   expertiseFilter: {emailType: (string|undefined), untargetedOnly: boolean},
+ *   text: string}>}
  *   `dimensions` is what the email says, standard dimensions first then in the
  *   declared order; `missing` names the active dimensions the email leaves empty,
  *   so a caller may ask for them rather than write without them.
@@ -56,6 +57,7 @@ async function buildGovernanceContext({ mailing, lang }) {
     await activeDimensions(companyId, lang)
   );
   const values = await valuesOf(mailing, companyId);
+  const emailType = values.get(StandardDimensions.EMAIL_TYPE) || null;
   const emailLocale = await readEmailLocale({ mailing });
 
   const dimensions = [];
@@ -85,9 +87,14 @@ async function buildGovernanceContext({ mailing, lang }) {
     language: emailLocale.language,
     locale: emailLocale.locale,
     // The doctrine type of the email's type (ADR-0030), the vocabulary the
-    // expertises are written against: `null` asks for those targeting none.
-    doctrineType:
-      values.get(StandardDimensions.EMAIL_TYPE)?.doctrineType || null,
+    // expertises are written against, and the filter it makes for
+    // `findApplicable`: a type mapped onto none asks for the expertises
+    // targeting no type; an email with no type filters nothing.
+    doctrineType: emailType ? emailType.doctrineType : null,
+    expertiseFilter: {
+      emailType: (emailType && emailType.doctrineType) || undefined,
+      untargetedOnly: Boolean(emailType) && !emailType.doctrineType,
+    },
     text: renderGovernanceContext({
       dimensions,
       localeLine: localeLine(emailLocale, lang),

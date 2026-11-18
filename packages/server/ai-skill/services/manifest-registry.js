@@ -49,6 +49,7 @@ function listManifests() {
  *   - AND ( expertise transversal  OR  expertise.scope ∩ filter.scope ≠ ∅ )
  *   - AND ( filter has no emailType  OR  expertise loads all email types
  *           OR emailType ∈ expertise.appliesToEmailTypes )
+ *   - AND ( not filter.untargetedOnly  OR  expertise loads all email types )
  */
 function filterMatchesExpertise(filter, expertise) {
   const filterCategories = Array.isArray(filter.categories)
@@ -68,7 +69,12 @@ function filterMatchesExpertise(filter, expertise) {
     : filterScopes.some((s) => expScopes.includes(s));
   if (!scopeMatches) return false;
 
-  if (filter.emailType) {
+  if (filter.untargetedOnly === true) {
+    const targeted = Array.isArray(expertise.appliesToEmailTypes)
+      ? expertise.appliesToEmailTypes.length > 0
+      : false;
+    if (targeted) return false;
+  } else if (filter.emailType) {
     const expEmailTypes = Array.isArray(expertise.appliesToEmailTypes)
       ? expertise.appliesToEmailTypes
       : [];
