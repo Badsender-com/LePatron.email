@@ -147,8 +147,9 @@ function defaultQualitySettings() {
 }
 
 // The checks the server runs on the export, once the others are done: when
-// one of them blocks, the export waits for its answer (up to the 20 s the
-// server gives itself, quality-resources.service.js).
+// one of them blocks, the export waits for its answer, 30 s at most and
+// cancellable (the editor's quality-gate.js). The image format check also
+// reads the server's answer, but never makes the export wait.
 const SERVER_CHECKS = Object.freeze([
   'broken-links',
   'dangerous-links',
