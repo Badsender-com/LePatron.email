@@ -14,6 +14,7 @@ const SEGMENT_OF = {
   literalNotCarried: 'templates',
   literalNotOffered: 'crossings',
   doctrineLiteralUnknown: 'templates',
+  emailTypeNotMapped: 'values',
 };
 
 export default {

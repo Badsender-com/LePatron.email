@@ -1402,6 +1402,8 @@ export default {
           '{templates} compare {identifier}, qu\'aucune valeur ne porte.',
         literalNotOffered:
           '{templates} compare {identifier} avec {parent}, mais {identifier} n\'est pas proposé sous {parent}.',
+        emailTypeNotMapped:
+          '{value} n\'est rattachée à aucun type Badsender : elle ne charge que les expertises qui ne ciblent aucun type.',
         doctrineLiteralUnknown:
           '{templates} compare doctrineType à {identifier}, qui n\'est aucun des six types Badsender.',
       },
