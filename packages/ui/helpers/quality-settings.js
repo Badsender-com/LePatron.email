@@ -20,14 +20,11 @@ export function checksByCategory() {
   }));
 }
 
-// The server's code for a change to a check of the technical settings
-// (TECH_CHECKS) by a user who cannot set them. Read from ERROR_CODES once
-// the UI's copy of the codes has it.
-const FORBIDDEN_TECH_QUALITY_CHECK =
-  ERROR_CODES.FORBIDDEN_TECH_QUALITY_CHECK || 'FORBIDDEN_TECH_QUALITY_CHECK';
-
+// FORBIDDEN_TECH_QUALITY_CHECK: a change to a check of the technical
+// settings (TECH_CHECKS) by a user who cannot set them.
 const MESSAGES = {
-  [FORBIDDEN_TECH_QUALITY_CHECK]: 'qualitySettings.snackbars.forbidden',
+  [ERROR_CODES.FORBIDDEN_TECH_QUALITY_CHECK]:
+    'qualitySettings.snackbars.forbidden',
   [ERROR_CODES.INVALID_QUALITY_SETTINGS]: 'qualitySettings.snackbars.invalid',
 };
 

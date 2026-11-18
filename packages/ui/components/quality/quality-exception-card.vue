@@ -199,9 +199,9 @@ export default {
           mandatory
           dense
           role="group"
-          :aria-label="`${$t('qualitySettings.stateLabel')} : ${checkName(
-            checkId
-          )}`"
+          :aria-label="
+            labelValue($t('qualitySettings.stateLabel'), checkName(checkId))
+          "
           :color="applied.state === 'blocking' ? 'error' : 'accent'"
           @change="$emit('state', $event)"
         >

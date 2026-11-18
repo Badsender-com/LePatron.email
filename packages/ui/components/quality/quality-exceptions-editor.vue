@@ -299,7 +299,6 @@ export default {
     />
 
     <bs-quality-save-bar
-      v-if="changeCount || invalidCount || loading"
       :change-count="changeCount"
       :loading="loading"
       :invalid-count="invalidCount"
