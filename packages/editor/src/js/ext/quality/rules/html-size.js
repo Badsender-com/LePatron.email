@@ -12,7 +12,9 @@ const { kbSize } = require('../message-params');
 // A company may set its threshold above Gmail's limit: past the threshold it
 // is warned of both, and between the two Gmail's clipping is only an info,
 // the threshold being the company's own choice.
-const GMAIL_CLIPPING_BYTES = 102 * 1024;
+const {
+  GMAIL_CLIPPING_BYTES,
+} = require('../../../../../../shared/quality/limits.js');
 
 const kbOf = (bytes) => Math.ceil(bytes / 1024);
 
