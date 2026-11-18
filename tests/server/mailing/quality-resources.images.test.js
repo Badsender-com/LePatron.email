@@ -47,6 +47,83 @@ describe('images', () => {
     });
   });
 
+  // probe-image-size knows no AVIF nor HEIC: the type the server announced
+  // tells them, for the editor's format check.
+  it.each([
+    ['image/avif', 'avif'],
+    ['image/heic', 'heic'],
+    ['image/HEIF; charset=binary', 'heif'],
+  ])('reads the type of an image it cannot parse from %s', async (ct, type) => {
+    const d = deps({
+      probe: jest.fn(async () => ({
+        status: 200,
+        contentType: ct,
+        body: Buffer.from('not an image probe-image-size knows'),
+      })),
+    });
+    const { images } = await run({ images: ['https://cdn.test/img/1'] }, d);
+    expect(images['https://cdn.test/img/1']).toEqual({
+      state: 'ok',
+      bytes: 35,
+      type,
+    });
+  });
+
+  it.each([['application/octet-stream'], ['image/*'], [null]])(
+    'reads no type from a vague Content-Type (%s)',
+    async (ct) => {
+      const d = deps({
+        probe: jest.fn(async () => ({
+          status: 200,
+          contentType: ct,
+          body: Buffer.from('not an image probe-image-size knows'),
+        })),
+      });
+      const { images } = await run({ images: ['https://cdn.test/img/1'] }, d);
+      expect(images['https://cdn.test/img/1']).toEqual({
+        state: 'ok',
+        bytes: 35,
+      });
+    }
+  );
+
+  it('prefers the type read in the image over the Content-Type', async () => {
+    const d = deps({
+      probe: jest.fn(async () => ({
+        status: 200,
+        contentType: 'application/octet-stream',
+        body: ONE_PIXEL_PNG,
+      })),
+    });
+    const { images } = await run({ images: ['https://cdn.test/img/1'] }, d);
+    expect(images['https://cdn.test/img/1'].type).toBe('png');
+  });
+
+  it.each([
+    ['announced', 'image/svg+xml'],
+    ['not announced', null],
+  ])(
+    'keeps the type of an SVG without dimensions, its Content-Type %s',
+    async (_, ct) => {
+      const svg = Buffer.from(
+        '<svg xmlns="http://www.w3.org/2000/svg"><rect/></svg>'
+      );
+      const d = deps({
+        probe: jest.fn(async () => ({
+          status: 200,
+          contentType: ct,
+          body: svg,
+        })),
+      });
+      const { images } = await run({ images: ['https://cdn.test/img/1'] }, d);
+      expect(images['https://cdn.test/img/1']).toEqual({
+        state: 'ok',
+        bytes: svg.length,
+        ...(ct ? { type: 'svg' } : {}),
+      });
+    }
+  );
+
   it('measures our own images the way the export gets them, never at the host named', async () => {
     const d = deps();
     await run(
