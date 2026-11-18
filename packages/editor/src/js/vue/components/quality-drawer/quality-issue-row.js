@@ -1,5 +1,6 @@
 const Vue = require('vue/dist/vue.common');
 const { SEVERITY_META } = require('./quality-meta');
+const { rowPanelId } = require('./quality-items');
 
 // One result of the quality drawer: collapsed to a line, expanded inline to its
 // full description and its three actions (the mock-up's: go to block, add a
@@ -23,7 +24,7 @@ const QualityIssueRow = Vue.component('QualityIssueRow', {
       return SEVERITY_META[this.item.severity];
     },
     panelId() {
-      return `qc-row-${this.item.id.replace(/[^\w-]/g, '_')}`;
+      return rowPanelId(this.item.id);
     },
     // Passed checks have nothing to act on.
     isFinding() {

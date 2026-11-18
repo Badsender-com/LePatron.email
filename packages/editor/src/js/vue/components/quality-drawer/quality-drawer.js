@@ -34,6 +34,8 @@ const QualityDrawer = Vue.component('QualityDrawer', {
     ignoredFindings: [],
     checks: [],
     ranAt: null,
+    // The row a blocking modal asked to show (viewModel.quality.reveal).
+    focus: null,
     errorCount: 0,
     // Ignoring is shared by everyone who edits the email, so it takes the
     // same right: a reviewer sees the button, greyed out.
@@ -81,6 +83,7 @@ const QualityDrawer = Vue.component('QualityDrawer', {
       bind(q.checks, (value) => (this.checks = value)),
       bind(q.ranAt, (value) => (this.ranAt = value)),
       bind(q.errorCount, (value) => (this.errorCount = value)),
+      bind(q.focus, (value) => (this.focus = value)),
     ];
     // The editor opens before the user is known: locked until they are.
     if (this.vm.currentUser) {
@@ -177,6 +180,7 @@ const QualityDrawer = Vue.component('QualityDrawer', {
         :ignored-findings="ignoredFindings"
         :checks="checks"
         :ran-at="ranAt"
+        :focus="focus"
         :ignore-locked="ignoreLocked"
         @send-test="goTo('send')"
       ></quality-checks-panel>
