@@ -11,7 +11,7 @@ function load() {
   ({
     resolveQualitySettings,
     adjustedThresholds,
-  } = require('../../../packages/server/utils/resolve-quality-settings.js'));
+  } = require('../../../packages/shared/quality/resolve-quality-settings.js'));
 }
 
 describe('resolveQualitySettings — a group', () => {

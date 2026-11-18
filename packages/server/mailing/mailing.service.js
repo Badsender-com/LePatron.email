@@ -39,7 +39,7 @@ const {
 } = require('../utils/resolve-tracking-config');
 const {
   resolveQualitySettings,
-} = require('../utils/resolve-quality-settings.js');
+} = require('../../shared/quality/resolve-quality-settings.js');
 
 const IMAGES_FOLDER = 'images';
 
