@@ -176,10 +176,14 @@ async function main() {
 }
 
 if (require.main === module) {
-  main().catch((err) => {
-    console.error(err);
-    process.exit(1);
-  });
+  // Exits explicitly: the application's models open connections (mail,
+  // jobs) that would keep the script alive once the work is done.
+  main()
+    .then(() => process.exit(0))
+    .catch((err) => {
+      console.error(err);
+      process.exit(1);
+    });
 }
 
 module.exports = { planEmailTypeMigration };
