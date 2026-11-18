@@ -55,7 +55,7 @@ const contextOf = (emailTypeId) =>
   });
 
 // Turned on by #1634 (the AI reads the doctrine type of an email type)
-describe.skip('governance context: identifier and doctrine type of the email type', () => {
+describe('governance context: identifier and doctrine type of the email type', () => {
   it('gives the identifier and the doctrine type of the email type, apart', async () => {
     const context = await contextOf(COMMUNITY);
 
@@ -82,7 +82,7 @@ describe.skip('governance context: identifier and doctrine type of the email typ
 });
 
 // Turned on by #1634 (the AI reads the doctrine type of an email type)
-describe.skip('expertises filtered by the doctrine type', () => {
+describe('expertises filtered by the doctrine type', () => {
   it('gives the doctrine type of the email, the type the expertises are filtered by', async () => {
     expect((await contextOf(COMMUNITY)).doctrineType).toBe('editorial');
   });

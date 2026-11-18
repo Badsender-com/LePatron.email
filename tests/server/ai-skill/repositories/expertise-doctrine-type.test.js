@@ -36,19 +36,22 @@ const EXPERTISES = [
   expertise('transactional-only', ['transactional']),
 ];
 
-const matchesEmailType = (query, doc) => {
-  const clause = (query.$and || []).find((part) =>
-    (part.$or || []).some((or) => 'appliesToEmailTypes' in or)
-  );
-  if (!clause) return true;
-  return clause.$or.some((or) => {
-    const wanted = or.appliesToEmailTypes;
-    if (wanted && wanted.$size === 0) {
-      return doc.appliesToEmailTypes.length === 0;
+// A small evaluator of the clauses the repository writes on
+// `appliesToEmailTypes`: the value itself, or an empty list.
+const matchesClause = (condition, doc) =>
+  condition && condition.$size === 0
+    ? doc.appliesToEmailTypes.length === 0
+    : doc.appliesToEmailTypes.includes(condition);
+
+const matchesEmailType = (query, doc) =>
+  (query.$and || []).every((part) => {
+    if ('appliesToEmailTypes' in part) {
+      return matchesClause(part.appliesToEmailTypes, doc);
     }
-    return doc.appliesToEmailTypes.includes(wanted);
+    const ors = (part.$or || []).filter((or) => 'appliesToEmailTypes' in or);
+    if (!ors.length) return true;
+    return ors.some((or) => matchesClause(or.appliesToEmailTypes, doc));
   });
-};
 
 const loaded = async (emailType) => {
   Expertises.find.mockImplementation((query) => ({
@@ -65,7 +68,7 @@ const loaded = async (emailType) => {
 };
 
 // Turned on by #1634 (the AI reads the doctrine type of an email type)
-describe.skip('expertises filtered by the doctrine type', () => {
+describe('expertises filtered by the doctrine type', () => {
   beforeEach(() => jest.clearAllMocks());
 
   it('loads the expertises of the doctrine type and those targeting none', async () => {
