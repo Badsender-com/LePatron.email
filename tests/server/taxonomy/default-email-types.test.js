@@ -208,7 +208,7 @@ describe('seedDefaultEmailTypes', () => {
 // rule as the seed — which gives up the moment it finds anything — so the two
 // rules are what these tests separate.
 describe('planMissingDefaultEmailTypes', () => {
-  const canonicalsOf = (items) => items.map((item) => item.canonicalType);
+  const canonicalsOf = (items) => items.map((item) => item.doctrineType);
 
   it('proposes all six to a company with nothing', () => {
     const { toCreate, skipped } = planMissingDefaultEmailTypes([], 'fr');
@@ -220,9 +220,9 @@ describe('planMissingDefaultEmailTypes', () => {
   // The label belongs to the company. An admin who renamed "Éditorial" to
   // "Contenu de marque" still has the editorial type, and re-creating it would be
   // the tool undoing their work.
-  it('recognises a renamed type by its canonical mapping', () => {
+  it('recognises a renamed type by its doctrine type', () => {
     const { toCreate } = planMissingDefaultEmailTypes(
-      [{ label: 'Contenu de marque', canonicalType: 'editorial' }],
+      [{ label: 'Contenu de marque', doctrineType: 'editorial' }],
       'fr'
     );
 
@@ -232,7 +232,7 @@ describe('planMissingDefaultEmailTypes', () => {
 
   it('restores a single deleted type and leaves the rest alone', () => {
     const all = buildDefaultEmailTypes('fr');
-    const existing = all.filter((item) => item.canonicalType !== 'service');
+    const existing = all.filter((item) => item.doctrineType !== 'service');
 
     const { toCreate } = planMissingDefaultEmailTypes(existing, 'fr');
 
@@ -251,10 +251,10 @@ describe('planMissingDefaultEmailTypes', () => {
 
   // A company that mapped nothing gets everything back: that is the correct
   // reading of "this company has no Badsender type", however its items are named.
-  it('ignores items carrying no canonical mapping', () => {
+  it('ignores items mapped onto no doctrine type', () => {
     const { toCreate } = planMissingDefaultEmailTypes(
       [
-        { label: 'Black Friday', canonicalType: null },
+        { label: 'Black Friday', doctrineType: null },
         { label: 'Relance panier' },
       ],
       'fr'
@@ -267,13 +267,13 @@ describe('planMissingDefaultEmailTypes', () => {
   // different "Éditorial" is better told than worked around.
   it('skips a type whose label is already taken, rather than mangling it', () => {
     const { toCreate, skipped } = planMissingDefaultEmailTypes(
-      [{ label: 'Éditorial', canonicalType: null }],
+      [{ label: 'Éditorial', doctrineType: null }],
       'fr'
     );
 
     expect(canonicalsOf(toCreate)).not.toContain('editorial');
     expect(skipped).toEqual([
-      { canonicalType: 'editorial', label: 'Éditorial' },
+      { doctrineType: 'editorial', label: 'Éditorial' },
     ]);
   });
 
@@ -284,7 +284,7 @@ describe('planMissingDefaultEmailTypes', () => {
     'treats %p as the same label',
     (label) => {
       const { skipped } = planMissingDefaultEmailTypes(
-        [{ label, canonicalType: null }],
+        [{ label, doctrineType: null }],
         'fr'
       );
 
@@ -294,7 +294,7 @@ describe('planMissingDefaultEmailTypes', () => {
 
   it('keeps the doctrine order rather than appending at the end', () => {
     const all = buildDefaultEmailTypes('fr');
-    const existing = all.filter((item) => item.canonicalType !== 'editorial');
+    const existing = all.filter((item) => item.doctrineType !== 'editorial');
 
     const { toCreate } = planMissingDefaultEmailTypes(existing, 'fr');
 

@@ -27,7 +27,7 @@ const {
  */
 const DEFAULT_EMAIL_TYPES = Object.freeze([
   {
-    canonicalType: EmailTypeCanonical.EDITORIAL,
+    doctrineType: EmailTypeCanonical.EDITORIAL,
     order: 1,
     fr: {
       label: 'Éditorial',
@@ -41,7 +41,7 @@ const DEFAULT_EMAIL_TYPES = Object.freeze([
     },
   },
   {
-    canonicalType: EmailTypeCanonical.PROMOTIONAL,
+    doctrineType: EmailTypeCanonical.PROMOTIONAL,
     order: 2,
     fr: {
       label: 'Promotionnel',
@@ -55,7 +55,7 @@ const DEFAULT_EMAIL_TYPES = Object.freeze([
     },
   },
   {
-    canonicalType: EmailTypeCanonical.SERVICE,
+    doctrineType: EmailTypeCanonical.SERVICE,
     order: 3,
     fr: {
       label: 'Serviciel',
@@ -69,7 +69,7 @@ const DEFAULT_EMAIL_TYPES = Object.freeze([
     },
   },
   {
-    canonicalType: EmailTypeCanonical.NOTIFICATION,
+    doctrineType: EmailTypeCanonical.NOTIFICATION,
     order: 4,
     fr: {
       label: 'Suivi',
@@ -83,7 +83,7 @@ const DEFAULT_EMAIL_TYPES = Object.freeze([
     },
   },
   {
-    canonicalType: EmailTypeCanonical.TRANSACTIONAL,
+    doctrineType: EmailTypeCanonical.TRANSACTIONAL,
     order: 5,
     fr: {
       label: 'Transactionnel',
@@ -97,7 +97,7 @@ const DEFAULT_EMAIL_TYPES = Object.freeze([
     },
   },
   {
-    canonicalType: EmailTypeCanonical.INSTITUTIONAL,
+    doctrineType: EmailTypeCanonical.INSTITUTIONAL,
     order: 6,
     fr: {
       label: 'Institutionnel',
@@ -145,15 +145,18 @@ function pickSeedLang(...candidates) {
  * `type`.
  *
  * @param {string} [lang] `fr` or `en`; anything else falls back to `en`
- * @returns {Array<{label: string, description: string, canonicalType: string, order: number}>}
+ * @returns {Array<{label: string, description: string, canonicalType: string, doctrineType: string, order: number}>}
  */
 function buildDefaultEmailTypes(lang) {
   const locale = SEED_LANGS.includes(lang) ? lang : DEFAULT_SEED_LANG;
 
+  // The doctrine type is also the identifier of a default email type
+  // (ADR-0030): readable, and stable from one company to the next.
   return DEFAULT_EMAIL_TYPES.map((item) => ({
     label: item[locale].label,
     description: item[locale].description,
-    canonicalType: item.canonicalType,
+    canonicalType: item.doctrineType,
+    doctrineType: item.doctrineType,
     order: item.order,
   }));
 }
@@ -177,11 +180,16 @@ const labelKey = (label) =>
  * code that performs the write — not by a second implementation that can drift
  * from it.
  *
- * Missing is decided on `canonicalType`, not on the label, because the label is
- * the company's to change: an admin who renamed "Éditorial" to "Contenu de marque"
- * still has the editorial type, and re-creating it would be the tool undoing their
- * work. A company that mapped nothing gets everything back — which is the correct
- * reading of "this company has no Badsender type".
+ * Missing is decided on the doctrine type (ADR-0030), not on the label nor on
+ * the identifier, because both are the company's to change: an admin who
+ * declined "Éditorial" into "Infolettre communauté" (`com`) and "Relationnel"
+ * (`rel`) still has the editorial type, and re-creating it would be the tool
+ * undoing their work. A company that mapped nothing gets everything back —
+ * which is the correct reading of "this company has no Badsender type".
+ *
+ * A restored type takes its doctrine type as identifier, suffixed (`service_2`)
+ * when the company already uses it: an identifier must stay unique, and a
+ * restore should not fail on one.
  *
  * A type whose label is already taken is reported as skipped rather than created
  * under a mangled name. "Éditorial (2)" is not a thing anyone asked for, and the
@@ -192,36 +200,51 @@ const labelKey = (label) =>
  * a sort key and need not be unique, so this cannot fail — it can only place the
  * restored item among the others rather than after them.
  *
- * @param {Array<{label: string, canonicalType: string}>} existingItems the
- *   company's current email types, active or not
+ * @param {Array<{label: string, canonicalType: string, doctrineType: string}>}
+ *   existingItems the company's current email types, active or not
  * @param {string} [lang] `fr` or `en`; anything else falls back to `en`
- * @returns {{toCreate: Array<Object>, skipped: Array<{canonicalType: string, label: string}>}}
+ * @returns {{toCreate: Array<Object>, skipped: Array<{doctrineType: string, label: string}>}}
  */
 function planMissingDefaultEmailTypes(existingItems, lang) {
-  const items = existingItems || [];
+  const items = (existingItems || []).filter(Boolean);
   const mapped = new Set(
-    items.map((item) => item && item.canonicalType).filter(Boolean)
+    items.map((item) => item.doctrineType).filter(Boolean)
   );
-  const takenLabels = new Set(
-    items.map((item) => labelKey(item && item.label))
+  const takenLabels = new Set(items.map((item) => labelKey(item.label)));
+  const takenIdentifiers = new Set(
+    items.map((item) => item.canonicalType).filter(Boolean)
   );
 
   const toCreate = [];
   const skipped = [];
 
   for (const candidate of buildDefaultEmailTypes(lang)) {
-    if (mapped.has(candidate.canonicalType)) continue;
+    if (mapped.has(candidate.doctrineType)) continue;
     if (takenLabels.has(labelKey(candidate.label))) {
       skipped.push({
-        canonicalType: candidate.canonicalType,
+        doctrineType: candidate.doctrineType,
         label: candidate.label,
       });
       continue;
     }
-    toCreate.push(candidate);
+    const identifier = freeIdentifier(
+      candidate.canonicalType,
+      takenIdentifiers
+    );
+    takenIdentifiers.add(identifier);
+    toCreate.push({ ...candidate, canonicalType: identifier });
   }
 
   return { toCreate, skipped };
+}
+
+// `service`, else `service_2`, `service_3`…: the first one the company does
+// not use.
+function freeIdentifier(identifier, taken) {
+  if (!taken.has(identifier)) return identifier;
+  let suffix = 2;
+  while (taken.has(`${identifier}_${suffix}`)) suffix += 1;
+  return `${identifier}_${suffix}`;
 }
 
 module.exports = {

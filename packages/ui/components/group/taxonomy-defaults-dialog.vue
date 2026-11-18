@@ -96,7 +96,7 @@ export default {
     <template v-else>
       <p>{{ $t('taxonomy.defaults.confirmIntro') }}</p>
       <ul class="taxonomy-defaults__list mb-3">
-        <li v-for="item in toCreate" :key="item.canonicalType">
+        <li v-for="item in toCreate" :key="item.doctrineType">
           {{ item.label }}
         </li>
       </ul>

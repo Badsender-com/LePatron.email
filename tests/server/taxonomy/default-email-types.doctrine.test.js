@@ -17,7 +17,7 @@ const existing = (label, canonicalType, doctrineType) => ({
 });
 
 // Turned on by #1635 (default email types are judged on the doctrine type)
-describe.skip('default email types judged on the doctrine type', () => {
+describe('default email types judged on the doctrine type', () => {
   it('seeds each default email type with its doctrine type, also its identifier', () => {
     const editorial = buildDefaultEmailTypes('fr').find(
       (item) => item.doctrineType === 'editorial'
