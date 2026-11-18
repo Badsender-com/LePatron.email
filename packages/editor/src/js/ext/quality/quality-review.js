@@ -183,13 +183,11 @@ function installQualityReview(viewModel, ko, deps = {}) {
     // Blocklists are left out: they only run where they are configured.
     ruleCount: localRules.length + (resourcesUrl ? remote.listedCount : 0),
     // How many checks the quality settings turned off, for the drawer to say.
-    turnedOffCount: ko.pureComputed(
-      () =>
-        DEFAULT_RULES.length +
-        listedRemoteRules.length -
-        localRules.length -
-        remote.listedCount
-    ),
+    turnedOffCount:
+      DEFAULT_RULES.length +
+      listedRemoteRules.length -
+      localRules.length -
+      remote.listedCount,
     // The findings still to deal with, and those the team chose to ignore.
     activeFindings: active,
     ignoredFindings: ko.pureComputed(() => findings().filter(isIgnored)),

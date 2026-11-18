@@ -122,7 +122,8 @@ const QualityChecksPanel = Vue.component('QualityChecksPanel', {
         const row = panel && panel.closest('.qc-row');
         if (!row) return;
         if (row.scrollIntoView) row.scrollIntoView({ block: 'nearest' });
-        row.querySelector('.qc-row__head').focus();
+        const head = row.querySelector('.qc-row__head');
+        if (head) head.focus();
       });
     },
     items(items) {
@@ -208,7 +209,7 @@ const QualityChecksPanel = Vue.component('QualityChecksPanel', {
           {{ t('Run quality checks') }}
         </button>
         <p class="qc-drawer__hint">{{ t('__count__ checks', { count: vm.quality.ruleCount }) }}</p>
-        <p v-if="vm.quality.turnedOffCount() > 0" class="qc-drawer__hint qc-turned-off">{{ t('__count__ checks turned off by your company or this template', { count: vm.quality.turnedOffCount() }) }}</p>
+        <p v-if="vm.quality.turnedOffCount > 0" class="qc-drawer__hint qc-turned-off">{{ t('__count__ checks turned off by your company or this template', { count: vm.quality.turnedOffCount }) }}</p>
       </div>
 
       <div v-else-if="status === 'running'" class="qc-drawer__running">
@@ -228,7 +229,7 @@ const QualityChecksPanel = Vue.component('QualityChecksPanel', {
           :t="t"
           @run="run"
         ></quality-summary>
-        <p v-if="vm.quality.turnedOffCount() > 0" class="qc-drawer__hint qc-turned-off">{{ t('__count__ checks turned off by your company or this template', { count: vm.quality.turnedOffCount() }) }}</p>
+        <p v-if="vm.quality.turnedOffCount > 0" class="qc-drawer__hint qc-turned-off">{{ t('__count__ checks turned off by your company or this template', { count: vm.quality.turnedOffCount }) }}</p>
 
         <div class="qc-drawer__list">
           <quality-group
