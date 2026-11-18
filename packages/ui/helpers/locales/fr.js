@@ -240,6 +240,7 @@ export default {
     newTemplate: 'Ajouter un template',
     newFolder: 'Nouveau dossier',
     parentLocation: 'Destination',
+    company: 'Entreprise | Entreprises',
     template: 'Template | Templates',
     mailing: 'Email | Emails',
     newMailing: 'Nouvel email',

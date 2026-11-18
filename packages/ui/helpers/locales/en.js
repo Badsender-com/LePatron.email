@@ -236,6 +236,7 @@ export default {
     newTemplate: 'Add a template',
     newFolder: 'New folder',
     parentLocation: 'Location',
+    company: 'Company | Companies',
     template: 'Template | Templates',
     mailing: 'Email | Emails',
     newMailing: 'New email',
