@@ -1262,6 +1262,9 @@ export default {
     },
     page: {
       adjusted: 'Seuil « {level} » du réglage général ({inherited} {unit}) ajusté à {value} {unit} par ce template.',
+      loadError: 'Les réglages du contrôle qualité n\'ont pas pu être chargés.',
+      retry: 'Réessayer',
+      backToTemplates: 'Retour à la liste des templates',
     },
   },
   emailBuilderSettings: {

@@ -1,6 +1,7 @@
 import { CHECKS } from '~/helpers/constants/quality-checks.js';
 import {
   checksByCategory,
+  loadQualitySettings,
   qualitySettingsErrorKeyFor,
 } from '~/helpers/quality-settings.js';
 
@@ -42,5 +43,54 @@ describe('quality settings page helpers', () => {
     expect(qualitySettingsErrorKeyFor(refused)).toBe(
       'qualitySettings.snackbars.error'
     );
+  });
+});
+
+describe('what the quality pages load', () => {
+  const context = ({ group, templates }) => ({
+    params: { groupId: 'g1' },
+    store: { commit: jest.fn() },
+    app: { i18n: { t: (key) => key } },
+    $axios: {
+      $get: jest.fn((url) => {
+        const answer = url.endsWith('/templates') ? templates : group;
+        return answer instanceof Error
+          ? Promise.reject(answer)
+          : Promise.resolve(answer);
+      }),
+    },
+  });
+
+  it('gives the group and its templates', async () => {
+    const loaded = await loadQualitySettings(
+      context({ group: { id: 'g1' }, templates: { items: [{ id: 't1' }] } })
+    );
+    expect(loaded).toEqual({
+      group: { id: 'g1' },
+      templates: [{ id: 't1' }],
+      loadError: false,
+    });
+  });
+
+  it('tells a group without templates from a list it could not read', async () => {
+    const empty = await loadQualitySettings(
+      context({ group: { id: 'g1' }, templates: { items: [] } })
+    );
+    expect(empty.loadError).toBe(false);
+    const failed = await loadQualitySettings(
+      context({ group: { id: 'g1' }, templates: new Error('Network Error') })
+    );
+    expect(failed).toEqual({
+      group: { id: 'g1' },
+      templates: [],
+      loadError: true,
+    });
+  });
+
+  it('is a load error when the group cannot be read', async () => {
+    const loaded = await loadQualitySettings(
+      context({ group: new Error('Network Error'), templates: { items: [] } })
+    );
+    expect(loaded.loadError).toBe(true);
   });
 });

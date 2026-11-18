@@ -3,8 +3,8 @@ import { mapGetters } from 'vuex';
 import { Plus } from 'lucide-vue';
 import * as acls from '~/helpers/pages-acls.js';
 import * as apiRoutes from '~/helpers/api-routes.js';
-import { safeFetchGroup } from '~/helpers/safe-fetch-group';
 import { GENERAL } from '~/helpers/quality-exceptions.js';
+import { loadQualitySettings } from '~/helpers/quality-settings.js';
 import mixinSettingsTitle from '~/helpers/mixins/mixin-settings-title.js';
 import mixinUnsavedChanges from '~/helpers/mixins/mixin-unsaved-changes.js';
 import BsPageHeader from '~/components/layout/bs-page-header.vue';
@@ -36,23 +36,15 @@ export default {
   meta: {
     acl: acls.ACL_GROUP_MANAGE,
   },
-  async asyncData(nuxtContext) {
-    const [groupData, templates] = await Promise.all([
-      safeFetchGroup(nuxtContext),
-      nuxtContext.$axios
-        .$get(apiRoutes.groupsItemTemplates(nuxtContext.params))
-        .then((response) => response.items || [])
-        .catch((error) => {
-          console.error('[Quality] Failed to load the templates:', error);
-          return [];
-        }),
-    ]);
-    return { ...groupData, templates };
+  asyncData(nuxtContext) {
+    return loadQualitySettings(nuxtContext);
   },
   data() {
     return {
       group: {},
       templates: [],
+      loadError: false,
+      reloading: false,
       tab: TABS.includes(this.$route.query.tab)
         ? this.$route.query.tab
         : 'general',
@@ -92,6 +84,23 @@ export default {
       this.askToLeave(go);
     },
 
+    async reload() {
+      this.reloading = true;
+      try {
+        Object.assign(
+          this,
+          await loadQualitySettings({
+            $axios: this.$axios,
+            params: this.$route.params,
+            store: this.$store,
+            app: { i18n: this.$i18n },
+          })
+        );
+      } finally {
+        this.reloading = false;
+      }
+    },
+
     saveGeneral(qualitySettings) {
       // Partial update: only the section this page owns travels.
       return this.$axios.$put(
@@ -128,7 +137,7 @@ export default {
           {{ group.name }}
         </v-chip>
       </template>
-      <template v-if="tab === 'general'" #actions>
+      <template v-if="tab === 'general' && !loadError" #actions>
         <v-btn color="accent" elevation="0" @click="$refs.editor.openAdd()">
           <plus :size="16" class="mr-1" />
           {{ $t('qualitySettings.addException') }}
@@ -136,6 +145,7 @@ export default {
       </template>
     </bs-page-header>
     <v-tabs
+      v-if="!loadError"
       :key="tabsKey"
       :value="tab"
       class="hub-tabs quality-tabs"
@@ -150,7 +160,15 @@ export default {
     <v-divider />
     <v-container fluid>
       <div class="settings-content quality-content">
-        <div v-if="tab === 'general'">
+        <v-alert v-if="loadError" type="error" outlined role="alert">
+          {{ $t('qualitySettings.page.loadError') }}
+          <template #append>
+            <v-btn text color="error" :loading="reloading" @click="reload">
+              {{ $t('qualitySettings.page.retry') }}
+            </v-btn>
+          </template>
+        </v-alert>
+        <div v-else-if="tab === 'general'">
           <p class="quality-intro">{{ $t('qualitySettings.general.intro') }}</p>
           <bs-quality-exceptions-editor
             ref="editor"

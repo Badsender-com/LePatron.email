@@ -1456,6 +1456,9 @@ export default {
     },
     page: {
       adjusted: 'General "{level}" threshold ({inherited} {unit}) brought to {value} {unit} by this template.',
+      loadError: 'The quality control settings could not be loaded.',
+      retry: 'Try again',
+      backToTemplates: 'Back to the templates list',
     },
   },
   emailBuilderSettings: {

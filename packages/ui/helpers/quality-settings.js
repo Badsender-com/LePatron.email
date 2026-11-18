@@ -1,4 +1,6 @@
+import * as apiRoutes from '~/helpers/api-routes.js';
 import { ERROR_CODES } from '~/helpers/constants/error-codes.js';
+import { safeFetchGroup } from '~/helpers/safe-fetch-group';
 import {
   CHECKS,
   CHECK_CATEGORIES,
@@ -39,4 +41,26 @@ export function qualitySettingsErrorKeyFor(error) {
   return Object.prototype.hasOwnProperty.call(MESSAGES, code)
     ? MESSAGES[code]
     : 'qualitySettings.snackbars.error';
+}
+
+/**
+ * What the "Contrôle qualité" pages load: the group and its templates. A
+ * list that cannot be read is a load error, never an empty list: "no
+ * template" and "try again" lead to opposite acts.
+ * @param {Object} nuxtContext the asyncData context, or the same keys
+ * @returns {Promise<{ group: Object, templates: Object[], loadError: boolean }>}
+ */
+export async function loadQualitySettings(nuxtContext) {
+  const [groupData, templates] = await Promise.all([
+    safeFetchGroup(nuxtContext),
+    nuxtContext.$axios
+      .$get(apiRoutes.groupsItemTemplates(nuxtContext.params))
+      .then((response) => response.items || [])
+      .catch(() => null),
+  ]);
+  return {
+    group: groupData.group,
+    templates: templates || [],
+    loadError: !groupData.group.id || templates === null,
+  };
 }
