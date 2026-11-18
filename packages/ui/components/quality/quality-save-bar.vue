@@ -1,7 +1,9 @@
 <script>
 import { AlertTriangle } from 'lucide-vue';
 
-// The save button of a "Contrôle qualité" page, with how many changes wait.
+// The save bar of a "Contrôle qualité" page, always shown as on the other
+// settings pages: how many changes wait, and its buttons greyed out while
+// there is none.
 export default {
   name: 'BsQualitySaveBar',
   components: { AlertTriangle },
@@ -28,11 +30,11 @@ export default {
     </span>
     <v-btn
       text
-      color="accent"
+      color="primary"
       :disabled="loading || !changeCount"
       @click="$emit('cancel')"
     >
-      {{ $t('global.cancel') }}
+      {{ $t('qualitySettings.unsaved.cancel') }}
     </v-btn>
     <v-btn
       color="accent"
@@ -53,7 +55,9 @@ export default {
   align-items: center;
   justify-content: flex-end;
   gap: 8px;
-  margin-top: 24px;
+  margin-top: 2rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--gray-300);
 
   &__status {
     display: inline-flex;
