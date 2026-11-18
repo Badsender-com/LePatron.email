@@ -24,10 +24,29 @@ const escapeText = (s) =>
 const SPINNER =
   '<div class="bs-modal-spinner quality-wait-modal__spinner" aria-hidden="true"><svg class="bs-modal-spinner-svg" viewBox="0 0 50 50"><circle class="bs-modal-spinner-circle" cx="25" cy="25" r="20" fill="none" stroke-width="4"></circle></svg></div>';
 
+// The namespace of the document events a modal of the gate listens to.
+const EVENTS = '.qualityModal';
+
+// Tab and Shift+Tab loop over the modal's buttons.
+function trapTab(evt, buttons, inside) {
+  if (!buttons.length) return;
+  const first = buttons[0];
+  const last = buttons[buttons.length - 1];
+  const active = document.activeElement;
+  let target = null;
+  if (!inside(active)) target = evt.shiftKey ? last : first;
+  else if (evt.shiftKey && active === first) target = last;
+  else if (!evt.shiftKey && active === last) target = first;
+  if (!target) return;
+  evt.preventDefault();
+  target.focus();
+}
+
 /**
- * Appends a modal of the editor's framework and wires its closing.
+ * Appends a modal of the editor's framework, wires its closing and keeps
+ * the focus in it.
  * @param {Object} options
- * @param {string} options.name - its class, and the namespace of its keys
+ * @param {string} options.name - its class
  * @param {string} options.content - HTML of .modal-content, escaped
  * @param {string} options.footer - HTML of .modal-footer, escaped
  * @param {Function} options.onEscape - what the Escape key does
@@ -35,9 +54,10 @@ const SPINNER =
  * @returns {Object} the overlay, and `close()`
  */
 function mountModal({ name, content, footer, onEscape, dismissible = false }) {
-  // A modal of the same name is replaced, its keys with it.
-  $(`.bs-modal-overlay.${name}`).remove();
-  $(document).off(`.${name}`);
+  // One modal of the gate at a time: a new one replaces the one before, its
+  // keys and its hold on the focus with it.
+  $('.bs-modal-overlay.quality-modal').remove();
+  $(document).off(EVENTS);
   const $overlay = $(`
     <div class="bs-modal-overlay quality-modal ${name} small-modal" role="dialog" aria-modal="true" aria-labelledby="${name}-title">
       <div class="bs-modal-container">
@@ -50,18 +70,26 @@ function mountModal({ name, content, footer, onEscape, dismissible = false }) {
       </div>
     </div>
   `);
-  const keys = `keydown.${name}`;
   const close = () => {
     $overlay.remove();
-    $(document).off(keys);
+    $(document).off(EVENTS);
   };
   if (dismissible) {
     $overlay.on('click', (evt) => {
       if (evt.target === $overlay[0]) close();
     });
   }
-  $(document).on(keys, (evt) => {
+  // The focus stays in the modal: the editor behind it cannot change the
+  // email the gate is checking.
+  const buttons = () => $overlay.find('button:not([disabled])').toArray();
+  const inside = (node) => $overlay[0].contains(node);
+  $(document).on(`keydown${EVENTS}`, (evt) => {
     if (evt.key === 'Escape') onEscape();
+    if (evt.key === 'Tab') trapTab(evt, buttons(), inside);
+  });
+  $(document).on(`focusin${EVENTS}`, (evt) => {
+    const [first] = buttons();
+    if (first && !inside(evt.target)) first.focus();
   });
   $('body').append($overlay);
   return { $overlay, close };
