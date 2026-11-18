@@ -24,6 +24,8 @@ const { CHECKS, CHECK_STATES } = require('../../shared/quality/checks.js');
  *
  * @param {Object} raw the payload's qualitySettings
  * @param {Object} [stored] the settings stored on the group or template
+ * @param {Object} [inherited] for a template, its group's resolved thresholds
+ *   by check: what its unset thresholds follow
  * @returns {{ checks: Object }}
  */
 function sanitizeQualitySettings(raw, stored, inherited = {}) {
@@ -58,6 +60,12 @@ function sanitizeQualitySettings(raw, stored, inherited = {}) {
       ? current[checkId]
       : {};
     const next = { ...stored };
+    // A stored value that is not a number was not written by this sanitizer:
+    // it is dropped rather than written back.
+    if ('thresholds' in next) {
+      next.thresholds = finiteThresholds(next.thresholds);
+      if (!Object.keys(next.thresholds).length) delete next.thresholds;
+    }
     if ('state' in change) {
       if (change.state === null) delete next.state;
       else if (!CHECK_STATES.includes(change.state)) {
@@ -91,7 +99,7 @@ function mergeThresholds(checkId, raw, stored, fail, inherited = {}) {
     throw fail(`thresholds of ${checkId} must be an object`);
   }
   const known = CHECKS[checkId].thresholds;
-  const merged = { ...(stored || {}) };
+  const merged = finiteThresholds(stored);
   Object.entries(raw).forEach(([name, value]) => {
     // Own keys only: "constructor" is not a threshold of the catalogue.
     if (!Object.prototype.hasOwnProperty.call(known, name)) {
@@ -114,11 +122,13 @@ function mergeThresholds(checkId, raw, stored, fail, inherited = {}) {
   });
   // Thresholds that go together stay in order once merged, with what is
   // inherited or the defaults: an error level under its warning level would
-  // never be reached.
+  // never be reached. An inherited value that is not a number is skipped, as
+  // resolveQualitySettings skips it.
+  const inheritedValues = finiteThresholds(inherited);
   CHECKS[checkId].ordered.forEach(([low, high]) => {
     const value = (name) => {
-      if (name in merged) return merged[name];
-      if (Number.isFinite(inherited[name])) return inherited[name];
+      if (own(merged, name)) return merged[name];
+      if (own(inheritedValues, name)) return inheritedValues[name];
       return known[name].default;
     };
     if (value(low) > value(high)) {
@@ -126,6 +136,18 @@ function mergeThresholds(checkId, raw, stored, fail, inherited = {}) {
     }
   });
   return merged;
+}
+
+const own = (object, key) => Object.prototype.hasOwnProperty.call(object, key);
+
+// The thresholds that are finite numbers, as own keys of a plain object: what
+// a super admin may have stored by hand, or what a group passes down, is read
+// the way resolveQualitySettings reads it.
+function finiteThresholds(thresholds) {
+  if (!thresholds || typeof thresholds !== 'object') return {};
+  return Object.fromEntries(
+    Object.entries(thresholds).filter(([, value]) => Number.isFinite(value))
+  );
 }
 
 module.exports = { sanitizeQualitySettings };
