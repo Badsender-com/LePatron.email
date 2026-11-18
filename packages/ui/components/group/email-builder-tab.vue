@@ -4,6 +4,7 @@ import isEqual from 'lodash/isEqual';
 import { groupsItem } from '~/helpers/api-routes.js';
 import { emailMetadataErrorKeyFor } from '~/helpers/taxonomy.js';
 import { PAGE, SHOW_SNACKBAR } from '~/store/page.js';
+import BsGroupFeatureSwitch from '~/components/group/feature-switch.vue';
 
 function emptyConfig() {
   return {
@@ -14,6 +15,9 @@ function emptyConfig() {
 
 export default {
   name: 'BsGroupEmailBuilderTab',
+  components: {
+    BsGroupFeatureSwitch,
+  },
   props: {
     group: { type: Object, required: true },
   },
@@ -97,22 +101,24 @@ export default {
     <!-- One section per group of settings: `requiredFields` and the rest of the
          module's options land here as siblings, not as a rewrite of the page. -->
     <section class="settings-section">
-      <h3 class="settings-section__title">
-        {{ $t('emailBuilderSettings.metadata.sectionTitle') }}
-      </h3>
-      <p class="settings-section__description">
-        {{ $t('emailBuilderSettings.metadata.sectionDescription') }}
-      </p>
-
-      <v-switch
-        :input-value="config.enabled"
-        :label="$t('emailBuilderSettings.metadata.enabled')"
-        :disabled="loading"
-        color="accent"
-        hide-details
-        class="settings-section__switch"
-        @change="onEnabledChange"
-      />
+      <div class="settings-section__header">
+        <div>
+          <h3 class="settings-section__title">
+            {{ $t('emailBuilderSettings.metadata.sectionTitle') }}
+          </h3>
+          <p class="settings-section__description">
+            {{ $t('emailBuilderSettings.metadata.sectionDescription') }}
+          </p>
+        </div>
+        <bs-group-feature-switch
+          :value="Boolean(config.enabled)"
+          :label="$t('emailBuilderSettings.metadata.enabled')"
+          :on-text="$t('emailBuilderSettings.metadata.on')"
+          :off-text="$t('emailBuilderSettings.metadata.off')"
+          :disabled="loading"
+          @change="onEnabledChange"
+        />
+      </div>
 
       <p class="settings-section__hint">
         {{ $t('emailBuilderSettings.metadata.enabledHint') }}
@@ -158,8 +164,11 @@ export default {
     margin-bottom: 1rem;
   }
 
-  &__switch {
-    margin-top: 0;
+  &__header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 1rem;
   }
 
   &__hint {

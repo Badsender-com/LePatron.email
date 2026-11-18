@@ -150,6 +150,7 @@ export default {
     emailSent: 'An email was sent',
   },
   global: {
+    states: { on: 'On', off: 'Off' },
     errors: {
       typeCampagneRequired: 'Campaign type is required.',
       errorOccured: 'Oops! An error has occurred :(',
@@ -324,7 +325,6 @@ export default {
         companyInfo: 'Company information',
         companyInfoDescription: 'Enter the main information about the company.',
       },
-      states: { on: 'On', off: 'Off' },
       saml: { name: 'SAML authentication', on: 'On', off: 'Off' },
       enableSaml: 'Enable SAML authentication',
       entryPointHint: 'Login URL provided by your identity provider',
@@ -1206,6 +1206,8 @@ export default {
       sectionDescription:
         'Lets your team set a subject, a planned send date and an email type on each email, instead of retyping them on every send.',
       enabled: 'Enable email metadata',
+      on: 'On',
+      off: 'Off',
       enabledHint:
         'While the option is off, these fields appear nowhere and the API refuses them; data already entered is kept.',
       taxonomyAction: 'Manage email types',

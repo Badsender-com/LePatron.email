@@ -4,6 +4,8 @@ import { groupsItem } from '~/helpers/api-routes.js';
 import { PAGE, SHOW_SNACKBAR } from '~/store/page.js';
 import BsTextField from '~/components/form/bs-text-field.vue';
 import { Trash2 } from 'lucide-vue';
+import BsGroupFeatureSwitch from '~/components/group/feature-switch.vue';
+import BsSettingsRow from '~/components/layout/bs-settings-row.vue';
 
 function emptyConfig() {
   return {
@@ -16,6 +18,8 @@ function emptyConfig() {
 export default {
   name: 'TrackingParamsTab',
   components: {
+    BsGroupFeatureSwitch,
+    BsSettingsRow,
     BsTextField,
     LucideTrash2: Trash2,
   },
@@ -160,24 +164,29 @@ export default {
       {{ $t('trackingConfig.description') }}
     </p>
 
-    <div class="tracking-params__toggles">
-      <v-switch
-        :input-value="config.enabled"
-        :label="$t('trackingConfig.enabled')"
-        color="accent"
-        hide-details
-        @change="onEnabledChange"
-      />
-      <v-switch
-        :input-value="config.restrictValues"
-        :label="$t('trackingConfig.restrictValues')"
-        :disabled="!config.enabled"
-        color="accent"
-        hide-details
-        class="tracking-params__restrict-switch"
-        @change="onRestrictValuesChange"
-      />
-    </div>
+    <ul class="tracking-params__toggles">
+      <bs-settings-row title-id="tracking-enabled-title">
+        <template #title>{{ $t('trackingConfig.enabled') }}</template>
+        <bs-group-feature-switch
+          :value="Boolean(config.enabled)"
+          :label="$t('trackingConfig.enabled')"
+          :on-text="$t('global.states.on')"
+          :off-text="$t('global.states.off')"
+          @change="onEnabledChange"
+        />
+      </bs-settings-row>
+      <bs-settings-row title-id="tracking-restrict-title">
+        <template #title>{{ $t('trackingConfig.restrictValues') }}</template>
+        <bs-group-feature-switch
+          :value="Boolean(config.restrictValues)"
+          :label="$t('trackingConfig.restrictValues')"
+          :on-text="$t('global.states.on')"
+          :off-text="$t('global.states.off')"
+          :disabled="!config.enabled"
+          @change="onRestrictValuesChange"
+        />
+      </bs-settings-row>
+    </ul>
 
     <div v-if="config.enabled" class="params-table">
       <div class="params-table__header">
@@ -299,14 +308,9 @@ export default {
   }
 
   &__toggles {
-    display: flex;
-    flex-direction: column;
-    gap: 4px;
-    margin-bottom: 24px;
-  }
-
-  &__restrict-switch {
-    margin-top: 4px;
+    margin: 0 0 24px;
+    padding: 0;
+    list-style: none;
   }
 }
 

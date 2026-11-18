@@ -230,60 +230,47 @@ export default {
             {{ $t('groups.modules.description') }}
           </template>
 
-          <!-- Email Builder Module -->
-          <div class="module-card">
-            <div class="module-card__content">
-              <div class="module-card__icon">
-                <lucide-palette :size="28" color="#00acdc" />
-              </div>
-              <div class="module-card__info">
-                <div class="module-card__name">
-                  {{ $t('groups.modules.emailBuilder.name') }}
-                </div>
-                <div class="module-card__description">
-                  {{ $t('groups.modules.emailBuilder.description') }}
-                </div>
-              </div>
-            </div>
-            <v-switch
-              v-model="localModel.enableEmailBuilder"
-              color="accent"
-              hide-details
-              :disabled="disabled"
-              class="module-card__switch"
-            />
-          </div>
+          <bs-group-setting-card>
+            <template #icon><lucide-palette :size="28" /></template>
+            <template #name>
+              {{ $t('groups.modules.emailBuilder.name') }}
+            </template>
+            <template #description>
+              {{ $t('groups.modules.emailBuilder.description') }}
+            </template>
+            <template #control>
+              <bs-group-feature-switch
+                v-model="localModel.enableEmailBuilder"
+                :label="$t('groups.modules.emailBuilder.name')"
+                :on-text="$t('global.states.on')"
+                :off-text="$t('global.states.off')"
+                :disabled="disabled"
+              />
+            </template>
+          </bs-group-setting-card>
 
-          <!-- CRM Intelligence Module -->
-          <div class="module-card">
-            <div class="module-card__content">
-              <div class="module-card__icon">
-                <lucide-line-chart :size="28" color="#00acdc" />
-              </div>
-              <div class="module-card__info">
-                <div class="module-card__name">
-                  {{ $t('groups.modules.crmIntelligence.name') }}
-                </div>
-                <div class="module-card__description">
-                  {{ $t('groups.modules.crmIntelligence.description') }}
-                </div>
-                <div
-                  v-if="localModel.enableCrmIntelligence"
-                  class="module-card__hint"
-                >
-                  <lucide-arrow-right :size="14" color="#9e9e9e" />
-                  {{ $t('groups.modules.crmIntelligence.configHint') }}
-                </div>
-              </div>
-            </div>
-            <v-switch
-              v-model="localModel.enableCrmIntelligence"
-              color="accent"
-              hide-details
-              :disabled="disabled"
-              class="module-card__switch"
-            />
-          </div>
+          <bs-group-setting-card>
+            <template #icon><lucide-line-chart :size="28" /></template>
+            <template #name>
+              {{ $t('groups.modules.crmIntelligence.name') }}
+            </template>
+            <template #description>
+              {{ $t('groups.modules.crmIntelligence.description') }}
+            </template>
+            <template v-if="localModel.enableCrmIntelligence" #hint>
+              <lucide-arrow-right :size="14" color="#9e9e9e" />
+              {{ $t('groups.modules.crmIntelligence.configHint') }}
+            </template>
+            <template #control>
+              <bs-group-feature-switch
+                v-model="localModel.enableCrmIntelligence"
+                :label="$t('groups.modules.crmIntelligence.name')"
+                :on-text="$t('global.states.on')"
+                :off-text="$t('global.states.off')"
+                :disabled="disabled"
+              />
+            </template>
+          </bs-group-setting-card>
         </bs-form-section>
 
         <!-- ==================== SECTION 3: SECURITY ====================
@@ -320,8 +307,8 @@ export default {
               <bs-group-feature-switch
                 v-model="localModel.userHasAccessToAllWorkspaces"
                 :label="$t('forms.group.sections.permissions')"
-                :on-text="$t('forms.group.states.on')"
-                :off-text="$t('forms.group.states.off')"
+                :on-text="$t('global.states.on')"
+                :off-text="$t('global.states.off')"
                 :disabled="disabled"
               />
             </template>
@@ -463,73 +450,6 @@ export default {
 .group-form__idp-cert ::v-deep textarea {
   font-family: monospace;
   font-size: 0.75rem;
-}
-
-.module-card {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 1rem;
-  margin-bottom: 0.75rem;
-  background-color: #fff;
-  border: 1px solid rgba(0, 0, 0, 0.12);
-  border-radius: 8px;
-  transition: border-color 0.2s ease;
-
-  &:last-child {
-    margin-bottom: 0;
-  }
-
-  &:hover {
-    border-color: rgba(0, 172, 220, 0.4);
-  }
-
-  &__content {
-    display: flex;
-    align-items: flex-start;
-    gap: 1rem;
-  }
-
-  &__icon {
-    width: 48px;
-    height: 48px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    background-color: rgba(0, 172, 220, 0.1);
-    border-radius: 8px;
-    flex-shrink: 0;
-  }
-
-  &__info {
-    display: flex;
-    flex-direction: column;
-  }
-
-  &__name {
-    font-weight: 500;
-    font-size: 1rem;
-    color: rgba(0, 0, 0, 0.87);
-  }
-
-  &__description {
-    font-size: 0.875rem;
-    color: rgba(0, 0, 0, 0.6);
-    margin-top: 0.25rem;
-  }
-
-  &__hint {
-    font-size: 0.75rem;
-    color: rgba(0, 0, 0, 0.5);
-    margin-top: 0.5rem;
-    display: flex;
-    align-items: center;
-    gap: 0.25rem;
-  }
-
-  &__switch {
-    flex-shrink: 0;
-  }
 }
 
 .danger-zone {
