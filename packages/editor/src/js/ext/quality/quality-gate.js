@@ -64,7 +64,8 @@ const verdictOf = ({
  */
 function exportRun(quality, runs, options) {
   const cancel = remoteApi.createCancel();
-  const run = runs.start({ ...options, cancel });
+  // An export's runs have their own count on the server.
+  const run = runs.start({ ...options, cancel, purpose: 'export' });
   let latest = { ...run.local, status: 'idle', failure: null };
   run.remote.then((outcome) => {
     latest = outcome;

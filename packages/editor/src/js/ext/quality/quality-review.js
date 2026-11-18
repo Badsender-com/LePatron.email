@@ -249,23 +249,17 @@ function installQualityReview(viewModel, ko, deps = {}) {
     },
   };
 
-  // What the export gate (quality-gate.js) needs of the runs: start one on
-  // the HTML about to leave, and show its results again after the export.
+  // For the export gate (quality-gate.js): start a run on the HTML about to
+  // leave (`cancel`, `purpose` of its request), show its results again.
   const runs = {
-    start({ html, quiet = false, cancel }) {
+    start({ html, quiet = false, ...request }) {
       const id = ++runId;
       runVersion = contentVersion;
       let started;
       try {
-        // A gate needs the server's answer even if a later run starts; its
-        // runs have their own count on the server.
-        const remoteOptions = {
-          silent: quiet,
-          answer: remoteBlocking,
-          cancel,
-          purpose: 'export',
-        };
-        started = runAll(id, { html }, remoteOptions);
+        // A gate needs the server's answer even if a later run starts.
+        const ask = { ...request, silent: quiet, answer: remoteBlocking };
+        started = runAll(id, { html }, ask);
       } catch (err) {
         settle();
         throw err;
