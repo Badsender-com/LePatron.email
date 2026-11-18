@@ -1636,7 +1636,6 @@ export default {
     table: {
       label: 'Libellé',
       description: 'Définition',
-      canonicalType: 'Correspondance IA',
       doctrineType: 'Type Badsender',
       order: 'Ordre',
       isActive: 'Statut',
@@ -1663,14 +1662,10 @@ export default {
       descriptionHint:
         'À quoi sert cette typologie chez vous, et quand l\'utiliser. C\'est ce texte qui guidera l\'IA.',
       descriptionTooLong: 'La définition ne peut pas dépasser {max} caractères',
-      canonicalType: 'Typologie IA correspondante',
-      canonicalTypePlaceholder: 'Aucune',
       doctrineType: 'Type Badsender',
       doctrineTypeNone: 'Aucun',
       doctrineTypeHint:
         "Facultatif. L'un des six types de la doctrine Badsender : il charge les bonnes expertises quel que soit le nom de la typologie, et le template le reçoit sous doctrineType.",
-      canonicalTypeHint:
-        'Facultatif. Fait le lien avec le vocabulaire de l\'IA, pour charger la bonne expertise quel que soit le nom que vous avez choisi.',
       order: 'Ordre',
       orderHint: 'Ordre d\'affichage dans les listes.',
       status: 'Statut',

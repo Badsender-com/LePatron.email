@@ -32,8 +32,7 @@ export default {
   mixins: [validationMixin, mixinTaxonomyValueErrors],
   props: {
     loading: { type: Boolean, default: false },
-    // The email type maps a value onto the doctrine's six types; any other
-    // dimension gives it an identifier of its own.
+    // An email type also carries its doctrine type (ADR-0030).
     isEmailType: { type: Boolean, default: true },
     // The dimension a value hangs under: its crossings are set in the matrix.
     parentLabel: { type: String, default: '' },
@@ -65,7 +64,6 @@ export default {
     identifierChanged() {
       return (
         !!this.editingId &&
-        !this.isEmailType &&
         !!this.initialIdentifier &&
         this.form.canonicalType !== this.initialIdentifier
       );
@@ -118,7 +116,7 @@ export default {
   },
   watch: {
     'form.label'(label) {
-      if (this.isEmailType || this.isEditing || this.identifierTouched) return;
+      if (this.isEditing || this.identifierTouched) return;
       this.form.canonicalType = proposeIdentifier(label) || null;
     },
     // Back to the saved identifier: a later change asks again.
@@ -224,7 +222,6 @@ export default {
       clearable
     />
     <bs-text-field
-      v-else
       :value="form.canonicalType"
       :label="$t('taxonomy.values.form.identifier')"
       :hint="$t('taxonomy.values.form.identifierHint')"

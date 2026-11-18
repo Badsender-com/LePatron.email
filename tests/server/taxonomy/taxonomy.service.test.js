@@ -310,7 +310,12 @@ describe('createTaxonomyItem', () => {
     expect(TaxonomyItems.create.mock.calls[0][0].label).toBe('Black Friday');
   });
 
-  it('accepts a canonical type without constraining its value', async () => {
+  // The identifier of an email type is the company's, like any value's
+  // (ADR-0030): any name a template can compare, not a list of the doctrine's.
+  it('accepts an identifier of an email type outside the doctrine', async () => {
+    TaxonomyItems.exists.mockImplementation(async (query) =>
+      query.canonicalType ? false : Boolean(dbFindOne(query))
+    );
     await taxonomyService.createTaxonomyItem({
       user: userA,
       type: 'emailType',

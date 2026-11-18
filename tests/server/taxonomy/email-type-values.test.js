@@ -111,7 +111,7 @@ describe('email type value: doctrine type', () => {
 });
 
 // Turned on by #1638 (an email type has a free identifier, like any value)
-describe.skip('email type value: identifier', () => {
+describe('email type value: identifier', () => {
   it('keeps the identifier an admin gives an email type', async () => {
     const value = await addValue('emailType', {
       label: 'Infolettre communauté',

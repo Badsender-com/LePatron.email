@@ -64,7 +64,7 @@ describe('governance values: doctrineType', () => {
 });
 
 // Turned on by #1638 (an email type has a free identifier, like any value)
-describe.skip('governance values: emailType is the identifier', () => {
+describe('governance values: emailType is the identifier', () => {
   it('publishes the identifier of the email type, not its doctrine type', () => {
     expect(publish(COMMUNITY).emailType).toBe('com');
   });

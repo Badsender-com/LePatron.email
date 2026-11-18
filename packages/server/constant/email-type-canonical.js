@@ -8,9 +8,9 @@
  * cases and the rules each type carries.
  *
  * Each company names and defines its typologies in its own words — that is the
- * point of the taxonomy. `canonicalType` is the optional bridge: a company's
- * "Infolettre", with its own definition, maps to `editorial`, so the right AI
- * expertise loads whatever the client called it. A company's definition may
+ * point of the taxonomy. The doctrine type (ADR-0030) is the optional bridge:
+ * a company's "Infolettre", with its own definition, maps to `editorial`, so
+ * the right AI expertise loads whatever the client called it. A company's definition may
  * RESTRICT or PRECISE the Badsender one; it may not contradict it.
  *
  * What this list is NOT, and why the previous one was wrong:
@@ -27,9 +27,10 @@
  * tests/ui/helpers/email-type-vocabulary.test.js.
  *
  * Deliberately NOT enforced as a Mongoose enum on the taxonomy schema: this list
- * will move, and the skills side already stores these values raw and falls back to
- * the raw string for unknown ones. Constraining the database would turn a
- * vocabulary change into a migration.
+ * will move, and constraining the database would turn a vocabulary change into
+ * a migration. The value service checks a doctrine type against it on write.
+ * The skills side stores these values raw and falls back to the raw string for
+ * unknown ones.
  */
 const EmailTypeCanonical = Object.freeze({
   // Content worth reading in itself, whatever it might sell.

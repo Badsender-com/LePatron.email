@@ -117,7 +117,7 @@ describe('migrate email types: doctrine type', () => {
 });
 
 // Turned on by #1638 (an email type has a free identifier, like any value)
-describe.skip('migrate email types: identifier', () => {
+describe('migrate email types: identifier', () => {
   let planEmailTypeMigration;
 
   beforeAll(() => {

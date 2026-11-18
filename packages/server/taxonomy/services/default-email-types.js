@@ -3,6 +3,7 @@
 const {
   EmailTypeCanonical,
 } = require('../../constant/email-type-canonical.js');
+const { freeIdentifier } = require('../../../shared/taxonomy/identifier.js');
 
 /**
  * The six Badsender email types, seeded into every company's taxonomy.
@@ -236,15 +237,6 @@ function planMissingDefaultEmailTypes(existingItems, lang) {
   }
 
   return { toCreate, skipped };
-}
-
-// `service`, else `service_2`, `service_3`…: the first one the company does
-// not use.
-function freeIdentifier(identifier, taken) {
-  if (!taken.has(identifier)) return identifier;
-  let suffix = 2;
-  while (taken.has(`${identifier}_${suffix}`)) suffix += 1;
-  return `${identifier}_${suffix}`;
 }
 
 module.exports = {

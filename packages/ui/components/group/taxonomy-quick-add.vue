@@ -46,7 +46,7 @@ export default {
   },
   watch: {
     label(label) {
-      if (this.isEmailType || this.identifierTouched) return;
+      if (this.identifierTouched) return;
       this.identifier = proposeIdentifier(label.trim()) || '';
     },
   },
@@ -94,24 +94,22 @@ export default {
       :disabled="saving"
       :maxlength="labelLimit"
     />
-    <template v-if="!isEmailType">
-      <label
-        class="taxonomy-quick-add__hint"
-        :for="`quick-add-${dimensionName}-identifier`"
-      >
-        {{ $t('taxonomy.workspace.quickAdd.identifier') }}
-      </label>
-      <input
-        :id="`quick-add-${dimensionName}-identifier`"
-        v-model="identifier"
-        class="taxonomy-quick-add__input taxonomy-quick-add__identifier"
-        :class="{ 'taxonomy-quick-add__input--invalid': !identifierValid }"
-        :aria-invalid="String(!identifierValid)"
-        :disabled="saving"
-        spellcheck="false"
-        @input="identifierTouched = true"
-      />
-    </template>
+    <label
+      class="taxonomy-quick-add__hint"
+      :for="`quick-add-${dimensionName}-identifier`"
+    >
+      {{ $t('taxonomy.workspace.quickAdd.identifier') }}
+    </label>
+    <input
+      :id="`quick-add-${dimensionName}-identifier`"
+      v-model="identifier"
+      class="taxonomy-quick-add__input taxonomy-quick-add__identifier"
+      :class="{ 'taxonomy-quick-add__input--invalid': !identifierValid }"
+      :aria-invalid="String(!identifierValid)"
+      :disabled="saving"
+      spellcheck="false"
+      @input="identifierTouched = true"
+    />
     <template v-if="isEmailType">
       <label
         class="taxonomy-quick-add__hint"

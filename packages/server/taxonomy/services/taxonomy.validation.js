@@ -164,17 +164,15 @@ function readDescription(value) {
 }
 
 /**
- * @returns {string|undefined} undefined clears the mapping onto the AI skills
- *   vocabulary, which is optional — clearing it is a legitimate choice.
+ * @returns {string|undefined} undefined clears the identifier, which is
+ *   optional: a value without one is published under its id.
  */
 function readCanonicalType(value) {
   if (value === null || value === '') return undefined;
   if (typeof value !== 'string') throw invalid();
   const canonicalType = value.trim();
   if (canonicalType.length > TaxonomyLimits.CANONICAL_TYPE) throw invalid();
-  // Deliberately not checked against the canonical list: that list evolves with
-  // the AI skills, which already accept a free value and fall back on the raw
-  // string. See constant/email-type-canonical.js.
+  // The pattern depends on nothing here, and is checked by the value service.
   return canonicalType;
 }
 

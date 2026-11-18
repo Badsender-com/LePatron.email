@@ -11,6 +11,12 @@
  * `doctrineType` is already set, `null` included, is left alone: an admin may
  * have unmapped it since.
  *
+ * Then each email type is left with an identifier unique in its company, the
+ * name a template compares: the old value is kept where only one email type of
+ * the company holds it and a template can compare it (`editorial`), and the
+ * others get one proposed from their label (`infolettre_communaute`),
+ * suffixed on collision. An email type without one keeps none.
+ *
  * It also reports any company dimension already named `doctrineType`, a name
  * the application now publishes to every template: renaming a dimension is the
  * company's call, never a script's.
@@ -31,6 +37,19 @@ const { EmailTypeCanonicalValues } = require(serverPath(
   'email-type-canonical.js'
 ));
 
+const {
+  IDENTIFIER_PATTERN,
+  proposeIdentifier,
+  freeIdentifier,
+} = require(path.resolve(
+  __dirname,
+  '..',
+  'packages',
+  'shared',
+  'taxonomy',
+  'identifier.js'
+));
+
 const DRY = process.argv.includes('--dry-run');
 const RESERVED_NAME = 'doctrineType';
 
@@ -44,9 +63,11 @@ const RESERVED_NAME = 'doctrineType';
  *   reservedNameTaken: Array<*>}}
  */
 function planEmailTypeMigration({ emailTypes = [], dimensions = [] }) {
+  const identifiers = identifiersToGive(emailTypes);
   const updates = [];
   emailTypes.forEach((item) => {
     const set = {};
+    if (identifiers.has(item)) set.canonicalType = identifiers.get(item);
     if (item.doctrineType === undefined) {
       set.doctrineType = EmailTypeCanonicalValues.includes(item.canonicalType)
         ? item.canonicalType
@@ -62,6 +83,44 @@ function planEmailTypeMigration({ emailTypes = [], dimensions = [] }) {
     .map((dimension) => dimension._company);
 
   return { updates, reservedNameTaken };
+}
+
+/**
+ * @returns {Map<Object, (string|null)>} the email types whose identifier
+ *   changes, with the new one
+ */
+function identifiersToGive(emailTypes) {
+  const byCompany = new Map();
+  emailTypes.forEach((item) => {
+    const key = String(item._company);
+    if (!byCompany.has(key)) byCompany.set(key, []);
+    byCompany.get(key).push(item);
+  });
+
+  const given = new Map();
+  byCompany.forEach((items) => {
+    const count = (identifier) =>
+      items.filter((item) => item.canonicalType === identifier).length;
+    const keeps = (item) =>
+      !item.canonicalType ||
+      (IDENTIFIER_PATTERN.test(item.canonicalType) &&
+        count(item.canonicalType) === 1);
+    const taken = new Set(
+      items
+        .filter(keeps)
+        .map((item) => item.canonicalType)
+        .filter(Boolean)
+    );
+    items
+      .filter((item) => !keeps(item))
+      .forEach((item) => {
+        const proposed = proposeIdentifier(item.label);
+        const identifier = proposed ? freeIdentifier(proposed, taken) : null;
+        if (identifier) taken.add(identifier);
+        given.set(item, identifier);
+      });
+  });
+  return given;
 }
 
 async function main() {
