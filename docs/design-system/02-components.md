@@ -741,7 +741,43 @@ Inline link with trailing or leading icon.
 
 ---
 
+## Filters Panel (listing)
+
+The email listing's search and filters ([preview](./preview/mailings-list.html)).
+Implementation: `mailings-filters.vue`, `mailings-search-scope.vue`, `mailings-date-field.vue`
+in `packages/ui/routes/mailings/__partials/`.
+
+**Anatomy** (one card, `--gray-200` border, 8px radius, 16px padding):
+
+1. **Search field**: full-width up to **520px**, 40px high, search icon vertically centred on the text line, clearable.
+2. **Row**: label "Dans", the **segmented scope control**, then the **Filtres** button and, when a filter is set, **Réinitialiser**. They sit together on the left: on a wide screen a control must stay near the field it refines.
+3. **Hint**: only when the scope is "all workspaces" ("Résultats dans vos N espaces de travail. La colonne Emplacement indique où se trouve chaque email.").
+4. **Panel** (collapsed by default, opened by Filtres): Templates, Tags, "Créé entre … au …", "Mis à jour entre … au …". Labels above the fields, placeholders "Tous les templates" / "Tous les tags".
+
+**Rules**
+
+- Fields never stretch with the screen: a grid of `repeat(auto-fill, minmax(200px, 280px))`.
+- The **Filtres** badge counts the panel's filters (templates, tags, dates), not the name, which has its own clearable field. With a filter set, the button takes the accent border and a 8% accent tint.
+- Filters carry over a change of scope (ADR 0007): the badge and Réinitialiser say why a list is narrowed.
+
+### Segmented control
+
+A gray track (`--gray-200`, 3px padding, 8px radius); the chosen segment is raised: white, `--gray-900`, weight 600, 1px `--gray-200` ring and a light shadow. The others are transparent, `--gray-700`, weight 500, no border. Vuetify's `v-btn-toggle` brings its own white ground and a border per button: both are overridden. Semantics: `role="radiogroup"` with `role="radio"` segments.
+
+### Date field
+
+Never the browser's native date input: its calendar cannot be styled. A readonly outlined field (placeholder `JJ/MM/AAAA`, calendar icon) opens a Vuetify `v-date-picker` in a menu (`content-class="bs-date-menu"`):
+
+- `color="accent"`, `no-title`, week starting on Monday, locale of the app.
+- Header month in 14px / 600; weekday initials 11px / 600 uppercase `--gray-600`; day cells 12px / 500.
+- Today (not chosen): 1px accent outline and accent text. Chosen day: solid accent, white text.
+- The field shows the date as the language writes it; the stored value stays `YYYY-MM-DD`.
+
+---
+
 ## Toggle / Switch
+
+> **In the Vue app**: one look everywhere, the Vuetify `v-switch` with `color="accent"`. No `inset` pill, no `color="primary"` (navy): the spec below is the visual intent (accent thumb when on).
 
 ```css
 .toggle-track {
