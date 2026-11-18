@@ -1,26 +1,19 @@
 <script>
 import { mapGetters } from 'vuex';
-import { EyeOff, Lock, Plus } from 'lucide-vue';
+import { Plus } from 'lucide-vue';
 import * as acls from '~/helpers/pages-acls.js';
 import * as apiRoutes from '~/helpers/api-routes.js';
-import { CHECKS } from '~/helpers/constants/quality-checks.js';
-import {
-  TEMPLATE,
-  exceptionsOf,
-  generalOf,
-} from '~/helpers/quality-exceptions.js';
+import { TEMPLATE } from '~/helpers/quality-exceptions.js';
 import { loadQualitySettings } from '~/helpers/quality-settings.js';
 import mixinSettingsTitle from '~/helpers/mixins/mixin-settings-title.js';
 import mixinUnsavedChanges from '~/helpers/mixins/mixin-unsaved-changes.js';
-import mixinQualityTexts from '~/helpers/mixins/mixin-quality-texts.js';
 import BsPageHeader from '~/components/layout/bs-page-header.vue';
 import BsBreadcrumb from '~/components/layout/bs-breadcrumb.vue';
 import BsModalConfirm from '~/components/modal-confirm.vue';
+import BsQualityAppliedGeneral from '~/components/quality/quality-applied-general.vue';
 import BsQualityExceptionsEditor from '~/components/quality/quality-exceptions-editor.vue';
 import { CAN, USER } from '~/store/user';
 import { CAPABILITIES } from '../../../../../../../shared/access/roles.js';
-
-const CATALOGUE_ORDER = Object.keys(CHECKS);
 
 // A template's own exceptions, over the general settings of its group
 // (docs/adr/0009-quality-settings-per-group-and-template.md). The template is
@@ -39,15 +32,14 @@ async function loadPage(nuxtContext) {
 export default {
   name: 'BsPageSettingsQualityTemplate',
   components: {
-    EyeOff,
-    Lock,
     Plus,
     BsPageHeader,
     BsBreadcrumb,
     BsModalConfirm,
+    BsQualityAppliedGeneral,
     BsQualityExceptionsEditor,
   },
-  mixins: [mixinSettingsTitle, mixinUnsavedChanges, mixinQualityTexts],
+  mixins: [mixinSettingsTitle, mixinUnsavedChanges],
   meta: {
     acl: acls.ACL_GROUP_MANAGE,
   },
@@ -92,18 +84,6 @@ export default {
         },
         { text: this.template ? this.template.name : '…', to: null },
       ];
-    },
-    // The general exceptions this template does not replace, as edited.
-    appliedGeneral() {
-      const general = exceptionsOf(this.group.qualitySettings);
-      const applied = generalOf(this.group.qualitySettings);
-      return CATALOGUE_ORDER.filter(
-        (id) => general[id] && !this.ownIds.includes(id)
-      ).map((id) => ({
-        id,
-        state: applied[id].state,
-        text: this.appliedText(id, applied[id]),
-      }));
     },
   },
   methods: {
@@ -199,48 +179,11 @@ export default {
             @saved="onSaved"
           />
 
-          <section class="applied">
-            <h2 class="applied__title">
-              {{ $t('qualitySettings.template.applied') }}
-            </h2>
-            <i18n
-              v-if="appliedGeneral.length"
-              path="qualitySettings.template.appliedFrom"
-              tag="p"
-              class="applied__intro"
-            >
-              <template #link>
-                <nuxt-link
-                  :to="qualityRoute"
-                  v-text="$t('qualitySettings.template.appliedFromLink')"
-                />
-              </template>
-            </i18n>
-            <p v-else class="applied__intro">
-              {{ $t('qualitySettings.template.appliedNone') }}
-              <nuxt-link :to="qualityRoute">
-                {{ $t('qualitySettings.template.appliedLink') }}
-              </nuxt-link>
-            </p>
-            <ul v-if="appliedGeneral.length" class="applied__list">
-              <li v-for="item in appliedGeneral" :key="item.id">
-                <span class="applied__name">{{ checkName(item.id) }}</span>
-                <span class="applied__text">
-                  <lock
-                    v-if="item.state === 'blocking'"
-                    :size="14"
-                    class="applied__icon applied__icon--error"
-                  />
-                  <eye-off
-                    v-else-if="item.state === 'off'"
-                    :size="14"
-                    class="applied__icon"
-                  />
-                  {{ item.text }}
-                </span>
-              </li>
-            </ul>
-          </section>
+          <bs-quality-applied-general
+            :general-settings="group.qualitySettings || null"
+            :own-ids="ownIds"
+            :quality-route="qualityRoute"
+          />
         </template>
       </div>
     </v-container>
@@ -276,67 +219,5 @@ export default {
   margin: 8px 0 16px;
   font-size: 0.875rem;
   color: var(--gray-700);
-}
-
-.applied {
-  margin-top: 32px;
-  padding-top: 24px;
-  border-top: 1px solid var(--gray-300);
-
-  &__title {
-    font-size: 1rem;
-    font-weight: 600;
-    color: var(--gray-900);
-    margin: 0 0 8px;
-  }
-
-  &__list {
-    list-style: none;
-    padding: 0;
-    margin: 0;
-    border: 1px solid var(--gray-300);
-    border-radius: 8px;
-
-    li {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      align-items: center;
-      gap: 4px 16px;
-      padding: 14px 16px;
-      font-size: 0.875rem;
-
-      & + li {
-        border-top: 1px solid var(--gray-300);
-      }
-    }
-  }
-
-  &__name {
-    color: var(--gray-900);
-  }
-
-  &__text,
-  &__intro {
-    color: var(--gray-700);
-    font-size: 0.875rem;
-  }
-
-  &__intro {
-    margin: 0 0 12px;
-
-    a {
-      color: var(--v-accent-base);
-    }
-  }
-
-  &__text {
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-  }
-
-  &__icon--error {
-    color: var(--v-error-base);
-  }
 }
 </style>
