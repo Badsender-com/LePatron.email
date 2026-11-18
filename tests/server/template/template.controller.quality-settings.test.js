@@ -5,7 +5,7 @@
 // touch the templates of their own company, a super admin any template.
 
 jest.mock('../../../packages/server/common/models.common.js', () => ({
-  Templates: { findById: jest.fn() },
+  Templates: { findById: jest.fn(), updateOne: jest.fn() },
   Groups: { findById: jest.fn() },
   Mailings: {},
   Galleries: {},
@@ -31,21 +31,20 @@ const GROUP_ID = '507f1f77bcf86cd799439001';
 const OTHER_GROUP_ID = '507f1f77bcf86cd799439002';
 const TEMPLATE_ID = '507f1f77bcf86cd799439201';
 
-function templateDoc(qualitySettings) {
-  return {
-    _id: TEMPLATE_ID,
-    _company: GROUP_ID,
-    qualitySettings,
-    markModified: jest.fn(),
-    save: jest.fn().mockResolvedValue(undefined),
-  };
+// The template and its group, as the route reads them: plain objects, with
+// only the fields it selects.
+const lean = (doc) => ({
+  select: jest.fn(() => ({ lean: jest.fn().mockResolvedValue(doc) })),
+});
+
+function templateWith(qualitySettings) {
+  Templates.findById.mockReturnValue(
+    lean({ _id: TEMPLATE_ID, _company: GROUP_ID, qualitySettings })
+  );
 }
 
-// The template's group, as the route reads it (its quality settings only).
 function groupWith(qualitySettings) {
-  Groups.findById.mockReturnValue({
-    select: jest.fn().mockResolvedValue({ qualitySettings }),
-  });
+  Groups.findById.mockReturnValue(lean({ qualitySettings }));
 }
 
 const groupAdminOf = (groupId) => ({
@@ -68,30 +67,35 @@ describe('PUT /templates/:templateId/quality-settings', () => {
     templates = require('../../../packages/server/template/template.controller.js');
   });
 
+  // What was written on the template, and what the client got back.
   async function put({ user, body, stored, group }) {
     groupWith(group);
-    const template = templateDoc(stored);
-    Templates.findById.mockResolvedValue(template);
+    templateWith(stored);
     const res = { json: jest.fn() };
     await templates.updateQualitySettings(
       { params: { templateId: TEMPLATE_ID }, body, user },
       res
     );
-    return { template, res };
+    const [[filter, update]] = Templates.updateOne.mock.calls;
+    expect(filter).toEqual({ _id: TEMPLATE_ID });
+    expect(res.json).toHaveBeenCalledWith({
+      qualitySettings: update.$set.qualitySettings,
+    });
+    return update.$set;
   }
 
   beforeEach(() => jest.clearAllMocks());
 
   it("lets a company admin override a setting on their group's template", async () => {
-    const { template } = await put({
+    const written = await put({
       user: groupAdminOf(GROUP_ID),
       body: { checks: { 'small-font': { thresholds: { minSize: 11 } } } },
     });
-    expect(template.qualitySettings).toEqual({
-      checks: { 'small-font': { thresholds: { minSize: 11 } } },
+    expect(written).toEqual({
+      qualitySettings: {
+        checks: { 'small-font': { thresholds: { minSize: 11 } } },
+      },
     });
-    expect(template.save).toHaveBeenCalled();
-    expect(template.markModified).toHaveBeenCalledWith('qualitySettings');
   });
 
   it("checks thresholds that go together against the group's values", async () => {
@@ -99,12 +103,12 @@ describe('PUT /templates/:templateId/quality-settings', () => {
       checks: { subject: { thresholds: { tooLong: 80 } } },
     };
     // 70 is over the default of 60, under the group's 80: allowed.
-    const { template } = await put({
+    const written = await put({
       user: groupAdminOf(GROUP_ID),
       group,
       body: { checks: { subject: { thresholds: { long: 70 } } } },
     });
-    expect(template.qualitySettings.checks.subject).toEqual({
+    expect(written.qualitySettings.checks.subject).toEqual({
       thresholds: { long: 70 },
     });
     // 90 is over the group's 80: refused.
@@ -119,11 +123,11 @@ describe('PUT /templates/:templateId/quality-settings', () => {
   });
 
   it('lets a super admin override any template', async () => {
-    const { template } = await put({
+    const written = await put({
       user: { role: 'super_admin' },
       body: { checks: { headings: { state: 'off' } } },
     });
-    expect(template.qualitySettings.checks.headings).toEqual({ state: 'off' });
+    expect(written.qualitySettings.checks.headings).toEqual({ state: 'off' });
   });
 
   it('refuses a company admin of another group with a 403', async () => {
@@ -137,12 +141,12 @@ describe('PUT /templates/:templateId/quality-settings', () => {
   });
 
   it('removes an override with null, back to the group', async () => {
-    const { template } = await put({
+    const written = await put({
       user: groupAdminOf(GROUP_ID),
       stored: { checks: { headings: { state: 'off' } } },
       body: { checks: { headings: { state: null } } },
     });
-    expect(template.qualitySettings).toEqual({ checks: {} });
+    expect(written.qualitySettings).toEqual({ checks: {} });
   });
 
   it('refuses an invalid setting with a 422', async () => {
