@@ -285,12 +285,15 @@ describe('text generation: POST /api/text-generation/subject', () => {
       invoke.mockResolvedValue(proposals('Lin : -30 % et livraison offerte'));
     });
 
-    it('asks for the subject expertise of the writing and deliverability categories, for the email type', async () => {
+    // For the group it bills: the expertises a company may read depend on
+    // their audience (ADR 0013).
+    it('asks for the subject expertise of the writing and deliverability categories, for the email type and the group', async () => {
       await request(makeApp()).post('/api/text-generation/subject').send(body);
       expect(findApplicable).toHaveBeenCalledWith({
         scope: 'subject',
         categories: ['redaction', 'deliverability'],
         emailType: 'promotional',
+        groupId: 'g1',
       });
     });
 
@@ -300,6 +303,7 @@ describe('text generation: POST /api/text-generation/subject', () => {
       expect(findApplicable).toHaveBeenCalledWith({
         scope: 'subject',
         categories: ['redaction', 'deliverability'],
+        groupId: 'g1',
       });
       expect(invoke.mock.calls[0][0].input).not.toHaveProperty('emailType');
     });
@@ -421,6 +425,30 @@ describe('text generation: POST /api/text-generation/subject', () => {
         'Lin : -30 % et livraison offerte',
       ]);
       expect(res.body.dropped).toBe(1);
+    });
+
+    // A model sometimes answers more than asked: the first three that respect
+    // the rules are shown, the rest is left out.
+    it('shows the first three proposals when the skill answers more', async () => {
+      invoke.mockResolvedValue(
+        proposals(
+          'Lin : -30 % et livraison offerte',
+          'Le lin de saison à -30 %',
+          'Votre été en lin, -30 %',
+          'Dernière ligne droite pour le lin'
+        )
+      );
+
+      const res = await request(makeApp())
+        .post('/api/text-generation/subject')
+        .send(body);
+
+      expect(res.status).toBe(200);
+      expect(res.body.proposals.map((p) => p.text)).toEqual([
+        'Lin : -30 % et livraison offerte',
+        'Le lin de saison à -30 %',
+        'Votre été en lin, -30 %',
+      ]);
     });
 
     it('keeps a proposal ending with one emoji', async () => {
@@ -770,6 +798,7 @@ describe('text generation: POST /api/text-generation/preheader', () => {
       scope: 'preheader',
       categories: ['redaction', 'deliverability'],
       emailType: 'promotional',
+      groupId: 'g1',
     });
   });
 

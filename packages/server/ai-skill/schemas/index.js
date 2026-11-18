@@ -62,8 +62,9 @@ const emailCopySchema = z
   )
   .min(1);
 
-// Three proposals exactly: the feature shows them side by side, and a skill
-// that answers two has not done its job.
+// Three proposals or more: the feature shows three side by side, the first
+// that respect its rules. A skill that answers two has not done its job; a
+// model that answers four, though asked for three, is not refused for it.
 const textProposalsOutput = z
   .object({
     proposals: z
@@ -75,7 +76,7 @@ const textProposalsOutput = z
           })
           .strict()
       )
-      .length(3),
+      .min(3),
   })
   .strict();
 

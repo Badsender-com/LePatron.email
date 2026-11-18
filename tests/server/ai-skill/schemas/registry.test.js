@@ -13,6 +13,22 @@ describe('zod schema registry', () => {
     expect(hasSchema('genericTextOutput')).toBe(true);
   });
 
+  // The feature shows three: a model that answers more is not refused for it,
+  // one that answers fewer has not done its job.
+  it('subjectGenOutput takes three proposals or more, never fewer', () => {
+    const subjectGenOutput = getSchema('subjectGenOutput');
+    const of = (n) => ({
+      proposals: Array.from({ length: n }, (_, i) => ({
+        text: `Objet ${i}`,
+        angle: 'bénéfice direct',
+      })),
+    });
+
+    expect(subjectGenOutput.safeParse(of(3)).success).toBe(true);
+    expect(subjectGenOutput.safeParse(of(4)).success).toBe(true);
+    expect(subjectGenOutput.safeParse(of(2)).success).toBe(false);
+  });
+
   it('returns undefined for unknown schemaId', () => {
     expect(getSchema('does-not-exist')).toBeUndefined();
     expect(hasSchema('does-not-exist')).toBe(false);

@@ -123,6 +123,9 @@ const KINDS = {
  * @param {string[]} [context.avoid] proposals the user already saw
  * @returns {{ proposals: Array<{text, angle, facts}>, dropped: number }}
  */
+// How many proposals the feature shows.
+const SHOWN = 3;
+
 function screenProposals(kind, proposals, { sources, avoid = [] }) {
   const { facts, breaksRule } = KINDS[kind];
   const known = new Set(
@@ -146,7 +149,12 @@ function screenProposals(kind, proposals, { sources, avoid = [] }) {
     seen.add(text.trim());
     kept.push({ text, angle, facts: facts(text) });
   });
-  return { proposals: kept, dropped: proposals.length - kept.length };
+  // Three are shown, the first that respect the rules: a model sometimes
+  // answers more than it was asked for.
+  return {
+    proposals: kept.slice(0, SHOWN),
+    dropped: proposals.length - kept.length,
+  };
 }
 
 module.exports = {
