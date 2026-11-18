@@ -68,6 +68,11 @@ async function updateQualityIgnores(req, res) {
  *   (60 at most)
  * @apiParam (Body) {Object[]} images `{ url }` of the client's images
  *   (40 at most)
+ * @apiParam (Body) {String[]} [checks] the editor's checks that are on among
+ *   broken-links, dangerous-links, domain-blocklists, image-weight,
+ *   images-total-weight and oversized-images: only theirs run (links visited
+ *   for broken-links only, Web Risk for dangerous-links, blocklists for
+ *   domain-blocklists, images downloaded for an image check). Left out, all run.
  *
  * @apiSuccess {Object} links by address: `{ state: ok|broken|unverifiable,
  *   httpStatus?, reason? }`

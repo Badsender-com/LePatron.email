@@ -55,6 +55,38 @@ const MAX_URL_LENGTH = RESOURCES.maxUrlLength;
 // Short enough to answer before a hosting router gives up on the request.
 const RUN_DEADLINE_MS = 20000;
 
+// The editor's checks this run serves, and what each has the server do: visit
+// the links, ask Web Risk, ask the blocklists, download the images.
+const REMOTE_CHECKS = Object.freeze({
+  'broken-links': 'linkProbes',
+  'dangerous-links': 'webRisk',
+  'domain-blocklists': 'blocklists',
+  'image-weight': 'images',
+  'images-total-weight': 'images',
+  'oversized-images': 'images',
+});
+const ALL_TASKS = Object.freeze({
+  linkProbes: true,
+  webRisk: true,
+  blocklists: true,
+  images: true,
+});
+
+/**
+ * What a run does for the checks the editor names; everything when it names
+ * none (an editor from before the list).
+ * @param {string[]} [checks]
+ * @returns {{ linkProbes: boolean, webRisk: boolean, blocklists: boolean,
+ *   images: boolean }}
+ */
+function tasksOf(checks) {
+  if (!checks) return ALL_TASKS;
+  const tasks = new Set(checks.map((id) => REMOTE_CHECKS[id]));
+  return Object.fromEntries(
+    Object.keys(ALL_TASKS).map((task) => [task, tasks.has(task)])
+  );
+}
+
 // ----- Payload
 
 function invalid() {
@@ -81,20 +113,37 @@ function checkUrl(value) {
   return value;
 }
 
+function checkIds(value) {
+  if (!Array.isArray(value)) throw invalid();
+  value.forEach((id) => {
+    if (typeof id !== 'string' || !Object.hasOwn(REMOTE_CHECKS, id)) {
+      throw invalid();
+    }
+  });
+  return [...new Set(value)];
+}
+
+const PAYLOAD_KEYS = ['links', 'images', 'checks'];
+
 /**
- * @param {Object} body - `{ links: string[], images: [{ url }] }`
- * @returns {{ links: string[], images: string[] }} distinct, bounded
+ * @param {Object} body - `{ links: string[], images: [{ url }], checks? }`,
+ *   `checks` the editor's checks that are on among REMOTE_CHECKS
+ * @returns {{ links: string[], images: string[], checks?: string[] }}
+ *   distinct, bounded; `checks` only when sent
  * @throws 422 INVALID_QUALITY_RESOURCES on anything else
  */
 function validateResourcesPayload(body) {
   if (!body || typeof body !== 'object' || Array.isArray(body)) throw invalid();
   const keys = Object.keys(body);
-  if (keys.some((key) => key !== 'links' && key !== 'images')) throw invalid();
+  if (keys.some((key) => !PAYLOAD_KEYS.includes(key))) throw invalid();
   const links = body.links || [];
   const images = body.images || [];
   if (!Array.isArray(links) || !Array.isArray(images)) throw invalid();
   if (links.length > MAX_LINKS || images.length > MAX_IMAGES) throw invalid();
+  const checks =
+    body.checks === undefined ? {} : { checks: checkIds(body.checks) };
   return {
+    ...checks,
     links: [...new Set(links.map(checkUrl))],
     images: [
       ...new Set(
@@ -152,7 +201,13 @@ function cutShortOnAbort(run, signal) {
 }
 
 /**
- * @param {{ links: string[], images: string[] }} resources - validated
+ * Only what the named checks need is done: no link is visited without
+ * "broken-links", no Web Risk lookup without "dangerous-links", no blocklist
+ * query without "domain-blocklists", no image downloaded without an image
+ * check. What is skipped answers as a check that has not run.
+ *
+ * @param {{ links: string[], images: string[], checks?: string[] }} resources
+ *   validated
  * @param {Object} context
  * @param {string} context.userKey - one run at a time for this key
  * @param {string} context.cacheScope - answers are shared within this scope
@@ -175,16 +230,19 @@ function checkResources(
   cutShortOnAbort(run, signal);
   return throttled(userKey, async () => {
     const key = (kind, value) => `${cacheScope}|${kind}|${value}`;
+    const tasks = tasksOf(resources.checks);
+    const probed = tasks.linkProbes ? resources.links : [];
+    const measured = tasks.images ? resources.images : [];
 
     const [linkResults, imageResults, domains, dangerous] = await Promise.all([
-      mapLimited(resources.links, CONCURRENCY, (url) =>
+      mapLimited(probed, CONCURRENCY, (url) =>
         cached(
           key('link', url),
           () => links.checkLink(url, run, deps),
           links.isDefinitiveLink
         )
       ),
-      mapLimited(resources.images, CONCURRENCY, (url) => {
+      mapLimited(measured, CONCURRENCY, (url) => {
         const target = images.measuredUrl(url, ownHosts);
         // Our own image is keyed by its path: the host that named it is the
         // caller's to choose, and must not decide what another URL reads.
@@ -195,10 +253,17 @@ function checkResources(
           target.own ? images.OWN_IMAGE_TTL_MS : undefined
         );
       }),
-      threats.checkDomains(resources.links, deps.zones(), key, run, deps),
+      // Without zones or a key, each answers as a check that has not run.
+      threats.checkDomains(
+        resources.links,
+        tasks.blocklists ? deps.zones() : [],
+        key,
+        run,
+        deps
+      ),
       threats.checkThreats(
         resources.links,
-        deps.webRiskKey(),
+        tasks.webRisk ? deps.webRiskKey() : null,
         key,
         run,
         { company: cacheScope, user: userKey },
@@ -207,8 +272,8 @@ function checkResources(
     ]);
 
     return {
-      links: zipObject(resources.links, linkResults),
-      images: zipObject(resources.images, imageResults),
+      links: zipObject(probed, linkResults),
+      images: zipObject(measured, imageResults),
       blocklists: domains,
       webRisk: dangerous,
     };

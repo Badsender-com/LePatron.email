@@ -51,11 +51,14 @@ function checkableImages(ctx) {
 /**
  * What to ask the server about: the links only if one of the given checks
  * reads them, the images only if one reads them. A link sent for nothing is
- * still fetched by the server, and leaves the client's site a visit.
+ * still fetched by the server, and leaves the client's site a visit. The
+ * checks themselves go along: the server runs only theirs (a link sent for
+ * the blocklists is not visited when "broken-links" is off).
  * @param {Object} ctx
- * @param {Array<{ reads: string }>} rules - the server's checks that will run,
- *   each naming what it reads: 'links' or 'images'
- * @returns {{ links: string[], images: Array<{ url: string }> }}
+ * @param {Array<{ id: string, reads: string }>} rules - the server's checks
+ *   that will run, each naming what it reads: 'links' or 'images'
+ * @returns {{ links: string[], images: Array<{ url: string }>,
+ *   checks: string[] }}
  */
 function collectResources(ctx, rules) {
   const reads = new Set(rules.map((rule) => rule.reads));
@@ -68,6 +71,7 @@ function collectResources(ctx, rules) {
   return {
     links: links.slice(0, MAX_LINKS),
     images: images.slice(0, MAX_IMAGES).map((url) => ({ url })),
+    checks: rules.map((rule) => rule.id),
   };
 }
 
