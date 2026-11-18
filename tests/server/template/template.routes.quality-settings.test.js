@@ -2,9 +2,10 @@
 
 // PUT /templates/:templateId/quality-settings as a client calls it: the real
 // router, guards and controller, over models that apply the projection they
-// are asked for, as MongoDB would (epic #1193, ADR 0009). A company admin may
-// override the quality settings of their own company's templates: the route's
-// guard lets company admins through, the controller checks the company.
+// are asked for, as MongoDB would (epic #1193, ADR 0009). A super admin
+// overrides any template's settings, a company admin or tech admin the ones of
+// their own company's templates; every other role is refused by the route's
+// guard, before any template is read.
 
 jest.mock('puppeteer', () => ({}));
 jest.mock('../../../packages/server/common/models.common.js', () => ({
@@ -41,16 +42,16 @@ const {
   Groups,
 } = require('../../../packages/server/common/models.common.js');
 const { ROLES } = require('../../../packages/shared/access/roles.js');
-const { actorFrom } = require('../../helpers/super-admin-fixtures.js');
 const {
-  GUARD_GROUP_ADMIN,
-} = require('../../../packages/server/account/auth.guard.js');
-const { routeInspector } = require('../../helpers/express-router.js');
+  actorFrom,
+  bootstrap,
+} = require('../../helpers/super-admin-fixtures.js');
 
 const OWN_GROUP = '507f1f77bcf86cd799439b01';
 const OTHER_GROUP = '507f1f77bcf86cd799439b02';
 const OWN_TEMPLATE = '507f1f77bcf86cd799439c01';
 const OTHER_TEMPLATE = '507f1f77bcf86cd799439c02';
+const ORPHAN_TEMPLATE = '507f1f77bcf86cd799439c03';
 const MISSING_TEMPLATE = '507f1f77bcf86cd799439c04';
 
 // A template's markup weighs megabytes: it must never be read nor sent back.
@@ -75,6 +76,8 @@ const template = (_id, _company) => ({
 const TEMPLATES = {
   [OWN_TEMPLATE]: template(OWN_TEMPLATE, OWN_GROUP),
   [OTHER_TEMPLATE]: template(OTHER_TEMPLATE, OTHER_GROUP),
+  // A template no company holds yet: only a super admin reaches it.
+  [ORPHAN_TEMPLATE]: template(ORPHAN_TEMPLATE, undefined),
 };
 
 // `findById(id).select('a b').lean()`, keeping only the selected fields; what
@@ -144,12 +147,27 @@ beforeEach(() => {
   Groups.findById.mockImplementation((id) => projected(GROUPS, id));
 });
 
-describe('PUT /api/templates/:templateId/quality-settings — guard', () => {
-  it('is open to company admins, the controller checking the group', () => {
-    expect(
-      routeInspector(router).guardsOf('put', '/:templateId/quality-settings')
-    ).toEqual([GUARD_GROUP_ADMIN]);
-  });
+describe('PUT /api/templates/:templateId/quality-settings — rights', () => {
+  it.each([
+    // who, own company's template, another company's, one no company holds
+    ['a super admin', 200, 200, 200, userWith(ROLES.SUPER_ADMIN)],
+    ['the bootstrap account', 200, 200, 200, bootstrap],
+    ['a tech admin', 200, 403, 403, userWith(ROLES.GROUP_ADMIN_TECH)],
+    ['a company admin', 200, 403, 403, userWith(ROLES.GROUP_ADMIN)],
+    ['a writer', 401, 401, 401, userWith(ROLES.WRITER)],
+    ['a reviewer', 401, 401, 401, userWith(ROLES.REVIEWER)],
+    ['a regular user', 401, 401, 401, userWith(ROLES.REGULAR_USER)],
+  ])(
+    'answers %s with %i on its own company, %i on another, %i without company',
+    async (_label, own, other, orphan, user) => {
+      expect((await put(user, OWN_TEMPLATE)).status).toBe(own);
+      expect((await put(user, OTHER_TEMPLATE)).status).toBe(other);
+      expect((await put(user, ORPHAN_TEMPLATE)).status).toBe(orphan);
+      const writes = [own, other, orphan].filter((s) => s === 200).length;
+      expect(Templates.updateOne).toHaveBeenCalledTimes(writes);
+      if (own === 401) expect(Templates.findById).not.toHaveBeenCalled();
+    }
+  );
 
   it("refuses a company admin of another company on this company's template", async () => {
     const res = await put(
