@@ -24,6 +24,8 @@ module.exports = {
   severity: 'warning',
   titleKey: 'Blocklisted domains',
   remote: true,
+  // What the editor sends the server for it (resources.js).
+  reads: 'links',
   // Runs only where the platform subscribed to a blocklist.
   optional: true,
   passKey: 'No link points to a blocklisted domain',

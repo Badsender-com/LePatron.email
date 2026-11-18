@@ -49,12 +49,22 @@ function checkableImages(ctx) {
 }
 
 /**
- * What to ask the server about.
+ * What to ask the server about: the links only if one of the given checks
+ * reads them, the images only if one reads them. A link sent for nothing is
+ * still fetched by the server, and leaves the client's site a visit.
+ * @param {Object} ctx
+ * @param {Array<{ reads: string }>} rules - the server's checks that will run,
+ *   each naming what it reads: 'links' or 'images'
  * @returns {{ links: string[], images: Array<{ url: string }> }}
  */
-function collectResources(ctx) {
-  const links = _.uniq(checkableLinks(ctx).map((link) => link.href));
-  const images = _.uniq(checkableImages(ctx).map((image) => image.src));
+function collectResources(ctx, rules) {
+  const reads = new Set(rules.map((rule) => rule.reads));
+  const links = reads.has('links')
+    ? _.uniq(checkableLinks(ctx).map((link) => link.href))
+    : [];
+  const images = reads.has('images')
+    ? _.uniq(checkableImages(ctx).map((image) => image.src))
+    : [];
   return {
     links: links.slice(0, MAX_LINKS),
     images: images.slice(0, MAX_IMAGES).map((url) => ({ url })),

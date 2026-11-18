@@ -54,6 +54,88 @@ describe('what is sent to the server', () => {
   });
 });
 
+describe('what is sent to the server, with checks turned off', () => {
+  const LINK_CHECKS = ['broken-links', 'dangerous-links', 'domain-blocklists'];
+  const IMAGE_CHECKS = [
+    'image-weight',
+    'images-total-weight',
+    'oversized-images',
+  ];
+  const email = `
+    <a href="https://brand.com/a">A</a>
+    <img src="https://cdn.brand.com/hero.jpg">
+  `;
+
+  // The mailing's quality settings, as the server resolves them (ADR 0009).
+  function vmTurningOff(ruleIds) {
+    const vm = vmWith(email);
+    vm.metadata.qualitySettings = {
+      checks: Object.fromEntries(
+        ruleIds.map((id) => [id, { state: 'off', thresholds: {} }])
+      ),
+    };
+    return vm;
+  }
+
+  const resourcesOf = (vm) => runQualityChecks(vm, { rules: [] }).resources;
+
+  it('declares, for each server check, whether it reads the links or the images', () => {
+    expect(
+      Object.fromEntries(REMOTE_RULES.map((rule) => [rule.id, rule.reads]))
+    ).toEqual({
+      ...Object.fromEntries(LINK_CHECKS.map((id) => [id, 'links'])),
+      ...Object.fromEntries(IMAGE_CHECKS.map((id) => [id, 'images'])),
+    });
+  });
+
+  it('sends no link when every check that reads links is off', () => {
+    expect(resourcesOf(vmTurningOff(LINK_CHECKS))).toEqual({
+      links: [],
+      images: [{ url: 'https://cdn.brand.com/hero.jpg' }],
+    });
+  });
+
+  it('sends no image when every check that reads images is off', () => {
+    expect(resourcesOf(vmTurningOff(IMAGE_CHECKS))).toEqual({
+      links: ['https://brand.com/a'],
+      images: [],
+    });
+  });
+
+  it('still sends the links while one check that reads them is on', () => {
+    const vm = vmTurningOff(['broken-links', 'domain-blocklists']);
+    expect(resourcesOf(vm).links).toEqual(['https://brand.com/a']);
+  });
+
+  it('sends only the images to the review when the link checks are off', async () => {
+    const vm = vmTurningOff(LINK_CHECKS);
+    vm.metadata.url = { qualityResources: '/x' };
+    const checkResources = jest.fn(() => new Promise(() => {}));
+    installQualityReview(vm, ko, { defer: (fn) => fn(), checkResources });
+
+    vm.quality.run();
+    // The request waits for the previous one's turn.
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    expect(checkResources).toHaveBeenCalledWith(
+      '/x',
+      { links: [], images: [{ url: 'https://cdn.brand.com/hero.jpg' }] },
+      expect.anything()
+    );
+  });
+
+  it('asks the server nothing when every check it runs is off', () => {
+    const vm = vmTurningOff(LINK_CHECKS.concat(IMAGE_CHECKS));
+    vm.metadata.url = { qualityResources: '/x' };
+    const checkResources = jest.fn();
+    installQualityReview(vm, ko, { defer: (fn) => fn(), checkResources });
+
+    vm.quality.run();
+    expect(resourcesOf(vm)).toEqual({ links: [], images: [] });
+    expect(checkResources).not.toHaveBeenCalled();
+    expect(vm.quality.remoteStatus()).toBe('idle');
+  });
+});
+
 describe('the review, with the server', () => {
   const html = '<a href="https://brand.com/x">Shop</a>';
 

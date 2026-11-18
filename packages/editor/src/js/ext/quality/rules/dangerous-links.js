@@ -52,6 +52,8 @@ module.exports = {
   severity: 'error',
   titleKey: 'Dangerous links',
   remote: true,
+  // What the editor sends the server for it (resources.js).
+  reads: 'links',
   optional: true,
   passKey: 'Google lists none of the links as dangerous',
   enabled(ctx) {

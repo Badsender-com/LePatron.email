@@ -25,6 +25,8 @@ module.exports = {
   severity: 'warning',
   titleKey: 'Total image weight',
   remote: true,
+  // What the editor sends the server for it (resources.js).
+  reads: 'images',
   enabled: (ctx) => weighed(ctx).length > 0,
   passKey: 'Images weigh __size__ KB in all, under __max__',
   passParams: (ctx) => ({

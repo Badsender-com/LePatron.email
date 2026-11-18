@@ -18,6 +18,8 @@ module.exports = {
   severity: 'info',
   titleKey: 'Image dimensions',
   remote: true,
+  // What the editor sends the server for it (resources.js).
+  reads: 'images',
   enabled: (ctx) =>
     checkableImages(ctx).some((image) => {
       const result = remoteImage(ctx, image.src);
