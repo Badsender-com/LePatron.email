@@ -189,6 +189,22 @@ export function matchesBase(exception, base) {
   );
 }
 
+/**
+ * The values an exception sets that equal the ones it replaces: on a
+ * template, kept but no longer following the general settings.
+ * @returns {string[]} 'state' and the names of the thresholds
+ */
+export function valuesEqualToBase(exception, base) {
+  const ex = exception || {};
+  const equal = isSet(ex.state) && ex.state === base.state ? ['state'] : [];
+  Object.entries(ex.thresholds || {}).forEach(([name, value]) => {
+    if (isSet(value) && Number(value) === base.thresholds[name]) {
+      equal.push(name);
+    }
+  });
+  return equal;
+}
+
 // The exception as it is saved. In the general settings, a value equal to the
 // recommended one sets nothing. On a template, a value equal to the general
 // one is kept: it will not follow the general settings' later changes.

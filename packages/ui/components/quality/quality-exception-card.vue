@@ -5,7 +5,9 @@ import {
   GENERAL,
   adjustmentsOf,
   effectiveOf,
+  isEmptyException,
   matchesBase,
+  valuesEqualToBase,
   sameException,
   hasNote,
   isServerCheck,
@@ -82,8 +84,23 @@ export default {
     isDirty() {
       return !sameException(this.exception, this.saved);
     },
+    // In the general settings, a value equal to the recommended one is
+    // dropped on save; on a template it is kept, so only an exception that
+    // sets nothing changes nothing.
     changesNothing() {
-      return matchesBase(this.exception, this.base);
+      return this.isGeneral
+        ? matchesBase(this.exception, this.base)
+        : isEmptyException(this.exception);
+    },
+    // A template's values equal to the general ones: kept, but they no
+    // longer follow the general settings.
+    equalToGeneral() {
+      return this.isGeneral
+        ? 0
+        : valuesEqualToBase(this.exception, this.base).length;
+    },
+    ownState() {
+      return !this.isGeneral && Boolean(this.exception.state);
     },
     isServer() {
       return isServerCheck(this.checkId);
@@ -95,6 +112,7 @@ export default {
       return (
         this.showThresholds ||
         this.adjustments.length > 0 ||
+        this.equalToGeneral > 0 ||
         this.changesNothing ||
         this.applied.state !== 'on' ||
         hasNote(this.checkId)
@@ -147,6 +165,24 @@ export default {
         <p v-if="locked" class="qx-card__base">
           {{ $t('qualitySettings.card.techOnly') }}
         </p>
+        <p v-if="!isGeneral" class="qx-card__base">
+          {{
+            ownState
+              ? $t('qualitySettings.page.stateOwn')
+              : $t('qualitySettings.page.stateGeneral')
+          }}
+          <v-btn
+            v-if="ownState && !locked"
+            x-small
+            text
+            color="accent"
+            class="qx-card__restore"
+            :disabled="disabled"
+            @click="$emit('restore-state')"
+          >
+            {{ $t('qualitySettings.page.restoreState') }}
+          </v-btn>
+        </p>
       </div>
       <div class="qx-card__controls">
         <v-btn-toggle
@@ -198,6 +234,9 @@ export default {
     </div>
 
     <div v-if="hasBody" class="qx-card__body">
+      <p v-if="equalToGeneral" class="qx-card__equal" role="status">
+        {{ $tc('qualitySettings.page.equalToGeneral', equalToGeneral) }}
+      </p>
       <bs-quality-exception-notes
         :check-id="checkId"
         :level="level"
@@ -324,6 +363,18 @@ export default {
 
   &__adjusted {
     color: var(--gray-700);
+  }
+
+  &__equal {
+    padding: 8px 12px;
+    border-radius: 4px;
+    background: var(--surface-muted, #f5f5f5);
+  }
+
+  &__restore {
+    margin-left: 4px;
+    text-transform: none;
+    letter-spacing: normal;
   }
 
   &__thresholds {
