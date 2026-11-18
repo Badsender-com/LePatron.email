@@ -115,6 +115,18 @@ function createRemoteChecks(options) {
         return outcome;
       })
       .catch((err) => {
+        // Aborted (an export that stopped waiting): not run, not failed.
+        if (remoteApi.isCancel(err)) {
+          const cancelled = {
+            ...asLocal,
+            checks: local.checks.concat(listed.map(remoteCheck('cancelled'))),
+          };
+          if (isCurrent(id)) {
+            state.checks(cancelled.checks);
+            state.remoteStatus('idle');
+          }
+          return cancelled;
+        }
         // Listed as checks that could not run, never as passed. A blocklist
         // may not even be configured: it is left out.
         const outcome = {
