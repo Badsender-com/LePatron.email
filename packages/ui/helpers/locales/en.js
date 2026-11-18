@@ -1513,6 +1513,7 @@ export default {
       intro: 'Pick the check to change. It joins the list with its recommended values, which you can then change.',
       introTemplate: 'Pick the check to change. It joins the list with the general settings, which you can then change for this template.',
       none: 'No check matches.',
+      allTaken: 'Every check already has an exception.',
     },
     templates: {
       intro: 'A template can have its own exceptions. For everything else, it follows the general settings, including their later changes.',
@@ -1525,6 +1526,7 @@ export default {
       open: 'Open {name}',
       none: 'None',
       empty: 'You have no template yet. Every new template will follow the general settings.',
+      noMatch: 'No template matches.',
     },
     template: {
       intro: 'This template follows the general settings. Add an exception only for a check that must behave differently on this template.',

@@ -1105,6 +1105,7 @@ export default {
       intro: 'Choisissez le contrôle à modifier. Il apparaîtra dans la liste avec ses valeurs recommandées, que vous pourrez ensuite changer.',
       introTemplate: 'Choisissez le contrôle à modifier. Il apparaîtra dans la liste avec les réglages généraux, que vous pourrez ensuite changer pour ce template.',
       none: 'Aucun contrôle ne correspond.',
+      allTaken: 'Chaque contrôle a déjà une exception.',
     },
     templates: {
       intro: 'Un template peut avoir ses propres exceptions. Pour tout le reste, il suit les réglages généraux, y compris leurs changements ultérieurs.',
@@ -1117,6 +1118,7 @@ export default {
       open: 'Ouvrir {name}',
       none: 'Aucune',
       empty: 'Vous n\'avez pas encore de template. Chaque nouveau template suivra les réglages généraux.',
+      noMatch: 'Aucun template ne correspond.',
     },
     template: {
       intro: 'Ce template suit les réglages généraux. Ajoutez une exception seulement pour un contrôle qui doit se comporter autrement sur ce template.',
