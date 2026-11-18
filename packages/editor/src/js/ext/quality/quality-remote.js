@@ -84,7 +84,7 @@ module.exports = {
   postResources,
   createCancel,
   isTooFrequent,
-  isCancel: axios.isCancel,
+  isCancel: (err) => Boolean(axios.isCancel && axios.isCancel(err)),
   RETRY_DELAY_MS,
   RETRY_WINDOW_MS,
 };

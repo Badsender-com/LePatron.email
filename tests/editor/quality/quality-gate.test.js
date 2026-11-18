@@ -58,7 +58,8 @@ function editor({ email = withLink, checks = {}, answer, ...deps } = {}) {
   return vm;
 }
 
-// A server that has not answered yet; `token` is the request's.
+// A server that has not answered yet; `token` is the request's, and the
+// request fails as axios does once it is aborted.
 function pendingServer() {
   const server = {};
   server.answer = jest.fn(
@@ -67,6 +68,7 @@ function pendingServer() {
         server.token = cancelToken;
         server.resolve = resolve;
         server.reject = reject;
+        cancelToken.promise.then(reject);
       })
   );
   return server;
@@ -117,6 +119,26 @@ describe('waiting for a blocking check of the server', () => {
     expect(vm.notifier.warning).toHaveBeenCalledWith(UNCHECKED);
     expect($('.quality-wait-modal')).toBeNull();
     expect(server.token.reason).toBeDefined();
+  });
+
+  it('lists the checks of the server as cancelled once the wait ran out, not as a failure', async () => {
+    jest.useFakeTimers();
+    const server = pendingServer();
+    const vm = editor({ checks, answer: server.answer });
+    const verdict = vm.quality.gate({ html: withLink.html });
+    await Promise.resolve();
+    await Promise.resolve();
+    jest.advanceTimersByTime(SERVER_WAIT_MS);
+    await verdict;
+    jest.useRealTimers();
+    await flush();
+    const brokenLinks = vm.quality
+      .checks()
+      .find((check) => check.ruleId === 'broken-links');
+    expect(brokenLinks.status).toBe('cancelled');
+    expect(vm.quality.remoteStatus()).toBe('idle');
+    expect(vm.quality.remoteError()).toBeNull();
+    expect(console.error).not.toHaveBeenCalled();
   });
 
   it('lets the email leave with a notice when the user ran too many checks', async () => {
