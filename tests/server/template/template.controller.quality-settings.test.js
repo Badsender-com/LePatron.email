@@ -244,6 +244,7 @@ describe('PUT /templates/:templateId/quality-settings', () => {
       })
     );
     expect(error.status).toBe(403);
+    expect(error.message).toBe('FORBIDDEN_TECH_QUALITY_CHECK');
   });
 
   it("lets a tech admin override the tracking check's state", async () => {
@@ -270,6 +271,7 @@ describe('PUT /templates/:templateId/quality-settings', () => {
         })
       );
       expect(error.status).toBe(403);
+      expect(error.message).toBe('FORBIDDEN_TECH_QUALITY_CHECK');
       expect(Templates.updateOne).not.toHaveBeenCalled();
     }
   );

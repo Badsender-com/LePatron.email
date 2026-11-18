@@ -1,7 +1,7 @@
 'use strict';
 
 const { pick } = require('lodash');
-const { Forbidden, NotFound } = require('http-errors');
+const { NotFound } = require('http-errors');
 const asyncHandler = require('express-async-handler');
 const {
   createWorkspace,
@@ -43,7 +43,7 @@ const {
 } = require('../utils/sanitize-email-metadata.js');
 const {
   sanitizeQualitySettings,
-  keepsTechChecks,
+  assertTechChecksAllowed,
   qualitySettingsUpdate,
 } = require('../utils/sanitize-quality-settings.js');
 
@@ -581,15 +581,7 @@ async function update(req, res) {
       groupToUpdate.qualitySettings,
       storedSettings
     );
-    // The required tracking parameters are set with the company's tracking,
-    // a tech admin's: the whole request is refused, rather than the change
-    // silently dropped and the rest saved.
-    if (
-      !permissions.can(user, CAPABILITIES.GROUP_MANAGE_TECH) &&
-      !keepsTechChecks(storedSettings, qualitySettings)
-    ) {
-      throw new Forbidden();
-    }
+    assertTechChecksAllowed(user, storedSettings, qualitySettings);
     qualityUpdate = qualitySettingsUpdate(storedSettings, qualitySettings);
     delete groupToUpdate.qualitySettings;
   }

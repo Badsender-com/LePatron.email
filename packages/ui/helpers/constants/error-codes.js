@@ -35,4 +35,5 @@ export const ERROR_CODES = {
 
   // Quality settings of a group or a template (settings → Contrôle qualité).
   INVALID_QUALITY_SETTINGS: 'INVALID_QUALITY_SETTINGS',
+  FORBIDDEN_TECH_QUALITY_CHECK: 'FORBIDDEN_TECH_QUALITY_CHECK',
 };

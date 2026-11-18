@@ -181,6 +181,7 @@ describe('PUT /groups/:groupId — the required tracking parameters', () => {
       })
     );
     expect(error.status).toBe(403);
+    expect(error.message).toBe('FORBIDDEN_TECH_QUALITY_CHECK');
     expect(groupService.updateGroup).not.toHaveBeenCalled();
   });
 
@@ -196,6 +197,7 @@ describe('PUT /groups/:groupId — the required tracking parameters', () => {
       })
     );
     expect(error.status).toBe(403);
+    expect(error.message).toBe('FORBIDDEN_TECH_QUALITY_CHECK');
   });
 
   it('lets a company admin set the other checks, the state a tech admin set kept', async () => {

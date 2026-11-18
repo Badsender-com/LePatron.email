@@ -14,7 +14,6 @@ const logger = require('../utils/logger.js');
 const ERROR_CODES = require('../constant/error-codes.js');
 const modelsUtils = require('../utils/model.js');
 const permissions = require('../account/permissions.js');
-const { CAPABILITIES } = require('../../shared/access/roles.js');
 const templateService = require('./template.service.js');
 const fileManager = require('../common/file-manage.service.js');
 const generatePreview = require('./generate-preview.controller.js');
@@ -22,7 +21,7 @@ const templateBlocks = require('./template-blocks.controller.js');
 const _getTemplateImagePrefix = require('../utils/get-template-image-prefix.js');
 const {
   sanitizeQualitySettings,
-  keepsTechChecks,
+  assertTechChecksAllowed,
   qualitySettingsUpdate,
 } = require('../utils/sanitize-quality-settings.js');
 const {
@@ -280,12 +279,7 @@ async function updateQualitySettings(req, res) {
     inherited
   );
   // The required tracking parameters are a tech admin's, on a template too.
-  if (
-    !permissions.can(user, CAPABILITIES.GROUP_MANAGE_TECH) &&
-    !keepsTechChecks(template.qualitySettings, qualitySettings)
-  ) {
-    throw new createError.Forbidden();
-  }
+  assertTechChecksAllowed(user, template.qualitySettings, qualitySettings);
   // Check by check, so a save made meanwhile to another check stays.
   const update = qualitySettingsUpdate(
     template.qualitySettings,
