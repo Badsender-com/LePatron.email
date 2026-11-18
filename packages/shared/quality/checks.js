@@ -10,7 +10,8 @@
  * editor knows and the pages offer.
  *
  * Each check has its category (as the editor's rule declares it), a default
- * state and, when it has some, thresholds with their default, bounds and unit.
+ * state, when it has some, thresholds with their default, bounds and unit,
+ * and what it asks of the server, if anything (`server`).
  * The defaults are the quality control as it was before groups could set it:
  * every check on, the required tracking parameters blocking.
  *
@@ -32,7 +33,25 @@ const check = (category, thresholds = {}, defaultState = 'on', ordered = []) =>
     defaultState,
     thresholds: Object.freeze(thresholds),
     ordered: Object.freeze(ordered.map((pair) => Object.freeze(pair))),
+    server: null,
   });
+
+// What a check asks of the server: `task`, what the server does for it (visit
+// the links, ask Web Risk, ask the blocklists, download the images), and
+// `awaited`, whether the export waits for the answer when the check blocks.
+const askingServer = (task, awaited, base) =>
+  Object.freeze(
+    Object.assign({}, base, {
+      server: Object.freeze({ task: task, awaited: awaited }),
+    })
+  );
+// Run by the server on the export, once the local checks are done: when it
+// blocks, the export waits for its answer, 30 s at most and cancellable (the
+// editor's quality-gate.js).
+const runByServer = (task, base) => askingServer(task, true, base);
+// A local check with a second look at the server's answer: its findings never
+// block, so the export never waits for them.
+const secondLook = (task, base) => askingServer(task, false, base);
 
 const CHECKS = Object.freeze({
   // Copy
@@ -91,36 +110,47 @@ const CHECKS = Object.freeze({
   'image-only-email': check('content', {
     minTextLength: t(100, 1, 5000, 'characters'),
   }),
-  'broken-links': check('content'),
-  'dangerous-links': check('content'),
-  'domain-blocklists': check('content'),
+  'broken-links': runByServer('linkProbes', check('content')),
+  'dangerous-links': runByServer('webRisk', check('content')),
+  'domain-blocklists': runByServer('blocklists', check('content')),
   // Technical
   'insecure-urls': check('technical'),
-  'unsupported-image-formats': check('technical'),
+  // Judged again on the type the server reads, for an image whose address
+  // names no format: the server downloads that image.
+  'unsupported-image-formats': secondLook('images', check('technical')),
   'forbidden-code': check('technical'),
   'malformed-html': check('technical'),
   'unsupported-code': check('technical'),
   'loose-code': check('technical'),
   'html-size': check('technical', { maxKb: t(100, 10, 2048, 'KB') }),
   // Performance, checked by the server
-  'image-weight': check('performance', {
-    // The server measures 10 MB at most: a ceiling of 10,240 KB would
-    // never be exceeded.
-    maxKb: t(500, 10, 10239, 'KB'),
-    maxGifKb: t(1024, 10, 10239, 'KB'),
-  }),
-  'images-total-weight': check(
-    'performance',
-    {
-      warningKb: t(500, 10, 20480, 'KB'),
-      errorKb: t(1024, 10, 20480, 'KB'),
-    },
-    'on',
-    [['warningKb', 'errorKb']]
+  'image-weight': runByServer(
+    'images',
+    check('performance', {
+      // The server measures 10 MB at most: a ceiling of 10,240 KB would
+      // never be exceeded.
+      maxKb: t(500, 10, 10239, 'KB'),
+      maxGifKb: t(1024, 10, 10239, 'KB'),
+    })
   ),
-  'oversized-images': check('performance', {
-    maxRatio: t(2, 1, 10, 'ratio'),
-  }),
+  'images-total-weight': runByServer(
+    'images',
+    check(
+      'performance',
+      {
+        warningKb: t(500, 10, 20480, 'KB'),
+        errorKb: t(1024, 10, 20480, 'KB'),
+      },
+      'on',
+      [['warningKb', 'errorKb']]
+    )
+  ),
+  'oversized-images': runByServer(
+    'images',
+    check('performance', {
+      maxRatio: t(2, 1, 10, 'ratio'),
+    })
+  ),
 });
 
 const defaultThresholds = (checkId) => {
@@ -146,18 +176,27 @@ function defaultQualitySettings() {
   };
 }
 
-// The checks the server runs on the export, once the others are done: when
-// one of them blocks, the export waits for its answer, 30 s at most and
-// cancellable (the editor's quality-gate.js). The image format check also
-// reads the server's answer, but never makes the export wait.
-const SERVER_CHECKS = Object.freeze([
-  'broken-links',
-  'dangerous-links',
-  'domain-blocklists',
-  'image-weight',
-  'images-total-weight',
-  'oversized-images',
-]);
+const asksServer = (id) => CHECKS[id].server !== null;
+
+// The checks the server runs on the export (runByServer): when one of them
+// blocks, the export waits for its answer. The editor's REMOTE_RULES. The
+// image format check also reads the server's answer, but never makes the
+// export wait: it is not one of them.
+const SERVER_CHECKS = Object.freeze(
+  Object.keys(CHECKS).filter(
+    (id) => asksServer(id) && CHECKS[id].server.awaited
+  )
+);
+
+// Every check that reads the server's answer, and what it has the server do:
+// the checks the editor may name to the server, and the tasks a run does.
+const SERVER_TASKS = Object.freeze(
+  Object.fromEntries(
+    Object.keys(CHECKS)
+      .filter(asksServer)
+      .map((id) => [id, CHECKS[id].server.task])
+  )
+);
 
 // The checks that belong to the company's technical settings: only a user who
 // sets those (a tech admin, a super admin) sets their state and thresholds,
@@ -169,6 +208,7 @@ module.exports = {
   CHECK_STATES,
   CHECKS,
   SERVER_CHECKS,
+  SERVER_TASKS,
   TECH_CHECKS,
   defaultThresholds,
   defaultQualitySettings,

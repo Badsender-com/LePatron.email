@@ -32,13 +32,43 @@ describe('the shared check catalogue', () => {
     expect(Object.keys(CHECKS).sort()).toEqual(ruleIds.sort());
   });
 
-  it('names the checks the server runs, as the editor runs them', () => {
+  // The editor's lists are tied to these in tests/editor/quality/server-checks.test.js.
+  it('derives the checks the export waits for from what each asks the server', () => {
     const {
       SERVER_CHECKS,
     } = require('../../../packages/shared/quality/checks.js');
-    expect([...SERVER_CHECKS].sort()).toEqual(
-      REMOTE_RULES.map((rule) => rule.id).sort()
-    );
+    expect(SERVER_CHECKS).toEqual([
+      'broken-links',
+      'dangerous-links',
+      'domain-blocklists',
+      'image-weight',
+      'images-total-weight',
+      'oversized-images',
+    ]);
+  });
+
+  it('derives what the server does for each check reading its answer', () => {
+    const {
+      SERVER_TASKS,
+    } = require('../../../packages/shared/quality/checks.js');
+    expect(SERVER_TASKS).toEqual({
+      'broken-links': 'linkProbes',
+      'dangerous-links': 'webRisk',
+      'domain-blocklists': 'blocklists',
+      'image-weight': 'images',
+      'images-total-weight': 'images',
+      'oversized-images': 'images',
+      'unsupported-image-formats': 'images',
+    });
+  });
+
+  it('asks nothing of the server for the other checks', () => {
+    const {
+      SERVER_TASKS,
+    } = require('../../../packages/shared/quality/checks.js');
+    Object.keys(CHECKS)
+      .filter((id) => !(id in SERVER_TASKS))
+      .forEach((id) => expect([id, CHECKS[id].server]).toEqual([id, null]));
   });
 
   it('gives each check the category its rule declares', () => {
