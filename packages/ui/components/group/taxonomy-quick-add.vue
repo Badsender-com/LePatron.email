@@ -2,7 +2,7 @@
 import { Plus } from 'lucide-vue';
 import * as apiRoutes from '~/helpers/api-routes.js';
 import { proposeIdentifier } from '~/helpers/taxonomy-builder.js';
-import { TAXONOMY_LIMITS, canonicalTypeItems } from '~/helpers/taxonomy.js';
+import { TAXONOMY_LIMITS, doctrineTypeItems } from '~/helpers/taxonomy.js';
 
 // What a template compares: the server refuses anything else (value-fields.js).
 const IDENTIFIER_PATTERN = /^[A-Za-z0-9_-]*$/;
@@ -41,7 +41,7 @@ export default {
       return IDENTIFIER_PATTERN.test(this.identifier);
     },
     doctrineTypes() {
-      return canonicalTypeItems(null, (key) => this.$t(key));
+      return doctrineTypeItems((key) => this.$t(key));
     },
   },
   watch: {
@@ -122,6 +122,7 @@ export default {
         v-model="doctrineType"
         class="taxonomy-quick-add__input taxonomy-quick-add__doctrine"
         :disabled="saving"
+        @keydown.enter.prevent="add"
       >
         <option value="">{{ $t('taxonomy.form.doctrineTypeNone') }}</option>
         <option

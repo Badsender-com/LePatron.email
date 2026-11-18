@@ -10,7 +10,7 @@ import BsTextarea from '~/components/form/bs-textarea.vue';
 import BsTaxonomyFormStatus from '~/components/group/taxonomy-form-status.vue';
 import BsTaxonomyTokensField from '~/components/group/taxonomy-tokens-field.vue';
 import BsTaxonomyCodeField from '~/components/group/taxonomy-code-field.vue';
-import { TAXONOMY_LIMITS, canonicalTypeItems } from '~/helpers/taxonomy.js';
+import { TAXONOMY_LIMITS, doctrineTypeItems } from '~/helpers/taxonomy.js';
 import { proposeIdentifier } from '~/helpers/taxonomy-builder.js';
 import {
   valueFormFor,
@@ -83,7 +83,7 @@ export default {
       return this.isEditing ? this.$t('global.save') : this.$t('global.create');
     },
     doctrineTypeItems() {
-      return canonicalTypeItems(null, (key) => this.$t(key));
+      return doctrineTypeItems((key) => this.$t(key));
     },
     labelErrors() {
       const errors = [];

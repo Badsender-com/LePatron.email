@@ -1811,9 +1811,9 @@ export default {
         literalNotOffered:
           '{templates} compares {identifier} with {parent}, but {identifier} is not offered under {parent}.',
         emailTypeNotMapped:
-          '{value} is mapped onto no Badsender type: it loads only the expertises targeting no type.',
+          '{value} has no Badsender type: only the expertises that target no type will load.',
         doctrineLiteralUnknown:
-          '{templates} compares doctrineType with {identifier}, which is none of the six Badsender types.',
+          '{templates} compares doctrineType with {identifier}, outside the six Badsender types.',
       },
       precedence: {
         title: 'Token precedence',
@@ -2126,7 +2126,7 @@ export default {
     },
     defaults: {
       action: 'Default email types',
-      confirmTitle: 'Add the missing Badsender email types',
+      confirmTitle: 'Add an email type for each missing Badsender type',
       confirmIntro:
         'The following email types will be created. You can then rename them, refine their definition, or deactivate them.',
       confirmNothing:
