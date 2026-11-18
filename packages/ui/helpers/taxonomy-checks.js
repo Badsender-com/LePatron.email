@@ -14,7 +14,10 @@
  *   template;
  * - `literalNotOffered`: a template compares a child literal together with a
  *   parent literal (`market eq 'ca' and language eq 'fr'`), and the value
- *   carrying the child literal is not offered under that parent value.
+ *   carrying the child literal is not offered under that parent value;
+ * - `doctrineLiteralUnknown`: the literals a template compares `doctrineType`
+ *   against that are none of the doctrine's six types (ADR-0030), on the
+ *   email type: one point per template.
  *
  * Deactivated dimensions and values ask nothing; the trigger's values are the
  * doctrine's. A parent value under which a child offers nothing is no point: a
@@ -22,6 +25,7 @@
  * one market), and the editor then shows no select.
  */
 import { STANDARD_DIMENSIONS } from './taxonomy-builder.js';
+import { CANONICAL_TYPES } from './taxonomy.js';
 import {
   comparedLiterals,
   comparedTogether,
@@ -96,7 +100,24 @@ export function pointsToCheck({
       );
     }
   });
+  if (active.some((d) => d.name === STANDARD_DIMENSIONS.EMAIL_TYPE)) {
+    points.push(...doctrineLiteralsUnknown(templates));
+  }
   return points;
+}
+
+function doctrineLiteralsUnknown(templates) {
+  return templates
+    .map((template) => ({
+      kind: 'doctrineLiteralUnknown',
+      dimension: STANDARD_DIMENSIONS.EMAIL_TYPE,
+      identifiers: comparedLiterals(template.contract, 'doctrineType')
+        .map((entry) => entry.literal)
+        .filter((literal) => !CANONICAL_TYPES.includes(literal))
+        .sort(),
+      templateIds: [String(template.id)],
+    }))
+    .filter((point) => point.identifiers.length > 0);
 }
 
 function literalsNotCarried(dimension, own, templates) {

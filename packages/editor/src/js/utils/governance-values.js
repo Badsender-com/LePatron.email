@@ -11,7 +11,8 @@ const {
  * design tokens of the chosen values under their own names. When two chosen
  * values carry the same token, the dimension with the highest precedence wins,
  * and on a tie the later one in the declared order. The email's locale is
- * published under `locale` (ADR-0023), by the rule the server applies.
+ * published under `locale` (ADR-0023), by the rule the server applies, and the
+ * doctrine type of its email type under `doctrineType` (ADR-0030).
  *
  * Pure, like the rest of the section's helpers: the editor has no component test
  * harness. Covered by tests/editor/governance-values.test.js.
@@ -67,6 +68,7 @@ function governanceValues({ dimensions, selections, trigger }) {
   // (ADR-0023), keeps it: its templates compare against its identifiers.
   const ownsLocale = active.some((dimension) => dimension.name === 'locale');
   if (!ownsLocale) values.locale = localeOf(active, selections);
+  values.doctrineType = doctrineTypeOf(active, selections);
 
   return { values, sources: resolveTokens(carriers, values, dimensions) };
 }
@@ -90,6 +92,21 @@ function localeOf(dimensions, selections) {
 }
 
 /**
+ * The doctrine type of the email type chosen; an empty string when there is
+ * none, so `_root_.doctrineType eq 'transactional'` is false, not an error.
+ */
+function doctrineTypeOf(dimensions, selections) {
+  const emailType = dimensions.find((dimension) => dimension.name === 'emailType');
+  const chosen = selections && selections.emailType;
+  const value =
+    emailType &&
+    (emailType.values || []).find(
+      (option) => String(option.id) === String(chosen)
+    );
+  return (value && value.doctrineType) || '';
+}
+
+/**
  * Write the tokens of the chosen values into `values`, the lowest precedence
  * first so the highest is written last and wins.
  *
@@ -100,6 +117,7 @@ function resolveTokens(carriers, values, dimensions) {
   const reserved = new Set([
     'trigger',
     'locale',
+    'doctrineType',
     ...(dimensions || []).map((dimension) => dimension.name),
   ]);
   const sources = {};

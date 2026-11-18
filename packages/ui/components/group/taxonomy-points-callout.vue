@@ -13,6 +13,7 @@ const SEGMENT_OF = {
   dimensionUnread: 'settings',
   literalNotCarried: 'templates',
   literalNotOffered: 'crossings',
+  doctrineLiteralUnknown: 'templates',
 };
 
 export default {

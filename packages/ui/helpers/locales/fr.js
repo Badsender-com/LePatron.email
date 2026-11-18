@@ -1402,6 +1402,8 @@ export default {
           '{templates} compare {identifier}, qu\'aucune valeur ne porte.',
         literalNotOffered:
           '{templates} compare {identifier} avec {parent}, mais {identifier} n\'est pas proposé sous {parent}.',
+        doctrineLiteralUnknown:
+          '{templates} compare doctrineType à {identifier}, qui n\'est aucun des six types Badsender.',
       },
       precedence: {
         title: 'Priorité des tokens',
