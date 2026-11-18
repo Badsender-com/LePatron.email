@@ -365,39 +365,37 @@ Small icon-only buttons for contextual actions (edit, delete, reply, etc.).
 
 ## Modal / Dialog
 
-```css
-.modal-backdrop {
-  background: rgba(0, 0, 0, 0.5);
-}
+Every popin of the Vue app has **one anatomy**, whatever its content (a confirmation, a form, a picker). It is written once, in `packages/ui/assets/global-styles/dialogs.scss`, and applies to a plain `v-dialog` / `v-card` as well as to `BsModalConfirm`, `BsModalConfirmForm` and `BsModalForm`. **A dialog never restyles itself**: no `flat tile`, no `headline` or `text-h6` title, no local `.modal-actions` rule. If one must differ, the design system decides it first.
 
-.modal {
-  background: white;
-  border-radius: 8px;
-  max-width: 500px;
-  margin: 0 auto;
-}
-
-.modal-title {
-  padding: 16px;
-  font-size: 16px;
-  font-weight: 600;
-  color: var(--primary);
-}
-
-.modal-content {
-  padding: 0 16px 16px;
-  color: var(--gray-600);
-  font-size: 14px;
-}
-
-.modal-actions {
-  padding: 8px 16px;
-  display: flex;
-  justify-content: flex-end;
-  gap: 8px;
-  border-top: 1px solid var(--gray-200);
-}
 ```
+┌──────────────────────────────────────────┐
+│ Title                       Inter 20 / 600 │  24px 24px 8px, --v-primary-base
+│ Body text                   14 / 1.5       │  8px 24px 24px, gray-700
+├──────────────────────────────────────────┤  1px hairline, gray-200, full width
+│                  [ Cancel ] [ Main action ] │  16px 24px, 8px gap, right-aligned
+└──────────────────────────────────────────┘
+```
+
+| Part      | Rule                                                                                                                                                                                                    |
+| --------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Container | White, `--r-md` radius (10px), `--shadow-modal`. Over a scrim in the primary color (46%, Vuetify's own opacity).                                                                                        |
+| Title     | Inter 20px / 600, `--v-primary-base`, sentence case, a question mark when it asks something ("Exiger la double authentification ?"). A Lucide icon may precede it.                                      |
+| Body      | 14px / 1.5, `--gray-700`. A quieter second line takes the `bs-dialog-note` class (13px, `--gray-600`).                                                                                                  |
+| Footer    | A `--gray-200` hairline across the card, actions on the right. A form's footer written inside its body still runs the width of the card.                                                                |
+| Actions   | Cancel is a `text` button in the primary color, to the left. The main action is a `cta` (`color="accent"`). A destructive confirmation is `danger` (`color="error"`, filled). Never a filled `primary`. |
+| Buttons   | 36px high, 14px / 500, the radius of the controls, **sentence case**.                                                                                                                                   |
+| Width     | `max-width` 400 (a short question), 500 (the default), 600 (a form), up to 900 (a table or a picker).                                                                                                   |
+| Closing   | Cancel, Escape and a click outside all cancel and leave things as they were. A dialog that must not be closed by accident is `persistent`.                                                              |
+
+**Which component to use**
+
+- A confirmation: `BsModalConfirm` (`title`, `action-label`, `action-button-color`); with a typed confirmation or a checkbox, `BsModalConfirmForm`.
+- A form in a popin: `BsModalForm`, or `BsModalConfirm` with `is-form` when the footer is the form's own.
+- A one-off layout (a picker, a preview): a plain `v-dialog` > `v-card` > `v-card-title`, `v-card-text`, `v-divider`, `v-card-actions`.
+
+**Not in the Vue app's scope**: the editor's dialogs (Knockout / jQuery UI, see [04-editor-stack.md](./04-editor-stack.md)) keep their own look until the editor moves to the design system. A preview or a gallery that is only content (no footer) keeps the title and the container, and closes on Escape or a click outside.
+
+**Why filled `danger` and not outlined `danger-ink`**: the outlined button is for the action that opens a confirmation ("Supprimer l'entreprise" in the danger zone); the confirmation itself is the `danger` variant of the design system's `Btn`.
 
 ---
 

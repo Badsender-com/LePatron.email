@@ -121,6 +121,28 @@ This ensures gradual, low-risk convergence without requiring dedicated refactori
 
 ---
 
+### DEBT-010: Uppercase button labels
+
+|               |                                                                                                              |
+| ------------- | ------------------------------------------------------------------------------------------------------------ |
+| **Severity**  | Medium                                                                                                       |
+| **Current**   | Vuetify's `text-transform: uppercase` on every `v-btn` outside the dialogs ("ENREGISTRER", "CRÉER UN EMAIL") |
+| **Target**    | Sentence case, 14px / 500, as the design system's `Btn` ("No uppercase"); already so inside dialogs          |
+| **Direction** | One global rule on `.v-btn`, once the pages are reviewed; the dialogs already follow it                      |
+
+---
+
+### DEBT-011: Two fonts in the dialogs' neighbours
+
+|               |                                                                                                  |
+| ------------- | ------------------------------------------------------------------------------------------------ |
+| **Severity**  | Low                                                                                              |
+| **Current**   | Vuetify typography classes (`headline`, `text-h6`, `text-body-1`) still set Roboto in some pages |
+| **Target**    | Inter everywhere (DEBT-001); the dialogs no longer use those classes                             |
+| **Direction** | Migrate on each change                                                                           |
+
+---
+
 ## Resolved Debts
 
 _No debts have been fully resolved yet._
