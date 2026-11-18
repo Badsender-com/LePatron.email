@@ -1192,8 +1192,11 @@ async function handleRelativeOrFtpImages({
 }
 
 // Resolve the tracking context for a mailing: fetch group + template, build
-// the merged config, and verify required params are filled. Throws 422 with
-// the missing keys when required params are missing.
+// the merged config, and check the required params. Throws 422 with the
+// missing keys when a required param has no value AND the `tracking-params`
+// check is blocking for the mailing (its template's setting, else its
+// company's, else the default: blocking, ADR 0009). When the check is off or
+// only on, the missing params are let through and the others still apply.
 //
 // `freshTracking` (optional) — when the caller has a more recent tracking
 // state than what's persisted in mailing.data.tracking (typically the values
@@ -1235,8 +1238,8 @@ async function resolveMailingTrackingContext(
     groupTrackingConfig
   );
   // The required tracking parameters are a check like the others (ADR 0009):
-  // blocking by default; the server refuses them missing only while the
-  // mailing's group or template keeps that check blocking.
+  // blocking by default; the server refuses them missing only while that
+  // check resolves to blocking for the mailing's template and company.
   const trackingCheckBlocks =
     resolveQualitySettings(group, template).checks['tracking-params'].state ===
     'blocking';

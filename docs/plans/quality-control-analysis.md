@@ -58,7 +58,7 @@ LePatron.email dispose d'un système de contrôle qualité réparti entre le cli
 | Fichier                                                      | Rôle                            | Couche  |
 | ------------------------------------------------------------ | ------------------------------- | ------- |
 | `packages/editor/src/js/ext/quality/`                        | Moteur et règles du QC          | Client  |
-| `packages/editor/src/js/ext/badsender-control-quality.js`    | Modale du tracking obligatoire  | Client  |
+| `packages/editor/src/js/ext/badsender-control-quality.js`    | Modale des blocages             | Client  |
 | `packages/editor/src/js/ext/quality/quality-review.js`       | État du panneau, appels serveur | Client  |
 | `packages/editor/src/js/vue/components/quality-drawer/`      | Panneau « Tester votre email »  | Client  |
 | `packages/server/mailing/quality-resources.service.js`       | Liens et images mesurés         | Serveur |
@@ -106,7 +106,7 @@ Les seuils sont ceux de la revue d'équipe du 1er octobre 2026. Le catalogue dé
 | `headings`                  | Accessibilité | Info             | Titre vide, niveau sauté                                                                                                                                                                                                                             |
 | `alt-redundant`             | Accessibilité | Info             | Texte alternatif identique au texte voisin                                                                                                                                                                                                           |
 | `emoji-placement`           | Accessibilité | Info             | Deux emojis d'affilée ou plus, emoji au milieu d'une phrase (un emoji composé compte pour un)                                                                                                                                                        |
-| `tracking-params`           | Contenu       | Erreur, bloquant | Paramètres de tracking obligatoires sans valeur. Bloque le téléchargement et l'envoi ESP (`checkRequiredTrackingParams`)                                                                                                                             |
+| `tracking-params`           | Contenu       | Erreur, bloquant | Paramètres de tracking obligatoires sans valeur, bloquant par défaut. Tant que le contrôle est bloquant pour le mailing, bloque le téléchargement et l'envoi ESP, et le serveur les refuse aussi (`resolveMailingTrackingContext`)                   |
 | `unfilled-links`            | Contenu       | Erreur           | Lien avec texte dont l'adresse est `#toreplace`, `#`, vide ou `javascript:`                                                                                                                                                                          |
 | `malformed-links`           | Contenu       | Warning          | Protocole manquant ou inconnu, `mailto:` ou `tel:` invalide, espace, domaine sans point                                                                                                                                                              |
 | `displayed-urls`            | Contenu       | Warning          | Le texte du lien est une adresse                                                                                                                                                                                                                     |
@@ -137,21 +137,21 @@ Les seuils sont ceux de la revue d'équipe du 1er octobre 2026. Le catalogue dé
 
 ### Affichage
 
-Le panneau « Tester votre email » (`vue/components/quality-drawer/`) remplace la bannière du lot 1. Il groupe les résultats par sévérité (erreurs, warnings, infos, réussis), et chaque résultat propose « Aller au bloc », « Ajouter un commentaire » (pré-rempli, rien n'est publié sans l'utilisateur) et « Ignorer ». Un résultat ignoré est enregistré sur le mailing par son empreinte (`PATCH /api/mailings/:mailingId/quality-ignores`) et revient si son contenu change. Le téléchargement et l'envoi ESP lancent le contrôle et ouvrent le panneau ; seul le tracking obligatoire bloque, par la modale de `displayTrackingError()`. L'onglet « Envoi de test » du panneau envoie un test et crée les liens de partage.
+Le panneau « Tester votre email » (`vue/components/quality-drawer/`) remplace la bannière du lot 1. Il groupe les résultats par sévérité (erreurs, warnings, infos, réussis), et chaque résultat propose « Aller au bloc », « Ajouter un commentaire » (pré-rempli, rien n'est publié sans l'utilisateur) et « Ignorer ». Un résultat ignoré est enregistré sur le mailing par son empreinte (`PATCH /api/mailings/:mailingId/quality-ignores`) et revient si son contenu change. Le téléchargement et l'envoi ESP lancent le contrôle et ouvrent le panneau ; ce qui bloque dépend des réglages du groupe et du template (voir ci-dessous), et `viewModel.quality.gate()` le liste dans une modale (`displayBlockingFindings()`). Sans réglage, seul le tracking obligatoire est bloquant. Tous les exports passent par ce seul point d'entrée (`ext/quality/quality-gate.js`) : attente du serveur bornée à 30 s avec un bouton « Annuler », et un avertissement quand les liens et les images n'ont pas pu être vérifiés. L'onglet « Envoi de test » du panneau envoie un test et crée les liens de partage.
 
 ### Réglages par groupe et par template (epic #1193, ADR 0009)
 
 Chaque contrôle a un état par groupe : **Désactivé**, **Actif** ou **Bloquant**, et ses seuils dans des bornes. Un template surcharge ces réglages un par un et suit le groupe pour le reste. Sans réglage, c'est le comportement d'origine : tout est actif, le tracking obligatoire est bloquant, avec les seuils du tableau ci-dessus.
 
 - **Catalogue** : `packages/shared/quality/checks.js`, avec pour chaque contrôle sa catégorie, son état par défaut et ses seuils (défaut, bornes, unité). L'éditeur et le serveur le lisent ; la page d'admin en garde une copie, vérifiée par un test de synchro.
-- **Stockage** : `qualitySettings` sur le groupe et sur le template, `{ checks: { [id]: { state?, thresholds? } } }`, seulement ce qui est réglé. Il est validé par `sanitizeQualitySettings` (422 `INVALID_QUALITY_SETTINGS`), via `PUT /groups/:groupId` et `PUT /templates/:templateId/quality-settings`. Les droits sont ceux du super admin, et du company admin sur son groupe.
+- **Stockage** : `qualitySettings` sur le groupe et sur le template, `{ checks: { [id]: { state?, thresholds? } } }`, seulement ce qui est réglé. Il est validé par `sanitizeQualitySettings` (422 `INVALID_QUALITY_SETTINGS`), via `PUT /groups/:groupId` et `PUT /templates/:templateId/quality-settings`. Les droits sont ceux du super admin, et des company admin et tech admin de l'entreprise (capacité `GROUP_MANAGE` ; `canManageGroup` pour les templates de l'entreprise).
 - **Résolution** : `resolveQualitySettings(group, template)` donne, pour chaque contrôle et chaque seuil, la valeur du template, sinon celle du groupe, sinon le défaut. L'éditeur la reçoit dans `metadata.qualitySettings`.
 - **Éditeur** : un contrôle désactivé n'est ni lancé ni listé, et le panneau dit combien le sont. Les règles lisent leurs seuils dans `ctx.config.quality`, et les messages les citent.
 - **Blocage** :
   - les résultats d'un contrôle bloquant portent `blocking` et ne peuvent pas être ignorés ;
   - `viewModel.quality.gate({ html })` arrête le téléchargement et l'envoi ESP (avant l'ouverture du formulaire) et liste ce qui bloque dans une modale ;
   - un contrôle serveur bloquant fait attendre la réponse du serveur. Seul un résultat sûr bloque, un échec du serveur jamais ;
-  - côté serveur, seul le tracking obligatoire est revérifié, et seulement s'il est bloquant pour le mailing (`resolveMailingTrackingContext`). Les autres blocages ne s'appliquent que dans l'éditeur.
+  - côté serveur, seul le tracking obligatoire est revérifié, et seulement s'il est bloquant pour le mailing : réglage du template, sinon de l'entreprise, sinon le défaut (`resolveMailingTrackingContext`). Désactivé ou seulement actif, les paramètres manquants passent et les autres paramètres de tracking s'appliquent quand même. Les autres blocages ne s'appliquent que dans l'éditeur.
 - **Admin** : Paramètres → Email Builder → Contrôle qualité. Les réglages du groupe viennent en haut, puis chaque template avec ses surcharges.
 
 ### Contrôles qualité côté serveur
