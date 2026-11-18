@@ -11,6 +11,8 @@ import BsTextField from '~/components/form/bs-text-field';
 import BsTextarea from '~/components/form/bs-textarea.vue';
 import BsSelect from '~/components/form/bs-select';
 import BsFormSection from '~/components/layout/bs-form-section.vue';
+import BsGroupSettingCard from '~/components/group/setting-card.vue';
+import BsGroupFeatureSwitch from '~/components/group/feature-switch.vue';
 import { escapeHtml } from '~/helpers/escape-html';
 import {
   Palette,
@@ -19,7 +21,8 @@ import {
   AlertTriangle,
   Building2,
   Boxes,
-  Shield,
+  ShieldCheck,
+  Users,
   KeyRound,
 } from 'lucide-vue';
 import { CAPABILITIES } from '../../../shared/access/roles.js';
@@ -32,13 +35,16 @@ export default {
     BsTextarea,
     BsSelect,
     BsFormSection,
+    BsGroupSettingCard,
+    BsGroupFeatureSwitch,
     LucidePalette: Palette,
     LucideLineChart: LineChart,
     LucideArrowRight: ArrowRight,
     LucideAlertTriangle: AlertTriangle,
     LucideBuilding2: Building2,
     LucideBoxes: Boxes,
-    LucideShield: Shield,
+    LucideShieldCheck: ShieldCheck,
+    LucideUsers: Users,
     LucideKeyRound: KeyRound,
   },
   mixins: [validationMixin],
@@ -96,10 +102,13 @@ export default {
       immediate: true,
       handler(newVal) {
         if (newVal === null) {
-          this.useSamlAuthentication =
+          // A real boolean: the empty string of an empty issuer would read as
+          // "on" to a Boolean prop.
+          this.useSamlAuthentication = Boolean(
             this.group &&
-            ((this.group.issuer && this.group.issuer.length > 0) ||
-              (this.group.entryPoint && this.group.entryPoint.length > 0));
+              ((this.group.issuer && this.group.issuer.length > 0) ||
+                (this.group.entryPoint && this.group.entryPoint.length > 0))
+          );
         }
       },
     },
@@ -277,102 +286,121 @@ export default {
           </div>
         </bs-form-section>
 
-        <!-- ==================== SECTION 3: PERMISSIONS ==================== -->
-        <bs-form-section v-if="canManagePlatform">
+        <!-- ==================== SECTION 3: SECURITY ====================
+             Permissions, SAML and two-factor authentication read alike, as
+             the modules do. The first two are saved with the form; the
+             two-factor one saves on its own (the slot). -->
+        <bs-form-section
+          v-if="canManagePlatform || $slots['security-rows']"
+          last
+        >
           <template #icon>
-            <lucide-shield :size="20" />
+            <lucide-shield-check :size="20" />
           </template>
           <template #title>
-            {{ $t('forms.group.sections.permissions') }}
+            {{ $t('forms.group.sections.security') }}
           </template>
           <template #description>
-            {{ $t('forms.group.sections.permissionsDescription') }}
-          </template>
-          <v-switch
-            v-model="localModel.userHasAccessToAllWorkspaces"
-            color="accent"
-            :label="$t('forms.group.userHasAccessToAllWorkspaces')"
-            hide-details
-            :disabled="disabled"
-          />
-        </bs-form-section>
-
-        <!-- ==================== SECTION 4: SAML AUTHENTICATION ==================== -->
-        <bs-form-section v-if="canManagePlatform" last>
-          <template #icon>
-            <lucide-key-round :size="20" />
-          </template>
-          <template #title>
-            {{ $t('forms.group.sections.authentication') }}
-          </template>
-          <template #description>
-            {{ $t('forms.group.sections.authenticationDescription') }}
+            {{ $t('forms.group.sections.securityDescription') }}
           </template>
 
-          <v-switch
-            v-model="useSamlAuthentication"
-            color="accent"
-            :label="$t('forms.group.enableSaml')"
-            hide-details
-            :disabled="disabled"
-            class="mb-4"
-          />
+          <bs-group-setting-card
+            v-if="canManagePlatform"
+            title-id="group-permissions-title"
+          >
+            <template #icon><lucide-users :size="28" /></template>
+            <template #name>
+              {{ $t('forms.group.sections.permissions') }}
+            </template>
+            <template #description>
+              {{ $t('forms.group.userHasAccessToAllWorkspaces') }}
+            </template>
+            <template #control>
+              <bs-group-feature-switch
+                v-model="localModel.userHasAccessToAllWorkspaces"
+                :label="$t('forms.group.sections.permissions')"
+                :on-text="$t('forms.group.states.on')"
+                :off-text="$t('forms.group.states.off')"
+                :disabled="disabled"
+              />
+            </template>
+          </bs-group-setting-card>
 
-          <v-expand-transition>
-            <div v-if="useSamlAuthentication">
-              <v-row>
-                <v-col cols="12" md="6">
-                  <bs-text-field
-                    v-model="localModel.entryPoint"
-                    :label="$t('forms.group.entryPoint')"
-                    :hint="$t('forms.group.entryPointHint')"
-                    :disabled="disabled"
-                  />
-                </v-col>
-                <v-col cols="12" md="6">
-                  <bs-text-field
-                    v-model="localModel.issuer"
-                    :label="$t('forms.group.issuer')"
-                    :hint="$t('forms.group.issuerHint')"
-                    :disabled="disabled"
-                  />
-                </v-col>
-                <!-- Required for SSO to be offered at all: without the identity
+          <bs-group-setting-card
+            v-if="canManagePlatform"
+            title-id="group-saml-title"
+          >
+            <template #icon><lucide-key-round :size="28" /></template>
+            <template #name>{{ $t('forms.group.saml.name') }}</template>
+            <template #description>
+              {{ $t('forms.group.sections.authenticationDescription') }}
+            </template>
+            <template #control>
+              <bs-group-feature-switch
+                v-model="useSamlAuthentication"
+                :label="$t('forms.group.enableSaml')"
+                :on-text="$t('forms.group.saml.on')"
+                :off-text="$t('forms.group.saml.off')"
+                :disabled="disabled"
+              />
+            </template>
+            <template v-if="useSamlAuthentication" #body>
+              <div>
+                <v-row>
+                  <v-col cols="12" md="6">
+                    <bs-text-field
+                      v-model="localModel.entryPoint"
+                      :label="$t('forms.group.entryPoint')"
+                      :hint="$t('forms.group.entryPointHint')"
+                      :disabled="disabled"
+                    />
+                  </v-col>
+                  <v-col cols="12" md="6">
+                    <bs-text-field
+                      v-model="localModel.issuer"
+                      :label="$t('forms.group.issuer')"
+                      :hint="$t('forms.group.issuerHint')"
+                      :disabled="disabled"
+                    />
+                  </v-col>
+                  <!-- Required for SSO to be offered at all: without the identity
                      provider's certificate, no response signature can be
                      checked, so the login page falls back to the password. -->
-                <v-col cols="12">
-                  <bs-textarea
-                    v-model="localModel.idpCert"
-                    :label="$t('forms.group.idpCert')"
-                    :hint="$t('forms.group.idpCertHint')"
-                    :disabled="disabled"
-                    rows="6"
-                    class="group-form__idp-cert"
-                  />
-                </v-col>
-              </v-row>
-            </div>
-          </v-expand-transition>
+                  <v-col cols="12">
+                    <bs-textarea
+                      v-model="localModel.idpCert"
+                      :label="$t('forms.group.idpCert')"
+                      :hint="$t('forms.group.idpCertHint')"
+                      :disabled="disabled"
+                      rows="6"
+                      class="group-form__idp-cert"
+                    />
+                  </v-col>
+                </v-row>
+              </div>
+            </template>
+          </bs-group-setting-card>
+
+          <slot name="security-rows" />
         </bs-form-section>
       </v-card-text>
+
+      <template v-if="canManagePlatform">
+        <v-divider />
+        <v-card-actions>
+          <v-spacer />
+          <v-btn
+            elevation="0"
+            color="accent"
+            :loading="loading"
+            :disabled="disabled || loading"
+            @click="onSubmit"
+          >
+            {{ $t('global.save') }}
+          </v-btn>
+        </v-card-actions>
+      </template>
     </v-card>
-
-    <!-- Cards of the settings that save on their own (security). -->
-    <slot name="before-danger-zone" />
-
-    <!-- The form's save comes after them, and the danger zone stays last:
-         nothing goes under it. -->
-    <div v-if="canManagePlatform" class="group-form__actions">
-      <v-btn
-        elevation="0"
-        color="accent"
-        :loading="loading"
-        :disabled="disabled || loading"
-        @click="onSubmit"
-      >
-        {{ $t('global.save') }}
-      </v-btn>
-    </div>
 
     <!-- ==================== DANGER ZONE ==================== -->
     <v-card
@@ -424,12 +452,6 @@ export default {
 </template>
 
 <style lang="scss" scoped>
-.group-form__actions {
-  display: flex;
-  justify-content: flex-end;
-  margin-top: 16px;
-}
-
 // A PEM certificate is read line by line: monospace keeps it recognisable.
 .group-form__idp-cert ::v-deep textarea {
   font-family: monospace;

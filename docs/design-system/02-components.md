@@ -778,15 +778,17 @@ Never the browser's native date input: its calendar cannot be styled. A readonly
 
 ---
 
-## Security card (company settings)
+## Security section (company settings)
 
-The company settings page ([DS sheet: `CompanySettings`](https://claude.ai/artifact/JtUDvCUrEjhutNiYQLZNif)): one card per domain, the **danger zone last, nothing under it**. Implementation: `group/two-factor-option.vue`, placed by the `before-danger-zone` slot of `group/form.vue`; it reuses `group/feature-switch.vue` and `layout/bs-settings-row.vue`.
+The company settings form ([DS sheet: `CompanySettings`](https://claude.ai/artifact/JtUDvCUrEjhutNiYQLZNif)). **One "Sécurité" section holds every setting that says who gets in and how**: Permissions, Authentification SAML and Double authentification. They read like the "Modules activés" cards: a bordered card per setting, its icon on a tile, a name, a sentence, and the switch on the right with its state word (`FeatureSwitch`: "Activé / Désactivé", "Activée / Désactivée", "Exigée / Non exigée"). The danger zone stays last, nothing goes under it.
 
-- **Row**: "Double authentification", its sentence, then how many members have set it up ("Configurée par N membres sur M", a `--v-primary-base` bar on gray). The control is the `FeatureSwitch` with its state words "Exigée / Non exigée".
-- **Turning it on or off is confirmed**, with the impact in numbers ("N membres sur M ne l'ont pas encore configurée"). The primary action is labelled with the verb ("Exiger la double authentification", "Ne plus exiger"). Cancelling puts the switch back on what is saved.
-- **Switches save at once**; the outcome is read **on the option**, never in a toast: "Enregistré" with a check (13px 500 success-ink, `role="status"`, gone after 4 seconds); on failure the switch returns to its saved state and the row says "Modification non enregistrée." in danger-ink with an underlined "Réessayer" (`role="alert"`).
-- A company admin reads the state and is told that only a tech admin changes it; a SAML company leaves it to its identity provider.
-- **Not built yet** (sheet `MfaMembers`): the "Membres sans double authentification" row, the members sub-page with reminders and the CSV export, and the lockout guard ("Configurer la mienne"): a member sets it up at sign-in, there is no account page for it yet. SAML still sits in the group form above, not in this card.
+Implementation: `group/form.vue` (the section), `group/setting-card.vue` (the card, with a `body` slot for what a setting unfolds), `group/feature-switch.vue`, `layout/bs-settings-row.vue` (the last two taken from the MCP stack), and `group/two-factor-option.vue` (the third row, passed through the `security-rows` slot).
+
+- **Permissions** and **SAML** are saved with the form's "Enregistrer"; SAML unfolds its fields (entry point, issuer, certificate) in its own card once on.
+- **Double authentification** saves on its own. Its sentence is followed by how many members have set it up ("Configurée par N membres sur M", with a bar once N > 0). Turning it on or off is **confirmed with its impact** ("N membres sur M ne l'ont pas encore configurée"); the primary action carries the verb ("Exiger la double authentification", "Ne plus exiger"). Cancelling puts the switch back on what is saved.
+- Its outcome is read **on the option**, never in a toast: "Enregistré" with a check (13px 500 success-ink, `role="status"`, gone after 4 seconds); on failure the switch returns to its saved state and the card says "Modification non enregistrée." in danger-ink with an underlined "Réessayer" (`role="alert"`).
+- A company admin reads the state and is told that only a tech admin changes it; a SAML company leaves two-factor to its identity provider.
+- **Not built yet**: the "Membres sans double authentification" row and the `MfaMembers` sub-page (reminders, CSV export), the lockout guard ("Configurer la mienne": a member sets it up at sign-in, there is no account page for it), and the "Modules activés" cards, which keep their own markup and could take `setting-card`.
 
 ---
 
