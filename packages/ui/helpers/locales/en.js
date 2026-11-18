@@ -768,7 +768,7 @@ export default {
     sidebarLabel: 'Tracking',
     title: 'Global tracking',
     description:
-      'Define UTM parameters automatically applied to every email (global configuration). Values defined here override any existing values in template links.',
+      'Define UTM parameters automatically applied to every email (general settings). Values defined here replace any values already in the links.',
     enabled: 'Enable global tracking',
     restrictValues:
       'Restrict to the parameters below (disable free-form input in the builder)',
@@ -783,18 +783,18 @@ export default {
     lockedDisabledHint:
       'Define at least one possible value before locking this key.',
     empty: 'No tracking parameter defined',
-    inheritedFromGroup: 'Inherited from the global configuration',
+    inheritedFromGroup: 'General tracking settings',
     cascade: {
       label: 'Tracking configuration for this template',
-      inherit: 'Inherit from the global configuration',
+      inherit: 'Follow the general settings',
       inheritDescription:
-        'The parameters defined at the global level apply as-is.',
-      extend: 'Inherit and add template-specific parameters',
+        'The parameters of the general settings apply as they are.',
+      extend: 'Follow the general settings and add parameters for this template',
       extendDescription:
-        'Global parameters stay active; the ones added below extend them (or override on key conflict).',
-      replace: 'Replace the global configuration with a template-specific one',
+        'The parameters of the general settings stay active; the ones added below complete them (or replace them for the same key).',
+      replace: 'Replace the general settings with parameters for this template',
       replaceDescription:
-        'Only the parameters defined below apply; the global configuration is ignored.',
+        'Only the parameters defined below apply; the general settings are ignored.',
     },
     validation: {
       emptyKey: 'Key is required',
@@ -810,13 +810,13 @@ export default {
         'Please fill in these parameters before downloading: {keys}',
     },
     templates: {
-      sectionTitle: 'Per-template tracking overrides',
+      sectionTitle: 'Exceptions by template',
       sectionDescription:
-        'You can override or extend the global configuration above for each template.',
+        'Each template follows the general settings above, unless it has an exception: parameters added to them, or in their place.',
       empty: 'No template available.',
-      statusInherits: 'Inherits from the global configuration',
-      statusMerge: 'Extends the global configuration',
-      statusOverride: 'Specific configuration (overrides the global configuration)',
+      statusInherits: 'Follows the general settings',
+      statusMerge: 'Exception: completes the general settings',
+      statusOverride: 'Exception: replaces the general settings',
     },
   },
   personalizedVariables: {
