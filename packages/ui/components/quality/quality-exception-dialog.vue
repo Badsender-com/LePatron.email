@@ -87,7 +87,10 @@ export default {
       </div>
       <v-divider />
       <v-card-text class="qx-dialog__list">
-        <p v-if="!groups.length" class="qx-dialog__none">
+        <p v-if="!candidates.length" class="qx-dialog__none">
+          {{ $t('qualitySettings.dialog.allTaken') }}
+        </p>
+        <p v-else-if="!groups.length" class="qx-dialog__none">
           {{ $t('qualitySettings.dialog.none') }}
         </p>
         <v-list v-for="group in groups" :key="group.category" dense>
@@ -149,9 +152,13 @@ export default {
     color: var(--gray-700);
   }
 
+  // Wraps rather than crushing the name and description beside it.
   &__applies {
+    flex: 0 1 30%;
+    max-width: 180px;
+    margin-left: 12px;
     font-size: 12px;
-    white-space: nowrap;
+    white-space: normal;
     text-align: right;
   }
 

@@ -113,6 +113,7 @@ export default {
       v-if="templates.length"
       :headers="headers"
       :items="items"
+      :empty-message="$t('qualitySettings.templates.noMatch')"
       clickable
       @click:row="open"
     >
@@ -132,15 +133,17 @@ export default {
           <v-chip x-small class="qx-templates__chip">
             {{ $tc('qualitySettings.exceptionCount', item.count) }}
           </v-chip>
-          <span class="qx-templates__summary">{{ item.summary }}</span>
+          <span class="qx-templates__summary" :title="item.summary">{{
+            item.summary
+          }}</span>
         </span>
       </template>
-      <template #item.open="{ item }">
+      <template #item.open>
+        <!-- The template's name is the link: the chevron only shows that
+             the row opens. -->
         <chevron-right
           :size="16"
-          :aria-label="
-            $t('qualitySettings.templates.open', { name: item.name })
-          "
+          aria-hidden="true"
           class="qx-templates__open"
         />
       </template>
