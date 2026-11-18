@@ -104,3 +104,60 @@ describe('sanitizeQualitySettings — values that are not numbers', () => {
     });
   });
 });
+
+// A group may move a threshold past one its template sets: resolution then
+// makes the template's value win. Sending the template's settings back must
+// not be refused for it; only a value the request changes is checked.
+describe('sanitizeQualitySettings — a pair checked only on what changes', () => {
+  // The template set long 50 when its group's tooLong was 60; the group then
+  // lowered tooLong to 45.
+  const stored = subject({ long: 50 });
+  const inherited = { subject: { tooLong: 45 } };
+
+  it("accepts the template's settings sent back unchanged", () => {
+    // As the settings page sends them: every threshold, null when inherited.
+    expect(
+      sanitizeQualitySettings(
+        subject({ long: 50, tooLong: null }),
+        stored,
+        inherited
+      )
+    ).toEqual(subject({ long: 50 }));
+  });
+
+  it('accepts a change to another check of the template', () => {
+    expect(
+      sanitizeQualitySettings(
+        { checks: { headings: { state: 'off' } } },
+        stored,
+        inherited
+      )
+    ).toEqual({ checks: { ...stored.checks, headings: { state: 'off' } } });
+  });
+
+  it('refuses a new value of the template that contradicts the inherited one', () => {
+    const error = refusal(() =>
+      sanitizeQualitySettings(subject({ long: 55 }), stored, inherited)
+    );
+    expect(error.status).toBe(422);
+    expect(error.details).toBe('subject.long must not exceed subject.tooLong');
+  });
+
+  it('refuses an own value removed for an inherited one that contradicts the other', () => {
+    // Back to the group's tooLong of 45, under the template's long of 50.
+    const error = refusal(() =>
+      sanitizeQualitySettings(
+        subject({ tooLong: null }),
+        subject({ long: 50, tooLong: 50 }),
+        inherited
+      )
+    );
+    expect(error.status).toBe(422);
+  });
+
+  it('accepts a new value of the template that is in order with the inherited one', () => {
+    expect(
+      sanitizeQualitySettings(subject({ long: 40 }), stored, inherited)
+    ).toEqual(subject({ long: 40 }));
+  });
+});

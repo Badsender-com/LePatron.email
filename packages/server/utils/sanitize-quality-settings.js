@@ -99,7 +99,8 @@ function mergeThresholds(checkId, raw, stored, fail, inherited = {}) {
     throw fail(`thresholds of ${checkId} must be an object`);
   }
   const known = CHECKS[checkId].thresholds;
-  const merged = finiteThresholds(stored);
+  const before = finiteThresholds(stored);
+  const merged = { ...before };
   Object.entries(raw).forEach(([name, value]) => {
     // Own keys only: "constructor" is not a threshold of the catalogue.
     if (!Object.prototype.hasOwnProperty.call(known, name)) {
@@ -124,8 +125,15 @@ function mergeThresholds(checkId, raw, stored, fail, inherited = {}) {
   // inherited or the defaults: an error level under its warning level would
   // never be reached. An inherited value that is not a number is skipped, as
   // resolveQualitySettings skips it.
+  // Only a value this request changes is checked: a template's own value,
+  // sent back as it is, may face an inherited one its group moved since, and
+  // resolveQualitySettings then makes the template's value win.
+  const changed = (name) =>
+    own(raw, name) &&
+    (own(merged, name) !== own(before, name) || merged[name] !== before[name]);
   const inheritedValues = finiteThresholds(inherited);
   CHECKS[checkId].ordered.forEach(([low, high]) => {
+    if (!changed(low) && !changed(high)) return;
     const value = (name) => {
       if (own(merged, name)) return merged[name];
       if (own(inheritedValues, name)) return inheritedValues[name];
