@@ -497,14 +497,20 @@ export default {
     filters: {
       title: 'Filters',
       createdBetween: 'Created between',
+      datePlaceholder: 'MM/DD/YYYY',
+      to: 'to',
+      allTemplates: 'All templates',
+      allTags: 'All tags',
       updatedBetween: 'Updated between',
       and: 'and',
-      searchPlaceholder: 'Search by name...',
+      searchPlaceholder: 'Search an email by name',
       startDate: 'Start date',
       endDate: 'End date',
     },
     search: {
-      scope: 'Search in',
+      scope: 'In',
+      allWorkspacesHint:
+        'Results from your {n} workspaces. The Location column shows where each email is.',
       currentFolder: 'Current folder',
       allWorkspaces: 'All my workspaces',
       location: 'Location',

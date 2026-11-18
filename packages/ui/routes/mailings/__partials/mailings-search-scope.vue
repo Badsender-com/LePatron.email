@@ -44,7 +44,6 @@ export default {
       :value="scope"
       mandatory
       dense
-      color="accent"
       role="radiogroup"
       aria-labelledby="mailings-search-scope-label"
       class="mailings-search-scope__toggle"
@@ -78,17 +77,48 @@ export default {
   align-items: center;
   flex-wrap: wrap;
   gap: 8px;
-  margin-bottom: 12px;
 
   &__label {
     font-size: 13px;
-    font-weight: 500;
     color: var(--gray-600);
   }
 
-  &__toggle ::v-deep .v-btn {
-    text-transform: none;
-    letter-spacing: normal;
+  // A segmented control: a gray track, the chosen segment raised in white.
+  // Vuetify gives the toggle its own white ground and a border to each
+  // button: both are overridden here.
+  &__toggle.v-btn-toggle {
+    padding: 3px;
+    background: var(--gray-200) !important;
+    border: none;
+    border-radius: 8px;
+
+    ::v-deep .v-btn.v-btn {
+      height: 28px;
+      padding: 0 12px;
+      border: none !important;
+      border-radius: 6px !important;
+      background: transparent !important;
+      color: var(--gray-700) !important;
+      font-size: 13px;
+      font-weight: 500;
+      text-transform: none;
+      letter-spacing: normal;
+
+      &:hover {
+        color: var(--gray-900) !important;
+      }
+    }
+
+    ::v-deep .v-btn.v-btn--active {
+      background: #fff !important;
+      color: var(--gray-900) !important;
+      font-weight: 600;
+      box-shadow: 0 1px 2px rgba(0, 0, 0, 0.16), 0 0 0 1px var(--gray-200);
+    }
+
+    ::v-deep .v-btn::before {
+      opacity: 0 !important;
+    }
   }
 }
 </style>
