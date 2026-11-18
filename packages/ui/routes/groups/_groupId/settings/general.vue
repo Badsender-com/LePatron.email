@@ -50,6 +50,8 @@ export default {
         elevation="0"
         :disabled="loading"
         :loading="loading"
+        :outcome="outcome"
+        :outcome-detail="outcomeDetail"
         @submit="updateGroup"
       >
         <template #security-rows>

@@ -113,9 +113,6 @@ export default {
       progress:
         'Configurée par {n} membre sur {total} | Configurée par {n} membres sur {total}',
       saml: 'Cette entreprise se connecte en SSO : la double authentification relève de son fournisseur d’identité.',
-      saved: 'Enregistré',
-      failed: 'Modification non enregistrée.',
-      retry: 'Réessayer',
       confirmOn: {
         title: 'Exiger la double authentification ?',
         pending:
@@ -153,6 +150,10 @@ export default {
     emailSent: 'L\'email a bien été envoyé',
   },
   global: {
+    saveOutcome: {
+        failed: 'Modification non enregistrée.',
+      retry: 'Réessayer',
+    },
     states: { on: 'Activé', off: 'Désactivé' },
     errors: {
       typeCampagneRequired: 'Le type de campagne est requis.',
@@ -835,10 +836,6 @@ export default {
       emptyKey: 'La clé est requise',
       duplicateKey: 'Cette clé est dupliquée',
     },
-    snackbars: {
-      updated: 'Configuration de tracking enregistrée.',
-      error: 'Erreur lors de l\'enregistrement.',
-    },
     builder: {
       requiredMissing: 'Paramètres de tracking obligatoires manquants',
       requiredMissingDescription:
@@ -1022,7 +1019,6 @@ export default {
     },
     snackbars: {
       invalid: 'Les réglages envoyés n\'ont pas été acceptés.',
-      updated: 'Réglages Email Builder mis à jour',
       error: 'La mise à jour des réglages a échoué',
     },
   },

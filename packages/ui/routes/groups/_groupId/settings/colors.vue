@@ -46,6 +46,8 @@ export default {
           v-model="group"
           :disabled="loading"
           :loading="loading"
+          :outcome="outcome"
+          :outcome-detail="outcomeDetail"
           @save="updateGroup"
         />
       </div>

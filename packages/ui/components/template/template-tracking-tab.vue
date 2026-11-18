@@ -1,11 +1,11 @@
 <script>
-import { mapMutations } from 'vuex';
 import { templatesItemTrackingConfig } from '~/helpers/api-routes.js';
-import { PAGE, SHOW_SNACKBAR } from '~/store/page.js';
 import BsTextField from '~/components/form/bs-text-field.vue';
 import { Trash2 } from 'lucide-vue';
 import BsGroupFeatureSwitch from '~/components/group/feature-switch.vue';
 import BsSettingsRow from '~/components/layout/bs-settings-row.vue';
+import mixinInlineOutcome from '~/helpers/mixins/mixin-inline-outcome.js';
+import BsSaveOutcome from '~/components/layout/bs-save-outcome.vue';
 
 function emptyConfig() {
   return {
@@ -19,11 +19,13 @@ function emptyConfig() {
 export default {
   name: 'TemplateTrackingTab',
   components: {
+    BsSaveOutcome,
     BsGroupFeatureSwitch,
     BsSettingsRow,
     BsTextField,
     LucideTrash2: Trash2,
   },
+  mixins: [mixinInlineOutcome],
   props: {
     template: { type: Object, required: true },
     groupTrackingConfig: {
@@ -103,7 +105,6 @@ export default {
     },
   },
   methods: {
-    ...mapMutations(PAGE, { showSnackbar: SHOW_SNACKBAR }),
     syncValuesInputs() {
       this.valuesInputs = (this.localConfig.params || []).map((p) =>
         (p.values || []).join(', ')
@@ -161,16 +162,10 @@ export default {
           templatesItemTrackingConfig({ templateId: this.template.id }),
           this.localConfig
         );
-        this.showSnackbar({
-          text: this.$t('trackingConfig.snackbars.updated'),
-          color: 'success',
-        });
+        this.markSaved();
         this.$emit('update');
       } catch (error) {
-        this.showSnackbar({
-          text: this.$t('trackingConfig.snackbars.error'),
-          color: 'error',
-        });
+        this.markFailed();
       } finally {
         this.loading = false;
       }
@@ -357,6 +352,11 @@ export default {
 
     <v-divider class="mt-4" />
     <div class="form-actions">
+      <bs-save-outcome
+        :outcome="outcome"
+        :detail="outcomeDetail"
+        @retry="onSubmit"
+      />
       <v-btn
         color="accent"
         elevation="0"
@@ -533,7 +533,9 @@ export default {
 
 .form-actions {
   display: flex;
+  align-items: center;
   justify-content: flex-end;
+  gap: 1rem;
   padding: 12px 0;
 }
 </style>

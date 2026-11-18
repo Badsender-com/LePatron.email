@@ -1,15 +1,14 @@
 <script>
 import { mapGetters } from 'vuex';
-import { Smartphone, Check } from 'lucide-vue';
+import { Smartphone } from 'lucide-vue';
 
 import { groupsItem, groupsItemUsers } from '~/helpers/api-routes.js';
 import { CAN, USER } from '~/store/user';
 import { CAPABILITIES } from '../../../shared/access/roles.js';
 import BsGroupSettingCard from '~/components/group/setting-card.vue';
+import BsSaveOutcome from '~/components/layout/bs-save-outcome.vue';
+import mixinInlineOutcome from '~/helpers/mixins/mixin-inline-outcome.js';
 import BsGroupFeatureSwitch from '~/components/group/feature-switch.vue';
-
-// How long "Enregistré" stays under the option.
-const SAVED_FOR_MS = 4000;
 
 // Every member of the group signs in with a second factor (ADR 0008).
 // The last row of the Security section of the company settings (design
@@ -21,18 +20,17 @@ export default {
   name: 'BsGroupTwoFactorOption',
   components: {
     BsGroupSettingCard,
+    BsSaveOutcome,
     BsGroupFeatureSwitch,
     LucideSmartphone: Smartphone,
-    LucideCheck: Check,
   },
+  mixins: [mixinInlineOutcome],
   props: {
     group: { type: Object, required: true },
   },
   data() {
     return {
       loading: false,
-      // 'saved' | 'failed' | null: the outcome of the last change.
-      outcome: null,
       // The value asked for, kept until it is confirmed (or tried again).
       asked: null,
       // The confirmation dialog; `confirmed` tells closing it by the action
@@ -43,7 +41,6 @@ export default {
       // Bumped to draw the switch back on the saved state after a refusal:
       // the browser already flipped it.
       switchKey: 0,
-      savedTimer: null,
     };
   },
   computed: {
@@ -81,9 +78,6 @@ export default {
   async created() {
     await this.loadMembers();
   },
-  beforeDestroy() {
-    clearTimeout(this.savedTimer);
-  },
   methods: {
     // The counts are an aid: a failure leaves the row without them.
     async loadMembers() {
@@ -99,7 +93,7 @@ export default {
     // A change that touches every member is confirmed first, with its impact.
     ask(value) {
       this.asked = Boolean(value);
-      this.outcome = null;
+      this.clearOutcome();
       this.confirmed = false;
       this.confirming = true;
     },
@@ -117,7 +111,6 @@ export default {
       const value = this.asked;
       if (value === null) return;
       this.loading = true;
-      clearTimeout(this.savedTimer);
       try {
         const group = await this.$axios.$put(
           groupsItem({ groupId: this.group.id }),
@@ -125,12 +118,9 @@ export default {
         );
         this.$emit('update', group);
         this.asked = null;
-        this.outcome = 'saved';
-        this.savedTimer = setTimeout(() => {
-          this.outcome = null;
-        }, SAVED_FOR_MS);
+        this.markSaved();
       } catch (error) {
-        this.outcome = 'failed';
+        this.markFailed();
         this.switchKey += 1;
       } finally {
         this.loading = false;
@@ -174,24 +164,12 @@ export default {
             {{ $t('twoFactor.group.managedByTech') }}
           </span>
           <!-- The outcome sits on the option: read where it was made. -->
-          <span
-            v-if="outcome === 'saved'"
-            class="bs-group-two-factor__outcome bs-group-two-factor__outcome--saved"
-            role="status"
-          >
-            <lucide-check :size="14" aria-hidden="true" />
-            {{ $t('twoFactor.group.saved') }}
-          </span>
-          <span
-            v-else-if="outcome === 'failed'"
-            class="bs-group-two-factor__outcome bs-group-two-factor__outcome--failed"
-            role="alert"
-          >
-            {{ $t('twoFactor.group.failed') }}
-            <button type="button" @click="ask(asked)">
-              {{ $t('twoFactor.group.retry') }}
-            </button>
-          </span>
+          <bs-save-outcome
+            class="mt-2"
+            :outcome="outcome"
+            :detail="outcomeDetail"
+            @retry="ask(asked)"
+          />
         </template>
       </template>
       <template #control>
@@ -265,3 +243,28 @@ export default {
     </v-dialog>
   </div>
 </template>
+
+<style lang="scss" scoped>
+// The card is the last row of its section: the section spaces it, not the card.
+.bs-group-two-factor ::v-deep .bs-group-setting-card {
+  margin-bottom: 0;
+}
+
+.bs-group-two-factor {
+  &__progress {
+    display: block;
+    margin-top: 6px;
+    font-size: 13px;
+  }
+
+  &__state {
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--gray-600);
+
+    &--on {
+      color: #2e7d32;
+    }
+  }
+}
+</style>
