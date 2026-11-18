@@ -87,16 +87,56 @@ async function fetchOwn(
     if (response.body && response.body.destroy) response.body.destroy();
     return { status: response.status, body: null };
   }
-  return { status: response.status, body: await response.buffer() };
+  return {
+    status: response.status,
+    contentType: response.headers.get('content-type'),
+    body: await response.buffer(),
+  };
 }
 
-function dimensionsOf(buffer) {
+// The image types a Content-Type names, as probe-image-size spells them and
+// the editor's format check reads them. probe-image-size 4 knows no AVIF nor
+// HEIC: their type comes from here. Anything vague (application/octet-stream,
+// image/*) says nothing.
+const TYPE_OF_CONTENT_TYPE = Object.freeze({
+  'image/avif': 'avif',
+  'image/heic': 'heic',
+  'image/heic-sequence': 'heic',
+  'image/heif': 'heif',
+  'image/heif-sequence': 'heif',
+  'image/webp': 'webp',
+  'image/svg+xml': 'svg',
+  'image/tiff': 'tiff',
+  'image/jpeg': 'jpg',
+  'image/png': 'png',
+  'image/gif': 'gif',
+  'image/bmp': 'bmp',
+});
+
+function typeOfContentType(contentType) {
+  if (typeof contentType !== 'string') return undefined;
+  const mime = contentType.split(';')[0].trim().toLowerCase();
+  return Object.hasOwn(TYPE_OF_CONTENT_TYPE, mime)
+    ? TYPE_OF_CONTENT_TYPE[mime]
+    : undefined;
+}
+
+// Its dimensions when the image says them, and its type even without them (an
+// SVG without width nor height): read in the image, else in its Content-Type.
+function imageInfoOf(buffer, contentType) {
+  let probed = null;
   try {
-    const { width, height, type } = probeImageSize.sync(buffer) || {};
-    return width ? { width, height, type } : {};
+    probed = probeImageSize.sync(buffer);
   } catch (e) {
-    return {};
+    probed = null;
   }
+  const type = (probed && probed.type) || typeOfContentType(contentType);
+  return {
+    ...(probed && probed.width
+      ? { width: probed.width, height: probed.height }
+      : {}),
+    ...(type ? { type } : {}),
+  };
 }
 
 function download(target, run, deps, acceptBody) {
@@ -148,7 +188,7 @@ async function measureImage(target, run, deps) {
       return {
         state: 'ok',
         bytes: response.body.length,
-        ...dimensionsOf(response.body),
+        ...imageInfoOf(response.body, response.contentType),
       };
     } catch (error) {
       run.bytes -= reserved;
