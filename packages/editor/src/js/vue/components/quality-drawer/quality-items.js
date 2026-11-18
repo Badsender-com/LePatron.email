@@ -18,7 +18,7 @@ function findingItems(findings, t, locale) {
       id: `${finding.fingerprint}#${seen[finding.fingerprint]}`,
       severity: finding.severity,
       title: t(finding.titleKey),
-      description: t(finding.messageKey, formatParams(finding.params, { locale })),
+      description: t(finding.messageKey, formatParams(finding.params, { locale, t })),
       category: t(CATEGORY_KEYS[finding.category]),
       blockId: finding.blockId,
       blockLabel: finding.blockLabel,
@@ -30,7 +30,7 @@ function findingItems(findings, t, locale) {
 // What a check with no finding says of itself.
 function checkDescription(check, t, locale) {
   if (check.status === 'passed') {
-    return t(check.passKey, formatParams(check.passParams, { locale }));
+    return t(check.passKey, formatParams(check.passParams, { locale, t }));
   }
   if (check.status === 'cancelled') return t('This check was cancelled');
   return t('This check could not run');

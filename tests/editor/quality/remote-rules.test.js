@@ -117,9 +117,11 @@ describe('image weight', () => {
         },
       })
     );
-    expect(findings.map((f) => [f.messageKey, f.params.size])).toEqual([
-      ['Heavy image (__size__ KB): keep it under __max__ KB', '800'],
-      ['Heavy GIF (__size__ KB): keep it under __max__ KB', '1500'],
+    expect(
+      findings.map((f) => [f.messageKey, f.params.size, f.params.max])
+    ).toEqual([
+      ['Heavy image (__size__ KB): keep it under __max__', '800', { kb: 500 }],
+      ['Heavy GIF (__size__ KB): keep it under __max__', '1500', { kb: 1024 }],
     ]);
   });
 
@@ -165,9 +167,12 @@ describe('image weight', () => {
     expect(total(400 * KB)).toEqual([]);
     expect(total(600 * KB)[0]).toMatchObject({
       severity: 'warning',
-      params: { size: 600 },
+      params: { size: 600, max: { kb: 500 } },
     });
-    expect(total(1200 * KB)[0]).toMatchObject({ severity: 'error' });
+    expect(total(1200 * KB)[0]).toMatchObject({
+      severity: 'error',
+      params: { max: { kb: 1024 } },
+    });
   });
 
   it('notes an image more than twice as wide as it is shown', () => {

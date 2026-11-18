@@ -540,8 +540,8 @@ module.exports = {
   'Template sample image not replaced': 'Template sample image not replaced',
   'Missing Outlook background image': 'Missing Outlook background image',
   'Missing mobile background image': 'Missing mobile background image',
-  'Exported HTML weighs __size__ KB: keep it under __max__ KB, Gmail clips emails over 102 KB once the ESP adds its tracking':
-    'Exported HTML weighs __size__ KB: keep it under __max__ KB, Gmail clips emails over 102 KB once the ESP adds its tracking',
+  'Exported HTML weighs __size__ KB: keep it under __max__, Gmail clips emails over 102 KB once the ESP adds its tracking':
+    'Exported HTML weighs __size__ KB: keep it under __max__, Gmail clips emails over 102 KB once the ESP adds its tracking',
   'Required tracking parameters missing: __keys__':
     'Required tracking parameters missing: __keys__',
   'Test email': 'Test email',
@@ -579,8 +579,8 @@ module.exports = {
   'Every background image turned on is set':
     'Every background image turned on is set',
   'Email weight': 'Email weight',
-  'Exported HTML weighs __size__ KB, under the __max__ KB limit':
-    'Exported HTML weighs __size__ KB, under the __max__ KB limit',
+  'Exported HTML weighs __size__ KB, under the __max__ limit':
+    'Exported HTML weighs __size__ KB, under the __max__ limit',
   'Link addresses': 'Link addresses',
   'Every link address is well formed': 'Every link address is well formed',
   'Link URL contains a space: __url__': 'Link URL contains a space: __url__',
@@ -798,19 +798,21 @@ module.exports = {
   'Link could not be checked, check it by hand: __label__':
     'Link could not be checked, check it by hand: __label__',
   'Image weight': 'Image weight',
-  'Images checked: __count__, each under __max__ KB':
-    'Images checked: __count__, each under __max__ KB',
+  'Images checked: __count__, each under __max__':
+    'Images checked: __count__, each under __max__',
   'Image could not be downloaded: the export will leave it out (__name__)':
     'Image could not be downloaded: the export will leave it out (__name__)',
-  'Heavy GIF (__size__ KB): keep it under __max__ KB':
-    'Heavy GIF (__size__ KB): keep it under __max__ KB',
-  'Heavy image (__size__ KB): keep it under __max__ KB':
-    'Heavy image (__size__ KB): keep it under __max__ KB',
+  'Heavy GIF (__size__ KB): keep it under __max__':
+    'Heavy GIF (__size__ KB): keep it under __max__',
+  'Heavy image (__size__ KB): keep it under __max__':
+    'Heavy image (__size__ KB): keep it under __max__',
   'Total image weight': 'Total image weight',
-  'Images weigh __size__ KB in all, under __max__ KB':
-    'Images weigh __size__ KB in all, under __max__ KB',
-  'Images weigh __size__ KB in all: over __max__ KB':
-    'Images weigh __size__ KB in all: over __max__ KB',
+  'Images weigh __size__ KB in all, under __max__':
+    'Images weigh __size__ KB in all, under __max__',
+  'Images weigh __size__ KB in all: over __max__':
+    'Images weigh __size__ KB in all: over __max__',
+  '__size__ KB': '__size__ KB',
+  '__size__ MB': '__size__ MB',
   'Image dimensions': 'Image dimensions',
   'No image is much larger than it is shown':
     'No image is much larger than it is shown',

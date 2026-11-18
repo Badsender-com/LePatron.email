@@ -1,6 +1,7 @@
 'use strict';
 
 const { thresholdOf } = require('../settings');
+const { kbSize } = require('../message-params');
 
 // Gmail clips any message whose HTML exceeds 102 KB. The warning comes from
 // 100 KB: the ESP adds its tracking code to the HTML (team decision of
@@ -13,11 +14,11 @@ module.exports = {
   category: 'technical',
   severity: 'warning',
   titleKey: 'Email weight',
-  passKey: 'Exported HTML weighs __size__ KB, under the __max__ KB limit',
+  passKey: 'Exported HTML weighs __size__ KB, under the __max__ limit',
   GMAIL_CLIPPING_BYTES,
   passParams: (ctx) => ({
     size: Math.ceil(new Blob([ctx.html]).size / 1024),
-    max: thresholdOf(ctx, 'html-size', 'maxKb'),
+    max: kbSize(thresholdOf(ctx, 'html-size', 'maxKb')),
   }),
   run(ctx) {
     const bytes = new Blob([ctx.html]).size;
@@ -27,8 +28,8 @@ module.exports = {
     return [
       {
         messageKey:
-          'Exported HTML weighs __size__ KB: keep it under __max__ KB, Gmail clips emails over 102 KB once the ESP adds its tracking',
-        params: { size, max },
+          'Exported HTML weighs __size__ KB: keep it under __max__, Gmail clips emails over 102 KB once the ESP adds its tracking',
+        params: { size, max: kbSize(max) },
         value: size,
       },
     ];
