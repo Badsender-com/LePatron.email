@@ -65,6 +65,8 @@ module.exports = {
   severity: 'warning',
   titleKey: 'Image weight',
   remote: true,
+  // What the editor sends the server for it (resources.js).
+  reads: 'images',
   enabled: (ctx) => measured(ctx).length > 0,
   passKey: 'Images checked: __count__, each under __max__',
   passParams: (ctx) => ({

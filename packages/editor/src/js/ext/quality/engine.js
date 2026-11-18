@@ -152,10 +152,17 @@ function rankFingerprints(findings) {
 
 const NO_RESOURCES = Object.freeze({ links: [], images: [] });
 
-// What to ask the server about. Never in the way of the local checks.
+// A check the company or the template turned off is neither run nor listed,
+// on the local pass as on the server's, and what it reads is not sent.
+const isOff = (ctx, rule) => checkStateOf(ctx, rule.id) === 'off';
+
+// What the server's checks still on need. Never in the way of the local checks.
 function resourcesOf(ctx) {
   try {
-    return collectResources(ctx);
+    return collectResources(
+      ctx,
+      REMOTE_RULES.filter((rule) => !isOff(ctx, rule))
+    );
   } catch (err) {
     console.error('Quality checks could not list the links and images', err);
     return NO_RESOURCES;
@@ -226,10 +233,6 @@ function applicableRules(ctx, rules) {
  * (`ctx.remote = remote; runRules(ctx, REMOTE_RULES)`).
  * @returns {{ findings: Array, checks: Array }}
  */
-// A check the group or the template turned off is neither run nor listed,
-// on the local pass as on the server's.
-const isOff = (ctx, rule) => checkStateOf(ctx, rule.id) === 'off';
-
 function runRules(ctx, rules) {
   const kept = rules.filter((rule) => !isOff(ctx, rule));
   const results = applicableRules(ctx, kept).map((rule) => runRule(rule, ctx));

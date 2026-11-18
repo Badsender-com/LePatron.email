@@ -38,6 +38,8 @@ module.exports = {
   severity: 'error',
   titleKey: 'Broken links',
   remote: true,
+  // What the editor sends the server for it (resources.js).
+  reads: 'links',
   // Nothing checked, nothing to say: not listed.
   enabled: (ctx) => checkedLinks(ctx).length > 0,
   passKey: 'Links checked: __count__, all answer',
