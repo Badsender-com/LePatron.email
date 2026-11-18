@@ -1,0 +1,146 @@
+// =============================================================================
+// Dialogs — one anatomy for every popin of the app (design system: Dialog)
+// =============================================================================
+//
+// A dialog is a white card with the radius of the cards, floating above a
+// brand-colored scrim on `--shadow-modal`. Top to bottom:
+//
+//   1. the title: Inter 20px / 600 in the primary color;
+//   2. the body: 14px / 1.5, `--gray-700`;
+//   3. the footer, under a `--gray-200` hairline: actions on the right, the
+//      main one a `cta` (accent), the destructive one `danger`, the others
+//      text buttons to its left.
+//
+// The Vuetify defaults (a Roboto `headline`, a square `tile` card, a 16px
+// title, a footer without hairline, uppercase labels) are overridden here, so
+// that a dialog written with plain `v-dialog` / `v-card` and one written with
+// `BsModalConfirm` / `BsModalForm` come out the same. No dialog restyles
+// itself: if one must differ, the design system decides it first.
+//
+// Buttons keep the app's casing outside dialogs for now: the design system
+// writes them in sentence case ("No uppercase"), a change that is not made
+// page by page.
+// =============================================================================
+
+// The scrim of a modal: the primary color, at Vuetify's own 46%.
+.v-application
+  .v-overlay--active:not(.v-overlay--absolute)
+  > .v-overlay__scrim {
+  background-color: var(--v-primary-base) !important;
+  border-color: var(--v-primary-base) !important;
+}
+
+.v-application .v-dialog:not(.v-dialog--fullscreen) {
+  border-radius: var(--r-md);
+  box-shadow: var(--shadow-modal);
+
+  > .v-card {
+    border-radius: var(--r-md) !important;
+    box-shadow: none;
+  }
+
+  // 1. The title.
+  .v-card__title {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 24px 24px 8px;
+    font-family: inherit !important;
+    font-size: 20px !important;
+    font-weight: 600 !important;
+    line-height: 1.3 !important;
+    letter-spacing: normal !important;
+    color: var(--v-primary-base) !important;
+    // Vuetify breaks a title anywhere; a word is broken only if it must be.
+    word-break: normal;
+    overflow-wrap: anywhere;
+
+    // A title written with a typography class says nothing more.
+    .headline,
+    .text-h5,
+    .text-h6 {
+      font: inherit !important;
+      letter-spacing: inherit !important;
+      color: inherit !important;
+    }
+  }
+
+  // 2. The body.
+  .v-card .v-card__text {
+    padding: 8px 24px 24px !important;
+    font-size: 14px;
+    line-height: 1.5;
+    color: var(--gray-700);
+
+    p:last-child {
+      margin-bottom: 0;
+    }
+  }
+
+  // 3. The footer. A dialog may bring its own divider above it: then the
+  // divider is the hairline.
+  .v-card__actions,
+  .modal-actions {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 8px;
+    padding: 16px 24px !important;
+    border-top: 1px solid var(--gray-200);
+  }
+
+  .v-divider {
+    margin: 0 !important;
+    border-color: var(--gray-200);
+  }
+
+  .v-divider + .v-card__actions,
+  .v-divider + .modal-actions {
+    border-top: none;
+  }
+
+  // A footer written inside the body (a form's, with its divider above) runs
+  // the width of the card: it takes back the padding of the body.
+  .v-card__text {
+    .v-divider {
+      margin: 16px -24px 0 !important;
+      max-width: none;
+    }
+
+    .v-divider + .modal-actions,
+    .v-divider + .v-card__actions {
+      margin: 0 -24px -24px;
+    }
+
+    .modal-actions,
+    .v-card__actions {
+      margin: 16px -24px -24px;
+    }
+  }
+
+  // Buttons: sentence case, 14px / 500, 36px, the radius of the controls.
+  .v-card__actions .v-btn,
+  .modal-actions .v-btn {
+    height: 36px;
+    padding: 0 16px;
+    border-radius: var(--r-sm);
+    font-size: 14px;
+    font-weight: 500;
+    letter-spacing: 0.01em;
+    text-transform: none;
+  }
+
+  // The `text` button of the design system is in the primary color.
+  .v-card__actions
+    .v-btn--text:not(.primary--text):not(.error--text):not(.accent--text),
+  .modal-actions
+    .v-btn--text:not(.primary--text):not(.error--text):not(.accent--text) {
+    color: var(--v-primary-base);
+  }
+}
+
+// A second, quieter line in a dialog's body.
+.v-application .v-dialog .v-card__text .bs-dialog-note {
+  font-size: 13px;
+  color: var(--gray-600);
+}

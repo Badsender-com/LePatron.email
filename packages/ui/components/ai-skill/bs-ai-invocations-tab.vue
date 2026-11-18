@@ -473,13 +473,6 @@ export default {
 .filter-field {
   max-width: 220px;
 }
-.modal-actions {
-  display: flex;
-  align-items: center;
-  justify-content: flex-end;
-  gap: 0.5rem;
-  padding: 1rem 0 0;
-}
 .code-block {
   background: #f5f5f5;
   padding: 0.75rem;

@@ -38,7 +38,7 @@ export default {
     class="bs-mailings-modal-duplicate"
     width="500"
   >
-    <v-card flat tile>
+    <v-card>
       <v-card-title>
         {{ $t('mailings.duplicate') }}
       </v-card-title>

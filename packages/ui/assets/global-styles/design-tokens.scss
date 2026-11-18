@@ -66,6 +66,8 @@
   // Success said in words ("Copied"): 5.1:1 on white, where --v-success-base
   // is 2.8:1.
   --success-ink: #2e7d32;
+  // Destructive as text on white (5.3:1), where --color-error is 3.6:1.
+  --danger-ink: #c53a12;
 
   // A code, a key, an address to copy.
   --font-mono: ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Monaco, Consolas,
