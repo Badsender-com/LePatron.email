@@ -56,7 +56,7 @@ describe('a check that is off', () => {
     });
     installQualityReview(vm, ko, { defer: (fn) => fn() });
     vm.quality.run();
-    expect(vm.quality.turnedOffCount()).toBe(2);
+    expect(vm.quality.turnedOffCount).toBe(2);
   });
 
   it('runs every check as today when the mailing has no settings', () => {

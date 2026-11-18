@@ -35,9 +35,11 @@ const SPINNER =
  * @returns {Object} the overlay, and `close()`
  */
 function mountModal({ name, content, footer, onEscape, dismissible = false }) {
+  // A modal of the same name is replaced, its keys with it.
   $(`.bs-modal-overlay.${name}`).remove();
+  $(document).off(`.${name}`);
   const $overlay = $(`
-    <div class="bs-modal-overlay tracking-modal ${name} small-modal" role="dialog" aria-modal="true" aria-labelledby="${name}-title">
+    <div class="bs-modal-overlay quality-modal ${name} small-modal" role="dialog" aria-modal="true" aria-labelledby="${name}-title">
       <div class="bs-modal-container">
         <div class="bs-modal-card">
           <div class="bs-modal-content-wrapper">
@@ -132,7 +134,7 @@ function displayBlockingFindings(findings, viewModel, { onReveal } = {}) {
       <h5 id="blocking-modal-title">${escapeText(
         t('This email cannot leave yet')
       )}</h5>
-      <div class="tracking-modal__alert"><span>${escapeText(
+      <div class="quality-modal__alert"><span>${escapeText(
         t('Your company made these checks blocking: fix them before downloading or sending the email.')
       )}</span></div>
       <ul class="blocking-modal__list">${items}</ul>`,

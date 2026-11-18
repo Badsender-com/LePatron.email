@@ -1028,14 +1028,14 @@ body {
 // The modals of the quality gate (ext/badsender-control-quality.js): they
 // reuse the editor's .bs-modal-* framework (see badsender-modal.less); only
 // the inline alert and the wait's layout are added here.
-.tracking-modal {
+.quality-modal {
   // The modal is appended to <body>, which has no explicit font-family — it
   // would inherit the browser default (serif) instead of the editor's Inter
   // applied on .mo. Force the editor font-family here.
   font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI',
     Roboto, sans-serif;
 
-  .tracking-modal__alert {
+  .quality-modal__alert {
     display: flex;
     align-items: flex-start;
     gap: 10px;
