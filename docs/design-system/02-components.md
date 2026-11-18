@@ -759,6 +759,9 @@ in `packages/ui/routes/mailings/__partials/`.
 - Fields never stretch with the screen: a grid of `repeat(auto-fill, minmax(200px, 280px))`.
 - The **Filtres** badge counts the panel's filters (templates, tags, dates), not the name, which has its own clearable field. With a filter set, the button takes the accent border and a 8% accent tint.
 - Filters carry over a change of scope (ADR 0007): the badge and Réinitialiser say why a list is narrowed.
+- **Réinitialiser** sits last in the bar, outlined, and appears only when a panel filter is set (a typed name alone does not bring it). It resets everything: name, filters and scope back to "Dossier courant". Accessible name "Réinitialiser la recherche".
+- **Escape** in the name field empties that field only, scope and filters kept.
+- Source of truth: the `FiltresPanel` sheet of the "LePatron App - Design System" artifact. Known deviation: the segmented control's track is `--gray-200` (the app's `--gray-100` is a 4% alpha that barely shows on white).
 
 ### Segmented control
 
@@ -772,6 +775,18 @@ Never the browser's native date input: its calendar cannot be styled. A readonly
 - Header month in 14px / 600; weekday initials 11px / 600 uppercase `--gray-600`; day cells 12px / 500.
 - Today (not chosen): 1px accent outline and accent text. Chosen day: solid accent, white text.
 - The field shows the date as the language writes it; the stored value stays `YYYY-MM-DD`.
+
+---
+
+## Security card (company settings)
+
+The company settings page ([DS sheet: `CompanySettings`](https://claude.ai/artifact/JtUDvCUrEjhutNiYQLZNif)): one card per domain, the **danger zone last, nothing under it**. Implementation: `group/two-factor-option.vue`, placed by the `before-danger-zone` slot of `group/form.vue`; it reuses `group/feature-switch.vue` and `layout/bs-settings-row.vue`.
+
+- **Row**: "Double authentification", its sentence, then how many members have set it up ("Configurée par N membres sur M", a `--v-primary-base` bar on gray). The control is the `FeatureSwitch` with its state words "Exigée / Non exigée".
+- **Turning it on or off is confirmed**, with the impact in numbers ("N membres sur M ne l'ont pas encore configurée"). The primary action is labelled with the verb ("Exiger la double authentification", "Ne plus exiger"). Cancelling puts the switch back on what is saved.
+- **Switches save at once**; the outcome is read **on the option**, never in a toast: "Enregistré" with a check (13px 500 success-ink, `role="status"`, gone after 4 seconds); on failure the switch returns to its saved state and the row says "Modification non enregistrée." in danger-ink with an underlined "Réessayer" (`role="alert"`).
+- A company admin reads the state and is told that only a tech admin changes it; a SAML company leaves it to its identity provider.
+- **Not built yet** (sheet `MfaMembers`): the "Membres sans double authentification" row, the members sub-page with reminders and the CSV export, and the lockout guard ("Configurer la mienne"): a member sets it up at sign-in, there is no account page for it yet. SAML still sits in the group form above, not in this card.
 
 ---
 

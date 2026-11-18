@@ -99,14 +99,33 @@ export default {
       continue: 'Continue to LePatron',
     },
     group: {
+      sectionTitle: 'Security',
+      sectionDescription: 'How the members of the company sign in.',
       title: 'Two-factor authentication',
       description:
         'Every member of the company enters a code after their password. Those who have not set it up yet will do so at their next sign-in.',
       switch: 'Require two-factor authentication',
+      on: 'Required',
+      off: 'Not required',
+      progress:
+        'Set up by {n} member out of {total} | Set up by {n} members out of {total}',
       saml: 'This company signs in with SSO: two-factor authentication belongs to its identity provider.',
-      updated: 'Setting saved',
-      required: 'Required of every member.',
-      notRequired: 'Not required.',
+      saved: 'Saved',
+      failed: 'Change not saved.',
+      retry: 'Try again',
+      confirmOn: {
+        title: 'Require two-factor authentication?',
+        pending:
+          '{n} member out of {total} has not set it up yet. | {n} members out of {total} have not set it up yet.',
+        everyone:
+          'Each member will set it up at their next sign-in. Sessions already open are not interrupted.',
+        action: 'Require two-factor authentication',
+      },
+      confirmOff: {
+        title: 'Stop requiring two-factor authentication?',
+        body: 'Members will be able to sign in with their password alone.',
+        action: 'Stop requiring',
+      },
       managedByTech: 'Only a technical administrator can change this setting.',
     },
     users: {
