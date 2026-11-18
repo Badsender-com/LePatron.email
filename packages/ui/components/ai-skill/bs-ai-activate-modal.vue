@@ -133,3 +133,10 @@ export default {
     </v-form>
   </bs-modal-confirm>
 </template>
+
+<style lang="scss" scoped>
+.impact-list {
+  margin: 0.25rem 0 0;
+  padding-left: 1.1rem;
+}
+</style>

@@ -139,3 +139,69 @@ export default {
     </v-form>
   </bs-modal-confirm>
 </template>
+
+<style lang="scss" scoped>
+.bs-textarea {
+  margin-bottom: 1rem;
+
+  &__label {
+    display: block;
+    font-size: 0.75rem;
+    font-weight: 500;
+    color: rgba(0, 0, 0, 0.6);
+    margin-bottom: 0.375rem;
+  }
+
+  &__required {
+    color: #f44336;
+    margin-left: 2px;
+  }
+
+  &__input {
+    ::v-deep .v-input__slot {
+      border: 1px solid rgba(0, 0, 0, 0.2) !important;
+      border-radius: 4px;
+      background: #fff !important;
+      min-height: 40px;
+      padding: 8px 12px;
+      transition: border-color 0.2s ease;
+
+      &:hover {
+        border-color: rgba(0, 0, 0, 0.4) !important;
+      }
+    }
+
+    &.v-input--is-focused ::v-deep .v-input__slot {
+      border-color: #00acdc !important;
+    }
+
+    ::v-deep textarea {
+      font-size: 0.875rem;
+      line-height: 1.5;
+
+      &::placeholder {
+        color: rgba(0, 0, 0, 0.38);
+        font-size: 0.875rem;
+      }
+    }
+  }
+
+  &__errors {
+    margin-top: 4px;
+    font-size: 0.75rem;
+    color: #f44336;
+    display: flex;
+    flex-direction: column;
+  }
+
+  &__hint {
+    margin-top: 4px;
+    font-size: 0.75rem;
+    color: rgba(0, 0, 0, 0.6);
+  }
+
+  &--error &__input ::v-deep .v-input__slot {
+    border-color: #f44336 !important;
+  }
+}
+</style>

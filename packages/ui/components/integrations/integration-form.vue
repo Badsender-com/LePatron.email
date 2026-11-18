@@ -385,3 +385,68 @@ export default {
     </div>
   </v-card>
 </template>
+
+<style lang="scss" scoped>
+.bs-text-field {
+  margin-bottom: 1rem;
+
+  &__label {
+    display: block;
+    font-size: 0.75rem;
+    font-weight: 500;
+    color: rgba(0, 0, 0, 0.6);
+    margin-bottom: 0.375rem;
+  }
+
+  &__required {
+    color: #f04e23;
+    margin-left: 2px;
+  }
+
+  &__input {
+    &.v-text-field.v-text-field--solo {
+      ::v-deep .v-input__slot {
+        border: 1px solid rgba(0, 0, 0, 0.2);
+        border-radius: 4px;
+        background: #fff;
+        min-height: 40px;
+        padding: 0 12px;
+        transition: border-color 0.2s ease;
+
+        &:hover {
+          border-color: rgba(0, 0, 0, 0.4);
+        }
+      }
+
+      &.v-input--is-focused ::v-deep .v-input__slot {
+        border-color: #00acdc;
+      }
+
+      &.error--text ::v-deep .v-input__slot {
+        border-color: #f04e23;
+      }
+
+      ::v-deep input {
+        font-size: 0.875rem;
+        padding: 8px 0;
+      }
+
+      ::v-deep .v-text-field__details {
+        padding: 4px 0 0 0;
+        min-height: auto;
+      }
+
+      ::v-deep .v-messages__message {
+        font-size: 0.75rem;
+      }
+    }
+  }
+
+  &__hint {
+    font-size: 0.75rem;
+    color: rgba(0, 0, 0, 0.5);
+    margin-top: 0.25rem;
+    padding-left: 2px;
+  }
+}
+</style>
