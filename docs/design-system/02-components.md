@@ -711,6 +711,33 @@ Inline link with trailing or leading icon.
 
 ---
 
+## Alert
+
+A framed sentence that says something about the page or the form it sits in, and stays there until the page changes. Written once, in `packages/ui/assets/global-styles/feedback.scss`: an author picks a tone with `<v-alert type="...">` and the variant (`outlined`, `text`, `dense`, solid) makes no difference. It is the alert of the sign-in card (`AuthCard`) for every page.
+
+| Tone      | Use                                                         | Ground                | Frame              | Icon            |
+| --------- | ----------------------------------------------------------- | --------------------- | ------------------ | --------------- |
+| `error`   | Something went wrong, or cannot be done                     | `--color-error-bg`    | `--error-border`   | `--danger-ink`  |
+| `warning` | A consequence to know before going on                       | `--tint-warning-soft` | `--warning-border` | `--warning-ink` |
+| `info`    | A fact that explains the page ("the list is empty: normal") | `--tint-info-soft`    | `--info-border`    | `--info-ink`    |
+| `success` | Something is in place and stays so (not a toast: see below) | `--tint-success-soft` | `--success-border` | `--success-ink` |
+
+- 12px 16px padding, a 1px frame, `--r-md` radius, the text in 13px / 1.5 `--gray-900`: **the tone is carried by the frame and the icon, never by the text**. No shadow, no left bar, no solid fill.
+- `role="alert"` (Vuetify's default) for what went wrong; a plain note otherwise.
+- One alert states one thing, in one or two sentences. A mistake made on a field goes on the field, not in an alert.
+- Sentence case, no exclamation mark; an `error` says what happened and what to do.
+
+## Tooltip
+
+A short label on a control that has no text of its own (an icon button) or whose text is cut. Written in `feedback.scss`, for every `v-tooltip`.
+
+- `--gray-900` ground, white text, 12px / 500, 6px 10px padding, `--r-sm` radius, `--shadow-menu`, **280px at most**.
+- It shows on hover **and on keyboard focus**, above the dialogs (the z-index scale), and never holds anything to click.
+- The text is a noun or a verb ("Aide", "Renommer"), never a sentence; the same words name the control for a screen reader (`aria-label`).
+- Position: `bottom` by default; `top` when the control is at the foot of the screen, `left` or `right` along a side panel.
+
+---
+
 ## Feedback after an action: inline or toast
 
 Two kinds of feedback, and **the one to use depends on what was done**:

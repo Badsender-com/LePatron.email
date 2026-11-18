@@ -1,0 +1,76 @@
+// =============================================================================
+// Alerts and tooltips — what the app says in a page, and on a hover
+// =============================================================================
+//
+// An alert is a framed sentence: a soft tint of its tone, a 1px frame of the
+// same tone, the text in `--gray-900`, a 16px icon in the tone's ink. It is
+// the alert of the sign-in card (design system: AuthCard) for every page, the
+// four tones sharing one anatomy. Vuetify's own alerts (solid, outlined, text,
+// a bold left border) are overridden here, so that `<v-alert type="warning">`
+// reads the same whichever variant its author picked.
+//
+// A tooltip is a dark label, `--gray-900`, white text, on the shadow of a menu.
+// =============================================================================
+
+.v-application .v-alert {
+  --alert-ink: var(--info-ink);
+  --alert-bg: var(--tint-info-soft);
+  --alert-border: var(--info-border);
+
+  &.error,
+  &.error--text {
+    --alert-ink: var(--danger-ink);
+    --alert-bg: var(--color-error-bg);
+    --alert-border: var(--error-border);
+  }
+
+  &.warning,
+  &.warning--text {
+    --alert-ink: var(--warning-ink);
+    --alert-bg: var(--tint-warning-soft);
+    --alert-border: var(--warning-border);
+  }
+
+  &.success,
+  &.success--text {
+    --alert-ink: var(--success-ink);
+    --alert-bg: var(--tint-success-soft);
+    --alert-border: var(--success-border);
+  }
+
+  padding: 12px 16px;
+  border: 1px solid var(--alert-border) !important;
+  border-radius: var(--r-md) !important;
+  background: var(--alert-bg) !important;
+  font-size: 13px;
+  line-height: 1.5;
+  // The text is the page's, whatever the tone: only the icon carries it.
+  color: var(--gray-900) !important;
+  caret-color: var(--gray-900) !important;
+
+  .v-alert__wrapper .v-icon,
+  .v-alert__icon {
+    color: var(--alert-ink) !important;
+  }
+
+  // Vuetify draws a left or top border as a separate bar, and the `text`
+  // variant lays its own tint over the ground: neither has a place here.
+  .v-alert__border,
+  &::before {
+    display: none;
+  }
+}
+
+// A tooltip says a short thing about the control it is on: 12px, 280px at
+// most, over dialogs (the z-index scale puts it there).
+.v-application .v-tooltip__content {
+  max-width: 280px;
+  padding: 6px 10px;
+  border-radius: var(--r-sm);
+  background: var(--gray-900) !important;
+  box-shadow: var(--shadow-menu);
+  color: #fff;
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 1.4;
+}
