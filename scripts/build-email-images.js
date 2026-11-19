@@ -25,11 +25,16 @@ const LUCIDE = path.join(ROOT, 'node_modules/lucide-vue/dist/esm/icons');
 // for the same step (lock for a password, shield for the second factor, mail
 // for the code, smartphone for a device).
 const ICONS = [
+  // The card of each email.
   'lock',
   'shield-check',
   'shield-alert',
   'mail-check',
   'smartphone',
+  // The three reasons of the welcome: blocks, a check, languages.
+  'blocks',
+  'badge-check',
+  'languages',
 ];
 
 // The darkened accent of the application (`v-accent-darken1` of its design
