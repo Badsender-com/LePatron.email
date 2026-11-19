@@ -1,6 +1,13 @@
 import isEqual from 'lodash/isEqual';
-import { CHECKS, SERVER_CHECKS } from '~/helpers/constants/quality-checks.js';
-import { templateThresholds } from '../../shared/quality/resolve-quality-settings.js';
+import {
+  CHECKS,
+  CHECK_STATES,
+  SERVER_CHECKS,
+} from '~/helpers/constants/quality-checks.js';
+import {
+  resolveQualitySettings,
+  templateThresholds,
+} from '../../shared/quality/resolve-quality-settings.js';
 
 // The "Contrôle qualité" page shows exceptions only
 // (docs/adr/0009-quality-settings-per-group-and-template.md). Three levels:
@@ -80,7 +87,11 @@ export function exceptionsOf(settings) {
         return [
           id,
           {
-            state: stored[id].state || null,
+            // A state the catalogue does not know sets nothing, as the
+            // editor and the server read it.
+            state: CHECK_STATES.includes(stored[id].state)
+              ? stored[id].state
+              : null,
             thresholds: Object.fromEntries(
               thresholdNames(id).map((name) => [
                 name,
@@ -149,17 +160,13 @@ export function adjustmentsOf(checkId, exception, base) {
 
 /**
  * What applies to every template: the general settings over the recommended
- * values, for all the checks.
+ * values, for all the checks, resolved as the server and the editor resolve
+ * them (a malformed stored value reads as the default).
  * @param {Object} [groupSettings] the group's `qualitySettings`
  */
 export function generalOf(groupSettings) {
-  const exceptions = exceptionsOf(groupSettings);
-  return Object.fromEntries(
-    Object.keys(CHECKS).map((id) => [
-      id,
-      effectiveOf(exceptions[id], recommendedOf(id)),
-    ])
-  );
+  return resolveQualitySettings({ qualitySettings: groupSettings }, null)
+    .checks;
 }
 
 /**

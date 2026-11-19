@@ -43,6 +43,24 @@ describe('the exceptions of a level', () => {
     });
   });
 
+  it('reads a state the catalogue does not know as nothing set', () => {
+    const stored = {
+      checks: {
+        headings: { state: 'loud' },
+        subject: { state: 'loud', thresholds: { long: 45 } },
+      },
+    };
+    expect(exceptionsOf(stored)).toEqual({
+      subject: { state: null, thresholds: { long: 45, tooLong: null } },
+    });
+    // What applies: the default, as the editor reads it.
+    expect(generalOf(stored).headings.state).toBe('on');
+    expect(generalOf(stored).subject).toEqual({
+      state: 'on',
+      thresholds: { long: 45, tooLong: 60 },
+    });
+  });
+
   it('has none when nothing is stored', () => {
     expect(exceptionsOf(undefined)).toEqual({});
     expect(exceptionsOf({ checks: { headings: {} } })).toEqual({});
