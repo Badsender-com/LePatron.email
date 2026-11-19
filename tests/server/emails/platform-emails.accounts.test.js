@@ -97,6 +97,20 @@ describe('the welcome and the reset of a password', () => {
     expect(Math.round(days)).toBe(7);
     expect(lastMessage().html).toMatch(/valid for 7 days/);
   });
+
+  // The address is one segment of the link: a `+`, a `#` or a `/` in it
+  // must not cut the link or end it early.
+  it('encodes the address in the link, the `@` aside', async () => {
+    mail.send.mockClear();
+    const user = member('en');
+    user.email = 'first+last#x/y@client.test';
+
+    await user.resetPassword('user', 'en');
+
+    const link = `/account/first%2Blast%23x%2Fy@client.test/password/${user.token}`;
+    expect(lastMessage().text).toContain(link);
+    expect(lastMessage().html).toContain(link);
+  });
 });
 
 describe('the text that comes from the outside', () => {
