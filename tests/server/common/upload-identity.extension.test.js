@@ -6,6 +6,7 @@ const path = require('path');
 
 const {
   resolveUploadExtension,
+  storedExtension,
 } = require('../../../packages/server/common/upload-identity.service.js');
 
 // 8x8 fixtures inlined as bytes: sharp's native module does not load under
@@ -31,6 +32,19 @@ beforeAll(() => {
     path.join(dir, 'not-an-image'),
     'just some text, not a pixel'
   );
+  fs.writeFileSync(
+    path.join(dir, 'svg-bytes'),
+    '<svg xmlns="http://www.w3.org/2000/svg" width="8" height="8"></svg>'
+  );
+  // a JPEG whose dimensions sit past the sniffed head: its first bytes still
+  // say what it is
+  fs.writeFileSync(
+    path.join(dir, 'jpeg-large-exif'),
+    Buffer.concat([
+      Buffer.from([0xff, 0xd8, 0xff, 0xe1, 0xff, 0xfe]),
+      Buffer.alloc(8192),
+    ])
+  );
 });
 
 afterAll(() => fs.rmSync(dir, { recursive: true, force: true }));
@@ -38,7 +52,7 @@ afterAll(() => fs.rmSync(dir, { recursive: true, force: true }));
 const upload = (name, type) => ({ path: path.join(dir, name), type });
 
 describe('resolveUploadExtension', () => {
-  it('trusts a declared type it can map', () => {
+  it('names the format of an image as declared', () => {
     expect(resolveUploadExtension(upload('png-bytes', 'image/png'))).toBe(
       'png'
     );
@@ -77,6 +91,36 @@ describe('resolveUploadExtension', () => {
 
   it('does not throw when the file is unreadable', () => {
     expect(resolveUploadExtension(upload('missing-file', ''))).toBeNull();
+  });
+});
+
+describe('resolveUploadExtension — the bytes decide', () => {
+  it.each([
+    ['text/html', 'png-bytes', 'png'],
+    ['image/jpeg', 'png-bytes', 'png'],
+    ['application/xml', 'jpeg-bytes', 'jpeg'],
+    ['image/png', 'svg-bytes', 'svg'],
+    ['text/html', 'jpeg-large-exif', 'jpeg'],
+  ])(
+    'stores what is declared %s as the format of its bytes (%s)',
+    (type, file, ext) => {
+      expect(resolveUploadExtension(upload(file, type))).toBe(ext);
+    }
+  );
+});
+
+describe('storedExtension', () => {
+  it('names an image after its bytes, whatever the declared type', () => {
+    expect(
+      storedExtension(Buffer.from(PNG_FIXTURE, 'base64'), 'text/html')
+    ).toBe('png');
+  });
+
+  it('keeps the declared mapping when the bytes are not an image', () => {
+    expect(storedExtension(Buffer.from('plain text'), 'application/pdf')).toBe(
+      'pdf'
+    );
+    expect(storedExtension(Buffer.from('plain text'), '')).toBeNull();
   });
 });
 

@@ -22,6 +22,7 @@ jest.mock('../../../packages/server/common/models.common.js', () => ({
 jest.mock('../../../packages/server/mailing/mailing.service.js', () => ({
   findOneForUser: jest.fn(),
   userCanEditMailing: jest.fn().mockResolvedValue(true),
+  userCanReadMailing: jest.fn().mockResolvedValue(true),
 }));
 
 const express = require('express');

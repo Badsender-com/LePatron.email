@@ -9,15 +9,16 @@ const ESP_CONTENT_TYPE = require('../../constant/content-esp-type.js');
 const { InternalServerError } = require('http-errors');
 
 class SendinBlueProvider {
+  // Each provider holds its own SDK client, with the key of its account: the
+  // SDK's `ApiClient.instance` is one for the whole process.
   constructor({ apiKey, ...data }) {
-    const defaultClient = SibApiV3Sdk.ApiClient.instance;
-    this.apiKey = defaultClient.authentications['api-key'];
-    this.apiKey.apiKey = apiKey;
+    this.client = new SibApiV3Sdk.ApiClient();
+    this.client.authentications['api-key'].apiKey = apiKey;
     this.data = data;
   }
 
   async connectApi() {
-    const apiAccountInstance = new SibApiV3Sdk.AccountApi();
+    const apiAccountInstance = new SibApiV3Sdk.AccountApi(this.client);
     return await apiAccountInstance.getAccount();
   }
 
@@ -26,7 +27,9 @@ class SendinBlueProvider {
   }
 
   async getCampaignMail({ campaignId }) {
-    const apiEmailCampaignsInstance = new SibApiV3Sdk.EmailCampaignsApi();
+    const apiEmailCampaignsInstance = new SibApiV3Sdk.EmailCampaignsApi(
+      this.client
+    );
 
     if (!campaignId) {
       throw new InternalServerError(
@@ -49,7 +52,9 @@ class SendinBlueProvider {
   }
 
   async getTemplate({ campaignId }) {
-    const apiTemplateInstance = new SibApiV3Sdk.TransactionalEmailsApi();
+    const apiTemplateInstance = new SibApiV3Sdk.TransactionalEmailsApi(
+      this.client
+    );
 
     if (!campaignId) {
       throw new InternalServerError(ERROR_CODES.MISSING_PROPERTIES_TEMPLATE_ID);
@@ -77,7 +82,9 @@ class SendinBlueProvider {
     freshTracking,
   }) {
     try {
-      const apiEmailCampaignsInstance = new SibApiV3Sdk.EmailCampaignsApi();
+      const apiEmailCampaignsInstance = new SibApiV3Sdk.EmailCampaignsApi(
+        this.client
+      );
       let emailCampaignsData = new SibApiV3Sdk.CreateEmailCampaign();
 
       emailCampaignsData = await this.formatSendinBlueData({
@@ -111,7 +118,9 @@ class SendinBlueProvider {
     freshTracking,
   }) {
     try {
-      const apiTemplateInstance = new SibApiV3Sdk.TransactionalEmailsApi();
+      const apiTemplateInstance = new SibApiV3Sdk.TransactionalEmailsApi(
+        this.client
+      );
       let templateData = new SibApiV3Sdk.CreateSmtpTemplate();
 
       templateData = await this.formatSendinBlueData({
@@ -150,7 +159,9 @@ class SendinBlueProvider {
     try {
       console.log('update a template ...');
 
-      const apiTemplateInstance = new SibApiV3Sdk.TransactionalEmailsApi();
+      const apiTemplateInstance = new SibApiV3Sdk.TransactionalEmailsApi(
+        this.client
+      );
       let templateData = new SibApiV3Sdk.UpdateSmtpTemplate();
 
       templateData = await this.formatSendinBlueData({
@@ -182,7 +193,9 @@ class SendinBlueProvider {
     freshTracking,
   }) {
     try {
-      const apiEmailCampaignsInstance = new SibApiV3Sdk.EmailCampaignsApi();
+      const apiEmailCampaignsInstance = new SibApiV3Sdk.EmailCampaignsApi(
+        this.client
+      );
       let emailCampaignsData = new SibApiV3Sdk.UpdateEmailCampaign();
       emailCampaignsData = await this.formatSendinBlueData({
         campaignMailData,

@@ -145,9 +145,13 @@ const EspComponent = Vue.component('EspForm', {
           /*
             If the campaign for this profile should exist but was not found on DSC,
             Then it was probably deleted on DSC's side.
-            So we allow the user to create a new one
+            So we allow the user to create a new one. A 404 of the profile
+            itself, already in creation, is shown: asking again would loop.
           */
-          if (error.response.status === 404) {
+          if (
+            error.response?.status === 404 &&
+            this.type !== SEND_MODE.CREATION
+          ) {
             this.type = SEND_MODE.CREATION;
             this.fetchProfileData(message);
             return;

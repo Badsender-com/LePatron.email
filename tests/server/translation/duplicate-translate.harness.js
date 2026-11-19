@@ -19,6 +19,7 @@ jest.mock('../../../packages/server/translation/translation-jobs', () => ({
   setFailed: jest.fn(),
 }));
 jest.mock('../../../packages/server/mailing/mailing.service', () => ({
+  assertCanDuplicateWithTranslation: jest.fn(),
   findOneForUser: jest.fn(),
   duplicateWithTranslatedData: jest.fn(),
   updatePreviewHtml: jest.fn(),

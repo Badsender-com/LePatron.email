@@ -13,7 +13,10 @@ const { green, red } = require('chalk');
 const config = require('../node.config.js');
 const fileManager = require('../common/file-manage.service.js');
 const { CacheImages } = require('../common/models.common.js');
-const imageService = require('./image.service');
+const {
+  setServedFileHeaders,
+  isInlineImage,
+} = require('./served-file-headers.js');
 
 console.log('[IMAGES] config.images.cache', config.images.cache);
 
@@ -24,7 +27,6 @@ module.exports = {
   checkImageCache,
   checkSizes,
   read,
-  destroy,
 };
 
 /// ///
@@ -162,10 +164,12 @@ const isImageContentType = (contentType) =>
 // for what is actually a PNG. The browser then refuses to paint the response in
 // an `<img>`, the editor re-requests the same thumbnail on every re-render, and
 // a single open tab becomes thousands of requests per minute.
-// So when the extension doesn't already name an image type, ask the bytes.
+// So when the extension doesn't already name a raster image type, ask the
+// bytes. An `.svg` is asked too: the cached resize of an SVG is a PNG kept
+// under the source's name.
 const resolveContentType = async (imageName) => {
   const guessedContentType = mime.lookup(imageName);
-  if (isImageContentType(guessedContentType)) return guessedContentType;
+  if (isInlineImage(guessedContentType)) return guessedContentType;
 
   const probeStream = fileManager.streamImage(imageName);
   try {
@@ -200,7 +204,7 @@ const streamImageToResponse = async (req, res, next, imageName) => {
   // https://groups.google.com/forum/#!topic/nodejs/A8wbaaPmmBQ
   imageStream.once('readable', () => {
     addCacheControl(res);
-    if (contentType) res.set('Content-Type', contentType);
+    setServedFileHeaders(res, contentType);
 
     imageStream
       .pipe(res)
@@ -458,31 +462,4 @@ function placeholder(req, res) {
 function read(req, res, next) {
   const { imageName } = req.params;
   streamImageToResponse(req, res, next, imageName);
-}
-
-/// ///
-// EDITOR SPECIFIC
-/// ///
-
-// destroy an image is not a real deletion…
-// …because those images can be still used inside creations:
-//  - cache can be inactive
-//  - if active: we are not sure that cropped images are cached
-//  - even though every cropped images are cached
-//    an image can be used at it's original size (no cropped image cache)
-// so:
-//  - we just flag this image in the gallery table as not visible
-function destroy(req, res, next) {
-  if (!req.xhr) return next(new createError.NotImplemented());
-  const { imageName } = req.params;
-  let mongoId = /^([a-f\d]{24})-/.exec(imageName);
-  if (!mongoId) return next(new createError.UnprocessableEntity());
-  mongoId = mongoId[1];
-
-  imageService
-    .destroy(mongoId, imageName)
-    .then((gallery) => {
-      res.send({ files: gallery.files });
-    })
-    .catch(next);
 }

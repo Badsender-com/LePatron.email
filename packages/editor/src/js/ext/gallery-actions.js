@@ -11,10 +11,10 @@ const NONE = Object.freeze({
 });
 
 /**
- * What the user may do to the images of one gallery, as the server will
- * answer it. The one place that says so: the panel shows these actions and
- * nothing else, and each extension refuses the others before any request,
- * so a new way in cannot open a path that can only fail.
+ * What the user may do to the images of one gallery. The one place that
+ * says so: the panel shows these actions and nothing else, and each
+ * extension refuses the others before any request, so a new way in cannot
+ * open a path that can only fail.
  *
  * - Uploading, editing (which adds a copy) and deleting need
  *   `gallery.manage`.
@@ -27,6 +27,11 @@ const NONE = Object.freeze({
  *   file on, and no editing either, whose copy is uploaded through that
  *   zone's input (badsender-edit-image.js). Renaming and deleting a
  *   template image keep their own rule, which says nothing of the email.
+ *
+ * The server answers the same for the email's gallery and for renaming. An
+ * upload to the template's gallery is held here only: the request names the
+ * template, not the email being edited, so the server checks the company of
+ * the template alone (server/image/gallery-access.js).
  *
  * Denied while the user is unknown, like `userCan`. Reads the current user
  * observable, so a binding calling this re-evaluates once the user arrives.

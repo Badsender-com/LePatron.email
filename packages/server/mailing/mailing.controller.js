@@ -24,6 +24,7 @@ const {
 
 const simpleI18n = require('../helpers/server-simple-i18n.js');
 const logger = require('../utils/logger.js');
+const { FRAME_ANCESTORS } = require('../utils/frame-headers.js');
 const {
   Mailings,
   Galleries,
@@ -287,8 +288,7 @@ async function moveMany(req, res) {
  *
  * @apiParam {string} mailingId
  *
- * @apiParam (Body) {String} name
- * @apiParam (Body) {String} workspaceId
+ * @apiParam (Body) {String} mailingName
  *
  * @apiUse mailings
  */
@@ -297,13 +297,10 @@ async function rename(req, res) {
   const {
     user,
     params: { mailingId },
-    body: { mailingName, workspaceId, parentFolderId },
+    body: { mailingName },
   } = req;
 
-  await mailingService.renameMailing(
-    { mailingId, mailingName, workspaceId, parentFolderId },
-    user
-  );
+  await mailingService.renameMailing({ mailingId, mailingName }, user);
 
   res.status(204).send();
 }
@@ -408,7 +405,9 @@ async function previewHtml(req, res) {
   // Opened directly in a tab, the document runs in an opaque origin with no
   // script: whatever the sanitizer missed cannot reach the session. Does not
   // apply to the modal, which fetches the text and sandboxes its own iframe.
-  res.set('Content-Security-Policy', 'sandbox');
+  // This policy replaces the one every page gets (utils/frame-headers.js), so
+  // it carries its frame-ancestors too.
+  res.set('Content-Security-Policy', `sandbox; ${FRAME_ANCESTORS}`);
   res.send(previewMailHtml);
 }
 
@@ -585,6 +584,33 @@ async function bulkUpdate(req, res) {
     throw new UnprocessableEntity();
   }
 
+  const mailingQuery = {
+    _id: { $in: items.map(mongoose.Types.ObjectId) },
+    _company: mongoose.Types.ObjectId(companyId),
+  };
+
+  // The mailings of the user's group, each written only where the user may
+  // save it, as a single mailing is: one it may not save refuses the request
+  // before any tag or mailing is written.
+  const userMailings = await Mailings.find(mailingQuery).select({
+    _id: 1,
+    tags: 1,
+    _workspace: 1,
+    _parentFolder: 1,
+  });
+  // Once per location: a selection is often many mailings of one folder.
+  const oneByLocation = new Map(
+    userMailings.map((mailing) => [
+      `${mailing._workspace}/${mailing._parentFolder}`,
+      mailing,
+    ])
+  );
+  await Promise.all(
+    [...oneByLocation.values()].map((mailing) =>
+      mailingService.assertUserCanEditMailing(req.user, mailing)
+    )
+  );
+
   // Find existing tags in the database
   const existingTags = await mongoose.models.Tag.find({
     label: { $in: tagsChanges.added },
@@ -607,17 +633,6 @@ async function bulkUpdate(req, res) {
       }))
     );
   }
-
-  const mailingQuery = {
-    _id: { $in: items.map(mongoose.Types.ObjectId) },
-    _company: mongoose.Types.ObjectId(companyId),
-  };
-
-  // Ensure mailings belong to the same group
-  const userMailings = await Mailings.find(mailingQuery).select({
-    _id: 1,
-    tags: 1,
-  });
 
   const updateQueries = userMailings.map(async (mailing) => {
     const originalTags = mailing.tags;

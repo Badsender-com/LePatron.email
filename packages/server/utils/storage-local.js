@@ -2,15 +2,43 @@
 
 const fs = require('fs-extra');
 const path = require('path');
+const { Readable } = require('node:stream');
 
 const config = require('../node.config.js');
 const defer = require('../helpers/create-promise.js');
 const formatName = require('../helpers/format-filename-for-jquery-fileupload.js');
 const logger = require('../utils/logger.js');
 
+// A stored name is a file name of the upload folder: no separator, no parent
+// reference, no NUL. The name comes from the URL, where Express has already
+// decoded `%2F`.
+const NOT_A_FILE_NAME = /[/\\\0]|\.\./;
+
+// The path of `name` in the upload folder, or null when it is not one of its
+// files.
+function uploadPathOf(name) {
+  if (typeof name !== 'string' || name === '' || NOT_A_FILE_NAME.test(name)) {
+    return null;
+  }
+  const folder = path.resolve(config.images.uploadDir);
+  const filePath = path.resolve(folder, name);
+  return filePath.startsWith(folder + path.sep) ? filePath : null;
+}
+
+// A read that fails as a missing file does, so the caller answers 404.
+function missingFileStream(name) {
+  const readable = new Readable({ read() {} });
+  const error = Object.assign(new Error(`ENOENT: no such file, '${name}'`), {
+    code: 'ENOENT',
+  });
+  process.nextTick(() => readable.destroy(error));
+  return readable;
+}
+
 // https://docs.nodejitsu.com/articles/advanced/streams/how-to-use-fs-create-read-stream/
 function streamImage(imageName) {
-  const imagePath = path.join(config.images.uploadDir, imageName);
+  const imagePath = uploadPathOf(imageName);
+  if (!imagePath) return missingFileStream(imageName);
   return fs.createReadStream(imagePath);
 }
 

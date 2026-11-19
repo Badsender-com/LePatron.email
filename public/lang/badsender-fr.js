@@ -213,6 +213,10 @@ module.exports = {
   'title-send-test-mails': 'Envoyer un email de test',
   'send-test-success': 'Email envoyé avec succès',
   'send-test-error': "Erreur lors de l'envoi de l'email :(",
+  'send-test-too-many-recipients':
+    "Trop d'adresses pour un seul envoi de test : réduisez la liste.",
+  'send-test-too-many-sends':
+    "Trop d'envois de test en une heure : réessayez plus tard.",
   'placeholder-input-emails-test':
     'Exemple : premieremail@test.com;secondemail@test.com',
   'emails-test': 'Saisir un ou plusieurs emails',

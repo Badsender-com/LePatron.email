@@ -623,6 +623,8 @@ export default {
     estimatedTime: '~{time} remaining',
     destination: 'Destination',
     destinationHint: 'Select where to create the translated copy',
+    destinationRequiredHint:
+      'You cannot edit this location: select where to create the translated copy',
   },
   template: {
     noId: 'No ID',
