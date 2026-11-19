@@ -17,8 +17,9 @@ const read = (file) =>
 describe('a threshold field', () => {
   const source = read('quality-threshold-field.vue');
 
-  it('reads out its error as it appears', () => {
-    expect(source).toMatch(/role="alert"/);
+  it('reads out its error once, not at each keystroke', () => {
+    expect(source).toMatch(/aria-live="polite"/);
+    expect(source).not.toMatch(/role="alert"/);
     expect(source).toMatch(/hide-details/);
   });
 

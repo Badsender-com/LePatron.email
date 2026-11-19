@@ -39,9 +39,6 @@ export default {
     hintId() {
       return `qx-hint-${this.checkId}-${this.name}`;
     },
-    errorId() {
-      return `qx-error-${this.checkId}-${this.name}`;
-    },
     errorText() {
       if (!this.error) return '';
       const params = Object.fromEntries(
@@ -86,7 +83,7 @@ export default {
       :error="Boolean(error)"
       :disabled="disabled"
       :data-threshold="`${checkId}.${name}`"
-      :aria-describedby="error ? errorId : hintId"
+      :aria-describedby="hintId"
       :aria-invalid="error ? 'true' : 'false'"
       type="number"
       :step="threshold.unit === 'ratio' ? 0.1 : 1"
@@ -106,16 +103,14 @@ export default {
       </template>
     </v-text-field>
     <div class="qx-threshold__hint">
-      <!-- An alert inserted is read out: the error of a value is heard as
-           it is typed, the hint is only read with the field. -->
+      <!-- A polite live region: an error is read out once it appears, and
+           again only when its text changes, not at each keystroke. -->
       <span
-        v-if="error"
-        :id="errorId"
-        role="alert"
-        class="qx-threshold__error"
-        >{{ errorText }}</span
+        :id="hintId"
+        aria-live="polite"
+        :class="{ 'qx-threshold__error': error }"
+        >{{ error ? errorText : hint }}</span
       >
-      <span v-else :id="hintId">{{ hint }}</span>
       <v-btn
         v-if="canRestore && !disabled"
         x-small
