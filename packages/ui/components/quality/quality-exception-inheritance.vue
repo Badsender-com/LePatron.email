@@ -29,8 +29,8 @@ export default {
           level:
             this.thresholdShort(this.checkId, adjustment.threshold) ||
             this.$t('qualitySettings.thresholdsShort.default'),
-          inherited: adjustment.inherited,
-          value: adjustment.value,
+          inherited: this.formatNumber(adjustment.inherited),
+          value: this.formatNumber(adjustment.value),
           unit: this.unitName(this.checkId, adjustment.threshold),
         }),
       }));
