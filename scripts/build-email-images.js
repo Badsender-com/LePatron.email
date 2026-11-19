@@ -16,26 +16,12 @@
 const fs = require('fs');
 const path = require('path');
 const sharp = require('sharp');
+// The icons of the emails: the list the template draws from.
+const { ICONS } = require('../packages/server/email-templates/email-icons.js');
 
 const ROOT = path.join(__dirname, '..');
 const OUT = path.join(ROOT, 'public/media/email');
 const LUCIDE = path.join(ROOT, 'node_modules/lucide-vue/dist/esm/icons');
-
-// The icon of each kind of email: the ones the pages of the application use
-// for the same step (lock for a password, shield for the second factor, mail
-// for the code, smartphone for a device).
-const ICONS = [
-  // The card of each email.
-  'lock',
-  'shield-check',
-  'shield-alert',
-  'mail-check',
-  'smartphone',
-  // The three reasons of the welcome: blocks, a check, languages.
-  'blocks',
-  'badge-check',
-  'languages',
-];
 
 // The darkened accent of the application (`v-accent-darken1` of its design
 // system) for the strokes, the accent at 12 % (`tint-accent`) for the tile.

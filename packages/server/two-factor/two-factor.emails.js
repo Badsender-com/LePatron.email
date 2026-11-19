@@ -21,7 +21,7 @@ const OPEN = { fr: 'Ouvrir LePatron', en: 'Open LePatron' };
 
 // The icon of the card of each email: the ones the pages of the second factor
 // use (shield, mail, phone), a shield with a mark when it is a warning.
-const ICONS = {
+const ICON_BY_EMAIL = {
   setUp: 'shield-check',
   reset: 'shield-alert',
   emailChanged: 'shield-alert',
@@ -159,7 +159,11 @@ async function sendTwoFactorEmail(user, name, texts = TEXTS[name], extra = {}) {
   try {
     await mail.send({
       to: user.email,
-      ...composeEmail(texts, lang, { url, icon: ICONS[name], ...extra }),
+      ...composeEmail(texts, lang, {
+        url,
+        icon: ICON_BY_EMAIL[name],
+        ...extra,
+      }),
     });
   } catch (error) {
     logger.error(`[two-factor] ${name} email failed for ${user.id}`, error);
