@@ -5,7 +5,8 @@ import { safeFetchGroup } from '~/helpers/safe-fetch-group';
 import mixinSettingsTitle from '~/helpers/mixins/mixin-settings-title.js';
 import BsPageHeader from '~/components/layout/bs-page-header.vue';
 import BsGroupAiFeaturesTab from '~/components/group/ai-features-tab.vue';
-import { CAN, USER } from '~/store/user';
+import BsGroupMcpAccessOption from '~/components/group/mcp-access-option.vue';
+import { CAN, GROUP_CHANGED, USER } from '~/store/user';
 import { CAPABILITIES } from '../../../../../shared/access/roles.js';
 
 export default {
@@ -13,6 +14,7 @@ export default {
   components: {
     BsPageHeader,
     BsGroupAiFeaturesTab,
+    BsGroupMcpAccessOption,
   },
   mixins: [mixinSettingsTitle],
   meta: {
@@ -33,6 +35,18 @@ export default {
     ...mapGetters(USER, { can: CAN }),
     showGroupBadge() {
       return this.can(CAPABILITIES.PLATFORM_MANAGE) && this.group.name;
+    },
+  },
+  methods: {
+    // The MCP section saves the access and the retex: the page follows, and
+    // the sidebar's connected applications link with it.
+    onMcpUpdate(saved) {
+      this.group.enableMcp = saved.enableMcp;
+      this.group.allowRetex = saved.allowRetex;
+      this.$store.dispatch(`${USER}/${GROUP_CHANGED}`, {
+        group: this.group,
+        changes: { enableMcp: saved.enableMcp },
+      });
     },
   },
 };
@@ -58,7 +72,13 @@ export default {
         <bs-group-ai-features-tab
           :active="true"
           :is-platform="!!group.isPlatform"
-        />
+        >
+          <bs-group-mcp-access-option
+            v-if="group.id"
+            :group="group"
+            @update="onMcpUpdate"
+          />
+        </bs-group-ai-features-tab>
       </div>
     </v-container>
   </div>

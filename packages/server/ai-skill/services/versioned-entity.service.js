@@ -27,9 +27,11 @@
  */
 
 const createError = require('http-errors');
+const ERROR_CODES = require('../../constant/error-codes.js');
 const {
   SkillStatuses,
   MinorVersionDefaults,
+  Audiences,
 } = require('../constant/skill-constants.js');
 const {
   findVersion,
@@ -37,7 +39,16 @@ const {
   maxMajor,
   maxMinorFor,
   assertDraft,
+  laterThan,
+  openDraftOf,
+  versionLabel,
 } = require('./version-helpers.js');
+const {
+  createDraftWriter,
+  plain,
+  readAtOf,
+  saveIfUnchanged,
+} = require('./versioned-draft.js');
 
 /**
  * @param {Object} options
@@ -46,7 +57,9 @@ const {
  * @param {string} options.entityNoun Lowercase, for prose ("skill")
  * @param {string} options.idField Business key field ("skillId")
  * @param {Array<{name: string, default: Function, deep?: boolean}>} options.contentFields
- * @param {(version: Object) => void} [options.activationGate] Throws to refuse publication
+ * @param {(version: Object, doc: Object) => (void|Promise<void>)} [options.activationGate]
+ *   Throws (or rejects) to refuse publication; receives the version and the
+ *   document it belongs to
  */
 function createVersionedEntityService({
   model,
@@ -102,6 +115,45 @@ function createVersionedEntityService({
     'releaseNotes',
   ];
 
+  // A minor draft on top of the active version: a minor release carries no
+  // doctrine change, so it is pre-filled and the activation gate does not ask
+  // for it (unlike a major). These are stored CONTENT, displayed as authored —
+  // see MinorVersionDefaults for why they are French and not an i18n key.
+  function minorDraftOf(doc, active, userId) {
+    const now = new Date();
+    return {
+      versionMajor: active.versionMajor,
+      versionMinor: maxMinorFor(doc, active.versionMajor) + 1,
+      status: 'DRAFT',
+      ...cloneVersionContent(active),
+      changelog: MinorVersionDefaults.changelog,
+      releaseNotes: MinorVersionDefaults.releaseNotes,
+      createdBy: userId,
+      createdAt: now,
+      updatedBy: userId,
+      updatedAt: now,
+    };
+  }
+
+  // A major draft seeded from `seed`, or blank. Its changelog and release
+  // notes are left empty on purpose: the activation gate requires the author
+  // to write both before a major can be published.
+  function majorDraftOf(doc, seed, userId) {
+    const now = new Date();
+    return {
+      versionMajor: maxMajor(doc) + 1,
+      versionMinor: 0,
+      status: 'DRAFT',
+      ...cloneVersionContent(seed),
+      changelog: '',
+      releaseNotes: '',
+      createdBy: userId,
+      createdAt: now,
+      updatedBy: userId,
+      updatedAt: now,
+    };
+  }
+
   /**
    * New minor draft on top of the currently active version. Refuses when there
    * is no active version: a minor release is by definition a correction of
@@ -116,24 +168,7 @@ function createVersionedEntityService({
         `Cannot create a minor version: no active version on this ${entityNoun}`
       );
     }
-    const versionMajor = active.versionMajor;
-    const now = new Date();
-    doc.versions.push({
-      versionMajor,
-      versionMinor: maxMinorFor(doc, versionMajor) + 1,
-      status: 'DRAFT',
-      ...cloneVersionContent(active),
-      // A minor release carries no doctrine change, so it is pre-filled and the
-      // activation gate does not ask for it (unlike a major). These are stored
-      // CONTENT, displayed as authored — see MinorVersionDefaults for why they
-      // are French and not an i18n key.
-      changelog: MinorVersionDefaults.changelog,
-      releaseNotes: MinorVersionDefaults.releaseNotes,
-      createdBy: userId,
-      createdAt: now,
-      updatedBy: userId,
-      updatedAt: now,
-    });
+    doc.versions.push(minorDraftOf(doc, active, userId));
     await doc.save();
     return doc;
   }
@@ -144,37 +179,162 @@ function createVersionedEntityService({
    */
   async function createMajorVersion(id, { source, userId } = {}) {
     const doc = await getDoc(id);
-    const seed = source || findActiveVersion(doc);
-    const now = new Date();
-    doc.versions.push({
-      versionMajor: maxMajor(doc) + 1,
-      versionMinor: 0,
-      status: 'DRAFT',
-      ...cloneVersionContent(seed),
-      // Left empty on purpose: the activation gate requires the author to write
-      // both before a major can be published.
-      changelog: '',
-      releaseNotes: '',
-      createdBy: userId,
-      createdAt: now,
-      updatedBy: userId,
-      updatedAt: now,
-    });
+    doc.versions.push(
+      majorDraftOf(doc, source || findActiveVersion(doc), userId)
+    );
     await doc.save();
     return doc;
   }
 
+  /**
+   * A draft version as an import brings it (ADR 0018): its number and content
+   * as given, for a document created with it rather than with a blank 1.0.
+   */
+  function importedDraft(version, userId) {
+    const now = new Date();
+    return {
+      versionMajor: version.versionMajor,
+      versionMinor: version.versionMinor,
+      status: 'DRAFT',
+      ...cloneVersionContent(version),
+      changelog: version.changelog || '',
+      releaseNotes: version.releaseNotes || '',
+      createdBy: userId,
+      createdAt: now,
+      updatedBy: userId,
+      updatedAt: now,
+    };
+  }
+
+  // Why a draft cannot be written at `wanted` on the document, as read: it is
+  // archived, a draft is open, which an import does not overwrite, or the
+  // number is not ahead of the active version, or exists already.
+  function assertDraftAt(doc, id, wanted) {
+    const params = { id, version: versionLabel(wanted) };
+    if (doc.status === SkillStatuses.ARCHIVED) {
+      throw createError(409, ERROR_CODES.SKILLS_IMPORT_ARCHIVED, params);
+    }
+    if (openDraftOf(doc)) {
+      throw createError(409, ERROR_CODES.SKILLS_IMPORT_DRAFT_OPEN, params);
+    }
+    const { versionMajor: major, versionMinor: minor } = wanted;
+    const active = findActiveVersion(doc);
+    const ahead =
+      !active ||
+      major > active.versionMajor ||
+      (major === active.versionMajor && minor > active.versionMinor);
+    if (!ahead || findVersion(doc, major, minor)) {
+      throw createError(
+        409,
+        ERROR_CODES.SKILLS_IMPORT_VERSION_NOT_AHEAD,
+        params
+      );
+    }
+  }
+
+  /**
+   * New draft at a number given rather than the next one: an imported version
+   * keeps the number it has on the instance it comes from (ADR 0018). Only
+   * ahead of the active version, and never beside an open draft, which an
+   * import does not overwrite. Written, as an assistant's draft is
+   * (versioned-draft.js), on the condition that the versions did not change
+   * since they were read: of two drafts started at once, one is written.
+   *
+   * @throws {HttpError} 404, 400 when the model refuses the version, or 409
+   *   with an ERROR_CODES `SKILLS_IMPORT_*`
+   */
+  async function createVersionAt(id, { major, minor }, content, userId) {
+    const wanted = { versionMajor: major, versionMinor: minor };
+    const doc = await getDoc(id);
+    assertDraftAt(doc, id, wanted);
+    const read = (doc.versions || []).length;
+    // Validated first, as a save would be: the model refuses what it
+    // refuses, and derives what it derives (an expertise's sections), which
+    // a conditioned update does not run.
+    doc.versions.push(importedDraft({ ...content, ...wanted }, userId));
+    await doc.validate();
+    const written = await model.findOneAndUpdate(
+      {
+        [idField]: id,
+        status: { $ne: SkillStatuses.ARCHIVED },
+        versions: { $size: read },
+      },
+      { $push: { versions: plain(doc.versions[read]) } },
+      { new: true }
+    );
+    if (written) return written;
+    // Another write came first: why it leaves no room, when it says.
+    assertDraftAt(await getDoc(id), id, wanted);
+    throw createError(409, ERROR_CODES.SKILLS_IMPORT_CHANGED, {
+      id,
+      version: versionLabel(wanted),
+    });
+  }
+
+  /**
+   * A person's change to a draft: `patch.updatedAt`, when given, is the
+   * update date of the draft the screen read (readAtOf).
+   */
   async function updateVersion(id, { major, minor }, patch, userId) {
     const doc = await getDoc(id);
     const version = findVersion(doc, major, minor);
     assertDraft(version);
+    const readAt = readAtOf(version, patch.updatedAt);
     for (const key of PATCHABLE_VERSION_FIELDS) {
       if (patch[key] !== undefined) version[key] = patch[key];
     }
     version.updatedBy = userId;
-    version.updatedAt = new Date();
-    await doc.save();
+    version.updatedAt = laterThan(readAt);
+    await saveIfUnchanged(doc, version, readAt);
     return doc;
+  }
+
+  // The assistant's way to a draft (ADR 0014), one open at a time, each
+  // write conditioned on what it read: versioned-draft.js.
+  const drafts = createDraftWriter({
+    model,
+    idField,
+    entityNoun,
+    getDoc,
+    minorDraftOf,
+    majorDraftOf,
+    patchable: PATCHABLE_VERSION_FIELDS,
+  });
+  /**
+   * Adds the retex a draft addresses to it (ADR 0021), in one write on the
+   * version while it is a draft, so that two proposals citing at once both
+   * count, and a draft published meanwhile takes no citation. Checked by the
+   * caller: only the writing tools of MCP cite, never a version update.
+   *
+   * @returns {Promise<string[]>} the retex the draft cites now
+   * @throws {HttpError} 404 or 409 when the version is no draft
+   */
+  async function citeRetex(id, { major, minor }, retexIds, userId) {
+    const written = await model.findOneAndUpdate(
+      {
+        [idField]: id,
+        versions: {
+          $elemMatch: {
+            versionMajor: major,
+            versionMinor: minor,
+            status: SkillStatuses.DRAFT,
+          },
+        },
+      },
+      {
+        $addToSet: {
+          'versions.$.retexIds': { $each: retexIds.map(String) },
+        },
+        $set: {
+          'versions.$.updatedBy': userId,
+          'versions.$.updatedAt': new Date(),
+        },
+      },
+      { new: true }
+    );
+    // Why nothing was written: no such item, version, or draft.
+    if (!written) assertDraft(findVersion(await getDoc(id), major, minor));
+    return findVersion(written, major, minor).retexIds;
   }
 
   async function deleteVersion(id, { major, minor }) {
@@ -189,19 +349,23 @@ function createVersionedEntityService({
   }
 
   /**
-   * Publish a DRAFT: run the entity's own gate, require release notes on a
-   * major, archive the version it replaces, and move the `activeVersion`
-   * pointer.
+   * What a publication checks before it writes, at no cost: the version is
+   * a draft, as the screen read it (readAtOf), passes the entity's own gate,
+   * and a major has its changelog and release notes. Read before the
+   * publication guard replays anything (ADR 0019), on a document already
+   * read, stored or plain.
+   *
+   * @returns {Promise<{ version: Object, readAt: Date|null }>}
    */
-  async function activateVersion(id, { major, minor }, payload = {}, userId) {
-    const doc = await getDoc(id);
+  async function checkPublishable(doc, { major, minor }, payload = {}) {
     const version = findVersion(doc, major, minor);
     if (!version) throw createError(404, `Version ${major}.${minor} not found`);
     if (version.status !== 'DRAFT') {
       throw createError(409, 'Only DRAFT versions can be activated');
     }
+    const readAt = readAtOf(version, payload.updatedAt);
 
-    if (activationGate) activationGate(version);
+    if (activationGate) await activationGate(version, doc);
 
     // Major releases require explicit changelog and releaseNotes. Minor
     // releases inherit the auto-filled defaults from createMinorVersion.
@@ -212,6 +376,29 @@ function createVersionedEntityService({
         'changelog and releaseNotes are required to activate a major version'
       );
     }
+    return { version, readAt };
+  }
+
+  /**
+   * Publish a DRAFT: run the entity's own gate, require release notes on a
+   * major, archive the version it replaces, and move the `activeVersion`
+   * pointer. `payload.openToAll` opens the item to every company in the same
+   * write (ADR 0013), so a publication never stands half done.
+   * `payload.updatedAt`, when given, is the update date of the draft the
+   * screen read: a draft written since is not published unread (readAtOf).
+   * `payload.keepOnCopy`, on a copy, keeps the item on the copy in the same
+   * write (ADR 0019), followed yet or not: the next follow leaves the
+   * version published here as it is. `payload.guardRecord`, the decision
+   * taken after the publication guard, is kept with the version in the same
+   * write too.
+   */
+  async function activateVersion(id, { major, minor }, payload = {}, userId) {
+    const doc = await getDoc(id);
+    const { version, readAt } = await checkPublishable(
+      doc,
+      { major, minor },
+      payload
+    );
     if (payload.changelog) version.changelog = payload.changelog;
     if (payload.releaseNotes) version.releaseNotes = payload.releaseNotes;
 
@@ -223,19 +410,34 @@ function createVersionedEntityService({
     const now = new Date();
     version.status = 'ACTIVE';
     version.activatedAt = now;
+    if (payload.guardRecord) {
+      version.guardHistory = [
+        ...(version.guardHistory || []),
+        payload.guardRecord,
+      ];
+    }
     version.updatedBy = userId;
-    version.updatedAt = now;
+    version.updatedAt = laterThan(readAt);
     doc.activeVersion = {
       major: version.versionMajor,
       minor: version.versionMinor,
     };
     doc.status = SkillStatuses.ACTIVE;
-    await doc.save();
+    if (payload.openToAll === true) doc.audience = Audiences.ALL;
+    if (payload.keepOnCopy === true) {
+      doc.keptOnCopy = true;
+      doc.keptOnCopyAt = now;
+      doc._keptOnCopyBy = userId;
+    }
+    await saveIfUnchanged(doc, version, readAt);
     return doc;
   }
 
-  async function archive(id) {
+  // `before`, given the item as read, may refuse or record on it what the
+  // archive does, saved with it.
+  async function archive(id, before) {
     const doc = await getDoc(id);
+    if (before) before(doc);
     doc.status = SkillStatuses.ARCHIVED;
     await doc.save();
     return doc;
@@ -247,8 +449,14 @@ function createVersionedEntityService({
     cloneVersionContent,
     createMinorVersion,
     createMajorVersion,
+    openOrStartDraft: drafts.openOrStartDraft,
+    writeDraftIfUnchanged: drafts.writeDraftIfUnchanged,
+    createVersionAt,
+    importedDraft,
     updateVersion,
+    citeRetex,
     deleteVersion,
+    checkPublishable,
     activateVersion,
     archive,
     PATCHABLE_VERSION_FIELDS,

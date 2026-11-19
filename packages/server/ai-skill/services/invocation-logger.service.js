@@ -3,27 +3,8 @@
 const createError = require('http-errors');
 const logger = require('../../utils/logger.js');
 const { AISkillInvocations, Groups } = require('../../common/models.common.js');
-const {
-  InvocationStatuses,
-  DefaultLogRetentionDays,
-} = require('../constant/skill-constants.js');
-
-const MS_PER_DAY = 24 * 60 * 60 * 1000;
-
-/**
- * Deadline stamped on every invocation, consumed by the TTL index on
- * AISkillInvocation.expiresAt. Retention is a per-Group setting, so it cannot
- * live in the index itself.
- *
- * @param {Date} startedAt
- * @param {number} retentionDays
- * @returns {Date}
- */
-function computeExpiresAt(startedAt, retentionDays) {
-  const days = retentionDays || DefaultLogRetentionDays;
-  const from = startedAt instanceof Date ? startedAt : new Date();
-  return new Date(from.getTime() + days * MS_PER_DAY);
-}
+const { InvocationStatuses } = require('../constant/skill-constants.js');
+const { computeExpiresAt } = require('../../group/log-retention.js');
 
 /**
  * The Group's retention, from the caller when it already loaded the Group.
@@ -157,7 +138,6 @@ function truncate(str, max) {
 }
 
 module.exports = {
-  computeExpiresAt,
   logInvocation,
   logFailure,
   formatZodError,

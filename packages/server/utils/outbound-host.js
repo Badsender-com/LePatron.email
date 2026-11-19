@@ -238,6 +238,6 @@ module.exports = {
   OUTBOUND_HOST_ERRORS,
   guardedLookup,
   BLOCKED_HOST_ERROR_CODE,
-  // exported for testing
+  // What the authorization server's fetches read too (mcp-client-metadata).
   isBlockedAddress,
 };

@@ -19,6 +19,7 @@ import { getProviderLabel } from '~/components/integrations/provider-configs';
 import BsSelect from '~/components/form/bs-select.vue';
 import BsAiModelPicker from '~/components/group/bs-ai-model-picker.vue';
 import BsFormSection from '~/components/layout/bs-form-section.vue';
+import BsGroupFeatureSwitch from '~/components/group/feature-switch.vue';
 import { Cpu } from 'lucide-vue';
 
 const FEATURE_TYPE = 'skill';
@@ -29,6 +30,7 @@ export default {
     BsSelect,
     BsAiModelPicker,
     BsFormSection,
+    BsGroupFeatureSwitch,
     LucideCpu: Cpu,
   },
   props: {
@@ -85,6 +87,11 @@ export default {
       set(value) {
         this.updateFeature({ isActive: value });
       },
+    },
+    // Switched off, the settings fold under the header, unless they are
+    // what it takes to switch it on: no active integration chosen yet.
+    folded() {
+      return !this.skillIsActive && Boolean(this.hasActiveIntegration);
     },
     selectedModel: {
       get() {
@@ -147,7 +154,7 @@ export default {
 </script>
 
 <template>
-  <bs-form-section :last="last">
+  <bs-form-section card :active="skillIsActive" :last="last" :folded="folded">
     <template #icon>
       <lucide-cpu :size="20" />
     </template>
@@ -157,23 +164,20 @@ export default {
     <template #description>
       {{ $t('aiFeatures.skill.description') }}
     </template>
+    <template #header-actions>
+      <bs-group-feature-switch
+        v-model="skillIsActive"
+        :label="$t('aiFeatures.skill.enableLabel')"
+        :on-text="$t('aiFeatures.skill.on')"
+        :off-text="$t('aiFeatures.skill.off')"
+        :disabled="loading || saving || !hasActiveIntegration"
+        :loading="saving"
+      />
+    </template>
 
     <v-skeleton-loader v-if="loading" type="article" />
 
     <template v-else>
-      <!-- Activation switch -->
-      <div class="activation-row mb-4">
-        <v-switch
-          v-model="skillIsActive"
-          :label="$t('aiFeatures.skill.enableLabel')"
-          :disabled="saving || !hasActiveIntegration"
-          :loading="saving"
-          color="accent"
-          hide-details
-          class="mt-0"
-        />
-      </div>
-
       <!-- Warning if selected integration is inactive -->
       <v-alert
         v-if="selectedIntegrationId && !hasActiveIntegration"
@@ -209,10 +213,3 @@ export default {
     </template>
   </bs-form-section>
 </template>
-
-<style lang="scss" scoped>
-.activation-row {
-  display: flex;
-  align-items: center;
-}
-</style>

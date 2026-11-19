@@ -1,0 +1,269 @@
+'use strict';
+
+const { z } = require('zod');
+const {
+  DEFAULT_PAGE_SIZE,
+  MAX_PAGE_SIZE,
+  MAX_PAGE,
+  searchMailings,
+} = require('../mailing/mailing-search.service.js');
+const { accessibleLocations } = require('../mailing/mailing-locations.js');
+const { withIdentity, failure, tooLongSearch } = require('./mcp-identity.js');
+const { READ_ONLY } = require('./mcp-tool-grammar.js');
+const {
+  MAILING_STATUSES,
+  statusOf,
+  plannedDayOf,
+} = require('./mcp-mailing-status.js');
+
+// What an assistant may send: bounded, like every input of this server.
+const MAX_NAME_LENGTH = 200;
+const MAX_TAGS = 20;
+const MAX_TAG_LENGTH = 100;
+const MAX_LOCATIONS = 50;
+const MAX_ID_LENGTH = 100;
+
+const uriOf = (mailingId) => `lepatron://mailings/${mailingId}`;
+
+// The kind of a mailing among the results of search, the first part of their
+// id (`mailing:<id>`).
+const MAILING_KIND = 'mailing';
+const MAILING_ID_PREFIX = `${MAILING_KIND}:`;
+
+/**
+ * A mailing's id as list_mailings gives it, from that id or from the one
+ * search gives, prefixed with its kind.
+ */
+const bareMailingId = (id) =>
+  id.startsWith(MAILING_ID_PREFIX) ? id.slice(MAILING_ID_PREFIX.length) : id;
+
+// The ESP profiles a mailing was pushed to, each counted once.
+const espProfileCountOf = (espIds) =>
+  new Set((espIds || []).map((push) => String(push.profileId))).size;
+
+const REFERENCE = z.object({ id: z.string(), name: z.string() });
+const MAILING = z.object({
+  id: z.string(),
+  name: z.string(),
+  subject: z.string().nullable(),
+  tags: z.array(z.string()),
+  status: z.enum(MAILING_STATUSES),
+  approved: z.boolean(),
+  plannedSendDate: z.string().nullable(),
+  espProfileCount: z.number(),
+  author: z.string().nullable(),
+  template: z.string().nullable(),
+  workspace: REFERENCE,
+  folder: REFERENCE.optional(),
+  subfolder: REFERENCE.optional(),
+  createdAt: z.string(),
+  updatedAt: z.string(),
+  uri: z.string(),
+});
+
+const isoOf = (date) => (date ? new Date(date).toISOString() : null);
+
+function asItem(mailing, facts) {
+  const espProfileCount = espProfileCountOf(mailing.espIds);
+  return {
+    id: String(mailing._id),
+    name: mailing.name,
+    subject: facts.subject || null,
+    tags: mailing.tags || [],
+    status: statusOf({
+      espProfileCount,
+      approved: facts.approved,
+      plannedSendDate: facts.plannedSendDate,
+    }),
+    approved: facts.approved,
+    plannedSendDate: plannedDayOf(facts.plannedSendDate),
+    espProfileCount,
+    // The search answers the author's and the template's names under the
+    // listing's own names.
+    author: mailing.userName || null,
+    template: mailing.templateName || null,
+    ...mailing.location,
+    createdAt: isoOf(mailing.createdAt),
+    updatedAt: isoOf(mailing.updatedAt),
+    uri: uriOf(mailing._id),
+  };
+}
+
+// The search across accessible workspaces an assistant's arguments ask for.
+function searchOf(user, args, pageSize) {
+  return {
+    user,
+    filters: {
+      tags: args.tags,
+      createdAtStart: args.createdAfter,
+      createdAtEnd: args.createdBefore,
+      updatedAtStart: args.updatedAfter,
+      updatedAtEnd: args.updatedBefore,
+    },
+    pagination: { page: args.page ?? 1, itemsPerPage: pageSize },
+    within: {
+      workspaceIds: args.workspaceIds,
+      folderIds: args.folderIds,
+      ...(args.mine && { userIds: [user.id] }),
+      authorName: args.author,
+      // Whatever its case and accents, as the author's name.
+      name: args.name,
+    },
+  };
+}
+
+/**
+ * The mailings a user may read in the company the token is bound to (ADR 0012),
+ * answered by the search across accessible workspaces (ADR 0007): the same
+ * rule decides what comes back in the app and in an assistant. Each one with
+ * its derived status, and linked as a resource.
+ */
+async function listMailings({ user }, args) {
+  const pageSize = args.pageSize ?? DEFAULT_PAGE_SIZE;
+  if (pageSize > MAX_PAGE_SIZE) {
+    return failure(
+      `A page holds ${MAX_PAGE_SIZE} mailings at most: ask for the next page.`
+    );
+  }
+  let items;
+  try {
+    ({ items } = await searchMailings(searchOf(user, args, pageSize)));
+  } catch (error) {
+    return tooLongSearch(error);
+  }
+  // The listing reads each mailing's approval by the app's own rule.
+  const mailings = items.docs.map((mailing) =>
+    asItem(mailing, { ...mailing, approved: mailing.isApproved })
+  );
+  const answer = {
+    mailings,
+    total: items.totalDocs,
+    page: items.page,
+    pageSize,
+    totalPages: items.totalPages,
+  };
+  return {
+    content: [
+      { type: 'text', text: JSON.stringify(answer) },
+      ...mailings.map((mailing) => ({
+        type: 'resource_link',
+        uri: mailing.uri,
+        name: mailing.name,
+        mimeType: 'text/plain',
+      })),
+    ],
+    structuredContent: answer,
+  };
+}
+
+const dateFilter = (description) =>
+  z
+    .string()
+    .datetime({ offset: true })
+    .optional()
+    .describe(`${description} ISO 8601, e.g. 2026-11-04T00:00:00Z.`);
+const LOCATION_IDS = z.array(z.string().max(MAX_ID_LENGTH)).max(MAX_LOCATIONS);
+const LIST_INPUT = z.object({
+  name: z
+    .string()
+    .max(MAX_NAME_LENGTH)
+    .optional()
+    .describe('A part of the mailing name, whatever its case and accents.'),
+  tags: z
+    .array(z.string().max(MAX_TAG_LENGTH))
+    .max(MAX_TAGS)
+    .optional()
+    .describe('At least one of these tags.'),
+  workspaceIds: LOCATION_IDS.optional().describe(
+    'Workspace ids, from list_workspaces.'
+  ),
+  folderIds: LOCATION_IDS.optional().describe(
+    'Folder ids, from list_workspaces: a folder with its subfolders.'
+  ),
+  mine: z
+    .boolean()
+    .optional()
+    .describe('true: only the mailings the user created.'),
+  author: z
+    .string()
+    .max(MAX_NAME_LENGTH)
+    .optional()
+    .describe("A part of the author's name."),
+  createdAfter: dateFilter('Created on or after this date.'),
+  createdBefore: dateFilter('Created before this instant, excluded.'),
+  updatedAfter: dateFilter('Updated on or after this date.'),
+  updatedBefore: dateFilter('Updated before this instant, excluded.'),
+  page: z
+    .number()
+    .int()
+    .min(1)
+    .max(MAX_PAGE)
+    .optional()
+    .describe('The page to read, from 1. Default: 1.'),
+  pageSize: z
+    .number()
+    .int()
+    .min(1)
+    .optional()
+    .describe(
+      `Mailings per page, ${MAX_PAGE_SIZE} at most. Default: ${DEFAULT_PAGE_SIZE}.`
+    ),
+});
+const LIST_OUTPUT = z.object({
+  mailings: z.array(MAILING),
+  total: z.number(),
+  page: z.number(),
+  pageSize: z.number(),
+  totalPages: z.number(),
+});
+
+function registerListMailings(server) {
+  server.registerTool(
+    'list_mailings',
+    {
+      title: 'List the mailings',
+      description:
+        "Lists the mailings the user may read in LePatron, in the company of this connection, the most recently updated first, a page at a time. Filters: a part of the name, tags, creation and update dates, workspaces and folders (a folder with its subfolders; list_workspaces gives their ids), the user's own mailings (mine) or a part of the author's name. Names match whatever their case and accents. A mailing with no folder sits at the root of its workspace. Each one comes with its status, derived from its facts, the first that applies: pushed-to-esp (a campaign or template was created in an ESP; it says nothing of sending), scheduled (approved, with a planned send date, whichever day it is), approved (with no planned send date), or draft (not approved, even with a planned send date). approved and plannedSendDate (a day, YYYY-MM-DD) give the detail. LePatron never knows whether a mailing was sent. Read a mailing, its text or its HTML, with get_mailing.",
+      inputSchema: LIST_INPUT,
+      outputSchema: LIST_OUTPUT,
+      annotations: READ_ONLY,
+    },
+    withIdentity(listMailings)
+  );
+}
+
+const FOLDER = REFERENCE.extend({ subfolders: z.array(REFERENCE) });
+const WORKSPACE = REFERENCE.extend({ folders: z.array(FOLDER) });
+const WORKSPACES_INPUT = z.object({});
+const WORKSPACES_OUTPUT = z.object({ workspaces: z.array(WORKSPACE) });
+
+function registerListWorkspaces(server) {
+  server.registerTool(
+    'list_workspaces',
+    {
+      title: 'List the workspaces',
+      description:
+        'Lists the workspaces the user may read in LePatron, in the company of this connection, each with its folders and their subfolders: where mailings are filed. Give their ids to list_mailings to look in some of them only.',
+      inputSchema: WORKSPACES_INPUT,
+      outputSchema: WORKSPACES_OUTPUT,
+      annotations: READ_ONLY,
+    },
+    withIdentity(async ({ user }) => {
+      const answer = { workspaces: await accessibleLocations(user) };
+      return {
+        content: [{ type: 'text', text: JSON.stringify(answer) }],
+        structuredContent: answer,
+      };
+    })
+  );
+}
+
+module.exports = {
+  registerListMailings,
+  registerListWorkspaces,
+  asItem,
+  MAILING,
+  uriOf,
+  MAILING_KIND,
+  bareMailingId,
+};

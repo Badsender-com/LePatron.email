@@ -13,7 +13,11 @@ const {
   EmailsGroups,
   AISkillInvocations,
   AIPlaygroundScenarios,
+  McpFeedbacks,
+  McpRetexes,
 } = require('../common/models.common.js');
+const { revokeConnections } = require('../mcp/mcp-connections.js');
+const { forgetCompanyClients } = require('../mcp/mcp-clients.js');
 const Roles = require('../account/roles');
 const permissions = require('../account/permissions.js');
 
@@ -181,6 +185,19 @@ async function deleteGroup(groupId) {
       { groupContext: mongoose.Types.ObjectId(groupId) },
       { $set: { groupContext: null } }
     ),
+    revokeConnections({ _company: mongoose.Types.ObjectId(groupId) }),
+    // What its users wrote from their connected applications: the feedbacks,
+    // and the retex, open ones included (ADR 0012, ADR 0021).
+    McpFeedbacks.deleteMany({ _company: mongoose.Types.ObjectId(groupId) }),
+    McpRetexes.deleteMany({ _company: mongoose.Types.ObjectId(groupId) }),
+    // A consultant's retex written for it belongs to the platform company:
+    // it stays, without the name of the company it was written for.
+    McpRetexes.updateMany(
+      { _connectedCompany: mongoose.Types.ObjectId(groupId) },
+      { $set: { _connectedCompany: null } }
+    ),
+    // And the MCP clients it registered, with their secrets (ADR 0012).
+    forgetCompanyClients(mongoose.Types.ObjectId(groupId)),
     Groups.deleteOne({
       _id: mongoose.Types.ObjectId(groupId),
     }),

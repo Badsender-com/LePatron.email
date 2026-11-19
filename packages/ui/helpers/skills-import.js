@@ -1,0 +1,60 @@
+// The rules of the import modal of the skills export (ADR 0018), apart from
+// the modal so they are tested on their own.
+
+const IMPORTABLE = ['new', 'update'];
+
+// One key per item of the file: an expertise and a skill may share an id.
+export const keyOf = (item) => `${item.kind}:${item.id}`;
+
+// Only a new item or an update can be imported; an item up to date has
+// nothing to bring, a blocked one says why.
+export function isSelectable(item) {
+  return IMPORTABLE.includes(item.state);
+}
+
+// Checked at first: everything that can be imported.
+export function defaultSelection(items) {
+  return items.filter(isSelectable).map(keyOf);
+}
+
+// What a warning of the preview fills its words with: the expertises it
+// names, or the nature the imported version brings, in words (`t`).
+export function warningValues(warning, t) {
+  return {
+    ids: (warning.expertiseIds || []).join(', '),
+    nature: warning.nature ? t(`aiSkills.natures.${warning.nature}`) : '',
+  };
+}
+
+// The selection, as the import route takes it.
+export function importPayload(keys) {
+  const idsOf = (kind) =>
+    keys
+      .filter((key) => key.startsWith(`${kind}:`))
+      .map((key) => key.slice(kind.length + 1));
+  return { expertiseIds: idsOf('expertise'), skillIds: idsOf('skill') };
+}
+
+// How many items each outcome of the import holds.
+export function reportCounts(report) {
+  return ['created', 'updated', 'skipped', 'failed'].reduce(
+    (counts, outcome) => ({
+      ...counts,
+      [outcome]: (report[outcome] || []).length,
+    }),
+    {}
+  );
+}
+
+// The drafts the import wrote, each linked to its page in the back office,
+// where a person publishes it, with what to know before publishing it.
+export function draftLinks(report) {
+  return [...(report.created || []), ...(report.updated || [])].map(
+    ({ kind, id, version, warnings }) => ({
+      id,
+      version,
+      to: kind === 'skill' ? `/ai-skills/${id}` : `/ai-expertise/${id}`,
+      warnings: warnings || [],
+    })
+  );
+}

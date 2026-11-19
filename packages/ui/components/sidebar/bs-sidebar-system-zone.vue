@@ -21,14 +21,16 @@
 </template>
 
 <script>
-import { Settings, HelpCircle, LogOut } from 'lucide-vue';
+import { Settings, Plug, HelpCircle, LogOut } from 'lucide-vue';
 import { mapGetters } from 'vuex';
 import { SYSTEM_ITEMS } from './sidebar-config.js';
-import { CAN, GROUP, SELECTED_GROUP, USER } from '~/store/user';
+import { CAN, GROUP, MODULES_GROUP, SELECTED_GROUP, USER } from '~/store/user';
+import { canConnectApplications } from '~/helpers/module-activation.js';
 import { CAPABILITIES } from '../../../shared/access/roles.js';
 
 const ICON_MAP = {
   Settings,
+  Plug,
   HelpCircle,
   LogOut,
 };
@@ -37,6 +39,7 @@ export default {
   name: 'BsSidebarSystemZone',
   components: {
     Settings,
+    Plug,
     HelpCircle,
     LogOut,
   },
@@ -50,6 +53,7 @@ export default {
     ...mapGetters(USER, {
       userGroup: GROUP,
       selectedGroup: SELECTED_GROUP,
+      modulesGroup: MODULES_GROUP,
       can: CAN,
     }),
 
@@ -62,7 +66,17 @@ export default {
         if (item.id === 'settings') {
           return canAccessSettings;
         }
-        // All other items (help, logout) are for everyone
+        // The AI assistants connected to LePatron, where the group has the
+        // MCP module and allows them (ADR 0017). Whoever manages the platform
+        // always has the page: it lists their connections in every company,
+        // which they revoke from it whatever the selected company has.
+        if (item.id === 'connectedApplications') {
+          return (
+            this.can(CAPABILITIES.PLATFORM_MANAGE) ||
+            canConnectApplications(this.modulesGroup)
+          );
+        }
+        // The others (help, logout) are for everyone
         return true;
       });
     },
@@ -88,6 +102,7 @@ export default {
           this.$route.path.includes('/settings')
         );
       }
+      if (item.route) return this.$route.path.startsWith(item.route);
       return false;
     },
 

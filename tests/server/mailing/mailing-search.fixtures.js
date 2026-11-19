@@ -195,6 +195,7 @@ const docNamed = (result, name) =>
   result.items.docs.find((doc) => doc.name === name);
 
 module.exports = {
+  MAILINGS,
   CLIENT_GROUP,
   OTHER_GROUP,
   NEWSLETTERS,

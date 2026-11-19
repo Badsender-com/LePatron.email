@@ -1,0 +1,226 @@
+'use strict';
+
+const {
+  createMcpHandler,
+  ProtocolError,
+} = require('@modelcontextprotocol/server');
+const { toNodeHandler } = require('@modelcontextprotocol/node');
+const logger = require('../utils/logger.js');
+const { createRateLimiter, clientIp } = require('../utils/rate-limit.js');
+const { createMcpServer } = require('./mcp-server.js');
+const { resolveIdentity, READ_SCOPE } = require('./mcp-identity.js');
+const { createAuthorizationServer, identityOf } = require('./mcp-oauth.js');
+const { McpOAuthAdapter } = require('./mcp-oauth-adapter.js');
+const { createInteractionsRouter } = require('./mcp-oauth-interactions.js');
+const { isClientAllowed } = require('./mcp-clients.js');
+const { useConnection } = require('./mcp-connections.js');
+
+const MINUTE = 60 * 1000;
+const HOUR = 60 * MINUTE;
+const limit = (windowMs, max) =>
+  createRateLimiter({ windowMs, max, keyOf: clientIp });
+
+const RESOURCE_PATH = '/mcp';
+const ISSUER_PATH = '/oauth';
+
+// A refusal before any MCP exchange answers with an HTTP status and the
+// OAuth error body (RFC 6750): its error code, when there is one, and why.
+// Clients act on the status and the challenge. Never a JSON-RPC error:
+// -32001 is the SDK's "Session not found", not a refusal.
+function refuse(res, status, error, description, headers = {}) {
+  res.set(headers);
+  res
+    .status(status)
+    .json({ ...(error && { error }), error_description: description });
+}
+
+// The bearer token an Authorization header carries, valid or not, whatever
+// the case of its scheme (RFC 7235, section 2.1); null when it carries none.
+// Only a request that sent one is refused with an error code (RFC 6750,
+// section 3.1).
+function bearerTokenOf(header) {
+  const [, token = null] =
+    /^Bearer\s+(\S+)\s*$/i.exec(String(header || '')) || [];
+  return token;
+}
+
+/**
+ * The identity a bearer token carries, when it is an access token LePatron
+ * issued for the MCP endpoint and still valid.
+ */
+async function authInfoOf(provider, value, resource) {
+  if (!value) return null;
+  const token = await provider.AccessToken.find(value);
+  if (!token || token.isExpired || token.aud !== resource) return null;
+  const identity = identityOf(token.accountId);
+  // Its client still serves its company, and its connection still stands
+  // (revoked by its user or the group's admin: refused at once). Read at
+  // once: deleting a client revokes its connections anyway.
+  const [clientAllowed, connectionStands] = await Promise.all([
+    isClientAllowed(token.clientId, identity.groupId),
+    useConnection(token.grantId),
+  ]);
+  if (!clientAllowed || !connectionStands) return null;
+  return {
+    token: value,
+    clientId: token.clientId,
+    scopes: String(token.scope || '')
+      .split(' ')
+      .filter(Boolean),
+    expiresAt: token.exp,
+    resource: new URL(resource),
+    // The grant's connection keeps the drafts mode (#1385).
+    extra: { ...identity, grantId: token.grantId },
+  };
+}
+
+/**
+ * Mounts the MCP endpoint and LePatron's authorization server on the app
+ * (ADR 0012): the metadata a connected application discovers them by
+ * (RFC 9728, RFC 8414), the authorization server under `/oauth`, the consent
+ * API the consent page reads (`/oauth/consent/:uid/…`), and `/mcp`, which
+ * takes only the access tokens issued for it. The consent page itself,
+ * `/oauth/consent/:uid`, is the UI's. The clients a company registers by
+ * hand and the connected applications are the app's API routes
+ * (`mcp-client.routes.js`, `connected-application.routes.js`).
+ *
+ * Mount after the session and passport: the consent API reads the app's user.
+ *
+ * @param {import('express').Application} app
+ * @param {Object} options
+ * @param {string} options.origin the site's public origin
+ * @param {string[]} options.cookieKeys
+ * @param {Function} [options.adapter] the storage of the authorization
+ *   server: McpOAuthAdapter, or what builds one by model
+ * @param {Object} [options.jwks]
+ * @param {Function} [options.fetch]
+ * @returns {import('oidc-provider').default} the authorization server
+ */
+function mountMcp(
+  app,
+  { origin, adapter = McpOAuthAdapter, ...providerOptions }
+) {
+  const resource = `${origin}${RESOURCE_PATH}`;
+  const issuer = `${origin}${ISSUER_PATH}`;
+  const resourceMetadataUrl = `${origin}/.well-known/oauth-protected-resource${RESOURCE_PATH}`;
+  const provider = createAuthorizationServer({
+    issuer,
+    resource,
+    adapter,
+    ...providerOptions,
+  });
+  // What checks a client registered by hand (mcp-client.controller.js).
+  app.locals.mcpAuthorizationServer = provider;
+  // The provider builds the URLs it publishes from the request: it is handed
+  // the site's public origin, never what a Host header claims.
+  provider.proxy = true;
+  const publicOrigin = new URL(origin);
+  const callback = provider.callback();
+  const providerCallback = (req, res) => {
+    req.headers['x-forwarded-proto'] = publicOrigin.protocol.slice(0, -1);
+    req.headers['x-forwarded-host'] = publicOrigin.host;
+    return callback(req, res);
+  };
+
+  app.get(`/.well-known/oauth-protected-resource${RESOURCE_PATH}`, (req, res) =>
+    res.json({
+      resource,
+      authorization_servers: [issuer],
+      scopes_supported: [READ_SCOPE],
+      bearer_methods_supported: ['header'],
+      resource_name: 'LePatron',
+    })
+  );
+
+  // RFC 8414 puts the issuer's path after the well-known segment; the
+  // provider answers its own discovery document.
+  app.get(
+    `/.well-known/oauth-authorization-server${ISSUER_PATH}`,
+    (req, res) => {
+      req.url = '/.well-known/openid-configuration';
+      req.originalUrl = `${ISSUER_PATH}${req.url}`;
+      providerCallback(req, res);
+    }
+  );
+
+  // Nothing under /oauth is framed by another site, the consent page
+  // included: a click on Allow is the user's own, whatever cookies a browser
+  // sends to a frame.
+  app.use(ISSUER_PATH, (req, res, next) => {
+    res.set('Content-Security-Policy', "frame-ancestors 'none'");
+    res.set('X-Frame-Options', 'DENY');
+    next();
+  });
+
+  // Per address. The token and registration endpoints are called by the
+  // assistants' servers, which many users share: generous, against floods.
+  // The authorization endpoint fetches the metadata document a client names.
+  app.use(`${ISSUER_PATH}/auth`, limit(MINUTE, 60));
+  app.use(`${ISSUER_PATH}/consent`, limit(MINUTE, 120));
+  app.use(`${ISSUER_PATH}/token`, limit(MINUTE, 600));
+  app.use(`${ISSUER_PATH}/reg`, limit(HOUR, 100));
+
+  // Under the consent page's path, where the provider's interaction cookie
+  // is sent (see mcp-oauth-interactions.js).
+  app.use(
+    `${ISSUER_PATH}/consent`,
+    createInteractionsRouter(provider, resource)
+  );
+
+  // Everything else under /oauth is the provider's; the consent page itself
+  // is the UI's. Express hands the provider the path without the mount point,
+  // as it expects.
+  app.use(ISSUER_PATH, (req, res, next) =>
+    req.path.startsWith('/consent/') ? next() : providerCallback(req, res)
+  );
+
+  const mcpHandler = toNodeHandler(
+    createMcpHandler(({ authInfo }) => createMcpServer({ authInfo }), {
+      onerror: (error) => logger.error('[mcp]', error.message),
+    })
+  );
+  const discovery = `resource_metadata="${resourceMetadataUrl}", scope="${READ_SCOPE}"`;
+  const challengeOf = (tokenSent) => ({
+    'WWW-Authenticate': tokenSent
+      ? `Bearer error="invalid_token", ${discovery}`
+      : `Bearer ${discovery}`,
+  });
+
+  app.all(RESOURCE_PATH, async (req, res, next) => {
+    try {
+      const bearerToken = bearerTokenOf(req.headers.authorization);
+      const authInfo = await authInfoOf(provider, bearerToken, resource);
+      if (!authInfo) {
+        const tokenSent = Boolean(bearerToken);
+        return refuse(
+          res,
+          401,
+          tokenSent ? 'invalid_token' : null,
+          'A valid access token is required.',
+          challengeOf(tokenSent)
+        );
+      }
+      // What the token said at consent may no longer hold: say so before any
+      // MCP exchange, with the HTTP status a client acts on. Not
+      // insufficient_scope, which would send the client back to consent. The
+      // call reads who calls from here (`identify`).
+      let identity;
+      try {
+        identity = await resolveIdentity(authInfo);
+      } catch (refusal) {
+        // A refusal says why; anything else is a failure of the server,
+        // which the error handler logs and answers without its message.
+        if (!(refusal instanceof ProtocolError)) throw refusal;
+        return refuse(res, 403, 'access_denied', refusal.message);
+      }
+      req.auth = { ...authInfo, identity };
+      return mcpHandler(req, res, req.body);
+    } catch (err) {
+      return next(err);
+    }
+  });
+
+  return provider;
+}
+
+module.exports = { mountMcp };

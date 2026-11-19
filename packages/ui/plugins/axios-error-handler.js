@@ -8,6 +8,18 @@
 // CRITICAL: Must be module-level, not component-level, to persist across error handler invocations
 let isRedirecting = false;
 
+// Whether a request goes to the consent API, under the consent page's path.
+function isConsentRequest(url) {
+  if (typeof window === 'undefined') return false;
+  try {
+    return new URL(url, window.location.origin).pathname.startsWith(
+      '/oauth/consent/'
+    );
+  } catch {
+    return false;
+  }
+}
+
 export default function ({ $axios }) {
   $axios.onError((error) => {
     const code = parseInt(error.response && error.response.status);
@@ -16,6 +28,10 @@ export default function ({ $axios }) {
     // login page's to show: the member is not signed in yet.
     const url = (error.config && error.config.url) || '';
     if (url.startsWith('/account/login')) return;
+    // So is a refusal of the consent of a connected application (ADR 0012):
+    // its page says why, and still lets the user decline. Its URLs are
+    // absolute (helpers/api-routes.js).
+    if (isConsentRequest(url)) return;
 
     // Handle 401 Unauthorized errors
     if (code === 401) {

@@ -1,5 +1,12 @@
 'use strict';
 
+// The model is a mock: the tests of the assistant's drafts check the
+// conditions each write sends (`$size`, `$elemMatch` on the update date), not
+// what MongoDB does with them. What those conditions do with two proposals at
+// once is tested on the fake models, which match an `$elemMatch` element by
+// element and replace the element a positional `$set` names
+// (tests/server/mcp/mcp.authoring.test.js, "changes proposed at once").
+
 jest.mock('../../../../packages/server/common/models.common.js', () => ({
   LePatronSkills: {},
   Expertises: {},
@@ -222,6 +229,237 @@ describe.each(ENTITIES)('versioned lifecycle — $label', (entity) => {
     });
   });
 
+  // The assistant's way to a draft (ADR 0014): one draft open at a time.
+  describe('openOrStartDraft', () => {
+    const active = () => makeVersion({ versionMajor: 2, versionMinor: 0 });
+
+    it('starts a minor draft on the condition that the versions did not change', async () => {
+      build({ versions: [active()], activeVersion: { major: 2, minor: 0 } });
+      model.findOneAndUpdate = jest.fn(async (_filter, { $push }) => ({
+        ...doc,
+        versions: [...doc.versions, $push.versions],
+      }));
+
+      const { version } = await service.openOrStartDraft('an-id', {
+        userId: USER_ID,
+      });
+
+      expect(version).toMatchObject({ versionMajor: 2, versionMinor: 1 });
+      expect(model.findOneAndUpdate).toHaveBeenCalledWith(
+        {
+          [entity.idField]: 'an-id',
+          status: { $ne: 'ARCHIVED' },
+          versions: { $size: 1 },
+        },
+        { $push: { versions: expect.objectContaining({ status: 'DRAFT' }) } },
+        { new: true }
+      );
+    });
+
+    it('writes nothing when a draft is open', async () => {
+      build({
+        versions: [active(), makeVersion({ versionMinor: 1, status: 'DRAFT' })],
+        activeVersion: { major: 2, minor: 0 },
+      });
+      doc.versions[1].versionMajor = 2;
+      model.findOneAndUpdate = jest.fn();
+
+      const { version } = await service.openOrStartDraft('an-id');
+
+      expect(version).toMatchObject({ versionMajor: 2, versionMinor: 1 });
+      expect(model.findOneAndUpdate).not.toHaveBeenCalled();
+    });
+
+    it('refuses when the document changed and leaves no draft to write', async () => {
+      build({ versions: [active()], activeVersion: { major: 2, minor: 0 } });
+      model.findOneAndUpdate = jest.fn().mockResolvedValue(null);
+
+      await expect(service.openOrStartDraft('an-id')).rejects.toMatchObject({
+        status: 409,
+      });
+      expect(model.findOne).toHaveBeenCalledTimes(2);
+    });
+  });
+
+  // An assistant's change is written on the condition that the draft it read
+  // was not written since: its update date.
+  describe('writeDraftIfUnchanged', () => {
+    const READ_AT = new Date('2026-11-01T10:00:00Z');
+    const readDraft = () =>
+      makeVersion({ versionMinor: 1, status: 'DRAFT', updatedAt: READ_AT });
+
+    beforeEach(() => {
+      build({ versions: [makeVersion(), readDraft()] });
+      doc.validate = jest.fn().mockResolvedValue(undefined);
+    });
+
+    it('validates, then writes the draft only if its update date is the one read', async () => {
+      model.findOneAndUpdate = jest.fn().mockResolvedValue(doc);
+      const [, version] = doc.versions;
+
+      await service.writeDraftIfUnchanged(
+        doc,
+        version,
+        { changelog: 'Shorter' },
+        USER_ID
+      );
+
+      expect(doc.validate).toHaveBeenCalled();
+      const [filter, update] = model.findOneAndUpdate.mock.calls[0];
+      expect(filter.status).toEqual({ $ne: 'ARCHIVED' });
+      expect(filter.versions.$elemMatch).toEqual({
+        versionMajor: 1,
+        versionMinor: 1,
+        status: 'DRAFT',
+        // A draft stored before it had an update date has none.
+        updatedAt: { $in: [READ_AT, null] },
+      });
+      expect(update.$set['versions.$']).toMatchObject({ changelog: 'Shorter' });
+      expect(update.$set['versions.$'].updatedAt.getTime()).toBeGreaterThan(
+        READ_AT.getTime()
+      );
+    });
+
+    // The schema fills in the update date of a version stored without one:
+    // the condition takes it as none, so such a draft can be written.
+    it('writes a draft stored without an update date', async () => {
+      const legacy = doc.versions[1];
+      legacy.$isDefault = (field) => field === 'updatedAt';
+      model.findOneAndUpdate = jest.fn().mockResolvedValue(doc);
+
+      await service.writeDraftIfUnchanged(doc, legacy, {}, USER_ID);
+
+      const [filter] = model.findOneAndUpdate.mock.calls[0];
+      expect(filter.versions.$elemMatch.updatedAt).toEqual({
+        $in: [null, null],
+      });
+    });
+
+    it('refuses when the draft changed since it was read', async () => {
+      model.findOneAndUpdate = jest.fn().mockResolvedValue(null);
+
+      await expect(
+        service.writeDraftIfUnchanged(doc, doc.versions[1], {}, USER_ID)
+      ).rejects.toMatchObject({
+        status: 409,
+        message: expect.stringMatching(/changed since it was read/),
+      });
+    });
+
+    it('writes nothing the schema refuses', async () => {
+      model.findOneAndUpdate = jest.fn();
+      doc.validate.mockRejectedValue(
+        Object.assign(new Error('bad section'), { status: 400 })
+      );
+
+      await expect(
+        service.writeDraftIfUnchanged(doc, doc.versions[1], {}, USER_ID)
+      ).rejects.toMatchObject({ status: 400 });
+      expect(model.findOneAndUpdate).not.toHaveBeenCalled();
+    });
+  });
+
+  // A person's save and publication are conditioned on the draft their
+  // screen read, as the assistant's writes are (ADR 0014).
+  describe('a person writing a draft an assistant may have written', () => {
+    const READ_AT = new Date('2026-11-01T10:00:00Z');
+    const draftOf = () =>
+      makeVersion({ versionMinor: 1, status: 'DRAFT', updatedAt: READ_AT });
+    let conditions;
+
+    beforeEach(() => {
+      build({ versions: [makeVersion(), draftOf()] });
+      conditions = [];
+      doc.save = jest.fn(async function save() {
+        conditions.push(this.$where);
+        return this;
+      });
+    });
+
+    it.each([
+      ['the same update date', READ_AT.toISOString()],
+      ['none, from an older client', undefined],
+    ])('saves a draft when the request sends %s', async (_case, updatedAt) => {
+      await service.updateVersion(
+        'an-id',
+        { major: 1, minor: 1 },
+        { changelog: 'By a person', updatedAt },
+        USER_ID
+      );
+
+      expect(doc.versions[1].changelog).toBe('By a person');
+      expect(conditions[0].versions.$elemMatch).toMatchObject({
+        versionMinor: 1,
+        status: 'DRAFT',
+        updatedAt: { $in: [READ_AT, null] },
+      });
+    });
+
+    it('refuses a save when the draft was written since the screen read it', async () => {
+      await expect(
+        service.updateVersion(
+          'an-id',
+          { major: 1, minor: 1 },
+          { changelog: 'By a person', updatedAt: '2026-10-01T00:00:00Z' },
+          USER_ID
+        )
+      ).rejects.toMatchObject({
+        status: 409,
+        message: 'SKILL_VERSION_CHANGED',
+      });
+      expect(doc.save).not.toHaveBeenCalled();
+    });
+
+    // What Mongoose throws when a save's condition matches nothing, by what
+    // the save changed (a VersionError once an array changed, as on MongoDB).
+    it.each(['DocumentNotFoundError', 'VersionError'])(
+      'refuses a save when the draft is written between its read and its save (%s)',
+      async (name) => {
+        doc.save = jest
+          .fn()
+          .mockRejectedValue(
+            Object.assign(new Error('No matching document found'), { name })
+          );
+
+        await expect(
+          service.updateVersion('an-id', { major: 1, minor: 1 }, {}, USER_ID)
+        ).rejects.toMatchObject({
+          status: 409,
+          message: 'SKILL_VERSION_CHANGED',
+        });
+      }
+    );
+
+    it('refuses to publish a draft written since the screen read it', async () => {
+      await expect(
+        service.activateVersion(
+          'an-id',
+          { major: 1, minor: 1 },
+          { updatedAt: '2026-10-01T00:00:00Z' },
+          USER_ID
+        )
+      ).rejects.toMatchObject({
+        status: 409,
+        message: 'SKILL_VERSION_CHANGED',
+      });
+      expect(doc.versions[1].status).toBe('DRAFT');
+    });
+
+    it('publishes on the condition that the draft is as read', async () => {
+      await service.activateVersion(
+        'an-id',
+        { major: 1, minor: 1 },
+        { updatedAt: READ_AT.toISOString() },
+        USER_ID
+      );
+
+      expect(doc.versions[1].status).toBe('ACTIVE');
+      expect(conditions[0].versions.$elemMatch.updatedAt).toEqual({
+        $in: [READ_AT, null],
+      });
+    });
+  });
+
   describe('updateVersion', () => {
     it('patches content fields plus the release notes', async () => {
       build({ versions: [makeVersion({ status: 'DRAFT' })] });
@@ -374,7 +612,7 @@ describe.each(ENTITIES)('versioned lifecycle — $label', (entity) => {
       await expect(
         service.activateVersion('an-id', { major: 1, minor: 0 }, notes, USER_ID)
       ).rejects.toThrow('refused by the gate');
-      expect(gate).toHaveBeenCalledWith(doc.versions[0]);
+      expect(gate).toHaveBeenCalledWith(doc.versions[0], doc);
       expect(doc.versions[0].status).toBe('DRAFT');
       expect(doc.save).not.toHaveBeenCalled();
     });

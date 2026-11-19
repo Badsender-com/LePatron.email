@@ -6,6 +6,7 @@
 
 const { createListingStore } = require('./fake-listing-models.js');
 const { matches, sortedBy, projected } = require('./fake-mongo-query.js');
+const { aggregated } = require('./fake-mongo-aggregate.js');
 
 const GROUP = '507f1f77bcf86cd799439b01';
 const WORKSPACE = '507f1f77bcf86cd799439d01';
@@ -86,10 +87,28 @@ describe('fake listing models, filters as MongoDB reads them', () => {
     expect(matches({ tags: ['a', 'b'] }, { tags: ['b', 'a'] })).toBe(false);
   });
 
+  it('matches $size on the length of an array, and never on a missing field', () => {
+    expect(matches({ tags: [] }, { tags: { $size: 0 } })).toBe(true);
+    expect(matches({ tags: ['a'] }, { tags: { $size: 0 } })).toBe(false);
+    expect(matches({}, { tags: { $size: 0 } })).toBe(false);
+  });
+
+  it('reads a dotted path into an embedded document, and through an array', () => {
+    const skill = {
+      activeVersion: { major: 2 },
+      versions: [{ status: 'ARCHIVED' }, { status: 'ACTIVE' }],
+    };
+
+    expect(matches(skill, { 'activeVersion.major': 2 })).toBe(true);
+    expect(matches(skill, { 'versions.status': 'ACTIVE' })).toBe(true);
+    expect(matches(skill, { 'versions.status': 'DRAFT' })).toBe(false);
+    expect(matches(skill, { 'owner.name': { $exists: false } })).toBe(true);
+  });
+
   it.each([
     ['an unknown operator', { $text: { $search: 'spring' } }],
-    ['an unknown field operator', { name: { $elemMatch: {} } }],
-    ['a dotted path', { 'location.workspace': WORKSPACE }],
+    ['an unknown field operator', { name: { $all: ['Spring'] } }],
+    ['a positional path', { 'versions.0.status': 'ACTIVE' }],
     ['an embedded document', { location: { workspace: WORKSPACE } }],
   ])('throws on %s rather than match nothing', (_, filter) => {
     expect(() => matches({ name: 'Spring' }, filter)).toThrow(
@@ -118,5 +137,147 @@ describe('fake listing models, sort and projection', () => {
       _id: 'x',
       name: 'A',
     });
+  });
+});
+
+describe('fake listing models, dotted projections and aggregations', () => {
+  const skill = {
+    _id: 'x',
+    title: 'A',
+    activeVersion: { major: 2, minor: 0 },
+    versions: [
+      { versionMajor: 1, status: 'ARCHIVED', body: 'old', testCases: [1] },
+      { versionMajor: 2, status: 'ACTIVE', body: 'new', testCases: [2] },
+    ],
+  };
+
+  it('keeps or drops a dotted path, in every element of an array', () => {
+    expect(projected(skill, { 'versions.status': 1 })).toEqual({
+      _id: 'x',
+      versions: [{ status: 'ARCHIVED' }, { status: 'ACTIVE' }],
+    });
+    expect(
+      projected(skill, { 'versions.testCases': 0 }).versions.map(Object.keys)
+    ).toEqual([
+      ['versionMajor', 'status', 'body'],
+      ['versionMajor', 'status', 'body'],
+    ]);
+    expect(skill.versions[0].testCases).toEqual([1]);
+  });
+
+  it('keeps the first element that matches an $elemMatch, or no field', () => {
+    expect(
+      projected(skill, {
+        title: 1,
+        versions: { $elemMatch: { status: 'ACTIVE' } },
+      })
+    ).toEqual({ _id: 'x', title: 'A', versions: [skill.versions[1]] });
+    expect(
+      projected(skill, { versions: { $elemMatch: { status: 'DRAFT' } } })
+    ).toEqual({ _id: 'x' });
+  });
+
+  it('unwinds an array, then matches and projects each element', () => {
+    const answer = aggregated(
+      [skill, { _id: 'y', versions: [] }],
+      [
+        { $match: { title: 'A' } },
+        { $unwind: '$versions' },
+        { $match: { 'versions.status': 'ACTIVE' } },
+        { $project: { title: 1, 'versions.body': 1 } },
+      ]
+    );
+
+    expect(answer).toEqual([
+      { _id: 'x', title: 'A', versions: { body: 'new' } },
+    ]);
+  });
+
+  // Mongoose casts a find's filter, never an aggregation's: MongoDB compares
+  // the string with the ObjectId stored, and finds nothing.
+  it('finds no id by a string in an aggregation, as a find does', () => {
+    const id = { _bsontype: 'ObjectID', toString: () => 'abc' };
+    const stored = [{ ...skill, _id: id, _company: id }];
+
+    expect(aggregated([skill], [{ $match: { _id: 'x' } }])).toEqual([]);
+    expect(aggregated([skill], [{ $match: { _id: { $in: ['x'] } } }])).toEqual(
+      []
+    );
+    expect(aggregated(stored, [{ $match: { _company: 'abc' } }])).toEqual([]);
+    expect(matches(skill, { _id: 'x' })).toBe(true);
+    expect(matches(stored[0], { _company: 'abc' })).toBe(true);
+  });
+
+  it('groups by a field, with the first of each group and a sum', () => {
+    const comments = [
+      { _mailing: 'm1', decision: 'approved', score: 2 },
+      { _mailing: 'm2', decision: null, score: 'n/a' },
+      { _mailing: 'm1', decision: null, score: 3 },
+      { decision: 'approved' },
+    ];
+
+    expect(
+      aggregated(comments, [
+        {
+          $group: {
+            _id: '$_mailing',
+            decision: { $first: '$decision' },
+            count: { $sum: 1 },
+            score: { $sum: '$score' },
+          },
+        },
+      ])
+    ).toEqual([
+      { _id: 'm1', decision: 'approved', count: 2, score: 5 },
+      { _id: 'm2', decision: null, count: 1, score: 0 },
+      { _id: null, decision: 'approved', count: 1, score: 0 },
+    ]);
+  });
+
+  // `$strLenCP` counts code points, as MongoDB does, and fails on what is no
+  // string: a preview's length is read without the preview.
+  it('measures a string in code points, and nothing else', () => {
+    const records = [
+      { _id: 'a', html: 'é😀<p>' },
+      { _id: 'b' },
+      { _id: 'c', html: null },
+    ];
+    const length = { $strLenCP: { $ifNull: ['$html', ''] } };
+
+    expect(aggregated(records, [{ $project: { length } }])).toEqual([
+      { _id: 'a', length: 5 },
+      { _id: 'b', length: 0 },
+      { _id: 'c', length: 0 },
+    ]);
+    expect(
+      aggregated(records, [{ $project: { _id: 0, length, title: 1 } }])
+    ).toEqual([{ length: 5 }, { length: 0 }, { length: 0 }]);
+  });
+
+  it.each([
+    ['a missing field', { _id: 'b' }, 'missing'],
+    ['null', { _id: 'c', html: null }, 'null'],
+    ['a number', { _id: 'd', html: 42 }, 'int'],
+  ])('fails to measure %s, as MongoDB does', (_, record, found) => {
+    expect(() =>
+      aggregated([record], [{ $project: { length: { $strLenCP: '$html' } } }])
+    ).toThrow(`$strLenCP requires a string argument, found: ${found}`);
+  });
+
+  it.each([
+    ['an unknown stage', [{ $lookup: {} }]],
+    ['an unknown operator', [{ $project: { n: { $size: '$versions' } } }]],
+    ['the unwind of a dotted path', [{ $unwind: '$a.b' }]],
+    ['a group by an expression', [{ $group: { _id: { a: '$a' } } }]],
+    [
+      'an unknown accumulator',
+      [{ $group: { _id: '$a', all: { $push: '$b' } } }],
+    ],
+    [
+      'an $elemMatch in a $project',
+      [{ $project: { versions: { $elemMatch: { status: 'ACTIVE' } } } }],
+    ],
+  ])('throws on %s', (_, pipeline) => {
+    expect(() => aggregated([skill], pipeline)).toThrow('is not supported');
   });
 });

@@ -120,6 +120,13 @@ export default {
           width: '60px',
         },
         {
+          text: this.$t('tableHeaders.groups.mcp'),
+          align: 'center',
+          value: 'enableMcpModule',
+          sortable: false,
+          width: '60px',
+        },
+        {
           text: this.$t('global.actions'),
           value: 'actions',
           align: 'right',
@@ -360,14 +367,20 @@ export default {
             />
           </template>
 
-          <template #item.enableCrmIntelligence="{ item }">
+          <!-- The modules sold to a company: opened, or not. -->
+          <template
+            v-for="flag in ['enableCrmIntelligence', 'enableMcpModule']"
+            #[`item.${flag}`]="{ item }"
+          >
             <lucide-check
-              v-if="item.enableCrmIntelligence"
+              v-if="item[flag]"
+              :key="flag"
               :size="16"
               class="accent--text"
             />
             <lucide-x-circle
               v-else
+              :key="flag"
               :size="16"
               class="error--text"
               style="opacity: 0.35"

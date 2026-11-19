@@ -64,7 +64,7 @@ Conséquences :
 
 ## Chargement des expertises (`findApplicable`)
 
-`expertiseRepo.findApplicable({ scope, categories, emailType?, language? })`
+`expertiseRepo.findApplicable({ scope, categories, emailType?, language?, groupId? })`
 exige **scope ET categories** — un appelant qui veut un mix large énumère
 explicitement. La lourdeur est volontaire : le mix d'expertise d'une feature
 est une décision qui doit être **visible en review de code**.
@@ -76,6 +76,10 @@ Une expertise matche si :
 - ET `expertise.category ∈ categories`
 - ET ( `appliesToEmailTypes` vide OU `emailType ∈ appliesToEmailTypes` )
 - ET ( `appliesToLanguages` vide OU `language ∈ appliesToLanguages` )
+- ET son audience l'ouvre à l'entreprise de l'appelant (ADR 0013) : `groupId`
+  est l'id de l'entreprise, dont `findApplicable` relit lui-même si c'est
+  l'entreprise plateforme ; sans `groupId`, l'appelant est traité comme une
+  entreprise cliente. Seul le playground passe `everyAudience: true`.
 
 ### Périmètres : normalisés des deux côtés, et un warning si ça ne matche pas
 

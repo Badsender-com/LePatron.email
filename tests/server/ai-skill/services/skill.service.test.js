@@ -62,6 +62,69 @@ describe('skill.service', () => {
       expect(result.page).toBe(2);
       expect(result.pageSize).toBe(10);
     });
+
+    // The export bar reads there what a selected task skill brings (ADR
+    // 0018), without reading each skill: the nature and the consumed
+    // expertises of the active version, and never the versions themselves.
+    it('gives the nature and consumed expertises of the active version', async () => {
+      LePatronSkills.find.mockReturnValue(
+        mockChainable([
+          {
+            skillId: 'task',
+            activeVersion: { major: 2, minor: 0 },
+            versions: [
+              {
+                versionMajor: 1,
+                versionMinor: 0,
+                nature: 'FEATURE',
+                consumedExpertiseIds: [],
+              },
+              {
+                versionMajor: 2,
+                versionMinor: 0,
+                nature: 'TASK',
+                consumedExpertiseIds: ['tone', 'brand'],
+              },
+              {
+                versionMajor: 2,
+                versionMinor: 1,
+                nature: 'TASK',
+                consumedExpertiseIds: ['draft-only'],
+              },
+            ],
+          },
+          {
+            skillId: 'draft',
+            activeVersion: { major: null, minor: 0 },
+            versions: [{ versionMajor: 1, versionMinor: 0, nature: 'TASK' }],
+          },
+        ])
+      );
+      LePatronSkills.countDocuments.mockResolvedValue(2);
+
+      const { items } = await skillService.listSkills();
+
+      const projection = LePatronSkills.find.mock.calls[0][1];
+      expect(projection).not.toHaveProperty('versions');
+      expect(projection).toMatchObject({
+        'versions.versionMajor': 1,
+        'versions.versionMinor': 1,
+        'versions.nature': 1,
+        'versions.consumedExpertiseIds': 1,
+      });
+      expect(items).toEqual([
+        {
+          skillId: 'task',
+          activeVersion: {
+            major: 2,
+            minor: 0,
+            nature: 'TASK',
+            consumedExpertiseIds: ['tone', 'brand'],
+          },
+        },
+        { skillId: 'draft', activeVersion: { major: null, minor: 0 } },
+      ]);
+    });
   });
 
   describe('createSkill', () => {
@@ -98,6 +161,53 @@ describe('skill.service', () => {
       expect(v.outputSchemaId).toBe('genericTextOutput');
     });
 
+    // Opening to every company is an act of its own (ADR 0013), never a
+    // field of the creation.
+    it('starts with the platform company, whatever the request says', async () => {
+      LePatronSkills.create.mockResolvedValue({ skillId: 'a' });
+      await skillService.createSkill(
+        {
+          skillId: 'redaction.cta',
+          title: 't',
+          category: 'redaction',
+          audience: 'all',
+        },
+        new Types.ObjectId()
+      );
+      expect(LePatronSkills.create.mock.calls[0][0].audience).toBe('platform');
+    });
+
+    it('writes the first version whole when given its content', async () => {
+      LePatronSkills.create.mockResolvedValue({ skillId: 'a' });
+      await skillService.createSkill(
+        { skillId: 'qc.report', title: 't', category: 'qc', nature: 'task' },
+        new Types.ObjectId(),
+        { nature: 'task', procedure: '1. Read', changelog: 'First draft' }
+      );
+      expect(LePatronSkills.create).toHaveBeenCalledTimes(1);
+      const [v] = LePatronSkills.create.mock.calls[0][0].versions;
+      expect(v).toMatchObject({
+        versionMajor: 1,
+        versionMinor: 0,
+        status: 'DRAFT',
+        nature: 'task',
+        procedure: '1. Read',
+        changelog: 'First draft',
+      });
+    });
+
+    // The back office sends the skill's fields only: a version's content is
+    // never taken from them.
+    it('takes no version content from the skill fields', async () => {
+      LePatronSkills.create.mockResolvedValue({ skillId: 'a' });
+      await skillService.createSkill(
+        { skillId: 'qc.report', title: 't', category: 'qc', nature: 'task' },
+        new Types.ObjectId()
+      );
+      const [v] = LePatronSkills.create.mock.calls[0][0].versions;
+      expect(v.nature).toBe('feature');
+    });
+
     it('throws 409 on duplicate skillId', async () => {
       LePatronSkills.create.mockRejectedValue({ code: 11000 });
       await expect(
@@ -117,6 +227,18 @@ describe('skill.service', () => {
       });
       expect(doc.title).toBe('new');
       expect(doc.inputSchemaId).toBeUndefined();
+      expect(doc.save).toHaveBeenCalled();
+    });
+
+    // What the publication's confirmation sends to open a skill to every
+    // company (ADR 0013).
+    it('patches the audience', async () => {
+      const doc = mockSkillDoc({ audience: 'platform' });
+      LePatronSkills.findOne.mockResolvedValue(doc);
+
+      await skillService.updateSkill('generic.text', { audience: 'all' });
+
+      expect(doc.audience).toBe('all');
       expect(doc.save).toHaveBeenCalled();
     });
   });
@@ -384,6 +506,40 @@ describe('skill.service', () => {
         message: 'SKILL_SCHEMAS_REQUIRED_TO_PUBLISH',
       });
     });
+
+    // Production writes a feature skill before its code ships (ADR 0019):
+    // the draft is saved, its publication refused until the code holds the
+    // schema, whatever the skill's nature.
+    it.each([
+      ['feature', { inputSchemaId: 'notShippedYet' }],
+      ['feature', { outputSchemaId: 'notShippedYet' }],
+      ['task', { inputSchemaId: 'notShippedYet', procedure: '1. Read.' }],
+    ])(
+      'refuses to publish a %s version naming a schema the code lacks',
+      async (nature, fields) => {
+        const doc = mockSkillDoc({
+          versions: [
+            {
+              versionMajor: 1,
+              versionMinor: 1,
+              status: 'DRAFT',
+              nature,
+              ...SCHEMAS,
+              ...fields,
+            },
+          ],
+        });
+        LePatronSkills.findOne.mockResolvedValue(doc);
+        await expect(
+          skillService.activateVersion('a', { major: 1, minor: 1 }, {}, null)
+        ).rejects.toMatchObject({
+          status: 400,
+          message: 'SKILL_SCHEMA_NOT_IN_CODE',
+          schemaId: 'notShippedYet',
+        });
+        expect(doc.save).not.toHaveBeenCalled();
+      }
+    );
 
     it('requires changelog + releaseNotes for a major release', async () => {
       const doc = mockSkillDoc({

@@ -756,7 +756,7 @@ Two kinds of feedback, and **the one to use depends on what was done**:
 - **Where**: next to the control that was used. A switch: under the sentence of its row (`BsGroupFeatureSwitch` in a `BsGroupSettingCard`). A form with a save button: **to the left of the button**, in the same bar.
 - Validation stays on the fields; this is only the outcome of the save.
 
-Pages that use it: the company form, the colors, the export options, the email builder settings, the tracking (global and per template), and the two-factor option.
+Pages that use it: the company form, the colors, the export options, the email builder settings, the tracking (global and per template), and the switches saved on their own through `mixinGroupSwitch` (two-factor, MCP access, retex).
 
 ### Toast: the snackbar
 

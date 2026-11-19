@@ -125,6 +125,8 @@ describe('playground-runner.executeScenario', () => {
         invocationSource: 'playground',
         groupId: GROUP_ID,
         userId: USER_ID,
+        // The super admins try what the clients cannot use yet (ADR 0013).
+        options: expect.objectContaining({ everyAudience: true }),
       })
     );
     const composedInput = skillInvocation.invoke.mock.calls[0][0].input;

@@ -2,6 +2,10 @@
 import { mapMutations } from 'vuex';
 import { PAGE, SHOW_SNACKBAR } from '~/store/page.js';
 import * as api from '~/helpers/ai-playground-routes.js';
+import { aiSkill, aiSkillVersion } from '~/helpers/ai-skill-routes.js';
+import { addRunAsTestCase } from '~/helpers/ai-skill-test-cases.js';
+import { skillErrorMessage } from '~/helpers/ai-skill-errors.js';
+import { dateTime } from '~/helpers/format-date.js';
 import BsAiPlaygroundRunResult from './bs-ai-playground-run-result.vue';
 import BsAiPlaygroundRunsList from './bs-ai-playground-runs-list.vue';
 import BsAiPlaygroundRunDetailModal from './bs-ai-playground-run-detail-modal.vue';
@@ -153,6 +157,49 @@ export default {
         this.runDetailLoading = false;
       }
     },
+    // The run joins the test cases of the skill's open draft. An active
+    // version never changes, so without a draft nothing is written and the
+    // snackbar says how to open one (ADR 0019).
+    async makeTestCase() {
+      const run = this.detailRun;
+      if (!run || !run.resolvedSkill) return;
+      this.runDetailLoading = true;
+      try {
+        const skill = await this.$axios.$get(
+          aiSkill(run.resolvedSkill.skillId)
+        );
+        const result = addRunAsTestCase(skill, run, {
+          notes: this.$t('aiSkills.testCases.fromRunNotes', {
+            date: dateTime(run.createdAt),
+          }),
+        });
+        if (result.outcome !== 'added') {
+          this.showSnackbar({
+            text: this.$t(`aiSkills.testCases.fromRun.${result.outcome}`),
+            color: 'warning',
+          });
+          return;
+        }
+        const { draft } = result;
+        await this.$axios.$patch(
+          aiSkillVersion(skill.skillId, draft.versionMajor, draft.versionMinor),
+          { testCases: result.testCases }
+        );
+        this.showSnackbar({
+          text: this.$t('aiSkills.testCases.fromRun.added', {
+            version: `${draft.versionMajor}.${draft.versionMinor}`,
+          }),
+          color: 'success',
+        });
+      } catch (err) {
+        this.showSnackbar({
+          text: skillErrorMessage(this, err),
+          color: 'error',
+        });
+      } finally {
+        this.runDetailLoading = false;
+      }
+    },
     async openCompare() {
       if (!this.goldenRunId) {
         this.goldenRun = null;
@@ -223,6 +270,7 @@ export default {
       @mark-golden="markGolden"
       @unmark-golden="unmarkGolden"
       @compare="openCompare"
+      @make-test-case="makeTestCase"
     />
     <bs-ai-playground-run-compare-view
       ref="compareView"

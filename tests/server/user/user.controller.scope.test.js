@@ -5,6 +5,9 @@
 // controller, with the authenticated user as passport puts it on the request
 // and the models replaced by an in-memory store.
 
+jest.mock('../../../packages/server/mcp/mcp-connections.js', () => ({
+  revokeConnections: jest.fn(),
+}));
 jest.mock('../../../packages/server/common/models.common.js', () => {
   const users = [];
   const matches = (record, filter) =>
@@ -77,6 +80,9 @@ jest.mock('../../../packages/server/utils/logger.js', () => ({
 }));
 
 const { Users } = require('../../../packages/server/common/models.common.js');
+const {
+  revokeConnections,
+} = require('../../../packages/server/mcp/mcp-connections.js');
 const controller = require('../../../packages/server/user/user.controller.js');
 
 const GROUP_A = '507f1f77bcf86cd799439a01';
@@ -250,5 +256,20 @@ describe('an admin', () => {
         })
       ).status
     ).toBe(200);
+  });
+});
+
+// Credentials changed by an admin end the AI assistants the member connected
+// (ADR 0012): reactivated, or with a new password, they connect them again.
+describe('an admin changing the credentials of a member', () => {
+  it.each(
+    MANAGEMENT_ACTIONS.filter(([label]) =>
+      ['deactivates', 'resets the password of'].includes(label)
+    )
+  )('%s them, and ends their assistants', async (_, act) => {
+    revokeConnections.mockClear();
+
+    expect((await act(companyAdminOfA, DAVE)).status).toBe(200);
+    expect(revokeConnections).toHaveBeenCalledWith({ _user: DAVE });
   });
 });

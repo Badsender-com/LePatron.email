@@ -78,7 +78,7 @@ import BsSidebarContextZone from './bs-sidebar-context-zone.vue';
 import BsSidebarCompanySwitcher from './bs-sidebar-company-switcher.vue';
 import BsSidebarSystemZone from './bs-sidebar-system-zone.vue';
 import BsSidebarToggle from './bs-sidebar-toggle.vue';
-import { SIDEBAR_MODULES } from './sidebar-config.js';
+import { SIDEBAR_MODULES, ACCOUNT_PATH_PREFIXES } from './sidebar-config.js';
 import { isModuleLocked } from '~/helpers/module-activation';
 import { HELP_DOCS_URL } from '~/helpers/constants/external-urls';
 import {
@@ -146,6 +146,9 @@ export default {
       // (the validate() hook on the route already rejects unknown ids).
       if (path.startsWith('/module-unavailable/')) {
         return path.split('/')[2] || null;
+      }
+      if (ACCOUNT_PATH_PREFIXES.some((prefix) => path.startsWith(prefix))) {
+        return 'account';
       }
       // Settings is part of SYSTEM_ITEMS, not SIDEBAR_MODULES.
       if (path.includes('/settings')) {

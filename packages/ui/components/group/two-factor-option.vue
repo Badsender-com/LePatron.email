@@ -2,20 +2,21 @@
 import { mapGetters } from 'vuex';
 import { Smartphone } from 'lucide-vue';
 
-import { groupsItem, groupsItemUsers } from '~/helpers/api-routes.js';
+import { groupsItemUsers } from '~/helpers/api-routes.js';
+import mixinGroupSwitch from '~/helpers/mixins/mixin-group-switch.js';
 import { CAN, USER } from '~/store/user';
 import { countTwoFactorSetups } from '~/helpers/two-factor.js';
 import { CAPABILITIES } from '../../../shared/access/roles.js';
 import BsGroupSettingCard from '~/components/group/setting-card.vue';
 import BsSaveOutcome from '~/components/layout/bs-save-outcome.vue';
-import mixinInlineOutcome from '~/helpers/mixins/mixin-inline-outcome.js';
 import BsGroupFeatureSwitch from '~/components/group/feature-switch.vue';
 
 // Every member of the group signs in with a second factor (ADR 0008).
 // The last row of the Security section of the company settings (design
 // system, CompanySettings). Unlike the rows above it, it is saved on its own:
 // the change is confirmed with its impact, and its outcome is read where it
-// was made, under the option, never in a toast.
+// was made, under the option, never in a toast. The save itself is the one of
+// every company switch (mixinGroupSwitch), once the change is confirmed.
 // A technical setting: a company admin reads it, a tech admin switches it.
 export default {
   name: 'BsGroupTwoFactorOption',
@@ -25,13 +26,9 @@ export default {
     BsGroupFeatureSwitch,
     LucideSmartphone: Smartphone,
   },
-  mixins: [mixinInlineOutcome],
-  props: {
-    group: { type: Object, required: true },
-  },
+  mixins: [mixinGroupSwitch({ field: 'requireTwoFactor' })],
   data() {
     return {
-      loading: false,
       // The value asked for, kept until it is confirmed (or tried again).
       asked: null,
       // The confirmation dialog; `confirmed` tells closing it by the action
@@ -39,8 +36,8 @@ export default {
       confirming: false,
       confirmed: false,
       members: [],
-      // Bumped to draw the switch back on the saved state after a refusal:
-      // the browser already flipped it.
+      // Bumped to draw the switch back on the saved state after a cancel:
+      // the browser already flipped it, and `switchValue` never moved.
       switchKey: 0,
     };
   },
@@ -103,34 +100,17 @@ export default {
       this.confirmed = false;
       this.confirming = true;
     },
+    // Saved, the asked value is done with; failed, it stays for "Réessayer".
     async confirm() {
       this.confirmed = true;
       this.confirming = false;
-      await this.save();
+      if (this.asked === null) return;
+      if (await this.save(this.asked)) this.asked = null;
     },
     // Cancelled: the switch goes back to what is saved.
     cancel() {
       this.asked = null;
       this.switchKey += 1;
-    },
-    async save() {
-      const value = this.asked;
-      if (value === null) return;
-      this.loading = true;
-      try {
-        const group = await this.$axios.$put(
-          groupsItem({ groupId: this.group.id }),
-          { requireTwoFactor: value }
-        );
-        this.$emit('update', group);
-        this.asked = null;
-        this.markSaved();
-      } catch (error) {
-        this.markFailed();
-        this.switchKey += 1;
-      } finally {
-        this.loading = false;
-      }
     },
   },
 };
@@ -183,7 +163,7 @@ export default {
           <bs-group-feature-switch
             v-if="canSwitch"
             :key="switchKey"
-            :value="required"
+            :value="switchValue"
             :label="$t('twoFactor.group.switch')"
             :on-text="$t('twoFactor.group.on')"
             :off-text="$t('twoFactor.group.off')"

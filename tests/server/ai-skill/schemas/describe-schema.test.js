@@ -59,6 +59,25 @@ describe('describe-schema', () => {
       );
     });
 
+    // What a prompt argument of MCP says of itself (mcp-skill-catalog.js).
+    it('gives the description the schema gives a field, wrapped or not', () => {
+      expect(describeField('p', z.string().describe('The brief.'))).toEqual({
+        name: 'p',
+        type: 'string',
+        required: true,
+        multiline: true,
+        description: 'The brief.',
+      });
+      expect(
+        describeField('o', z.string().describe('Inside.').optional())
+          .description
+      ).toBe('Inside.');
+      expect(
+        describeField('w', z.string().optional().describe('Outside.'))
+          .description
+      ).toBe('Outside.');
+    });
+
     it('unwraps nested wrappers (optional around default)', () => {
       const field = z.string().default('x').optional();
       const d = describeField('w', field);

@@ -15,7 +15,8 @@
  * - Otherwise: locked iff the flag is explicitly falsy on the group.
  * - A super admin sees the modules of its selected group as the group's users
  *   do (ADR 0002, amended): the caller passes that group. The lock is part of
- *   the view; the server never refuses a super admin for a module flag.
+ *   the view; the server lets a super admin through a module flag, except the
+ *   MCP module, which it refuses to a super admin too while closed (ADR 0017).
  */
 export function isModuleLocked(module, user, group) {
   if (!module || !module.enabledFlag) return false;
@@ -39,4 +40,18 @@ export function isFlagEnabled(flag, user, group) {
   // guardEmailBuilder.js server-side: legacy groups predating the flag
   // shouldn't be locked out.
   return group[flag] !== false;
+}
+
+/**
+ * Whether the users of a group may connect AI assistants to LePatron: the
+ * group has the MCP module and allows MCP access (ADR 0017). No exception for
+ * a super admin: the caller passes its selected group, like any module. The
+ * sidebar still offers the connected applications page to whoever manages
+ * the platform, where their connections in every company are listed.
+ *
+ * @param {Object} group
+ * @returns {boolean}
+ */
+export function canConnectApplications(group) {
+  return Boolean(group && group.enableMcpModule === true && group.enableMcp);
 }

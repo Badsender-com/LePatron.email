@@ -26,9 +26,7 @@
       class="color-card color-card--add"
       @click="handleAddColor()"
     >
-      <div class="color-card__add-icon">
-        +
-      </div>
+      <div class="color-card__add-icon">+</div>
       <div class="color-card__add-label">
         {{ $t('colors.addColor') }}
       </div>

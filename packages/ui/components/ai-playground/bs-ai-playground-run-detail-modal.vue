@@ -5,7 +5,7 @@ import BsTextarea from '~/components/form/bs-textarea.vue';
 import BsMarkdownRenderer from '~/components/form/bs-markdown-renderer.vue';
 import { dateTime } from '~/helpers/format-date.js';
 import { latencySeconds } from '~/helpers/format-latency.js';
-import { Star, GitCompare } from 'lucide-vue';
+import { Star, GitCompare, ListChecks } from 'lucide-vue';
 import runOutputAsMarkdown from '~/helpers/run-output-markdown.js';
 
 export default {
@@ -17,6 +17,7 @@ export default {
     BsMarkdownRenderer,
     LucideStar: Star,
     LucideGitCompare: GitCompare,
+    LucideListChecks: ListChecks,
   },
   props: {
     run: { type: Object, default: null },
@@ -167,6 +168,18 @@ export default {
         >
           <lucide-git-compare :size="16" class="mr-1" />
           {{ $t('aiPlayground.actions.compare') }}
+        </v-btn>
+        <v-btn
+          text
+          small
+          color="primary"
+          :loading="loading"
+          :disabled="!isSuccess"
+          :title="$t('aiPlayground.actions.makeTestCaseHint')"
+          @click="$emit('make-test-case')"
+        >
+          <lucide-list-checks :size="16" class="mr-1" />
+          {{ $t('aiPlayground.actions.makeTestCase') }}
         </v-btn>
       </div>
 

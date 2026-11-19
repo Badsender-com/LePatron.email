@@ -2,6 +2,7 @@
 
 jest.mock('../../../../packages/server/common/models.common', () => ({
   Expertises: { find: jest.fn(), distinct: jest.fn() },
+  Groups: { findById: jest.fn() },
 }));
 
 jest.mock('../../../../packages/server/utils/logger.js', () => ({
@@ -116,6 +117,16 @@ describe('expertise.repository', () => {
         },
         { category: { $in: ['redaction'] } },
       ]);
+    });
+
+    it('reads the active version alone, never the history', async () => {
+      mockReturnDocs([]);
+      await findApplicable({ scope: 'cta', categories: ['redaction'] });
+
+      expect(Expertises.find.mock.calls[0][1]).toMatchObject({
+        expertiseId: 1,
+        versions: { $elemMatch: { status: 'ACTIVE' } },
+      });
     });
 
     it('wraps a scalar scope into an array', async () => {
@@ -283,6 +294,20 @@ describe('expertise.repository', () => {
       // The scopes that DO exist are the one thing needed to fix the call.
       expect(message).toContain('cta');
       expect(message).toContain('objet');
+    });
+
+    // A scope an assistant guesses through MCP is answered there, not logged
+    // as a mistake in a feature's code, nor read again with a `distinct`.
+    it('stays silent when the caller turns the diagnostic off', async () => {
+      mockReturnDocs([]);
+      await findApplicable({
+        scope: 'bouton',
+        categories: ['redaction'],
+        warnOnUnmatched: false,
+      });
+      await flushWarning();
+      expect(Expertises.distinct).not.toHaveBeenCalled();
+      expect(logger.warn).not.toHaveBeenCalled();
     });
 
     /**

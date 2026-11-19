@@ -1,0 +1,7 @@
+{
+  "jobs": [
+    {
+      "command": "0 3 * * * node scripts/follow-production.js"
+    }
+  ]
+}

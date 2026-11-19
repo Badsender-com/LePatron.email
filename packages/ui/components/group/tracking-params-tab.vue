@@ -1,5 +1,6 @@
 <script>
 import { groupsItem } from '~/helpers/api-routes.js';
+import { changedGroupFields } from '~/helpers/group-changes.js';
 import BsTextField from '~/components/form/bs-text-field.vue';
 import { Trash2 } from 'lucide-vue';
 import BsGroupFeatureSwitch from '~/components/group/feature-switch.vue';
@@ -135,12 +136,18 @@ export default {
     },
     async onSubmit() {
       if (!this.canSave) return;
+      // The tracking alone, when it changed since the company was loaded.
+      const changes = changedGroupFields(this.localGroup, this.group, [
+        'trackingConfig',
+      ]);
       this.loading = true;
       try {
-        await this.$axios.$put(
-          groupsItem({ groupId: this.localGroup.id }),
-          this.localGroup
-        );
+        if (Object.keys(changes).length > 0) {
+          await this.$axios.$put(
+            groupsItem({ groupId: this.localGroup.id }),
+            changes
+          );
+        }
         this.markSaved();
         this.$emit('update');
       } catch (error) {

@@ -5,7 +5,14 @@
 import BsTextField from '~/components/form/bs-text-field.vue';
 import BsSelect from '~/components/form/bs-select.vue';
 import BsTextarea from '~/components/form/bs-textarea.vue';
-import { skillCategoryOptions } from '~/helpers/ai-skill-categories.js';
+import {
+  skillCategoryOptions,
+  audienceOptions,
+  AUDIENCE_ITEM_KINDS,
+  AUDIENCES,
+  SKILL_NATURES,
+} from '~/helpers/ai-skill-categories.js';
+import { latestDraft } from '~/helpers/ai-skill-versions.js';
 
 export default {
   name: 'BsAiSkillDetailsForm',
@@ -17,6 +24,39 @@ export default {
   computed: {
     categoryOptions() {
       return skillCategoryOptions(this);
+    },
+    // Worded for what the skill is: its active version's nature, else its
+    // latest draft's.
+    audienceOptions() {
+      return audienceOptions(
+        this,
+        this.nature === SKILL_NATURES.TASK
+          ? AUDIENCE_ITEM_KINDS.TASK_SKILL
+          : AUDIENCE_ITEM_KINDS.FEATURE_SKILL
+      );
+    },
+    // One stored before audiences has none until the migration opens it, and
+    // no client uses it meanwhile: shown as the platform company's.
+    audience() {
+      return this.value.audience || AUDIENCES.PLATFORM;
+    },
+    // The nature is the active version's (ADR 0013), set on a draft version;
+    // the mark only counts while the active version is a feature skill's.
+    activeVersion() {
+      const av = this.value.activeVersion;
+      if (!av || av.major == null) return null;
+      return (this.value.versions || []).find(
+        (v) => v.versionMajor === av.major && v.versionMinor === (av.minor || 0)
+      );
+    },
+    nature() {
+      const version = this.activeVersion || latestDraft(this.value.versions);
+      return (version && version.nature) || SKILL_NATURES.FEATURE;
+    },
+    activeIsTask() {
+      return (
+        !!this.activeVersion && this.activeVersion.nature === SKILL_NATURES.TASK
+      );
     },
   },
   methods: {
@@ -47,6 +87,26 @@ export default {
       item-value="value"
       :label="$t('aiSkills.filters.category')"
       @input="update({ category: $event })"
+    />
+    <bs-select
+      :value="audience"
+      :items="audienceOptions"
+      item-text="text"
+      item-value="value"
+      :label="$t('aiSkills.audience')"
+      :hint="$t('aiSkills.audienceHint')"
+      persistent-hint
+      @input="update({ audience: $event })"
+    />
+    <v-checkbox
+      v-if="!activeIsTask"
+      :input-value="value.servedToAssistants === true"
+      :label="$t('aiSkills.servedToAssistants')"
+      :hint="$t('aiSkills.servedToAssistantsHint')"
+      persistent-hint
+      dense
+      class="mt-2"
+      @change="update({ servedToAssistants: $event === true })"
     />
 
     <div class="d-flex justify-end mt-3">

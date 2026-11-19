@@ -97,7 +97,6 @@ describe('the two-factor row of the Security section', () => {
       .mockRejectedValueOnce(new Error('down'))
       .mockResolvedValueOnce({ ...GROUP, requireTwoFactor: true });
     const { vm } = build({ put });
-    const before = vm.switchKey;
 
     vm.ask(true);
     vm.confirm();
@@ -108,7 +107,7 @@ describe('the two-factor row of the Security section', () => {
     expect(vm.asked).toBe(true);
     // The browser already flipped the switch: it is drawn back on the saved
     // state.
-    expect(vm.switchKey).toBe(before + 1);
+    expect(vm.switchValue).toBe(false);
 
     // "Réessayer" asks again for the same value, then saves it.
     vm.ask(vm.asked);

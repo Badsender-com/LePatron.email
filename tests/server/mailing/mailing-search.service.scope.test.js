@@ -14,6 +14,7 @@
 const ERROR_CODES = require('../../../packages/server/constant/error-codes.js');
 const { createListingStore } = require('../../helpers/fake-listing-models.js');
 const {
+  MAILINGS,
   CLIENT_GROUP,
   OTHER_GROUP,
   NEWSLETTERS,
@@ -54,6 +55,8 @@ jest.mock('../../../packages/server/utils/logger.js', () => ({
 
 const {
   searchMailings,
+  findReadableMailings,
+  locateReadableMailing,
 } = require('../../../packages/server/mailing/mailing-search.service');
 
 function search(user, { filters = {}, pagination = BY_NAME } = {}) {
@@ -179,5 +182,109 @@ describe('searching every accessible workspace, its scope', () => {
         ...openable(IN_NEWSLETTERS, false),
       ]);
     });
+  });
+});
+
+// A mailing named by its id, read by the rule of the search (ADR 0007): what
+// another module, the MCP server, asks before it points at an email.
+describe('a mailing the user may read', () => {
+  beforeEach(() => seed(mockStore));
+
+  const idOf = (name) => MAILINGS.find((m) => m.name === name)._id;
+
+  it('finds those of an accessible workspace, and none of another', async () => {
+    const found = await findReadableMailings(frank, [
+      idOf('Weekly news'),
+      idOf('Spring promo'),
+      idOf('Spring old'),
+    ]);
+
+    expect(found).toEqual([{ _id: idOf('Weekly news') }]);
+  });
+
+  // A check of a right never reads an email's content.
+  it('reads the id alone unless told what to read', async () => {
+    expect(await findReadableMailings(frank, [idOf('Weekly news')])).toEqual([
+      { _id: idOf('Weekly news') },
+    ]);
+  });
+
+  it('reads many at once, each once, and takes text that is no id as none', async () => {
+    const found = await findReadableMailings(
+      frank,
+      [idOf('Weekly news'), idOf('Weekly news'), { $ne: null }, 'nope'],
+      { name: 1 }
+    );
+
+    expect(found.map((m) => m.name)).toEqual(['Weekly news']);
+  });
+});
+
+// A mailing read with where it sits, for the MCP server to read one (#1304):
+// the same rule, and nothing of it read before the rule let it through.
+describe('a mailing the user may read, and where it sits', () => {
+  beforeEach(() => seed(mockStore));
+
+  const idOf = (name) => MAILINGS.find((m) => m.name === name)._id;
+  const newsletters = { id: NEWSLETTERS, name: 'Newsletters' };
+
+  it.each([
+    ['at the root of a workspace', 'Weekly news', { workspace: newsletters }],
+    [
+      'in a folder',
+      'Spring sale',
+      { workspace: newsletters, folder: { id: YEAR_2026, name: '2026' } },
+    ],
+    [
+      'in a subfolder',
+      'Spring teaser',
+      {
+        workspace: newsletters,
+        folder: { id: YEAR_2026, name: '2026' },
+        subfolder: { id: SPRING, name: 'Spring' },
+      },
+    ],
+  ])('says where one %s sits', async (_where, name, location) => {
+    const found = await locateReadableMailing(frank, idOf(name), 'name');
+
+    expect(found.mailing.name).toBe(name);
+    expect(found.location).toEqual(location);
+  });
+
+  it('reads what it is told, kept or left out', async () => {
+    const kept = await locateReadableMailing(
+      frank,
+      idOf('Weekly news'),
+      'name'
+    );
+    const left = await locateReadableMailing(
+      frank,
+      idOf('Weekly news'),
+      '-name'
+    );
+
+    expect(kept.mailing).not.toHaveProperty('author');
+    expect(left.mailing).not.toHaveProperty('name');
+    expect(left.mailing).toHaveProperty('author');
+  });
+
+  it('keeps a super admin to the selected group', async () => {
+    const admin = superAdmin(CLIENT_GROUP);
+
+    expect(
+      await locateReadableMailing(admin, idOf('Spring old'), 'name')
+    ).not.toBeNull();
+    expect(
+      await locateReadableMailing(admin, idOf('Spring elsewhere'), 'name')
+    ).toBeNull();
+  });
+
+  it.each([
+    ['a workspace the user cannot access', () => idOf('Spring promo')],
+    ['a subfolder of such a workspace', () => idOf('Spring old')],
+    ['another group', () => idOf('Spring elsewhere')],
+    ['text that is no id', () => ({ $ne: null })],
+  ])('finds none in %s', async (_case, id) => {
+    expect(await locateReadableMailing(frank, id(), '-data')).toBeNull();
   });
 });

@@ -22,6 +22,10 @@
       :collapsed="collapsed"
     />
 
+    <!-- A page of the user's own account (connected applications): no
+         module, and nothing to pick in the sidebar. -->
+    <div v-else-if="activeModule === 'account'" />
+
     <!-- Empty state when no module is active -->
     <div v-else class="bs-sidebar-context-zone__empty">
       <p v-if="!collapsed" class="text-body-2 grey--text text-center pa-4">

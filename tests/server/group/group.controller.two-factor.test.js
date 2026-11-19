@@ -4,49 +4,18 @@
 // (epic #1318, ADR 0008): a tech admin or a super admin switches it, from a
 // group update that keeps only a few fields from anyone but a super admin.
 
-jest.mock('../../../packages/server/common/models.common.js', () => ({
-  Groups: { findById: jest.fn() },
-  SecurityEvents: { create: jest.fn() },
-  Profiles: {},
-  Templates: {},
-  Mailings: {},
-}));
-jest.mock('../../../packages/server/group/group.service.js', () => ({
-  updateGroup: jest.fn(),
-  findUserByGroupId: jest.fn(),
-}));
-jest.mock('../../../packages/server/profile/profile.service.js', () => ({}));
-jest.mock(
-  '../../../packages/server/emails-group/emails-group.service.js',
-  () => ({})
-);
-jest.mock(
-  '../../../packages/server/personalized-variables/personalized-variable.service.js',
-  () => ({})
-);
-jest.mock('../../../packages/server/group/group-ftp.service.js', () => ({
-  processCredentialsForUpdate: jest.fn((body) => ({ ...body })),
-  validateSshKeyOrThrow: jest.fn(),
-  maskFtpCredentials: jest.fn((group) => group),
-}));
-jest.mock('../../../packages/server/workspace/workspace.service.js', () => ({
-  createWorkspace: jest.fn(),
-  findWorkspaces: jest.fn(),
-}));
-jest.mock('../../../packages/server/utils/logger.js', () => ({
-  log: jest.fn(),
-  info: jest.fn(),
-  warn: jest.fn(),
-  error: jest.fn(),
-}));
-
 const createError = require('http-errors');
 const {
-  Groups,
   SecurityEvents,
-} = require('../../../packages/server/common/models.common.js');
-const groupService = require('../../../packages/server/group/group.service.js');
-const groupController = require('../../../packages/server/group/group.controller.js');
+  groupService,
+  groupController,
+  GROUP_ID,
+  companyAdmin,
+  techAdmin,
+  superAdmin,
+  storedGroup,
+  update,
+} = require('./group-update.harness.js');
 const {
   ROLES,
   CAPABILITIES,
@@ -55,27 +24,6 @@ const {
 const {
   GUARD_GROUP_ADMIN,
 } = require('../../../packages/server/account/auth.guard.js');
-
-const GROUP_ID = '507f1f77bcf86cd799439001';
-const companyAdmin = { id: 'a1', role: 'company_admin', group: GROUP_ID };
-const techAdmin = { id: 'a2', role: 'company_admin_tech', group: GROUP_ID };
-const superAdmin = { id: 'a3', role: 'super_admin' };
-
-function storedGroup(fields) {
-  const group = { id: GROUP_ID, name: 'Client group', ...fields };
-  Groups.findById.mockReturnValue({
-    lean: jest.fn().mockResolvedValue(group),
-    then: (resolve, reject) => Promise.resolve(group).then(resolve, reject),
-  });
-}
-
-async function update(user, body) {
-  await groupController.update(
-    { params: { groupId: GROUP_ID }, body, user },
-    { json: jest.fn() }
-  );
-  return groupService.updateGroup.mock.calls[0][0];
-}
 
 beforeEach(() => {
   jest.clearAllMocks();

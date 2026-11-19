@@ -1,16 +1,24 @@
 'use strict';
 
 const { Schema } = require('mongoose');
+const createError = require('http-errors');
 const { ObjectId, Mixed } = Schema.Types;
 const { UserModel } = require('../../constant/model.names.js');
+const { GuardRecordSchema } = require('./guard-record.schema.js');
+const { UsageChangeSchema } = require('./usage-change.schema.js');
 const { hasSchema } = require('../schemas');
 const {
   SkillCategoryValues,
   SkillStatuses,
   SkillStatusValues,
+  AudienceValues,
+  SkillNatures,
+  SkillNatureValues,
   SkillIdRegex,
   MaxSkillIdLength,
 } = require('../constant/skill-constants.js');
+const { newItemAudience } = require('../services/audience.js');
+const { followFields } = require('./follow-fields.js');
 
 const INPUT_PLACEHOLDER_REGEX = /\{\{\s*input\b[^}]*\}\}/;
 
@@ -44,6 +52,14 @@ const SkillVersionSchema = new Schema(
       enum: VersionStatusValues,
       default: 'DRAFT',
     },
+    // What the skill is while this version is active (ADR 0013): a feature
+    // skill, or a task skill. Changing it is publishing a version of the
+    // other nature; the version it replaces keeps its own.
+    nature: {
+      type: String,
+      enum: SkillNatureValues,
+      default: SkillNatures.FEATURE,
+    },
     systemPrompt: { type: String, default: '' },
     skillBody: { type: String, default: '' },
     inputTemplate: { type: String, default: '' },
@@ -51,6 +67,10 @@ const SkillVersionSchema = new Schema(
     // ACTIVE/ARCHIVED — same rule as prompts). Empty on a fresh draft; the
     // activation gate requires them to be set before publishing.
     inputSchemaId: { type: String, default: '' },
+    // A task skill's procedure, and the expertises it consumes, in the order
+    // it reads them (ADR 0013). Empty on a feature skill.
+    procedure: { type: String, default: '' },
+    consumedExpertiseIds: { type: [String], default: [] },
     outputSchemaId: { type: String, default: '' },
     modelHints: { type: ModelHintsSchema, default: () => ({}) },
     changelog: { type: String, default: '' },
@@ -60,7 +80,13 @@ const SkillVersionSchema = new Schema(
     updatedAt: { type: Date, default: Date.now },
     updatedBy: { type: ObjectId, ref: UserModel },
     activatedAt: { type: Date, default: null },
+    // When a follow of production brought it (ADR 0019): unset on a version
+    // written on this instance.
+    followedAt: { type: Date },
     testCases: { type: [TestCaseSchema], default: [] },
+    guardHistory: { type: [GuardRecordSchema], default: [] },
+    // The retex this draft addresses (ADR 0021), closed when it is published.
+    retexIds: { type: [String], default: [] },
   },
   { _id: false }
 );
@@ -95,11 +121,25 @@ const LePatronSkillSchema = new Schema(
       enum: SkillStatusValues,
       default: SkillStatuses.DRAFT,
     },
+    // No audience on a document written before audiences: it waits for the
+    // migration, closed to the clients (services/audience.js).
+    audience: {
+      type: String,
+      enum: AudienceValues,
+      default: newItemAudience,
+    },
+    // A feature skill reaches assistants only when marked so (ADR 0013); a
+    // task skill always does, within its audience. Read only while the active
+    // version is a feature skill's.
+    servedToAssistants: { type: Boolean, default: false },
+    ...followFields(),
     activeVersion: {
       type: ActiveVersionSchema,
       default: () => ({ major: null, minor: 0 }),
     },
     versions: { type: [SkillVersionSchema], default: [] },
+    // What changed a feature's use of it without a new version (ADR 0019).
+    usageHistory: { type: [UsageChangeSchema], default: [] },
   },
   {
     timestamps: true,
@@ -113,39 +153,53 @@ LePatronSkillSchema.index({ status: 1 });
 
 /**
  * Validation hook:
- * - Per version: if schemas are set (they may be empty on a fresh DRAFT),
- *   ensure inputSchemaId / outputSchemaId exist in the zod registry.
+ * - Per version but a draft: if schemas are set, ensure inputSchemaId /
+ *   outputSchemaId exist in the zod registry. A draft may name a schema the
+ *   code does not hold yet: production writes a feature skill before the
+ *   code that calls it ships (ADR 0019), and its publication is refused
+ *   until it does (skill.service.js).
  * - Ensure `{{input.*}}` placeholders never appear outside `inputTemplate`
  *   (prompt-injection guard — see PLAN §4.4).
+ * Either refuses the save as a request error whose message is meant to be
+ * shown (400), for whoever wrote the version, a person or an assistant.
  */
 LePatronSkillSchema.pre('validate', function preValidate(next) {
   for (const version of this.versions || []) {
     const label = `${version.versionMajor}.${version.versionMinor}`;
-    if (version.inputSchemaId && !hasSchema(version.inputSchemaId)) {
+    const draft = version.status === 'DRAFT';
+    if (!draft && version.inputSchemaId && !hasSchema(version.inputSchemaId)) {
       return next(
-        new Error(
+        createError(
+          400,
           `Version ${label}: unknown inputSchemaId "${version.inputSchemaId}" (not in zod registry)`
         )
       );
     }
-    if (version.outputSchemaId && !hasSchema(version.outputSchemaId)) {
+    if (
+      !draft &&
+      version.outputSchemaId &&
+      !hasSchema(version.outputSchemaId)
+    ) {
       return next(
-        new Error(
+        createError(
+          400,
           `Version ${label}: unknown outputSchemaId "${version.outputSchemaId}" (not in zod registry)`
         )
       );
     }
     if (INPUT_PLACEHOLDER_REGEX.test(version.systemPrompt || '')) {
       return next(
-        new Error(
-          `Version ${label}: {{input.*}} placeholders are not allowed in systemPrompt`
+        createError(
+          400,
+          `Version ${label}: {{input.*}} placeholders are not allowed in systemPrompt, only in inputTemplate`
         )
       );
     }
     if (INPUT_PLACEHOLDER_REGEX.test(version.skillBody || '')) {
       return next(
-        new Error(
-          `Version ${label}: {{input.*}} placeholders are not allowed in skillBody`
+        createError(
+          400,
+          `Version ${label}: {{input.*}} placeholders are not allowed in skillBody, only in inputTemplate`
         )
       );
     }

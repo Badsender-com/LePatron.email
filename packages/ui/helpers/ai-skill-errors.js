@@ -3,15 +3,18 @@
 //
 // The server sends identifiers, not prose: an error's `message` is an
 // ERROR_CODES entry and a warning carries a `code`, each with the data the
-// sentence interpolates (`schemaId`, `fields`). The wording lives in the
+// sentence interpolates (`schemaId`, `fields`, `max`, `expertiseIds`). The wording lives in the
 // locales, under `aiSkills.errors.*` and `aiSkills.warnings.*`.
 //
 // `vm` is the component instance (for $t).
 
-// Arrays read better joined than as "a,b".
+// Arrays read better joined than as "a,b": the fields of a template, the
+// expertises a version consumes.
 function interpolatable(payload = {}) {
   const params = { ...payload };
-  if (Array.isArray(params.fields)) params.fields = params.fields.join(', ');
+  Object.keys(params).forEach((key) => {
+    if (Array.isArray(params[key])) params[key] = params[key].join(', ');
+  });
   return params;
 }
 

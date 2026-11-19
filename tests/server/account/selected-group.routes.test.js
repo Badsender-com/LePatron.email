@@ -173,7 +173,15 @@ describe('the selected group endpoint', () => {
   describe('the module flags of the selected group', () => {
     it("are the group's stored flags", async () => {
       seed(
-        [{ ...ACME, enableEmailBuilder: false, enableCrmIntelligence: true }],
+        [
+          {
+            ...ACME,
+            enableEmailBuilder: false,
+            enableCrmIntelligence: true,
+            enableMcpModule: false,
+            enableMcp: true,
+          },
+        ],
         { [ALICE]: CLIENT_GROUP }
       );
 
@@ -182,6 +190,8 @@ describe('the selected group endpoint', () => {
       expect(res.body.selectedGroup).toMatchObject({
         enableEmailBuilder: false,
         enableCrmIntelligence: true,
+        enableMcpModule: false,
+        enableMcp: true,
       });
     });
 
@@ -212,6 +222,7 @@ describe('the selected group endpoint', () => {
         enableEmailBuilder: true,
         enableCrmIntelligence: false,
         downloadMailingWithFtpImages: false,
+        enableMcpModule: false,
       });
     });
   });

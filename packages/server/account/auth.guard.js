@@ -232,8 +232,11 @@ passport.use(
           return done(null, false, { message: 'password.error.nouser' });
         }
         // A new session for the account, once the response is valid: a
-        // refused one leaves the browser's session as it was.
+        // refused one leaves the browser's session as it was. Only the page
+        // the login was asked on carries over (index.js checks it).
+        const { returnPath } = req.session;
         await renewSession(req);
+        if (returnPath) req.session.returnPath = returnPath;
         done(null, user);
       } catch (error) {
         done(error);
