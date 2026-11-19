@@ -46,9 +46,11 @@ const {
 } = require('../utils/sanitize-email-metadata.js');
 const {
   sanitizeQualitySettings,
-  assertTechChecksAllowed,
   qualitySettingsUpdate,
 } = require('../utils/sanitize-quality-settings.js');
+const {
+  assertTechChecksAllowed,
+} = require('../account/tech-quality-checks.js');
 
 /**
  * The company fields a request names: its own keys, but those that start
