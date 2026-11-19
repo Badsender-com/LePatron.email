@@ -43,6 +43,7 @@
       .desc, .text { color: #d1d5db !important; }
       .muted { color: #9ca3af !important; }
       .rule { border-top-color: #2a4552 !important; }
+      .code { background-color: #16394a !important; color: #f3f4f6 !important; }
       .card a { color: #7fd3f0 !important; }
       .card .cta { background-color: #00acdc !important; }
       .card .cta a { color: #093040 !important; }
@@ -72,6 +73,17 @@
                       <h1 class="title" style="margin: 0; font-family: 'Inter', Tahoma, Arial, sans-serif; font-size: 20px; line-height: 30px; font-weight: 600; color: #093040; text-align: center; mso-line-height-rule: exactly;">{%=o.t.title%}</h1>
                     </td>
                   </tr>
+                  {% if (o.code) { %}
+                  <tr>
+                    <td class="pad" style="padding: 20px 32px 0 32px;">
+                      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+                        <tr>
+                          <td class="code" align="center" bgcolor="#e0f6fc" style="background-color: #e0f6fc; border-radius: 7px; padding: 16px 12px 16px 12px; font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, 'Courier New', monospace; font-size: 28px; line-height: 42px; font-weight: 600; letter-spacing: 0.3em; text-indent: 0.3em; color: #093040; text-align: center; mso-line-height-rule: exactly;">{%=o.code%}</td>
+                        </tr>
+                      </table>
+                    </td>
+                  </tr>
+                  {% } %}
                   <tr>
                     <td class="pad desc" style="padding: 16px 32px 0 32px; font-family: 'Inter', Tahoma, Arial, sans-serif; font-size: 14px; line-height: 21px; color: #374151; text-align: left; mso-line-height-rule: exactly;">{%=o.t.desc%}</td>
                   </tr>

@@ -148,16 +148,17 @@ function deviceTrustedTexts({ browser, os }) {
  * @param {string} name a key of TEXTS
  * @param {Object} [texts] the texts of an email not in TEXTS; one without a
  *   `button` has none, nothing to do but read it
+ * @param {Object} [extra] what the email shows besides its texts: the `code`
  * @returns {Promise<void>}
  */
-async function sendTwoFactorEmail(user, name, texts = TEXTS[name]) {
+async function sendTwoFactorEmail(user, name, texts = TEXTS[name], extra = {}) {
   const lang = resolveLanguage(user.lang);
   // A button leads to the sign-in page; an email without one has no link.
   const url = texts[lang].button ? `${siteOrigin()}/account/login` : undefined;
   try {
     await mail.send({
       to: user.email,
-      ...composeEmail(texts, lang, { url, icon: ICONS[name] }),
+      ...composeEmail(texts, lang, { url, icon: ICONS[name], ...extra }),
     });
   } catch (error) {
     logger.error(`[two-factor] ${name} email failed for ${user.id}`, error);
