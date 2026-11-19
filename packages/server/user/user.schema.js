@@ -8,12 +8,12 @@ const randToken = require('rand-token');
 const moment = require('moment');
 const mongooseHidden = require('mongoose-hidden')();
 
-const config = require('../node.config.js');
 const mail = require('../mailing/mail.service.js');
 const {
-  renderEmail,
+  composeEmail,
   siteOrigin,
   PASSWORD_TEXTS,
+  passwordTextsFor,
 } = require('../email-templates/email-template.js');
 const Roles = require('../account/roles');
 const { normalizeString } = require('../utils/model');
@@ -188,13 +188,40 @@ UserSchema.methods.deactivate = function deactivate() {
   return user.save();
 };
 
+// Whether the account ever signed in: a sign-in stores its time
+// (account/session-tracking.helper.js). The field is not loaded by default:
+// read it when the document came without it. An account whose last sign-in
+// predates that field is taken as never signed in: it is welcomed.
+async function hasSignedIn(user) {
+  if (user.isSelected('sessionMetadata')) {
+    return Boolean(user.sessionMetadata && user.sessionMetadata.loginTime);
+  }
+  const stored = await user.constructor
+    .findById(user._id)
+    .select('+sessionMetadata')
+    .lean();
+  return Boolean(
+    stored && stored.sessionMetadata && stored.sessionMetadata.loginTime
+  );
+}
+
 // `type` is 'admin' when an administrator resets the account (the current
 // password stops working at once and the open sessions end) or 'user' when
 // the person asked for a new one (the current password and the open sessions
 // keep working until the emailed link is used, so that asking in someone's
 // name locks nobody out).
+//
+// The text follows what the account is, read before the reset clears the
+// password (passwordTextsFor): an account that never signed in is welcomed,
+// its invitation sent again included; one without a password that signed in
+// before (reset, or deactivated and back) is told an administrator reset it.
 UserSchema.methods.resetPassword = async function resetPassword(type, lang) {
   const user = this;
+  const texts = passwordTextsFor({
+    hasPassword: Boolean(user.password),
+    hasSignedIn: await hasSignedIn(user),
+    askedBy: type === 'user' ? 'user' : 'admin',
+  });
   if (type !== 'user') {
     user.password = undefined;
     // No session carries this id: the session validation ends them all.
@@ -205,17 +232,13 @@ UserSchema.methods.resetPassword = async function resetPassword(type, lang) {
   lang = lang || 'en';
 
   const updatedUser = await user.save();
-  const resetUrl = `${siteOrigin()}/account/${updatedUser.email}/password/${
-    user.token
-  }`;
+  // The address is one segment of the path: encoded, so that a `?`, a `#` or
+  // a `/` in it does not cut the link. The `@` stays, a path allows it.
+  const email = encodeURIComponent(updatedUser.email).replace(/%40/g, '@');
+  const resetUrl = `${siteOrigin()}/account/${email}/password/${user.token}`;
   await mail.send({
     to: updatedUser.email,
-    subject: `${config.emailOptions.passwordSubjectPrefix} – Password reset`,
-    text: `here is the link to enter your new password ${resetUrl}`,
-    html: renderEmail(PASSWORD_TEXTS['reset-password'], lang, {
-      type: type,
-      url: resetUrl,
-    }),
+    ...composeEmail(texts, lang, { url: resetUrl }),
   });
 
   return updatedUser;
@@ -232,12 +255,7 @@ UserSchema.methods.setPassword = async function setPassword(password, lang) {
   const loginUrl = `${siteOrigin()}/account/login`;
   await mail.send({
     to: updatedUser.email,
-    subject: `${config.emailOptions.passwordSubjectPrefix} – password reset`,
-    text: `your password has been successfully been reinitialized. connect at ${loginUrl}`,
-    html: renderEmail(PASSWORD_TEXTS['reset-success'], lang, {
-      type: 'admin',
-      url: loginUrl,
-    }),
+    ...composeEmail(PASSWORD_TEXTS.confirmation, lang, { url: loginUrl }),
   });
   return updatedUser;
 };
