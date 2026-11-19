@@ -9,6 +9,7 @@ import {
   emptyException,
   recommendedOf,
   generalOf,
+  serverReadsImages,
 } from '~/helpers/quality-exceptions.js';
 import { generalOfDrafts, keptByOf } from '~/helpers/quality-drafts.js';
 import { exceptionsPayload, fieldErrors } from '~/helpers/quality-save.js';
@@ -70,6 +71,13 @@ export default {
     },
     general() {
       return generalOf(this.generalSettings);
+    },
+    // With the settings that will apply, unsaved changes included.
+    readsImages() {
+      return serverReadsImages(
+        this.drafts,
+        this.isGeneral ? generalOf(null) : this.general
+      );
     },
     generalExceptions() {
       return exceptionsOf(this.generalSettings);
@@ -274,6 +282,7 @@ export default {
           :kept-by="keptBy[id] || []"
           :group-id="groupId"
           :uses-metadata="usesMetadata"
+          :reads-images="readsImages"
           :disabled="loading"
           :locked="lockedIds.includes(id)"
           @state="setState(id, $event)"

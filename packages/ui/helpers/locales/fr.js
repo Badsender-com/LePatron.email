@@ -1095,7 +1095,8 @@ export default {
       'color-contrast': 'Suit les seuils des WCAG : rien à régler.',
       gmailClipping: 'Ce seuil dépasse {limit} Ko : au-delà de {limit} Ko, Gmail coupe l\'email et masque sa fin, pied de page compris.',
       metadata: 'Sans effet sur un email sans métadonnées (objet, préheader).',
-      unnamedImages: 'Si un contrôle d\'images ({checks}) est actif, une image dont l\'adresse n\'a pas d\'extension est jugée sur le type lu par le serveur, et signalée sans bloquer.',
+      unnamedImages: 'Une image dont l\'adresse n\'a pas d\'extension est jugée sur le type lu par le serveur, et signalée sans bloquer.',
+      unnamedImagesUnchecked: 'Une image dont l\'adresse n\'a pas d\'extension n\'est pas vérifiée tant qu\'aucun contrôle d\'images ({checks}) n\'est actif.',
     },
     dialog: {
       title: 'Ajouter une exception',
