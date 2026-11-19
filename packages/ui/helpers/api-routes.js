@@ -86,11 +86,14 @@ export function login() {
   return '/account/login';
 }
 
+// The address is a segment of the path: encoded, the server decodes it.
 export function accountResetPassword(routeParams = {}) {
-  return `/account/${routeParams.email}/password`;
+  return `/account/${encodeURIComponent(routeParams.email)}/password`;
 }
 export function accountSetPassword(routeParams = {}) {
-  return `/account/${routeParams.email}/password/${routeParams.token}`;
+  return `/account/${encodeURIComponent(
+    routeParams.email
+  )}/password/${encodeURIComponent(routeParams.token)}`;
 }
 
 /// ///

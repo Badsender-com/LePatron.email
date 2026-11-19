@@ -217,9 +217,10 @@ UserSchema.methods.resetPassword = async function resetPassword(type, lang) {
   lang = lang || 'en';
 
   const updatedUser = await user.save();
-  const resetUrl = `${siteOrigin()}/account/${updatedUser.email}/password/${
-    user.token
-  }`;
+  // The address is one segment of the path: encoded, so that a `?`, a `#` or
+  // a `/` in it does not cut the link. The `@` stays, a path allows it.
+  const email = encodeURIComponent(updatedUser.email).replace(/%40/g, '@');
+  const resetUrl = `${siteOrigin()}/account/${email}/password/${user.token}`;
   await mail.send({
     to: updatedUser.email,
     ...composeEmail(texts, lang, { url: resetUrl }),
