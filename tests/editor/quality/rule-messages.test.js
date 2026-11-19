@@ -235,9 +235,11 @@ describe.each(CASES)(
         if (rule.enabled && !rule.enabled(ctx)) return;
         const findings = rule.run(ctx) || [];
         const passParams = rule.passParams ? rule.passParams(ctx) : {};
+        // As the engine does: the pass a rule picks for this email.
+        const passKey = (rule.passKeyOf && rule.passKeyOf(ctx)) || rule.passKey;
         const messages = findings
           .map((finding) => [finding.messageKey, finding.params])
-          .concat([[rule.passKey, passParams]]);
+          .concat([[passKey, passParams]]);
         Object.keys(STRINGS).forEach((lang) => {
           messages.forEach(([key, params]) => {
             expect(STRINGS[lang]).toHaveProperty([key]);

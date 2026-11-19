@@ -138,3 +138,69 @@ describe('unsupported-image-formats', () => {
     }
   );
 });
+
+// An image without an extension is judged only by the second look, which asks
+// the server only while one of its image checks is on (#1267). With them off
+// the check still passes, and its pass says what it did not judge.
+describe('unsupported-image-formats, its pass', () => {
+  const STRINGS = {
+    en: require('../../../public/lang/badsender-en.js'),
+    fr: require('../../../public/lang/badsender-fr.js'),
+  };
+  const IMAGE_CHECKS = [
+    'image-weight',
+    'images-total-weight',
+    'oversized-images',
+  ];
+  const PASS = 'Every image uses a format email clients show';
+  const off = (ids) =>
+    Object.fromEntries(ids.map((id) => [id, { state: 'off', thresholds: {} }]));
+
+  function passOf(blockHtml, checks = {}) {
+    const vm = fakeViewModel({ blocks, html: exportOf({ b1: blockHtml }) });
+    vm.metadata.qualitySettings = { checks };
+    const [check] = runQualityChecks(vm, {
+      rules: [unsupportedImageFormats],
+    }).checks;
+    return check;
+  }
+
+  const unnamed =
+    '<img src="https://cdn.test/img/1"><img src="https://cdn.test/img/2">' +
+    '<img src="https://cdn.test/img/1"><img src="https://cdn.test/a.jpg">';
+
+  it('counts the images without an extension it did not judge, with the image checks off', () => {
+    const check = passOf(unnamed, off(IMAGE_CHECKS));
+    expect(check.status).toBe('passed');
+    expect(check.passKey).not.toBe(PASS);
+    expect(check.passParams).toEqual({ count: 2 });
+    Object.values(STRINGS).forEach((strings) => {
+      expect(strings).toHaveProperty([check.passKey]);
+      expect(strings[check.passKey]).toContain('__count__');
+    });
+  });
+
+  it('says every image is fine while one image check lets the server read them', () => {
+    const check = passOf(unnamed, off(IMAGE_CHECKS.slice(1)));
+    expect(check.passKey).toBe(PASS);
+    expect(check.passParams).toEqual({});
+  });
+
+  it('says every image is fine when every address names its format', () => {
+    const check = passOf(
+      '<img src="https://cdn.test/a.jpg">',
+      off(IMAGE_CHECKS)
+    );
+    expect(check.passKey).toBe(PASS);
+    expect(check.passParams).toEqual({});
+  });
+
+  it('leaves merge-tag and placeholder images out of the count', () => {
+    const check = passOf(
+      '<img src="https://cdn.test/{{id}}">' +
+        '<img src="http://localhost:3000/api/images/placeholder/300x200.png">',
+      off(IMAGE_CHECKS)
+    );
+    expect(check.passKey).toBe(PASS);
+  });
+});

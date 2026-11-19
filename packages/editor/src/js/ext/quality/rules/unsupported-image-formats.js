@@ -1,7 +1,12 @@
 'use strict';
 
+const _ = require('lodash');
 const { blockImages } = require('../exported-content');
-const { checkableImages, remoteImage } = require('../resources');
+const {
+  checkableImages,
+  remoteImage,
+  serverReadsImages,
+} = require('../resources');
 
 // Formats a part of the audience cannot see (caniemail): Outlook for Windows
 // shows no WebP, few clients show AVIF, HEIC or TIFF, and SVG is stripped by
@@ -32,6 +37,18 @@ function formatOf(image) {
 const unnamedImages = (ctx) =>
   checkableImages(ctx).filter((image) => !formatOf(image));
 
+// The images without an extension nobody judges: with every server check
+// reading the images off, the second look does not ask the server for them
+// (resources.js). The check still passes, a company that turned those checks
+// off getting no warning about it, but its pass says what it did not look at.
+const unjudgedCount = (ctx) =>
+  serverReadsImages(ctx)
+    ? 0
+    : _.uniq(unnamedImages(ctx).map((image) => image.src)).length;
+
+const UNJUDGED_PASS_KEY =
+  'Images whose address has an extension use formats email clients show. __count__ image(s) without an extension not checked: the server reads them only while an image check (weight, total weight or dimensions) is on';
+
 const MESSAGE_KEY =
   'Image format not shown by every email client (__format__): prefer JPG, PNG or GIF';
 
@@ -41,6 +58,11 @@ module.exports = {
   severity: 'warning',
   titleKey: 'Image formats',
   passKey: 'Every image uses a format email clients show',
+  passKeyOf: (ctx) => (unjudgedCount(ctx) ? UNJUDGED_PASS_KEY : null),
+  passParams: (ctx) => {
+    const count = unjudgedCount(ctx);
+    return count ? { count } : {};
+  },
   run(ctx) {
     return blockImages(ctx)
       .map((image) => ({ image, format: formatOf(image) }))

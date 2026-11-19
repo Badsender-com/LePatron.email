@@ -10,6 +10,11 @@ const { isPlaceholderSrc } = require('./images');
 // as the server, from packages/shared: past them, the first ones are checked
 // and the rest left out, and a longer address is not sent at all.
 const { RESOURCES } = require('../../../../../shared/quality/limits.js');
+const {
+  CHECKS,
+  SERVER_CHECKS,
+} = require('../../../../../shared/quality/checks.js');
+const { checkStateOf } = require('./settings');
 
 const MAX_LINKS = RESOURCES.maxLinks;
 const MAX_IMAGES = RESOURCES.maxImages;
@@ -97,6 +102,16 @@ function collectResources(ctx, rules) {
   };
 }
 
+// The server's checks that download the images (weight, total weight,
+// dimensions): a second look at an image can only read what they fetched.
+const IMAGE_SERVER_CHECKS = SERVER_CHECKS.filter(
+  (id) => CHECKS[id].server.task === 'images'
+);
+
+/** Whether the server downloads the images on this run: one such check is on. */
+const serverReadsImages = (ctx) =>
+  IMAGE_SERVER_CHECKS.some((id) => checkStateOf(ctx, id) !== 'off');
+
 const hasResources = (resources) =>
   Boolean(resources) &&
   (resources.links.length > 0 || resources.images.length > 0);
@@ -108,6 +123,7 @@ const remoteImage = (ctx, url) => _.get(ctx, ['remote', 'images', url], null);
 module.exports = {
   collectResources,
   hasResources,
+  serverReadsImages,
   checkableLinks,
   checkableImages,
   remoteLink,

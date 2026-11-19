@@ -661,6 +661,8 @@ module.exports = {
   'Image formats': 'Image formats',
   'Every image uses a format email clients show':
     'Every image uses a format email clients show',
+  'Images whose address has an extension use formats email clients show. __count__ image(s) without an extension not checked: the server reads them only while an image check (weight, total weight or dimensions) is on':
+    'Images whose address has an extension use formats email clients show. __count__ image(s) without an extension not checked: the server reads them only while an image check (weight, total weight or dimensions) is on',
   'Image format not shown by every email client (__format__): prefer JPG, PNG or GIF':
     'Image format not shown by every email client (__format__): prefer JPG, PNG or GIF',
   'quality-title-subject': 'Subject',
