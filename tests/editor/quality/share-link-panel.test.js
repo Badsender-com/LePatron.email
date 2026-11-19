@@ -22,6 +22,12 @@ Vue.config.devtools = false;
 const URL = '/api/mailings/m1/share-links';
 const flush = () => new Promise((resolve) => setTimeout(resolve, 0));
 
+// What the copy tests set on the page, put back after each one: a Clipboard
+// API left from a test, its mock emptied by resetAllMocks, made the next copy
+// call `undefined.then` (seen in the CI on 30/10/2026).
+const originalExecCommand = document.execCommand;
+let app = null;
+
 async function mount(url = URL, active = true) {
   const vm = {
     t: (key, params = {}) =>
@@ -34,7 +40,7 @@ async function mount(url = URL, active = true) {
     metadata: { url: { shareLinks: url }, shareLinks: { maxActive: 5 } },
   };
   document.body.innerHTML = '<div id="root"></div>';
-  const app = new Vue({
+  app = new Vue({
     render: (h) => h(ShareLinkPanel, { props: { vm, active } }),
   }).$mount('#root');
   await flush();
@@ -56,6 +62,15 @@ beforeEach(() => {
       ],
     },
   });
+});
+
+afterEach(() => {
+  if (app) app.$destroy();
+  app = null;
+  document.body.innerHTML = '';
+  delete window.isSecureContext;
+  delete navigator.clipboard;
+  document.execCommand = originalExecCommand;
 });
 
 describe('ShareLinkPanel', () => {
@@ -181,6 +196,11 @@ describe('ShareLinkPanel', () => {
   it('gives the advice to select the link only where the link is on screen', async () => {
     Object.defineProperty(window, 'isSecureContext', {
       value: false,
+      configurable: true,
+    });
+    // No Clipboard API at all: only the field can copy, and it refuses.
+    Object.defineProperty(navigator, 'clipboard', {
+      value: undefined,
       configurable: true,
     });
     document.execCommand = jest.fn(() => false);
