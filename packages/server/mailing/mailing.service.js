@@ -1509,14 +1509,23 @@ async function deleteOne(mailing) {
 const PREVIEW_CACHE_BUDGET = 8 * 1024 * 1024; // characters
 // The largest sanitized preview kept: MCP reads no larger one (ADR 0012).
 const PREVIEW_CACHE_MAX_ENTRY = PREVIEW_CACHE_BUDGET / 10;
-const { sanitizeCached: sanitizePreviewCached, keyOf: previewCacheKeyOf } =
-  createSanitizedPreviewCache({
-    sanitize: sanitizePreviewHtml,
-    budget: PREVIEW_CACHE_BUDGET,
-    maxEntry: PREVIEW_CACHE_MAX_ENTRY,
-  });
-// MCP reads a mailing's content through the same cache (mcp/mcp-mailing-read.js),
-// and keys the previews it relays on the same version.
+const { sanitizeCached: sanitizePreviewCached } = createSanitizedPreviewCache({
+  sanitize: sanitizePreviewHtml,
+  budget: PREVIEW_CACHE_BUDGET,
+  maxEntry: PREVIEW_CACHE_MAX_ENTRY,
+});
+
+// What tells one saved preview of a mailing from another: its last write, and
+// its length should two writes share a millisecond. MCP keys the previews it
+// relays on it (mcp/mcp-relayed-images.js).
+function previewCacheKeyOf(mailing) {
+  const updatedAt = mailing.updatedAt
+    ? new Date(mailing.updatedAt).getTime()
+    : 0;
+  return `${mailing._id}:${updatedAt}:${mailing.previewHtml.length}`;
+}
+
+// MCP reads a mailing's content through the same cache (mcp/mcp-mailing-read.js).
 module.exports.PREVIEW_CACHE_MAX_ENTRY = PREVIEW_CACHE_MAX_ENTRY;
 module.exports.previewCacheKeyOf = previewCacheKeyOf;
 module.exports.sanitizePreviewCached = sanitizePreviewCached;

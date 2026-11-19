@@ -77,8 +77,7 @@ function createSanitizedPreviewCache({
     return html;
   }
 
-  // keyOf names the version held, for a cache of what is derived from it.
-  return { peek, sanitizeCached, keyOf };
+  return { peek, sanitizeCached };
 }
 
 module.exports = { createSanitizedPreviewCache };

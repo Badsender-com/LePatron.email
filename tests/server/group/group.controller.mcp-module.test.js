@@ -104,10 +104,11 @@ describe('PUT /groups/:groupId — MCP module', () => {
       { $set: { enableMcpModule: true } },
       { new: false, projection: { enableMcpModule: 1 } }
     );
-    expect(groupService.updateGroup).toHaveBeenCalledWith({
-      name: 'Renamed',
-      id: GROUP_ID,
-    });
+    // The second argument is the quality settings update: none asked here.
+    expect(groupService.updateGroup).toHaveBeenCalledWith(
+      { name: 'Renamed', id: GROUP_ID },
+      {}
+    );
   });
 
   // The access a closed module gives is none, whatever the switch says.
