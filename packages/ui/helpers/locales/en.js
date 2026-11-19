@@ -99,8 +99,6 @@ export default {
       continue: 'Continue to LePatron',
     },
     group: {
-      sectionTitle: 'Security',
-      sectionDescription: 'How the members of the company sign in.',
       title: 'Two-factor authentication',
       description:
         'Every member of the company enters a code after their password. Those who have not set it up yet will do so at their next sign-in.',
@@ -324,7 +322,6 @@ export default {
         authentication: 'Authentication',
         authenticationDescription: 'Configure SAML authentication to allow your users to login with their enterprise account.',
         permissions: 'Permissions',
-        permissionsDescription: 'Manage user access rights to different workspaces.',
         companyInfo: 'Company information',
         companyInfoDescription: 'Enter the main information about the company.',
       },

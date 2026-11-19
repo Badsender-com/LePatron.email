@@ -102,8 +102,6 @@ export default {
       continue: 'Continuer vers LePatron',
     },
     group: {
-      sectionTitle: 'Sécurité',
-      sectionDescription: 'Comment les membres de l’entreprise se connectent.',
       title: 'Double authentification',
       description:
         'Chaque membre de l’entreprise saisit un code après son mot de passe. Ceux qui ne l’ont pas encore configurée le feront à leur prochaine connexion.',
@@ -328,7 +326,6 @@ export default {
         authentication: 'Authentification',
         authenticationDescription: 'Configurez l\'authentification SAML pour permettre à vos utilisateurs de se connecter avec leur compte d\'entreprise.',
         permissions: 'Permissions',
-        permissionsDescription: 'Gérez les droits d\'accès des utilisateurs aux différents workspaces.',
         companyInfo: 'Informations de l\'entreprise',
         companyInfoDescription: 'Renseignez les informations principales de l\'entreprise.',
       },
