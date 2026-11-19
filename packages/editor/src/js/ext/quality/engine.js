@@ -42,6 +42,7 @@ const oversizedImages = require('./rules/oversized-images');
 const domainBlocklists = require('./rules/domain-blocklists');
 const dangerousLinks = require('./rules/dangerous-links');
 const { collectResources } = require('./resources');
+const { passMessageOf } = require('./pass-message');
 const { checkStateOf } = require('./settings');
 const { isMostSevere } = require('./levels');
 
@@ -195,21 +196,6 @@ function resourcesOf(ctx) {
   }
 }
 
-// What a passed check says ("Exported HTML weighs 12 KB"): a parameter that
-// cannot be computed leaves the check passed, with nothing to say.
-function passParamsOf(rule, ctx) {
-  if (!rule.passParams) return {};
-  try {
-    return rule.passParams(ctx) || {};
-  } catch (err) {
-    console.error(
-      `Quality check "${rule.id}" could not describe its pass`,
-      err
-    );
-    return {};
-  }
-}
-
 function runRule(rule, ctx) {
   try {
     const findings = rankFingerprints(
@@ -225,8 +211,9 @@ function runRule(rule, ctx) {
         status,
         count: findings.length,
         // What a passed check says: "Every link has a destination".
-        passKey: rule.passKey,
-        passParams: status === 'passed' ? passParamsOf(rule, ctx) : {},
+        ...(status === 'passed'
+          ? passMessageOf(rule, ctx)
+          : { passKey: rule.passKey, passParams: {} }),
       },
     };
   } catch (err) {
