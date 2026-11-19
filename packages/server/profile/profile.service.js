@@ -5,15 +5,11 @@ const ESP_CONTENT_TYPE = require('../constant/content-esp-type.js');
 
 const ERROR_CODES = require('../constant/error-codes.js');
 
-const {
-  NotFound,
-  Conflict,
-  InternalServerError,
-  Unauthorized,
-} = require('http-errors');
+const { NotFound, Conflict, InternalServerError } = require('http-errors');
 const mailingService = require('../mailing/mailing.service.js');
 const groupService = require('../group/group.service.js');
 const permissions = require('../account/permissions.js');
+const { assertSameGroup } = require('../account/request-scope.js');
 const EspTypes = require('../constant/esp-type');
 
 module.exports = {
@@ -58,12 +54,38 @@ async function assertRequiredTrackingParamsFilled({
   // Pass freshTracking when available so we validate the live builder state
   // instead of the (possibly stale) persisted mailing.data.tracking.
   await mailingService.resolveMailingTrackingContext(mailing, freshTracking);
+  return mailing;
 }
 
+/**
+ * The profile an email is pushed through: one the user reaches, of the
+ * email's own company. A profile the user does not reach answers like one
+ * that does not exist.
+ *
+ * @param {Object} params
+ * @param {Object} params.user
+ * @param {string} params.profileId
+ * @param {Object} params.mailing read in the user's company, its template
+ *   populated (an email created by the platform has no company of its own)
+ */
+async function findProfileForMailing({ user, profileId, mailing }) {
+  const profile = await findOne(profileId);
+  if (!permissions.canAccessGroup(user, profile._company)) {
+    throw new NotFound(ERROR_CODES.PROFILE_NOT_FOUND);
+  }
+  assertSameGroup(
+    mailing._company || mailing._wireframe?._company,
+    profile._company
+  );
+  return profile;
+}
+
+// A profile the user does not reach answers like one that does not exist, as
+// in findProfileForMailing.
 async function checkIfUserIsAuthorizedToAccessProfile({ user, profileId }) {
   const profile = await findOne(profileId);
   if (!permissions.canAccessGroup(user, profile?._company)) {
-    throw new Unauthorized(ERROR_CODES.FORBIDDEN_PROFILE_ACCESS);
+    throw new NotFound(ERROR_CODES.PROFILE_NOT_FOUND);
   }
 }
 
@@ -187,6 +209,28 @@ async function updateProfile({
   );
 }
 
+/**
+ * An update edits a campaign the email already has on this profile: the one
+ * recorded in its espIds when it was created. Any other answers like a
+ * campaign that does not exist.
+ *
+ * @param {Object} params
+ * @param {Object} params.mailing with its espIds
+ * @param {string} params.profileId
+ * @param {string} params.campaignId
+ */
+function assertCampaignOfMailing({ mailing, profileId, campaignId }) {
+  const recorded = (mailing.espIds || []).some(
+    (espId) =>
+      espId &&
+      String(espId.profileId) === String(profileId) &&
+      String(espId.campaignId) === String(campaignId)
+  );
+  if (!recorded) {
+    throw new NotFound(ERROR_CODES.ESP_CAMPAIGN_NOT_FOUND);
+  }
+}
+
 async function updateEspCampaign({
   user,
   espSendingMailData,
@@ -199,8 +243,17 @@ async function updateEspCampaign({
 }) {
   const { subject, campaignMailName, planification } = espSendingMailData;
   // Block ESP export when required group/template tracking params are missing
-  await assertRequiredTrackingParamsFilled({ mailingId, user, freshTracking });
-  const profile = await findOne(profileId);
+  const mailing = await assertRequiredTrackingParamsFilled({
+    mailingId,
+    user,
+    freshTracking,
+  });
+  // Exporting is open to every role, the reviewer included, who writes no
+  // email (ADR 0004; rbac-refonte §3.6, item 3): the user reads the email,
+  // and updates the campaign recorded on it for this profile.
+  await mailingService.assertUserCanReadMailing(user, mailing);
+  const profile = await findProfileForMailing({ user, profileId, mailing });
+  assertCampaignOfMailing({ mailing, profileId, campaignId });
 
   const {
     apiKey,
@@ -286,8 +339,16 @@ async function sendEspCampaign({
 }) {
   const { subject, campaignMailName, planification } = espSendingMailData;
   // Block ESP export when required group/template tracking params are missing
-  await assertRequiredTrackingParamsFilled({ mailingId, user, freshTracking });
-  const profile = await findOne(profileId);
+  const mailing = await assertRequiredTrackingParamsFilled({
+    mailingId,
+    user,
+    freshTracking,
+  });
+  // Exporting is open to every role, the reviewer included, who writes no
+  // email (ADR 0004; rbac-refonte §3.6, item 3): the user reads the email,
+  // through a profile of its company.
+  await mailingService.assertUserCanReadMailing(user, mailing);
+  const profile = await findProfileForMailing({ user, profileId, mailing });
 
   /*
     For DSC, creating a new campaign from the same profile is allowed

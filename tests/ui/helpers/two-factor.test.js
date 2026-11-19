@@ -247,7 +247,14 @@ describe('a failed sign-in through the identity provider', () => {
   );
 
   it('lands on the login page, which says so', () => {
-    expect(server).toMatch(/SSO_FAILED = '\/account\/login\?sso=failed'/);
+    const sso = fs.readFileSync(
+      path.join(__dirname, '../../../packages/server/account/saml-account.js'),
+      'utf8'
+    );
+    expect(sso).toMatch(
+      /SSO_FAILURE_REDIRECT = '\/account\/login\?sso=failed'/
+    );
+    expect(server).toMatch(/SSO_FAILED = SSO_FAILURE_REDIRECT/);
     expect(server).not.toMatch(/failureRedirect: '\/'/);
 
     const login = read('routes/account/login/index.vue');

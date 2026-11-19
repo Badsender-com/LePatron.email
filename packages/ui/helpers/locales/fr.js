@@ -634,6 +634,8 @@ export default {
     estimatedTime: '~{time} restantes',
     destination: 'Destination',
     destinationHint: 'Sélectionnez où créer la copie traduite',
+    destinationRequiredHint:
+      'Vous ne pouvez pas modifier cet emplacement : sélectionnez où créer la copie traduite',
   },
   template: {
     noId: 'Aucun ID',

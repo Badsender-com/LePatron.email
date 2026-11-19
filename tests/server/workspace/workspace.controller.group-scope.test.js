@@ -1,6 +1,6 @@
 'use strict';
 
-// Reading or deleting a workspace by id: a super admin reaches every
+// Reading, updating or deleting a workspace by id: a super admin reaches every
 // company's workspaces, anyone else its own company's (account/permissions.js).
 
 const mongoose = require('mongoose');
@@ -9,6 +9,7 @@ jest.mock('../../../packages/server/workspace/workspace.service', () => ({
   getWorkspace: jest.fn(),
   getWorkspaceWithAccessRight: jest.fn(),
   deleteWorkspace: jest.fn(),
+  updateWorkspace: jest.fn(),
 }));
 
 const workspaceService = require('../../../packages/server/workspace/workspace.service');
@@ -16,8 +17,11 @@ const workspaceController = require('../../../packages/server/workspace/workspac
 const ERROR_CODES = require('../../../packages/server/constant/error-codes.js');
 const {
   ALICE,
+  CAROL,
   DAVE,
+  ERIN,
   FRANK,
+  PLATFORM_GROUP,
   CLIENT_GROUP,
   USERS,
   actorFrom,
@@ -37,6 +41,7 @@ beforeEach(() => {
   workspaceService.getWorkspace.mockResolvedValue(WORKSPACE);
   workspaceService.getWorkspaceWithAccessRight.mockResolvedValue(WORKSPACE);
   workspaceService.deleteWorkspace.mockResolvedValue();
+  workspaceService.updateWorkspace.mockResolvedValue();
 });
 
 const params = { workspaceId: WORKSPACE_ID };
@@ -88,5 +93,102 @@ describe('deleting a workspace', () => {
       body: ERROR_CODES.FORBIDDEN_WORKSPACE_RETRIEVAL,
     });
     expect(workspaceService.deleteWorkspace).not.toHaveBeenCalled();
+  });
+});
+
+describe('updating a workspace', () => {
+  // What the workspace form sends, and what the membership toggle of a user's
+  // page sends.
+  const FORM = {
+    name: 'Renamed',
+    description: 'For the newsletters',
+    selectedUsers: [{ id: FRANK }],
+    groupId: CLIENT_GROUP,
+  };
+
+  it.each([
+    ['a super admin', actor(ALICE)],
+    ['a company admin of its company', actor(ERIN)],
+  ])('lets %s update it', async (_label, user) => {
+    const result = await call(workspaceController.updateWorkspace, {
+      user,
+      params,
+      body: FORM,
+    });
+
+    expect(result.status).toBe(200);
+    expect(workspaceService.updateWorkspace).toHaveBeenCalledWith({
+      id: WORKSPACE_ID,
+      groupId: WORKSPACE._company,
+      name: 'Renamed',
+      description: 'For the newsletters',
+      _users: [FRANK],
+    });
+  });
+
+  it('refuses a company admin of another company', async () => {
+    const result = await call(workspaceController.updateWorkspace, {
+      user: actor(CAROL),
+      params,
+      body: FORM,
+    });
+
+    expect(result).toEqual({
+      status: 403,
+      body: ERROR_CODES.FORBIDDEN_WORKSPACE_RETRIEVAL,
+    });
+    expect(workspaceService.updateWorkspace).not.toHaveBeenCalled();
+  });
+
+  it('stores only the fields of the form, in the company of the workspace', async () => {
+    await call(workspaceController.updateWorkspace, {
+      user: actor(ERIN),
+      params,
+      body: {
+        ...FORM,
+        groupId: PLATFORM_GROUP,
+        _company: PLATFORM_GROUP,
+        createdAt: '2020-01-01',
+      },
+    });
+
+    expect(workspaceService.updateWorkspace).toHaveBeenCalledWith({
+      id: WORKSPACE_ID,
+      groupId: WORKSPACE._company,
+      name: 'Renamed',
+      description: 'For the newsletters',
+      _users: [FRANK],
+    });
+  });
+
+  it('changes only the members when only the members are sent', async () => {
+    await call(workspaceController.updateWorkspace, {
+      user: actor(ERIN),
+      params,
+      body: { selectedUsers: [{ id: FRANK }] },
+    });
+
+    expect(workspaceService.updateWorkspace).toHaveBeenCalledWith({
+      id: WORKSPACE_ID,
+      groupId: WORKSPACE._company,
+      _users: [FRANK],
+    });
+  });
+
+  it.each([
+    ['a name', { name: { $ne: null } }],
+    ['a description', { description: ['x'] }],
+  ])('refuses %s that is not text', async (_field, body) => {
+    const result = await call(workspaceController.updateWorkspace, {
+      user: actor(ERIN),
+      params,
+      body: { ...FORM, ...body },
+    });
+
+    expect(result).toEqual({
+      status: 400,
+      body: ERROR_CODES.INVALID_REQUEST,
+    });
+    expect(workspaceService.updateWorkspace).not.toHaveBeenCalled();
   });
 });

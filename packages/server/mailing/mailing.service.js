@@ -66,6 +66,7 @@ const {
   listingGroupIdOf,
   resourceGroupIdOf,
   assertSameGroup,
+  refuseBootstrapAccount,
 } = require('../account/request-scope.js');
 const { testConnection } = require('../group/group-ftp.service.js');
 
@@ -78,12 +79,15 @@ module.exports = {
   findOneForUser,
   assertUserCanEditMailing,
   userCanEditMailing,
+  assertUserCanReadMailing,
+  userCanReadMailing,
   buildMailingCopy,
   renameMailing,
   deleteMailing,
   deleteOne,
   copyMailing,
   duplicateWithTranslatedData,
+  assertCanDuplicateWithTranslation,
   moveMailing,
   moveManyMailings,
   findAllIn,
@@ -304,6 +308,40 @@ async function assertUserCanEditMailing(user, mailing) {
 async function userCanEditMailing(user, mailing) {
   try {
     await assertUserCanEditMailing(user, mailing);
+    return true;
+  } catch (error) {
+    if (error.status === 403 || error.status === 404) return false;
+    throw error;
+  }
+}
+
+/**
+ * Reading a mailing (its preview, its gallery, the source of a copy): any user
+ * of the company of the workspace that holds it, member or not, whatever the
+ * company's "access to all workspaces" setting
+ * (docs/plans/preview-non-member-workspace.md). The mailing itself is loaded
+ * in the user's company first (`addGroupFilter`, `findOneForUser`).
+ *
+ * @param {Object} user
+ * @param {Object} mailing with its `_workspace` and `_parentFolder`
+ * @throws {NotFound} when the workspace is outside the user's reach
+ */
+async function assertUserCanReadMailing(user, mailing) {
+  if (permissions.can(user, CAPABILITIES.PLATFORM_MANAGE)) return;
+  const workspace = await getOwningWorkspace(mailing);
+  if (workspace) workspaceService.doesUserHaveReadAccess(user, workspace);
+}
+
+/**
+ * The same rule as `assertUserCanReadMailing`, as an answer.
+ *
+ * @param {Object} user
+ * @param {Object} mailing
+ * @returns {Promise<boolean>}
+ */
+async function userCanReadMailing(user, mailing) {
+  try {
+    await assertUserCanReadMailing(user, mailing);
     return true;
   } catch (error) {
     if (error.status === 403 || error.status === 404) return false;
@@ -847,7 +885,13 @@ async function getMailNameAndCompanyByMailingIdAndUser({ mailingId, user }) {
   const mailing = await Mailings.findOne(query)
     // `subject` so a test send can carry the real subject line rather than the
     // internal mailing name; the caller falls back on the name when it is empty.
-    .select({ name: 1, subject: 1, _company: 1 })
+    .select({
+      name: 1,
+      subject: 1,
+      _company: 1,
+      _workspace: 1,
+      _parentFolder: 1,
+    })
     .lean();
   if (!mailing) throw new NotFound(ERROR_CODES.MAILING_MISSING_SOURCE);
   return mailing;
@@ -1289,13 +1333,7 @@ async function copyMailing(mailingId, destination, user) {
   // mailing out of it. We therefore only require READ access on the source
   // workspace — `folderService.hasAccess` would require workspace membership
   // (write), which wrongly blocked read-only users copying from a folder.
-  // A mailing lives in either a workspace or a folder (never both); when it is
-  // in a folder, resolve the owning workspace to run the same read check.
-  const sourceWorkspace = await getOwningWorkspace(mailing);
-
-  if (sourceWorkspace) {
-    workspaceService.doesUserHaveReadAccess(user, sourceWorkspace);
-  }
+  await assertUserCanReadMailing(user, mailing);
 
   // `findOne` returns a Mongoose document whose real data lives in an internal
   // `_doc`; running lodash `omit` on it directly does not reliably strip the
@@ -1354,6 +1392,69 @@ async function copyMailing(mailingId, destination, user) {
 }
 
 /**
+ * Whether the user may duplicate and translate a mailing there: asked before
+ * the translation starts, since the provider bills it, and again when the
+ * copy is written (`duplicateWithTranslatedData`).
+ *
+ * @param {Object} params
+ * @param {string} params.mailingId the source
+ * @param {Object} params.user
+ * @param {string} [params.workspaceId] the workspace the user chose
+ * @param {string} [params.folderId] the folder the user chose
+ */
+async function assertCanDuplicateWithTranslation({
+  mailingId,
+  user,
+  workspaceId,
+  folderId,
+}) {
+  const mailing = await findOneForUser(mailingId, user);
+  await locationOfTranslatedCopy({ mailing, user, workspaceId, folderId });
+}
+
+/**
+ * Where a translated copy goes, once checked: the source is read like the
+ * source of a copy, and the copy goes to the folder or workspace the user
+ * chose, or back next to its source, in a location the user writes to and in
+ * the company of its source.
+ *
+ * @returns {Promise<Object>} `{ _parentFolder }` or `{ _workspace }`
+ */
+async function locationOfTranslatedCopy({
+  mailing,
+  user,
+  workspaceId,
+  folderId,
+}) {
+  await assertUserCanReadMailing(user, mailing);
+
+  if (folderId) {
+    await folderService.hasAccess(folderId, user);
+    const destWorkspace = await folderService.getWorkspaceForFolder(folderId);
+    assertSameGroup(mailing._company, destWorkspace?.group);
+    return { _parentFolder: folderId };
+  }
+  if (workspaceId) {
+    const destWorkspace = await workspaceService.getWorkspace(workspaceId);
+    workspaceService.doesUserHaveWriteAccess(user, destWorkspace);
+    assertSameGroup(mailing._company, destWorkspace.group);
+    return { _workspace: workspaceId };
+  }
+  if (mailing._parentFolder) {
+    await folderService.hasAccess(mailing._parentFolder, user);
+    return { _parentFolder: mailing._parentFolder };
+  }
+  if (mailing._workspace) {
+    const sourceWorkspace = await workspaceService.getWorkspace(
+      mailing._workspace
+    );
+    workspaceService.doesUserHaveWriteAccess(user, sourceWorkspace);
+    return { _workspace: mailing._workspace };
+  }
+  return {};
+}
+
+/**
  * Duplicate a mailing with translated/modified data
  * Used for the "Duplicate + Translate" feature
  * @param {Object} params
@@ -1371,21 +1472,13 @@ async function duplicateWithTranslatedData({
   workspaceId,
   folderId,
 }) {
-  // Group-scoped load: prevent a group admin from duplicating+translating a
-  // mailing of another group by id (cross-tenant IDOR).
   const mailing = await findOneForUser(mailingId, user);
-
-  // Check access to original mailing's folder (now throws on denial)
-  if (mailing?._parentFolder) {
-    await folderService.hasAccess(mailing._parentFolder, user);
-  }
-
-  if (mailing?.workspace) {
-    const sourceWorkspace = await workspaceService.getWorkspace(
-      mailing.workspace
-    );
-    workspaceService.doesUserHaveReadAccess(user, sourceWorkspace);
-  }
+  const location = await locationOfTranslatedCopy({
+    mailing,
+    user,
+    workspaceId,
+    folderId,
+  });
 
   // Same Mongoose-document caveat as `copyMailing`: omit on the raw document
   // does not reliably strip identity/location fields (some are aliases), which
@@ -1411,22 +1504,9 @@ async function duplicateWithTranslatedData({
     copy.author = user.name;
   }
 
-  // Handle destination: use provided or fall back to the original location.
-  // The source location was stripped above, so the fallback re-applies it.
-  if (folderId) {
-    // Validate access to destination folder
-    await folderService.hasAccess(folderId, user);
-    copy._parentFolder = folderId;
-  } else if (workspaceId) {
-    // Validate access to destination workspace
-    const destWorkspace = await workspaceService.getWorkspace(workspaceId);
-    workspaceService.doesUserHaveWriteAccess(user, destWorkspace);
-    copy._workspace = workspaceId;
-  } else if (mailing._parentFolder) {
-    copy._parentFolder = mailing._parentFolder;
-  } else if (mailing._workspace) {
-    copy._workspace = mailing._workspace;
-  }
+  // The source location was stripped above: the copy goes where it was
+  // checked to go.
+  Object.assign(copy, location);
 
   // Create the new mailing
   const copiedMailing = await Mailings.create(copy);
@@ -1454,25 +1534,29 @@ async function duplicateWithTranslatedData({
   return copiedMailing;
 }
 
-async function renameMailing(
-  { mailingId, mailingName, workspaceId, parentFolderId },
-  user
-) {
-  if (!mailingName || mailingName === '') {
+/**
+ * Rename a mailing where it lies: read in the user's company (another
+ * company's answers like one that does not exist), and renamed by whoever may
+ * save it, in its own workspace or folder. The bootstrap account is refused,
+ * as on every module write.
+ *
+ * @param {Object} params
+ * @param {string} params.mailingId
+ * @param {string} params.mailingName
+ * @param {Object} user
+ */
+async function renameMailing({ mailingId, mailingName }, user) {
+  // A module write: the bootstrap account stays in the settings.
+  refuseBootstrapAccount(user);
+  if (typeof mailingName !== 'string' || mailingName === '') {
     throw new BadRequest(ERROR_CODES.NAME_NOT_PROVIDED);
   }
 
-  checkEitherWorkspaceOrFolderDefined(workspaceId, parentFolderId);
-
-  if (workspaceId) {
-    const workspace = await workspaceService.getWorkspace(workspaceId);
-    workspaceService.doesUserHaveWriteAccess(user, workspace);
-  } else {
-    await folderService.hasAccess(parentFolderId, user);
-  }
+  const mailing = await findOneForUser(mailingId, user);
+  await assertUserCanEditMailing(user, mailing);
 
   const updateResponse = await Mailings.updateOne(
-    { _id: mongoose.Types.ObjectId(mailingId) },
+    { _id: mailing._id },
     { name: mailingName }
   );
 
@@ -1541,14 +1625,9 @@ async function previewMail(mailingId, user) {
     _parentFolder: 1,
   }).lean();
   if (!mailWithPreview) throw new NotFound(ERROR_CODES.MAILING_NOT_FOUND);
-  // A READ, like the source of a copy: any user of the company may preview a
-  // mailing of any of its workspaces, member or not, whatever the company's
-  // "access to all workspaces" setting. The preview is how a user picks a
+  // A READ, like the source of a copy: the preview is how a user picks a
   // mailing to copy, and a preview URL can be shared with a colleague.
-  if (!permissions.can(user, CAPABILITIES.PLATFORM_MANAGE)) {
-    const workspace = await getOwningWorkspace(mailWithPreview);
-    if (workspace) workspaceService.doesUserHaveReadAccess(user, workspace);
-  }
+  await assertUserCanReadMailing(user, mailWithPreview);
   // Its own code, after the access check: the UI tells "not generated yet" from
   // a refusal, and only a reader allowed in learns that there is no preview.
   if (!mailWithPreview.previewHtml)

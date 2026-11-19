@@ -3,6 +3,7 @@
 const asyncHandler = require('express-async-handler');
 const createError = require('http-errors');
 const translationService = require('./translation.service');
+const mailingService = require('../mailing/mailing.service');
 const translationJobs = require('./translation-jobs');
 const { processTranslationAsync } = require('./translation-job-runner.js');
 const logger = require('../utils/logger.js');
@@ -56,6 +57,15 @@ async function duplicateAndTranslate(req, res) {
   if (!targetLanguage || typeof targetLanguage !== 'string') {
     throw createError(400, ERROR_CODES.TRANSLATION_TARGET_LANGUAGE_REQUIRED);
   }
+
+  // Who may do it, answered to the request itself: the provider bills the
+  // translation, so nothing starts that the copy could not be written for.
+  await mailingService.assertCanDuplicateWithTranslation({
+    mailingId,
+    user,
+    workspaceId,
+    folderId,
+  });
 
   // Create the job up-front so the client can start polling immediately.
   // Heavy work (DB lookups, text extraction, batching) is moved to the

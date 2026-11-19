@@ -8,10 +8,17 @@ jest.mock('../../../packages/server/common/file-manage.service.js', () => ({
   writeStreamFromStream: jest.fn().mockResolvedValue(undefined),
   list: jest.fn().mockResolvedValue([]),
 }));
-jest.mock('../../../packages/server/common/upload-identity.service.js', () => ({
-  // the shared reader, which bounds what it hands the prober
-  probeImageDimensions: jest.fn().mockReturnValue(null),
-}));
+jest.mock('../../../packages/server/common/upload-identity.service.js', () => {
+  const actual = jest.requireActual(
+    '../../../packages/server/common/upload-identity.service.js'
+  );
+  return {
+    // the shared reader, which bounds what it hands the prober
+    probeImageDimensions: jest.fn().mockReturnValue(null),
+    storedExtension: actual.storedExtension,
+    SNIFF_BYTES: actual.SNIFF_BYTES,
+  };
+});
 jest.mock('../../../packages/server/common/models.common.js', () => {
   // a constructor (createGallery does `new Galleries()`) with the statics used
   const Galleries = jest.fn();
@@ -37,6 +44,10 @@ const {
 } = require('../../../packages/server/common/models.common.js');
 
 const MONGO_ID = 'abc123';
+const PNG_BYTES = Buffer.from(
+  'iVBORw0KGgoAAAANSUhEUgAAAAgAAAAICAYAAADED76LAAAACXBIWXMAAAPoAAAD6AG1e1JrAAAAEklEQVR42mP4z8DwHx9mGBkKAMLXf4HVAzL9AAAAAElFTkSuQmCC',
+  'base64'
+);
 const IMAGE_URL = 'https://cdn.example.com/photo.png';
 
 function mockImageResponse(
@@ -137,6 +148,16 @@ describe('image.service.createFromUrl', () => {
       { creationOrWireframeId: MONGO_ID, 'files.name': { $ne: result.name } },
       { $push: { files: result } }
     );
+  });
+
+  // The extension comes from the bytes, not from the type the remote server
+  // announced.
+  it('names the image after its bytes, not the announced type', async () => {
+    mockImageResponse(PNG_BYTES, { contentType: 'text/html' });
+
+    const result = await imageService.createFromUrl(MONGO_ID, IMAGE_URL);
+
+    expect(result.name).toMatch(new RegExp(`^${MONGO_ID}-[a-f0-9]+\\.png$`));
   });
 });
 

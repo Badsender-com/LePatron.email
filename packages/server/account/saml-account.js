@@ -1,9 +1,11 @@
 'use strict';
 
+const express = require('express');
 const { XMLParser } = require('fast-xml-parser');
 
 const { Users, Groups } = require('../common/models.common.js');
 const { normalizeString } = require('../utils/model.js');
+const logger = require('../utils/logger.js');
 const { samlOptionsFor } = require('./saml-config.js');
 
 // SSO signs a person in through the identity provider of their own company,
@@ -16,6 +18,17 @@ const companyIdOf = (user) => String(user._company?._id || user._company);
 // Far above any real response; a bigger one is not parsed at all.
 const MAX_RESPONSE_LENGTH = 256 * 1024;
 
+// The form the identity provider posts to the callback: the response, which
+// form encoding makes a few percent longer, and RelayState. Twice the length
+// a response is read at.
+const CALLBACK_BODY_LIMIT = 2 * MAX_RESPONSE_LENGTH;
+
+// The application reads JSON everywhere; this form, where it is posted only.
+const samlCallbackBody = express.urlencoded({
+  extended: false,
+  limit: CALLBACK_BODY_LIMIT,
+});
+
 // The account's email is stored lowercased. A NameID that only lowercases to
 // it through a non-ASCII letter (the Kelvin sign for "k", say) is another
 // name, not another spelling.
@@ -23,7 +36,7 @@ const asciiLowercase = (value) =>
   value.replace(/[A-Z]/g, (letter) => letter.toLowerCase());
 
 // The parser leaves entities alone (no DOCTYPE expansion); the predefined ones
-// and character references are decoded here, as passport-saml reads them.
+// and character references are decoded here, as the SAML library reads them.
 const PREDEFINED_ENTITIES = {
   amp: '&',
   lt: '<',
@@ -83,7 +96,7 @@ function findAccount(email) {
 }
 
 /**
- * The passport-saml options for a request. Starting a sign-in, the login page
+ * The SAML options for a request. Starting a sign-in, the login page
  * names the account in the query string; on the callback, the account comes
  * from the response itself, never from the query string, which the sender of
  * the response chooses. Remembers on the request which company's certificate
@@ -103,8 +116,7 @@ async function samlOptionsForRequest(request) {
   if (!user) throw new Error('SAML provider not found');
 
   const group = await Groups.findOne({ _id: companyIdOf(user) });
-  // Never options without the identity provider's certificate: passport-saml
-  // verifies a response's signature only when it has one.
+  // Never options without the identity provider's certificate.
   const samlOptions = samlOptionsFor(group);
   if (!samlOptions) throw new Error('Provider informations not found');
 
@@ -117,7 +129,7 @@ async function samlOptionsForRequest(request) {
  * belongs to the company whose certificate checked the response.
  *
  * @param {Object} req the request `samlOptionsForRequest` read
- * @param {Object} profile the profile passport-saml read from the response
+ * @param {Object} profile the profile the SAML library read from the response
  * @returns {Promise<Object|null>}
  */
 async function accountOfResponse(req, profile) {
@@ -127,4 +139,25 @@ async function accountOfResponse(req, profile) {
   return user;
 }
 
-module.exports = { nameIdOf, samlOptionsForRequest, accountOfResponse };
+// Where a sign-in through SSO that does not succeed lands: the login page,
+// which says it failed (its `sso` query).
+const SSO_FAILURE_REDIRECT = '/account/login?sso=failed';
+
+/**
+ * Express error middleware of the callback: a response the SAML library
+ * refuses sends the browser back like a response naming no account does. The
+ * reason is logged; the response, which names a person, is not.
+ */
+function refusedSamlResponse(error, req, res, _next) {
+  logger.warn('[SAML] response refused:', error?.message);
+  res.redirect(SSO_FAILURE_REDIRECT);
+}
+
+module.exports = {
+  SSO_FAILURE_REDIRECT,
+  refusedSamlResponse,
+  nameIdOf,
+  samlOptionsForRequest,
+  accountOfResponse,
+  samlCallbackBody,
+};

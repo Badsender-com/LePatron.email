@@ -3,7 +3,6 @@
 const isEmail = require('validator/lib/isEmail');
 const ERROR_CODES = require('../constant/error-codes.js');
 const logger = require('../utils/logger.js');
-const { onlyUnique } = require('../utils/array.js');
 const mailingService = require('./mailing.service.js');
 const emailsGroupService = require('../emails-group/emails-group.service');
 const processMosaicoHtmlRender = require('../utils/process-mosaico-html-render.js');
@@ -11,8 +10,17 @@ const processMosaicoHtmlRender = require('../utils/process-mosaico-html-render.j
 const { BadRequest } = require('http-errors');
 const mail = require('../mailing/mail.service.js');
 
+// The addresses one test send reaches, the list added included: a test goes
+// to the team and its testing tools, a campaign goes through an ESP.
+const MAX_TEST_RECIPIENTS = 100;
+// The test sends of one account in an hour, on the route
+// (mailing.routes.js): an editing session sends a few, not hundreds.
+const TEST_SENDS_PER_HOUR_PER_ACCOUNT = 60;
+
 module.exports = {
   sendTestMail,
+  MAX_TEST_RECIPIENTS,
+  TEST_SENDS_PER_HOUR_PER_ACCOUNT,
 };
 
 async function sendTestMail({
@@ -22,13 +30,16 @@ async function sendTestMail({
   htmlFromEditor,
   user,
 }) {
+  if (typeof rcpt !== 'string') {
+    throw new BadRequest(ERROR_CODES.EMAIL_NOT_VALID);
+  }
+
   const mailing = await mailingService.getMailNameAndCompanyByMailingIdAndUser({
     mailingId,
     user,
   });
-
-  // TODO: add back group check
-  // if (!isFromCompany(user, mailing._company)) throw new createError.Unauthorized()
+  // The email of the user's company, in a workspace or folder it may read.
+  await mailingService.assertUserCanReadMailing(user, mailing);
 
   // body.html is the result of viewModel.exportHTML()
   // • in /src/js/ext/badsender-server-storage.js
@@ -49,7 +60,11 @@ async function sendTestMail({
     }
   }
 
-  adresses = adresses.filter(onlyUnique).filter((email) => !!email);
+  adresses = [...new Set(adresses)].filter((email) => !!email);
+
+  if (adresses.length > MAX_TEST_RECIPIENTS) {
+    throw new BadRequest(ERROR_CODES.TOO_MANY_TEST_RECIPIENTS);
+  }
 
   for (const mail of adresses) {
     if (!isEmail(mail)) {

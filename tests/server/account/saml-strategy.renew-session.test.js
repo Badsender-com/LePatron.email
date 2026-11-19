@@ -39,7 +39,7 @@ function verify(req) {
   return new Promise((resolve) =>
     passport
       ._strategy('saml')
-      ._verify(req, { nameID: 'someone@client.test' }, (error, user) =>
+      ._signonVerify(req, { nameID: 'someone@client.test' }, (error, user) =>
         resolve({ error, user })
       )
   );

@@ -1,6 +1,7 @@
 'use strict';
 
 const asyncHandler = require('express-async-handler');
+const { pick } = require('lodash');
 const createHttpError = require('http-errors');
 const ERROR_CODES = require('../constant/error-codes.js');
 const workspaceService = require('./workspace.service');
@@ -108,15 +109,39 @@ async function createWorkspace(req, res) {
  * @apiSuccess {workspace} workspace updated
  */
 
+// What the workspace form sets; the membership toggle of a user's page sends
+// the members alone.
+const UPDATABLE_TEXT_FIELDS = ['name', 'description'];
+
 async function updateWorkspace(req, res) {
+  const { workspaceId } = req.params;
+  const { user, body } = req;
+
   try {
-    const { selectedUsers, ...otherProperties } = req.body;
-    const workspace = {
-      id: req.params.workspaceId,
-      _users: (selectedUsers && selectedUsers.map((user) => user.id)) || [],
-      ...otherProperties,
-    };
-    await workspaceService.updateWorkspace(workspace);
+    const fields = pick(body, UPDATABLE_TEXT_FIELDS);
+    if (Object.values(fields).some((value) => typeof value !== 'string')) {
+      return res.status(400).send(ERROR_CODES.INVALID_REQUEST);
+    }
+
+    const workspace = await workspaceService.getWorkspace(workspaceId);
+    if (!workspace) {
+      return res.status(404).send(ERROR_CODES.WORKSPACE_NOT_FOUND);
+    }
+    // A company admin updates the workspaces of its company, a super admin
+    // those of every company.
+    if (!permissions.canManageGroup(user, workspace._company)) {
+      return res.status(403).send(ERROR_CODES.FORBIDDEN_WORKSPACE_RETRIEVAL);
+    }
+
+    const { selectedUsers } = body;
+    await workspaceService.updateWorkspace({
+      id: workspaceId,
+      groupId: workspace._company,
+      ...fields,
+      _users: (Array.isArray(selectedUsers) ? selectedUsers : []).map(
+        (member) => member?.id
+      ),
+    });
     res.send();
   } catch (error) {
     if (error.status) {
