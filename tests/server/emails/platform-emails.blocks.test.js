@@ -32,10 +32,10 @@ describe.each(CASES)('the %s email, in %s', (name, lang) => {
       expect(list).not.toBeNull();
       expect(list[0].match(/<li[\s>]/g)).toHaveLength(3);
       expect(list[0].match(/<strong/g)).toHaveLength(3);
-      // A mailing is the object of the application; an email is an address.
+      // What a company designs is an email (GLOSSARY.md), never a mailing.
       const words = list[0].replace(/<[^>]+>/g, ' ');
-      expect(words).toMatch(/mailing/);
-      expect(words).not.toMatch(/\bemails?\b/i);
+      expect(words).toMatch(/\bemails?\b/i);
+      expect(words).not.toMatch(/mailing/i);
     });
 
     it('shows them in a benefits block, a title over a picto and a sentence each', () => {

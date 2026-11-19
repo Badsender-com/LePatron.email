@@ -49,8 +49,8 @@ Précisions :
 
 ### Hors gabarit
 
-| Email         | Déclencheur                                                                                                                       | Contenu                                                                                               |
-| ------------- | --------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------- |
-| Envoi de test | L'éditeur envoie le mailing à des adresses ([send-test-mail.service.js](../../packages/server/mailing/send-test-mail.service.js)) | Le HTML du mailing en cours d'édition. Sujet : celui du mailing, à défaut son nom. Pas de texte brut. |
+| Email         | Déclencheur                                                                                                                    | Contenu                                                                                               |
+| ------------- | ------------------------------------------------------------------------------------------------------------------------------ | ----------------------------------------------------------------------------------------------------- |
+| Envoi de test | L'éditeur envoie l'email à des adresses ([send-test-mail.service.js](../../packages/server/mailing/send-test-mail.service.js)) | Le HTML de l'email en cours d'édition. Sujet : celui de l'email, à défaut son nom. Pas de texte brut. |
 
 Les fournisseurs ESP ([esp/](../../packages/server/esp/)) exportent vers des services tiers, ils n'envoient pas d'email.

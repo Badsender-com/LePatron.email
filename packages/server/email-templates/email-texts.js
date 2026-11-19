@@ -37,9 +37,9 @@ const COMMON_TEXTS = {
 const PASSWORD_TEXTS = {
   // The first password of an account an administrator created: the one email
   // that says why LePatron is worth the trouble: three promises of the
-  // brandbook, in the vocabulary of the application (a mailing is the
-  // object, an email is an address) and its voice (formal vous, short
-  // sentences, facts).
+  // brandbook, in the vocabulary of the application (GLOSSARY.md: what a
+  // company designs is an email) and its voice (formal vous, short sentences,
+  // facts).
   welcome: {
     fr: {
       subject: 'Bienvenue',
@@ -54,7 +54,7 @@ const PASSWORD_TEXTS = {
             icon: 'blocks',
             title: 'Pas de feuille blanche.',
             text:
-              'Vous composez vos mailings avec des blocs conçus pour votre marque, déjà conformes à vos règles.',
+              'Vous composez vos emails avec des blocs conçus pour votre marque, déjà conformes à vos règles.',
           },
           {
             icon: 'badge-check',
@@ -66,7 +66,7 @@ const PASSWORD_TEXTS = {
             icon: 'languages',
             title: 'Des déclinaisons sans copier-coller.',
             text:
-              'Langues, marques, marchés\u00a0: adaptez un mailing sans refaire la mise en page.',
+              'Langues, marques, marchés\u00a0: adaptez un email sans refaire la mise en page.',
           },
         ],
       },
@@ -85,7 +85,7 @@ const PASSWORD_TEXTS = {
             icon: 'blocks',
             title: 'No blank page.',
             text:
-              'You build mailings from blocks designed for your brand, already compliant with your rules.',
+              'You build emails from blocks designed for your brand, already compliant with your rules.',
           },
           {
             icon: 'badge-check',
@@ -97,7 +97,7 @@ const PASSWORD_TEXTS = {
             icon: 'languages',
             title: 'Variants without copy-paste.',
             text:
-              'Languages, brands, markets: adapt a mailing without redoing the layout.',
+              'Languages, brands, markets: adapt an email without redoing the layout.',
           },
         ],
       },
@@ -143,14 +143,15 @@ const PASSWORD_TEXTS = {
     },
   },
   // The password is set: a first one, or a new one. The mail cannot tell which
-  // (the link does not remember), so it says neither.
+  // (the link does not remember), so it says neither. A company admin or a
+  // tech admin may have sent the link: the text names neither.
   confirmation: {
     fr: {
       subject: 'Mot de passe enregistré',
       title: 'Votre mot de passe est enregistré',
       preheader: 'Vous pouvez vous connecter avec votre mot de passe.',
       desc:
-        'Vous avez choisi votre mot de passe. Si ce n’est pas vous, prévenez l’administrateur technique de votre société.',
+        'Vous avez choisi votre mot de passe. Si ce n’est pas vous, prévenez un administrateur de votre entreprise.',
       button: 'Ouvrir LePatron',
     },
     en: {
@@ -158,7 +159,7 @@ const PASSWORD_TEXTS = {
       title: 'Your password is saved',
       preheader: 'You can sign in with your password.',
       desc:
-        'You chose your password. If this was not you, tell your company’s technical administrator.',
+        'You chose your password. If this was not you, tell an administrator of your company.',
       button: 'Open LePatron',
     },
   },
