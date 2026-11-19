@@ -13,7 +13,6 @@ jest.mock('../../../packages/server/utils/logger.js', () => ({
   log: jest.fn(),
 }));
 
-const config = require('../../../packages/server/node.config.js');
 const {
   CASES,
   useEmail,
@@ -133,7 +132,13 @@ describe.each(CASES)('the %s email, in %s', (name, lang) => {
     [visible, message.text, message.subject].forEach((text) =>
       expect(text).not.toMatch(/email builder/i)
     );
-    expect(config.emailOptions.passwordSubjectPrefix).not.toMatch(/builder/i);
+    // The default of the code, whatever a local .lepatronrc or the
+    // environment says: the configuration read without them.
+    jest.isolateModules(() => {
+      jest.doMock('rc', () => (_name, defaults) => defaults);
+      const defaults = require('../../../packages/server/node.config.js');
+      expect(defaults.emailOptions.passwordSubjectPrefix).toBe('LePatron');
+    });
   });
 
   if (EMAILS[name].cta) {
