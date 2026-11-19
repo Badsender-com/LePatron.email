@@ -103,10 +103,10 @@ export default {
       this.confirmed = false;
       this.confirming = true;
     },
-    confirm() {
+    async confirm() {
       this.confirmed = true;
       this.confirming = false;
-      this.save();
+      await this.save();
     },
     // Cancelled: the switch goes back to what is saved.
     cancel() {
