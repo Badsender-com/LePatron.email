@@ -17,6 +17,26 @@ jest.mock(
   })
 );
 
+// The limiter of the route, with its options as the route sets them. A test
+// may lower its ceiling (`mockMaxOverride`): reaching 600 takes 600 requests,
+// too slow for a full run on a busy machine.
+const mockLimiterOptions = [];
+let mockMaxOverride = null;
+jest.mock('../../../packages/server/utils/rate-limit.js', () => {
+  const actual = jest.requireActual(
+    '../../../packages/server/utils/rate-limit.js'
+  );
+  return {
+    ...actual,
+    createRateLimiter: (options) => {
+      mockLimiterOptions.push(options);
+      return actual.createRateLimiter(
+        mockMaxOverride ? { ...options, max: mockMaxOverride } : options
+      );
+    },
+  };
+});
+
 const express = require('express');
 const request = require('../../helpers/local-request');
 
@@ -35,15 +55,18 @@ describe('the route of the relayed images', () => {
   let relayedPathOf;
   let perMinute;
   let logger;
+  let rateLimit;
 
-  beforeEach(() => {
-    mockGuardedFetch.mockReset();
+  // The route as the server mounts it, freshly required: its limiter and its
+  // cache start empty.
+  function mount() {
     let address;
     let router;
     jest.isolateModules(() => {
       address = require('../../../packages/server/mcp/mcp-relayed-image-address.js');
       router = require('../../../packages/server/mcp/mcp-relayed-images.routes.js');
       logger = require('../../../packages/server/utils/logger.js');
+      rateLimit = require('../../../packages/server/utils/rate-limit.js');
     });
     perMinute = router.RELAYED_IMAGES_PER_MINUTE;
     app = express();
@@ -52,21 +75,39 @@ describe('the route of the relayed images', () => {
       const relayed = new URL(address.relayedUrlOf(url));
       return relayed.pathname + relayed.search;
     };
+  }
+
+  beforeEach(() => {
+    mockGuardedFetch.mockReset();
+    mockLimiterOptions.length = 0;
+    mockMaxOverride = null;
+    mount();
   });
 
-  it('limits the requests of one address, widely', async () => {
-    const server = app.listen(0, '127.0.0.1');
+  afterEach(() => {
+    mockMaxOverride = null;
+  });
+
+  it('limits the requests of one address, widely', () => {
+    const [options] = mockLimiterOptions;
+    expect(options.max).toBe(perMinute);
+    expect(perMinute).toBeGreaterThanOrEqual(300);
+    expect(options.windowMs).toBe(60 * 1000);
+    expect(options.keyOf).toBe(rateLimit.clientIp);
+  });
+
+  it('refuses an address past its ceiling, before any fetch', async () => {
+    mockMaxOverride = 3;
+    mount();
     const unsigned = '/api/relayed-images/0.forged?url=x';
-    for (let i = 0; i < perMinute; i += 1) {
+    for (let i = 0; i < 3; i += 1) {
       // eslint-disable-next-line no-await-in-loop
-      const res = await request(server).get(unsigned);
+      const res = await request(app).get(unsigned);
       expect(res.status).toBe(404);
     }
 
-    const past = await request(server).get(relayedPathOf(LOGO));
-    server.close();
+    const past = await request(app).get(relayedPathOf(LOGO));
 
-    expect(perMinute).toBeGreaterThanOrEqual(300);
     expect(past.status).toBe(429);
     expect(mockGuardedFetch).not.toHaveBeenCalled();
   });
