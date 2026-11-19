@@ -79,8 +79,10 @@ export default {
       if (!open && !this.confirmed) this.cancel();
     },
   },
-  async created() {
-    await this.loadMembers();
+  // In the browser only: the server's render would fetch every member of the
+  // company for counts it throws away.
+  mounted() {
+    this.loadMembers();
   },
   methods: {
     // The counts are an aid: a failure leaves the row without them.
@@ -136,7 +138,7 @@ export default {
 
 <template>
   <div class="bs-group-two-factor">
-    <bs-group-setting-card title-id="two-factor-title">
+    <bs-group-setting-card>
       <template #icon><lucide-smartphone :size="28" /></template>
       <template #name>{{ $t('twoFactor.group.title') }}</template>
       <template #description>
@@ -267,7 +269,7 @@ export default {
     color: var(--gray-600);
 
     &--on {
-      color: #2e7d32;
+      color: var(--success-ink);
     }
   }
 }
