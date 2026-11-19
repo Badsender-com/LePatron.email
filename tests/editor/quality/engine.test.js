@@ -135,6 +135,37 @@ describe('runQualityChecks', () => {
     });
   });
 
+  it('says the pass a check picks for this email, its own when it cannot tell', () => {
+    const picking = (passKeyOf) => ({
+      ...reportEveryBlock,
+      passKey: 'Every image is fine',
+      passKeyOf,
+      passParams: () => ({ count: 2 }),
+      run: () => [],
+    });
+    jest.spyOn(console, 'error').mockImplementation(() => {});
+    const passOf = (rule) =>
+      runQualityChecks(fakeViewModel(), { rules: [rule] }).checks[0];
+
+    expect(passOf(picking(() => '__count__ not judged'))).toMatchObject({
+      status: 'passed',
+      passKey: '__count__ not judged',
+      passParams: { count: 2 },
+    });
+    expect(passOf(picking(() => null)).passKey).toBe('Every image is fine');
+    const broken = passOf(
+      picking(() => {
+        throw new Error('boom');
+      })
+    );
+    expect(broken).toMatchObject({
+      status: 'passed',
+      passKey: 'Every image is fine',
+      passParams: {},
+    });
+    console.error.mockRestore();
+  });
+
   it('keeps running the other checks when one of them throws', () => {
     const broken = {
       ...reportEveryBlock,
