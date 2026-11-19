@@ -205,3 +205,37 @@ Lecture : le gabarit date d'un habillage de campagne Badsender (images datées �
 ## Reproduire
 
 Le script qui produit les 18 rendus remplace `mail.send` par une capture, avec `NODE_ENV=test`, puis appelle `renderEmail` et `sendTwoFactorEmail`. Il vit dans le répertoire temporaire de la session et n'est pas dans le dépôt : à ajouter sous forme de test Jest au moment de la refonte (priorité 5).
+
+## Refonte : ce qui est fait (2026-11-19)
+
+Le gabarit est réécrit ([account-email.html](../../packages/server/email-templates/account-email.html)), les textes et l'API de rendu aussi ([email-template.js](../../packages/server/email-templates/email-template.js)). Les tests de contrat ([platform-emails.test.js](../../tests/server/emails/platform-emails.test.js)) couvrent les 10 envois en français et en anglais.
+
+| Constat  | État                                                                                                                                        |
+| -------- | ------------------------------------------------------------------------------------------------------------------------------------------- |
+| T1       | corrigé : `lang` du membre sur `html` et sur la `div role="article"`                                                                        |
+| T2       | corrigé                                                                                                                                     |
+| T3       | corrigé : `<title>` = titre de l'email                                                                                                      |
+| T4       | corrigé : un `h1` partout                                                                                                                   |
+| T5       | corrigé : le `<a>` est un bloc avec 14 px de marge, toute la pilule se clique (hauteur 52 px)                                               |
+| T6       | corrigé : corps 16/24, pied 14/21, titre 24/36 (150 %)                                                                                      |
+| T7, T8   | corrigés : sujets traduits. Le préfixe `Email builder LePatron` reste dans la configuration                                                 |
+| T9, T10  | corrigés : plus de majuscules saisies, un libellé par email (« Choisir mon mot de passe », « Ouvrir LePatron »), pas de bouton pour le code |
+| T11      | corrigé : pied de page de deux lignes                                                                                                       |
+| T12, T13 | corrigés : plus d'icônes sociales, logo décoratif `alt=""`, nom « LePatron » en texte                                                       |
+| T14      | traité : `color-scheme`, `prefers-color-scheme: dark`, pictogramme coloré lisible sur fond clair et sombre. **Non vu dans un client réel**  |
+| T15      | corrigé : texte brut = titre, description, lien, mention                                                                                    |
+| T16, T17 | corrigés : plus de CSS de carrousel, une seule famille Inter en graisses 400 et 700                                                         |
+| T18      | corrigé : préheader écrit pour chaque email                                                                                                 |
+| T19      | non traité (transactionnel court)                                                                                                           |
+
+Contrastes calculés : texte 18,4:1, texte discret 7,2:1, bouton 13,9:1 ; en mode sombre texte 14,2:1, texte discret 8,9:1, bouton 6,4:1, lien 9,2:1.
+
+Pour la bienvenue : un compte sans mot de passe reçoit « Bienvenue sur LePatron », les autres reçoivent « Nouveau mot de passe » (administrateur ou demande de la personne).
+
+### Reste à vérifier à la main
+
+- Rendu dans Gmail, Outlook (Windows), Apple Mail, mobile : non fait.
+- Lecteur d'écran (NVDA, VoiceOver) : non fait. Les critères « Tabulation logique », « Espacements » et « Version mobile » restent **À analyser**.
+- Le pictogramme est servi par l'application (`/media/logo_lepatron.png`) : en développement (`localhost`), un client mail ne peut pas le charger. En production, il suit `config.host`.
+- `tabindex="0"` sur le bouton et `aria-label` : non ajoutés, le lien natif est déjà focusable et son libellé est explicite. La grille les demande : à trancher.
+- Le lien de bienvenue renvoyé avant d'avoir été utilisé est vu comme une réinitialisation (voir « Décisions »).

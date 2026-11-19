@@ -5,10 +5,12 @@ const path = require('path');
 const tmpl = require('blueimp-tmpl');
 
 const config = require('../node.config.js');
+const logger = require('../utils/logger.js');
 
 // The emails the application sends about an account (password, two-factor
 // authentication): one HTML template, filled with the texts of each email in
-// the account's language.
+// the account's language. The decisions behind it, and the grid it answers,
+// are in docs/emails/.
 
 tmpl.load = function (id) {
   const filename = path.join(__dirname, `${id}.html`);
@@ -16,66 +18,113 @@ tmpl.load = function (id) {
 };
 
 // put in cache
-const accountTemplate = tmpl('reset-password');
+const accountTemplate = tmpl('account-email');
 
+// The languages of the application: the emails speak those, no other.
+const LANGUAGES = ['fr', 'en'];
+const FALLBACK_LANGUAGE = 'en';
+
+const PRIVACY_URL = 'https://www.badsender.com/vie-privee/';
+const DPO_EMAIL = 'dpo@badsender.com';
+
+// What every email says around its own text.
 const COMMON_TEXTS = {
   fr: {
-    baseline: "L'EMAILING SUR MESURE",
-    footerBaseline1: 'Pour des emails sur mesure',
-    footerBaseline2: 'et modulables',
-    rgpd1:
-      'Conformément au règlement européen pour la protection des données personnelles (RGPD) et, en France, à la loi "informatique et libertés", vous bénéficiez notamment d\'un droit d\'accès, de rectification et de suppression des données personnelles vous concernant. Pour en savoir davantage sur tous vos droits et les conditions dans lesquelles Badsender traite vos données personnelles, nous vous invitons à prendre connaissance de',
-    rgpd2:
-      "Pour exercer vos droits ou pour toute question, nous vous remercions de nous contacter à l'adresse suivante&nbsp;:",
-    rgpdUrl: 'notre Politique de confidentialité',
-    zeroCarbon:
-      "N'oubliez pas de détruire ce message une fois que vous l'aurez consulté. Toutes nos bonnes pratiques pour un emailing + vert sont à disposition ",
-    zeroCarbonLink: 'en suivant ce lien',
-    legals: 'Badsender SASU - SIRET 81310812300015',
+    fallback:
+      'Si le bouton ne fonctionne pas, copiez ce lien dans votre navigateur :',
+    sent:
+      'Cet email a été envoyé automatiquement par LePatron, l’email builder de Badsender.',
+    data: 'Vos données personnelles :',
+    privacy: 'politique de confidentialité',
+    colon: ' : ',
   },
   en: {
-    baseline: 'TAILOR-MADE EMAILING',
-    footerBaseline1: 'For tailor-made emails',
-    footerBaseline2: 'and scalable',
-    rgpd1:
-      'In accordance with the European regulation for the protection of personal data (GDPR) and, in France, with the law "informatique et liberté", you have the right to access, rectify and delete your personal data. To learn more about all your rights and the conditions under which Badsender processes your personal data, we invite you to read',
-    rgpd2:
-      'To exercise your rights or if you have any questions, please contact us at the following address:',
-    rgpdUrl: 'our Privacy Policy',
-    zeroCarbon:
-      "Don't forget to delete this message once you've viewed it. All our best practices for a green emailing are available ",
-    zeroCarbonLink: 'by following this link',
-    legals: 'Badsender SASU - SIRET 81310812300015',
+    fallback: 'If the button does not work, copy this link into your browser:',
+    sent:
+      'This email was sent automatically by LePatron, Badsender’s email builder.',
+    data: 'Your personal data:',
+    privacy: 'privacy policy',
+    colon: ': ',
   },
 };
 
+// A link in a password email lives a week (`resetPassword` of the user
+// schema): the texts below say so.
 const PASSWORD_TEXTS = {
-  'reset-password': {
+  // The first password of an account an administrator created.
+  welcome: {
     fr: {
-      title: "Bienvenue sur l'email builder de Badsender",
+      subject: 'Bienvenue sur LePatron',
+      title: 'Bienvenue sur LePatron',
+      preheader: 'Choisissez votre mot de passe pour activer votre compte.',
       desc:
-        "Cliquez sur le bouton ci-dessous pour initialiser votre mot de passe, ou copiez l'url suivante dans votre navigateur:",
-      reset: 'INITIALISER MON MOT DE PASSE',
+        'Un administrateur a créé votre compte. Choisissez votre mot de passe pour vous connecter. Ce lien est valable 7 jours.',
+      button: 'Choisir mon mot de passe',
     },
     en: {
-      title: "Welcome to the Badsender's email builder",
+      subject: 'Welcome to LePatron',
+      title: 'Welcome to LePatron',
+      preheader: 'Choose your password to activate your account.',
       desc:
-        'Click the button below to reset your password, or copy the following URL into your browser:',
-      reset: 'RESET MY PASSWORD',
+        'An administrator created your account. Choose your password to sign in. This link is valid for 7 days.',
+      button: 'Choose my password',
     },
   },
-  'reset-success': {
+  // A new password, an administrator's doing.
+  reset: {
     fr: {
-      title: 'Votre mot de passe a bien été réinitialisé',
+      subject: 'Nouveau mot de passe',
+      title: 'Choisissez un nouveau mot de passe',
+      preheader: 'Ce lien est valable 7 jours.',
       desc:
-        "Cliquez sur le bouton ci-dessous pour vous connecter, ou copiez l'url suivante dans votre navigateur:",
-      reset: 'SE CONNECTER',
+        'Un administrateur a réinitialisé votre mot de passe. Choisissez-en un nouveau pour vous connecter. Ce lien est valable 7 jours.',
+      button: 'Choisir un nouveau mot de passe',
     },
     en: {
-      title: 'Your password has been successfully updated',
+      subject: 'New password',
+      title: 'Choose a new password',
+      preheader: 'This link is valid for 7 days.',
       desc:
-        'Click the button below to login, or copy the following URL into your browser:',
-      reset: 'LOGIN',
+        'An administrator reset your password. Choose a new one to sign in. This link is valid for 7 days.',
+      button: 'Choose a new password',
+    },
+  },
+  // A new password, asked for by the person.
+  forgot: {
+    fr: {
+      subject: 'Nouveau mot de passe',
+      title: 'Choisissez un nouveau mot de passe',
+      preheader: 'Ce lien est valable 7 jours.',
+      desc:
+        'Vous avez demandé un nouveau mot de passe. Choisissez-le avec le bouton ci-dessous. Ce lien est valable 7 jours. Si ce n’est pas vous, ignorez cet email : votre mot de passe actuel reste valable.',
+      button: 'Choisir un nouveau mot de passe',
+    },
+    en: {
+      subject: 'New password',
+      title: 'Choose a new password',
+      preheader: 'This link is valid for 7 days.',
+      desc:
+        'You asked for a new password. Choose it with the button below. This link is valid for 7 days. If this was not you, ignore this email: your current password still works.',
+      button: 'Choose a new password',
+    },
+  },
+  // The new password is set.
+  confirmation: {
+    fr: {
+      subject: 'Mot de passe modifié',
+      title: 'Votre mot de passe a changé',
+      preheader: 'Vous pouvez vous connecter avec votre nouveau mot de passe.',
+      desc:
+        'Vous avez choisi un nouveau mot de passe. Si ce n’est pas vous, prévenez l’administrateur technique de votre société.',
+      button: 'Ouvrir LePatron',
+    },
+    en: {
+      subject: 'Password changed',
+      title: 'Your password has changed',
+      preheader: 'You can sign in with your new password.',
+      desc:
+        'You chose a new password. If this was not you, tell your company’s technical administrator.',
+      button: 'Open LePatron',
     },
   },
 };
@@ -89,17 +138,58 @@ function siteOrigin() {
 }
 
 /**
- * @param {Object} texts the email's texts by language: `{ fr, en }`, each
- *   with `title`, `desc` and `reset` (the button)
- * @param {string} [lang] the account's, English when unknown
- * @param {Object} data `url` (the button's link), `type` ('admin' shows the
- *   title)
- * @returns {string} the HTML of the email
+ * The language an email is written in: the account's when the application
+ * translates it, English otherwise. An untranslated language is logged, so
+ * it is not mistaken for a choice.
+ *
+ * @param {string} [lang]
+ * @returns {'fr'|'en'}
  */
-function renderEmail(texts, lang, data) {
-  const language = texts[lang] ? lang : 'en';
-  const t = { ...COMMON_TEXTS[language], ...texts[language] };
-  return accountTemplate({ t, ...data });
+function resolveLanguage(lang) {
+  if (LANGUAGES.includes(lang)) return lang;
+  if (lang) {
+    logger.warn(
+      `[email] "${lang}" is not a translated language: the email is in ${FALLBACK_LANGUAGE}`
+    );
+  }
+  return FALLBACK_LANGUAGE;
 }
 
-module.exports = { renderEmail, siteOrigin, PASSWORD_TEXTS };
+/**
+ * Everything `mail.send` needs of an email but the recipient.
+ *
+ * @param {Object} texts the email's texts by language: `{ fr, en }`, each with
+ *   `subject`, `title`, `preheader`, `desc` and, with a `url`, `button`
+ * @param {string} [lang] the account's
+ * @param {Object} [data] `url`: where the button leads (none, no button)
+ * @returns {{subject: string, text: string, html: string}}
+ */
+function composeEmail(texts, lang, { url } = {}) {
+  const language = resolveLanguage(lang);
+  const t = texts[language];
+  const c = COMMON_TEXTS[language];
+  const html = accountTemplate({
+    lang: language,
+    t,
+    c,
+    url,
+    logo: `${siteOrigin()}/media/logo_lepatron.png`,
+    privacyUrl: PRIVACY_URL,
+    dpo: DPO_EMAIL,
+  });
+  const text = [
+    t.title,
+    t.desc,
+    url ? `${t.button}${c.colon}${url}` : '',
+    c.sent,
+  ]
+    .filter(Boolean)
+    .join('\n\n');
+  return {
+    subject: `${config.emailOptions.passwordSubjectPrefix} – ${t.subject}`,
+    text,
+    html,
+  };
+}
+
+module.exports = { composeEmail, siteOrigin, resolveLanguage, PASSWORD_TEXTS };

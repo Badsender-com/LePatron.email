@@ -5,7 +5,7 @@ const bcrypt = require('bcryptjs');
 const createError = require('http-errors');
 
 const { isSixDigits } = require('./codes.js');
-const { sendTwoFactorEmail } = require('./two-factor.emails.js');
+const { sendTwoFactorEmail, SUBJECTS } = require('./two-factor.emails.js');
 const {
   EMAIL_CODE_TTL_MS,
   EMAIL_CODES_PER_STEP,
@@ -41,16 +41,18 @@ function takeHourlyBudget(userId) {
 
 const TEXTS = {
   fr: {
+    subject: SUBJECTS.fr,
     title: 'Votre code de vérification : {code}',
+    preheader: 'Saisissez ce code pour vous connecter.',
     desc:
       'Il est valable 10 minutes. Si vous n’êtes pas en train de vous connecter, ignorez cet email et prévenez l’administrateur technique de votre société : quelqu’un connaît votre mot de passe.',
-    reset: 'SE CONNECTER',
   },
   en: {
+    subject: SUBJECTS.en,
     title: 'Your verification code: {code}',
+    preheader: 'Enter this code to sign in.',
     desc:
       'It is valid for 10 minutes. If you are not signing in, ignore this email and tell your company’s technical administrator: someone knows your password.',
-    reset: 'SIGN IN',
   },
 };
 
