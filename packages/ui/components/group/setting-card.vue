@@ -4,10 +4,6 @@
 // that needs fields unfolds them in its own card (the `body` slot).
 export default {
   name: 'BsGroupSettingCard',
-  props: {
-    // Lets the switch name itself after the card (aria-labelledby).
-    titleId: { type: String, default: null },
-  },
 };
 </script>
 
@@ -19,7 +15,7 @@ export default {
           <slot name="icon" />
         </div>
         <div class="bs-group-setting-card__info">
-          <div :id="titleId" class="bs-group-setting-card__name">
+          <div class="bs-group-setting-card__name">
             <slot name="name" />
           </div>
           <div class="bs-group-setting-card__description">

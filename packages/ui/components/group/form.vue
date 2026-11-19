@@ -297,10 +297,7 @@ export default {
             {{ $t('forms.group.sections.securityDescription') }}
           </template>
 
-          <bs-group-setting-card
-            v-if="canManagePlatform"
-            title-id="group-permissions-title"
-          >
+          <bs-group-setting-card v-if="canManagePlatform">
             <template #icon><lucide-users :size="28" /></template>
             <template #name>
               {{ $t('forms.group.sections.permissions') }}
@@ -319,10 +316,7 @@ export default {
             </template>
           </bs-group-setting-card>
 
-          <bs-group-setting-card
-            v-if="canManagePlatform"
-            title-id="group-saml-title"
-          >
+          <bs-group-setting-card v-if="canManagePlatform">
             <template #icon><lucide-key-round :size="28" /></template>
             <template #name>{{ $t('forms.group.saml.name') }}</template>
             <template #description>

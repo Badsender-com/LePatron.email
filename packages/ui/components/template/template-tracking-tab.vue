@@ -241,7 +241,7 @@ export default {
     </v-radio-group>
 
     <ul class="template-tracking__rows">
-      <bs-settings-row title-id="template-tracking-restrict-title">
+      <bs-settings-row>
         <template #title>{{ $t('trackingConfig.restrictValues') }}</template>
         <bs-group-feature-switch
           :value="Boolean(localConfig.restrictValues)"
