@@ -12,19 +12,19 @@ Le gabarit est réécrit ([account-email.html](../../packages/server/email-templ
 | T2       | corrigé                                                                                                                                     |
 | T3       | corrigé : `<title>` = titre de l'email                                                                                                      |
 | T4       | corrigé : un `h1` partout                                                                                                                   |
-| T5       | corrigé : le `<a>` est un bloc avec 14 px de marge, toute la pilule se clique (hauteur 52 px)                                               |
-| T6       | corrigé : corps 16/24, pied 14/21, titre 24/36 (150 %)                                                                                      |
-| T7, T8   | corrigés : sujets traduits. Le préfixe `Email builder LePatron` reste dans la configuration                                                 |
+| T5       | corrigé : le `<a>` est un bloc avec 12 × 20 px de marge, toute la pilule se clique (45 px de haut, 48 sous 480 px)                          |
+| T6       | corrigé : corps et pied 14/21, titre 20/30 (150 %) ; corps 16/24 sous 480 px                                                                |
+| T7, T8   | corrigés : sujets traduits. Le préfixe par défaut de la configuration passe de `Email builder LePatron` à `LePatron`                        |
 | T9, T10  | corrigés : plus de majuscules saisies, un libellé par email (« Choisir mon mot de passe », « Ouvrir LePatron »), pas de bouton pour le code |
 | T11      | corrigé : pied de page de deux lignes                                                                                                       |
-| T12, T13 | corrigés : plus d'icônes sociales, logo décoratif `alt=""`, nom « LePatron » en texte                                                       |
+| T12, T13 | corrigés : plus d'icônes sociales, logo avec `alt="LePatron"`, icônes décoratives `alt=""`                                                  |
 | T14      | traité : `color-scheme`, `prefers-color-scheme: dark`, pictogramme coloré lisible sur fond clair et sombre. **Non vu dans un client réel**  |
 | T15      | corrigé : texte brut = titre, description, lien, mention                                                                                    |
-| T16, T17 | corrigés : plus de CSS de carrousel, une seule famille Inter en graisses 400 et 700                                                         |
+| T16, T17 | corrigés : plus de CSS de carrousel, une seule famille Inter (police variable de 400 à 700)                                                 |
 | T18      | corrigé : préheader écrit pour chaque email                                                                                                 |
 | T19      | non traité (transactionnel court)                                                                                                           |
 
-Contrastes calculés : texte 18,4:1, texte discret 7,2:1, bouton 13,9:1 ; en mode sombre texte 14,2:1, texte discret 8,9:1, bouton 6,4:1, lien 9,2:1.
+Contrastes calculés : texte 10,3:1, texte discret 4,8:1, bouton et liens 13,9:1, code 12,4:1 ; en mode sombre texte 10,5:1, texte discret 6,1:1, bouton 5,3:1, lien 9,2:1.
 
 Pour la bienvenue : un compte sans mot de passe ni lien reçoit « Bienvenue sur LePatron », les autres reçoivent « Nouveau mot de passe » (administrateur ou demande de la personne).
 
@@ -32,7 +32,7 @@ Pour la bienvenue : un compte sans mot de passe ni lien reçoit « Bienvenue sur
 
 - Rendu dans Gmail, Outlook (Windows), Apple Mail, mobile : non fait.
 - Lecteur d'écran (NVDA, VoiceOver) : non fait. Les critères « Tabulation logique », « Espacements » et « Version mobile » restent **À analyser**.
-- Le pictogramme est servi par l'application (`/media/logo_lepatron.png`) : en développement (`localhost`), un client mail ne peut pas le charger. En production, il suit `config.host`.
+- Le logo et les icônes sont servis par l'application (`/media/email/`) : en développement (`localhost`), un client mail ne peut pas les charger. En production, ils suivent `config.host`.
 - `tabindex="0"` sur le bouton et `aria-label` : non ajoutés, le lien natif est déjà focusable et son libellé est explicite. La grille les demande : à trancher.
 - Revue du 2026-11-19 : la première version testait seulement l'absence de mot de passe, et accueillait à tort un compte déjà réinitialisé dont le premier email était parti. Corrigé (mot de passe **et** lien absents), avec tests du second envoi.
 
@@ -48,11 +48,17 @@ Corrigé après relecture :
 - **Langue** : `FR`, `fr-FR` lus comme `fr` ; valeur inconnue journalisée entre guillemets et coupée.
 - **Tests** : textes des trois emails de mot de passe distingués, « 7 jours » lié à `tokenExpire`, échappement du navigateur et du système d'un appareil, langues absentes, interligne vérifié sur chaque taille.
 
+Corrigé après la revue de la PR (2026-11-19) :
+
+- **Carte fluide** : `width: 100%; max-width: 480px`, sans dépendre des media queries ; un tableau fixe de 480 px sous Outlook pour Windows.
+- **Vocabulaire** : « email » et non « mailing » (GLOSSARY.md), « admin technique » et « entreprise » comme dans l'interface ; la confirmation de mot de passe renvoie à « un administrateur de votre entreprise », un admin entreprise pouvant aussi envoyer le lien.
+- **Lien de mot de passe** : l'adresse est encodée dans le chemin (le `@` reste), et l'interface l'encode aussi dans ses appels.
+- **Icônes** : une seule liste (`email-icons.js`), lue par le gabarit et par `scripts/build-email-images.js`, et un test vérifie que chaque icône a son PNG.
+
 Non corrigé :
 
 - Les polices viennent de fonts.gstatic.com : un appel à Google à l'ouverture. La charte tolère les polices personnalisées avec repli ; à décider si on veut s'en passer (repli Arial/Tahoma, déjà en place).
 - La page de confidentialité est la page française pour les lecteurs anglais : pas de page anglaise connue.
-- L'adresse du membre n'est pas encodée dans le lien de mot de passe (`user.schema.js`, code d'origine) : un `?` ou un `#` dans une adresse casserait le lien.
 
 ## Identité : le design system de l'application (2026-11-19, après retour)
 
@@ -64,13 +70,13 @@ Deux tentatives précédentes se sont trompées de référence. La première pre
 | ----------- | -------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------- |
 | Fond        | primaire `#093040`, dégradé radial accent vers primaire à 50 % (en bas à droite) | idem, à l'identique au-dessus de 960 px ; fond uni `#093040` jusqu'à 960 px et en repli |
 | Logo        | variante pour fond sombre, sans signature                                        | idem, en PNG hébergé, au-dessus de la carte                                             |
-| Carte       | blanche, 480 px, rayon 10 px, ombre `shadow-modal`, filet `gray-200`             | idem                                                                                    |
+| Carte       | blanche, 480 px, rayon 10 px, ombre `shadow-modal`, filet `gray-200`             | idem, fluide jusqu'à 480 px (`max-width`, sans media query), 480 px fixes sous Outlook  |
 | En-tête     | pastille ronde 56 px (`tint-accent`), icône lucide en `accent-darken1`           | idem, une icône par type d'email                                                        |
 | Titre       | Inter 20 px / 600, primaire                                                      | idem, centré, interligne 150 %                                                          |
 | Texte       | Inter 14 px, `gray-700`                                                          | idem, aligné à gauche ; 16 px sous 480 px                                               |
-| Actions     | rangée à droite sous un filet, bouton à la largeur du libellé                    | idem ; pleine largeur sous 480 px (44 px de haut), comme la carte                       |
+| Actions     | rangée à droite sous un filet, bouton à la largeur du libellé                    | idem ; pleine largeur sous 480 px (48 px de haut), comme la carte                       |
 | Bouton      | rayon 5 px (`r-sm`), 500, sans majuscules, survol qui assombrit                  | idem                                                                                    |
-| Vocabulaire | « mailing » est l'objet, « email » est une adresse                               | la bienvenue parle de mailings                                                          |
+| Vocabulaire | « email » est ce que l'entreprise conçoit (GLOSSARY.md), jamais « mailing »      | la bienvenue parle d'emails                                                             |
 
 Écarts assumés, la grille d'accessibilité l'emportant :
 
