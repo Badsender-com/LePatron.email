@@ -50,14 +50,18 @@ export default {
         elevation="0"
         :disabled="loading"
         :loading="loading"
+        :outcome="outcome"
+        :outcome-detail="outcomeDetail"
         @submit="updateGroup"
-      />
-      <bs-group-two-factor-option
-        v-if="group.id"
-        class="mt-6"
-        :group="group"
-        @update="group.requireTwoFactor = $event.requireTwoFactor"
-      />
+      >
+        <template #security-rows>
+          <bs-group-two-factor-option
+            v-if="group.id"
+            :group="group"
+            @update="group.requireTwoFactor = $event.requireTwoFactor"
+          />
+        </template>
+      </bs-group-form>
     </v-container>
   </div>
 </template>

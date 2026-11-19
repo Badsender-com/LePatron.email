@@ -35,7 +35,7 @@ export default {
       </v-card-text>
       <v-card-actions>
         <v-spacer />
-        <v-btn text @click="visible = false">
+        <v-btn text color="primary" @click="visible = false">
           {{ $t('global.cancel') }}
         </v-btn>
         <v-btn

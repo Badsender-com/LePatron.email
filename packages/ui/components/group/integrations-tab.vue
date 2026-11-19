@@ -429,13 +429,3 @@ export default {
     </v-dialog>
   </div>
 </template>
-
-<style lang="scss" scoped>
-.modal-actions {
-  display: flex;
-  align-items: center;
-  justify-content: flex-end;
-  gap: 0.5rem;
-  padding: 1rem;
-}
-</style>
