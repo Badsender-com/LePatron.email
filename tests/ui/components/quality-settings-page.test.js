@@ -84,3 +84,20 @@ describe("a template's page", () => {
     );
   });
 });
+
+describe("an exception card's heading", () => {
+  const source = read('quality-exception-card-header.vue');
+
+  it("brings a template's state back with a button styled as the thresholds' ones", () => {
+    const threshold = read('quality-threshold-field.vue');
+    const style = /<v-btn\s+v-if="[^"]*!disabled"\s+x-small\s+text\s+color="primary"/;
+    expect(threshold).toMatch(style);
+    expect(source).toMatch(style);
+    expect(source).toMatch(/qualitySettings\.page\.restoreState/);
+  });
+
+  it('makes the "checked online" chip reachable by keyboard', () => {
+    expect(source).toMatch(/tabindex="0"\s+:aria-describedby="onlineTipId"/);
+    expect(source).toMatch(/:id="onlineTipId" class="d-sr-only"/);
+  });
+});
