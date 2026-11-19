@@ -22,14 +22,21 @@
   <style type="text/css">
     /* The sign-in card of the application (its design system): the primary
        colour behind, the white logo, a white card of 480 px with 10 px
-       corners. The backdrop is the gradient of the sign-in screen (the accent
-       to the primary at 50 %) over the solid primary, which a client that
-       draws no gradient (Outlook for Windows) keeps. The glow is at the top
-       right, not the bottom right as on the screen: the footer text then
-       always sits on the solid half, whatever the width (3.2:1 on the glow on
-       a phone, 13.9:1 on the solid). The action is in the primary colour, not the accent: white on
+       corners. The backdrop is the glow of the sign-in screen, at the bottom
+       right (the accent fading to the primary), over the solid primary, which
+       a client that draws no gradient (Outlook for Windows) keeps. Its size is
+       fixed (a circle of 420 px), not proportional as on the screen: the
+       footer text must stay where the white on it is 4.5:1, which is 159 px
+       from the corner (35 % of the radius, plus a margin), and with a
+       proportional glow that distance grows with the height of the email.
+       The backdrop has 170 px under the footer for it. The action is in the
+       primary colour, not the accent: white on
        the accent is 2.7:1, and the design system says to use the primary
        where accessibility is a hard requirement. */
+    /* The backdrop fills the window where the client lets it (the glow stays at
+       the bottom right of the window, as on the sign-in screen); elsewhere it
+       is as high as the email. */
+    html, body { height: 100%; }
     body { margin: 0; padding: 0; width: 100% !important; -webkit-text-size-adjust: 100%; -ms-text-size-adjust: 100%; }
     a { color: #093040; }
     a:active { opacity: 0.8; }
@@ -60,10 +67,10 @@
 <body class="page" style="margin: 0; padding: 0; background-color: #093040; direction: ltr;">
   <span class="preheader" style="display: none !important; visibility: hidden; opacity: 0; color: transparent; font-size: 1px; line-height: 1px; max-height: 0; max-width: 0; overflow: hidden; mso-hide: all;">{%=o.t.preheader%}</span>
   <span aria-hidden="true" style="display: none !important; visibility: hidden; opacity: 0; color: transparent; font-size: 1px; line-height: 1px; max-height: 0; max-width: 0; overflow: hidden; mso-hide: all;">&#847;&zwnj;&nbsp;&#847;&zwnj;&nbsp;&#847;&zwnj;&nbsp;&#847;&zwnj;&nbsp;&#847;&zwnj;&nbsp;&#847;&zwnj;&nbsp;&#847;&zwnj;&nbsp;&#847;&zwnj;&nbsp;&#847;&zwnj;&nbsp;&#847;&zwnj;&nbsp;&#847;&zwnj;&nbsp;&#847;&zwnj;&nbsp;&#847;&zwnj;&nbsp;&#847;&zwnj;&nbsp;&#847;&zwnj;&nbsp;&#847;&zwnj;&nbsp;&#847;&zwnj;&nbsp;&#847;&zwnj;&nbsp;&#847;&zwnj;&nbsp;&#847;&zwnj;&nbsp;</span>
-  <div role="article" lang="{%=o.lang%}" dir="ltr" style="direction: ltr;">
-    <table role="presentation" class="page" width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="#093040" style="background-color: #093040;">
+  <div role="article" lang="{%=o.lang%}" dir="ltr" style="direction: ltr; height: 100%;">
+    <table role="presentation" class="page" width="100%" height="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="#093040" style="background-color: #093040; height: 100%;">
       <tr>
-        <td class="backdrop" align="center" style="background-color: #093040; background-image: radial-gradient(at 100% 0%, rgb(0, 172, 220) 0%, rgb(9, 48, 64) 50%); padding: 40px 12px 40px 12px;">
+        <td class="backdrop" align="center" valign="top" style="background-color: #093040; background-image: radial-gradient(circle 420px at 100% 100%, rgb(0, 172, 220) 0%, rgb(9, 48, 64) 100%); padding: 40px 12px 170px 12px;">
           <table role="presentation" width="480" class="wrap" cellpadding="0" cellspacing="0" border="0" style="width: 480px; max-width: 480px;">
             <tr>
               <td align="center" style="padding: 0 0 28px 0;"><img src="{%=o.logoSrc%}" alt="LePatron" width="190" style="display: block; width: 190px; height: auto; border: 0;"/></td>
@@ -155,7 +162,7 @@
               </td>
             </tr>
             <tr>
-              <td class="pad footer" style="padding: 24px 4px 0 4px; font-family: 'Inter', Tahoma, Arial, sans-serif; font-size: 14px; line-height: 21px; color: #cfdbe1; text-align: left; mso-line-height-rule: exactly;">
+              <td class="pad footer" style="padding: 24px 4px 0 4px; font-family: 'Inter', Tahoma, Arial, sans-serif; font-size: 14px; line-height: 21px; color: #ffffff; text-align: left; mso-line-height-rule: exactly;">
                 <p style="margin: 0 0 8px 0;">{%=o.c.sent%}</p>
                 <p style="margin: 0;">{%=o.c.data%} <a href="{%=o.privacyUrl%}" style="color: #ffffff; text-decoration: underline;">{%=o.c.privacy%}</a> {%=o.c.or%} <a href="mailto:{%=o.dpo%}" style="color: #ffffff; text-decoration: underline;">{%=o.dpo%}</a>.</p>
               </td>
