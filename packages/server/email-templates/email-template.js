@@ -5,10 +5,18 @@ const path = require('path');
 const tmpl = require('blueimp-tmpl');
 
 const config = require('../node.config.js');
+const logger = require('../utils/logger.js');
+const {
+  COMMON_TEXTS,
+  PASSWORD_TEXTS,
+  passwordTextsFor,
+} = require('./email-texts.js');
+const { ICONS } = require('./email-icons.js');
 
 // The emails the application sends about an account (password, two-factor
 // authentication): one HTML template, filled with the texts of each email in
-// the account's language.
+// the account's language. The decisions behind it, and the grid it answers,
+// are in docs/emails/.
 
 tmpl.load = function (id) {
   const filename = path.join(__dirname, `${id}.html`);
@@ -16,69 +24,21 @@ tmpl.load = function (id) {
 };
 
 // put in cache
-const accountTemplate = tmpl('reset-password');
+const accountTemplate = tmpl('account-email');
 
-const COMMON_TEXTS = {
-  fr: {
-    baseline: "L'EMAILING SUR MESURE",
-    footerBaseline1: 'Pour des emails sur mesure',
-    footerBaseline2: 'et modulables',
-    rgpd1:
-      'Conformément au règlement européen pour la protection des données personnelles (RGPD) et, en France, à la loi "informatique et libertés", vous bénéficiez notamment d\'un droit d\'accès, de rectification et de suppression des données personnelles vous concernant. Pour en savoir davantage sur tous vos droits et les conditions dans lesquelles Badsender traite vos données personnelles, nous vous invitons à prendre connaissance de',
-    rgpd2:
-      "Pour exercer vos droits ou pour toute question, nous vous remercions de nous contacter à l'adresse suivante&nbsp;:",
-    rgpdUrl: 'notre Politique de confidentialité',
-    zeroCarbon:
-      "N'oubliez pas de détruire ce message une fois que vous l'aurez consulté. Toutes nos bonnes pratiques pour un emailing + vert sont à disposition ",
-    zeroCarbonLink: 'en suivant ce lien',
-    legals: 'Badsender SASU - SIRET 81310812300015',
-  },
-  en: {
-    baseline: 'TAILOR-MADE EMAILING',
-    footerBaseline1: 'For tailor-made emails',
-    footerBaseline2: 'and scalable',
-    rgpd1:
-      'In accordance with the European regulation for the protection of personal data (GDPR) and, in France, with the law "informatique et liberté", you have the right to access, rectify and delete your personal data. To learn more about all your rights and the conditions under which Badsender processes your personal data, we invite you to read',
-    rgpd2:
-      'To exercise your rights or if you have any questions, please contact us at the following address:',
-    rgpdUrl: 'our Privacy Policy',
-    zeroCarbon:
-      "Don't forget to delete this message once you've viewed it. All our best practices for a green emailing are available ",
-    zeroCarbonLink: 'by following this link',
-    legals: 'Badsender SASU - SIRET 81310812300015',
-  },
-};
+// The languages of the application: the emails speak those, no other.
+const LANGUAGES = ['fr', 'en'];
+const FALLBACK_LANGUAGE = 'en';
 
-const PASSWORD_TEXTS = {
-  'reset-password': {
-    fr: {
-      title: "Bienvenue sur l'email builder de Badsender",
-      desc:
-        "Cliquez sur le bouton ci-dessous pour initialiser votre mot de passe, ou copiez l'url suivante dans votre navigateur:",
-      reset: 'INITIALISER MON MOT DE PASSE',
-    },
-    en: {
-      title: "Welcome to the Badsender's email builder",
-      desc:
-        'Click the button below to reset your password, or copy the following URL into your browser:',
-      reset: 'RESET MY PASSWORD',
-    },
-  },
-  'reset-success': {
-    fr: {
-      title: 'Votre mot de passe a bien été réinitialisé',
-      desc:
-        "Cliquez sur le bouton ci-dessous pour vous connecter, ou copiez l'url suivante dans votre navigateur:",
-      reset: 'SE CONNECTER',
-    },
-    en: {
-      title: 'Your password has been successfully updated',
-      desc:
-        'Click the button below to login, or copy the following URL into your browser:',
-      reset: 'LOGIN',
-    },
-  },
-};
+// The images of the emails, built by scripts/build-email-images.js from the
+// logo and the icons of the application. The application serves them from its
+// public folder (public/media/email): an email links them by an absolute
+// address, with the scheme and the host of the site, as for its other links.
+const ASSETS_PATH = '/media/email';
+const DEFAULT_ICON = 'lock';
+
+const PRIVACY_URL = 'https://www.badsender.com/vie-privee/';
+const DPO_EMAIL = 'dpo@badsender.com';
 
 // The links in the emails use the scheme the site is served with: https
 // everywhere but in development, as the FORCE HTTPS middleware of index.js
@@ -89,17 +49,88 @@ function siteOrigin() {
 }
 
 /**
- * @param {Object} texts the email's texts by language: `{ fr, en }`, each
- *   with `title`, `desc` and `reset` (the button)
- * @param {string} [lang] the account's, English when unknown
- * @param {Object} data `url` (the button's link), `type` ('admin' shows the
- *   title)
- * @returns {string} the HTML of the email
+ * The language an email is written in: the account's when the application
+ * translates it, English otherwise. An untranslated language is logged, so
+ * it is not mistaken for a choice.
+ *
+ * @param {string} [lang]
+ * @returns {'fr'|'en'}
  */
-function renderEmail(texts, lang, data) {
-  const language = texts[lang] ? lang : 'en';
-  const t = { ...COMMON_TEXTS[language], ...texts[language] };
-  return accountTemplate({ t, ...data });
+function resolveLanguage(lang) {
+  // `fr-FR` and `FR` are French. The value is a free string of the account:
+  // it is logged quoted and cut, never raw.
+  const base =
+    typeof lang === 'string' ? lang.trim().toLowerCase().split(/[-_]/)[0] : '';
+  if (LANGUAGES.includes(base)) return base;
+  if (lang) {
+    logger.warn(
+      `[email] ${JSON.stringify(
+        String(lang).slice(0, 20)
+      )} is not a translated language: the email is in ${FALLBACK_LANGUAGE}`
+    );
+  }
+  return FALLBACK_LANGUAGE;
 }
 
-module.exports = { renderEmail, siteOrigin, PASSWORD_TEXTS };
+/**
+ * Everything `mail.send` needs of an email but the recipient.
+ *
+ * @param {Object} texts the email's texts by language: `{ fr, en }`, each with
+ *   `subject`, `title`, `preheader`, `desc` and, with a `url`, `button`
+ * @param {string} [lang] the account's
+ * @param {Object} [data] `url`: where the button leads (none, no button);
+ *   `icon`: the one of the card, one of ICONS (a lock when none); `code`: a
+ *   one-time code, shown apart under the title
+ * @returns {{subject: string, text: string, html: string}}
+ */
+function composeEmail(texts, lang, { url, icon = DEFAULT_ICON, code } = {}) {
+  const language = resolveLanguage(lang);
+  const t = texts[language];
+  const c = COMMON_TEXTS[language];
+  const iconName = ICONS.includes(icon) ? icon : DEFAULT_ICON;
+  // The images are hosted by the application: absolute addresses.
+  const assets = `${siteOrigin()}${ASSETS_PATH}`;
+  const benefits = t.benefits && {
+    title: t.benefits.title,
+    items: t.benefits.items.map((item) => ({
+      ...item,
+      src: `${assets}/icon-${
+        ICONS.includes(item.icon) ? item.icon : DEFAULT_ICON
+      }.png`,
+    })),
+  };
+  const html = accountTemplate({
+    lang: language,
+    t,
+    c,
+    url,
+    code,
+    benefits,
+    logoSrc: `${assets}/logo.png`,
+    iconSrc: `${assets}/icon-${iconName}.png`,
+    privacyUrl: PRIVACY_URL,
+    dpo: DPO_EMAIL,
+  });
+  const text = [
+    code ? `${t.title}${c.colon}${code}` : t.title,
+    t.desc,
+    url ? `${t.button}${c.colon}${url}` : '',
+    c.sent,
+  ]
+    .filter(Boolean)
+    .join('\n\n');
+  return {
+    subject: `${config.emailOptions.passwordSubjectPrefix} – ${t.subject}`,
+    text,
+    html,
+  };
+}
+
+module.exports = {
+  composeEmail,
+  siteOrigin,
+  resolveLanguage,
+  PASSWORD_TEXTS,
+  passwordTextsFor,
+  ICONS,
+};

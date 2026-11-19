@@ -47,7 +47,7 @@ const config = rc('lepatron', {
   },
   emailOptions: {
     from: 'LePatron.email local test <info@lepatron-local-test.name>',
-    passwordSubjectPrefix: 'Email builder LePatron',
+    passwordSubjectPrefix: 'LePatron',
   },
   storage: {
     type: 'local',

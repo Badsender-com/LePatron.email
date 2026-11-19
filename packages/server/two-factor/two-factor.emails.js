@@ -1,94 +1,126 @@
 'use strict';
 
-const config = require('../node.config.js');
 const logger = require('../utils/logger.js');
 const mail = require('../mailing/mail.service.js');
 const {
-  renderEmail,
+  composeEmail,
+  resolveLanguage,
   siteOrigin,
 } = require('../email-templates/email-template.js');
 
 // The emails that tell a member about their two-factor authentication
-// (ADR 0008). None names who acted: the security event keeps that.
+// (ADR 0008). None names who acted: the security event keeps that. The one to
+// warn is the tech admin, who resets the second factor (GLOSSARY.md).
 
 const SUBJECTS = {
   fr: 'Double authentification',
   en: 'Two-factor authentication',
 };
 
-const SIGN_IN = { fr: 'SE CONNECTER', en: 'SIGN IN' };
+const OPEN = { fr: 'Ouvrir LePatron', en: 'Open LePatron' };
+
+// The icon of the card of each email: the ones the pages of the second factor
+// use (shield, mail, phone), a shield with a mark when it is a warning.
+const ICON_BY_EMAIL = {
+  setUp: 'shield-check',
+  reset: 'shield-alert',
+  emailChanged: 'shield-alert',
+  recoveryCodeUsed: 'shield-alert',
+  deviceTrusted: 'smartphone',
+  emailCode: 'mail-check',
+};
 
 const TEXTS = {
   reset: {
     fr: {
-      title: 'Votre double authentification a été réinitialisée',
+      subject: SUBJECTS.fr,
+      title: 'Votre double authentification est réinitialisée',
+      preheader: 'Vous la configurerez de nouveau à votre prochaine connexion.',
       desc:
-        'Vous la configurerez de nouveau à votre prochaine connexion. Si vous n’attendiez pas ce changement, prévenez l’administrateur technique de votre société.',
-      reset: SIGN_IN.fr,
+        'Vous la configurerez de nouveau à votre prochaine connexion. Si vous n’attendiez pas ce changement, prévenez l’admin technique de votre entreprise.',
+      button: OPEN.fr,
     },
     en: {
-      title: 'Your two-factor authentication was reset',
+      subject: SUBJECTS.en,
+      title: 'Your two-factor authentication is reset',
+      preheader: 'You will set it up again at your next sign-in.',
       desc:
-        'You will set it up again at your next sign-in. If you did not expect this change, tell your company’s technical administrator.',
-      reset: SIGN_IN.en,
+        'You will set it up again at your next sign-in. If you did not expect this change, tell your company’s tech admin.',
+      button: OPEN.en,
     },
   },
   // Sent to the previous address of a member whose emailed method was reset
   // by the change of their address.
   emailChanged: {
     fr: {
+      subject: SUBJECTS.fr,
       title: 'L’adresse de votre compte a changé',
+      preheader: 'Votre double authentification est réinitialisée.',
       desc:
-        'Votre compte utilise désormais une autre adresse email, et votre double authentification a été réinitialisée. Si vous n’attendiez pas ce changement, prévenez tout de suite l’administrateur technique de votre société.',
-      reset: SIGN_IN.fr,
+        'Votre compte utilise désormais une autre adresse email, et votre double authentification est réinitialisée. Si vous n’attendiez pas ce changement, prévenez tout de suite l’admin technique de votre entreprise.',
+      button: OPEN.fr,
     },
     en: {
-      title: 'The address of your account changed',
+      subject: SUBJECTS.en,
+      title: 'The address of your account has changed',
+      preheader: 'Your two-factor authentication is reset.',
       desc:
-        'Your account now uses another email address, and your two-factor authentication was reset. If you did not expect this change, tell your company’s technical administrator straight away.',
-      reset: SIGN_IN.en,
+        'Your account now uses another email address, and your two-factor authentication is reset. If you did not expect this change, tell your company’s tech admin straight away.',
+      button: OPEN.en,
     },
   },
   setUp: {
     fr: {
+      subject: SUBJECTS.fr,
       title: 'La double authentification est activée sur votre compte',
+      preheader: 'Vous saisirez un code après votre mot de passe.',
       desc:
-        'Vous saisirez désormais un code après votre mot de passe. Si vous ne l’avez pas configurée vous-même, prévenez tout de suite l’administrateur technique de votre société.',
-      reset: SIGN_IN.fr,
+        'Vous saisirez désormais un code après votre mot de passe. Si vous ne l’avez pas configurée vous-même, prévenez tout de suite l’admin technique de votre entreprise.',
+      button: OPEN.fr,
     },
     en: {
+      subject: SUBJECTS.en,
       title: 'Two-factor authentication is on for your account',
+      preheader: 'You will enter a code after your password.',
       desc:
-        'You will now enter a code after your password. If you did not set it up yourself, tell your company’s technical administrator straight away.',
-      reset: SIGN_IN.en,
+        'You will now enter a code after your password. If you did not set it up yourself, tell your company’s tech admin straight away.',
+      button: OPEN.en,
     },
   },
   recoveryCodeUsed: {
     fr: {
-      title: 'Un code de secours a servi à vous connecter',
+      subject: SUBJECTS.fr,
+      title: 'Connexion avec un code de secours',
+      preheader: 'Une nouvelle série de codes de secours est disponible.',
       desc:
-        'Une nouvelle série de codes de secours vous a été donnée, et les précédents ne fonctionnent plus. Si vous n’êtes pas à l’origine de cette connexion, prévenez l’administrateur technique de votre société.',
-      reset: SIGN_IN.fr,
+        'Vous avez reçu une nouvelle série de codes de secours\u00a0: les précédents ne fonctionnent plus. Si vous ne vous êtes pas connecté, prévenez l’admin technique de votre entreprise.',
+      button: OPEN.fr,
     },
     en: {
-      title: 'A recovery code was used to sign you in',
+      subject: SUBJECTS.en,
+      title: 'Sign-in with a recovery code',
+      preheader: 'A new set of recovery codes is available.',
       desc:
-        'You were given a new set of recovery codes, and the previous ones no longer work. If you did not sign in, tell your company’s technical administrator.',
-      reset: SIGN_IN.en,
+        'You received a new set of recovery codes: the previous ones no longer work. If you did not sign in, tell your company’s tech admin.',
+      button: OPEN.en,
     },
   },
   deviceTrusted: {
     fr: {
+      subject: SUBJECTS.fr,
       title: 'Un nouvel appareil de confiance',
+      preheader: 'Cet appareil ne demandera plus de code pendant 30 jours.',
       desc:
-        'Cet appareil ne vous demandera plus de code pendant 30 jours. Si vous ne l’avez pas mémorisé vous-même, prévenez l’administrateur technique de votre société.',
-      reset: SIGN_IN.fr,
+        'Cet appareil ne vous demandera plus de code pendant 30 jours. Si vous ne l’avez pas mémorisé vous-même, prévenez l’admin technique de votre entreprise.',
+      button: OPEN.fr,
     },
     en: {
+      subject: SUBJECTS.en,
       title: 'A new trusted device',
+      preheader: 'This device will not ask for a code for 30 days.',
       desc:
-        'This device will not ask you for a code for 30 days. If you did not trust it yourself, tell your company’s technical administrator.',
-      reset: SIGN_IN.en,
+        'This device will not ask you for a code for 30 days. If you did not trust it yourself, tell your company’s tech admin.',
+      button: OPEN.en,
     },
   },
 };
@@ -102,7 +134,9 @@ const TEXTS = {
 function deviceTrustedTexts({ browser, os }) {
   const texts = {};
   Object.entries(TEXTS.deviceTrusted).forEach(([lang, text]) => {
-    texts[lang] = { ...text, title: `${text.title} : ${browser}, ${os}` };
+    // A no-break space before the colon in French only.
+    const colon = lang === 'fr' ? '\u00a0: ' : ': ';
+    texts[lang] = { ...text, title: `${text.title}${colon}${browser}, ${os}` };
   });
   return texts;
 }
@@ -113,22 +147,27 @@ function deviceTrustedTexts({ browser, os }) {
  *
  * @param {Object} user the member
  * @param {string} name a key of TEXTS
- * @param {Object} [texts] the texts of an email not in TEXTS
+ * @param {Object} [texts] the texts of an email not in TEXTS; one without a
+ *   `button` has none, nothing to do but read it
+ * @param {Object} [extra] what the email shows besides its texts: the `code`
  * @returns {Promise<void>}
  */
-async function sendTwoFactorEmail(user, name, texts = TEXTS[name]) {
-  const lang = texts[user.lang] ? user.lang : 'en';
-  const url = `${siteOrigin()}/account/login`;
+async function sendTwoFactorEmail(user, name, texts = TEXTS[name], extra = {}) {
+  const lang = resolveLanguage(user.lang);
+  // A button leads to the sign-in page; an email without one has no link.
+  const url = texts[lang].button ? `${siteOrigin()}/account/login` : undefined;
   try {
     await mail.send({
       to: user.email,
-      subject: `${config.emailOptions.passwordSubjectPrefix} – ${SUBJECTS[lang]}`,
-      text: `${texts[lang].title}. ${texts[lang].desc} ${url}`,
-      html: renderEmail(texts, lang, { type: 'admin', url }),
+      ...composeEmail(texts, lang, {
+        url,
+        icon: ICON_BY_EMAIL[name],
+        ...extra,
+      }),
     });
   } catch (error) {
     logger.error(`[two-factor] ${name} email failed for ${user.id}`, error);
   }
 }
 
-module.exports = { sendTwoFactorEmail, deviceTrustedTexts, SUBJECTS, SIGN_IN };
+module.exports = { sendTwoFactorEmail, deviceTrustedTexts, SUBJECTS };
