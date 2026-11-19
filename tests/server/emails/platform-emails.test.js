@@ -296,6 +296,34 @@ describe.each(CASES)('the %s email, in %s', (name, lang) => {
     );
   });
 
+  // The backdrop of the sign-in screen is a gradient (the accent to the primary
+  // at 50 %). A client that draws none (Outlook for Windows) keeps the solid
+  // primary, declared first and again as an attribute. The glow is at the top
+  // right: on a phone, a glow at the bottom right sits under the footer text
+  // (3.2:1), where the solid half gives it 13.9:1.
+  it('paints the backdrop with the gradient of the sign-in screen, over the solid primary', () => {
+    const cell = tag(/<td[^>]*class="backdrop"[^>]*>/);
+    expect(cell).toMatch(
+      /background-color:\s*#093040;\s*background-image:\s*radial-gradient\(at 100% 0%,\s*rgb\(0, 172, 220\) 0%,\s*rgb\(9, 48, 64\) 50%\)/
+    );
+    // The solid colour is also the attribute of the page table and the body.
+    expect(message.html).toMatch(
+      /<table[^>]*class="page"[^>]*bgcolor="#093040"/
+    );
+    expect(message.html).toMatch(/<body[^>]*background-color:\s*#093040/);
+    // One gradient, on the backdrop only: never under the card or the text.
+    const markup = message.html.replace(/<style[\s\S]*?<\/style>/g, '');
+    expect(markup.match(/gradient\(/g)).toHaveLength(1);
+    expect(tag(/<table[^>]*class="card"[^>]*>/)).not.toMatch(/gradient/);
+  });
+
+  it('keeps the footer text readable on the solid fallback, and on the solid half of the gradient', () => {
+    const footer = tag(/<td[^>]*class="[^"]*footer[^"]*"[^>]*>/);
+    const text = /color:\s*(#[0-9a-f]{6})/i.exec(footer)[1];
+    expect(contrast(text, '#093040')).toBeGreaterThanOrEqual(4.5);
+    expect(contrast('#ffffff', '#093040')).toBeGreaterThanOrEqual(4.5);
+  });
+
   it('speaks of the platform, not only of an email builder', () => {
     const visible = message.html
       .replace(/<style[\s\S]*?<\/style>/g, '')

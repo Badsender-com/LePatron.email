@@ -264,17 +264,17 @@ Les emails de notification de l'application suivent **le design system de l'appl
 
 Deux tentatives précédentes se sont trompées de référence. La première prenait le `secondary` `#265090` du code de la page de connexion pour fond ; le design system de l'app dit que la carte de connexion est posée sur le **primaire** `#093040` (« deep teal »). La deuxième habillait les emails aux couleurs du site (toile, safran, Fraunces).
 
-| Élément     | Design system de l'application                                         | Email                                                             |
-| ----------- | ---------------------------------------------------------------------- | ----------------------------------------------------------------- |
-| Fond        | primaire `#093040` (fond de la carte de connexion)                     | idem                                                              |
-| Logo        | variante pour fond sombre, sans signature                              | idem, en PNG hébergé, au-dessus de la carte                       |
-| Carte       | blanche, 480 px, rayon 10 px, ombre `shadow-modal`, filet `gray-200`   | idem                                                              |
-| En-tête     | pastille ronde 56 px (`tint-accent`), icône lucide en `accent-darken1` | idem, une icône par type d'email                                  |
-| Titre       | Inter 20 px / 600, primaire                                            | idem, centré, interligne 150 %                                    |
-| Texte       | Inter 14 px, `gray-700`                                                | idem, aligné à gauche ; 16 px sous 480 px                         |
-| Actions     | rangée à droite sous un filet, bouton à la largeur du libellé          | idem ; pleine largeur sous 480 px (44 px de haut), comme la carte |
-| Bouton      | rayon 5 px (`r-sm`), 500, sans majuscules, survol qui assombrit        | idem                                                              |
-| Vocabulaire | « mailing » est l'objet, « email » est une adresse                     | la bienvenue parle de mailings                                    |
+| Élément     | Design system de l'application                                                             | Email                                                                   |
+| ----------- | ------------------------------------------------------------------------------------------ | ----------------------------------------------------------------------- |
+| Fond        | primaire `#093040`, dégradé radial accent `#00ACDC` vers primaire à 50 % (en bas à droite) | idem, **lueur en haut à droite**, sur le primaire uni qui sert de repli |
+| Logo        | variante pour fond sombre, sans signature                                                  | idem, en PNG hébergé, au-dessus de la carte                             |
+| Carte       | blanche, 480 px, rayon 10 px, ombre `shadow-modal`, filet `gray-200`                       | idem                                                                    |
+| En-tête     | pastille ronde 56 px (`tint-accent`), icône lucide en `accent-darken1`                     | idem, une icône par type d'email                                        |
+| Titre       | Inter 20 px / 600, primaire                                                                | idem, centré, interligne 150 %                                          |
+| Texte       | Inter 14 px, `gray-700`                                                                    | idem, aligné à gauche ; 16 px sous 480 px                               |
+| Actions     | rangée à droite sous un filet, bouton à la largeur du libellé                              | idem ; pleine largeur sous 480 px (44 px de haut), comme la carte       |
+| Bouton      | rayon 5 px (`r-sm`), 500, sans majuscules, survol qui assombrit                            | idem                                                                    |
+| Vocabulaire | « mailing » est l'objet, « email » est une adresse                                         | la bienvenue parle de mailings                                          |
 
 Écarts assumés, la grille d'accessibilité l'emportant :
 
@@ -286,6 +286,8 @@ Deux tentatives précédentes se sont trompées de référence. La première pre
 **Le code de vérification** est mis en exergue discrètement : encart teinté `tint-accent` (`#e0f6fc` sur blanc), coins de 7 px, police mono 28 px / 600 en primaire (12:1), lettres espacées de 0,3 em comme le champ de code de l'application (`code-input`). En mode sombre : fond `#16394a`, texte `#f3f4f6`. Contrairement à la première version, il n'est plus dans le titre (`h1`) ni dans le sujet.
 
 **Le bloc bénéfices de la bienvenue** : encart `surface-muted` (`#fafafa`), filet `gray-200`, coins de 7 px (le bloc de compte de la carte de connexion), titre en `h2` 16 px / 600, puis trois lignes picto + phrase. Pictos : `blocks` (blocs conçus pour la marque), `badge-check` (vérifié avant l'envoi), `languages` (déclinaisons), en tuile ronde `tint-accent` 40 px, `alt=""` puisque le texte porte le sens. La liste garde sa sémantique sans puces (`role="list"`). En mode sombre : fond `#0e2531`.
+
+**Le fond en dégradé.** L'écran de connexion a un dégradé radial (`radial-gradient(at 100% 100%, accent 0%, primaire 50%)`). L'email le reprend **sur le primaire uni**, déclaré avant et en attribut `bgcolor` : un client qui ne dessine pas les dégradés (Outlook pour Windows, d'après nos règles) garde l'aplat `#093040`, comme avant. Seule la lueur change de coin : en haut à droite, derrière le logo, et non en bas à droite. Mesuré sur les rendus, avec la lueur en bas à droite le pied de page tombe sur du cyan sur mobile (blanc 3,2:1, `#cfdbe1` 2,3:1, sous les 4,5:1) ; en haut à droite il reste sur l'aplat (13,9:1 et 9,9:1), sur bureau comme sur mobile. Le dégradé n'est que sur le fond, jamais sous la carte ni sous un texte long. Support des clients : à confirmer par un test Litmus ou Email on Acid, non fait ici.
 
 Voix (brandbook) : vouvoiement, phrases courtes, des faits plutôt que des adjectifs, jamais « révolutionnaire », « booster », « clé en main ». Le nom s'écrit LePatron. Les trois bénéfices de la bienvenue reprennent trois différenciateurs du brandbook et du site. Le texte reste à valider.
 
