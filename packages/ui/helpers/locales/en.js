@@ -1504,7 +1504,7 @@ export default {
       'color-contrast': 'Follows the WCAG thresholds: nothing to set.',
       gmailClipping: 'This threshold is over {limit} KB: past {limit} KB, Gmail clips the email and hides its end, footer included.',
       metadata: 'No effect on an email without email metadata (subject, preheader).',
-      unnamedImages: 'An image whose address has no extension is judged on the type the server reads, and flagged without blocking.',
+      unnamedImages: 'If an image check ({checks}) is on, an image whose address has no extension is judged on the type the server reads, and flagged without blocking.',
     },
     dialog: {
       title: 'Add an exception',

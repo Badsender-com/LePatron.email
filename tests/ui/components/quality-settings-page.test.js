@@ -112,4 +112,10 @@ describe('the notes of a blocking card', () => {
     expect(blocksOn).toBeGreaterThan(-1);
     expect(lower).toBeGreaterThan(blocksOn);
   });
+
+  it('names the image checks the format of an unnamed image depends on', () => {
+    expect(source).toMatch(
+      /IMAGE_READING_CHECKS = \[\s*'image-weight',\s*'images-total-weight',\s*'oversized-images',?\s*\]/
+    );
+  });
 });

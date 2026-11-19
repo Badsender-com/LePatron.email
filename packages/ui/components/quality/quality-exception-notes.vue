@@ -10,6 +10,14 @@ import {
 import mixinQualityTexts from '~/helpers/mixins/mixin-quality-texts.js';
 
 const BYTES_PER_KB = 1024;
+// The checks whose run has the server download the images: only then does
+// it read the type of an image whose address names none (the editor's
+// resources.js, ADR 0009).
+const IMAGE_READING_CHECKS = [
+  'image-weight',
+  'images-total-weight',
+  'oversized-images',
+];
 // The checks that judge the email's metadata: an email without them gives
 // them nothing to read.
 const METADATA_CHECKS = ['subject', 'preheader'];
@@ -98,9 +106,20 @@ export default {
         );
       }
       if (id === 'unsupported-image-formats') {
-        parts.push(this.$t('qualitySettings.notes.unnamedImages'));
+        parts.push(this.unnamedImagesText());
       }
       return parts.join(' ');
+    },
+  },
+  methods: {
+    // The card knows the settings of its own check only: the condition on
+    // the image checks is said, not checked.
+    unnamedImagesText() {
+      return this.$t('qualitySettings.notes.unnamedImages', {
+        checks: new Intl.ListFormat(this.$i18n.locale, {
+          type: 'disjunction',
+        }).format(IMAGE_READING_CHECKS.map((id) => this.checkName(id))),
+      });
     },
   },
 };
