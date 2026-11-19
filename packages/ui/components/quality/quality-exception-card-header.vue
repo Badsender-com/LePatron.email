@@ -84,13 +84,13 @@ export default {
           ? $t('qualitySettings.page.stateOwn')
           : $t('qualitySettings.page.stateGeneral')
       }}
+      <!-- Styled as the thresholds' "back to" buttons. -->
       <v-btn
-        v-if="ownState && !locked"
+        v-if="ownState && !locked && !disabled"
         x-small
         text
-        color="accent"
+        color="primary"
         class="qx-card-header__restore"
-        :disabled="disabled"
         @click="$emit('restore-state')"
       >
         {{ $t('qualitySettings.page.restoreState') }}
@@ -129,7 +129,6 @@ export default {
   }
 
   &__restore {
-    margin-left: 4px;
     text-transform: none;
     letter-spacing: normal;
   }
