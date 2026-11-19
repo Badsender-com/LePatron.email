@@ -108,7 +108,7 @@
           button: {
           disabled: !$root.download.enabled(),
           icons: { primary: 'lucide lucide-fw lucide-cable' },
-          label: name,
+          label: $root.escapeLabel(name),
         }">
           Link
         </a>

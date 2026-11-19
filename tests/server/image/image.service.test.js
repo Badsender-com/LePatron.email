@@ -1,8 +1,9 @@
 'use strict';
 
-jest.mock('node-fetch');
-jest.mock('../../../packages/server/utils/outbound-host.js', () => ({
-  assertOutboundHostAllowed: jest.fn().mockResolvedValue(undefined),
+// The reader that guards the address: tested in real HTTP on its own
+// (tests/server/utils/image-source.test.js).
+jest.mock('../../../packages/server/utils/image-source.js', () => ({
+  readImageSource: jest.fn(),
 }));
 jest.mock('../../../packages/server/common/file-manage.service.js', () => ({
   writeStreamFromStream: jest.fn().mockResolvedValue(undefined),
@@ -25,11 +26,10 @@ jest.mock(
   () => (name) => ({ name, url: `/img/${name}` })
 );
 
-const fetch = require('node-fetch');
 const imageService = require('../../../packages/server/image/image.service.js');
 const {
-  assertOutboundHostAllowed,
-} = require('../../../packages/server/utils/outbound-host.js');
+  readImageSource,
+} = require('../../../packages/server/utils/image-source.js');
 const fileManager = require('../../../packages/server/common/file-manage.service.js');
 const uploadIdentity = require('../../../packages/server/common/upload-identity.service.js');
 const {
@@ -43,12 +43,13 @@ function mockImageResponse(
   buffer,
   { ok = true, status = 200, contentType = 'image/png' } = {}
 ) {
-  fetch.mockResolvedValue({
-    ok,
-    status,
-    headers: { get: () => contentType },
-    buffer: () => Promise.resolve(buffer),
-  });
+  if (!ok) {
+    readImageSource.mockRejectedValue(
+      new Error(`image source answered ${status}`)
+    );
+    return;
+  }
+  readImageSource.mockResolvedValue({ content: buffer, contentType });
 }
 
 // A gallery that holds what is pushed into it, so the service can read back
@@ -68,19 +69,24 @@ describe('image.service.createFromUrl', () => {
     galleryHoldingPushes();
   });
 
-  it('runs the SSRF guard on the image URL before downloading', async () => {
+  it('reads the image through the guarded reader, bounded in time and size', async () => {
     mockImageResponse(Buffer.from('imagedata'));
 
     await imageService.createFromUrl(MONGO_ID, IMAGE_URL);
-    expect(assertOutboundHostAllowed).toHaveBeenCalledWith(IMAGE_URL);
+    expect(readImageSource).toHaveBeenCalledWith(IMAGE_URL, {
+      timeoutMs: 15000,
+      maxBytes: 10 * 1024 * 1024,
+    });
   });
 
-  it('does not fetch when the SSRF guard rejects', async () => {
-    assertOutboundHostAllowed.mockRejectedValueOnce(new Error('blocked'));
+  it('stores nothing when the reader refuses the address', async () => {
+    readImageSource.mockRejectedValueOnce(
+      new Error('image source address refused')
+    );
     await expect(
       imageService.createFromUrl(MONGO_ID, IMAGE_URL)
-    ).rejects.toThrow('blocked');
-    expect(fetch).not.toHaveBeenCalled();
+    ).rejects.toThrow('refused');
+    expect(fileManager.writeStreamFromStream).not.toHaveBeenCalled();
   });
 
   it('throws on a non-ok download', async () => {

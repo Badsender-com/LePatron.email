@@ -6,8 +6,8 @@ const axios = require('../../config/axios');
 const { InternalServerError } = require('http-errors');
 const qs = require('qs');
 const soapRequest = require('../../../server/utils/soap-request');
-const { getMd5FromBlob } = require('../../../server/utils/crypto.js');
-const fetch = require('node-fetch');
+const crypto = require('crypto');
+const { readImageSource } = require('../../utils/image-source.js');
 const FormData = require('form-data');
 const {
   asyncReplace,
@@ -404,17 +404,17 @@ class AdobeProvider {
       async (match, tag) => {
         const splittedMatch = match.split('/');
         const imageName = splittedMatch[splittedMatch.length - 1];
-        const response = await fetch(match);
-        const blob = await response.blob();
-
-        const md5 = await getMd5FromBlob(blob);
+        // Through readImageSource: these URLs are written by the email's
+        // authors, and what they answer is uploaded to Adobe Campaign.
+        const { content, contentType } = await readImageSource(match);
+        const md5 = crypto.createHash('md5').update(content).digest('hex');
 
         try {
           await this.uploadDeliveryImage({
-            image: Buffer.from(await blob.arrayBuffer()),
+            image: content,
             optionImg: {
               filename: imageName,
-              contentType: blob.type,
+              contentType: contentType || '',
             },
           });
         } catch (uploadError) {

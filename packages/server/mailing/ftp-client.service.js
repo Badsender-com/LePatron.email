@@ -2,7 +2,7 @@
 
 const Client = require('ssh2-sftp-client');
 const SocksClient = require('socks').SocksClient;
-const request = require('request');
+const { readImageSource } = require('../utils/image-source.js');
 const url = require('url');
 const fs = require('fs-extra');
 const crypto = require('crypto');
@@ -62,14 +62,10 @@ class FTPClient {
         const localPath = `${tmpDir}/${fileName}`;
         const remotePath = `${folderPath}${fileName}`;
 
-        await new Promise((resolve, reject) => {
-          const requestedFile = request.get(fileUrl);
-          const fileStream = fs.createWriteStream(localPath);
-
-          requestedFile.pipe(fileStream);
-          fileStream.on('finish', resolve);
-          fileStream.on('error', reject);
-        });
+        // Through readImageSource: these URLs are written by the email's
+        // authors, and what they answer lands on the company's server.
+        const { content } = await readImageSource(fileUrl);
+        await fs.writeFile(localPath, content);
 
         try {
           client.on('debug', (msg) => console.log('DEBUG SFTP:', msg));
