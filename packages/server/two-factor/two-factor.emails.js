@@ -9,7 +9,8 @@ const {
 } = require('../email-templates/email-template.js');
 
 // The emails that tell a member about their two-factor authentication
-// (ADR 0008). None names who acted: the security event keeps that.
+// (ADR 0008). None names who acted: the security event keeps that. The one to
+// warn is the tech admin, who resets the second factor (GLOSSARY.md).
 
 const SUBJECTS = {
   fr: 'Double authentification',
@@ -36,7 +37,7 @@ const TEXTS = {
       title: 'Votre double authentification est réinitialisée',
       preheader: 'Vous la configurerez de nouveau à votre prochaine connexion.',
       desc:
-        'Vous la configurerez de nouveau à votre prochaine connexion. Si vous n’attendiez pas ce changement, prévenez l’administrateur technique de votre société.',
+        'Vous la configurerez de nouveau à votre prochaine connexion. Si vous n’attendiez pas ce changement, prévenez l’admin technique de votre entreprise.',
       button: OPEN.fr,
     },
     en: {
@@ -44,7 +45,7 @@ const TEXTS = {
       title: 'Your two-factor authentication is reset',
       preheader: 'You will set it up again at your next sign-in.',
       desc:
-        'You will set it up again at your next sign-in. If you did not expect this change, tell your company’s technical administrator.',
+        'You will set it up again at your next sign-in. If you did not expect this change, tell your company’s tech admin.',
       button: OPEN.en,
     },
   },
@@ -56,7 +57,7 @@ const TEXTS = {
       title: 'L’adresse de votre compte a changé',
       preheader: 'Votre double authentification est réinitialisée.',
       desc:
-        'Votre compte utilise désormais une autre adresse email, et votre double authentification est réinitialisée. Si vous n’attendiez pas ce changement, prévenez tout de suite l’administrateur technique de votre société.',
+        'Votre compte utilise désormais une autre adresse email, et votre double authentification est réinitialisée. Si vous n’attendiez pas ce changement, prévenez tout de suite l’admin technique de votre entreprise.',
       button: OPEN.fr,
     },
     en: {
@@ -64,7 +65,7 @@ const TEXTS = {
       title: 'The address of your account has changed',
       preheader: 'Your two-factor authentication is reset.',
       desc:
-        'Your account now uses another email address, and your two-factor authentication is reset. If you did not expect this change, tell your company’s technical administrator straight away.',
+        'Your account now uses another email address, and your two-factor authentication is reset. If you did not expect this change, tell your company’s tech admin straight away.',
       button: OPEN.en,
     },
   },
@@ -74,7 +75,7 @@ const TEXTS = {
       title: 'La double authentification est activée sur votre compte',
       preheader: 'Vous saisirez un code après votre mot de passe.',
       desc:
-        'Vous saisirez désormais un code après votre mot de passe. Si vous ne l’avez pas configurée vous-même, prévenez tout de suite l’administrateur technique de votre société.',
+        'Vous saisirez désormais un code après votre mot de passe. Si vous ne l’avez pas configurée vous-même, prévenez tout de suite l’admin technique de votre entreprise.',
       button: OPEN.fr,
     },
     en: {
@@ -82,7 +83,7 @@ const TEXTS = {
       title: 'Two-factor authentication is on for your account',
       preheader: 'You will enter a code after your password.',
       desc:
-        'You will now enter a code after your password. If you did not set it up yourself, tell your company’s technical administrator straight away.',
+        'You will now enter a code after your password. If you did not set it up yourself, tell your company’s tech admin straight away.',
       button: OPEN.en,
     },
   },
@@ -92,7 +93,7 @@ const TEXTS = {
       title: 'Connexion avec un code de secours',
       preheader: 'Une nouvelle série de codes de secours est disponible.',
       desc:
-        'Vous avez reçu une nouvelle série de codes de secours\u00a0: les précédents ne fonctionnent plus. Si vous ne vous êtes pas connecté, prévenez l’administrateur technique de votre société.',
+        'Vous avez reçu une nouvelle série de codes de secours\u00a0: les précédents ne fonctionnent plus. Si vous ne vous êtes pas connecté, prévenez l’admin technique de votre entreprise.',
       button: OPEN.fr,
     },
     en: {
@@ -100,7 +101,7 @@ const TEXTS = {
       title: 'Sign-in with a recovery code',
       preheader: 'A new set of recovery codes is available.',
       desc:
-        'You received a new set of recovery codes: the previous ones no longer work. If you did not sign in, tell your company’s technical administrator.',
+        'You received a new set of recovery codes: the previous ones no longer work. If you did not sign in, tell your company’s tech admin.',
       button: OPEN.en,
     },
   },
@@ -110,7 +111,7 @@ const TEXTS = {
       title: 'Un nouvel appareil de confiance',
       preheader: 'Cet appareil ne demandera plus de code pendant 30 jours.',
       desc:
-        'Cet appareil ne vous demandera plus de code pendant 30 jours. Si vous ne l’avez pas mémorisé vous-même, prévenez l’administrateur technique de votre société.',
+        'Cet appareil ne vous demandera plus de code pendant 30 jours. Si vous ne l’avez pas mémorisé vous-même, prévenez l’admin technique de votre entreprise.',
       button: OPEN.fr,
     },
     en: {
@@ -118,7 +119,7 @@ const TEXTS = {
       title: 'A new trusted device',
       preheader: 'This device will not ask for a code for 30 days.',
       desc:
-        'This device will not ask you for a code for 30 days. If you did not trust it yourself, tell your company’s technical administrator.',
+        'This device will not ask you for a code for 30 days. If you did not trust it yourself, tell your company’s tech admin.',
       button: OPEN.en,
     },
   },

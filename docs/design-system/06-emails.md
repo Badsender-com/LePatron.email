@@ -2,7 +2,7 @@
 
 The emails the application sends about an account: the password (welcome, new password, saved) and two-factor authentication (code, set up, reset, address changed, recovery code used, trusted device).
 
-**Scope.** These emails belong to the application's design system, not to the brand's. The **Brandbook** governs what speaks _about_ LePatron (the website, decks, marketing emails) and gives the voice. The mailings people produce in the editor are theirs. Inventory, audit and decisions: [docs/emails/](../emails/README.md).
+**Scope.** These emails belong to the application's design system, not to the brand's. The **Brandbook** governs what speaks _about_ LePatron (the website, decks, marketing emails) and gives the voice. The emails people design in the editor are theirs. Inventory, audit and decisions: [docs/emails/](../emails/README.md).
 
 > **Rule.** A notification email is a sign-in card sent by mail. Take its tokens, its vocabulary and its accessibility rules from this design system. Do not bring Fraunces, the canvas ground or the site's saffron button into it.
 
@@ -52,7 +52,7 @@ A one-time code is shown apart, under the title, as the code field of the app: m
 ## Words
 
 - **Voice** (Brandbook): formal _vous_, short sentences, facts over adjectives. Never "révolutionnaire", "booster", "clé en main". The name is **LePatron**, one word.
-- **Vocabulary** (the app): a **mailing** is the campaign, an **email** is an address or the message you are reading. The platform is "la plateforme de gouvernance email et CRM", not only an "email builder".
+- **Vocabulary** (the app, [GLOSSARY.md](../../GLOSSARY.md)): what a company designs is an **email**, never a "mailing". The member to warn is named by role: "un administrateur de votre entreprise" for a password, "l'admin technique de votre entreprise" for the second factor, which a tech admin resets. The platform is "la plateforme de gouvernance email et CRM", not only an "email builder".
 - **Languages**: French and English only, as the app. Anything else is written in English and logged. Every email has a subject, a title, a preheader, a text and, unless it has nothing to do, a button, in both.
 - **Subject**: `LePatron – <subject>`, in the member's language. Sentence case.
 
