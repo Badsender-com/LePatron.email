@@ -56,6 +56,22 @@
   --accent-tint-resize-active: rgba(0, 172, 220, 0.5);
   // The ground of an icon tile while what it heads is on (BsFormSection card).
   --accent-tint-tile: rgba(0, 172, 220, 0.12);
+  // The ground of an icon in a round tile, of an accent badge.
+  --tint-accent: rgba(0, 172, 220, 0.12);
+  // The halo around a focused field or option.
+  --focus-ring: 0 0 0 3px rgba(0, 172, 220, 0.18);
+
+  // A frame around what goes wrong, or what is shown once.
+  --error-border: rgba(240, 78, 35, 0.35);
+  --tint-warning-soft: rgba(255, 180, 0, 0.08);
+  --warning-border: rgba(255, 180, 0, 0.6);
+  // Success said in words ("Copied"): 5.1:1 on white, where --v-success-base
+  // is 2.8:1.
+  --success-ink: #2e7d32;
+
+  // A code, a key, an address to copy.
+  --font-mono: ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Monaco, Consolas,
+    monospace;
 
   // Surface backgrounds
   --surface: #ffffff;
@@ -77,4 +93,5 @@
   // Box shadows
   --shadow-menu: 0 4px 14px rgba(9, 48, 64, 0.08),
     0 1px 2px rgba(9, 48, 64, 0.05);
+  --shadow-modal: 0 12px 32px rgba(13, 43, 62, 0.18);
 }
