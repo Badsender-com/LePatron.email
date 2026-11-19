@@ -1125,7 +1125,7 @@ export default {
       applied: 'Ce que ce template suit des réglages généraux',
       appliedNone: 'Aucune exception générale ne s\'applique à ce template : en dehors de ses propres exceptions, tous les contrôles appliquent les valeurs recommandées.',
       appliedLink: 'Voir les réglages généraux',
-      appliedFrom: 'Elles viennent des {link}. Les autres contrôles appliquent les valeurs recommandées.',
+      appliedFrom: 'Les exceptions ci-dessous viennent des {link}, et ce template ne les remplace pas. Hors de celles-ci et des siennes, chaque contrôle applique ses valeurs recommandées.',
       appliedFromLink: 'réglages généraux',
       notFound: 'Ce template est introuvable.',
     },
