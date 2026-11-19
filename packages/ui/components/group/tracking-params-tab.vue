@@ -160,7 +160,7 @@ export default {
     </p>
 
     <ul class="tracking-params__toggles">
-      <bs-settings-row title-id="tracking-enabled-title">
+      <bs-settings-row>
         <template #title>{{ $t('trackingConfig.enabled') }}</template>
         <bs-group-feature-switch
           :value="Boolean(config.enabled)"
@@ -170,7 +170,7 @@ export default {
           @change="onEnabledChange"
         />
       </bs-settings-row>
-      <bs-settings-row title-id="tracking-restrict-title">
+      <bs-settings-row>
         <template #title>{{ $t('trackingConfig.restrictValues') }}</template>
         <bs-group-feature-switch
           :value="Boolean(config.restrictValues)"
