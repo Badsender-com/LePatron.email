@@ -25,10 +25,10 @@ const LANGUAGES = ['fr', 'en'];
 const FALLBACK_LANGUAGE = 'en';
 
 // The images of the emails, built by scripts/build-email-images.js from the
-// logo and the icons of the application. They travel with the email (`cid:`),
-// nothing is fetched from the application when it opens: they show in
-// development and behind a firewall alike, as `localhost` could not.
-const ASSETS = path.join(__dirname, 'assets');
+// logo and the icons of the application. The application serves them from its
+// public folder (public/media/email): an email links them by an absolute
+// address, with the scheme and the host of the site, as for its other links.
+const ASSETS_PATH = '/media/email';
 const ICONS = [
   'lock',
   'shield-check',
@@ -40,8 +40,6 @@ const ICONS = [
   'languages',
 ];
 const DEFAULT_ICON = 'lock';
-const LOGO_CID = 'logo@lepatron.email';
-const ICON_CID = 'icon@lepatron.email';
 
 const PRIVACY_URL = 'https://www.badsender.com/vie-privee/';
 const DPO_EMAIL = 'dpo@badsender.com';
@@ -245,20 +243,22 @@ function resolveLanguage(lang) {
  * @param {Object} [data] `url`: where the button leads (none, no button);
  *   `icon`: the one of the card, one of ICONS (a lock when none); `code`: a
  *   one-time code, shown apart under the title
- * @returns {{subject: string, text: string, html: string, attachments: Object[]}}
+ * @returns {{subject: string, text: string, html: string}}
  */
 function composeEmail(texts, lang, { url, icon = DEFAULT_ICON, code } = {}) {
   const language = resolveLanguage(lang);
   const t = texts[language];
   const c = COMMON_TEXTS[language];
   const iconName = ICONS.includes(icon) ? icon : DEFAULT_ICON;
-  // The reasons of a welcome carry a round icon each, attached like the card's.
+  // The images are hosted by the application: absolute addresses.
+  const assets = `${siteOrigin()}${ASSETS_PATH}`;
   const benefits = t.benefits && {
     title: t.benefits.title,
-    items: t.benefits.items.map((item, index) => ({
+    items: t.benefits.items.map((item) => ({
       ...item,
-      icon: ICONS.includes(item.icon) ? item.icon : DEFAULT_ICON,
-      cid: `benefit-${index + 1}@lepatron.email`,
+      src: `${assets}/icon-${
+        ICONS.includes(item.icon) ? item.icon : DEFAULT_ICON
+      }.png`,
     })),
   };
   const html = accountTemplate({
@@ -268,8 +268,8 @@ function composeEmail(texts, lang, { url, icon = DEFAULT_ICON, code } = {}) {
     url,
     code,
     benefits,
-    logoCid: LOGO_CID,
-    iconCid: ICON_CID,
+    logoSrc: `${assets}/logo.png`,
+    iconSrc: `${assets}/icon-${iconName}.png`,
     privacyUrl: PRIVACY_URL,
     dpo: DPO_EMAIL,
   });
@@ -285,26 +285,6 @@ function composeEmail(texts, lang, { url, icon = DEFAULT_ICON, code } = {}) {
     subject: `${config.emailOptions.passwordSubjectPrefix} – ${t.subject}`,
     text,
     html,
-    attachments: [
-      {
-        filename: 'logo.png',
-        path: path.join(ASSETS, 'logo.png'),
-        cid: LOGO_CID,
-        contentDisposition: 'inline',
-      },
-      {
-        filename: `${iconName}.png`,
-        path: path.join(ASSETS, `icon-${iconName}.png`),
-        cid: ICON_CID,
-        contentDisposition: 'inline',
-      },
-      ...(benefits ? benefits.items : []).map(({ icon: name, cid }) => ({
-        filename: `${name}.png`,
-        path: path.join(ASSETS, `icon-${name}.png`),
-        cid,
-        contentDisposition: 'inline',
-      })),
-    ],
   };
 }
 

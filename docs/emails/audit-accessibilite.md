@@ -267,7 +267,7 @@ Deux tentatives précédentes se sont trompées de référence. La première pre
 | Élément     | Design system de l'application                                         | Email                                                             |
 | ----------- | ---------------------------------------------------------------------- | ----------------------------------------------------------------- |
 | Fond        | primaire `#093040` (fond de la carte de connexion)                     | idem                                                              |
-| Logo        | variante pour fond sombre, sans signature                              | idem, en PNG joint à l'email, au-dessus de la carte               |
+| Logo        | variante pour fond sombre, sans signature                              | idem, en PNG hébergé, au-dessus de la carte                       |
 | Carte       | blanche, 480 px, rayon 10 px, ombre `shadow-modal`, filet `gray-200`   | idem                                                              |
 | En-tête     | pastille ronde 56 px (`tint-accent`), icône lucide en `accent-darken1` | idem, une icône par type d'email                                  |
 | Titre       | Inter 20 px / 600, primaire                                            | idem, centré, interligne 150 %                                    |
@@ -289,7 +289,7 @@ Deux tentatives précédentes se sont trompées de référence. La première pre
 
 Voix (brandbook) : vouvoiement, phrases courtes, des faits plutôt que des adjectifs, jamais « révolutionnaire », « booster », « clé en main ». Le nom s'écrit LePatron. Les trois bénéfices de la bienvenue reprennent trois différenciateurs du brandbook et du site. Le texte reste à valider.
 
-Le logo et les icônes sont joints à l'email (`cid:`) : rien n'est chargé depuis l'application. Les icônes sont reconstruites par `node scripts/build-email-images.js` depuis les icônes lucide des pages de connexion.
+Le logo et les icônes sont des **images hébergées par l'application** (`public/media/email/`, servies sans authentification avant la session) et liées par des adresses absolues : `<site>/media/email/logo.png`, avec le schéma et l'hôte des autres liens (`config.host`, https hors développement). Ce choix remplace des pièces jointes `cid:` : il garde un message léger, mais il suppose que l'hôte soit joignable par le client mail (donc pas `localhost` en production) et que les images ne soient pas bloquées ; le `alt` du logo (« LePatron ») reste lisible sans elles. Les icônes sont reconstruites par `node scripts/build-email-images.js` depuis les icônes lucide des pages de connexion.
 
 Dérive à connaître : la page de connexion de l'application (`packages/ui/layouts/centered.vue`) est sur le `secondary` `#265090` ; le design system la décrit sur le primaire `#093040`. Les emails suivent le design system.
 

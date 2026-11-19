@@ -8,8 +8,8 @@
 //   - the round tile and the icon of the authentication cards (lucide, as in
 //     the pages, on --tint-accent, in the darkened accent), as PNGs.
 //
-// The emails attach them (`cid:`), so nothing is fetched from the application
-// when one opens: they show in development and behind a firewall alike.
+// They are served by the application, from its public folder, at
+// `<site>/media/email/<name>.png`: the emails link them by an absolute address.
 //
 //   node scripts/build-email-images.js
 
@@ -18,7 +18,7 @@ const path = require('path');
 const sharp = require('sharp');
 
 const ROOT = path.join(__dirname, '..');
-const OUT = path.join(ROOT, 'packages/server/email-templates/assets');
+const OUT = path.join(ROOT, 'public/media/email');
 const LUCIDE = path.join(ROOT, 'node_modules/lucide-vue/dist/esm/icons');
 
 // The icon of each kind of email: the ones the pages of the application use
