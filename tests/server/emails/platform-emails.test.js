@@ -127,7 +127,7 @@ describe.each(CASES)('the %s email, in %s', (name, lang) => {
   const tag = (re) => (message.html.match(re) || [])[0];
   const h1 = () =>
     ((message.html.match(/<h1[^>]*>([\s\S]*?)<\/h1>/) || [])[1] || '')
-      .replace(/\s+/g, ' ')
+      .replace(/[ \t\r\n]+/g, ' ')
       .trim();
 
   it('declares its language on the document and on an enclosing div', () => {
@@ -144,7 +144,7 @@ describe.each(CASES)('the %s email, in %s', (name, lang) => {
 
   it('is titled after what it says', () => {
     const title = (message.html.match(/<title>([\s\S]*?)<\/title>/) || [])[1];
-    expect(title.replace(/\s+/g, ' ').trim()).toBe(h1());
+    expect(title.replace(/[ \t\r\n]+/g, ' ').trim()).toBe(h1());
   });
 
   it('has one h1 and no other level that skips it', () => {
@@ -220,6 +220,14 @@ describe.each(CASES)('the %s email, in %s', (name, lang) => {
       ),
     ];
     expect(styles.length).toBeGreaterThan(0);
+    // Every size set above 1 px (1 px hides the preheader) comes with its
+    // line height: a reordered declaration cannot slip past the pairs.
+    const sizes = [...message.html.matchAll(/font-size:\s*(\d+)px/g)].filter(
+      ([, size]) => Number(size) > 1
+    );
+    expect(styles.filter(([, size]) => Number(size) > 1)).toHaveLength(
+      sizes.length
+    );
     styles
       .filter(([, size]) => Number(size) > 1)
       .forEach(([, size, line]) => {
@@ -305,6 +313,125 @@ describe('the welcome and the reset of a password', () => {
       expect(lastMessage().html).not.toMatch(welcome.en);
     }
   );
+
+  // The password is already cleared and a link is out: the account is no
+  // longer new, whatever asks for the next mail.
+  it.each([
+    ['an administrator sends it again', 'admin'],
+    ['the person asks for a new one', 'user'],
+  ])(
+    'does not welcome an account whose first mail is out, when %s',
+    async (_by, type) => {
+      const user = member('fr');
+      user.password = undefined;
+      await user.resetPassword('admin', 'fr');
+      expect(lastMessage().subject).toMatch(welcome.fr);
+
+      await user.resetPassword(type, 'fr');
+
+      expect(lastMessage().subject).not.toMatch(welcome.fr);
+      expect(lastMessage().html).not.toMatch(/Un administrateur a créé/);
+    }
+  );
+
+  it.each([
+    ['fr', 'admin', /administrateur a réinitialisé/],
+    ['en', 'admin', /administrator reset/],
+    ['fr', 'user', /Vous avez demandé.*mot de passe actuel reste valable/],
+    ['en', 'user', /You asked.*current password still works/],
+  ])(
+    'tells who asked: a reset in %s by %s says so',
+    async (lang, type, wording) => {
+      mail.send.mockClear();
+
+      await member(lang).resetPassword(type, lang);
+
+      expect(lastMessage().html).toMatch(wording);
+    }
+  );
+
+  it('says the link lives 7 days, as long as it does', async () => {
+    mail.send.mockClear();
+    const user = member('en');
+
+    await user.resetPassword('user', 'en');
+
+    const days = (user.tokenExpire - Date.now()) / (24 * 60 * 60 * 1000);
+    expect(Math.round(days)).toBe(7);
+    expect(lastMessage().html).toMatch(/valid for 7 days/);
+  });
+});
+
+describe('the text that comes from the outside', () => {
+  it('escapes the browser and the system of a trusted device', async () => {
+    mail.send.mockClear();
+
+    await twoFactorEmails.sendTwoFactorEmail(
+      member('en'),
+      'deviceTrusted',
+      twoFactorEmails.deviceTrustedTexts({
+        browser: '<script>alert("x")</script>',
+        os: '" onload="x',
+      })
+    );
+
+    expect(lastMessage().html).not.toContain('<script>');
+    expect(lastMessage().html).toContain('&lt;script&gt;');
+    expect(lastMessage().html).not.toContain('" onload="x');
+  });
+});
+
+describe('the language of the account, as it is stored', () => {
+  it.each([
+    ['FR', 'fr'],
+    ['fr-FR', 'fr'],
+    [' en_GB ', 'en'],
+  ])('reads %p as %s without a warning', async (stored, language) => {
+    mail.send.mockClear();
+    logger.warn.mockClear();
+
+    await twoFactorEmails.sendTwoFactorEmail(member(stored), 'setUp');
+
+    expect(lastMessage().html).toMatch(
+      new RegExp(`<html[^>]*\\slang="${language}"`)
+    );
+    expect(logger.warn).not.toHaveBeenCalled();
+  });
+
+  it.each([[undefined], [null], ['']])(
+    'writes in English, with nothing to log, when it is %p',
+    async (stored) => {
+      mail.send.mockClear();
+      logger.warn.mockClear();
+
+      await twoFactorEmails.sendTwoFactorEmail(member(stored), 'setUp');
+
+      expect(lastMessage().html).toMatch(/<html[^>]*\slang="en"/);
+      expect(logger.warn).not.toHaveBeenCalled();
+    }
+  );
+
+  it('logs a value it does not know quoted and cut, not raw', async () => {
+    logger.warn.mockClear();
+
+    await twoFactorEmails.sendTwoFactorEmail(
+      member('xx\nfake log line that goes on and on and on'),
+      'setUp'
+    );
+
+    const [line] = logger.warn.mock.calls[0];
+    expect(line).not.toMatch(/\n/);
+    expect(line).not.toContain('goes on and on and on');
+  });
+
+  it('writes a password email in English too, for an untranslated language', async () => {
+    mail.send.mockClear();
+
+    await member('de').resetPassword('user', 'de');
+
+    expect(lastMessage().html).toMatch(/<html[^>]*\slang="en"/);
+    expect(lastMessage().subject).toMatch(/New password/);
+  });
 });
 
 describe('a language the application does not translate', () => {

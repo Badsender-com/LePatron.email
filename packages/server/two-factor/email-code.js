@@ -42,10 +42,10 @@ function takeHourlyBudget(userId) {
 const TEXTS = {
   fr: {
     subject: SUBJECTS.fr,
-    title: 'Votre code de vérification : {code}',
+    title: 'Votre code de vérification\u00a0: {code}',
     preheader: 'Saisissez ce code pour vous connecter.',
     desc:
-      'Il est valable 10 minutes. Si vous n’êtes pas en train de vous connecter, ignorez cet email et prévenez l’administrateur technique de votre société : quelqu’un connaît votre mot de passe.',
+      'Il est valable 10 minutes. Si vous n’êtes pas en train de vous connecter, ignorez cet email et prévenez l’administrateur technique de votre société\u00a0: quelqu’un connaît votre mot de passe.',
   },
   en: {
     subject: SUBJECTS.en,

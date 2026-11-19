@@ -28,22 +28,27 @@ const PRIVACY_URL = 'https://www.badsender.com/vie-privee/';
 const DPO_EMAIL = 'dpo@badsender.com';
 
 // What every email says around its own text.
+// In French a colon takes a no-break space before it, so a line never starts
+// with one: the character U+00A0, written with an escape below, which the
+// escaping of the template leaves alone.
 const COMMON_TEXTS = {
   fr: {
     fallback:
-      'Si le bouton ne fonctionne pas, copiez ce lien dans votre navigateur :',
+      'Si le bouton ne fonctionne pas, copiez ce lien dans votre navigateur\u00a0:',
     sent:
-      'Cet email a été envoyé automatiquement par LePatron, l’email builder de Badsender.',
-    data: 'Vos données personnelles :',
+      'LePatron, l’email builder de Badsender, vous envoie cet email automatiquement.',
+    data: 'Pour vos données personnelles, consultez notre',
     privacy: 'politique de confidentialité',
-    colon: ' : ',
+    or: 'ou écrivez à',
+    colon: '\u00a0: ',
   },
   en: {
     fallback: 'If the button does not work, copy this link into your browser:',
     sent:
-      'This email was sent automatically by LePatron, Badsender’s email builder.',
-    data: 'Your personal data:',
+      'LePatron, Badsender’s email builder, sends you this email automatically.',
+    data: 'For your personal data, read our',
     privacy: 'privacy policy',
+    or: 'or write to',
     colon: ': ',
   },
 };
@@ -96,7 +101,7 @@ const PASSWORD_TEXTS = {
       title: 'Choisissez un nouveau mot de passe',
       preheader: 'Ce lien est valable 7 jours.',
       desc:
-        'Vous avez demandé un nouveau mot de passe. Choisissez-le avec le bouton ci-dessous. Ce lien est valable 7 jours. Si ce n’est pas vous, ignorez cet email : votre mot de passe actuel reste valable.',
+        'Vous avez demandé un nouveau mot de passe. Choisissez-le avec le bouton ci-dessous. Ce lien est valable 7 jours. Si ce n’est pas vous, ignorez cet email\u00a0: votre mot de passe actuel reste valable.',
       button: 'Choisir un nouveau mot de passe',
     },
     en: {
@@ -108,22 +113,23 @@ const PASSWORD_TEXTS = {
       button: 'Choose a new password',
     },
   },
-  // The new password is set.
+  // The password is set: a first one, or a new one. The mail cannot tell which
+  // (the link does not remember), so it says neither.
   confirmation: {
     fr: {
-      subject: 'Mot de passe modifié',
-      title: 'Votre mot de passe a changé',
-      preheader: 'Vous pouvez vous connecter avec votre nouveau mot de passe.',
+      subject: 'Mot de passe enregistré',
+      title: 'Votre mot de passe est enregistré',
+      preheader: 'Vous pouvez vous connecter avec votre mot de passe.',
       desc:
-        'Vous avez choisi un nouveau mot de passe. Si ce n’est pas vous, prévenez l’administrateur technique de votre société.',
+        'Vous avez choisi votre mot de passe. Si ce n’est pas vous, prévenez l’administrateur technique de votre société.',
       button: 'Ouvrir LePatron',
     },
     en: {
-      subject: 'Password changed',
-      title: 'Your password has changed',
-      preheader: 'You can sign in with your new password.',
+      subject: 'Password saved',
+      title: 'Your password is saved',
+      preheader: 'You can sign in with your password.',
       desc:
-        'You chose a new password. If this was not you, tell your company’s technical administrator.',
+        'You chose your password. If this was not you, tell your company’s technical administrator.',
       button: 'Open LePatron',
     },
   },
@@ -146,10 +152,16 @@ function siteOrigin() {
  * @returns {'fr'|'en'}
  */
 function resolveLanguage(lang) {
-  if (LANGUAGES.includes(lang)) return lang;
+  // `fr-FR` and `FR` are French. The value is a free string of the account:
+  // it is logged quoted and cut, never raw.
+  const base =
+    typeof lang === 'string' ? lang.trim().toLowerCase().split(/[-_]/)[0] : '';
+  if (LANGUAGES.includes(base)) return base;
   if (lang) {
     logger.warn(
-      `[email] "${lang}" is not a translated language: the email is in ${FALLBACK_LANGUAGE}`
+      `[email] ${JSON.stringify(
+        String(lang).slice(0, 20)
+      )} is not a translated language: the email is in ${FALLBACK_LANGUAGE}`
     );
   }
   return FALLBACK_LANGUAGE;
