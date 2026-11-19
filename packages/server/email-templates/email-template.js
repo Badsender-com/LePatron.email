@@ -52,7 +52,7 @@ const COMMON_TEXTS = {
     fallback:
       'Si le bouton ne fonctionne pas, copiez ce lien dans votre navigateur\u00a0:',
     sent:
-      'LePatron, l’email builder de Badsender, vous envoie cet email automatiquement.',
+      'LePatron, la plateforme de gouvernance email et CRM de Badsender, vous envoie cet email automatiquement.',
     data: 'Pour vos données personnelles, consultez notre',
     privacy: 'politique de confidentialité',
     or: 'ou écrivez à',
@@ -61,7 +61,7 @@ const COMMON_TEXTS = {
   en: {
     fallback: 'If the button does not work, copy this link into your browser:',
     sent:
-      'LePatron, Badsender’s email builder, sends you this email automatically.',
+      'LePatron, Badsender’s email and CRM governance platform, sends you this email automatically.',
     data: 'For your personal data, read our',
     privacy: 'privacy policy',
     or: 'or write to',
@@ -72,22 +72,64 @@ const COMMON_TEXTS = {
 // A link in a password email lives a week (`resetPassword` of the user
 // schema): the texts below say so.
 const PASSWORD_TEXTS = {
-  // The first password of an account an administrator created.
+  // The first password of an account an administrator created: the one email
+  // that says why LePatron is worth the trouble, in the words of
+  // lepatron.email (three of its promises, for the people who produce).
   welcome: {
     fr: {
-      subject: 'Bienvenue sur LePatron',
+      subject: 'Bienvenue',
       title: 'Bienvenue sur LePatron',
-      preheader: 'Choisissez votre mot de passe pour activer votre compte.',
+      preheader: 'Choisissez votre mot de passe et entrez dans LePatron.',
       desc:
-        'Un administrateur a créé votre compte. Choisissez votre mot de passe pour vous connecter. Ce lien est valable 7 jours.',
+        'Un administrateur a créé votre compte LePatron, la plateforme de gouvernance email et CRM de votre équipe. Choisissez votre mot de passe pour y entrer. Ce lien est valable 7 jours.',
+      benefits: {
+        title: 'Ce qui vous attend',
+        items: [
+          {
+            title: 'Pas de feuille blanche.',
+            text:
+              'Vous composez vos emails avec des blocs conçus pour votre marque, déjà conformes à vos règles.',
+          },
+          {
+            title: 'Le cadre, sans y penser.',
+            text:
+              'Charte, règles de rédaction, contrôle qualité\u00a0: tout est vérifié avant l’envoi.',
+          },
+          {
+            title: 'Des déclinaisons sans copier-coller.',
+            text:
+              'Langues, marques, marchés\u00a0: adaptez un email sans refaire la mise en page.',
+          },
+        ],
+      },
       button: 'Choisir mon mot de passe',
     },
     en: {
-      subject: 'Welcome to LePatron',
+      subject: 'Welcome',
       title: 'Welcome to LePatron',
-      preheader: 'Choose your password to activate your account.',
+      preheader: 'Choose your password and step into LePatron.',
       desc:
-        'An administrator created your account. Choose your password to sign in. This link is valid for 7 days.',
+        'An administrator created your LePatron account, your team’s email and CRM governance platform. Choose your password to get in. This link is valid for 7 days.',
+      benefits: {
+        title: 'What awaits you',
+        items: [
+          {
+            title: 'No blank page.',
+            text:
+              'You build emails from blocks designed for your brand, already compliant with your rules.',
+          },
+          {
+            title: 'The framework, effortlessly.',
+            text:
+              'Brand guidelines, writing rules, quality control: everything is checked before sending.',
+          },
+          {
+            title: 'Variants without copy-paste.',
+            text:
+              'Languages, brands, markets: adapt an email without redoing the layout.',
+          },
+        ],
+      },
       button: 'Choose my password',
     },
   },
