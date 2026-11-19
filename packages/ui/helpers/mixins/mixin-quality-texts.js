@@ -50,6 +50,28 @@ export default {
       return `${this.formatNumber(value)} ${this.unitName(id, name)}`;
     },
 
+    // { value, unit, level } of one threshold, for the blocking sentences.
+    levelParams(id, thresholds, name) {
+      return {
+        value: this.formatNumber(thresholds[name]),
+        unit: this.unitName(id, name),
+        level: this.thresholdShort(id, name),
+      };
+    },
+
+    // "Au-delà de 40 caractères (info), le résultat s'affiche sans bloquer.":
+    // the level under the one that blocks, said only when it starts below it.
+    // Brought up to it (a template's 50/50), it shows nothing on its own.
+    lowerShownText(id, thresholds, blockingName) {
+      const [pair] = CHECKS[id].ordered || [];
+      if (!pair || pair[1] !== blockingName) return '';
+      if (!(thresholds[pair[0]] < thresholds[blockingName])) return '';
+      return this.$t(
+        'qualitySettings.card.lowerShown',
+        this.levelParams(id, thresholds, pair[0])
+      );
+    },
+
     // "Actif · info 40 caractères · avertissement 60 caractères"
     appliedText(id, applied) {
       const parts = [this.stateName(applied.state)];
