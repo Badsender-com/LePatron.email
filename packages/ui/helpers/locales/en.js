@@ -1280,7 +1280,7 @@ export default {
       applied: 'What this template follows from the general settings',
       appliedNone: 'No general exception applies to this template: apart from its own exceptions, every check applies its recommended values.',
       appliedLink: 'See the general settings',
-      appliedFrom: 'They come from the {link}. The other checks apply their recommended values.',
+      appliedFrom: 'The exceptions below come from the {link}, and this template does not replace them. Apart from these and its own, every check applies its recommended values.',
       appliedFromLink: 'general settings',
       notFound: 'This template cannot be found.',
     },
