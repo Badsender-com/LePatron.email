@@ -18,6 +18,7 @@ jest.mock('../../../packages/server/utils/logger.js', () => ({
 }));
 
 const fs = require('fs');
+const path = require('path');
 const mongoose = require('mongoose');
 const mail = require('../../../packages/server/mailing/mail.service.js');
 const logger = require('../../../packages/server/utils/logger.js');
@@ -43,6 +44,9 @@ function contrast(a, b) {
   const [light, dark] = [luminance(a), luminance(b)].sort((x, y) => y - x);
   return (light + 0.05) / (dark + 0.05);
 }
+
+// Where the application hosts the images of the emails.
+const IMAGES = path.join(__dirname, '../../../public/media/email');
 
 const LOGIN_URL = `https://${config.host}/account/login`;
 
@@ -288,7 +292,7 @@ describe.each(CASES)('the %s email, in %s', (name, lang) => {
     expect(message.html).not.toMatch(/Fraunces|#fbf9f5/i);
     // The logo is above the card, on the backdrop: no band, no tagline.
     expect(message.html).toMatch(
-      /<td align="center"[^>]*><img src="cid:logo@[^>]*>/
+      /<td align="center"[^>]*><img src="https?:\/\/[^"]+\/media\/email\/logo\.png"[^>]*>/
     );
   });
 
@@ -323,22 +327,19 @@ describe.each(CASES)('the %s email, in %s', (name, lang) => {
       expect(block).toMatch(/<h2[^>]*>[^<]+<\/h2>/);
       expect(message.html.match(/<h2[\s>]/g)).toHaveLength(1);
       expect(block).toMatch(/<ul role="list"/);
-      // Each reason: a round icon that decorates (empty alt), attached.
+      // Each reason: a round icon that decorates (empty alt), hosted.
       const items = block.match(/<li[\s\S]*?<\/li>/g);
       expect(items).toHaveLength(3);
-      items.forEach((item, index) => {
-        const cid = `benefit-${index + 1}@lepatron.email`;
-        expect(item).toMatch(
-          new RegExp(`<img src="cid:${cid}" alt="" role="presentation"`)
+      const pictos = items.map((item) => {
+        const [, src] = /<img src="([^"]+)" alt="" role="presentation"/.exec(
+          item
         );
-        const file = message.attachments.find((a) => a.cid === cid);
-        expect(fs.existsSync(file.path)).toBe(true);
-        expect(file.contentDisposition).toBe('inline');
+        expect(src).toMatch(
+          /^https?:\/\/[^"]+\/media\/email\/icon-[a-z-]+\.png$/
+        );
+        return src;
       });
       // The pictos are not the card's: three different ones.
-      const pictos = message.attachments
-        .filter((a) => /^benefit-/.test(a.cid))
-        .map((a) => a.filename);
       expect(new Set(pictos).size).toBe(3);
     });
 
@@ -398,30 +399,30 @@ describe.each(CASES)('the %s email, in %s', (name, lang) => {
     });
   }
 
-  it('shows the logo and the icon of the card, which travel with the email', () => {
-    const logo = message.attachments.find(({ cid }) => /^logo@/.test(cid));
-    const icon = message.attachments.find(({ cid }) => /^icon@/.test(cid));
+  // The images are hosted by the application (public/media/email), linked by
+  // an absolute address: no attachment, nothing inline.
+  it('links its images by absolute addresses, to files the application hosts', () => {
+    const images = [
+      ...message.html.matchAll(/<img[^>]*\ssrc="([^"]+)"[^>]*>/g),
+    ];
     // The logo, the icon of the card and, for a welcome, one icon a reason.
-    expect(message.attachments).toHaveLength(
-      name === 'password initialisation' ? 5 : 2
-    );
-    [logo, icon].forEach((file) => {
-      expect(fs.existsSync(file.path)).toBe(true);
-      expect(file.contentDisposition).toBe('inline');
-      expect(message.html).toContain(`src="cid:${file.cid}"`);
+    expect(images).toHaveLength(name === 'password initialisation' ? 5 : 2);
+    images.forEach(([, src]) => {
+      expect(src).toMatch(
+        new RegExp(`^https?://${config.host}/media/email/[a-z-]+\\.png$`)
+      );
+      expect(fs.existsSync(path.join(IMAGES, path.basename(src)))).toBe(true);
     });
-    // The logo names the product; the round icon only decorates.
-    expect(tag(new RegExp(`<img[^>]*cid:${logo.cid}[^>]*>`))).toMatch(
-      /\salt="LePatron"/
-    );
-    expect(tag(new RegExp(`<img[^>]*cid:${icon.cid}[^>]*>`))).toMatch(
-      /\salt=""/
-    );
+    expect(message.html).not.toMatch(/cid:/);
+    expect(message.attachments).toBeUndefined();
   });
 
-  it('never loads an image from the application, which a mail client may not reach', () => {
-    const sources = [...message.html.matchAll(/<img[^>]*\ssrc="([^"]+)"/g)];
-    sources.forEach(([, src]) => expect(src).toMatch(/^cid:/));
+  it('shows the logo with the name of the product and the icon of the card as a decoration', () => {
+    const [logo, icon] = message.html.match(/<img[^>]*>/g);
+    expect(logo).toMatch(/\/media\/email\/logo\.png"/);
+    expect(logo).toMatch(/\salt="LePatron"/);
+    expect(icon).toMatch(/\/media\/email\/icon-[a-z-]+\.png"/);
+    expect(icon).toMatch(/\salt=""/);
   });
 
   if (EMAILS[name].cta) {
@@ -658,4 +659,34 @@ describe('a language the application does not translate', () => {
     expect(lastMessage().subject).toMatch(/two-factor/i);
     expect(logger.warn).toHaveBeenCalledWith(expect.stringContaining('de'));
   });
+});
+
+describe('the address of the images', () => {
+  const { isDev } = config;
+  afterEach(() => {
+    config.isDev = isDev;
+  });
+
+  it.each([
+    [true, 'http://'],
+    [false, 'https://'],
+  ])(
+    'starts with the scheme of the site, as the links do (isDev %s: %s)',
+    async (dev, scheme) => {
+      config.isDev = dev;
+      mail.send.mockClear();
+
+      await member('en').resetPassword('user', 'en');
+
+      const sources = [
+        ...lastMessage().html.matchAll(/<img[^>]*\ssrc="([^"]+)"/g),
+      ].map(([, src]) => src);
+      expect(sources.length).toBeGreaterThan(0);
+      sources.forEach((src) =>
+        expect(src.startsWith(`${scheme}${config.host}/media/email/`)).toBe(
+          true
+        )
+      );
+    }
+  );
 });
