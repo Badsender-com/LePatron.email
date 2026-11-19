@@ -258,28 +258,35 @@ Non corrigé :
 - La page de confidentialité est la page française pour les lecteurs anglais : pas de page anglaise connue.
 - L'adresse du membre n'est pas encodée dans le lien de mot de passe (`user.schema.js`, code d'origine) : un `?` ou un `#` dans une adresse casserait le lien.
 
-## Identité : le site lepatron.email, pas la page de connexion (2026-11-19, après retour)
+## Identité : le design system de l'application (2026-11-19, après retour)
 
-Deux retours ont fait changer de référence. Le fond bleu marine était le `secondary` (`#265090`) de la page de connexion de l'application, qui n'est pas l'identité du nouveau positionnement. Et le bouton cyan à texte noir n'était pas un choix de la marque : c'était l'accent du design system de l'application, dont le blanc (2,6:1) échoue à la grille, corrigé par un texte sombre.
+Les emails de notification de l'application suivent **le design system de l'application**, pas celui du site. Les artefacts de référence sont « LePatron App - Design System » (design, ce qui est _dans_ le produit) et « LePatron - Brandbook » (voix, ce qui parle _de_ LePatron). Le README de l'app le dit : couleurs, typographie, composants, « this system only » ; le brandbook seul pour le site, les présentations et les emails marketing. Ni Fraunces, ni la toile, ni le papier patron dans l'app.
 
-**Aucun brandbook de LePatron n'a été trouvé dans Notion** : « MAJ template nouveau brandbook » est celui du client Beobank, et le ton de voix de « Refonte Site LePatron » est marqué « tbd ». La référence est donc le site en ligne, dont les jetons ont été lus dans son CSS (`--c-*`, `--font-*`).
+Deux tentatives précédentes se sont trompées de référence. La première prenait le `secondary` `#265090` du code de la page de connexion pour fond ; le design system de l'app dit que la carte de connexion est posée sur le **primaire** `#093040` (« deep teal »). La deuxième habillait les emails aux couleurs du site (toile, safran, Fraunces).
 
-| Élément | Site lepatron.email                         | Email                                                              |
-| ------- | ------------------------------------------- | ------------------------------------------------------------------ |
-| Fond    | toile `#FBF9F5`                             | idem (sombre : `#0b1d28`)                                          |
-| Encre   | `#093040` (titres, bandeaux, pied de page)  | bandeau du logo, titres, texte du bouton                           |
-| Action  | safran `#FFB400`, texte encre, rayon 5 px   | idem, 7,8:1                                                        |
-| Survol  | fond encre, texte blanc                     | idem (13,9:1), sur la cellule arrondie                             |
-| Titres  | Fraunces 500 (repli Georgia)                | idem                                                               |
-| Texte   | Inter                                       | Inter, 16/24                                                       |
-| Lien    | ciel profond `#00739A`                      | idem (5,4:1)                                                       |
-| Motif   | trait pointillé terminé par un point safran | idem sous le titre                                                 |
-| Logo    | logo en couleurs                            | logo blanc sur le bandeau encre (lisible en clair comme en sombre) |
+| Élément     | Design system de l'application                                         | Email                                                             |
+| ----------- | ---------------------------------------------------------------------- | ----------------------------------------------------------------- |
+| Fond        | primaire `#093040` (fond de la carte de connexion)                     | idem                                                              |
+| Logo        | variante pour fond sombre, sans signature                              | idem, en PNG joint à l'email, au-dessus de la carte               |
+| Carte       | blanche, 480 px, rayon 10 px, ombre `shadow-modal`, filet `gray-200`   | idem                                                              |
+| En-tête     | pastille ronde 56 px (`tint-accent`), icône lucide en `accent-darken1` | idem, une icône par type d'email                                  |
+| Titre       | Inter 20 px / 600, primaire                                            | idem, centré, interligne 150 %                                    |
+| Texte       | Inter 14 px, `gray-700`                                                | idem, aligné à gauche ; 16 px sous 480 px                         |
+| Actions     | rangée à droite sous un filet, bouton à la largeur du libellé          | idem ; pleine largeur sous 480 px (44 px de haut), comme la carte |
+| Bouton      | rayon 5 px (`r-sm`), 500, sans majuscules, survol qui assombrit        | idem                                                              |
+| Vocabulaire | « mailing » est l'objet, « email » est une adresse                     | la bienvenue parle de mailings                                    |
 
-Le logo et les icônes sont joints à l'email (`cid:`) : rien n'est chargé depuis l'application à l'ouverture. Les icônes (cadenas, bouclier, courrier, téléphone, comme sur les pages de connexion de l'application) sont reconstruites par `node scripts/build-email-images.js`.
+Écarts assumés, la grille d'accessibilité l'emportant :
 
-Ton : vouvoiement, phrases courtes, « plateforme de gouvernance email et CRM » et non « email builder » (plus nulle part dans les emails, le préfixe des sujets est `LePatron`). Les trois bénéfices de la bienvenue reprennent trois promesses du site (blocs conçus pour la marque, contrôle avant diffusion, déclinaisons). **Ton de voix déduit du site, à valider** : il n'y a pas de brandbook écrit.
+- **Le bouton est en primaire `#093040` avec du blanc (14:1), pas en accent.** Blanc sur l'accent `#00ACDC` fait 2,7:1, sous la grille (critère critique). Le README de l'app prévoit ce cas : « là où l'accessibilité est exigée, le primaire pour l'action principale, et le dire ». Survol `#072530`. En mode sombre, où le primaire disparaîtrait, le bouton passe à l'accent avec un texte `#093040` (5,3:1).
+- **Les liens sont en primaire souligné** (13,9:1), pas en `accent-darken1` (3,6:1 sur blanc, sous 4,5:1). Le soulignement reste.
+- **La description est alignée à gauche**, la carte de l'application la centre : « textes longs ni centrés ni justifiés » (critique). Le titre et l'icône restent centrés.
+- **Le pied de page est un texte de 14 px** (le design system a 12 px pour la signature) : la grille demande 14 px.
 
-Écarts avec la grille d'accessibilité : aucun pour le bouton (safran et encre passent). Le texte est aligné à gauche, comme sur le site.
+Voix (brandbook) : vouvoiement, phrases courtes, des faits plutôt que des adjectifs, jamais « révolutionnaire », « booster », « clé en main ». Le nom s'écrit LePatron. Les trois bénéfices de la bienvenue reprennent trois différenciateurs du brandbook et du site. Le texte reste à valider.
+
+Le logo et les icônes sont joints à l'email (`cid:`) : rien n'est chargé depuis l'application. Les icônes sont reconstruites par `node scripts/build-email-images.js` depuis les icônes lucide des pages de connexion.
+
+Dérive à connaître : la page de connexion de l'application (`packages/ui/layouts/centered.vue`) est sur le `secondary` `#265090` ; le design system la décrit sur le primaire `#093040`. Les emails suivent le design system.
 
 Vu en rendu : Chromium (bureau, mobile 390 px, mode sombre forcé). Pas vu : Gmail, Outlook, Apple Mail.

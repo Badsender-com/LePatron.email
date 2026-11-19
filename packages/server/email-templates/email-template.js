@@ -73,8 +73,10 @@ const COMMON_TEXTS = {
 // schema): the texts below say so.
 const PASSWORD_TEXTS = {
   // The first password of an account an administrator created: the one email
-  // that says why LePatron is worth the trouble, in the words of
-  // lepatron.email (three of its promises, for the people who produce).
+  // that says why LePatron is worth the trouble: three promises of the
+  // brandbook, in the vocabulary of the application (a mailing is the
+  // object, an email is an address) and its voice (formal vous, short
+  // sentences, facts).
   welcome: {
     fr: {
       subject: 'Bienvenue',
@@ -88,7 +90,7 @@ const PASSWORD_TEXTS = {
           {
             title: 'Pas de feuille blanche.',
             text:
-              'Vous composez vos emails avec des blocs conçus pour votre marque, déjà conformes à vos règles.',
+              'Vous composez vos mailings avec des blocs conçus pour votre marque, déjà conformes à vos règles.',
           },
           {
             title: 'Le cadre, sans y penser.',
@@ -98,7 +100,7 @@ const PASSWORD_TEXTS = {
           {
             title: 'Des déclinaisons sans copier-coller.',
             text:
-              'Langues, marques, marchés\u00a0: adaptez un email sans refaire la mise en page.',
+              'Langues, marques, marchés\u00a0: adaptez un mailing sans refaire la mise en page.',
           },
         ],
       },
@@ -116,7 +118,7 @@ const PASSWORD_TEXTS = {
           {
             title: 'No blank page.',
             text:
-              'You build emails from blocks designed for your brand, already compliant with your rules.',
+              'You build mailings from blocks designed for your brand, already compliant with your rules.',
           },
           {
             title: 'The framework, effortlessly.',
@@ -126,7 +128,7 @@ const PASSWORD_TEXTS = {
           {
             title: 'Variants without copy-paste.',
             text:
-              'Languages, brands, markets: adapt an email without redoing the layout.',
+              'Languages, brands, markets: adapt a mailing without redoing the layout.',
           },
         ],
       },

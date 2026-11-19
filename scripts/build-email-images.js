@@ -6,7 +6,7 @@
 //   - the logo of the sign-in pages (packages/ui/components/account/
 //     login-logo.vue, a white SVG), as a PNG: mail clients do not draw SVG;
 //   - the round tile and the icon of the authentication cards (lucide, as in
-//     the pages, on --tint-accent, in the deep sky of the brand), as PNGs.
+//     the pages, on --tint-accent, in the darkened accent), as PNGs.
 //
 // The emails attach them (`cid:`), so nothing is fetched from the application
 // when one opens: they show in development and behind a firewall alike.
@@ -32,9 +32,9 @@ const ICONS = [
   'smartphone',
 ];
 
-// The deep sky of the brand (--c-ciel-prof of lepatron.email, the darkened
-// accent of the application) for the strokes, the sky at 12 % for the tile.
-const ICON_COLOR = '#00739a';
+// The darkened accent of the application (`v-accent-darken1` of its design
+// system) for the strokes, the accent at 12 % (`tint-accent`) for the tile.
+const ICON_COLOR = '#0091b8';
 const TILE = { color: '#00acdc', opacity: 0.12 };
 
 // A lucide icon file is a list of [tag, attributes] pairs: read it as text.
