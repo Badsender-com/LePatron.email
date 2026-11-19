@@ -26,7 +26,7 @@ Le gabarit est réécrit ([account-email.html](../../packages/server/email-templ
 
 Contrastes calculés : texte 10,3:1, texte discret 4,8:1, bouton et liens 13,9:1, code 12,4:1 ; en mode sombre texte 10,5:1, texte discret 6,1:1, bouton 5,3:1, lien 9,2:1.
 
-Pour la bienvenue : un compte sans mot de passe ni lien reçoit « Bienvenue sur LePatron », les autres reçoivent « Nouveau mot de passe » (administrateur ou demande de la personne).
+Pour la bienvenue : un compte sans mot de passe qui ne s'est jamais connecté reçoit « Bienvenue sur LePatron », même quand son invitation est renvoyée ; les autres reçoivent « Nouveau mot de passe » (règle complète : [README.md](./README.md)).
 
 ### Reste à vérifier à la main
 
@@ -34,13 +34,13 @@ Pour la bienvenue : un compte sans mot de passe ni lien reçoit « Bienvenue sur
 - Lecteur d'écran (NVDA, VoiceOver) : non fait. Les critères « Tabulation logique », « Espacements » et « Version mobile » restent **À analyser**.
 - Le logo et les icônes sont servis par l'application (`/media/email/`) : en développement (`localhost`), un client mail ne peut pas les charger. En production, ils suivent `config.host`.
 - `tabindex="0"` sur le bouton et `aria-label` : non ajoutés, le lien natif est déjà focusable et son libellé est explicite. La grille les demande : à trancher.
-- Revue du 2026-11-19 : la première version testait seulement l'absence de mot de passe, et accueillait à tort un compte déjà réinitialisé dont le premier email était parti. Corrigé (mot de passe **et** lien absents), avec tests du second envoi.
+- Revue du 2026-11-19 : la première version testait seulement l'absence de mot de passe, et accueillait à tort un compte déjà réinitialisé. La règle lit maintenant la dernière connexion (voir la revue de la PR plus bas).
 
 ### Revue du code (2026-11-19)
 
 Corrigé après relecture :
 
-- **Bienvenue** : décision par « ni mot de passe ni lien » (voir plus haut), tests des envois suivants.
+- **Bienvenue** : tests des envois suivants (la règle a changé depuis, voir la revue de la PR).
 - **Bouton sous Outlook Windows** : `mso-padding-alt` sur la cellule, le moteur Word ignore le remplissage du `<a>`. Le test ne vérifie que le HTML, pas ce rendu.
 - **Confirmation** : le texte ne dit plus « nouveau mot de passe », il peut s'agir d'un premier.
 - **Typographie** : espace insécable avant les deux-points en français, titre « Connexion avec un code de secours », pied de page en phrase complète, voix active.
@@ -53,6 +53,7 @@ Corrigé après la revue de la PR (2026-11-19) :
 - **Carte fluide** : `width: 100%; max-width: 480px`, sans dépendre des media queries ; un tableau fixe de 480 px sous Outlook pour Windows.
 - **Vocabulaire** : « email » et non « mailing » (GLOSSARY.md), « admin technique » et « entreprise » comme dans l'interface ; la confirmation de mot de passe renvoie à « un administrateur de votre entreprise », un admin entreprise pouvant aussi envoyer le lien.
 - **Lien de mot de passe** : l'adresse est encodée dans le chemin (le `@` reste), et l'interface l'encode aussi dans ses appels.
+- **Texte des emails de mot de passe** : choisi sur le mot de passe et la dernière connexion (`passwordTextsFor`), plus sur la présence d'un lien. « Mot de passe oublié » ne dit plus « votre mot de passe actuel reste valable » à un compte qui n'en a pas ; une invitation renvoyée est de nouveau une bienvenue ; un compte réactivé n'est plus « créé ».
 - **Icônes** : une seule liste (`email-icons.js`), lue par le gabarit et par `scripts/build-email-images.js`, et un test vérifie que chaque icône a son PNG.
 
 Non corrigé :

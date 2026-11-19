@@ -6,7 +6,11 @@ const tmpl = require('blueimp-tmpl');
 
 const config = require('../node.config.js');
 const logger = require('../utils/logger.js');
-const { COMMON_TEXTS, PASSWORD_TEXTS } = require('./email-texts.js');
+const {
+  COMMON_TEXTS,
+  PASSWORD_TEXTS,
+  passwordTextsFor,
+} = require('./email-texts.js');
 const { ICONS } = require('./email-icons.js');
 
 // The emails the application sends about an account (password, two-factor
@@ -127,5 +131,6 @@ module.exports = {
   siteOrigin,
   resolveLanguage,
   PASSWORD_TEXTS,
+  passwordTextsFor,
   ICONS,
 };

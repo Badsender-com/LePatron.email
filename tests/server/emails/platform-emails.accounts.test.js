@@ -51,13 +51,13 @@ describe('the welcome and the reset of a password', () => {
     }
   );
 
-  // The password is already cleared and a link is out: the account is no
-  // longer new, whatever asks for the next mail.
+  // The invitation is out and was never used (no password, never signed
+  // in): sending it again, or asking for one, welcomes again.
   it.each([
     ['an administrator sends it again', 'admin'],
     ['the person asks for a new one', 'user'],
   ])(
-    'does not welcome an account whose first mail is out, when %s',
+    'welcomes again an account whose invitation is out, when %s',
     async (_by, type) => {
       const user = member('fr');
       user.password = undefined;
@@ -66,8 +66,8 @@ describe('the welcome and the reset of a password', () => {
 
       await user.resetPassword(type, 'fr');
 
-      expect(lastMessage().subject).not.toMatch(welcome.fr);
-      expect(lastMessage().html).not.toMatch(/Un administrateur a créé/);
+      expect(lastMessage().subject).toMatch(welcome.fr);
+      expect(lastMessage().html).not.toMatch(/réinitialisé|reste valable/);
     }
   );
 
