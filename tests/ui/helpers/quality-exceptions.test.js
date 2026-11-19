@@ -9,6 +9,7 @@ import {
   sameException,
   exceptionCount,
   blocksFrom,
+  usesEmailMetadata,
   adjustmentsOf,
   valuesEqualToBase,
 } from '~/helpers/quality-exceptions.js';
@@ -194,5 +195,16 @@ describe('blocking', () => {
   it('says nothing more for a check without a pair', () => {
     expect(blocksFrom('html-size', { maxKb: 100 })).toBeNull();
     expect(blocksFrom('headings', {})).toBeNull();
+  });
+});
+
+describe("a company's email metadata", () => {
+  it('is used only when the company switched it on', () => {
+    expect(usesEmailMetadata({ emailMetadata: { enabled: true } })).toBe(true);
+    expect(usesEmailMetadata({ emailMetadata: { enabled: false } })).toBe(
+      false
+    );
+    expect(usesEmailMetadata({})).toBe(false);
+    expect(usesEmailMetadata(null)).toBe(false);
   });
 });

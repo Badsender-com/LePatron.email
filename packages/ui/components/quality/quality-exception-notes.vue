@@ -35,6 +35,9 @@ export default {
     applied: { type: Object, required: true },
     changesNothing: { type: Boolean, default: false },
     groupId: { type: String, default: '' },
+    // Whether the company fills in email metadata: without them, a subject
+    // check has nothing to judge.
+    usesMetadata: { type: Boolean, default: false },
     // A check of the technical settings this user cannot set: no link to
     // settings they cannot open, and no word of a removal on save, which
     // they cannot make.
@@ -50,8 +53,8 @@ export default {
         : '';
     },
     // What the check's settings may hide: past Gmail's limit, an email is
-    // clipped whatever its threshold says; without metadata, a subject
-    // check has nothing to judge.
+    // clipped whatever its threshold says; in a company without email
+    // metadata, a subject check has nothing to judge.
     warnings() {
       if (this.applied.state === 'off') return [];
       const warnings = [];
@@ -66,7 +69,7 @@ export default {
           })
         );
       }
-      if (METADATA_CHECKS.includes(this.checkId)) {
+      if (METADATA_CHECKS.includes(this.checkId) && !this.usesMetadata) {
         warnings.push(this.$t('qualitySettings.notes.metadata'));
       }
       return warnings;

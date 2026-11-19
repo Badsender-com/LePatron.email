@@ -3,7 +3,7 @@ import { mapGetters } from 'vuex';
 import { Plus } from 'lucide-vue';
 import * as acls from '~/helpers/pages-acls.js';
 import * as apiRoutes from '~/helpers/api-routes.js';
-import { TEMPLATE } from '~/helpers/quality-exceptions.js';
+import { TEMPLATE, usesEmailMetadata } from '~/helpers/quality-exceptions.js';
 import { loadQualitySettings } from '~/helpers/quality-settings.js';
 import mixinSettingsTitle from '~/helpers/mixins/mixin-settings-title.js';
 import mixinUnsavedChanges from '~/helpers/mixins/mixin-unsaved-changes.js';
@@ -68,6 +68,10 @@ export default {
     },
     level() {
       return TEMPLATE;
+    },
+    // The template's company: the template is one of its group's.
+    usesMetadata() {
+      return usesEmailMetadata(this.group);
     },
     qualityRoute() {
       return `/groups/${this.$route.params.groupId}/settings/quality`;
@@ -175,6 +179,7 @@ export default {
             :settings="template.qualitySettings || null"
             :general-settings="group.qualitySettings || null"
             :group-id="$route.params.groupId"
+            :uses-metadata="usesMetadata"
             :save="saveTemplate"
             @changes="unsavedChanges = $event"
             @exceptions="ownIds = $event"

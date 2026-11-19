@@ -35,6 +35,14 @@ const storedChecks = (settings) =>
 
 export const isServerCheck = (id) => SERVER_CHECKS.includes(id);
 
+/**
+ * Whether a company fills in email metadata (subject, preheader): without
+ * them, the checks that judge them have nothing to read.
+ * @param {Object} [group]
+ */
+export const usesEmailMetadata = (group) =>
+  Boolean(group && group.emailMetadata && group.emailMetadata.enabled);
+
 // The checks whose card carries a note: a setting elsewhere it depends on.
 const NOTE_CHECKS = [
   'tracking-params',
