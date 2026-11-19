@@ -22,7 +22,12 @@
   <style type="text/css">
     /* The sign-in card of the application (its design system): the primary
        colour behind, the white logo, a white card of 480 px with 10 px
-       corners. The action is in the primary colour, not the accent: white on
+       corners. The backdrop is the gradient of the sign-in screen (the accent
+       to the primary at 50 %) over the solid primary, which a client that
+       draws no gradient (Outlook for Windows) keeps. The glow is at the top
+       right, not the bottom right as on the screen: the footer text then
+       always sits on the solid half, whatever the width (3.2:1 on the glow on
+       a phone, 13.9:1 on the solid). The action is in the primary colour, not the accent: white on
        the accent is 2.7:1, and the design system says to use the primary
        where accessibility is a hard requirement. */
     body { margin: 0; padding: 0; width: 100% !important; -webkit-text-size-adjust: 100%; -ms-text-size-adjust: 100%; }
@@ -58,7 +63,7 @@
   <div role="article" lang="{%=o.lang%}" dir="ltr" style="direction: ltr;">
     <table role="presentation" class="page" width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="#093040" style="background-color: #093040;">
       <tr>
-        <td align="center" style="padding: 40px 12px 40px 12px;">
+        <td class="backdrop" align="center" style="background-color: #093040; background-image: radial-gradient(at 100% 0%, rgb(0, 172, 220) 0%, rgb(9, 48, 64) 50%); padding: 40px 12px 40px 12px;">
           <table role="presentation" width="480" class="wrap" cellpadding="0" cellspacing="0" border="0" style="width: 480px; max-width: 480px;">
             <tr>
               <td align="center" style="padding: 0 0 28px 0;"><img src="{%=o.logoSrc%}" alt="LePatron" width="190" style="display: block; width: 190px; height: auto; border: 0;"/></td>
