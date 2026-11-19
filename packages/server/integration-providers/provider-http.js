@@ -167,7 +167,12 @@ async function guardedFetch(
 
   let currentUrl = url;
   for (let hop = 0; ; hop += 1) {
-    const timeout = deadline ? Math.max(1, deadline - Date.now()) : 0;
+    // The first call gets the whole budget: read again at once, the clock
+    // may already have moved a millisecond. A redirect gets what is left.
+    let timeout = 0;
+    if (deadline) {
+      timeout = hop === 0 ? timeoutMs : Math.max(1, deadline - Date.now());
+    }
     const response = await fetchOnce(
       currentUrl,
       { ...options, timeout },
