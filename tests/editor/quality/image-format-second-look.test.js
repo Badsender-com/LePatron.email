@@ -92,6 +92,10 @@ describe('the format of an image whose address names none', () => {
     const { findings, checks } = formatsOf(vm);
     expect(findings).toEqual([]);
     expect(checks.map((c) => c.status)).toEqual(['passed']);
+    // The server read it: every image was judged.
+    expect(checks[0].passKey).toBe(
+      'Every image uses a format email clients show'
+    );
   });
 
   it('never blocks the export', async () => {
@@ -158,8 +162,10 @@ describe('what the second look asks the server', () => {
     expect(checkResources).not.toHaveBeenCalled();
     // No "checking the links and images" line in the drawer.
     expect(vm.quality.remoteStatus()).toBe('idle');
-    // Judged on the addresses alone, as before the second look.
-    expect(formatsOf(vm).checks.map((c) => c.status)).toEqual(['passed']);
+    // Judged on the addresses alone: passed, saying one image was not judged.
+    const [check] = formatsOf(vm).checks;
+    expect(check.status).toBe('passed');
+    expect(check.passParams).toEqual({ count: 1 });
   });
 
   it('sends no image for it when every server check reading the images is off', async () => {
