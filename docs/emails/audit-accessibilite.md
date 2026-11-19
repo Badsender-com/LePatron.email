@@ -257,3 +257,28 @@ Non corrigé :
 - Les polices viennent de fonts.gstatic.com : un appel à Google à l'ouverture. La charte tolère les polices personnalisées avec repli ; à décider si on veut s'en passer (repli Arial/Tahoma, déjà en place).
 - La page de confidentialité est la page française pour les lecteurs anglais : pas de page anglaise connue.
 - L'adresse du membre n'est pas encodée dans le lien de mot de passe (`user.schema.js`, code d'origine) : un `?` ou un `#` dans une adresse casserait le lien.
+
+## Alignement sur le design system (2026-11-19, après retour)
+
+La première refonte reprenait des couleurs du design system sans en reprendre l'apparence : primaire en bouton alors que « les actions principales utilisent l'accent, jamais le primaire », survol en bleu secondaire, logo chargé depuis `localhost`. Les emails sont maintenant dessinés d'après la carte de connexion de l'application ([auth-card.vue](../../packages/ui/components/account/auth-card.vue), [design-tokens.scss](../../packages/ui/assets/global-styles/design-tokens.scss), [02-components.md](../design-system/02-components.md)).
+
+| Élément | Application                                                 | Email                                                                 |
+| ------- | ----------------------------------------------------------- | --------------------------------------------------------------------- |
+| Fond    | secondaire `#265090`                                        | idem (sombre : `#0c1f38`)                                             |
+| Logo    | logo blanc de la page de connexion                          | le même, en PNG, joint à l'email                                      |
+| Carte   | blanche, 480 px, rayon 10 px, ombre `--shadow-modal`        | idem                                                                  |
+| En-tête | pastille ronde 56 px (`--tint-accent`), icône lucide, titre | idem, icône par type d'email (cadenas, bouclier, courrier, téléphone) |
+| Titre   | Inter 20 px / 600, primaire                                 | idem, interligne 150 %                                                |
+| Action  | accent `#00ACDC`, rayon 4 px, à droite sous un filet        | idem, pleine largeur sur mobile                                       |
+| Survol  | accent assombri `#0095c0`                                   | idem, sur la cellule arrondie et non sur le lien                      |
+| Police  | Inter, graisses 400 à 700                                   | une police variable Inter 400-700                                     |
+
+Deux écarts assumés, la grille d'accessibilité l'emportant :
+
+- **Texte du bouton** : le design system met du blanc sur l'accent, soit 2,6:1 (les boutons de l'application échouent déjà). L'email met `#04202b` : 6,4:1 au repos, 4,9:1 au survol.
+- **Description** : centrée dans l'application, alignée à gauche dans l'email (« textes longs ni centrés ni justifiés », critère critique). Le titre reste centré.
+- Les liens sont en primaire souligné (13,9:1) et non en accent assombri (3,5:1).
+
+Le logo et les icônes sont joints à l'email (`cid:`) : rien n'est chargé depuis l'application à l'ouverture, ils s'affichent en développement (maildev) comme derrière un pare-feu. Ils sont reconstruits par `node scripts/build-email-images.js`.
+
+Vu en rendu : Chromium (bureau, mobile 390 px, mode sombre forcé, survol forcé). Pas vu : Gmail, Outlook, Apple Mail.

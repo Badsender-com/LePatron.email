@@ -6,15 +6,16 @@ Inventaire des emails que LePatron envoie de lui-même (compte, mot de passe, do
 
 ## Où ça se passe
 
-| Rôle                | Fichier                                                                                                                                             |
-| ------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Transport SMTP      | [mail.service.js](../../packages/server/mailing/mail.service.js) (`mail.send`, nodemailer)                                                          |
-| Gabarit HTML unique | [account-email.html](../../packages/server/email-templates/account-email.html) (blueimp-tmpl)                                                       |
-| Textes et rendu     | [email-template.js](../../packages/server/email-templates/email-template.js) (`composeEmail`, `resolveLanguage`, textes des emails de mot de passe) |
-| Emails du compte    | [user.schema.js](../../packages/server/user/user.schema.js) (`resetPassword`, `setPassword`)                                                        |
-| Emails 2FA          | [two-factor.emails.js](../../packages/server/two-factor/two-factor.emails.js) et [email-code.js](../../packages/server/two-factor/email-code.js)    |
-| Expéditeur, préfixe | `config.emailOptions` dans [node.config.js](../../packages/server/node.config.js) (`from`, `passwordSubjectPrefix`)                                 |
-| Tests               | [platform-emails.test.js](../../tests/server/emails/platform-emails.test.js) : le contrat des 10 envois, en français et en anglais                  |
+| Rôle                | Fichier                                                                                                                                                                                                                              |
+| ------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Transport SMTP      | [mail.service.js](../../packages/server/mailing/mail.service.js) (`mail.send`, nodemailer)                                                                                                                                           |
+| Gabarit HTML unique | [account-email.html](../../packages/server/email-templates/account-email.html) (blueimp-tmpl), sur le modèle de la carte de connexion de l'application                                                                               |
+| Images              | [assets/](../../packages/server/email-templates/assets/) : logo et icônes, joints à chaque email (`cid:`), construits par [build-email-images.js](../../scripts/build-email-images.js) depuis le logo et les icônes de l'application |
+| Textes et rendu     | [email-template.js](../../packages/server/email-templates/email-template.js) (`composeEmail`, `resolveLanguage`, textes des emails de mot de passe)                                                                                  |
+| Emails du compte    | [user.schema.js](../../packages/server/user/user.schema.js) (`resetPassword`, `setPassword`)                                                                                                                                         |
+| Emails 2FA          | [two-factor.emails.js](../../packages/server/two-factor/two-factor.emails.js) et [email-code.js](../../packages/server/two-factor/email-code.js)                                                                                     |
+| Expéditeur, préfixe | `config.emailOptions` dans [node.config.js](../../packages/server/node.config.js) (`from`, `passwordSubjectPrefix`)                                                                                                                  |
+| Tests               | [platform-emails.test.js](../../tests/server/emails/platform-emails.test.js) : le contrat des 10 envois, en français et en anglais                                                                                                   |
 
 Tous les emails passent par le même gabarit. Chacun a, dans les deux langues (`user.lang`, anglais par défaut), un sujet, un titre, un préheader, un texte et, sauf le code, un bouton. `composeEmail` en tire le sujet, le HTML et la version texte.
 
