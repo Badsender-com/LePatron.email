@@ -119,3 +119,26 @@ describe('what a blocking check of the server says', () => {
     expect(LOCALES[locale].qualitySettings.serverWait).toMatch(wait);
   });
 });
+
+describe('the level under the one that blocks', () => {
+  const texts = textsIn('fr');
+
+  it('says it shows without blocking when it starts below', () => {
+    expect(
+      texts.lowerShownText('subject', { long: 40, tooLong: 60 }, 'tooLong')
+    ).toBe(
+      "Au-delà de 40 caractères (info), le résultat s'affiche sans bloquer."
+    );
+  });
+
+  it.each([
+    ['brought up to it', { long: 50, tooLong: 50 }],
+    ['past it', { long: 70, tooLong: 50 }],
+  ])('says nothing when it is %s', (_case, thresholds) => {
+    expect(texts.lowerShownText('subject', thresholds, 'tooLong')).toBe('');
+  });
+
+  it('says nothing for a check with a single level', () => {
+    expect(texts.lowerShownText('html-size', { maxKb: 100 }, 'maxKb')).toBe('');
+  });
+});

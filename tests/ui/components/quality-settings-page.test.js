@@ -102,3 +102,14 @@ describe("an exception card's heading", () => {
     expect(source).toMatch(/:id="onlineTipId" class="d-sr-only"/);
   });
 });
+
+describe('the notes of a blocking card', () => {
+  const source = read('quality-exception-notes.vue');
+
+  it('says where a server check blocks before what still shows below', () => {
+    const blocksOn = source.indexOf("'qualitySettings.card.blocksOn'");
+    const lower = source.indexOf('this.lowerShownText(');
+    expect(blocksOn).toBeGreaterThan(-1);
+    expect(lower).toBeGreaterThan(blocksOn);
+  });
+});

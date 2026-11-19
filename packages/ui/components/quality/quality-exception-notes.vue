@@ -1,6 +1,5 @@
 <script>
 import { Lock } from 'lucide-vue';
-import { CHECKS } from '~/helpers/constants/quality-checks.js';
 import { GMAIL_CLIPPING_BYTES } from '../../../shared/quality/limits.js';
 import {
   GENERAL,
@@ -77,22 +76,23 @@ export default {
         ),
       ];
       const from = blocksFrom(id, this.applied.thresholds);
-      const fromParams = from && this.levelParams(from.name);
+      const { thresholds } = this.applied;
+      const fromParams = from && this.levelParams(id, thresholds, from.name);
       // A server check says where it blocks in its own cases.
       if (from && !isServerCheck(id)) {
         parts.push(this.$t('qualitySettings.card.blocksFrom', fromParams));
-      }
-      const lower = from && this.lowerLevelOf(from.name);
-      if (lower) {
-        parts.push(
-          this.$t('qualitySettings.card.lowerShown', this.levelParams(lower))
-        );
       }
       if (isServerCheck(id)) {
         parts.push(
           this.$t('qualitySettings.card.blocksOn', {
             cases: this.$t(`qualitySettings.blocksOn.${id}`, fromParams || {}),
-          }),
+          })
+        );
+      }
+      const lower = from && this.lowerShownText(id, thresholds, from.name);
+      if (lower) parts.push(lower);
+      if (isServerCheck(id)) {
+        parts.push(
           this.$t(`qualitySettings.unverifiable.${id}`),
           this.$t('qualitySettings.serverWait')
         );
@@ -101,22 +101,6 @@ export default {
         parts.push(this.$t('qualitySettings.notes.unnamedImages'));
       }
       return parts.join(' ');
-    },
-  },
-  methods: {
-    // { value, unit, level } of one threshold, as it applies.
-    levelParams(name) {
-      return {
-        value: this.formatNumber(this.applied.thresholds[name]),
-        unit: this.unitName(this.checkId, name),
-        level: this.thresholdShort(this.checkId, name),
-      };
-    },
-
-    // The level below the one that blocks, which still shows its findings.
-    lowerLevelOf(name) {
-      const [pair] = CHECKS[this.checkId].ordered || [];
-      return pair && pair[1] === name ? pair[0] : null;
     },
   },
 };
