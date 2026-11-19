@@ -158,6 +158,18 @@ MAINTENANCE_PAGE_URL                    Url of maintenance page in case you appl
 ERROR_PAGE_URL                          Url of the page that will be displayed in case your application crashs
 ```
 
+### Quality control (optional)
+
+Two online checks of the quality control need a third party. Both are off while their variable is unset: the editor then leaves them out of the checks it lists.
+
+```
+QC_WEB_RISK_API_KEY                     Google Web Risk API key, for the "Liens dangereux" check
+QC_DOMAIN_BLOCKLISTS                    DNS blocklists for the "Domaines sur liste noire" check, as name=zone pairs separated by commas
+                                        (ex: Spamhaus DBL=<key>.dbl.dq.spamhaus.net,SURBL=multi.surbl.org)
+```
+
+Every DNS blocklist asks for a subscription for commercial use, and Spamhaus answers nothing through public resolvers: use its DQS zone with your key.
+
 ### AWS S3
 
 Those are the keys you should set for aws
