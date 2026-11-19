@@ -187,6 +187,10 @@ TemplateSchema.statics.findForApi = async function findForApi(query = {}) {
     return {
       ...template,
       id: template._id,
+      // The `group` alias of `_company`, which a lean read does not apply
+      group: template._company
+        ? { id: template._company._id, name: template._company.name }
+        : null,
       hasMarkup: templatesWithMarkupSet.has(template._id.toString()),
       coverImage,
       imageCount,

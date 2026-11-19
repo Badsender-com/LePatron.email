@@ -27,7 +27,9 @@ export default {
         {
           text: this.$tc('global.group', 1),
           value: 'group',
-          sort: (a, b) => String(b.name).localeCompare(a.name),
+          // A template whose group no longer exists has a null group
+          sort: (a, b) =>
+            String(b?.name ?? '').localeCompare(String(a?.name ?? '')),
         },
         {
           text: this.$t('tableHeaders.templates.markup'),
@@ -98,6 +100,7 @@ export default {
 
     <template #item.group="{ item }">
       <nuxt-link
+        v-if="item.group"
         :to="`/groups/${item.group.id}`"
         class="cell-link"
         @click.native.stop
