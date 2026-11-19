@@ -264,17 +264,17 @@ Les emails de notification de l'application suivent **le design system de l'appl
 
 Deux tentatives précédentes se sont trompées de référence. La première prenait le `secondary` `#265090` du code de la page de connexion pour fond ; le design system de l'app dit que la carte de connexion est posée sur le **primaire** `#093040` (« deep teal »). La deuxième habillait les emails aux couleurs du site (toile, safran, Fraunces).
 
-| Élément     | Design system de l'application                                                   | Email                                                                              |
-| ----------- | -------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------- |
-| Fond        | primaire `#093040`, dégradé radial accent vers primaire à 50 % (en bas à droite) | idem, en bas à droite, rayon fixe de 420 px, sur le primaire uni qui sert de repli |
-| Logo        | variante pour fond sombre, sans signature                                        | idem, en PNG hébergé, au-dessus de la carte                                        |
-| Carte       | blanche, 480 px, rayon 10 px, ombre `shadow-modal`, filet `gray-200`             | idem                                                                               |
-| En-tête     | pastille ronde 56 px (`tint-accent`), icône lucide en `accent-darken1`           | idem, une icône par type d'email                                                   |
-| Titre       | Inter 20 px / 600, primaire                                                      | idem, centré, interligne 150 %                                                     |
-| Texte       | Inter 14 px, `gray-700`                                                          | idem, aligné à gauche ; 16 px sous 480 px                                          |
-| Actions     | rangée à droite sous un filet, bouton à la largeur du libellé                    | idem ; pleine largeur sous 480 px (44 px de haut), comme la carte                  |
-| Bouton      | rayon 5 px (`r-sm`), 500, sans majuscules, survol qui assombrit                  | idem                                                                               |
-| Vocabulaire | « mailing » est l'objet, « email » est une adresse                               | la bienvenue parle de mailings                                                     |
+| Élément     | Design system de l'application                                                   | Email                                                                                   |
+| ----------- | -------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------- |
+| Fond        | primaire `#093040`, dégradé radial accent vers primaire à 50 % (en bas à droite) | idem, à l'identique au-dessus de 960 px ; fond uni `#093040` jusqu'à 960 px et en repli |
+| Logo        | variante pour fond sombre, sans signature                                        | idem, en PNG hébergé, au-dessus de la carte                                             |
+| Carte       | blanche, 480 px, rayon 10 px, ombre `shadow-modal`, filet `gray-200`             | idem                                                                                    |
+| En-tête     | pastille ronde 56 px (`tint-accent`), icône lucide en `accent-darken1`           | idem, une icône par type d'email                                                        |
+| Titre       | Inter 20 px / 600, primaire                                                      | idem, centré, interligne 150 %                                                          |
+| Texte       | Inter 14 px, `gray-700`                                                          | idem, aligné à gauche ; 16 px sous 480 px                                               |
+| Actions     | rangée à droite sous un filet, bouton à la largeur du libellé                    | idem ; pleine largeur sous 480 px (44 px de haut), comme la carte                       |
+| Bouton      | rayon 5 px (`r-sm`), 500, sans majuscules, survol qui assombrit                  | idem                                                                                    |
+| Vocabulaire | « mailing » est l'objet, « email » est une adresse                               | la bienvenue parle de mailings                                                          |
 
 Écarts assumés, la grille d'accessibilité l'emportant :
 
@@ -287,14 +287,25 @@ Deux tentatives précédentes se sont trompées de référence. La première pre
 
 **Le bloc bénéfices de la bienvenue** : encart `surface-muted` (`#fafafa`), filet `gray-200`, coins de 7 px (le bloc de compte de la carte de connexion), titre en `h2` 16 px / 600, puis trois lignes picto + phrase. Pictos : `blocks` (blocs conçus pour la marque), `badge-check` (vérifié avant l'envoi), `languages` (déclinaisons), en tuile ronde `tint-accent` 40 px, `alt=""` puisque le texte porte le sens. La liste garde sa sémantique sans puces (`role="list"`). En mode sombre : fond `#0e2531`.
 
-**Le fond en dégradé.** L'email reprend la lueur de l'écran de connexion, **en bas à droite comme lui**, sur le primaire uni `#093040` déclaré avant et en attribut `bgcolor` : un client qui ne dessine pas les dégradés (Outlook pour Windows, d'après nos règles) garde l'aplat d'avant. Deux écarts avec l'écran, qui servent la lisibilité du pied de page, dernier élément de l'email :
+**Le fond en dégradé.** L'email reprend le dégradé de l'écran de connexion **à l'identique** : `radial-gradient(at 100% 100%, accent 0%, primaire 50%)`, avec son rayon proportionnel, sur le primaire uni `#093040` déclaré avant et en attribut `bgcolor`. Un client qui ne dessine pas les dégradés (Outlook pour Windows, d'après nos règles) garde l'aplat.
 
-- **La lueur a une taille fixe** (un cercle de 420 px), au lieu de dépendre de la taille de la fenêtre. Avec la lueur proportionnelle de l'écran, la distance à laquelle le texte reste lisible grandit avec la hauteur de l'email : pas de garantie possible. Le blanc atteint 4,5:1 à 35 % du rayon, soit 159 px du coin avec une marge.
-- **170 px de fond sous le pied de page**, pour que le texte reste au-delà de cette distance. Le pied de page est en blanc (`#cfdbe1` n'atteignait que 3,9:1 sur la lueur à la largeur d'un bureau).
+**Jusqu'à 960 px de large (la bascule « tablette » de l'application), le dégradé est coupé** par une media query (`background-image: none`) : le fond est le primaire uni. Le pied de page, dernier élément de l'email, est en blanc, et sous cette largeur il tombe sur la lueur et passe sous 4,5:1. Mesuré et calculé :
 
-Mesuré sur le rendu réel, juste à côté du texte du pied de page : blanc à **5,0:1** à 390 px de large, **5,1:1** à 600 px, **6,0:1** à 760 px, **13,9:1** à 1280 px. Une variante avec la lueur en haut à droite avait été essayée d'abord, sans en parler : écartée, la lueur doit rester où elle est sur l'écran.
+| Largeur | Avec le dégradé | Retenu             |
+| ------- | --------------- | ------------------ |
+| 500 px  | blanc 2,9:1     | fond uni, 13,9:1   |
+| 600 px  | 3,3:1           | fond uni, 13,9:1   |
+| 760 px  | 4,0:1           | fond uni, 13,9:1   |
+| 960 px  | 4,6:1           | fond uni, 13,9:1   |
+| 961 px  | 4,6:1           | dégradé, **4,6:1** |
+| 1000 px | 4,7:1           | dégradé, 4,7:1     |
+| 1280 px | 5,3:1           | dégradé, 5,3:1     |
 
-Le fond s'étend à la hauteur de la fenêtre là où le client l'accepte (`html, body, table { height: 100% }`), pour que la lueur reste en bas à droite de la fenêtre et ne soit pas coupée net à la fin d'un email court ; ailleurs il a la hauteur de l'email. Le dégradé n'est que sur le fond, jamais sous la carte ni sous un texte long. Support des clients : à confirmer par un test Litmus ou Email on Acid, non fait ici.
+Le calcul (ellipse « farthest-corner », rayons égaux aux côtés de la boîte fois √2, accent à 0 %, primaire à 50 %) a été confirmé sur le rendu réel, sur 8 largeurs de 390 à 1920 px et deux emails (bienvenue, code) : 4,6:1 au pire à 961 px. Le test calcule la même chose à partir du CSS de l'email, pour trois hauteurs d'email et des fenêtres de 500 à 1600 px.
+
+Le fond s'étend à la hauteur de la fenêtre là où le client l'accepte (`height: 100%` sur `html`, `body`, le tableau de la page et son conteneur), pour que la lueur reste en bas à droite de la fenêtre comme sur l'écran. Le dégradé n'est que sur le fond, jamais sous la carte ni sous un texte long.
+
+**Limite connue :** la coupure sous 960 px repose sur les media queries. Un client qui les ignore et dessine les dégradés (certaines apps de messagerie sur mobile) afficherait la lueur sous le pied de page, à 3,2:1 au pire sur un téléphone. Support à confirmer par un test Litmus ou Email on Acid, non fait ici.
 
 Voix (brandbook) : vouvoiement, phrases courtes, des faits plutôt que des adjectifs, jamais « révolutionnaire », « booster », « clé en main ». Le nom s'écrit LePatron. Les trois bénéfices de la bienvenue reprennent trois différenciateurs du brandbook et du site. Le texte reste à valider.
 
