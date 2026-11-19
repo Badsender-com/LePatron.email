@@ -19,9 +19,11 @@
 //
 // =============================================================================
 
-// The scrim of a modal: the primary color, at Vuetify's own 46%.
+// The scrim of a modal: the primary color, at Vuetify's own 46%. Vuetify puts
+// a dialog's overlay first in the app root; the overlays a page writes itself
+// (the mobile sidebar's backdrop) sit deeper and keep their own color.
 .v-application
-  .v-overlay--active:not(.v-overlay--absolute)
+  > .v-overlay--active:not(.v-overlay--absolute)
   > .v-overlay__scrim {
   background-color: var(--v-primary-base) !important;
   border-color: var(--v-primary-base) !important;
