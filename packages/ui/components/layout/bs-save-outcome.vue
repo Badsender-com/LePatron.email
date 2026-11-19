@@ -7,7 +7,8 @@ import { Check } from 'lucide-vue';
 // "Modification non enregistrée." with a way to try again. Never a toast.
 //
 // The live region is always in the page: a screen reader announces what comes
-// into it.
+// into it, the failure included. One region only: an `alert` inside it would
+// be announced twice.
 export default {
   name: 'BsSaveOutcome',
   components: { LucideCheck: Check },
@@ -32,7 +33,6 @@ export default {
     <span
       v-else-if="outcome === 'failed'"
       class="bs-save-outcome__text bs-save-outcome__text--failed"
-      role="alert"
     >
       {{ $t('global.saveOutcome.failed') }}
       <template v-if="detail">{{ detail }}</template>
