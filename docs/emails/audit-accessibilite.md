@@ -194,13 +194,13 @@ Lecture : le gabarit date d'un habillage de campagne Badsender (images datées �
 4. **Multilingue** : textes dans `locales/`, `lang` dynamique, sujets traduits, langue de repli explicite.
 5. **Tests** : rendu de chaque email dans les deux langues, assertions sur `lang`, `<title>`, `h1`, `role`, `alt`, sujets.
 
-## À décider avec toi
+## Décisions (2026-11-19)
 
-- Faut-il un email de bienvenue distinct de la réinitialisation (cf. l'inventaire) ?
-- Le pied de page marketing (RGPD, « détruisez ce message ») doit-il rester sur des emails de sécurité, ou être remplacé par une ligne de contact courte ?
-- Mode sombre : on le traite, ou on le laisse au client mail ?
-- Autres langues que fr et en : prévues ?
-- Le logo et les couleurs de groupe (white-label) doivent-ils s'appliquer aux emails ? Cela suppose de passer le groupe du membre au rendu.
+- **Pied de page** : une ligne courte (nom du produit, contact, lien vie privée) sur tous les emails de sécurité. Plus de « détruisez ce message », plus d'icônes sociales.
+- **Marque** : LePatron, couleurs par défaut (primaire `#093040`, accent `#00ACDC`). Le groupe du membre n'est pas passé au rendu.
+- **Mode sombre** : traité (logo en PNG transparent, couleurs lisibles quand le client inverse).
+- **Langues** : fr et en seulement, comme l'application. Le repli sur l'anglais devient explicite (journalisé).
+- **Email de bienvenue** : voulu, distinct de la réinitialisation. Il est la première initialisation du mot de passe. Aujourd'hui rien ne le distingue : un compte créé n'a ni mot de passe ni jeton (`status: to-be-initialized`), et l'admin lui envoie le lien avec l'action « réinitialiser le mot de passe » (`adminResetPassword`). Le gabarit affiche déjà « Bienvenue sur l'email builder » pour ce cas, mais le même texte sert à une vraie réinitialisation. Distinction retenue : au moment de l'envoi, un compte sans mot de passe est un compte à initialiser (bienvenue) ; un compte qui en avait un est une réinitialisation. Limite connue : un lien de bienvenue renvoyé avant d'avoir été utilisé est vu comme une réinitialisation, faute de trace de la première initialisation (un indicateur `passwordSetAt` règlerait le cas, à décider).
 
 ## Reproduire
 
