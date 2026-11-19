@@ -1,10 +1,12 @@
 <script>
-import { mapMutations } from 'vuex';
 import { groupsItem } from '~/helpers/api-routes.js';
 import { changedGroupFields } from '~/helpers/group-changes.js';
-import { PAGE, SHOW_SNACKBAR } from '~/store/page.js';
 import BsTextField from '~/components/form/bs-text-field.vue';
 import { Trash2 } from 'lucide-vue';
+import BsGroupFeatureSwitch from '~/components/group/feature-switch.vue';
+import BsSettingsRow from '~/components/layout/bs-settings-row.vue';
+import mixinInlineOutcome from '~/helpers/mixins/mixin-inline-outcome.js';
+import BsSaveOutcome from '~/components/layout/bs-save-outcome.vue';
 
 function emptyConfig() {
   return {
@@ -17,9 +19,13 @@ function emptyConfig() {
 export default {
   name: 'TrackingParamsTab',
   components: {
+    BsSaveOutcome,
+    BsGroupFeatureSwitch,
+    BsSettingsRow,
     BsTextField,
     LucideTrash2: Trash2,
   },
+  mixins: [mixinInlineOutcome],
   props: {
     group: { type: Object, required: true },
   },
@@ -67,7 +73,6 @@ export default {
     },
   },
   methods: {
-    ...mapMutations(PAGE, { showSnackbar: SHOW_SNACKBAR }),
     syncValuesInputs() {
       this.valuesInputs = (this.config.params || []).map((p) =>
         (p.values || []).join(', ')
@@ -143,16 +148,10 @@ export default {
             changes
           );
         }
-        this.showSnackbar({
-          text: this.$t('trackingConfig.snackbars.updated'),
-          color: 'success',
-        });
+        this.markSaved();
         this.$emit('update');
       } catch (error) {
-        this.showSnackbar({
-          text: this.$t('trackingConfig.snackbars.error'),
-          color: 'error',
-        });
+        this.markFailed();
       } finally {
         this.loading = false;
       }
@@ -167,26 +166,29 @@ export default {
       {{ $t('trackingConfig.description') }}
     </p>
 
-    <div class="tracking-params__toggles">
-      <v-switch
-        :input-value="config.enabled"
-        :label="$t('trackingConfig.enabled')"
-        color="accent"
-        inset
-        hide-details
-        @change="onEnabledChange"
-      />
-      <v-switch
-        :input-value="config.restrictValues"
-        :label="$t('trackingConfig.restrictValues')"
-        :disabled="!config.enabled"
-        color="accent"
-        inset
-        hide-details
-        class="tracking-params__restrict-switch"
-        @change="onRestrictValuesChange"
-      />
-    </div>
+    <ul class="tracking-params__toggles">
+      <bs-settings-row>
+        <template #title>{{ $t('trackingConfig.enabled') }}</template>
+        <bs-group-feature-switch
+          :value="Boolean(config.enabled)"
+          :label="$t('trackingConfig.enabled')"
+          :on-text="$t('global.states.on')"
+          :off-text="$t('global.states.off')"
+          @change="onEnabledChange"
+        />
+      </bs-settings-row>
+      <bs-settings-row>
+        <template #title>{{ $t('trackingConfig.restrictValues') }}</template>
+        <bs-group-feature-switch
+          :value="Boolean(config.restrictValues)"
+          :label="$t('trackingConfig.restrictValues')"
+          :on-text="$t('global.states.on')"
+          :off-text="$t('global.states.off')"
+          :disabled="!config.enabled"
+          @change="onRestrictValuesChange"
+        />
+      </bs-settings-row>
+    </ul>
 
     <div v-if="config.enabled" class="params-table">
       <div class="params-table__header">
@@ -286,6 +288,11 @@ export default {
 
     <v-divider class="mt-4" />
     <div class="form-actions">
+      <bs-save-outcome
+        :outcome="outcome"
+        :detail="outcomeDetail"
+        @retry="onSubmit"
+      />
       <v-btn
         color="accent"
         elevation="0"
@@ -308,14 +315,9 @@ export default {
   }
 
   &__toggles {
-    display: flex;
-    flex-direction: column;
-    gap: 4px;
-    margin-bottom: 24px;
-  }
-
-  &__restrict-switch {
-    margin-top: 4px;
+    margin: 0 0 24px;
+    padding: 0;
+    list-style: none;
   }
 }
 
@@ -399,7 +401,9 @@ export default {
 
 .form-actions {
   display: flex;
+  align-items: center;
   justify-content: flex-end;
+  gap: 1rem;
   padding: 12px 0;
 }
 </style>

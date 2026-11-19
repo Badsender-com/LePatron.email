@@ -104,14 +104,15 @@ describe('a save of the settings, by whoever manages the platform', () => {
   });
 });
 
-// The page itself: the mixin, exercised against a fake instance (the
-// repository has no @vue/test-utils).
+// The page itself: the mixin and the inline outcome it brings, exercised
+// against a fake instance (the repository has no @vue/test-utils).
+const MIXINS = [...mixinGroupSettingsSave.mixins, mixinGroupSettingsSave];
+
 function settingsPage(group, put, { fields } = {}) {
   const vm = {
-    ...mixinGroupSettingsSave.data(),
+    ...Object.assign({}, ...MIXINS.map((mixin) => mixin.data())),
     group,
     canManagePlatform: true,
-    snackbars: [],
     $route: { params: { groupId: 'g1' } },
     $axios: { $put: put },
     $store: { dispatch: jest.fn() },
@@ -119,25 +120,39 @@ function settingsPage(group, put, { fields } = {}) {
     $t: (key) => key,
     $te: () => false,
   };
-  Object.entries(mixinGroupSettingsSave.methods).forEach(([name, fn]) => {
-    vm[name] = fn.bind(vm);
-  });
-  vm.showSnackbar = (snackbar) => vm.snackbars.push(snackbar);
+  MIXINS.forEach((mixin) =>
+    Object.entries(mixin.methods).forEach(([name, fn]) => {
+      vm[name] = fn.bind(vm);
+    })
+  );
   mixinGroupSettingsSave.created.call(vm);
   return vm;
 }
 
 describe('the save of a settings page', () => {
-  it('sends no request when nothing changed', async () => {
+  beforeEach(() => jest.useFakeTimers());
+  afterEach(() => jest.useRealTimers());
+
+  // Nothing to send: the company is as the page shows it, which is saved.
+  it('sends no request when nothing changed, and says it is saved', async () => {
     const put = jest.fn();
     const vm = settingsPage(loaded(), put);
 
     await vm.updateGroup();
 
     expect(put).not.toHaveBeenCalled();
-    expect(vm.snackbars).toEqual([
-      { text: 'snackbars.updated', color: 'success' },
-    ]);
+    expect(vm.outcome).toBe('saved');
+  });
+
+  it('says on the page when the save fails', async () => {
+    const put = jest.fn().mockRejectedValue(new Error('offline'));
+    const vm = settingsPage(loaded(), put);
+
+    vm.group.name = 'Acme Corp';
+    await vm.updateGroup();
+
+    expect(vm.outcome).toBe('failed');
+    expect(vm.loading).toBe(false);
   });
 
   it('measures the next save from the company as saved', async () => {
@@ -149,6 +164,7 @@ describe('the save of a settings page', () => {
     await vm.updateGroup();
     expect(put).toHaveBeenLastCalledWith('/groups/g1', { name: 'Acme Corp' });
     expect(vm.group).toBe(saved);
+    expect(vm.outcome).toBe('saved');
 
     vm.group.status = 'demo';
     await vm.updateGroup();

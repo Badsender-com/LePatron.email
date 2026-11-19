@@ -103,10 +103,24 @@ export default {
       description:
         'Every member of the company enters a code after their password. Those who have not set it up yet will do so at their next sign-in.',
       switch: 'Require two-factor authentication',
+      on: 'Required',
+      off: 'Not required',
+      progress:
+        'Set up by {n} member out of {total} | Set up by {n} members out of {total}',
       saml: 'This company signs in with SSO: two-factor authentication belongs to its identity provider.',
-      updated: 'Setting saved',
-      required: 'Required of every member.',
-      notRequired: 'Not required.',
+      confirmOn: {
+        title: 'Require two-factor authentication?',
+        pending:
+          '{n} member out of {total} has not set it up yet. | {n} members out of {total} have not set it up yet.',
+        everyone:
+          'Each member will set it up at their next sign-in. Sessions already open are not interrupted.',
+        action: 'Require two-factor authentication',
+      },
+      confirmOff: {
+        title: 'Stop requiring two-factor authentication?',
+        body: 'Members will be able to sign in with their password alone.',
+        action: 'Stop requiring',
+      },
       managedByTech: 'Only a technical administrator can change this setting.',
     },
     users: {
@@ -131,6 +145,12 @@ export default {
     emailSent: 'An email was sent',
   },
   global: {
+    saveOutcome: {
+      saved: 'Saved',
+      failed: 'Change not saved.',
+      retry: 'Try again',
+    },
+    states: { on: 'On', off: 'Off' },
     errors: {
       typeCampagneRequired: 'Campaign type is required.',
       errorOccured: 'Oops! An error has occurred :(',
@@ -214,6 +234,7 @@ export default {
     newTemplate: 'Add a template',
     newFolder: 'New folder',
     parentLocation: 'Location',
+    company: 'Company | Companies',
     template: 'Template | Templates',
     mailing: 'Email | Emails',
     newMailing: 'New email',
@@ -294,15 +315,17 @@ export default {
   forms: {
     group: {
       sections: {
+        security: 'Security',
+        securityDescription: 'Members’ access to the workspaces and how they sign in.',
         generalInfo: 'General information',
         imageHosting: 'Image hosting',
         authentication: 'Authentication',
         authenticationDescription: 'Configure SAML authentication to allow your users to login with their enterprise account.',
         permissions: 'Permissions',
-        permissionsDescription: 'Manage user access rights to different workspaces.',
         companyInfo: 'Company information',
         companyInfoDescription: 'Enter the main information about the company.',
       },
+      saml: { name: 'SAML authentication', on: 'On', off: 'Off' },
       enableSaml: 'Enable SAML authentication',
       entryPointHint: 'Login URL provided by your identity provider',
       issuerHint: 'Unique identifier for your application at the provider',
@@ -508,14 +531,21 @@ export default {
     filters: {
       title: 'Filters',
       createdBetween: 'Created between',
+      resetSearch: 'Reset the search',
+      datePlaceholder: 'MM/DD/YYYY',
+      to: 'to',
+      allTemplates: 'All templates',
+      allTags: 'All tags',
       updatedBetween: 'Updated between',
       and: 'and',
-      searchPlaceholder: 'Search by name...',
+      searchPlaceholder: 'Search an email by name',
       startDate: 'Start date',
       endDate: 'End date',
     },
     search: {
-      scope: 'Search in',
+      scope: 'In',
+      allWorkspacesHint:
+        'Results from your {n} workspaces. The Location column shows where each email is.',
       currentFolder: 'Current folder',
       allWorkspaces: 'All my workspaces',
       location: 'Location',
@@ -803,10 +833,6 @@ export default {
       emptyKey: 'Key is required',
       duplicateKey: 'This key is duplicated',
     },
-    snackbars: {
-      updated: 'Tracking configuration saved.',
-      error: 'An error occurred while saving.',
-    },
     builder: {
       requiredMissing: 'Required tracking parameters are missing',
       requiredMissingDescription:
@@ -872,7 +898,6 @@ export default {
       'The rating and the comment of a feedback are always shared with the platform company, whether the retex is allowed or not.',
     offForgets:
       'Turning it off erases the retex the company\'s users already sent, open or closed, and the session summaries kept with older feedback. Those a consultant of the platform company writes while working for it stay: they belong to the platform company.',
-    updated: 'Retex updated',
   },
   oauthConsent: {
     claimedName: '"{client}"',
@@ -1078,7 +1103,6 @@ export default {
     offTitle: 'Turn MCP access off?',
     offConfirm:
       'Every assistant connected to the accounts of {group} will be disconnected at once. Turning it back on reconnects none: each user will connect theirs again.',
-    updated: 'MCP access updated',
   },
   crmIntelligence: {
     title: 'CRM Intelligence',
@@ -1405,6 +1429,8 @@ export default {
       sectionDescription:
         'Lets your team set a subject, a planned send date and an email type on each email, instead of retyping them on every send.',
       enabled: 'Enable email metadata',
+      on: 'On',
+      off: 'Off',
       enabledHint:
         'While the option is off, these fields appear nowhere and the API refuses them; data already entered is kept.',
       taxonomyAction: 'Manage email types',
@@ -1413,7 +1439,6 @@ export default {
     },
     snackbars: {
       invalid: 'The settings sent were not accepted.',
-      updated: 'Email Builder settings updated',
       error: 'Could not update the settings',
     },
   },

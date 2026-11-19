@@ -68,6 +68,17 @@
   // Success said in words ("Copied"): 5.1:1 on white, where --v-success-base
   // is 2.8:1.
   --success-ink: #2e7d32;
+  // Destructive as text on white (5.3:1), where --color-error is 3.6:1.
+  --danger-ink: #c53a12;
+  // Warning and information as text on white or on their own soft tint.
+  --warning-ink: #8a5a00;
+  --info-ink: #1565c0;
+  // The soft ground and the frame of an alert, by tone: the same 8% / 35%
+  // everywhere (the error and the warning ones are above).
+  --tint-info-soft: rgba(33, 150, 243, 0.08);
+  --info-border: rgba(33, 150, 243, 0.35);
+  --tint-success-soft: rgba(76, 175, 80, 0.08);
+  --success-border: rgba(76, 175, 80, 0.35);
 
   // A code, a key, an address to copy.
   --font-mono: ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Monaco, Consolas,

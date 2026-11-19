@@ -1,10 +1,10 @@
-import { mapGetters, mapMutations } from 'vuex';
+import { mapGetters } from 'vuex';
 import cloneDeep from 'lodash/cloneDeep';
-import { PAGE, SHOW_SNACKBAR } from '~/store/page.js';
 import { CAN, GROUP_CHANGED, USER } from '~/store/user.js';
 import * as apiRoutes from '~/helpers/api-routes.js';
 import { changedGroupFields } from '~/helpers/group-changes.js';
 import { CAPABILITIES } from '../../../shared/access/roles.js';
+import mixinInlineOutcome from '~/helpers/mixins/mixin-inline-outcome.js';
 
 // What the server lets a company admin change in its own company.
 const COMPANY_ADMIN_FIELDS = ['name', 'colorScheme'];
@@ -38,7 +38,9 @@ export function groupSettingsPayload(
 /**
  * The save of a company settings page (general, colours): `group` and
  * `loading`, the group badge in the header, and `updateGroup`, which sends
- * the fields changed since the page was loaded.
+ * the fields changed since the page was loaded. The outcome is read on the
+ * page (`outcome`, `outcomeDetail`: see `mixinInlineOutcome`), at the foot of
+ * the form, never in a toast.
  *
  * Usage, next to `mixinSettingsTitle`, with the page's own `asyncData`; a page
  * that edits some fields only names them, so it never sends the others:
@@ -48,6 +50,7 @@ export function groupSettingsPayload(
  * ```
  */
 export default {
+  mixins: [mixinInlineOutcome],
   data() {
     return {
       group: {},
@@ -69,7 +72,6 @@ export default {
     this.loadedGroup = cloneDeep(this.group);
   },
   methods: {
-    ...mapMutations(PAGE, { showSnackbar: SHOW_SNACKBAR }),
     async updateGroup() {
       const {
         $axios,
@@ -81,10 +83,7 @@ export default {
       });
       // Nothing changed: the company is already as the page shows it.
       if (Object.keys(changes).length === 0) {
-        this.showSnackbar({
-          text: this.$t('snackbars.updated'),
-          color: 'success',
-        });
+        this.markSaved();
         return;
       }
       try {
@@ -99,19 +98,14 @@ export default {
             changes: { enableMcpModule: saved.enableMcpModule },
           });
         }
-        this.showSnackbar({
-          text: this.$t('snackbars.updated'),
-          color: 'success',
-        });
+        this.markSaved();
       } catch (error) {
         const errorCode = error?.response?.data?.message;
-        this.showSnackbar({
-          text:
-            errorCode && this.$te(`global.errors.${errorCode}`)
-              ? this.$t(`global.errors.${errorCode}`)
-              : this.$t('global.errors.errorOccured'),
-          color: 'error',
-        });
+        this.markFailed(
+          errorCode && this.$te(`global.errors.${errorCode}`)
+            ? this.$t(`global.errors.${errorCode}`)
+            : ''
+        );
       } finally {
         this.loading = false;
       }

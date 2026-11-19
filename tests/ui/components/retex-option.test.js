@@ -14,23 +14,18 @@ const fr = require('../../../packages/ui/helpers/locales/fr.js').default;
 const en = require('../../../packages/ui/helpers/locales/en.js').default;
 
 function mountOption(group, $put) {
-  const commit = jest.fn();
   return mountSfc('packages/ui/components/group/retex-option.vue', {
     props: { group },
     mocks: {
       $t: (key) => key,
       $axios: { $put },
-      // What mapMutations reads of the store's `page` module.
-      $store: {
-        commit,
-        _modulesNamespaceMap: { 'page/': { context: { commit } } },
-      },
     },
     imports: {
       '~/helpers/mixins/mixin-group-switch.js': mixinGroupSwitch,
       '~/components/layout/bs-settings-row.vue': componentOf(
         'packages/ui/components/layout/bs-settings-row.vue'
       ),
+      '~/components/layout/bs-save-outcome.vue': {},
     },
   });
 }
@@ -58,6 +53,28 @@ describe('the retex option of a company', () => {
 
     expect($put).toHaveBeenCalledWith(expect.any(String), { allowRetex: true });
     expect(update).toHaveBeenCalledWith(saved);
+    expect(
+      vm.$el.querySelector('bs-save-outcome').getAttribute('outcome')
+    ).toBe('saved');
+  });
+
+  it('says beside the switch when the save fails, and tries again', async () => {
+    const $put = jest
+      .fn()
+      .mockRejectedValueOnce(new Error('500'))
+      .mockResolvedValueOnce({ id: 'g1', allowRetex: true });
+    const vm = mountOption({ id: 'g1', allowRetex: false }, $put);
+
+    vm.$el.querySelector('v-switch').dispatchEvent(new Event('change'));
+    await settle(vm);
+    const outcome = vm.$el.querySelector('bs-save-outcome');
+    expect(outcome.getAttribute('outcome')).toBe('failed');
+
+    outcome.dispatchEvent(new Event('retry'));
+    await settle(vm);
+    expect($put).toHaveBeenLastCalledWith(expect.any(String), {
+      allowRetex: true,
+    });
   });
 
   it.each([

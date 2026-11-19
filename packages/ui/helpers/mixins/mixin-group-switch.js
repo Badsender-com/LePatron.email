@@ -1,10 +1,11 @@
-import { mapMutations } from 'vuex';
-
 import { groupsItem } from '~/helpers/api-routes.js';
-import { PAGE, SHOW_SNACKBAR } from '~/store/page.js';
+import mixinInlineOutcome from '~/helpers/mixins/mixin-inline-outcome.js';
 
 // A switch of the company (two-factor authentication, MCP access, retex),
 // saved on its own: switching it never carries the rest of the group's form.
+// Its outcome is read where the switch is, never in a toast (design system,
+// "A setting was saved"): `outcome` and `outcomeDetail` of
+// `mixinInlineOutcome`, for the host's `BsSaveOutcome`.
 //
 // The switch shows `switchValue`, not the group's value. A Vuetify switch
 // keeps the state it was clicked to: after a failed save it would stay on a
@@ -12,13 +13,16 @@ import { PAGE, SHOW_SNACKBAR } from '~/store/page.js';
 // told it nothing. `switchValue` follows the click, then goes back to the
 // saved value when the save fails.
 //
-// The host component binds `:input-value="switchValue"` and `@change="save"`.
+// The host component binds `:input-value="switchValue"` and `@change="save"`,
+// and `<bs-save-outcome :outcome="outcome" :detail="outcomeDetail"
+// @retry="save(!switchValue)" />`: after a failure the switch is back on the
+// saved value, so trying again asks for the other one.
 //
 // @param {Object} options
 // @param {string} options.field the group's boolean field
-// @param {string} options.updatedKey the locale key of the saved message
-export default function mixinGroupSwitch({ field, updatedKey }) {
+export default function mixinGroupSwitch({ field }) {
   return {
+    mixins: [mixinInlineOutcome],
     props: {
       group: { type: Object, required: true },
     },
@@ -31,10 +35,11 @@ export default function mixinGroupSwitch({ field, updatedKey }) {
       },
     },
     methods: {
-      ...mapMutations(PAGE, { showSnackbar: SHOW_SNACKBAR }),
+      // Resolves to whether the value was saved.
       async save(value) {
         const saved = this.group[field] === true;
         this.switchValue = Boolean(value);
+        this.clearOutcome();
         this.loading = true;
         try {
           const group = await this.$axios.$put(
@@ -42,13 +47,12 @@ export default function mixinGroupSwitch({ field, updatedKey }) {
             { [field]: Boolean(value) }
           );
           this.$emit('update', group);
-          this.showSnackbar({ text: this.$t(updatedKey), color: 'success' });
+          this.markSaved();
+          return true;
         } catch (error) {
           this.switchValue = saved;
-          this.showSnackbar({
-            text: this.$t('global.errors.errorOccured'),
-            color: 'error',
-          });
+          this.markFailed();
+          return false;
         } finally {
           this.loading = false;
         }

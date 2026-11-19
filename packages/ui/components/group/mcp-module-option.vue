@@ -2,8 +2,11 @@
 import { Plug, ArrowRight } from 'lucide-vue';
 import { groupConnectedApplications } from '~/helpers/api-routes.js';
 import BsModalConfirm from '~/components/modal-confirm.vue';
+import BsGroupSettingCard from '~/components/group/setting-card.vue';
+import BsGroupFeatureSwitch from '~/components/group/feature-switch.vue';
 
-// The MCP module of a company (ADR 0017), a card of the company's Modules:
+// The MCP module of a company (ADR 0017), a card of the company's Modules
+// (the setting card and the feature switch of the cards beside it):
 // sold apart from MCP access, which the company's tech admin then turns on in
 // its AI features. Its switch is saved with the rest of the form. Closing a
 // module that was open revokes the company's connections, so the save asks
@@ -15,6 +18,8 @@ export default {
   name: 'BsGroupMcpModuleOption',
   components: {
     BsModalConfirm,
+    BsGroupSettingCard,
+    BsGroupFeatureSwitch,
     LucidePlug: Plug,
     LucideArrowRight: ArrowRight,
   },
@@ -82,34 +87,27 @@ export default {
 
 <template>
   <div class="bs-group-mcp-module-option">
-    <div class="bs-group-mcp-module-option__content">
-      <div class="bs-group-mcp-module-option__icon">
-        <lucide-plug :size="28" />
-      </div>
-      <div>
-        <div class="bs-group-mcp-module-option__name">
-          {{ $t('groups.modules.mcp.name') }}
-        </div>
-        <div class="bs-group-mcp-module-option__description">
-          {{ $t('groups.modules.mcp.description') }}
-        </div>
-        <div
-          v-if="group.enableMcpModule"
-          class="bs-group-mcp-module-option__hint"
-        >
-          <lucide-arrow-right :size="14" />
-          {{ $t('groups.modules.mcp.configHint') }}
-        </div>
-      </div>
-    </div>
-    <v-switch
-      :input-value="group.enableMcpModule"
-      :aria-label="$t('groups.modules.mcp.name')"
-      hide-details
-      :disabled="disabled"
-      class="bs-group-mcp-module-option__switch"
-      @change="$emit('change', $event)"
-    />
+    <bs-group-setting-card>
+      <template #icon><lucide-plug :size="28" /></template>
+      <template #name>{{ $t('groups.modules.mcp.name') }}</template>
+      <template #description>
+        {{ $t('groups.modules.mcp.description') }}
+      </template>
+      <template v-if="group.enableMcpModule" #hint>
+        <lucide-arrow-right :size="14" color="#9e9e9e" />
+        {{ $t('groups.modules.mcp.configHint') }}
+      </template>
+      <template #control>
+        <bs-group-feature-switch
+          :value="group.enableMcpModule === true"
+          :label="$t('groups.modules.mcp.name')"
+          :on-text="$t('global.states.on')"
+          :off-text="$t('global.states.off')"
+          :disabled="disabled"
+          @change="$emit('change', $event)"
+        />
+      </template>
+    </bs-group-setting-card>
 
     <bs-modal-confirm
       ref="closeModal"
@@ -124,67 +122,9 @@ export default {
 </template>
 
 <style lang="scss" scoped>
-// The card of a module, drawn with the theme's tokens (white-label).
-.bs-group-mcp-module-option {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 1rem;
-  margin-bottom: 0.75rem;
-  background-color: var(--surface);
-  border: 1px solid var(--gray-300);
-  border-radius: 8px;
-  transition: border-color 0.2s ease;
-
-  &:last-child {
-    margin-bottom: 0;
-  }
-
-  &:hover {
-    border-color: var(--accent-tint-resize-active);
-  }
-
-  &__content {
-    display: flex;
-    align-items: flex-start;
-    gap: 1rem;
-  }
-
-  &__icon {
-    width: 48px;
-    height: 48px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    flex-shrink: 0;
-    border-radius: 8px;
-    background-color: var(--accent-tint-selected-hover);
-    color: var(--v-accent-base);
-  }
-
-  &__name {
-    font-weight: 500;
-    font-size: 1rem;
-    color: var(--gray-900);
-  }
-
-  &__description {
-    margin-top: 0.25rem;
-    font-size: 0.875rem;
-    color: var(--gray-700);
-  }
-
-  &__hint {
-    display: flex;
-    align-items: center;
-    gap: 0.25rem;
-    margin-top: 0.5rem;
-    font-size: 0.75rem;
-    color: var(--gray-600);
-  }
-
-  &__switch {
-    flex-shrink: 0;
-  }
+// The dialog follows the card, which so never reads as the last of the
+// Modules: the wrapper says when it is.
+.bs-group-mcp-module-option:last-child ::v-deep .bs-group-setting-card {
+  margin-bottom: 0;
 }
 </style>

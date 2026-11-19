@@ -186,7 +186,7 @@ export default {
       </v-card-text>
       <v-card-actions>
         <v-spacer />
-        <v-btn text @click="close">
+        <v-btn text color="primary" @click="close">
           {{ $t('global.cancel') }}
         </v-btn>
         <v-btn color="accent" elevation="0" :loading="loading" @click="save">

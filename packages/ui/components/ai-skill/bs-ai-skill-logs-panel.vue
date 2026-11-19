@@ -74,6 +74,7 @@ export default {
     <div class="d-flex justify-end mb-2">
       <v-switch
         v-model="hideTest"
+        color="accent"
         :label="$t('aiSkills.logs.hideTest')"
         dense
         hide-details

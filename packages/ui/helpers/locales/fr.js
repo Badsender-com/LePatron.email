@@ -106,10 +106,24 @@ export default {
       description:
         'Chaque membre de l’entreprise saisit un code après son mot de passe. Ceux qui ne l’ont pas encore configurée le feront à leur prochaine connexion.',
       switch: 'Exiger la double authentification',
+      on: 'Exigée',
+      off: 'Non exigée',
+      progress:
+        'Configurée par {n} membre sur {total} | Configurée par {n} membres sur {total}',
       saml: 'Cette entreprise se connecte en SSO : la double authentification relève de son fournisseur d’identité.',
-      updated: 'Paramètre enregistré',
-      required: 'Exigée pour tous les membres.',
-      notRequired: 'Non exigée.',
+      confirmOn: {
+        title: 'Exiger la double authentification ?',
+        pending:
+          '{n} membre sur {total} ne l’a pas encore configurée. | {n} membres sur {total} ne l’ont pas encore configurée.',
+        everyone:
+          'Chaque membre la configurera à sa prochaine connexion. Les sessions déjà ouvertes ne sont pas interrompues.',
+        action: 'Exiger la double authentification',
+      },
+      confirmOff: {
+        title: 'Ne plus exiger la double authentification ?',
+        body: 'Les membres pourront se connecter avec leur seul mot de passe.',
+        action: 'Ne plus exiger',
+      },
       managedByTech: 'Seul un administrateur technique peut modifier ce paramètre.',
     },
     users: {
@@ -134,6 +148,12 @@ export default {
     emailSent: 'L\'email a bien été envoyé',
   },
   global: {
+    saveOutcome: {
+      saved: 'Enregistré',
+      failed: 'Modification non enregistrée.',
+      retry: 'Réessayer',
+    },
+    states: { on: 'Activé', off: 'Désactivé' },
     errors: {
       typeCampagneRequired: 'Le type de campagne est requis.',
       errorOccured: 'Oups ! Une erreur est survenue :(',
@@ -218,6 +238,7 @@ export default {
     newTemplate: 'Ajouter un template',
     newFolder: 'Nouveau dossier',
     parentLocation: 'Destination',
+    company: 'Entreprise | Entreprises',
     template: 'Template | Templates',
     mailing: 'Email | Emails',
     newMailing: 'Nouvel email',
@@ -298,15 +319,17 @@ export default {
   forms: {
     group: {
       sections: {
+        security: 'Sécurité',
+        securityDescription: 'L’accès des membres aux workspaces et la façon dont ils se connectent.',
         generalInfo: 'Informations générales',
         imageHosting: 'Hébergement des images',
         authentication: 'Authentification',
         authenticationDescription: 'Configurez l\'authentification SAML pour permettre à vos utilisateurs de se connecter avec leur compte d\'entreprise.',
         permissions: 'Permissions',
-        permissionsDescription: 'Gérez les droits d\'accès des utilisateurs aux différents workspaces.',
         companyInfo: 'Informations de l\'entreprise',
         companyInfoDescription: 'Renseignez les informations principales de l\'entreprise.',
       },
+      saml: { name: 'Authentification SAML', on: 'Activée', off: 'Désactivée' },
       enableSaml: 'Activer l\'authentification SAML',
       entryPointHint: 'URL de connexion fournie par votre fournisseur d\'identité',
       issuerHint: 'Identifiant unique de votre application chez le fournisseur',
@@ -517,15 +540,22 @@ export default {
     list: 'Rechercher dans la liste d\'emails',
     filters: {
       title: 'Filtres',
-      createdBetween: 'Créé entre le',
-      updatedBetween: 'Mis à jour entre le',
+      createdBetween: 'Créé entre',
+      resetSearch: 'Réinitialiser la recherche',
+      datePlaceholder: 'JJ/MM/AAAA',
+      to: 'au',
+      allTemplates: 'Tous les templates',
+      allTags: 'Tous les tags',
+      updatedBetween: 'Mis à jour entre',
       and: 'et le',
-      searchPlaceholder: 'Rechercher par nom...',
+      searchPlaceholder: 'Rechercher un email par nom',
       startDate: 'Date début',
       endDate: 'Date fin',
     },
     search: {
-      scope: 'Rechercher dans',
+      scope: 'Dans',
+      allWorkspacesHint:
+        'Résultats dans vos {n} espaces de travail. La colonne Emplacement indique où se trouve chaque email.',
       currentFolder: 'Dossier courant',
       allWorkspaces: 'Tous mes espaces de travail',
       location: 'Emplacement',
@@ -818,10 +848,6 @@ export default {
       emptyKey: 'La clé est requise',
       duplicateKey: 'Cette clé est dupliquée',
     },
-    snackbars: {
-      updated: 'Configuration de tracking enregistrée.',
-      error: 'Erreur lors de l\'enregistrement.',
-    },
     builder: {
       requiredMissing: 'Paramètres de tracking obligatoires manquants',
       requiredMissingDescription:
@@ -995,6 +1021,8 @@ export default {
       sectionDescription:
         'Permet de renseigner un objet, une date d\'envoi prévue et une typologie sur chaque email, au lieu de les ressaisir à chaque envoi.',
       enabled: 'Activer les métadonnées des emails',
+      on: 'Activées',
+      off: 'Désactivées',
       enabledHint:
         'Lorsque l\'option est désactivée, ces champs n\'apparaissent nulle part et l\'API les refuse ; les données déjà saisies sont conservées.',
       taxonomyAction: 'Gérer les typologies',
@@ -1003,7 +1031,6 @@ export default {
     },
     snackbars: {
       invalid: 'Les réglages envoyés n\'ont pas été acceptés.',
-      updated: 'Réglages Email Builder mis à jour',
       error: 'La mise à jour des réglages a échoué',
     },
   },
@@ -1153,7 +1180,6 @@ export default {
       'La note et le commentaire des avis sont toujours partagés avec l\'entreprise plateforme, que le retour d\'expérience soit autorisé ou non.',
     offForgets:
       'Le désactiver efface les retours d\'expérience déjà envoyés par les utilisateurs de l\'entreprise, ouverts ou clos, et les résumés de session gardés avec les anciens avis. Ceux qu\'un consultant de l\'entreprise plateforme écrit en travaillant pour elle restent : ils appartiennent à l\'entreprise plateforme.',
-    updated: 'Retours d\'expérience mis à jour',
   },
   oauthConsent: {
     claimedName: '« {client} »',
@@ -1363,7 +1389,6 @@ export default {
     offTitle: 'Couper l\'accès MCP ?',
     offConfirm:
       'Tous les assistants connectés aux comptes de l\'entreprise {group} seront déconnectés tout de suite. Le réactiver ne les reconnectera pas : chaque utilisateur devra connecter le sien à nouveau.',
-    updated: 'Accès MCP mis à jour',
   },
   crmIntelligence: {
     title: 'CRM Intelligence',

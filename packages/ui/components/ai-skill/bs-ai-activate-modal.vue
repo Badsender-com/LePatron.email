@@ -221,13 +221,6 @@ export default {
 </template>
 
 <style lang="scss" scoped>
-.modal-actions {
-  display: flex;
-  align-items: center;
-  justify-content: flex-end;
-  gap: 0.5rem;
-  padding: 1rem 0;
-}
 .impact-list {
   margin: 0.25rem 0 0;
   padding-left: 1.1rem;
