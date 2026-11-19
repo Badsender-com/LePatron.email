@@ -296,14 +296,14 @@ describe.each(CASES)('the %s email, in %s', (name, lang) => {
     );
   });
 
-  // The backdrop is the glow of the sign-in screen, at the bottom right, over
-  // the solid primary that a client drawing no gradient keeps (Outlook for
-  // Windows). Its size is fixed, so that the footer text, the last thing in the
-  // email, can be kept where it is readable whatever the height of the email.
+  // The backdrop is the glow of the sign-in screen as it is, over the solid
+  // primary that a client drawing no gradient keeps (Outlook for Windows). Up
+  // to the tablet breakpoint of the application the glow is off: the footer text
+  // sits on it there, and falls under 4.5:1.
   it('paints the backdrop with the glow of the sign-in screen, over the solid primary', () => {
     const cell = tag(/<td[^>]*class="backdrop"[^>]*>/);
     expect(cell).toMatch(
-      /background-color:\s*#093040;\s*background-image:\s*radial-gradient\(circle \d+px at 100% 100%,\s*rgb\(0, 172, 220\) 0%,\s*rgb\(9, 48, 64\) 100%\)/
+      /background-color:\s*#093040;\s*background-image:\s*radial-gradient\(at 100% 100%,\s*rgb\(0, 172, 220\) 0%,\s*rgb\(9, 48, 64\) 50%\)/
     );
     // The solid colour is also the attribute of the page table and the body.
     expect(message.html).toMatch(
@@ -316,6 +316,53 @@ describe.each(CASES)('the %s email, in %s', (name, lang) => {
     expect(tag(/<table[^>]*class="card"[^>]*>/)).not.toMatch(/gradient/);
   });
 
+  it('turns the glow off up to the tablet breakpoint of the application, leaving the solid primary', () => {
+    expect(message.html).toMatch(
+      /@media only screen and \(max-width: 960px\) \{\s*\.backdrop \{ background-image: none !important; \}/
+    );
+  });
+
+  // Where the glow is on, the white footer text must be 4.5:1 on it. The glow
+  // is the CSS ellipse of the sign-in screen: farthest corner, so radii of the
+  // box sides times the square root of 2; the accent at 0 %, the primary at
+  // 50 %. The text is the last thing of the box, its right end `(W - 480) / 2 +
+  // 4` px from the corner, its bottom `H - footerBottom` px above it.
+  it('keeps the white footer text 4.5:1 on the glow, from the first width where it is on', () => {
+    const [, breakpoint] = /max-width: (\d+)px\) \{\s*\.backdrop/.exec(
+      message.html
+    );
+    const accent = [0, 172, 220];
+    const primary = [9, 48, 64];
+    const hex = (k) =>
+      `#${accent
+        .map((c, i) => Math.round(c * (1 - k) + primary[i] * k))
+        .map((c) => c.toString(16).padStart(2, '0'))
+        .join('')}`;
+    const width = Number(breakpoint) + 1;
+    // The shortest emails are the ones that bring the text closest to the
+    // glow; windows from 500 to 1600 px high.
+    let worst = Infinity;
+    [450, 640, 934].forEach((footerBottom) => {
+      for (let window = 500; window <= 1600; window += 25) {
+        const height = Math.max(footerBottom + 40, window);
+        const dx = (width - 480) / 2 + 4;
+        const dy = height - footerBottom;
+        const d = Math.hypot(
+          dx / (width * Math.SQRT2),
+          dy / (height * Math.SQRT2)
+        );
+        worst = Math.min(worst, contrast('#ffffff', hex(Math.min(1, d / 0.5))));
+      }
+    });
+    expect(worst).toBeGreaterThanOrEqual(4.5);
+    const footer = tag(/<td[^>]*class="[^"]*footer[^"]*"[^>]*>/);
+    expect(/color:\s*(#[0-9a-f]{6})/i.exec(footer)[1].toLowerCase()).toBe(
+      '#ffffff'
+    );
+    // And on the solid primary, where the glow is off or not drawn.
+    expect(contrast('#ffffff', '#093040')).toBeGreaterThanOrEqual(4.5);
+  });
+
   it('lets the backdrop fill the window where the client allows it, so the glow is not cut short', () => {
     // Without it the glow stops flat at the end of a short email, when the
     // window is taller than the email.
@@ -324,28 +371,6 @@ describe.each(CASES)('the %s email, in %s', (name, lang) => {
     expect(tag(/<table[^>]*class="page"[^>]*>/)).toMatch(/height:\s*100%/);
     expect(tag(/<div[^>]*role="article"[^>]*>/)).toMatch(/height:\s*100%/);
     expect(tag(/<td[^>]*class="backdrop"[^>]*>/)).toMatch(/valign="top"/);
-  });
-
-  it('keeps the footer text where the glow is dark enough to read it', () => {
-    const cell = tag(/<td[^>]*class="backdrop"[^>]*>/);
-    const radius = Number(/circle (\d+)px/.exec(cell)[1]);
-    // The text is the last thing of the backdrop: its bottom is `padding-bottom`
-    // from the corner of the glow, at the closest (a phone, text to the edge).
-    const [, distance] = /padding:\s*\d+px \d+px (\d+)px \d+px/.exec(cell);
-    // The colour of the glow at that distance: the accent fading to the
-    // primary over the radius.
-    const k = Math.min(1, Number(distance) / radius);
-    const accent = [0, 172, 220];
-    const primary = [9, 48, 64];
-    const hex = accent
-      .map((c, i) => Math.round(c * (1 - k) + primary[i] * k))
-      .map((c) => c.toString(16).padStart(2, '0'))
-      .join('');
-    const footer = tag(/<td[^>]*class="[^"]*footer[^"]*"[^>]*>/);
-    const text = /color:\s*(#[0-9a-f]{6})/i.exec(footer)[1];
-    expect(contrast(text, `#${hex}`)).toBeGreaterThanOrEqual(4.5);
-    // And on the solid fallback.
-    expect(contrast(text, '#093040')).toBeGreaterThanOrEqual(4.5);
   });
 
   it('speaks of the platform, not only of an email builder', () => {
