@@ -24,6 +24,22 @@ const accountTemplate = tmpl('account-email');
 const LANGUAGES = ['fr', 'en'];
 const FALLBACK_LANGUAGE = 'en';
 
+// The images of the emails, built by scripts/build-email-images.js from the
+// logo and the icons of the application. They travel with the email (`cid:`),
+// nothing is fetched from the application when it opens: they show in
+// development and behind a firewall alike, as `localhost` could not.
+const ASSETS = path.join(__dirname, 'assets');
+const ICONS = [
+  'lock',
+  'shield-check',
+  'shield-alert',
+  'mail-check',
+  'smartphone',
+];
+const DEFAULT_ICON = 'lock';
+const LOGO_CID = 'logo@lepatron.email';
+const ICON_CID = 'icon@lepatron.email';
+
 const PRIVACY_URL = 'https://www.badsender.com/vie-privee/';
 const DPO_EMAIL = 'dpo@badsender.com';
 
@@ -173,19 +189,22 @@ function resolveLanguage(lang) {
  * @param {Object} texts the email's texts by language: `{ fr, en }`, each with
  *   `subject`, `title`, `preheader`, `desc` and, with a `url`, `button`
  * @param {string} [lang] the account's
- * @param {Object} [data] `url`: where the button leads (none, no button)
- * @returns {{subject: string, text: string, html: string}}
+ * @param {Object} [data] `url`: where the button leads (none, no button);
+ *   `icon`: the one of the card, one of ICONS (a lock when none)
+ * @returns {{subject: string, text: string, html: string, attachments: Object[]}}
  */
-function composeEmail(texts, lang, { url } = {}) {
+function composeEmail(texts, lang, { url, icon = DEFAULT_ICON } = {}) {
   const language = resolveLanguage(lang);
   const t = texts[language];
   const c = COMMON_TEXTS[language];
+  const iconName = ICONS.includes(icon) ? icon : DEFAULT_ICON;
   const html = accountTemplate({
     lang: language,
     t,
     c,
     url,
-    logo: `${siteOrigin()}/media/logo_lepatron.png`,
+    logoCid: LOGO_CID,
+    iconCid: ICON_CID,
     privacyUrl: PRIVACY_URL,
     dpo: DPO_EMAIL,
   });
@@ -201,7 +220,27 @@ function composeEmail(texts, lang, { url } = {}) {
     subject: `${config.emailOptions.passwordSubjectPrefix} – ${t.subject}`,
     text,
     html,
+    attachments: [
+      {
+        filename: 'logo.png',
+        path: path.join(ASSETS, 'logo.png'),
+        cid: LOGO_CID,
+        contentDisposition: 'inline',
+      },
+      {
+        filename: `${iconName}.png`,
+        path: path.join(ASSETS, `icon-${iconName}.png`),
+        cid: ICON_CID,
+        contentDisposition: 'inline',
+      },
+    ],
   };
 }
 
-module.exports = { composeEmail, siteOrigin, resolveLanguage, PASSWORD_TEXTS };
+module.exports = {
+  composeEmail,
+  siteOrigin,
+  resolveLanguage,
+  PASSWORD_TEXTS,
+  ICONS,
+};

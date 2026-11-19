@@ -17,6 +17,7 @@ jest.mock('../../../packages/server/utils/logger.js', () => ({
   log: jest.fn(),
 }));
 
+const fs = require('fs');
 const mongoose = require('mongoose');
 const mail = require('../../../packages/server/mailing/mail.service.js');
 const logger = require('../../../packages/server/utils/logger.js');
@@ -28,6 +29,20 @@ const {
 } = require('../../../packages/server/two-factor/email-code.js');
 
 const User = mongoose.model('PlatformEmailsTest', UserSchema);
+
+// The contrast of WCAG 2: computed here, from the colours, and not read from
+// the code under test.
+function luminance(hex) {
+  const [r, g, b] = [1, 3, 5]
+    .map((i) => parseInt(hex.slice(i, i + 2), 16) / 255)
+    .map((v) => (v <= 0.03928 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4));
+  return 0.2126 * r + 0.7152 * g + 0.0722 * b;
+}
+
+function contrast(a, b) {
+  const [light, dark] = [luminance(a), luminance(b)].sort((x, y) => y - x);
+  return (light + 0.05) / (dark + 0.05);
+}
 
 const LOGIN_URL = `https://${config.host}/account/login`;
 
@@ -214,26 +229,27 @@ describe.each(CASES)('the %s email, in %s', (name, lang) => {
   });
 
   it('sets its text at 14 px or more, with a line height of 150 % or more', () => {
-    const styles = [
-      ...message.html.matchAll(
-        /font-size:\s*(\d+)px;\s*line-height:\s*(\d+)px/g
-      ),
-    ];
-    expect(styles.length).toBeGreaterThan(0);
-    // Every size set above 1 px (1 px hides the preheader) comes with its
-    // line height: a reordered declaration cannot slip past the pairs.
-    const sizes = [...message.html.matchAll(/font-size:\s*(\d+)px/g)].filter(
-      ([, size]) => Number(size) > 1
+    // Read per style attribute: whatever the order of the declarations, each
+    // size above 1 px (1 px hides the preheader) has a line height of its own.
+    const texts = [...message.html.matchAll(/style="([^"]*)"/g)]
+      .map(([, style]) => style)
+      .filter((style) => /font-size:\s*(\d+)px/.test(style))
+      .map((style) => ({
+        size: Number(/font-size:\s*(\d+)px/.exec(style)[1]),
+        line: Number((/line-height:\s*(\d+)px/.exec(style) || [])[1]),
+      }))
+      .filter(({ size }) => size > 1);
+    expect(texts.length).toBeGreaterThan(0);
+    texts.forEach(({ size, line }) => {
+      expect(size).toBeGreaterThanOrEqual(14);
+      expect(line / size).toBeGreaterThanOrEqual(1.5);
+    });
+  });
+
+  it('sets the description and the link at 16 px on a phone', () => {
+    expect(message.html).toMatch(
+      /max-width:\s*520px[\s\S]*\.desc,\s*\.muted\s*\{\s*font-size:\s*16px/
     );
-    expect(styles.filter(([, size]) => Number(size) > 1)).toHaveLength(
-      sizes.length
-    );
-    styles
-      .filter(([, size]) => Number(size) > 1)
-      .forEach(([, size, line]) => {
-        expect(Number(size)).toBeGreaterThanOrEqual(14);
-        expect(Number(line) / Number(size)).toBeGreaterThanOrEqual(1.5);
-      });
   });
 
   it('writes no text in capitals in its source, so a screen reader does not spell it', () => {
@@ -255,6 +271,43 @@ describe.each(CASES)('the %s email, in %s', (name, lang) => {
     expect(message.html).not.toMatch(/carousel/);
   });
 
+  // The sign-in card of the application (packages/ui/components/account/
+  // auth-card.vue, docs/design-system): the secondary colour behind a white
+  // card of 480 px with 10 px corners, the title in the primary colour, the
+  // accent for the action.
+  it('wears the sign-in card of the application', () => {
+    expect(message.html).toMatch(/<body[^>]*background-color:\s*#265090/);
+    expect(message.html).toMatch(/width:\s*480px/);
+    expect(message.html).toMatch(/border-radius:\s*10px/);
+    expect(tag(/<h1[^>]*>/)).toMatch(/color:\s*#093040/);
+    expect(tag(/<h1[^>]*>/)).toMatch(/font-family:\s*'Inter'/);
+    expect(tag(/<h1[^>]*>/)).toMatch(/font-size:\s*20px/);
+    expect(tag(/<h1[^>]*>/)).toMatch(/font-weight:\s*600/);
+  });
+
+  it('shows the logo and the icon of the card, which travel with the email', () => {
+    const logo = message.attachments.find(({ cid }) => /^logo@/.test(cid));
+    const icon = message.attachments.find(({ cid }) => /^icon@/.test(cid));
+    expect(message.attachments).toHaveLength(2);
+    [logo, icon].forEach((file) => {
+      expect(fs.existsSync(file.path)).toBe(true);
+      expect(file.contentDisposition).toBe('inline');
+      expect(message.html).toContain(`src="cid:${file.cid}"`);
+    });
+    // The logo names the product; the round icon only decorates.
+    expect(tag(new RegExp(`<img[^>]*cid:${logo.cid}[^>]*>`))).toMatch(
+      /\salt="LePatron"/
+    );
+    expect(tag(new RegExp(`<img[^>]*cid:${icon.cid}[^>]*>`))).toMatch(
+      /\salt=""/
+    );
+  });
+
+  it('never loads an image from the application, which a mail client may not reach', () => {
+    const sources = [...message.html.matchAll(/<img[^>]*\ssrc="([^"]+)"/g)];
+    sources.forEach(([, src]) => expect(src).toMatch(/^cid:/));
+  });
+
   if (EMAILS[name].cta) {
     it('leads to the sign-in or password page with a button that is clickable in full', () => {
       const [button] = message.html.match(
@@ -264,6 +317,36 @@ describe.each(CASES)('the %s email, in %s', (name, lang) => {
       // The anchor is the whole button: block, with room to tap (44 px high
       // at 24 px of line and 10 px of padding or more, above and below).
       expect(button).toMatch(/padding:\s*(1\d|[2-9]\d)px/);
+    });
+
+    it('puts the accent of the design system on the button, with a text that can be read', () => {
+      const cell = tag(/<td[^>]*class="cta"[^>]*>/);
+      const link = tag(/<a[^>]*display:\s*block[^>]*>/);
+      expect(cell).toMatch(/background-color:\s*#00acdc/i);
+      expect(cell).toMatch(/border-radius:\s*4px/);
+      const text = /color:\s*(#[0-9a-f]{6})/i.exec(link)[1];
+      // White on the accent is 2.6:1 (the application's own buttons): the grid
+      // asks 4.5:1, so the text is a very dark primary.
+      expect(contrast(text, '#00acdc')).toBeGreaterThanOrEqual(4.5);
+    });
+
+    it('darkens the accent on hover, on the rounded cell and not on the link, and keeps the text readable', () => {
+      expect(message.html).toMatch(
+        /\.cta:hover\s*\{\s*background-color:\s*#0095c0\s*!important/i
+      );
+      // A background on the link would paint square corners over the cell's.
+      expect(tag(/<a[^>]*display:\s*block[^>]*>/)).not.toMatch(/background/);
+      expect(message.html).not.toMatch(/(^|[\s,}])a:hover\s*\{[^}]*background/);
+      const link = tag(/<a[^>]*display:\s*block[^>]*>/);
+      const text = /color:\s*(#[0-9a-f]{6})/i.exec(link)[1];
+      expect(contrast(text, '#0095c0')).toBeGreaterThanOrEqual(4.5);
+    });
+
+    it('stays in the card, under a rule, on the right as the actions of the application', () => {
+      expect(tag(/<td[^>]*class="[^"]*actions[^"]*"[^>]*>/)).toMatch(
+        /text-align:\s*right/
+      );
+      expect(message.html).toMatch(/class="rule"[^>]*border-top:\s*1px solid/);
     });
 
     it('names where the button leads, not a bare "sign in" repeated everywhere', () => {
