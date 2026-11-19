@@ -59,7 +59,7 @@ const markedWithoutSchema = {
   versions: [
     {
       ...f.SKILLS[0].versions[0],
-      inputSchemaId: 'subjectGenInput', // not in the code's registry
+      inputSchemaId: 'subjectDraftInput', // not in the code's registry
       inputTemplate:
         '<expertise>{{input.expertise}}</expertise>\n<type>{{input.emailType}}</type>\n<content>{{input.content}}</content>\n<brief>{{input.brief}}</brief>\n<brand>{{input.brand.name}}</brand>\n<tone>{{input.toString}}</tone>',
     },
