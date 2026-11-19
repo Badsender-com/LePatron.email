@@ -21,9 +21,11 @@ const templateBlocks = require('./template-blocks.controller.js');
 const _getTemplateImagePrefix = require('../utils/get-template-image-prefix.js');
 const {
   sanitizeQualitySettings,
-  assertTechChecksAllowed,
   qualitySettingsUpdate,
 } = require('../utils/sanitize-quality-settings.js');
+const {
+  assertTechChecksAllowed,
+} = require('../account/tech-quality-checks.js');
 const {
   resolveQualitySettings,
 } = require('../../shared/quality/resolve-quality-settings.js');

@@ -13,14 +13,8 @@
 const {
   sanitizeQualitySettings,
   keepsTechChecks,
-  assertTechChecksAllowed,
   qualitySettingsUpdate,
 } = require('../../../packages/server/utils/sanitize-quality-settings.js');
-const {
-  ROLES,
-  CAPABILITIES,
-  roleCan,
-} = require('../../../packages/shared/access/roles.js');
 
 const CHECKS = 'qualitySettings.checks';
 
@@ -214,37 +208,6 @@ describe('keepsTechChecks', () => {
     });
     expect(keepsTechChecks(stored, next)).toBe(false);
   });
-});
-
-describe('assertTechChecksAllowed', () => {
-  const off = { checks: { 'tracking-params': { state: 'off' } } };
-  const on = { checks: { 'tracking-params': { state: 'on' } } };
-  const userOf = (role) => ({ role, group: { id: 'g1' } });
-
-  it.each(Object.values(ROLES))(
-    'decides a change of the tracking check for a %s',
-    (role) => {
-      const run = () => assertTechChecksAllowed(userOf(role), off, on);
-      if (roleCan(role, CAPABILITIES.GROUP_MANAGE_TECH)) {
-        expect(run).not.toThrow();
-      } else {
-        const error = refusal(run);
-        expect(error.status).toBe(403);
-        expect(error.message).toBe('FORBIDDEN_TECH_QUALITY_CHECK');
-      }
-    }
-  );
-
-  it.each(Object.values(ROLES))(
-    'lets a %s send the tracking check back as it is',
-    (role) => {
-      expect(() =>
-        assertTechChecksAllowed(userOf(role), off, {
-          checks: { ...off.checks, headings: { state: 'off' } },
-        })
-      ).not.toThrow();
-    }
-  );
 });
 
 describe('qualitySettingsUpdate', () => {
