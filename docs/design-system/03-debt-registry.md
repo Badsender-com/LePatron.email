@@ -138,12 +138,13 @@ _Measured in November 2026 on `packages/ui` (counts are of occurrences found in 
 
 ### DEBT-014: Pages waiting for the MCP stack
 
-|               |                                                                                                                                                        |
-| ------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| **Severity**  | Low                                                                                                                                                    |
-| **Current**   | The "Fonctionnalités IA" page keeps labelled switches and success toasts; `feature-switch.vue` and `bs-settings-row.vue` are copies of the MCP stack's |
-| **Target**    | `BsGroupFeatureSwitch` in a feature card, the outcome inline (`BsSaveOutcome`)                                                                         |
-| **Direction** | Once the MCP stack is merged: drop the copies, take the page over, then close this debt                                                                |
+|               |                                                                                                                                                                                                                                                                                    |
+| ------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Severity**  | Low                                                                                                                                                                                                                                                                                |
+| **Current**   | The "Fonctionnalités IA" page keeps labelled switches and success toasts; `feature-switch.vue` and `bs-settings-row.vue` are copies of the MCP stack's                                                                                                                             |
+| **Target**    | `BsGroupFeatureSwitch` in a feature card, the outcome inline (`BsSaveOutcome`)                                                                                                                                                                                                     |
+| **Direction** | Once the MCP stack is merged: drop the copies, take the page over, then close this debt                                                                                                                                                                                            |
+| **Then**      | The copies stay identical to the MCP stack's until then. Two fixes wait for that day: the "on" word of `feature-switch.vue` takes `--success-ink` (not `--v-success-darken1`), and `BsSettingsRow`'s `titleId` is passed only where the control reads it through `aria-labelledby` |
 
 ---
 
