@@ -35,6 +35,9 @@ const ICONS = [
   'shield-alert',
   'mail-check',
   'smartphone',
+  'blocks',
+  'badge-check',
+  'languages',
 ];
 const DEFAULT_ICON = 'lock';
 const LOGO_CID = 'logo@lepatron.email';
@@ -88,16 +91,19 @@ const PASSWORD_TEXTS = {
         title: 'Ce qui vous attend',
         items: [
           {
+            icon: 'blocks',
             title: 'Pas de feuille blanche.',
             text:
               'Vous composez vos mailings avec des blocs conçus pour votre marque, déjà conformes à vos règles.',
           },
           {
+            icon: 'badge-check',
             title: 'Le cadre, sans y penser.',
             text:
               'Charte, règles de rédaction, contrôle qualité\u00a0: tout est vérifié avant l’envoi.',
           },
           {
+            icon: 'languages',
             title: 'Des déclinaisons sans copier-coller.',
             text:
               'Langues, marques, marchés\u00a0: adaptez un mailing sans refaire la mise en page.',
@@ -116,16 +122,19 @@ const PASSWORD_TEXTS = {
         title: 'What awaits you',
         items: [
           {
+            icon: 'blocks',
             title: 'No blank page.',
             text:
               'You build mailings from blocks designed for your brand, already compliant with your rules.',
           },
           {
+            icon: 'badge-check',
             title: 'The framework, effortlessly.',
             text:
               'Brand guidelines, writing rules, quality control: everything is checked before sending.',
           },
           {
+            icon: 'languages',
             title: 'Variants without copy-paste.',
             text:
               'Languages, brands, markets: adapt a mailing without redoing the layout.',
@@ -243,12 +252,22 @@ function composeEmail(texts, lang, { url, icon = DEFAULT_ICON, code } = {}) {
   const t = texts[language];
   const c = COMMON_TEXTS[language];
   const iconName = ICONS.includes(icon) ? icon : DEFAULT_ICON;
+  // The reasons of a welcome carry a round icon each, attached like the card's.
+  const benefits = t.benefits && {
+    title: t.benefits.title,
+    items: t.benefits.items.map((item, index) => ({
+      ...item,
+      icon: ICONS.includes(item.icon) ? item.icon : DEFAULT_ICON,
+      cid: `benefit-${index + 1}@lepatron.email`,
+    })),
+  };
   const html = accountTemplate({
     lang: language,
     t,
     c,
     url,
     code,
+    benefits,
     logoCid: LOGO_CID,
     iconCid: ICON_CID,
     privacyUrl: PRIVACY_URL,
@@ -279,6 +298,12 @@ function composeEmail(texts, lang, { url, icon = DEFAULT_ICON, code } = {}) {
         cid: ICON_CID,
         contentDisposition: 'inline',
       },
+      ...(benefits ? benefits.items : []).map(({ icon: name, cid }) => ({
+        filename: `${name}.png`,
+        path: path.join(ASSETS, `icon-${name}.png`),
+        cid,
+        contentDisposition: 'inline',
+      })),
     ],
   };
 }

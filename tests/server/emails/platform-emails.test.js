@@ -309,12 +309,53 @@ describe.each(CASES)('the %s email, in %s', (name, lang) => {
       expect(list[0].match(/<li[\s>]/g)).toHaveLength(3);
       expect(list[0].match(/<strong/g)).toHaveLength(3);
       // A mailing is the object of the application; an email is an address.
-      expect(list[0]).toMatch(/mailing/);
-      expect(list[0]).not.toMatch(/\bemails?\b/i);
+      const words = list[0].replace(/<[^>]+>/g, ' ');
+      expect(words).toMatch(/mailing/);
+      expect(words).not.toMatch(/\bemails?\b/i);
+    });
+
+    it('shows them in a benefits block, a title over a picto and a sentence each', () => {
+      const block = message.html.match(
+        /<table[^>]*class="benefits"[\s\S]*?<\/ul>/
+      )[0];
+      // The block has its own title, a real heading, and keeps its list
+      // semantics although the list has no bullets.
+      expect(block).toMatch(/<h2[^>]*>[^<]+<\/h2>/);
+      expect(message.html.match(/<h2[\s>]/g)).toHaveLength(1);
+      expect(block).toMatch(/<ul role="list"/);
+      // Each reason: a round icon that decorates (empty alt), attached.
+      const items = block.match(/<li[\s\S]*?<\/li>/g);
+      expect(items).toHaveLength(3);
+      items.forEach((item, index) => {
+        const cid = `benefit-${index + 1}@lepatron.email`;
+        expect(item).toMatch(
+          new RegExp(`<img src="cid:${cid}" alt="" role="presentation"`)
+        );
+        const file = message.attachments.find((a) => a.cid === cid);
+        expect(fs.existsSync(file.path)).toBe(true);
+        expect(file.contentDisposition).toBe('inline');
+      });
+      // The pictos are not the card's: three different ones.
+      const pictos = message.attachments
+        .filter((a) => /^benefit-/.test(a.cid))
+        .map((a) => a.filename);
+      expect(new Set(pictos).size).toBe(3);
+    });
+
+    it('keeps the block legible in dark mode', () => {
+      const dark = message.html.match(
+        /@media \(prefers-color-scheme: dark\)[\s\S]*?\n {4}\}/
+      )[0];
+      expect(dark).toMatch(
+        /\.benefits\s*\{\s*background-color:\s*#0e2531\s*!important/
+      );
+      expect(contrast('#d1d5db', '#0e2531')).toBeGreaterThanOrEqual(4.5);
     });
   } else {
     it('has no list of reasons: it is not a welcome', () => {
       expect(message.html).not.toMatch(/<ul[\s>]/);
+      expect(message.html).not.toMatch(/<h2[\s>]/);
+      expect(message.html).not.toMatch(/class="benefits"/);
     });
   }
 
@@ -360,7 +401,10 @@ describe.each(CASES)('the %s email, in %s', (name, lang) => {
   it('shows the logo and the icon of the card, which travel with the email', () => {
     const logo = message.attachments.find(({ cid }) => /^logo@/.test(cid));
     const icon = message.attachments.find(({ cid }) => /^icon@/.test(cid));
-    expect(message.attachments).toHaveLength(2);
+    // The logo, the icon of the card and, for a welcome, one icon a reason.
+    expect(message.attachments).toHaveLength(
+      name === 'password initialisation' ? 5 : 2
+    );
     [logo, icon].forEach((file) => {
       expect(fs.existsSync(file.path)).toBe(true);
       expect(file.contentDisposition).toBe('inline');

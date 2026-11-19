@@ -39,6 +39,7 @@ Sujet : après le préfixe `LePatron – ` (`passwordSubjectPrefix`).
 Précisions :
 
 - Les emails 1 à 3 sont les deux textes d'un même envoi, `resetPassword` : l'état du compte, lu **avant** que l'envoi ne l'efface, choisit la bienvenue (ni mot de passe ni lien : statut `to-be-initialized`) ou le nouveau mot de passe. Un lien de bienvenue renvoyé avant d'avoir servi est donc un « nouveau mot de passe ». Un compte désactivé, qui perd les deux, est de nouveau accueilli à sa réactivation.
+- La bienvenue (1) porte un bloc « Ce qui vous attend » : trois bénéfices, chacun avec un picto rond (lucide, comme les pages de connexion de l'app : `blocks`, `badge-check`, `languages`), dans un encart `surface-muted` au filet `gray-200` et aux coins de 7 px, comme le bloc de compte de la carte de connexion. C'est une vraie liste (`ul role="list"`) sous un `h2`. Les pictos sont joints à l'email.
 - L'email 4 ne dit pas s'il s'agit d'un premier mot de passe ou d'un nouveau : le lien ne s'en souvient pas.
 - Un membre dont le groupe utilise le SSO ne reçoit pas les emails 1 à 3 (pas de mot de passe).
 - Le code (5) est mis à part sous le titre, dans un encart teinté d'accent (`tint-accent`), en police mono 28 px et lettres espacées, comme le champ de code de l'application. Il n'est ni dans le titre ni dans le sujet (donc ni dans l'aperçu de la boîte de réception) ; la version texte le donne après le titre. Il reste six chiffres contigus : copiable d'un geste, mais un lecteur d'écran le lit comme un nombre.
