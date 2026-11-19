@@ -30,6 +30,7 @@ Design system documentation for LePatron.email.
 | [03-debt-registry.md](./03-debt-registry.md)                                   | UI debts to address                                    |
 | [04-editor-stack.md](./04-editor-stack.md)                                     | Editor technical stack                                 |
 | [05-roles-permissions-design-brief.md](./05-roles-permissions-design-brief.md) | Brief rôles, permissions et validation pour la refonte |
+| [06-emails.md](./06-emails.md)                                                 | Notification emails: the sign-in card sent by mail     |
 | [../UX_GUIDELINES.md](../UX_GUIDELINES.md)                                     | UX patterns and accessibility                          |
 
 ## Key Principles
