@@ -27,7 +27,15 @@ describe.each(CASES)('the %s email, in %s', (name, lang) => {
 
   it('wears the sign-in card of the application', () => {
     expect(message.html).toMatch(/<body[^>]*background-color:\s*#093040/);
-    expect(message.html).toMatch(/width:\s*480px/);
+    // Fluid up to 480 px without a media query; a fixed table for Outlook.
+    const wrap = tag(/<table[^>]*class="wrap"[^>]*>/);
+    expect(wrap).toMatch(/\swidth="100%"/);
+    expect(wrap).toMatch(/[\s;"]width:\s*100%/);
+    expect(wrap).toMatch(/max-width:\s*480px/);
+    expect(wrap).not.toMatch(/[\s;"]width:\s*480px/);
+    expect(message.html).toMatch(
+      /<!--\[if mso\]><table role="presentation" width="480"[^>]*><tr><td><!\[endif\]-->\s*<table[^>]*class="wrap"/
+    );
     expect(message.html).toMatch(/border-radius:\s*10px/);
     expect(tag(/<h1[^>]*>/)).toMatch(/color:\s*#093040/);
     expect(tag(/<h1[^>]*>/)).toMatch(/font-family:\s*'Inter'/);

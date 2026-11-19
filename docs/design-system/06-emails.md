@@ -12,18 +12,18 @@ The emails the application sends about an account: the password (welcome, new pa
 
 One template, [account-email.html](../../packages/server/email-templates/account-email.html), filled with the texts of each email in French and in English. It follows `BsAuthCard` ([auth-card.vue](../../packages/ui/components/account/auth-card.vue)).
 
-| Element    | Token / value                                                           | Notes                                                          |
-| ---------- | ----------------------------------------------------------------------- | -------------------------------------------------------------- |
-| Backdrop   | `v-primary-base` `#093040`, over it the sign-in glow                    | Solid primary is the fallback (see Backdrop)                   |
-| Logo       | White lockup on the backdrop, 190 px, `alt="LePatron"`                  | PNG, hosted: SVG is not drawn by mail clients                  |
-| Card       | `white`, `r-lg` 10 px, `gray-200` hairline, `shadow-modal`, 480 px wide | 100 % wide under 480 px, 20 px side padding                    |
-| Icon tile  | 56 px round, `tint-accent`, lucide icon in `v-accent-darken1`           | One icon per email, `alt=""` (it decorates)                    |
-| Title      | `h1`, Inter 20 / 600, `v-primary-base`, centred, line height 150 %      | One per email, equal to the `<title>`                          |
-| Text       | Inter 14, `gray-700` `#374151`; 16 under 480 px                         | Left-aligned (long text is never centred)                      |
-| Muted text | `gray-600` `#6b7280`, 14 (16 under 480 px)                              | On white only: 4.8:1                                           |
-| Block      | `surface-muted` `#fafafa`, `gray-200` hairline, `r-md` 7 px             | Benefits of the welcome; same as the account block of the card |
-| Action     | Under a `gray-200` rule, right-aligned, one per card                    | Full width under 480 px, 44 px tall                            |
-| Footer     | Inter 14, white, on the backdrop                                        | One sentence on who sends it, one on personal data             |
+| Element    | Token / value                                                           | Notes                                                                                                  |
+| ---------- | ----------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------ |
+| Backdrop   | `v-primary-base` `#093040`, over it the sign-in glow                    | Solid primary is the fallback (see Backdrop)                                                           |
+| Logo       | White lockup on the backdrop, 190 px, `alt="LePatron"`                  | PNG, hosted: SVG is not drawn by mail clients                                                          |
+| Card       | `white`, `r-lg` 10 px, `gray-200` hairline, `shadow-modal`, 480 px wide | Fluid (`max-width`, no media query); 20 px side padding under 480 px; a fixed 480 px table for Outlook |
+| Icon tile  | 56 px round, `tint-accent`, lucide icon in `v-accent-darken1`           | One icon per email, `alt=""` (it decorates)                                                            |
+| Title      | `h1`, Inter 20 / 600, `v-primary-base`, centred, line height 150 %      | One per email, equal to the `<title>`                                                                  |
+| Text       | Inter 14, `gray-700` `#374151`; 16 under 480 px                         | Left-aligned (long text is never centred)                                                              |
+| Muted text | `gray-600` `#6b7280`, 14 (16 under 480 px)                              | On white only: 4.8:1                                                                                   |
+| Block      | `surface-muted` `#fafafa`, `gray-200` hairline, `r-md` 7 px             | Benefits of the welcome; same as the account block of the card                                         |
+| Action     | Under a `gray-200` rule, right-aligned, one per card                    | 45 px tall; full width and 48 px tall under 480 px                                                     |
+| Footer     | Inter 14, white, on the backdrop                                        | One sentence on who sends it, one on personal data                                                     |
 
 ## The button
 
