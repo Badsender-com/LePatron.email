@@ -9,7 +9,7 @@ Inventaire des emails que LePatron envoie de lui-même (compte, mot de passe, do
 | Rôle                | Fichier                                                                                                                                                                                                                              |
 | ------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | Transport SMTP      | [mail.service.js](../../packages/server/mailing/mail.service.js) (`mail.send`, nodemailer)                                                                                                                                           |
-| Gabarit HTML unique | [account-email.html](../../packages/server/email-templates/account-email.html) (blueimp-tmpl), sur le modèle de la carte de connexion de l'application                                                                               |
+| Gabarit HTML unique | [account-email.html](../../packages/server/email-templates/account-email.html) (blueimp-tmpl), aux couleurs et à la typographie du site lepatron.email                                                                               |
 | Images              | [assets/](../../packages/server/email-templates/assets/) : logo et icônes, joints à chaque email (`cid:`), construits par [build-email-images.js](../../scripts/build-email-images.js) depuis le logo et les icônes de l'application |
 | Textes et rendu     | [email-template.js](../../packages/server/email-templates/email-template.js) (`composeEmail`, `resolveLanguage`, textes des emails de mot de passe)                                                                                  |
 | Emails du compte    | [user.schema.js](../../packages/server/user/user.schema.js) (`resetPassword`, `setPassword`)                                                                                                                                         |
@@ -21,11 +21,11 @@ Tous les emails passent par le même gabarit. Chacun a, dans les deux langues (`
 
 ## Les emails
 
-Sujet : après le préfixe `Email builder LePatron – `.
+Sujet : après le préfixe `LePatron – ` (`passwordSubjectPrefix`).
 
 | #   | Email                                 | Déclencheur                                                                                                                                                                      | Destinataire           | Sujet fr / en                                           |
 | --- | ------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------- | ------------------------------------------------------- |
-| 1   | Bienvenue (première initialisation)   | Un admin envoie le lien à un compte jamais initialisé (ni mot de passe ni lien) : `adminResetPassword` ([user.controller.js:358](../../packages/server/user/user.controller.js)) | Le membre              | `Bienvenue sur LePatron` / `Welcome to LePatron`        |
+| 1   | Bienvenue (première initialisation)   | Un admin envoie le lien à un compte jamais initialisé (ni mot de passe ni lien) : `adminResetPassword` ([user.controller.js:358](../../packages/server/user/user.controller.js)) | Le membre              | `Bienvenue` / `Welcome`                                 |
 | 2   | Nouveau mot de passe (admin)          | Un admin réinitialise un compte déjà initialisé, ou renvoie le lien                                                                                                              | Le membre              | `Nouveau mot de passe` / `New password`                 |
 | 3   | Mot de passe oublié                   | Le membre demande un lien : `forgotPassword` ([user.controller.js:395](../../packages/server/user/user.controller.js))                                                           | Le membre              | `Nouveau mot de passe` / `New password`                 |
 | 4   | Mot de passe enregistré               | Le membre a choisi son mot de passe : `setPassword` ([user.controller.js:443](../../packages/server/user/user.controller.js))                                                    | Le membre              | `Mot de passe enregistré` / `Password saved`            |

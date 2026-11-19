@@ -14,98 +14,114 @@
   <![endif]-->
   <!--[if !mso]><!-->
   <style type="text/css">
-    /* Inter, as the application: one variable font for 400 to 700. */
+    /* The type of lepatron.email: Fraunces for the titles, Inter for the rest.
+       A client that loads no font falls back on Georgia and Arial. */
+    @font-face { font-family: 'Fraunces'; font-style: normal; font-weight: 500; font-display: swap; src: url(https://fonts.gstatic.com/s/fraunces/v38/6NUh8FyLNQOQZAnv9bYEvDiIdE9Ea92uemAk_WBq8U_9v0c2Wa0K7iN7hzFUPJH58nib1603gg7S2nfgRYIchRuTCf7T.woff2) format('woff2'); }
     @font-face { font-family: 'Inter'; font-style: normal; font-weight: 400 700; font-display: swap; src: url(https://fonts.gstatic.com/s/inter/v20/UcC73FwrK3iLTeHuS_nVMrMxCp50SjIa1ZL7.woff2) format('woff2'); }
   </style>
   <!--<![endif]-->
   <style type="text/css">
-    /* The sign-in card of the application (docs/design-system): the secondary
-       colour behind, a white card of 480 px with 10 px corners, the accent for
-       the action. The hover darkens the accent, on the cell that is rounded. */
+    /* The identity of lepatron.email: the canvas behind, a white card under an
+       ink band, the saffron for the action, which turns ink on hover. */
     body { margin: 0; padding: 0; width: 100% !important; -webkit-text-size-adjust: 100%; -ms-text-size-adjust: 100%; }
-    a { color: #093040; }
+    a { color: #00739a; }
     a:active { opacity: 0.8; }
-    .cta:hover { background-color: #0095c0 !important; }
-    @media only screen and (max-width: 520px) {
+    .cta:hover { background-color: #093040 !important; }
+    .cta:hover a { color: #ffffff !important; }
+    @media only screen and (max-width: 560px) {
       .wrap, .card { width: 100% !important; }
       .pad { padding-left: 20px !important; padding-right: 20px !important; }
-      .desc, .muted { font-size: 16px !important; line-height: 24px !important; }
-      .actions { text-align: center !important; }
+      .muted { font-size: 16px !important; line-height: 24px !important; }
       .actions table { width: 100% !important; }
-      .cta a { font-size: 16px !important; line-height: 24px !important; }
     }
     @media (prefers-color-scheme: dark) {
-      body, .page { background-color: #0c1f38 !important; }
-      .card { background-color: #102731 !important; }
-      .title { color: #f2f6f8 !important; }
-      .desc, .muted { color: #b8c7ce !important; }
-      .rule { border-color: #2a4552 !important; }
-      .card a { color: #7fd3f0 !important; }
-      .card .cta a { color: #04202b !important; }
+      body, .page { background-color: #0b1d28 !important; }
+      .card { background-color: #102731 !important; border-color: #2a4552 !important; }
+      .title, .strong { color: #f2f6f8 !important; }
+      .text, .muted, .footer { color: #cfdbe1 !important; }
+      .card a, .footer a { color: #7fd3f0 !important; }
+      .card .cta a { color: #093040 !important; }
+      .dash { border-bottom-color: #cfdbe1 !important; }
+      .cta:hover { background-color: #ffffff !important; }
+      .cta:hover a { color: #093040 !important; }
     }
   </style>
 </head>
-<body class="page" style="margin: 0; padding: 0; background-color: #265090; direction: ltr;">
+<body class="page" style="margin: 0; padding: 0; background-color: #fbf9f5; direction: ltr;">
   <span class="preheader" style="display: none !important; visibility: hidden; opacity: 0; color: transparent; font-size: 1px; line-height: 1px; max-height: 0; max-width: 0; overflow: hidden; mso-hide: all;">{%=o.t.preheader%}</span>
   <span aria-hidden="true" style="display: none !important; visibility: hidden; opacity: 0; color: transparent; font-size: 1px; line-height: 1px; max-height: 0; max-width: 0; overflow: hidden; mso-hide: all;">&#847;&zwnj;&nbsp;&#847;&zwnj;&nbsp;&#847;&zwnj;&nbsp;&#847;&zwnj;&nbsp;&#847;&zwnj;&nbsp;&#847;&zwnj;&nbsp;&#847;&zwnj;&nbsp;&#847;&zwnj;&nbsp;&#847;&zwnj;&nbsp;&#847;&zwnj;&nbsp;&#847;&zwnj;&nbsp;&#847;&zwnj;&nbsp;&#847;&zwnj;&nbsp;&#847;&zwnj;&nbsp;&#847;&zwnj;&nbsp;&#847;&zwnj;&nbsp;&#847;&zwnj;&nbsp;&#847;&zwnj;&nbsp;&#847;&zwnj;&nbsp;&#847;&zwnj;&nbsp;</span>
   <div role="article" lang="{%=o.lang%}" dir="ltr" style="direction: ltr;">
-    <table role="presentation" class="page" width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="#265090" style="background-color: #265090;">
+    <table role="presentation" class="page" width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="#fbf9f5" style="background-color: #fbf9f5;">
       <tr>
         <td align="center" style="padding: 32px 12px 32px 12px;">
-          <table role="presentation" width="480" class="wrap" cellpadding="0" cellspacing="0" border="0" style="width: 480px; max-width: 480px;">
-            <tr>
-              <td align="center" style="padding: 0 0 28px 0;"><img src="cid:{%=o.logoCid%}" alt="LePatron" width="190" style="display: block; width: 190px; height: auto; border: 0;"/></td>
-            </tr>
+          <table role="presentation" width="520" class="wrap" cellpadding="0" cellspacing="0" border="0" style="width: 520px; max-width: 520px;">
             <tr>
               <td>
-                <table role="presentation" width="100%" class="card" cellpadding="0" cellspacing="0" border="0" bgcolor="#ffffff" style="background-color: #ffffff; border-radius: 10px; box-shadow: 0 12px 32px rgba(13, 43, 62, 0.18);">
+                <table role="presentation" width="100%" class="card" cellpadding="0" cellspacing="0" border="0" bgcolor="#ffffff" style="background-color: #ffffff; border: 1px solid #eef0f3; border-radius: 10px; box-shadow: 0 2px 6px rgba(13, 43, 62, 0.08);">
                   <tr>
-                    <td class="pad" align="center" style="padding: 32px 32px 0 32px;"><img src="cid:{%=o.iconCid%}" alt="" role="presentation" width="56" height="56" style="display: block; width: 56px; height: 56px; border: 0;"/></td>
+                    <td class="pad" bgcolor="#093040" style="background-color: #093040; border-radius: 10px 10px 0 0; padding: 24px 32px 24px 32px;"><img src="cid:{%=o.logoCid%}" alt="LePatron" width="150" style="display: block; width: 150px; height: auto; border: 0;"/></td>
                   </tr>
                   <tr>
-                    <td class="pad" align="center" style="padding: 16px 32px 0 32px;">
-                      <h1 class="title" style="margin: 0; font-family: 'Inter', Tahoma, Arial, sans-serif; font-size: 20px; line-height: 30px; font-weight: 600; color: #093040; text-align: center; mso-line-height-rule: exactly;">{%=o.t.title%}</h1>
+                    <td class="pad" style="padding: 32px 32px 0 32px;"><img src="cid:{%=o.iconCid%}" alt="" role="presentation" width="48" height="48" style="display: block; width: 48px; height: 48px; border: 0;"/></td>
+                  </tr>
+                  <tr>
+                    <td class="pad" style="padding: 20px 32px 0 32px;">
+                      <h1 class="title" style="margin: 0; font-family: 'Fraunces', Georgia, 'Times New Roman', serif; font-size: 26px; line-height: 39px; font-weight: 500; color: #093040; text-align: left; mso-line-height-rule: exactly;">{%=o.t.title%}</h1>
                     </td>
                   </tr>
                   <tr>
-                    <td class="pad desc" style="padding: 16px 32px 0 32px; font-family: 'Inter', Tahoma, Arial, sans-serif; font-size: 14px; line-height: 21px; color: #666666; text-align: left; mso-line-height-rule: exactly;">{%=o.t.desc%}</td>
-                  </tr>
-                  {% if (o.url) { %}
-                  <tr>
-                    <td class="pad muted" style="padding: 16px 32px 0 32px; font-family: 'Inter', Tahoma, Arial, sans-serif; font-size: 14px; line-height: 21px; color: #666666; text-align: left; mso-line-height-rule: exactly;">{%=o.c.fallback%} <a href="{%=o.url%}" style="text-decoration: underline; word-break: break-all;">{%=o.url%}</a></td>
-                  </tr>
-                  <tr>
-                    <td class="pad" style="padding: 24px 32px 0 32px;">
-                      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+                    <td class="pad" style="padding: 12px 32px 0 32px;">
+                      <table role="presentation" cellpadding="0" cellspacing="0" border="0">
                         <tr>
-                          <td class="rule" style="border-top: 1px solid #ebebeb; font-size: 1px; line-height: 1px;">&nbsp;</td>
+                          <td class="dash" width="72" style="width: 72px; border-bottom: 2px dashed #093040; font-size: 1px; line-height: 8px;">&nbsp;</td>
+                          <td width="8" bgcolor="#ffb400" style="width: 8px; background-color: #ffb400; border-radius: 8px; font-size: 1px; line-height: 8px;">&nbsp;</td>
                         </tr>
                       </table>
                     </td>
                   </tr>
                   <tr>
-                    <td class="pad actions" align="right" style="padding: 16px 32px 24px 32px; text-align: right;">
-                      <table role="presentation" align="right" cellpadding="0" cellspacing="0" border="0" style="margin-left: auto;">
+                    <td class="pad text" style="padding: 20px 32px 0 32px; font-family: 'Inter', Tahoma, Arial, sans-serif; font-size: 16px; line-height: 24px; color: #1f2937; text-align: left; mso-line-height-rule: exactly;">{%=o.t.desc%}</td>
+                  </tr>
+                  {% if (o.t.benefits) { %}
+                  <tr>
+                    <td class="pad strong" style="padding: 24px 32px 0 32px; font-family: 'Inter', Tahoma, Arial, sans-serif; font-size: 16px; line-height: 24px; font-weight: 700; color: #093040; text-align: left; mso-line-height-rule: exactly;">{%=o.t.benefits.title%}</td>
+                  </tr>
+                  <tr>
+                    <td class="pad text" style="padding: 8px 32px 0 32px; font-family: 'Inter', Tahoma, Arial, sans-serif; font-size: 16px; line-height: 24px; color: #1f2937; text-align: left; mso-line-height-rule: exactly;">
+                      <ul style="margin: 0; padding: 0 0 0 20px;">
+                        {% for (var i = 0; i < o.t.benefits.items.length; i++) { %}
+                        <li style="margin: 0 0 12px 0; padding: 0;"><strong class="strong" style="color: #093040;">{%=o.t.benefits.items[i].title%}</strong> {%=o.t.benefits.items[i].text%}</li>
+                        {% } %}
+                      </ul>
+                    </td>
+                  </tr>
+                  {% } %}
+                  {% if (o.url) { %}
+                  <tr>
+                    <td class="pad actions" style="padding: 24px 32px 0 32px;">
+                      <table role="presentation" cellpadding="0" cellspacing="0" border="0">
                         <tr>
-                          <td class="cta" align="center" bgcolor="#00acdc" style="background-color: #00acdc; border-radius: 4px; mso-padding-alt: 12px 24px;">
-                            <a href="{%=o.url%}" style="display: block; padding: 12px 24px; font-family: 'Inter', Tahoma, Arial, sans-serif; font-size: 14px; line-height: 24px; font-weight: 600; color: #04202b; text-decoration: none; text-align: center; mso-line-height-rule: exactly;">{%=o.t.button%}</a>
+                          <td class="cta" align="center" bgcolor="#ffb400" style="background-color: #ffb400; border-radius: 5px; mso-padding-alt: 14px 28px;">
+                            <a href="{%=o.url%}" style="display: block; padding: 14px 28px; font-family: 'Inter', Tahoma, Arial, sans-serif; font-size: 16px; line-height: 24px; font-weight: 600; color: #093040; text-decoration: none; text-align: center; mso-line-height-rule: exactly;">{%=o.t.button%}</a>
                           </td>
                         </tr>
                       </table>
                     </td>
                   </tr>
-                  {% } else { %}
                   <tr>
-                    <td style="font-size: 1px; line-height: 24px;">&nbsp;</td>
+                    <td class="pad muted" style="padding: 20px 32px 0 32px; font-family: 'Inter', Tahoma, Arial, sans-serif; font-size: 14px; line-height: 21px; color: #4a5a63; text-align: left; mso-line-height-rule: exactly;">{%=o.c.fallback%} <a href="{%=o.url%}" style="text-decoration: underline; word-break: break-all;">{%=o.url%}</a></td>
                   </tr>
                   {% } %}
+                  <tr>
+                    <td style="font-size: 1px; line-height: 32px;">&nbsp;</td>
+                  </tr>
                 </table>
               </td>
             </tr>
             <tr>
-              <td align="center" style="padding: 24px 12px 0 12px; font-family: 'Inter', Tahoma, Arial, sans-serif; font-size: 14px; line-height: 21px; color: #ffffff; text-align: center; mso-line-height-rule: exactly;">
+              <td class="pad footer" style="padding: 20px 4px 0 4px; font-family: 'Inter', Tahoma, Arial, sans-serif; font-size: 14px; line-height: 21px; color: #4a5a63; text-align: left; mso-line-height-rule: exactly;">
                 <p style="margin: 0 0 8px 0;">{%=o.c.sent%}</p>
-                <p style="margin: 0;">{%=o.c.data%} <a href="{%=o.privacyUrl%}" style="color: #ffffff; text-decoration: underline;">{%=o.c.privacy%}</a> {%=o.c.or%} <a href="mailto:{%=o.dpo%}" style="color: #ffffff; text-decoration: underline;">{%=o.dpo%}</a>.</p>
+                <p style="margin: 0;">{%=o.c.data%} <a href="{%=o.privacyUrl%}" style="text-decoration: underline;">{%=o.c.privacy%}</a> {%=o.c.or%} <a href="mailto:{%=o.dpo%}" style="text-decoration: underline;">{%=o.dpo%}</a>.</p>
               </td>
             </tr>
           </table>

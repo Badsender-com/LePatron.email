@@ -246,9 +246,9 @@ describe.each(CASES)('the %s email, in %s', (name, lang) => {
     });
   });
 
-  it('sets the description and the link at 16 px on a phone', () => {
+  it('sets the link at 16 px on a phone, where the text is already at 16', () => {
     expect(message.html).toMatch(
-      /max-width:\s*520px[\s\S]*\.desc,\s*\.muted\s*\{\s*font-size:\s*16px/
+      /max-width:\s*560px[\s\S]*\.muted\s*\{\s*font-size:\s*16px/
     );
   });
 
@@ -271,19 +271,47 @@ describe.each(CASES)('the %s email, in %s', (name, lang) => {
     expect(message.html).not.toMatch(/carousel/);
   });
 
-  // The sign-in card of the application (packages/ui/components/account/
-  // auth-card.vue, docs/design-system): the secondary colour behind a white
-  // card of 480 px with 10 px corners, the title in the primary colour, the
-  // accent for the action.
-  it('wears the sign-in card of the application', () => {
-    expect(message.html).toMatch(/<body[^>]*background-color:\s*#265090/);
-    expect(message.html).toMatch(/width:\s*480px/);
+  // The identity of lepatron.email (its tokens: --c-toile, --c-encre,
+  // --c-safran, Fraunces for the titles): the canvas behind a white card under
+  // an ink band that carries the logo, the title in Fraunces, the saffron for
+  // the action. No brandbook of the product was found: the live site is the
+  // reference.
+  it('wears the identity of lepatron.email', () => {
+    expect(message.html).toMatch(/<body[^>]*background-color:\s*#fbf9f5/);
+    expect(message.html).toMatch(/width:\s*520px/);
     expect(message.html).toMatch(/border-radius:\s*10px/);
     expect(tag(/<h1[^>]*>/)).toMatch(/color:\s*#093040/);
-    expect(tag(/<h1[^>]*>/)).toMatch(/font-family:\s*'Inter'/);
-    expect(tag(/<h1[^>]*>/)).toMatch(/font-size:\s*20px/);
-    expect(tag(/<h1[^>]*>/)).toMatch(/font-weight:\s*600/);
+    expect(tag(/<h1[^>]*>/)).toMatch(/font-family:\s*'Fraunces',\s*Georgia/);
+    expect(tag(/<h1[^>]*>/)).toMatch(/font-weight:\s*500/);
+    expect(message.html).toMatch(/font-family:\s*'Inter'/);
+    // The logo is white, on the ink band.
+    expect(message.html).toMatch(
+      /bgcolor="#093040"[^>]*>\s*<img src="cid:logo@/
+    );
   });
+
+  it('speaks of the platform, not only of an email builder', () => {
+    const visible = message.html
+      .replace(/<style[\s\S]*?<\/style>/g, '')
+      .replace(/<[^>]+>/g, ' ');
+    [visible, message.text, message.subject].forEach((text) =>
+      expect(text).not.toMatch(/email builder/i)
+    );
+    expect(config.emailOptions.passwordSubjectPrefix).not.toMatch(/builder/i);
+  });
+
+  if (name === 'password initialisation') {
+    it('gives three reasons why LePatron is worth it, as a list', () => {
+      const list = message.html.match(/<ul[\s\S]*?<\/ul>/);
+      expect(list).not.toBeNull();
+      expect(list[0].match(/<li[\s>]/g)).toHaveLength(3);
+      expect(list[0].match(/<strong/g)).toHaveLength(3);
+    });
+  } else {
+    it('has no list of reasons: it is not a welcome', () => {
+      expect(message.html).not.toMatch(/<ul[\s>]/);
+    });
+  }
 
   it('shows the logo and the icon of the card, which travel with the email', () => {
     const logo = message.attachments.find(({ cid }) => /^logo@/.test(cid));
@@ -319,34 +347,40 @@ describe.each(CASES)('the %s email, in %s', (name, lang) => {
       expect(button).toMatch(/padding:\s*(1\d|[2-9]\d)px/);
     });
 
-    it('puts the accent of the design system on the button, with a text that can be read', () => {
+    it('puts the saffron of the brand on the button, with an ink text that can be read', () => {
       const cell = tag(/<td[^>]*class="cta"[^>]*>/);
       const link = tag(/<a[^>]*display:\s*block[^>]*>/);
-      expect(cell).toMatch(/background-color:\s*#00acdc/i);
-      expect(cell).toMatch(/border-radius:\s*4px/);
+      expect(cell).toMatch(/background-color:\s*#ffb400/i);
+      expect(cell).toMatch(/border-radius:\s*5px/);
       const text = /color:\s*(#[0-9a-f]{6})/i.exec(link)[1];
-      // White on the accent is 2.6:1 (the application's own buttons): the grid
-      // asks 4.5:1, so the text is a very dark primary.
-      expect(contrast(text, '#00acdc')).toBeGreaterThanOrEqual(4.5);
+      expect(text.toLowerCase()).toBe('#093040');
+      // The grid asks 4.5:1 of the text of a button.
+      expect(contrast(text, '#ffb400')).toBeGreaterThanOrEqual(4.5);
     });
 
-    it('darkens the accent on hover, on the rounded cell and not on the link, and keeps the text readable', () => {
+    it('turns the button ink on hover, as the site does, on the rounded cell and not on the link', () => {
       expect(message.html).toMatch(
-        /\.cta:hover\s*\{\s*background-color:\s*#0095c0\s*!important/i
+        /\.cta:hover\s*\{\s*background-color:\s*#093040\s*!important/i
+      );
+      expect(message.html).toMatch(
+        /\.cta:hover a\s*\{\s*color:\s*#ffffff\s*!important/i
       );
       // A background on the link would paint square corners over the cell's.
       expect(tag(/<a[^>]*display:\s*block[^>]*>/)).not.toMatch(/background/);
       expect(message.html).not.toMatch(/(^|[\s,}])a:hover\s*\{[^}]*background/);
-      const link = tag(/<a[^>]*display:\s*block[^>]*>/);
-      const text = /color:\s*(#[0-9a-f]{6})/i.exec(link)[1];
-      expect(contrast(text, '#0095c0')).toBeGreaterThanOrEqual(4.5);
+      expect(contrast('#ffffff', '#093040')).toBeGreaterThanOrEqual(4.5);
     });
 
-    it('stays in the card, under a rule, on the right as the actions of the application', () => {
-      expect(tag(/<td[^>]*class="[^"]*actions[^"]*"[^>]*>/)).toMatch(
-        /text-align:\s*right/
+    it('keeps the ink text on the saffron button in dark mode, where links turn light', () => {
+      const dark = message.html.match(
+        /@media \(prefers-color-scheme: dark\)[\s\S]*?\n {4}\}/
+      )[0];
+      expect(dark).toMatch(/\.card a[^{]*\{\s*color:\s*#7fd3f0/);
+      expect(dark).toMatch(
+        /\.card \.cta a\s*\{\s*color:\s*#093040\s*!important/
       );
-      expect(message.html).toMatch(/class="rule"[^>]*border-top:\s*1px solid/);
+      // The dashed motif is ink: it would vanish on the dark card.
+      expect(dark).toMatch(/\.dash\s*\{\s*border-bottom-color:\s*#cfdbe1/);
     });
 
     it('names where the button leads, not a bare "sign in" repeated everywhere', () => {

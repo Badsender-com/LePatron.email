@@ -258,27 +258,28 @@ Non corrigé :
 - La page de confidentialité est la page française pour les lecteurs anglais : pas de page anglaise connue.
 - L'adresse du membre n'est pas encodée dans le lien de mot de passe (`user.schema.js`, code d'origine) : un `?` ou un `#` dans une adresse casserait le lien.
 
-## Alignement sur le design system (2026-11-19, après retour)
+## Identité : le site lepatron.email, pas la page de connexion (2026-11-19, après retour)
 
-La première refonte reprenait des couleurs du design system sans en reprendre l'apparence : primaire en bouton alors que « les actions principales utilisent l'accent, jamais le primaire », survol en bleu secondaire, logo chargé depuis `localhost`. Les emails sont maintenant dessinés d'après la carte de connexion de l'application ([auth-card.vue](../../packages/ui/components/account/auth-card.vue), [design-tokens.scss](../../packages/ui/assets/global-styles/design-tokens.scss), [02-components.md](../design-system/02-components.md)).
+Deux retours ont fait changer de référence. Le fond bleu marine était le `secondary` (`#265090`) de la page de connexion de l'application, qui n'est pas l'identité du nouveau positionnement. Et le bouton cyan à texte noir n'était pas un choix de la marque : c'était l'accent du design system de l'application, dont le blanc (2,6:1) échoue à la grille, corrigé par un texte sombre.
 
-| Élément | Application                                                 | Email                                                                 |
-| ------- | ----------------------------------------------------------- | --------------------------------------------------------------------- |
-| Fond    | secondaire `#265090`                                        | idem (sombre : `#0c1f38`)                                             |
-| Logo    | logo blanc de la page de connexion                          | le même, en PNG, joint à l'email                                      |
-| Carte   | blanche, 480 px, rayon 10 px, ombre `--shadow-modal`        | idem                                                                  |
-| En-tête | pastille ronde 56 px (`--tint-accent`), icône lucide, titre | idem, icône par type d'email (cadenas, bouclier, courrier, téléphone) |
-| Titre   | Inter 20 px / 600, primaire                                 | idem, interligne 150 %                                                |
-| Action  | accent `#00ACDC`, rayon 4 px, à droite sous un filet        | idem, pleine largeur sur mobile                                       |
-| Survol  | accent assombri `#0095c0`                                   | idem, sur la cellule arrondie et non sur le lien                      |
-| Police  | Inter, graisses 400 à 700                                   | une police variable Inter 400-700                                     |
+**Aucun brandbook de LePatron n'a été trouvé dans Notion** : « MAJ template nouveau brandbook » est celui du client Beobank, et le ton de voix de « Refonte Site LePatron » est marqué « tbd ». La référence est donc le site en ligne, dont les jetons ont été lus dans son CSS (`--c-*`, `--font-*`).
 
-Deux écarts assumés, la grille d'accessibilité l'emportant :
+| Élément | Site lepatron.email                         | Email                                                              |
+| ------- | ------------------------------------------- | ------------------------------------------------------------------ |
+| Fond    | toile `#FBF9F5`                             | idem (sombre : `#0b1d28`)                                          |
+| Encre   | `#093040` (titres, bandeaux, pied de page)  | bandeau du logo, titres, texte du bouton                           |
+| Action  | safran `#FFB400`, texte encre, rayon 5 px   | idem, 7,8:1                                                        |
+| Survol  | fond encre, texte blanc                     | idem (13,9:1), sur la cellule arrondie                             |
+| Titres  | Fraunces 500 (repli Georgia)                | idem                                                               |
+| Texte   | Inter                                       | Inter, 16/24                                                       |
+| Lien    | ciel profond `#00739A`                      | idem (5,4:1)                                                       |
+| Motif   | trait pointillé terminé par un point safran | idem sous le titre                                                 |
+| Logo    | logo en couleurs                            | logo blanc sur le bandeau encre (lisible en clair comme en sombre) |
 
-- **Texte du bouton** : le design system met du blanc sur l'accent, soit 2,6:1 (les boutons de l'application échouent déjà). L'email met `#04202b` : 6,4:1 au repos, 4,9:1 au survol.
-- **Description** : centrée dans l'application, alignée à gauche dans l'email (« textes longs ni centrés ni justifiés », critère critique). Le titre reste centré.
-- Les liens sont en primaire souligné (13,9:1) et non en accent assombri (3,5:1).
+Le logo et les icônes sont joints à l'email (`cid:`) : rien n'est chargé depuis l'application à l'ouverture. Les icônes (cadenas, bouclier, courrier, téléphone, comme sur les pages de connexion de l'application) sont reconstruites par `node scripts/build-email-images.js`.
 
-Le logo et les icônes sont joints à l'email (`cid:`) : rien n'est chargé depuis l'application à l'ouverture, ils s'affichent en développement (maildev) comme derrière un pare-feu. Ils sont reconstruits par `node scripts/build-email-images.js`.
+Ton : vouvoiement, phrases courtes, « plateforme de gouvernance email et CRM » et non « email builder » (plus nulle part dans les emails, le préfixe des sujets est `LePatron`). Les trois bénéfices de la bienvenue reprennent trois promesses du site (blocs conçus pour la marque, contrôle avant diffusion, déclinaisons). **Ton de voix déduit du site, à valider** : il n'y a pas de brandbook écrit.
 
-Vu en rendu : Chromium (bureau, mobile 390 px, mode sombre forcé, survol forcé). Pas vu : Gmail, Outlook, Apple Mail.
+Écarts avec la grille d'accessibilité : aucun pour le bouton (safran et encre passent). Le texte est aligné à gauche, comme sur le site.
+
+Vu en rendu : Chromium (bureau, mobile 390 px, mode sombre forcé). Pas vu : Gmail, Outlook, Apple Mail.
