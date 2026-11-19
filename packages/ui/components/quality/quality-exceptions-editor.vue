@@ -9,9 +9,8 @@ import {
   emptyException,
   recommendedOf,
   generalOf,
-  settingsOfDrafts,
-  templatesKeepingOwn,
 } from '~/helpers/quality-exceptions.js';
+import { generalOfDrafts, keptByOf } from '~/helpers/quality-drafts.js';
 import { exceptionsPayload, fieldErrors } from '~/helpers/quality-save.js';
 import { qualitySettingsErrorKeyFor } from '~/helpers/quality-settings.js';
 import mixinQualityTexts from '~/helpers/mixins/mixin-quality-texts.js';
@@ -76,25 +75,14 @@ export default {
     ids() {
       return CATALOGUE_ORDER.filter((id) => this.drafts[id]);
     },
-    // The exceptions as edited, as if saved: what the page shows applying.
+    // The general settings as edited: what will apply once saved.
     draftSettings() {
-      return settingsOfDrafts(this.drafts);
+      return generalOfDrafts(this.drafts, this.errors);
     },
-    // By check, the names of the templates its unsaved change will not
-    // reach.
     keptBy() {
-      if (!this.isGeneral || !this.templates.length) return {};
-      return Object.fromEntries(
-        this.ids.map((id) => [
-          id,
-          templatesKeepingOwn(
-            id,
-            this.draftSettings,
-            this.settings,
-            this.templates
-          ).map((template) => template.name),
-        ])
-      );
+      return this.isGeneral
+        ? keptByOf(this.ids, this.draftSettings, this.settings, this.templates)
+        : {};
     },
     payload() {
       return exceptionsPayload(this.level, this.drafts, this.saved);

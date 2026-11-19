@@ -1,6 +1,6 @@
 <script>
 import { CHECKS } from '~/helpers/constants/quality-checks.js';
-import { exceptionsOf, generalOf } from '~/helpers/quality-exceptions.js';
+import { referenceRows } from '~/helpers/quality-drafts.js';
 import mixinQualityTexts from '~/helpers/mixins/mixin-quality-texts.js';
 import { ChevronDown } from 'lucide-vue';
 import BsDataTable from '~/components/data-table/bs-data-table.vue';
@@ -12,8 +12,11 @@ export default {
   components: { BsDataTable, ChevronDown },
   mixins: [mixinQualityTexts],
   props: {
-    // The group's `qualitySettings` as edited: unsaved changes included.
+    // The group's `qualitySettings` as edited (generalOfDrafts): what will
+    // apply once saved.
     settings: { type: Object, default: null },
+    // As stored: a row that differs is marked as not saved.
+    savedSettings: { type: Object, default: null },
   },
   data() {
     return { open: false };
@@ -37,14 +40,11 @@ export default {
       ];
     },
     items() {
-      const applied = generalOf(this.settings);
-      const exceptions = exceptionsOf(this.settings);
-      return Object.keys(CHECKS).map((id) => ({
-        id,
-        name: this.checkName(id),
-        category: this.categoryName(id),
-        applied: this.appliedText(id, applied[id]),
-        isException: Boolean(exceptions[id]),
+      return referenceRows(this.settings, this.savedSettings).map((row) => ({
+        ...row,
+        name: this.checkName(row.id),
+        category: this.categoryName(row.id),
+        applied: this.appliedText(row.id, row.applied),
       }));
     },
   },
@@ -80,6 +80,14 @@ export default {
             >
               {{ $t('qualitySettings.reference.exception') }}
             </v-chip>
+            <v-chip
+              v-if="item.unsaved"
+              x-small
+              class="ml-2 qx-reference__unsaved"
+            >
+              <span class="qx-reference__unsaved-dot" />
+              {{ $t('qualitySettings.card.unsaved') }}
+            </v-chip>
           </template>
         </bs-data-table>
       </div>
@@ -112,6 +120,21 @@ export default {
     &--open {
       transform: rotate(180deg);
     }
+  }
+
+  // As the cards' "Non enregistrée" chip.
+  &__unsaved {
+    background: rgba(255, 180, 0, 0.2) !important;
+    color: var(--gray-900) !important;
+    font-weight: 600;
+  }
+
+  &__unsaved-dot {
+    width: 6px;
+    height: 6px;
+    margin-right: 5px;
+    border-radius: 50%;
+    background: var(--v-warning-base);
   }
 
   &__table {
