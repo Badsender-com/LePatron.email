@@ -13,6 +13,7 @@ const {
   composeEmail,
   siteOrigin,
   PASSWORD_TEXTS,
+  passwordTextsFor,
 } = require('../email-templates/email-template.js');
 const Roles = require('../account/roles');
 const { normalizeString } = require('../utils/model');
@@ -187,26 +188,40 @@ UserSchema.methods.deactivate = function deactivate() {
   return user.save();
 };
 
+// Whether the account ever signed in: a sign-in stores its time
+// (account/session-tracking.helper.js). The field is not loaded by default:
+// read it when the document came without it. An account whose last sign-in
+// predates that field is taken as never signed in: it is welcomed.
+async function hasSignedIn(user) {
+  if (user.isSelected('sessionMetadata')) {
+    return Boolean(user.sessionMetadata && user.sessionMetadata.loginTime);
+  }
+  const stored = await user.constructor
+    .findById(user._id)
+    .select('+sessionMetadata')
+    .lean();
+  return Boolean(
+    stored && stored.sessionMetadata && stored.sessionMetadata.loginTime
+  );
+}
+
 // `type` is 'admin' when an administrator resets the account (the current
 // password stops working at once and the open sessions end) or 'user' when
 // the person asked for a new one (the current password and the open sessions
 // keep working until the emailed link is used, so that asking in someone's
 // name locks nobody out).
 //
-// An account with neither a password nor a link (`to-be-initialized` of the
-// status) is welcomed, not reset: nobody ever mailed it. The state is read
-// before the reset clears the password and sets the link, so every later
-// mail is a reset, a welcome link sent again before it was used included, and
-// so is the one that follows another reset. A deactivated account, which
-// loses both, is welcomed again when it comes back.
+// The text follows what the account is, read before the reset clears the
+// password (passwordTextsFor): an account that never signed in is welcomed,
+// its invitation sent again included; one without a password that signed in
+// before (reset, or deactivated and back) is told an administrator reset it.
 UserSchema.methods.resetPassword = async function resetPassword(type, lang) {
   const user = this;
-  const texts =
-    !user.password && !user.token
-      ? PASSWORD_TEXTS.welcome
-      : type === 'user'
-      ? PASSWORD_TEXTS.forgot
-      : PASSWORD_TEXTS.reset;
+  const texts = passwordTextsFor({
+    hasPassword: Boolean(user.password),
+    hasSignedIn: await hasSignedIn(user),
+    askedBy: type === 'user' ? 'user' : 'admin',
+  });
   if (type !== 'user') {
     user.password = undefined;
     // No session carries this id: the session validation ends them all.

@@ -35,7 +35,8 @@ const COMMON_TEXTS = {
 // A link in a password email lives a week (`resetPassword` of the user
 // schema): the texts below say so.
 const PASSWORD_TEXTS = {
-  // The first password of an account an administrator created: the one email
+  // The first password of an account an administrator created, or its
+  // invitation sent again (passwordTextsFor below): the one email
   // that says why LePatron is worth the trouble: three promises of the
   // brandbook, in the vocabulary of the application (GLOSSARY.md: what a
   // company designs is an email) and its voice (formal vous, short sentences,
@@ -165,4 +166,26 @@ const PASSWORD_TEXTS = {
   },
 };
 
-module.exports = { COMMON_TEXTS, PASSWORD_TEXTS };
+/**
+ * The texts of a password email, from what the account is, never from what
+ * it is not: an email that says "reset" or "your current password still
+ * works" is sent only to an account that has a password, or had one.
+ *
+ * - No password, never signed in: the account is new, or its invitation ran
+ *   out. Welcome, whoever asks: an administrator did create it.
+ * - No password, signed in before: an administrator removed it (a reset, a
+ *   deactivation). Reset, whoever asks.
+ * - A password: reset when an administrator asks (it stops working),
+ *   forgot when the person asks (it keeps working until the link is used).
+ *
+ * @param {{hasPassword: boolean, hasSignedIn: boolean, askedBy: 'admin'|'user'}} account
+ * @returns {Object} one entry of PASSWORD_TEXTS
+ */
+function passwordTextsFor({ hasPassword, hasSignedIn, askedBy }) {
+  if (!hasPassword) {
+    return hasSignedIn ? PASSWORD_TEXTS.reset : PASSWORD_TEXTS.welcome;
+  }
+  return askedBy === 'user' ? PASSWORD_TEXTS.forgot : PASSWORD_TEXTS.reset;
+}
+
+module.exports = { COMMON_TEXTS, PASSWORD_TEXTS, passwordTextsFor };
