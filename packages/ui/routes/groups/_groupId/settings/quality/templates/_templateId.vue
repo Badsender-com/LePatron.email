@@ -134,7 +134,9 @@ export default {
       <template #breadcrumb>
         <bs-breadcrumb :items="breadcrumb" />
       </template>
-      <template v-if="template" #actions>
+      <!-- Only with the editor mounted: a group that cannot be read leaves
+           the template found but the editor out. -->
+      <template v-if="template && !loadError" #actions>
         <v-btn color="accent" elevation="0" @click="$refs.editor.openAdd()">
           <plus :size="16" class="mr-1" />
           {{ $t('qualitySettings.addException') }}

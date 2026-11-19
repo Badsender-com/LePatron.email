@@ -63,3 +63,24 @@ describe('the add dialog', () => {
     );
   });
 });
+
+describe("a template's page", () => {
+  const source = fs.readFileSync(
+    path.join(
+      __dirname,
+      '../../../packages/ui/routes/groups/_groupId/settings/quality/templates/_templateId.vue'
+    ),
+    'utf8'
+  );
+
+  it('offers to add an exception only once the editor is there', () => {
+    // A group that cannot be read leaves the template found but the editor
+    // out: the action would call it anyway.
+    expect(source).toMatch(
+      /<template v-if="template && !loadError" #actions>[\s\S]*?\$refs\.editor\.openAdd\(\)/
+    );
+    expect(source).toMatch(
+      /<v-alert v-if="loadError"[\s\S]*?<template v-else>/
+    );
+  });
+});
