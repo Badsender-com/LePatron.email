@@ -139,7 +139,8 @@ const buildTrackingContext = (groupTrackingConfig) => {
  *     list (the editor shows a strict combobox, empty by default); keep that
  *     choice if it belongs to the list, otherwise DROP the pair (null). We do
  *     not force values[0]: a required param without a choice is rejected
- *     upstream, and an optional one must stay empty.
+ *     upstream while its check is blocking (ADR 0009), and otherwise goes
+ *     out without it, as an optional one must stay empty.
  *   - `restrictValues` (group-global) → the value must belong to the list.
  * Otherwise `values` is just a SUGGESTION list and any value (including a
  * custom one typed by the user) is accepted. This mirrors the editor UX:
@@ -156,9 +157,10 @@ const resolveManagedValue = (param, value, restrictValues) => {
     if (allowed.length === 1) return allowed[0];
     // Multiple locked values → the user PICKS one. Inject that choice only if
     // it belongs to the list. An empty or out-of-list value is dropped (null)
-    // rather than silently forced to values[0]: a required param is caught
-    // upstream by validateRequiredTrackingParams, and an optional one must
-    // stay empty when the user did not choose.
+    // rather than silently forced to values[0]: a required param is refused
+    // upstream (resolveMailingTrackingContext) while its check is blocking,
+    // otherwise left out like an optional one, which must stay empty when the
+    // user did not choose.
     return allowed.includes(value) ? value : null;
   }
   if (restrictValues && allowed.length > 0) {

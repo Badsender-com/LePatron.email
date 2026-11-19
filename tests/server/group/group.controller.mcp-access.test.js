@@ -217,10 +217,11 @@ describe('PUT /groups/:groupId — MCP access, the security event', () => {
         projection: { requireTwoFactor: 1, enableMcp: 1 },
       }
     );
-    expect(groupService.updateGroup).toHaveBeenCalledWith({
-      name: 'Renamed',
-      id: GROUP_ID,
-    });
+    // The second argument is the quality settings update: none asked here.
+    expect(groupService.updateGroup).toHaveBeenCalledWith(
+      { name: 'Renamed', id: GROUP_ID },
+      {}
+    );
   });
 
   it('writes no switch when the request carries none', async () => {
@@ -287,10 +288,11 @@ describe('PUT /groups/:groupId — retex', () => {
       { $set: { allowRetex: true } },
       { new: false, projection: { allowRetex: 1 } }
     );
-    expect(groupService.updateGroup).toHaveBeenCalledWith({
-      name: 'Renamed',
-      id: GROUP_ID,
-    });
+    // The second argument is the quality settings update: none asked here.
+    expect(groupService.updateGroup).toHaveBeenCalledWith(
+      { name: 'Renamed', id: GROUP_ID },
+      {}
+    );
   });
 });
 

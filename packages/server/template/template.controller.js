@@ -20,6 +20,16 @@ const generatePreview = require('./generate-preview.controller.js');
 const templateBlocks = require('./template-blocks.controller.js');
 const _getTemplateImagePrefix = require('../utils/get-template-image-prefix.js');
 const {
+  sanitizeQualitySettings,
+  qualitySettingsUpdate,
+} = require('../utils/sanitize-quality-settings.js');
+const {
+  assertTechChecksAllowed,
+} = require('../account/tech-quality-checks.js');
+const {
+  resolveQualitySettings,
+} = require('../../shared/quality/resolve-quality-settings.js');
+const {
   sanitizeTrackingConfig,
 } = require('../utils/resolve-tracking-config.js');
 const {
@@ -33,6 +43,7 @@ module.exports = {
   readMarkup: asyncHandler(readMarkup),
   update: asyncHandler(update),
   updateTrackingConfig: asyncHandler(updateTrackingConfig),
+  updateQualitySettings: asyncHandler(updateQualitySettings),
   destroy: asyncHandler(destroy),
   destroyImages: asyncHandler(destroyImages),
   // expose generate preview controllers
@@ -143,6 +154,13 @@ async function readMarkup(req, res) {
 
 // Boolean fields of this resource that are sent through `multipart/form-data`.
 const MULTIPART_BOOLEAN_FIELDS = ['htmlBlockEnabled', 'blockBuilderEnabled'];
+// What the template page writes (components/template/form.vue). Its images
+// come as `assets`, merged apart; the company is set at creation only; the
+// quality settings and the tracking each have their own route, which
+// validates them.
+const UPDATABLE_FIELDS = ['name', 'description', 'markup'].concat(
+  MULTIPART_BOOLEAN_FIELDS
+);
 
 /**
  * @api {put} /templates/:templateId template update
@@ -171,13 +189,12 @@ async function update(req, res) {
   });
   const template = await Templates.findById(templateId);
   if (!template) throw new createError.NotFound();
-  // custom update function
   const updatedTemplate = _.assignIn(
     template,
-    _.omit(normalizeMultipartBooleans(body, MULTIPART_BOOLEAN_FIELDS), [
-      'images',
-      'assets',
-    ])
+    _.pick(
+      normalizeMultipartBooleans(body, MULTIPART_BOOLEAN_FIELDS),
+      UPDATABLE_FIELDS
+    )
   );
   updatedTemplate.assets = _.assign(
     {},
@@ -229,6 +246,64 @@ async function updateTrackingConfig(req, res) {
   });
   await template.save();
   res.json(template);
+}
+
+/**
+ * @api {put} /templates/:templateId/quality-settings override quality settings
+ * @apiPermission group-admin (own group only) or super-admin
+ * @apiName UpdateTemplateQualitySettings
+ * @apiGroup Templates
+ *
+ * @apiParam (Body) {Object} checks `{ [checkId]: { state?, thresholds? } }`;
+ *   `null` brings a setting back to the group's (ADR 0009)
+ * @apiSuccess {Object} qualitySettings the template's settings, as stored
+ */
+async function updateQualitySettings(req, res) {
+  const { templateId } = req.params;
+  const { user } = req;
+  // Only what the check and the write need: a template's markup weighs
+  // megabytes.
+  const template = await Templates.findById(templateId)
+    .select('_company qualitySettings')
+    .lean();
+  if (!template) throw new createError.NotFound(ERROR_CODES.TEMPLATE_NOT_FOUND);
+  // A company admin only touches the templates of their own company, a super
+  // admin any template.
+  if (!permissions.canManageGroup(user, template._company)) {
+    throw new createError.Forbidden();
+  }
+  // What the template does not set follows its group: thresholds that go
+  // together are checked against the group's values.
+  const group = template._company
+    ? await Groups.findById(template._company).select('qualitySettings').lean()
+    : null;
+  const { checks } = resolveQualitySettings(group, null);
+  const inherited = Object.fromEntries(
+    Object.entries(checks).map(([id, check]) => [id, check.thresholds])
+  );
+  const qualitySettings = sanitizeQualitySettings(
+    req.body,
+    template.qualitySettings,
+    inherited
+  );
+  // The required tracking parameters are a tech admin's, on a template too.
+  assertTechChecksAllowed(user, template.qualitySettings, qualitySettings);
+  // Check by check, so a save made meanwhile to another check stays.
+  const update = qualitySettingsUpdate(
+    template.qualitySettings,
+    qualitySettings
+  );
+  if (Object.keys(update).length) {
+    await Templates.updateOne({ _id: template._id }, update);
+  }
+  // What is stored now, a save made meanwhile to another check included:
+  // the settings only, never the template's markup.
+  const saved = await Templates.findById(template._id)
+    .select('qualitySettings')
+    .lean();
+  res.json({
+    qualitySettings: (saved && saved.qualitySettings) || { checks: {} },
+  });
 }
 
 /**

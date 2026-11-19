@@ -1,0 +1,206 @@
+/**
+ * @jest-environment jsdom
+ */
+
+'use strict';
+
+const {
+  runQualityChecks,
+} = require('../../../packages/editor/src/js/ext/quality/engine.js');
+const { fakeViewModel, exportOf } = require('./fake-view-model');
+
+const RULES = '../../../packages/editor/src/js/ext/quality/rules';
+const unnamedImageLinks = require(`${RULES}/unnamed-image-links`);
+const altTextQuality = require(`${RULES}/alt-text-quality`);
+const imageOnlyEmail = require(`${RULES}/image-only-email`);
+const unsupportedImageFormats = require(`${RULES}/unsupported-image-formats`);
+
+const blocks = [{ id: 'b1', type: 'imageBlock' }];
+
+function findingsIn(rule, blockHtml) {
+  const html = exportOf({ b1: blockHtml });
+  return runQualityChecks(fakeViewModel({ blocks, html }), { rules: [rule] })
+    .findings;
+}
+
+describe('unnamed-image-links', () => {
+  it('warns about a link made of an image without alternative text', () => {
+    const findings = findingsIn(
+      unnamedImageLinks,
+      '<a href="https://brand.com"><img src="a.jpg" alt=""></a>'
+    );
+    expect(findings).toHaveLength(1);
+    expect(findings[0].category).toBe('accessibility');
+  });
+
+  it.each([
+    '<a href="https://brand.com"><img src="a.jpg" alt="Spring sale"></a>',
+    '<a href="https://brand.com" aria-label="Spring sale"><img src="a.jpg" alt=""></a>',
+    '<a href="https://brand.com" title="Spring sale"><img src="a.jpg" alt=""></a>',
+    '<a href="https://brand.com"><img src="a.jpg" alt="">Shop</a>',
+    '<a href="#toreplace"><img src="a.jpg" alt=""></a>',
+    // Reported by unreplaced-images first.
+    '<a href="https://brand.com"><img src="http://localhost:3000/api/images/placeholder/300x200.png" alt=""></a>',
+  ])('leaves a named, unfilled or unreplaced link alone: %s', (blockHtml) => {
+    expect(findingsIn(unnamedImageLinks, blockHtml)).toEqual([]);
+  });
+});
+
+describe('alt-text-quality', () => {
+  const keyOf = (alt) =>
+    (findingsIn(altTextQuality, `<img src="a.jpg" alt="${alt}">`)[0] || {})
+      .messageKey;
+
+  it.each([
+    ['IMG_1234.jpg', 'Alternative text looks like a file name: __alt__'],
+    ['DSC_0042', 'Alternative text looks like a file name: __alt__'],
+    ['photo-12.jpg', 'Alternative text looks like a file name: __alt__'],
+    ['banner-spring.png', 'Alternative text looks like a file name: __alt__'],
+    ['https://brand.com/a.jpg', 'Alternative text is an address: __alt__'],
+    [
+      'a'.repeat(151),
+      'Alternative text is too long (__count__ characters): keep it to a short description',
+    ],
+  ])('notes %s', (alt, messageKey) => {
+    expect(keyOf(alt)).toBe(messageKey);
+  });
+
+  it('leaves a decorative image with an empty alt, and a real description, alone', () => {
+    expect(keyOf('')).toBeUndefined();
+    expect(keyOf('A woman holding the new serum')).toBeUndefined();
+    expect(keyOf('Photo 2024 de la collection')).toBeUndefined();
+  });
+});
+
+describe('image-only-email', () => {
+  it('warns when the images carry almost all the content', () => {
+    const findings = findingsIn(imageOnlyEmail, '<img src="a.jpg"><p>Hi</p>');
+    expect(findings).toHaveLength(1);
+    expect(findings[0].params.count).toBe(2);
+  });
+
+  it('counts the text a reader sees only', () => {
+    expect(
+      findingsIn(
+        imageOnlyEmail,
+        `<img src="a.jpg"><p style="display:none">${'a'.repeat(200)}</p>`
+      )
+    ).toHaveLength(1);
+  });
+
+  it('keeps one fingerprint whatever the count, so ignoring it lasts', () => {
+    const fingerprintOf = (text) =>
+      findingsIn(imageOnlyEmail, `<img src="a.jpg"><p>${text}</p>`)[0]
+        .fingerprint;
+    expect(fingerprintOf('Hi')).toBe(fingerprintOf('Hello there'));
+  });
+
+  it('still warns about an email of images alone at the lowest minimum, 1', () => {
+    const html = exportOf({ b1: '<img src="a.jpg">' });
+    const vm = fakeViewModel({ blocks, html });
+    vm.metadata.qualitySettings = {
+      checks: {
+        'image-only-email': { state: 'on', thresholds: { minTextLength: 1 } },
+      },
+    };
+    expect(
+      runQualityChecks(vm, { rules: [imageOnlyEmail] }).findings
+    ).toHaveLength(1);
+  });
+
+  it('stays silent with real text, or without images', () => {
+    const text = `<p>${'Our new collection is here. '.repeat(5)}</p>`;
+    expect(findingsIn(imageOnlyEmail, `<img src="a.jpg">${text}`)).toEqual([]);
+    expect(findingsIn(imageOnlyEmail, '<p>Hi</p>')).toEqual([]);
+  });
+});
+
+describe('unsupported-image-formats', () => {
+  it.each([
+    ['https://cdn.brand.com/hero.webp', 'WEBP'],
+    // A version parameter does not hide the extension (QC review, 13/10).
+    ['https://cdn.brand.com/hero.webp?v=2', 'WEBP'],
+    ['https://cdn.brand.com/hero.webp#v2', 'WEBP'],
+    ['http://localhost:3000/api/images/cover/600x300/hero.avif', 'AVIF'],
+    ['data:image/svg+xml;base64,PHN2Zz4=', 'SVG'],
+  ])('warns about %s', (src, format) => {
+    const findings = findingsIn(unsupportedImageFormats, `<img src="${src}">`);
+    expect(findings).toHaveLength(1);
+    expect(findings[0].params.format).toBe(format);
+  });
+
+  it.each(['a.jpg', 'a.PNG', 'https://cdn.brand.com/a.gif?v=2'])(
+    'leaves %s alone',
+    (src) => {
+      expect(findingsIn(unsupportedImageFormats, `<img src="${src}">`)).toEqual(
+        []
+      );
+    }
+  );
+});
+
+// An image without an extension is judged only by the second look, which asks
+// the server only while one of its image checks is on (#1267). With them off
+// the check still passes, and its pass says what it did not judge.
+describe('unsupported-image-formats, its pass', () => {
+  const STRINGS = {
+    en: require('../../../public/lang/badsender-en.js'),
+    fr: require('../../../public/lang/badsender-fr.js'),
+  };
+  const IMAGE_CHECKS = [
+    'image-weight',
+    'images-total-weight',
+    'oversized-images',
+  ];
+  const PASS = 'Every image uses a format email clients show';
+  const off = (ids) =>
+    Object.fromEntries(ids.map((id) => [id, { state: 'off', thresholds: {} }]));
+
+  function passOf(blockHtml, checks = {}) {
+    const vm = fakeViewModel({ blocks, html: exportOf({ b1: blockHtml }) });
+    vm.metadata.qualitySettings = { checks };
+    const [check] = runQualityChecks(vm, {
+      rules: [unsupportedImageFormats],
+    }).checks;
+    return check;
+  }
+
+  const unnamed =
+    '<img src="https://cdn.test/img/1"><img src="https://cdn.test/img/2">' +
+    '<img src="https://cdn.test/img/1"><img src="https://cdn.test/a.jpg">';
+
+  it('counts the images without an extension it did not judge, with the image checks off', () => {
+    const check = passOf(unnamed, off(IMAGE_CHECKS));
+    expect(check.status).toBe('passed');
+    expect(check.passKey).not.toBe(PASS);
+    expect(check.passParams).toEqual({ count: 2 });
+    Object.values(STRINGS).forEach((strings) => {
+      expect(strings).toHaveProperty([check.passKey]);
+      expect(strings[check.passKey]).toContain('__count__');
+    });
+  });
+
+  it('says every image is fine while one image check lets the server read them', () => {
+    const check = passOf(unnamed, off(IMAGE_CHECKS.slice(1)));
+    expect(check.passKey).toBe(PASS);
+    expect(check.passParams).toEqual({});
+  });
+
+  it('says every image is fine when every address names its format', () => {
+    const check = passOf(
+      '<img src="https://cdn.test/a.jpg">',
+      off(IMAGE_CHECKS)
+    );
+    expect(check.passKey).toBe(PASS);
+    expect(check.passParams).toEqual({});
+  });
+
+  it('leaves merge-tag and placeholder images out of the count', () => {
+    const check = passOf(
+      '<img src="https://cdn.test/{{id}}">' +
+        '<img src="http://localhost:3000/api/images/placeholder/300x200.png">',
+      off(IMAGE_CHECKS)
+    );
+    expect(check.passKey).toBe(PASS);
+  });
+});

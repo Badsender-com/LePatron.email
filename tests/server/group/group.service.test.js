@@ -1,7 +1,7 @@
 'use strict';
 
 jest.mock('../../../packages/server/common/models.common', () => ({
-  Groups: { findById: jest.fn() },
+  Groups: { findById: jest.fn(), updateOne: jest.fn() },
   Users: { find: jest.fn() },
   Mailings: {},
   Workspaces: {},
@@ -106,5 +106,44 @@ describe('groupService.checkIfUserIsAuthorizedToAccessGroup', () => {
       status: 401,
       message: ERROR_CODES.FORBIDDEN_PROFILE_ACCESS,
     });
+  });
+});
+
+describe('groupService.updateGroup', () => {
+  beforeEach(() => jest.clearAllMocks());
+
+  it('writes the fields and the given operators in one update', async () => {
+    await groupService.updateGroup(
+      { id: GROUP_ID, name: 'Company A' },
+      {
+        $set: { 'qualitySettings.checks.headings': { state: 'off' } },
+        $unset: { 'qualitySettings.checks.subject': '' },
+      }
+    );
+
+    expect(Groups.updateOne).toHaveBeenCalledTimes(1);
+    const [filter, update] = Groups.updateOne.mock.calls[0];
+    expect(String(filter._id)).toBe(GROUP_ID);
+    expect(update).toEqual({
+      $set: {
+        name: 'Company A',
+        'qualitySettings.checks.headings': { state: 'off' },
+      },
+      $unset: { 'qualitySettings.checks.subject': '' },
+    });
+  });
+
+  it('writes the fields alone without operators', async () => {
+    await groupService.updateGroup({ id: GROUP_ID, name: 'Company A' });
+
+    expect(Groups.updateOne.mock.calls[0][1]).toEqual({
+      $set: { name: 'Company A' },
+    });
+  });
+
+  it('writes nothing when there is nothing to write', async () => {
+    await groupService.updateGroup({ id: GROUP_ID }, {});
+
+    expect(Groups.updateOne).not.toHaveBeenCalled();
   });
 });
