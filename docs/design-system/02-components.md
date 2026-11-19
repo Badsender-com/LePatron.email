@@ -794,9 +794,9 @@ The email listing's search and filters ([preview](./preview/mailings-list.html))
 Implementation: `mailings-filters.vue`, `mailings-search-scope.vue`, `mailings-date-field.vue`
 in `packages/ui/routes/mailings/__partials/`.
 
-**Anatomy** (one card, `--gray-200` border, 8px radius, 16px padding):
+**Anatomy** (one card, `--gray-300` border, 10px radius, 16px padding):
 
-1. **Search field**: full-width up to **520px**, 40px high, search icon vertically centred on the text line, clearable.
+1. **Search field**: full-width up to **520px**, 38px high, search icon vertically centred on the text line, clearable.
 2. **Row**: label "Dans", the **segmented scope control**, then the **Filtres** button and, when a filter is set, **Réinitialiser**. They sit together on the left: on a wide screen a control must stay near the field it refines.
 3. **Hint**: only when the scope is "all workspaces" ("Résultats dans vos N espaces de travail. La colonne Emplacement indique où se trouve chaque email.").
 4. **Panel** (collapsed by default, opened by Filtres): Templates, Tags, "Créé entre … au …", "Mis à jour entre … au …". Labels above the fields, placeholders "Tous les templates" / "Tous les tags".
