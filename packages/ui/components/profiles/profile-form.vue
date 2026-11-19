@@ -8,7 +8,7 @@ import SENDINBLUEComponent from './esp/SENDINBLUEComponent.vue';
 import ACTITOComponent from './esp/ACTITOComponent.vue';
 import DSCComponent from './esp/DSCComponent.vue';
 import ADOBEComponent from './esp/ADOBEComponent.vue';
-import { Send, AlertTriangle } from 'lucide-vue';
+import { Send } from 'lucide-vue';
 
 export default {
   name: 'ProfileForm',
@@ -20,7 +20,6 @@ export default {
     DSCComponent,
     ADOBEComponent,
     LucideSend: Send,
-    LucideAlertTriangle: AlertTriangle,
   },
   mixins: [validationMixin],
   props: {
@@ -93,17 +92,8 @@ export default {
 <template>
   <form class="profile-form" @submit.prevent>
     <!-- FTP Warning Alert -->
-    <v-alert
-      v-if="showFtpWarning"
-      type="warning"
-      border="left"
-      colored-border
-      class="profile-form__alert"
-    >
-      <div class="d-flex align-center">
-        <lucide-alert-triangle :size="20" class="mr-3" />
-        <span>{{ $t('profiles.warningNoFTP') }}</span>
-      </div>
+    <v-alert v-if="showFtpWarning" type="warning" class="profile-form__alert">
+      {{ $t('profiles.warningNoFTP') }}
     </v-alert>
 
     <!-- ESP Type Selection (own card so it visually anchors above the ESP-specific card) -->
