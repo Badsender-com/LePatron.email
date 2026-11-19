@@ -78,15 +78,15 @@ const TEXTS = {
   recoveryCodeUsed: {
     fr: {
       subject: SUBJECTS.fr,
-      title: 'Un code de secours vous a connecté',
+      title: 'Connexion avec un code de secours',
       preheader: 'Une nouvelle série de codes de secours est disponible.',
       desc:
-        'Vous avez reçu une nouvelle série de codes de secours : les précédents ne fonctionnent plus. Si vous ne vous êtes pas connecté, prévenez l’administrateur technique de votre société.',
+        'Vous avez reçu une nouvelle série de codes de secours\u00a0: les précédents ne fonctionnent plus. Si vous ne vous êtes pas connecté, prévenez l’administrateur technique de votre société.',
       button: OPEN.fr,
     },
     en: {
       subject: SUBJECTS.en,
-      title: 'A recovery code signed you in',
+      title: 'Sign-in with a recovery code',
       preheader: 'A new set of recovery codes is available.',
       desc:
         'You received a new set of recovery codes: the previous ones no longer work. If you did not sign in, tell your company’s technical administrator.',
@@ -122,7 +122,9 @@ const TEXTS = {
 function deviceTrustedTexts({ browser, os }) {
   const texts = {};
   Object.entries(TEXTS.deviceTrusted).forEach(([lang, text]) => {
-    texts[lang] = { ...text, title: `${text.title} : ${browser}, ${os}` };
+    // A no-break space before the colon in French only.
+    const colon = lang === 'fr' ? '\u00a0: ' : ': ';
+    texts[lang] = { ...text, title: `${text.title}${colon}${browser}, ${os}` };
   });
   return texts;
 }

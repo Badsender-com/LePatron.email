@@ -193,17 +193,20 @@ UserSchema.methods.deactivate = function deactivate() {
 // keep working until the emailed link is used, so that asking in someone's
 // name locks nobody out).
 //
-// An account with no password is welcomed, not reset: it never had one. The
-// state is read before the reset clears the password. A welcome link sent
-// again before it was used reads as a reset, nothing keeps the first
-// initialisation (docs/emails/audit-accessibilite.md).
+// An account with neither a password nor a link (`to-be-initialized` of the
+// status) is welcomed, not reset: nobody ever mailed it. The state is read
+// before the reset clears the password and sets the link, so every later
+// mail is a reset, a welcome link sent again before it was used included, and
+// so is the one that follows another reset. A deactivated account, which
+// loses both, is welcomed again when it comes back.
 UserSchema.methods.resetPassword = async function resetPassword(type, lang) {
   const user = this;
-  const texts = !user.password
-    ? PASSWORD_TEXTS.welcome
-    : type === 'user'
-    ? PASSWORD_TEXTS.forgot
-    : PASSWORD_TEXTS.reset;
+  const texts =
+    !user.password && !user.token
+      ? PASSWORD_TEXTS.welcome
+      : type === 'user'
+      ? PASSWORD_TEXTS.forgot
+      : PASSWORD_TEXTS.reset;
   if (type !== 'user') {
     user.password = undefined;
     // No session carries this id: the session validation ends them all.

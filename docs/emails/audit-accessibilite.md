@@ -200,7 +200,7 @@ Lecture : le gabarit date d'un habillage de campagne Badsender (images datées �
 - **Marque** : LePatron, couleurs par défaut (primaire `#093040`, accent `#00ACDC`). Le groupe du membre n'est pas passé au rendu.
 - **Mode sombre** : traité (logo en PNG transparent, couleurs lisibles quand le client inverse).
 - **Langues** : fr et en seulement, comme l'application. Le repli sur l'anglais devient explicite (journalisé).
-- **Email de bienvenue** : voulu, distinct de la réinitialisation. Il est la première initialisation du mot de passe. Aujourd'hui rien ne le distingue : un compte créé n'a ni mot de passe ni jeton (`status: to-be-initialized`), et l'admin lui envoie le lien avec l'action « réinitialiser le mot de passe » (`adminResetPassword`). Le gabarit affiche déjà « Bienvenue sur l'email builder » pour ce cas, mais le même texte sert à une vraie réinitialisation. Distinction retenue : au moment de l'envoi, un compte sans mot de passe est un compte à initialiser (bienvenue) ; un compte qui en avait un est une réinitialisation. Limite connue : un lien de bienvenue renvoyé avant d'avoir été utilisé est vu comme une réinitialisation, faute de trace de la première initialisation (un indicateur `passwordSetAt` règlerait le cas, à décider).
+- **Email de bienvenue** : voulu, distinct de la réinitialisation. Il est la première initialisation du mot de passe. Un compte créé n'a ni mot de passe ni lien (`status: to-be-initialized`) : l'admin lui envoie le lien avec `adminResetPassword`. Distinction retenue : l'état du compte, lu avant que l'envoi n'efface le mot de passe et ne pose le lien. Ni mot de passe ni lien : bienvenue. Sinon : nouveau mot de passe. Limite connue : un lien de bienvenue renvoyé avant d'avoir servi est un « nouveau mot de passe », et un compte désactivé puis réactivé est de nouveau accueilli. Pas de champ en plus dans le schéma.
 
 ## Reproduire
 
@@ -230,7 +230,7 @@ Le gabarit est réécrit ([account-email.html](../../packages/server/email-templ
 
 Contrastes calculés : texte 18,4:1, texte discret 7,2:1, bouton 13,9:1 ; en mode sombre texte 14,2:1, texte discret 8,9:1, bouton 6,4:1, lien 9,2:1.
 
-Pour la bienvenue : un compte sans mot de passe reçoit « Bienvenue sur LePatron », les autres reçoivent « Nouveau mot de passe » (administrateur ou demande de la personne).
+Pour la bienvenue : un compte sans mot de passe ni lien reçoit « Bienvenue sur LePatron », les autres reçoivent « Nouveau mot de passe » (administrateur ou demande de la personne).
 
 ### Reste à vérifier à la main
 
@@ -238,4 +238,22 @@ Pour la bienvenue : un compte sans mot de passe reçoit « Bienvenue sur LePatro
 - Lecteur d'écran (NVDA, VoiceOver) : non fait. Les critères « Tabulation logique », « Espacements » et « Version mobile » restent **À analyser**.
 - Le pictogramme est servi par l'application (`/media/logo_lepatron.png`) : en développement (`localhost`), un client mail ne peut pas le charger. En production, il suit `config.host`.
 - `tabindex="0"` sur le bouton et `aria-label` : non ajoutés, le lien natif est déjà focusable et son libellé est explicite. La grille les demande : à trancher.
-- Le lien de bienvenue renvoyé avant d'avoir été utilisé est vu comme une réinitialisation (voir « Décisions »).
+- Revue du 2026-11-19 : la première version testait seulement l'absence de mot de passe, et accueillait à tort un compte déjà réinitialisé dont le premier email était parti. Corrigé (mot de passe **et** lien absents), avec tests du second envoi.
+
+### Revue du code (2026-11-19)
+
+Corrigé après relecture :
+
+- **Bienvenue** : décision par « ni mot de passe ni lien » (voir plus haut), tests des envois suivants.
+- **Bouton sous Outlook Windows** : `mso-padding-alt` sur la cellule, le moteur Word ignore le remplissage du `<a>`. Le test ne vérifie que le HTML, pas ce rendu.
+- **Confirmation** : le texte ne dit plus « nouveau mot de passe », il peut s'agir d'un premier.
+- **Typographie** : espace insécable avant les deux-points en français, titre « Connexion avec un code de secours », pied de page en phrase complète, voix active.
+- **Préheader** : rempli pour que les boîtes de réception n'y collent pas le texte suivant.
+- **Langue** : `FR`, `fr-FR` lus comme `fr` ; valeur inconnue journalisée entre guillemets et coupée.
+- **Tests** : textes des trois emails de mot de passe distingués, « 7 jours » lié à `tokenExpire`, échappement du navigateur et du système d'un appareil, langues absentes, interligne vérifié sur chaque taille.
+
+Non corrigé :
+
+- Les polices viennent de fonts.gstatic.com : un appel à Google à l'ouverture. La charte tolère les polices personnalisées avec repli ; à décider si on veut s'en passer (repli Arial/Tahoma, déjà en place).
+- La page de confidentialité est la page française pour les lecteurs anglais : pas de page anglaise connue.
+- L'adresse du membre n'est pas encodée dans le lien de mot de passe (`user.schema.js`, code d'origine) : un `?` ou un `#` dans une adresse casserait le lien.
