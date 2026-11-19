@@ -26,6 +26,7 @@ const {
   MAX_LINKS,
   MAX_IMAGES,
 } = require('./quality-resources.payload.js');
+const { CHECKS } = require('../../shared/quality/checks.js');
 
 /**
  * What the quality checks need from the outside world: whether the links of an
@@ -63,6 +64,17 @@ const ALL_TASKS = Object.freeze({
   images: true,
 });
 
+// Only a check the server runs starts a task. A local check with a second look
+// at the answer (the format of an image whose address names no format) reads
+// what such a check had downloaded: alone, it calls no image host the company
+// admin thought they had stopped by turning the image checks off. Its images
+// are ignored rather than refused, so an editor that still sends them alone
+// gets the rest of its run.
+const startsTask = (id) =>
+  Object.hasOwn(CHECKS, id) &&
+  CHECKS[id].server !== null &&
+  CHECKS[id].server.awaited;
+
 /**
  * What a run does for the checks the editor names; everything when it names
  * none (an editor from before the list).
@@ -72,7 +84,9 @@ const ALL_TASKS = Object.freeze({
  */
 function tasksOf(checks) {
   if (!checks) return ALL_TASKS;
-  const tasks = new Set(checks.map((id) => REMOTE_CHECKS[id]));
+  const tasks = new Set(
+    checks.filter(startsTask).map((id) => REMOTE_CHECKS[id])
+  );
   return Object.fromEntries(
     Object.keys(ALL_TASKS).map((task) => [task, tasks.has(task)])
   );
