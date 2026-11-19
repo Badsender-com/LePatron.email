@@ -183,7 +183,10 @@ export default {
             @draft-settings="draftSettings = $event"
             @saved="onSaved"
           />
-          <bs-quality-reference-table :settings="draftSettings" />
+          <bs-quality-reference-table
+            :settings="draftSettings"
+            :saved-settings="group.qualitySettings || null"
+          />
         </div>
         <bs-quality-templates-table
           v-else

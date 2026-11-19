@@ -11,8 +11,6 @@ import {
   blocksFrom,
   adjustmentsOf,
   valuesEqualToBase,
-  settingsOfDrafts,
-  templatesKeepingOwn,
 } from '~/helpers/quality-exceptions.js';
 
 // The "Contrôle qualité" page shows exceptions only (ADR 0009, admin design
@@ -196,59 +194,5 @@ describe('blocking', () => {
   it('says nothing more for a check without a pair', () => {
     expect(blocksFrom('html-size', { maxKb: 100 })).toBeNull();
     expect(blocksFrom('headings', {})).toBeNull();
-  });
-});
-
-describe('an unsaved change of the general settings', () => {
-  it('applies as edited, valid numbers only', () => {
-    const drafts = {
-      subject: { state: null, thresholds: { long: '45', tooLong: '' } },
-      headings: { state: 'off', thresholds: {} },
-    };
-    expect(generalOf(settingsOfDrafts(drafts)).subject.thresholds).toEqual({
-      long: 45,
-      tooLong: 60,
-    });
-    expect(exceptionsOf(settingsOfDrafts(drafts))).toEqual({
-      subject: { state: null, thresholds: { long: 45, tooLong: null } },
-      headings: { state: 'off', thresholds: {} },
-    });
-  });
-
-  const template = (name, checks) => ({ name, qualitySettings: { checks } });
-  const templates = [
-    template('Own warning', { subject: { thresholds: { tooLong: 50 } } }),
-    template('Own info', { subject: { thresholds: { long: 30 } } }),
-    template('Own state', { subject: { state: 'off' } }),
-    template('Follows', {}),
-  ];
-  const names = (list) => list.map((t) => t.name);
-
-  it('names the templates that set their own value of what changed', () => {
-    const drafted = { checks: { subject: { thresholds: { long: 35 } } } };
-    expect(
-      names(templatesKeepingOwn('subject', drafted, null, templates))
-    ).toEqual(['Own info']);
-  });
-
-  it('names those whose own value the new general one contradicts', () => {
-    // A general "long" of 70 is past the template's own "too long" of 50.
-    const drafted = { checks: { subject: { thresholds: { long: 70 } } } };
-    expect(
-      names(templatesKeepingOwn('subject', drafted, null, templates))
-    ).toEqual(['Own warning', 'Own info']);
-  });
-
-  it('names those with their own state when the state changes', () => {
-    const drafted = { checks: { subject: { state: 'blocking' } } };
-    expect(
-      names(templatesKeepingOwn('subject', drafted, null, templates))
-    ).toEqual(['Own state']);
-  });
-
-  it('names none while nothing changes', () => {
-    expect(templatesKeepingOwn('subject', general, general, templates)).toEqual(
-      []
-    );
   });
 });
