@@ -7,6 +7,7 @@ const tmpl = require('blueimp-tmpl');
 const config = require('../node.config.js');
 const logger = require('../utils/logger.js');
 const { COMMON_TEXTS, PASSWORD_TEXTS } = require('./email-texts.js');
+const { ICONS } = require('./email-icons.js');
 
 // The emails the application sends about an account (password, two-factor
 // authentication): one HTML template, filled with the texts of each email in
@@ -30,16 +31,6 @@ const FALLBACK_LANGUAGE = 'en';
 // public folder (public/media/email): an email links them by an absolute
 // address, with the scheme and the host of the site, as for its other links.
 const ASSETS_PATH = '/media/email';
-const ICONS = [
-  'lock',
-  'shield-check',
-  'shield-alert',
-  'mail-check',
-  'smartphone',
-  'blocks',
-  'badge-check',
-  'languages',
-];
 const DEFAULT_ICON = 'lock';
 
 const PRIVACY_URL = 'https://www.badsender.com/vie-privee/';

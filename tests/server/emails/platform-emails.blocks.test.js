@@ -17,6 +17,9 @@ const fs = require('fs');
 const path = require('path');
 const config = require('../../../packages/server/node.config.js');
 const {
+  ICONS,
+} = require('../../../packages/server/email-templates/email-icons.js');
+const {
   CASES,
   useEmail,
   IMAGES,
@@ -143,5 +146,15 @@ describe.each(CASES)('the %s email, in %s', (name, lang) => {
     expect(logo).toMatch(/\salt="LePatron"/);
     expect(icon).toMatch(/\/media\/email\/icon-[a-z-]+\.png"/);
     expect(icon).toMatch(/\salt=""/);
+  });
+});
+
+// The template, the 2FA senders and scripts/build-email-images.js share one
+// list of icons: each has its PNG, so no email links a missing image.
+describe('the icons of the emails', () => {
+  it('has a built image for every icon of the list', () => {
+    ICONS.forEach((icon) =>
+      expect(fs.existsSync(path.join(IMAGES, `icon-${icon}.png`))).toBe(true)
+    );
   });
 });

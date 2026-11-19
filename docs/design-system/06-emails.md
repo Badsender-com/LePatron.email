@@ -69,7 +69,7 @@ Each email is read against the Badsender grid (60 criteria, [docs/emails/audit-a
 ## Adding an email
 
 1. Its texts, in French and in English: `subject`, `title`, `preheader`, `desc`, and a `button` if it leads somewhere (two-factor emails: [two-factor.emails.js](../../packages/server/two-factor/two-factor.emails.js); password emails: [email-texts.js](../../packages/server/email-templates/email-texts.js)).
-2. An icon, from `ICONS` of [email-template.js](../../packages/server/email-templates/email-template.js); a new one is added to `scripts/build-email-images.js`, and the PNGs rebuilt.
+2. An icon, from `ICONS` of [email-icons.js](../../packages/server/email-templates/email-icons.js); a new one is added to that list, which `scripts/build-email-images.js` reads, and the PNGs rebuilt (a test checks each icon has its PNG).
 3. It is sent through `composeEmail`, which gives the subject, the text and the HTML.
 4. Add it to `EMAILS` of [tests/helpers/platform-emails.js](../../tests/helpers/platform-emails.js): the contract tests then run on it.
 5. Look at it: send it to maildev (`http://localhost:1080`) from the running application, in both languages, in light and dark mode, and under and over 960 px.
