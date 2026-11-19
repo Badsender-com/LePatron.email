@@ -15,6 +15,8 @@ Complete guide to LePatron.email documentation for developers and AI agents.
 | [TEMPLATE_DEVELOPER_GUIDE.md](./TEMPLATE_DEVELOPER_GUIDE.md) | Mosaico template development                            | Template developers      |
 | [README.md](./README.md)                                     | Project overview and setup                              | Everyone                 |
 | [adr/](./adr/)                                               | Architecture Decision Records                           | AI agents, developers    |
+| [emails/](./emails/README.md)                                | Emails the platform sends: inventory, audit, refonte    | Developers               |
+| [design-system/06-emails.md](./design-system/06-emails.md)   | Design system rules for the notification emails         | UI developers, designers |
 | [../.claude/skills/](../.claude/skills/)                     | Agent skills, including the new feature workflow        | AI agents                |
 
 ## 📚 Documentation Structure
