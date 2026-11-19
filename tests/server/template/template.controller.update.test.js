@@ -1,8 +1,9 @@
 'use strict';
 
-// PUT /templates/:templateId (super admin): the template's name, markup,
-// assets and options. The quality settings and the tracking each have their
-// own route, which validates them (ADR 0009): this one never writes them.
+// PUT /templates/:templateId (super admin): what the template page sends
+// (components/template/form.vue), and nothing else. The company is set at
+// creation; the quality settings and the tracking each have their own route,
+// which validates them (ADR 0009).
 
 jest.mock('../../../packages/server/common/models.common.js', () => ({
   Templates: { findById: jest.fn() },
@@ -34,8 +35,13 @@ const TEMPLATE_ID = '507f1f77bcf86cd799439201';
 function storedTemplate() {
   return {
     _id: TEMPLATE_ID,
+    _company: 'company-a',
     name: 'Newsletter',
-    assets: {},
+    description: '',
+    markup: '<html></html>',
+    htmlBlockEnabled: false,
+    blockBuilderEnabled: false,
+    assets: { 'a.png': 'wireframe-a.png' },
     qualitySettings: { checks: { headings: { state: 'off' } } },
     trackingConfig: { params: [] },
     markModified: jest.fn(),
@@ -59,21 +65,33 @@ async function update(body) {
 beforeEach(() => jest.clearAllMocks());
 
 describe('PUT /templates/:templateId', () => {
-  it('writes the fields it owns', async () => {
+  it('writes the fields the template page sends', async () => {
     const saved = await update({
       name: 'Newsletter',
       description: 'Monthly',
+      markup: '<html><body>new</body></html>',
       htmlBlockEnabled: 'true',
+      blockBuilderEnabled: 'false',
+      assets: { 'b.png': 'wireframe-b.png' },
     });
-    expect(saved.description).toBe('Monthly');
-    expect(saved.htmlBlockEnabled).toBe(true);
+    expect(saved).toMatchObject({
+      name: 'Newsletter',
+      description: 'Monthly',
+      markup: '<html><body>new</body></html>',
+      htmlBlockEnabled: true,
+      blockBuilderEnabled: false,
+      assets: { 'a.png': 'wireframe-a.png', 'b.png': 'wireframe-b.png' },
+    });
   });
 
   it.each([
+    ['the company', '_company', 'company-b'],
+    ['the id', '_id', '507f1f77bcf86cd799439999'],
     ['the quality settings', 'qualitySettings', null],
     ['the quality settings', 'qualitySettings', { checks: 'odd' }],
     ['the tracking', 'trackingConfig', { params: 'odd' }],
-  ])('leaves %s to their own route', async (_, field, value) => {
+    ['a field the template does not have', 'isAdmin', true],
+  ])('never writes %s', async (_, field, value) => {
     const before = storedTemplate()[field];
     const saved = await update({ name: 'Newsletter', [field]: value });
     expect(saved[field]).toEqual(before);

@@ -154,6 +154,13 @@ async function readMarkup(req, res) {
 
 // Boolean fields of this resource that are sent through `multipart/form-data`.
 const MULTIPART_BOOLEAN_FIELDS = ['htmlBlockEnabled', 'blockBuilderEnabled'];
+// What the template page writes (components/template/form.vue). Its images
+// come as `assets`, merged apart; the company is set at creation only; the
+// quality settings and the tracking each have their own route, which
+// validates them.
+const UPDATABLE_FIELDS = ['name', 'description', 'markup'].concat(
+  MULTIPART_BOOLEAN_FIELDS
+);
 
 /**
  * @api {put} /templates/:templateId template update
@@ -182,17 +189,12 @@ async function update(req, res) {
   });
   const template = await Templates.findById(templateId);
   if (!template) throw new createError.NotFound();
-  // custom update function
-  // The quality settings and the tracking each have their own route, which
-  // validates them: never written raw from here.
   const updatedTemplate = _.assignIn(
     template,
-    _.omit(normalizeMultipartBooleans(body, MULTIPART_BOOLEAN_FIELDS), [
-      'images',
-      'assets',
-      'qualitySettings',
-      'trackingConfig',
-    ])
+    _.pick(
+      normalizeMultipartBooleans(body, MULTIPART_BOOLEAN_FIELDS),
+      UPDATABLE_FIELDS
+    )
   );
   updatedTemplate.assets = _.assign(
     {},
