@@ -9,21 +9,21 @@
 const { mountSfc, componentOf, settle } = require('../../helpers/mount-sfc.js');
 
 function mountTab() {
-  const $get = jest.fn((url) =>
-    Promise.resolve(url === 'integrations' ? { items: [] } : { features: [] })
-  );
   const vm = mountSfc('packages/ui/components/group/ai-features-tab.vue', {
     mocks: {
       $t: (key) => key,
-      $axios: { $get },
       $route: { params: { groupId: 'g1' } },
     },
     imports: {
-      vuex: { mapMutations: () => ({ showSnackbar: jest.fn() }) },
-      '~/store/page.js': { PAGE: 'page', SHOW_SNACKBAR: 'SHOW_SNACKBAR' },
-      '~/helpers/api-routes.js': {
-        aiFeatures: () => 'aiFeatures',
-        integrations: () => 'integrations',
+      // The loading and saving of the AI features, shared with the engine
+      // sections: a company with none configured yet.
+      '~/helpers/mixins/mixin-ai-feature-config.js': {
+        data: () => ({
+          loading: false,
+          saving: false,
+          config: { features: [] },
+          integrations: [],
+        }),
       },
       '~/components/integrations/provider-configs': {
         getProviderLabel: (provider) => provider,
@@ -35,7 +35,7 @@ function mountTab() {
       '~/components/layout/bs-form-section.vue': componentOf(
         'packages/ui/components/layout/bs-form-section.vue'
       ),
-      '~/components/group/BsAiFeatureSkillEngineSection.vue': {},
+      '~/components/group/BsAiFeatureEngineSection.vue': {},
       '~/components/group/feature-switch.vue': {},
       'lucide-vue': {},
     },
