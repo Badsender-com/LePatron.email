@@ -10,9 +10,9 @@ import {
   valuesEqualToBase,
   sameException,
   hasNote,
-  isServerCheck,
 } from '~/helpers/quality-exceptions.js';
 import mixinQualityTexts from '~/helpers/mixins/mixin-quality-texts.js';
+import BsQualityExceptionCardHeader from '~/components/quality/quality-exception-card-header.vue';
 import BsQualityExceptionInheritance from '~/components/quality/quality-exception-inheritance.vue';
 import BsQualityExceptionNotes from '~/components/quality/quality-exception-notes.vue';
 import BsQualityThresholdField from '~/components/quality/quality-threshold-field.vue';
@@ -24,6 +24,7 @@ const STATES = ['off', 'on', 'blocking'];
 export default {
   name: 'BsQualityExceptionCard',
   components: {
+    BsQualityExceptionCardHeader,
     BsQualityExceptionInheritance,
     BsQualityExceptionNotes,
     BsQualityThresholdField,
@@ -92,15 +93,6 @@ export default {
         ? 0
         : valuesEqualToBase(this.exception, this.base).length;
     },
-    ownState() {
-      return !this.isGeneral && Boolean(this.exception.state);
-    },
-    isServer() {
-      return isServerCheck(this.checkId);
-    },
-    onlineTipId() {
-      return `qx-online-tip-${this.checkId}`;
-    },
     showThresholds() {
       return this.thresholdNames.length > 0 && this.applied.state !== 'off';
     },
@@ -137,62 +129,17 @@ export default {
     :data-exception="checkId"
   >
     <div class="qx-card__head">
-      <div class="qx-card__heading">
-        <div class="qx-card__title">
-          <span class="qx-card__name">{{ checkName(checkId) }}</span>
-          <span class="qx-card__category">{{ categoryName(checkId) }}</span>
-          <v-tooltip v-if="isServer" bottom max-width="320">
-            <template #activator="{ on, attrs }">
-              <v-chip
-                x-small
-                outlined
-                tabindex="0"
-                :aria-describedby="onlineTipId"
-                v-bind="attrs"
-                v-on="on"
-              >
-                {{ $t('qualitySettings.card.online') }}
-              </v-chip>
-            </template>
-            {{ $t('qualitySettings.card.onlineTip') }}
-          </v-tooltip>
-          <!-- The tooltip is only rendered once open: what a screen reader
-               reads on focus lives here. -->
-          <span v-if="isServer" :id="onlineTipId" class="d-sr-only">
-            {{ $t('qualitySettings.card.onlineTip') }}
-          </span>
-          <v-chip v-if="isDirty" x-small class="qx-card__unsaved">
-            <span class="qx-card__unsaved-dot" />
-            {{
-              isNew
-                ? $t('qualitySettings.card.new')
-                : $t('qualitySettings.card.unsaved')
-            }}
-          </v-chip>
-        </div>
-        <p v-if="baseText" class="qx-card__base">{{ baseText }}</p>
-        <p v-if="locked" class="qx-card__base">
-          {{ $t('qualitySettings.card.techOnly') }}
-        </p>
-        <p v-if="!isGeneral" class="qx-card__base">
-          {{
-            ownState
-              ? $t('qualitySettings.page.stateOwn')
-              : $t('qualitySettings.page.stateGeneral')
-          }}
-          <v-btn
-            v-if="ownState && !locked"
-            x-small
-            text
-            color="accent"
-            class="qx-card__restore"
-            :disabled="disabled"
-            @click="$emit('restore-state')"
-          >
-            {{ $t('qualitySettings.page.restoreState') }}
-          </v-btn>
-        </p>
-      </div>
+      <bs-quality-exception-card-header
+        :check-id="checkId"
+        :level="level"
+        :exception="exception"
+        :is-new="isNew"
+        :is-dirty="isDirty"
+        :base-text="baseText"
+        :disabled="disabled"
+        :locked="locked"
+        @restore-state="$emit('restore-state')"
+      />
       <div class="qx-card__controls">
         <v-btn-toggle
           :value="applied.state"
@@ -294,43 +241,6 @@ export default {
     border-color: var(--v-accent-base) !important;
   }
 
-  &__unsaved {
-    background: rgba(255, 180, 0, 0.2) !important;
-    color: var(--gray-900) !important;
-    font-weight: 600;
-  }
-
-  &__unsaved-dot {
-    width: 6px;
-    height: 6px;
-    margin-right: 5px;
-    border-radius: 50%;
-    background: var(--v-warning-base);
-  }
-
-  &__heading {
-    min-width: 0;
-  }
-
-  &__title {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    gap: 6px 8px;
-    min-width: 0;
-  }
-
-  &__name {
-    font-size: 0.9375rem;
-    font-weight: 600;
-    color: var(--gray-900);
-  }
-
-  &__category {
-    font-size: 0.8125rem;
-    color: var(--gray-700);
-  }
-
   &__controls {
     display: flex;
     align-items: center;
@@ -358,18 +268,6 @@ export default {
     p {
       margin: 0 0 4px;
     }
-  }
-
-  &__base {
-    margin: 2px 0 0;
-    font-size: 0.75rem;
-    color: var(--gray-700);
-  }
-
-  &__restore {
-    margin-left: 4px;
-    text-transform: none;
-    letter-spacing: normal;
   }
 
   &__thresholds {

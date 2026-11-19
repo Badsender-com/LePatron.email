@@ -4,12 +4,13 @@ import { referenceRows } from '~/helpers/quality-drafts.js';
 import mixinQualityTexts from '~/helpers/mixins/mixin-quality-texts.js';
 import { ChevronDown } from 'lucide-vue';
 import BsDataTable from '~/components/data-table/bs-data-table.vue';
+import BsQualityUnsavedChip from '~/components/quality/quality-unsaved-chip.vue';
 
 // Every check and what applies to it, read only, folded by default: where to
 // look at everything without the page listing it.
 export default {
   name: 'BsQualityReferenceTable',
-  components: { BsDataTable, ChevronDown },
+  components: { BsDataTable, BsQualityUnsavedChip, ChevronDown },
   mixins: [mixinQualityTexts],
   props: {
     // The group's `qualitySettings` as edited (generalOfDrafts): what will
@@ -80,14 +81,11 @@ export default {
             >
               {{ $t('qualitySettings.reference.exception') }}
             </v-chip>
-            <v-chip
+            <bs-quality-unsaved-chip
               v-if="item.unsaved"
-              x-small
-              class="ml-2 qx-reference__unsaved"
-            >
-              <span class="qx-reference__unsaved-dot" />
-              {{ $t('qualitySettings.card.unsaved') }}
-            </v-chip>
+              class="ml-2"
+              :label="$t('qualitySettings.card.unsaved')"
+            />
           </template>
         </bs-data-table>
       </div>
@@ -120,21 +118,6 @@ export default {
     &--open {
       transform: rotate(180deg);
     }
-  }
-
-  // As the cards' "Non enregistrée" chip.
-  &__unsaved {
-    background: rgba(255, 180, 0, 0.2) !important;
-    color: var(--gray-900) !important;
-    font-weight: 600;
-  }
-
-  &__unsaved-dot {
-    width: 6px;
-    height: 6px;
-    margin-right: 5px;
-    border-radius: 50%;
-    background: var(--v-warning-base);
   }
 
   &__table {
