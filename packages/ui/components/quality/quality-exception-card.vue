@@ -48,6 +48,8 @@ export default {
     // own value of what this unsaved change sets.
     keptBy: { type: Array, default: () => [] },
     groupId: { type: String, default: '' },
+    // Whether the company fills in email metadata (usesEmailMetadata).
+    usesMetadata: { type: Boolean, default: false },
     disabled: { type: Boolean, default: false },
     // A check of the technical settings, which this user cannot set.
     locked: { type: Boolean, default: false },
@@ -196,6 +198,7 @@ export default {
         :applied="applied"
         :changes-nothing="changesNothing"
         :group-id="groupId"
+        :uses-metadata="usesMetadata"
         :locked="locked"
       />
       <bs-quality-exception-inheritance

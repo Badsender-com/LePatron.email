@@ -46,6 +46,8 @@ export default {
     // The group's templates, on the general page: an unsaved change says
     // which of them keep their own value.
     templates: { type: Array, default: () => [] },
+    // Whether the company fills in email metadata (usesEmailMetadata).
+    usesMetadata: { type: Boolean, default: false },
     // Saves the payload; returns a promise of the server's answer, which
     // the `saved` event passes on.
     save: { type: Function, required: true },
@@ -271,6 +273,7 @@ export default {
           :errors="errors[id]"
           :kept-by="keptBy[id] || []"
           :group-id="groupId"
+          :uses-metadata="usesMetadata"
           :disabled="loading"
           :locked="lockedIds.includes(id)"
           @state="setState(id, $event)"

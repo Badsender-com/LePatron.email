@@ -3,7 +3,7 @@ import { mapGetters } from 'vuex';
 import { Plus } from 'lucide-vue';
 import * as acls from '~/helpers/pages-acls.js';
 import * as apiRoutes from '~/helpers/api-routes.js';
-import { GENERAL } from '~/helpers/quality-exceptions.js';
+import { GENERAL, usesEmailMetadata } from '~/helpers/quality-exceptions.js';
 import { loadQualitySettings } from '~/helpers/quality-settings.js';
 import mixinSettingsTitle from '~/helpers/mixins/mixin-settings-title.js';
 import mixinUnsavedChanges from '~/helpers/mixins/mixin-unsaved-changes.js';
@@ -61,6 +61,9 @@ export default {
     ...mapGetters(USER, { can: CAN }),
     level() {
       return GENERAL;
+    },
+    usesMetadata() {
+      return usesEmailMetadata(this.group);
     },
     showGroupBadge() {
       return this.can(CAPABILITIES.PLATFORM_MANAGE) && this.group.name;
@@ -178,6 +181,7 @@ export default {
             :settings="group.qualitySettings || null"
             :group-id="group.id || ''"
             :templates="templates"
+            :uses-metadata="usesMetadata"
             :save="saveGeneral"
             @changes="unsavedChanges = $event"
             @draft-settings="draftSettings = $event"
