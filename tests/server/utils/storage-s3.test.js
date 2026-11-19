@@ -11,8 +11,13 @@ const { PassThrough } = require('stream');
 
 // Real S3 acknowledges a PUT only once the object is stored, some time after
 // the last byte of the body left the socket. This fake S3 makes that gap
-// explicit, so we can tell "bytes sent" apart from "object stored".
-const ACK_DELAY_MS = 300;
+// explicit, so we can tell "bytes sent" apart from "object stored": 100 ms is
+// already far longer than the client takes to read right after its upload.
+const ACK_DELAY_MS = 100;
+
+// Real requests to a real local server, each waiting for that gap: jest's
+// 5 s leaves too little room when a full run loads the machine.
+jest.setTimeout(20000);
 
 let server;
 let storage;

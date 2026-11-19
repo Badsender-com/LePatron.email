@@ -10,6 +10,20 @@
 //     require('../../helpers/two-factor-harness.js').models
 //   );
 
+// Ten recovery codes hashed at the product's cost (8 rounds, in pure
+// JavaScript) take about 300 ms: several seconds, past jest's 5 s, under the
+// load of a full run. The tests hash them at bcrypt's lowest cost; what they
+// check (a set of ten, single use, stored hashed) does not depend on it.
+jest.doMock(
+  require.resolve('../../packages/server/two-factor/two-factor.constants.js'),
+  () => ({
+    ...jest.requireActual(
+      '../../packages/server/two-factor/two-factor.constants.js'
+    ),
+    RECOVERY_CODE_BCRYPT_ROUNDS: 4,
+  })
+);
+
 // The TOTP secret is encrypted with the application's key (ADR 0008).
 if (!process.env.ENCRYPTION_KEY) {
   process.env.ENCRYPTION_KEY = 'test-encryption-key-of-32-bytes!';
