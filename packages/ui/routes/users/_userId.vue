@@ -368,6 +368,7 @@ export default {
           </template>
           <template #item.assigned="{ item }">
             <v-switch
+              color="accent"
               :input-value="isUserInWorkspace(item)"
               :loading="savingWorkspaces.has(item.id)"
               :disabled="savingWorkspaces.has(item.id)"

@@ -1,18 +1,21 @@
 <script>
 import { validationMixin } from 'vuelidate';
 import { required } from 'vuelidate/lib/validators';
-import { mapMutations } from 'vuex';
 import { groupsItem } from '~/helpers/api-routes.js';
-import { PAGE, SHOW_SNACKBAR } from '~/store/page';
 import BsFtpSettings from '~/components/group/ftp-settings';
 import BsTextField from '~/components/form/bs-text-field';
 import BsSelect from '~/components/form/bs-select';
 import BsFormSection from '~/components/layout/bs-form-section.vue';
 import { Package, Server, Cloud } from 'lucide-vue';
+import BsGroupFeatureSwitch from '~/components/group/feature-switch.vue';
+import mixinInlineOutcome from '~/helpers/mixins/mixin-inline-outcome.js';
+import BsSaveOutcome from '~/components/layout/bs-save-outcome.vue';
 
 export default {
   name: 'BsExportOptionsTab',
   components: {
+    BsSaveOutcome,
+    BsGroupFeatureSwitch,
     BsFtpSettings,
     BsTextField,
     BsSelect,
@@ -21,7 +24,7 @@ export default {
     LucideServer: Server,
     LucideCloud: Cloud,
   },
-  mixins: [validationMixin],
+  mixins: [mixinInlineOutcome, validationMixin],
   httpOptions: ['http://', 'https://'],
   props: {
     group: { type: Object, default: () => ({}) },
@@ -68,7 +71,6 @@ export default {
     };
   },
   methods: {
-    ...mapMutations(PAGE, { showSnackbar: SHOW_SNACKBAR }),
     requiredErrors(fieldName) {
       const errors = [];
       if (!this.$v.localGroup[fieldName]?.$dirty) return errors;
@@ -95,16 +97,10 @@ export default {
           groupsItem({ groupId: this.localGroup.id }),
           this.localGroup
         );
-        this.showSnackbar({
-          text: this.$t('global.saved'),
-          color: 'success',
-        });
+        this.markSaved();
         this.$emit('update');
       } catch (error) {
-        this.showSnackbar({
-          text: this.$t('global.errors.errorOccured'),
-          color: 'error',
-        });
+        this.markFailed();
       } finally {
         this.loading = false;
       }
@@ -150,13 +146,14 @@ export default {
           <template #description>
             {{ $t('exportOptions.sections.ftpHostingDescription') }}
           </template>
-
-          <v-switch
-            v-model="localGroup.downloadMailingWithFtpImages"
-            :label="$t('forms.group.exportFtp')"
-            hide-details
-            class="mb-4"
-          />
+          <template #header-actions>
+            <bs-group-feature-switch
+              v-model="localGroup.downloadMailingWithFtpImages"
+              :label="$t('forms.group.exportFtp')"
+              :on-text="$t('global.states.on')"
+              :off-text="$t('global.states.off')"
+            />
+          </template>
 
           <v-expand-transition>
             <div v-if="localGroup.downloadMailingWithFtpImages">
@@ -181,13 +178,14 @@ export default {
           <template #description>
             {{ $t('exportOptions.sections.cdnHostingDescription') }}
           </template>
-
-          <v-switch
-            v-model="localGroup.downloadMailingWithCdnImages"
-            :label="$t('forms.group.exportCdn')"
-            hide-details
-            class="mb-4"
-          />
+          <template #header-actions>
+            <bs-group-feature-switch
+              v-model="localGroup.downloadMailingWithCdnImages"
+              :label="$t('forms.group.exportCdn')"
+              :on-text="$t('global.states.on')"
+              :off-text="$t('global.states.off')"
+            />
+          </template>
 
           <v-expand-transition>
             <div v-if="localGroup.downloadMailingWithCdnImages">
@@ -228,6 +226,12 @@ export default {
       <v-divider />
       <v-card-actions>
         <v-spacer />
+        <bs-save-outcome
+          :outcome="outcome"
+          :detail="outcomeDetail"
+          class="mr-4"
+          @retry="onSubmit"
+        />
         <v-btn
           elevation="0"
           color="accent"

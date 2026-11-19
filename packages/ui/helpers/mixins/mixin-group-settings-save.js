@@ -1,8 +1,8 @@
-import { mapGetters, mapMutations } from 'vuex';
-import { PAGE, SHOW_SNACKBAR } from '~/store/page.js';
+import { mapGetters } from 'vuex';
 import { CAN, USER } from '~/store/user.js';
 import * as apiRoutes from '~/helpers/api-routes.js';
 import { CAPABILITIES } from '../../../shared/access/roles.js';
+import mixinInlineOutcome from '~/helpers/mixins/mixin-inline-outcome.js';
 
 /**
  * What a save of the company's settings sends: whoever manages the platform
@@ -21,7 +21,9 @@ export function groupSettingsPayload(group, canManagePlatform) {
 
 /**
  * The save of a company settings page (general, colours): `group` and
- * `loading`, the group badge in the header, and `updateGroup`.
+ * `loading`, the group badge in the header, and `updateGroup`. The outcome is
+ * read on the page (`outcome`, `outcomeDetail`: see `mixinInlineOutcome`), at
+ * the foot of the form, never in a toast.
  *
  * Usage, next to `mixinSettingsTitle`, with the page's own `asyncData`:
  * ```
@@ -29,6 +31,7 @@ export function groupSettingsPayload(group, canManagePlatform) {
  * ```
  */
 export default {
+  mixins: [mixinInlineOutcome],
   data() {
     return {
       group: {},
@@ -45,7 +48,6 @@ export default {
     },
   },
   methods: {
-    ...mapMutations(PAGE, { showSnackbar: SHOW_SNACKBAR }),
     async updateGroup() {
       const {
         $axios,
@@ -57,19 +59,14 @@ export default {
           apiRoutes.groupsItem(params),
           groupSettingsPayload(this.group, this.canManagePlatform)
         );
-        this.showSnackbar({
-          text: this.$t('snackbars.updated'),
-          color: 'success',
-        });
+        this.markSaved();
       } catch (error) {
         const errorCode = error?.response?.data?.message;
-        this.showSnackbar({
-          text:
-            errorCode && this.$te(`global.errors.${errorCode}`)
-              ? this.$t(`global.errors.${errorCode}`)
-              : this.$t('global.errors.errorOccured'),
-          color: 'error',
-        });
+        this.markFailed(
+          errorCode && this.$te(`global.errors.${errorCode}`)
+            ? this.$t(`global.errors.${errorCode}`)
+            : ''
+        );
       } finally {
         this.loading = false;
       }

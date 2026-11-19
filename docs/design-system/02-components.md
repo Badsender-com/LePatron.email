@@ -19,8 +19,8 @@
   font-family: inherit;
   font-size: 14px;
   font-weight: 500;
-  text-transform: uppercase;
-  letter-spacing: 0.025em;
+  /* sentence case, never uppercase */
+  letter-spacing: 0.01em;
   cursor: pointer;
   border: none;
   transition: all 0.2s;
@@ -365,39 +365,37 @@ Small icon-only buttons for contextual actions (edit, delete, reply, etc.).
 
 ## Modal / Dialog
 
-```css
-.modal-backdrop {
-  background: rgba(0, 0, 0, 0.5);
-}
+Every popin of the Vue app has **one anatomy**, whatever its content (a confirmation, a form, a picker). It is written once, in `packages/ui/assets/global-styles/dialogs.scss`, and applies to a plain `v-dialog` / `v-card` as well as to `BsModalConfirm`, `BsModalConfirmForm` and `BsModalForm`. **A dialog never restyles itself**: no `flat tile`, no `headline` or `text-h6` title, no local `.modal-actions` rule. If one must differ, the design system decides it first.
 
-.modal {
-  background: white;
-  border-radius: 8px;
-  max-width: 500px;
-  margin: 0 auto;
-}
-
-.modal-title {
-  padding: 16px;
-  font-size: 16px;
-  font-weight: 600;
-  color: var(--primary);
-}
-
-.modal-content {
-  padding: 0 16px 16px;
-  color: var(--gray-600);
-  font-size: 14px;
-}
-
-.modal-actions {
-  padding: 8px 16px;
-  display: flex;
-  justify-content: flex-end;
-  gap: 8px;
-  border-top: 1px solid var(--gray-200);
-}
 ```
+┌──────────────────────────────────────────┐
+│ Title                       Inter 20 / 600 │  24px 24px 8px, --v-primary-base
+│ Body text                   14 / 1.5       │  8px 24px 24px, gray-700
+├──────────────────────────────────────────┤  1px hairline, gray-200, full width
+│                  [ Cancel ] [ Main action ] │  16px 24px, 8px gap, right-aligned
+└──────────────────────────────────────────┘
+```
+
+| Part      | Rule                                                                                                                                                                                                    |
+| --------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Container | White, `--r-md` radius (10px), `--shadow-modal`. Over a scrim in the primary color (46%, Vuetify's own opacity).                                                                                        |
+| Title     | Inter 20px / 600, `--v-primary-base`, sentence case, a question mark when it asks something ("Exiger la double authentification ?"). A Lucide icon may precede it.                                      |
+| Body      | 14px / 1.5, `--gray-700`. A quieter second line takes the `bs-dialog-note` class (13px, `--gray-600`).                                                                                                  |
+| Footer    | A `--gray-200` hairline across the card, actions on the right. A form's footer written inside its body still runs the width of the card.                                                                |
+| Actions   | Cancel is a `text` button in the primary color, to the left. The main action is a `cta` (`color="accent"`). A destructive confirmation is `danger` (`color="error"`, filled). Never a filled `primary`. |
+| Buttons   | 36px high, 14px / 500, the radius of the controls, **sentence case**.                                                                                                                                   |
+| Width     | `max-width` 400 (a short question), 500 (the default), 600 (a form), up to 900 (a table or a picker).                                                                                                   |
+| Closing   | Cancel, Escape and a click outside all cancel and leave things as they were. A dialog that must not be closed by accident is `persistent`.                                                              |
+
+**Which component to use**
+
+- A confirmation: `BsModalConfirm` (`title`, `action-label`, `action-button-color`); with a typed confirmation or a checkbox, `BsModalConfirmForm`.
+- A form in a popin: `BsModalForm`, or `BsModalConfirm` with `is-form` when the footer is the form's own.
+- A one-off layout (a picker, a preview): a plain `v-dialog` > `v-card` > `v-card-title`, `v-card-text`, `v-divider`, `v-card-actions`.
+
+**Not in the Vue app's scope**: the editor's dialogs (Knockout / jQuery UI, see [04-editor-stack.md](./04-editor-stack.md)) keep their own look until the editor moves to the design system. A preview or a gallery that is only content (no footer) keeps the title and the container, and closes on Escape or a click outside.
+
+**Why filled `danger` and not outlined `danger-ink`**: the outlined button is for the action that opens a confirmation ("Supprimer l'entreprise" in the danger zone); the confirmation itself is the `danger` variant of the design system's `Btn`.
 
 ---
 
@@ -713,7 +711,56 @@ Inline link with trailing or leading icon.
 
 ---
 
-## Notifications (Snackbar)
+## Alert
+
+A framed sentence that says something about the page or the form it sits in, and stays there until the page changes. Written once, in `packages/ui/assets/global-styles/feedback.scss`: an author picks a tone with `<v-alert type="...">` and the variant (`outlined`, `text`, `dense`, solid) makes no difference. It is the alert of the sign-in card (`AuthCard`) for every page.
+
+| Tone      | Use                                                         | Ground                | Frame              | Icon            |
+| --------- | ----------------------------------------------------------- | --------------------- | ------------------ | --------------- |
+| `error`   | Something went wrong, or cannot be done                     | `--color-error-bg`    | `--error-border`   | `--danger-ink`  |
+| `warning` | A consequence to know before going on                       | `--tint-warning-soft` | `--warning-border` | `--warning-ink` |
+| `info`    | A fact that explains the page ("the list is empty: normal") | `--tint-info-soft`    | `--info-border`    | `--info-ink`    |
+| `success` | Something is in place and stays so (not a toast: see below) | `--tint-success-soft` | `--success-border` | `--success-ink` |
+
+- 12px 16px padding, a 1px frame, `--r-md` radius, the text in 13px / 1.5 `--gray-900`: **the tone is carried by the frame and the icon, never by the text**. No shadow, no left bar, no solid fill.
+- `role="alert"` (Vuetify's default) for what went wrong; a plain note otherwise.
+- One alert states one thing, in one or two sentences. A mistake made on a field goes on the field, not in an alert.
+- Sentence case, no exclamation mark; an `error` says what happened and what to do.
+
+## Tooltip
+
+A short label on a control that has no text of its own (an icon button) or whose text is cut. Written in `feedback.scss`, for every `v-tooltip`.
+
+- `--gray-900` ground, white text, 12px / 500, 6px 10px padding, `--r-sm` radius, `--shadow-menu`, **280px at most**.
+- It shows on hover **and on keyboard focus**, above the dialogs (the z-index scale), and never holds anything to click.
+- The text is a noun or a verb ("Aide", "Renommer"), never a sentence; the same words name the control for a screen reader (`aria-label`).
+- Position: `bottom` by default; `top` when the control is at the foot of the screen, `left` or `right` along a side panel.
+
+---
+
+## Feedback after an action: inline or toast
+
+Two kinds of feedback, and **the one to use depends on what was done**:
+
+| What was done                                                                                   | Feedback                                                       |
+| ----------------------------------------------------------------------------------------------- | -------------------------------------------------------------- |
+| **A setting was saved** (a switch, a settings tab, the company form): a value that stays        | **Inline**, where it was made: `BsSaveOutcome`. Never a toast. |
+| **An action on a record** (create, delete, send, duplicate, translate): something that happened | A **toast** (snackbar), see below.                             |
+
+### Inline: `BsSaveOutcome`
+
+`packages/ui/components/layout/bs-save-outcome.vue`, with the `mixinInlineOutcome` mixin (`markSaved()`, `markFailed(detail)`).
+
+- **Saved**: a Lucide `Check` and "Enregistré", 13px / 500 in `--success-ink`, announced (`role="status"`, a live region always in the page), gone after **4 seconds**.
+- **Failed**: "Modification non enregistrée." in `--danger-ink` (`role="alert"`), then what the page knows ("Le nom est déjà pris"), then an underlined **"Réessayer"** that does the save again. It stays until the next try. The switch of a failed change goes back to its saved state.
+- **Where**: next to the control that was used. A switch: under the sentence of its row (`BsGroupFeatureSwitch` in a `BsGroupSettingCard`). A form with a save button: **to the left of the button**, in the same bar.
+- Validation stays on the fields; this is only the outcome of the save.
+
+Pages that use it: the company form, the colors, the export options, the email builder settings, the tracking (global and per template), and the two-factor option.
+
+### Toast: the snackbar
+
+For an action on a record, not for a setting.
 
 ```css
 .snackbar {
@@ -741,7 +788,66 @@ Inline link with trailing or leading icon.
 
 ---
 
+## Filters Panel (listing)
+
+The email listing's search and filters ([preview](./preview/mailings-list.html)).
+Implementation: `mailings-filters.vue`, `mailings-search-scope.vue`, `mailings-date-field.vue`
+in `packages/ui/routes/mailings/__partials/`.
+
+**Anatomy** (one card, `--gray-300` border, 10px radius, 16px padding):
+
+1. **Search field**: full-width up to **520px**, 38px high, search icon vertically centred on the text line, clearable.
+2. **Row**: label "Dans", the **segmented scope control**, then the **Filtres** button and, when a filter is set, **Réinitialiser**. They sit together on the left: on a wide screen a control must stay near the field it refines.
+3. **Hint**: only when the scope is "all workspaces" ("Résultats dans vos N espaces de travail. La colonne Emplacement indique où se trouve chaque email.").
+4. **Panel** (collapsed by default, opened by Filtres): Templates, Tags, "Créé entre … au …", "Mis à jour entre … au …". Labels above the fields, placeholders "Tous les templates" / "Tous les tags".
+
+**Rules**
+
+- Fields never stretch with the screen: a grid of `repeat(auto-fill, minmax(200px, 280px))`.
+- The **Filtres** badge counts the panel's filters (templates, tags, dates), not the name, which has its own clearable field. With a filter set, the button takes the accent border and a 8% accent tint.
+- Filters carry over a change of scope (ADR 0007): the badge and Réinitialiser say why a list is narrowed.
+- **Réinitialiser** sits last in the bar, outlined, and appears only when a panel filter is set (a typed name alone does not bring it). It resets everything: name, filters and scope back to "Dossier courant". Accessible name "Réinitialiser la recherche".
+- **Escape** in the name field empties that field only, scope and filters kept.
+- Source of truth: the `FiltresPanel` sheet of the "LePatron App - Design System" artifact. Known deviation: the segmented control's track is `--gray-200` (the app's `--gray-100` is a 4% alpha that barely shows on white).
+
+### Segmented control
+
+A gray track (`--gray-200`, 3px padding, 8px radius); the chosen segment is raised: white, `--gray-900`, weight 600, 1px `--gray-200` ring and a light shadow. The others are transparent, `--gray-700`, weight 500, no border. Vuetify's `v-btn-toggle` brings its own white ground and a border per button: both are overridden. Semantics: `role="radiogroup"` with `role="radio"` segments.
+
+### Date field
+
+Never the browser's native date input: its calendar cannot be styled. A readonly outlined field (placeholder `JJ/MM/AAAA`, calendar icon) opens a Vuetify `v-date-picker` in a menu (`content-class="bs-date-menu"`):
+
+- `color="accent"`, `no-title`, week starting on Monday, locale of the app.
+- Header month in 14px / 600; weekday initials 11px / 600 uppercase `--gray-600`; day cells 12px / 500.
+- Today (not chosen): 1px accent outline and accent text. Chosen day: solid accent, white text.
+- The field shows the date as the language writes it; the stored value stays `YYYY-MM-DD`.
+
+---
+
+## Security section (company settings)
+
+The company settings form ([DS sheet: `CompanySettings`](https://claude.ai/artifact/JtUDvCUrEjhutNiYQLZNif)). **One "Sécurité" section holds every setting that says who gets in and how**: Permissions, Authentification SAML and Double authentification. They read like the "Modules activés" cards: a bordered card per setting, its icon on a tile, a name, a sentence, and the switch on the right with its state word (`FeatureSwitch`: "Activé / Désactivé", "Activée / Désactivée", "Exigée / Non exigée"). The danger zone stays last, nothing goes under it.
+
+Implementation: `group/form.vue` (the section), `group/setting-card.vue` (the card, with a `body` slot for what a setting unfolds), `group/feature-switch.vue`, `layout/bs-settings-row.vue` (the last two taken from the MCP stack), and `group/two-factor-option.vue` (the third row, passed through the `security-rows` slot).
+
+- **Permissions** and **SAML** are saved with the form's "Enregistrer"; SAML unfolds its fields (entry point, issuer, certificate) in its own card once on.
+- **Double authentification** saves on its own. Its sentence is followed by how many members have set it up ("Configurée par N membres sur M", with a bar once N > 0). Turning it on or off is **confirmed with its impact** ("N membres sur M ne l'ont pas encore configurée"); in the app's usual dialog (rounded card, title, text, hairline, "Annuler" and the action in the accent, red to stop requiring); the action carries the verb ("Exiger la double authentification", "Ne plus exiger"). Cancelling, Escape or a click outside puts the switch back on what is saved.
+- Its outcome is read **on the option**, never in a toast: "Enregistré" with a check (13px 500 success-ink, `role="status"`, gone after 4 seconds); on failure the switch returns to its saved state and the card says "Modification non enregistrée." in danger-ink with an underlined "Réessayer" (`role="alert"`).
+- A company admin reads the state and is told that only a tech admin changes it; a SAML company leaves two-factor to its identity provider.
+- **Not built yet**: the "Membres sans double authentification" row and the `MfaMembers` sub-page (reminders, CSV export), and the lockout guard ("Configurer la mienne": a member sets it up at sign-in, there is no account page for it).
+
+---
+
 ## Toggle / Switch
+
+> **In the Vue app**: one look everywhere, the Vuetify `v-switch` with `color="accent"`. No `inset` pill, no `color="primary"` (navy): the spec below is the visual intent (accent thumb when on).
+>
+> **Which switch where**
+>
+> - **A setting of a page** (a module, an option, a toggle of a settings tab): `BsGroupFeatureSwitch`, which says its state in words ("Activé / Désactivé", "Exigée / Non exigée") to the switch's left. On a `BsGroupSettingCard` (icon tile, name, sentence), in the `header-actions` slot of a `BsFormSection`, or in a `BsSettingsRow`. The off track barely stands out from white: **the word carries the state, never drop it**.
+> - **A field of a form** (the "Actif" of an integration, in a dialog) and **a filter** (the logs' "Masquer les tests"): a labelled `v-switch` in the accent, the label being the field's.
+> - **A toggle in a table row** (a user's access to a workspace): a bare dense `v-switch`; the column header names it.
 
 ```css
 .toggle-track {
