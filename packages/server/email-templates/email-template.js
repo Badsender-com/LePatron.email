@@ -234,10 +234,11 @@ function resolveLanguage(lang) {
  *   `subject`, `title`, `preheader`, `desc` and, with a `url`, `button`
  * @param {string} [lang] the account's
  * @param {Object} [data] `url`: where the button leads (none, no button);
- *   `icon`: the one of the card, one of ICONS (a lock when none)
+ *   `icon`: the one of the card, one of ICONS (a lock when none); `code`: a
+ *   one-time code, shown apart under the title
  * @returns {{subject: string, text: string, html: string, attachments: Object[]}}
  */
-function composeEmail(texts, lang, { url, icon = DEFAULT_ICON } = {}) {
+function composeEmail(texts, lang, { url, icon = DEFAULT_ICON, code } = {}) {
   const language = resolveLanguage(lang);
   const t = texts[language];
   const c = COMMON_TEXTS[language];
@@ -247,13 +248,14 @@ function composeEmail(texts, lang, { url, icon = DEFAULT_ICON } = {}) {
     t,
     c,
     url,
+    code,
     logoCid: LOGO_CID,
     iconCid: ICON_CID,
     privacyUrl: PRIVACY_URL,
     dpo: DPO_EMAIL,
   });
   const text = [
-    t.title,
+    code ? `${t.title}${c.colon}${code}` : t.title,
     t.desc,
     url ? `${t.button}${c.colon}${url}` : '',
     c.sent,

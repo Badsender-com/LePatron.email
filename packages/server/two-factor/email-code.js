@@ -42,27 +42,19 @@ function takeHourlyBudget(userId) {
 const TEXTS = {
   fr: {
     subject: SUBJECTS.fr,
-    title: 'Votre code de vérification\u00a0: {code}',
+    title: 'Votre code de vérification',
     preheader: 'Saisissez ce code pour vous connecter.',
     desc:
       'Il est valable 10 minutes. Si vous n’êtes pas en train de vous connecter, ignorez cet email et prévenez l’administrateur technique de votre société\u00a0: quelqu’un connaît votre mot de passe.',
   },
   en: {
     subject: SUBJECTS.en,
-    title: 'Your verification code: {code}',
+    title: 'Your verification code',
     preheader: 'Enter this code to sign in.',
     desc:
       'It is valid for 10 minutes. If you are not signing in, ignore this email and tell your company’s technical administrator: someone knows your password.',
   },
 };
-
-function textsWith(code) {
-  const texts = {};
-  Object.entries(TEXTS).forEach(([lang, text]) => {
-    texts[lang] = { ...text, title: text.title.replace('{code}', code) };
-  });
-  return texts;
-}
 
 /**
  * Sends a new code to the account's address, which replaces the previous
@@ -86,7 +78,7 @@ async function sendEmailCode(pending, user) {
     hash: await bcrypt.hash(code, EMAIL_CODE_BCRYPT_ROUNDS),
     expiresAt: Date.now() + EMAIL_CODE_TTL_MS,
   };
-  await sendTwoFactorEmail(user, 'emailCode', textsWith(code));
+  await sendTwoFactorEmail(user, 'emailCode', TEXTS, { code });
 }
 
 /**

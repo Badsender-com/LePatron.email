@@ -283,6 +283,8 @@ Deux tentatives précédentes se sont trompées de référence. La première pre
 - **La description est alignée à gauche**, la carte de l'application la centre : « textes longs ni centrés ni justifiés » (critique). Le titre et l'icône restent centrés.
 - **Le pied de page est un texte de 14 px** (le design system a 12 px pour la signature) : la grille demande 14 px.
 
+**Le code de vérification** est mis en exergue discrètement : encart teinté `tint-accent` (`#e0f6fc` sur blanc), coins de 7 px, police mono 28 px / 600 en primaire (12:1), lettres espacées de 0,3 em comme le champ de code de l'application (`code-input`). En mode sombre : fond `#16394a`, texte `#f3f4f6`. Contrairement à la première version, il n'est plus dans le titre (`h1`) ni dans le sujet.
+
 Voix (brandbook) : vouvoiement, phrases courtes, des faits plutôt que des adjectifs, jamais « révolutionnaire », « booster », « clé en main ». Le nom s'écrit LePatron. Les trois bénéfices de la bienvenue reprennent trois différenciateurs du brandbook et du site. Le texte reste à valider.
 
 Le logo et les icônes sont joints à l'email (`cid:`) : rien n'est chargé depuis l'application. Les icônes sont reconstruites par `node scripts/build-email-images.js` depuis les icônes lucide des pages de connexion.

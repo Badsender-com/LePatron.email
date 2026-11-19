@@ -41,6 +41,7 @@ Précisions :
 - Les emails 1 à 3 sont les deux textes d'un même envoi, `resetPassword` : l'état du compte, lu **avant** que l'envoi ne l'efface, choisit la bienvenue (ni mot de passe ni lien : statut `to-be-initialized`) ou le nouveau mot de passe. Un lien de bienvenue renvoyé avant d'avoir servi est donc un « nouveau mot de passe ». Un compte désactivé, qui perd les deux, est de nouveau accueilli à sa réactivation.
 - L'email 4 ne dit pas s'il s'agit d'un premier mot de passe ou d'un nouveau : le lien ne s'en souvient pas.
 - Un membre dont le groupe utilise le SSO ne reçoit pas les emails 1 à 3 (pas de mot de passe).
+- Le code (5) est mis à part sous le titre, dans un encart teinté d'accent (`tint-accent`), en police mono 28 px et lettres espacées, comme le champ de code de l'application. Il n'est ni dans le titre ni dans le sujet (donc ni dans l'aperçu de la boîte de réception) ; la version texte le donne après le titre. Il reste six chiffres contigus : copiable d'un geste, mais un lecteur d'écran le lit comme un nombre.
 - Les emails 5 à 10 n'échouent jamais la requête qui les envoie : une erreur d'envoi est journalisée. Les emails 1 à 4 échouent la requête.
 - Les liens de 1 à 3 valent une semaine (`tokenExpire`, dit « 7 jours » dans les textes) ; le code (5) vit 10 minutes, 3 codes par étape, 10 par heure.
 - Une langue autre que fr et en (`user.lang` est un texte libre) est écrite en anglais, et le journal le signale. `FR` et `fr-FR` sont lus comme `fr`.

@@ -318,6 +318,45 @@ describe.each(CASES)('the %s email, in %s', (name, lang) => {
     });
   }
 
+  if (name === 'code by email') {
+    it('puts the code apart, in the code field style of the application, softly highlighted', () => {
+      const code = /\b(\d{6})\b/.exec(message.text)[1];
+      const cell = tag(/<td[^>]*class="code"[^>]*>/);
+      expect(message.html).toMatch(
+        new RegExp(`class="code"[^>]*>${code}</td>`)
+      );
+      expect(cell).toMatch(/font-family:\s*ui-monospace/);
+      expect(cell).toMatch(/letter-spacing:\s*0\.3em/);
+      expect(cell).toMatch(/font-size:\s*28px/);
+      // The accent at 12 % over white (tint-accent), the text in the primary.
+      expect(cell).toMatch(/background-color:\s*#e0f6fc/i);
+      expect(contrast('#093040', '#e0f6fc')).toBeGreaterThanOrEqual(4.5);
+      // Once in the page: the title and the subject no longer carry it.
+      expect(message.html.match(new RegExp(code, 'g'))).toHaveLength(1);
+      expect(h1()).not.toMatch(/\d/);
+      expect(message.subject).not.toContain(code);
+    });
+
+    it('writes the code in the plain text, right after the title', () => {
+      const code = /\b(\d{6})\b/.exec(message.text)[1];
+      expect(message.text).toMatch(new RegExp(`${h1()}.{1,3}${code}`));
+    });
+
+    it('keeps the code legible in dark mode', () => {
+      const dark = message.html.match(
+        /@media \(prefers-color-scheme: dark\)[\s\S]*?\n {4}\}/
+      )[0];
+      expect(dark).toMatch(
+        /\.code\s*\{\s*background-color:\s*#16394a\s*!important;\s*color:\s*#f3f4f6/
+      );
+      expect(contrast('#f3f4f6', '#16394a')).toBeGreaterThanOrEqual(4.5);
+    });
+  } else {
+    it('has no code block: it carries no code', () => {
+      expect(message.html).not.toMatch(/class="code"/);
+    });
+  }
+
   it('shows the logo and the icon of the card, which travel with the email', () => {
     const logo = message.attachments.find(({ cid }) => /^logo@/.test(cid));
     const icon = message.attachments.find(({ cid }) => /^icon@/.test(cid));
