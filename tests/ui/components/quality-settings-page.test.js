@@ -137,3 +137,26 @@ describe('the search fields', () => {
     );
   });
 });
+
+describe('the reference table', () => {
+  it("leads from a row to the check's card", () => {
+    const table = read('quality-reference-table.vue');
+    expect(table).toMatch(
+      /clickable\s+@click:row="\(item\) => \$emit\('select', item\.id\)"/
+    );
+    expect(table).toMatch(
+      /class="qx-reference__name"\s+@click\.stop="\$emit\('select', item\.id\)"/
+    );
+    const editor = read('quality-exceptions-editor.vue');
+    expect(editor).toMatch(/focusCheck\(id\)/);
+    expect(editor).toMatch(/:data-check-id="id"/);
+  });
+});
+
+describe('the save bar', () => {
+  it('shows only while something waits to be saved', () => {
+    expect(read('quality-exceptions-editor.vue')).toMatch(
+      /<bs-quality-save-bar\s+v-if="changeCount \|\| invalidCount \|\| loading"/
+    );
+  });
+});

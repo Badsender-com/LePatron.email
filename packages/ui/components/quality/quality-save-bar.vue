@@ -1,9 +1,8 @@
 <script>
 import { AlertTriangle } from 'lucide-vue';
 
-// The save bar of a "Contrôle qualité" page, always shown as on the other
-// settings pages: how many changes wait, and its buttons greyed out while
-// there is none.
+// The save bar of a "Contrôle qualité" page, shown while something waits to
+// be saved: how many changes, or which values are not valid.
 export default {
   name: 'BsQualitySaveBar',
   components: { AlertTriangle },

@@ -6,8 +6,9 @@ import { ChevronDown } from 'lucide-vue';
 import BsDataTable from '~/components/data-table/bs-data-table.vue';
 import BsQualityUnsavedChip from '~/components/quality/quality-unsaved-chip.vue';
 
-// Every check and what applies to it, read only, folded by default: where to
-// look at everything without the page listing it.
+// Every check and what applies to it, folded by default: where to look at
+// everything without the page listing it. A row leads to the check's card
+// (`select`), added when the check has none.
 export default {
   name: 'BsQualityReferenceTable',
   components: { BsDataTable, BsQualityUnsavedChip, ChevronDown },
@@ -69,9 +70,21 @@ export default {
     </button>
     <v-expand-transition>
       <div v-if="open" class="qx-reference__table">
-        <bs-data-table :headers="headers" :items="items" :items-per-page="-1">
+        <bs-data-table
+          :headers="headers"
+          :items="items"
+          :items-per-page="-1"
+          clickable
+          @click:row="(item) => $emit('select', item.id)"
+        >
           <template #item.name="{ item }">
-            {{ item.name }}
+            <button
+              type="button"
+              class="qx-reference__name"
+              @click.stop="$emit('select', item.id)"
+            >
+              {{ item.name }}
+            </button>
             <v-chip
               v-if="item.isException"
               x-small
@@ -122,6 +135,21 @@ export default {
 
   &__table {
     margin-top: 12px;
+  }
+
+  &__name {
+    padding: 0;
+    border: none;
+    background: none;
+    font: inherit;
+    color: inherit;
+    text-align: left;
+    cursor: pointer;
+
+    &:hover,
+    &:focus-visible {
+      text-decoration: underline;
+    }
   }
 }
 </style>

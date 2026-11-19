@@ -234,6 +234,12 @@ export default {
   border-color: var(--gray-300) !important;
   border-radius: 8px !important;
 
+  // Reached from a row of the reference table.
+  &:focus {
+    outline: 2px solid var(--v-accent-base);
+    outline-offset: 2px;
+  }
+
   &__head {
     display: flex;
     flex-wrap: wrap;

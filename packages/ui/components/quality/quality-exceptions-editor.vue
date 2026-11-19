@@ -198,6 +198,22 @@ export default {
       this.drafts = { ...this.drafts, [id]: emptyException(id) };
     },
 
+    // A row of the reference table: the check's card, added when it has
+    // none (as from the add dialog), scrolled to and focused. A check the
+    // user cannot set gets no card.
+    focusCheck(id) {
+      if (!this.drafts[id]) {
+        if (this.lockedIds.includes(id)) return;
+        this.add(id);
+      }
+      this.$nextTick(() => {
+        const card = this.$el.querySelector(`[data-check-id="${id}"]`);
+        if (!card) return;
+        card.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        card.focus({ preventScroll: true });
+      });
+    },
+
     remove(id) {
       this.drafts = omit(this.drafts, id);
     },
@@ -272,6 +288,8 @@ export default {
         <bs-quality-exception-card
           v-for="id in ids"
           :key="id"
+          :data-check-id="id"
+          tabindex="-1"
           :check-id="id"
           :level="level"
           :exception="drafts[id]"
@@ -299,6 +317,7 @@ export default {
     />
 
     <bs-quality-save-bar
+      v-if="changeCount || invalidCount || loading"
       :change-count="changeCount"
       :loading="loading"
       :invalid-count="invalidCount"

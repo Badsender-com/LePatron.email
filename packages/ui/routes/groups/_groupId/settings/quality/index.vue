@@ -190,6 +190,7 @@ export default {
           <bs-quality-reference-table
             :settings="draftSettings"
             :saved-settings="group.qualitySettings || null"
+            @select="$refs.editor.focusCheck($event)"
           />
         </div>
         <bs-quality-templates-table
