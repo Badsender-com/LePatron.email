@@ -140,18 +140,35 @@ describe('a run, for the checks the editor names', () => {
   });
 
   // The editor's format check judges an image whose address names no format
-  // by the type the server reads in it.
-  it('downloads the images for the image format check', async () => {
+  // by the type the server read in it, when an image check downloaded it.
+  it('downloads the images for the format check along with an image check', async () => {
     const d = configured();
-    const result = await run(resources(['unsupported-image-formats']), d);
+    const result = await run(
+      resources(['unsupported-image-formats', 'image-weight']),
+      d
+    );
+
+    expect(asked(d).imageDownloaded).toBe(true);
+    expect(Object.keys(result.images)).toEqual([IMAGE]);
+  });
+
+  // Alone, it would call image hosts the company turned the image checks off
+  // for. An editor that still asks is answered on the rest, not refused.
+  it('downloads no image for the format check alone, and answers the rest', async () => {
+    const d = configured();
+    const result = await run(
+      resources(['unsupported-image-formats', 'broken-links']),
+      d
+    );
 
     expect(asked(d)).toEqual({
-      linkVisited: false,
-      imageDownloaded: true,
+      linkVisited: true,
+      imageDownloaded: false,
       webRisk: false,
       blocklists: false,
     });
-    expect(Object.keys(result.images)).toEqual([IMAGE]);
+    expect(result.images).toEqual({});
+    expect(Object.keys(result.links)).toEqual([LINK]);
   });
 
   it('does nothing for an empty list', async () => {
