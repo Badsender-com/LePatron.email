@@ -24,7 +24,8 @@ export default {
   },
   computed: {
     groups() {
-      const query = normalized(this.search.trim());
+      // The field's clear button sets null.
+      const query = normalized((this.search || '').trim());
       const byId = new Map(this.candidates.map((c) => [c.id, c]));
       return checksByCategory()
         .map(({ category, ids }) => ({

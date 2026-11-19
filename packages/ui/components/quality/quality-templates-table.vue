@@ -63,7 +63,8 @@ export default {
       });
     },
     items() {
-      const query = this.search.trim().toLowerCase();
+      // The field's clear button sets null.
+      const query = (this.search || '').trim().toLowerCase();
       return this.rows.filter(
         (row) =>
           (this.show === 'all' || row.count > 0) &&

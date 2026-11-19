@@ -124,3 +124,16 @@ describe('the notes of a blocking card', () => {
     );
   });
 });
+
+describe('the search fields', () => {
+  it('read a search cleared with the clear button (null) as empty', () => {
+    ['quality-exception-dialog.vue', 'quality-templates-table.vue'].forEach(
+      (file) => {
+        const source = read(file);
+        expect(source).toMatch(/clearable/);
+        expect(source).not.toMatch(/this\.search\.trim\(\)/);
+        expect(source).toMatch(/\(this\.search \|\| ''\)\.trim\(\)/);
+      }
+    );
+  });
+});
