@@ -26,6 +26,9 @@ export default {
     return {
       templatesIsLoading: true,
       expanded: false,
+      // What the field shows. The store learns it 300 ms later: a reset in
+      // between must empty the field itself.
+      nameInput: '',
       dateRanges: [
         { key: 'createdAt', label: 'createdBetween' },
         { key: 'updatedAt', label: 'updatedBetween' },
@@ -66,6 +69,7 @@ export default {
 
   // One debounce per instance (a method would lose its `cancel`).
   created() {
+    this.nameInput = this.filters.name || '';
     this.debouncedNameChange = debounce((value) => {
       this.commitFilterChangeToStore({ name: value });
     }, 300);
@@ -76,6 +80,8 @@ export default {
 
   methods: {
     clearFilters() {
+      this.debouncedNameChange.cancel();
+      this.nameInput = '';
       this.$store.commit(`${FOLDER}/${SET_FILTERS}`, {
         name: '',
         templates: [],
@@ -103,9 +109,11 @@ export default {
     // Escape empties the name field only, scope and filters kept.
     clearName() {
       this.debouncedNameChange.cancel();
+      this.nameInput = '';
       this.commitFilterChangeToStore({ name: '' });
     },
     handleNameChange(value) {
+      this.nameInput = value || '';
       this.debouncedNameChange(value);
     },
     handleFilterChange(filterKey, filterValue) {
@@ -127,7 +135,7 @@ export default {
     :aria-label="$t('mailings.filters.title')"
   >
     <v-text-field
-      :value="filters.name"
+      :value="nameInput"
       :placeholder="$t('mailings.filters.searchPlaceholder')"
       :aria-label="$t('mailings.filters.searchPlaceholder')"
       class="filters-panel__search"
