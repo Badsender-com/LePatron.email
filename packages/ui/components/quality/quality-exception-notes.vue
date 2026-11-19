@@ -3,6 +3,7 @@ import { Lock } from 'lucide-vue';
 import { GMAIL_CLIPPING_BYTES } from '../../../shared/quality/limits.js';
 import {
   GENERAL,
+  IMAGE_SERVER_CHECKS,
   blocksFrom,
   hasNote,
   isServerCheck,
@@ -10,14 +11,6 @@ import {
 import mixinQualityTexts from '~/helpers/mixins/mixin-quality-texts.js';
 
 const BYTES_PER_KB = 1024;
-// The checks whose run has the server download the images: only then does
-// it read the type of an image whose address names none (the editor's
-// resources.js, ADR 0009).
-const IMAGE_READING_CHECKS = [
-  'image-weight',
-  'images-total-weight',
-  'oversized-images',
-];
 // The checks that judge the email's metadata: an email without them gives
 // them nothing to read.
 const METADATA_CHECKS = ['subject', 'preheader'];
@@ -38,6 +31,10 @@ export default {
     // Whether the company fills in email metadata: without them, a subject
     // check has nothing to judge.
     usesMetadata: { type: Boolean, default: false },
+    // Whether the server downloads the images with the settings that will
+    // apply: only then does it read the type of an image whose address
+    // names none.
+    readsImages: { type: Boolean, default: false },
     // A check of the technical settings this user cannot set: no link to
     // settings they cannot open, and no word of a removal on save, which
     // they cannot make.
@@ -115,13 +112,16 @@ export default {
     },
   },
   methods: {
-    // The card knows the settings of its own check only: the condition on
-    // the image checks is said, not checked.
+    // An image whose address names no format is judged on the type the
+    // server reads, which it reads only while an image check runs.
     unnamedImagesText() {
-      return this.$t('qualitySettings.notes.unnamedImages', {
+      if (this.readsImages) {
+        return this.$t('qualitySettings.notes.unnamedImages');
+      }
+      return this.$t('qualitySettings.notes.unnamedImagesUnchecked', {
         checks: new Intl.ListFormat(this.$i18n.locale, {
           type: 'disjunction',
-        }).format(IMAGE_READING_CHECKS.map((id) => this.checkName(id))),
+        }).format(IMAGE_SERVER_CHECKS.map((id) => this.checkName(id))),
       });
     },
   },

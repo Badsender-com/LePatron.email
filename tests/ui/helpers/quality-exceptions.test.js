@@ -10,6 +10,8 @@ import {
   exceptionCount,
   blocksFrom,
   usesEmailMetadata,
+  serverReadsImages,
+  IMAGE_SERVER_CHECKS,
   adjustmentsOf,
   valuesEqualToBase,
 } from '~/helpers/quality-exceptions.js';
@@ -206,5 +208,45 @@ describe("a company's email metadata", () => {
     );
     expect(usesEmailMetadata({})).toBe(false);
     expect(usesEmailMetadata(null)).toBe(false);
+  });
+});
+
+describe('the server reading the images', () => {
+  const off = { state: 'off', thresholds: {} };
+  const allOff = Object.fromEntries(IMAGE_SERVER_CHECKS.map((id) => [id, off]));
+
+  it('is asked by the checks that download the images, from the catalogue', () => {
+    expect(IMAGE_SERVER_CHECKS).toEqual([
+      'image-weight',
+      'images-total-weight',
+      'oversized-images',
+    ]);
+  });
+
+  it('happens while one of them is on, as the settings will apply', () => {
+    // General settings: the recommended values have them on.
+    expect(serverReadsImages({}, generalOf(null))).toBe(true);
+    expect(serverReadsImages(allOff, generalOf(null))).toBe(false);
+    // One back on in the drafts, blocking.
+    expect(
+      serverReadsImages(
+        {
+          ...allOff,
+          'oversized-images': { state: 'blocking', thresholds: {} },
+        },
+        generalOf(null)
+      )
+    ).toBe(true);
+  });
+
+  it('follows the general settings on a template, under its own', () => {
+    const generalOff = generalOf({ checks: allOff });
+    expect(serverReadsImages({}, generalOff)).toBe(false);
+    expect(
+      serverReadsImages(
+        { 'image-weight': { state: 'on', thresholds: {} } },
+        generalOff
+      )
+    ).toBe(true);
   });
 });

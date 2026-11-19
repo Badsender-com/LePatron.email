@@ -50,6 +50,8 @@ export default {
     groupId: { type: String, default: '' },
     // Whether the company fills in email metadata (usesEmailMetadata).
     usesMetadata: { type: Boolean, default: false },
+    // Whether the server downloads the images (serverReadsImages).
+    readsImages: { type: Boolean, default: false },
     disabled: { type: Boolean, default: false },
     // A check of the technical settings, which this user cannot set.
     locked: { type: Boolean, default: false },
@@ -199,6 +201,7 @@ export default {
         :changes-nothing="changesNothing"
         :group-id="groupId"
         :uses-metadata="usesMetadata"
+        :reads-images="readsImages"
         :locked="locked"
       />
       <bs-quality-exception-inheritance

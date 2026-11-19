@@ -35,6 +35,27 @@ const storedChecks = (settings) =>
 
 export const isServerCheck = (id) => SERVER_CHECKS.includes(id);
 
+// The server's checks that download the images (weight, total weight,
+// dimensions): only while one of them runs does the server read the type of
+// an image whose address names none (the editor's resources.js).
+export const IMAGE_SERVER_CHECKS = SERVER_CHECKS.filter(
+  (id) => CHECKS[id].server.task === 'images'
+);
+
+/**
+ * Whether the server downloads the images with the settings that will
+ * apply: one of IMAGE_SERVER_CHECKS is on or blocking.
+ * @param {Object} drafts a level's exceptions as edited, by check
+ * @param {Object} below what applies without them, by check: the
+ *   recommended values in the general settings, the general ones on a
+ *   template
+ */
+export function serverReadsImages(drafts, below) {
+  return IMAGE_SERVER_CHECKS.some(
+    (id) => effectiveOf(drafts[id], below[id]).state !== 'off'
+  );
+}
+
 /**
  * Whether a company fills in email metadata (subject, preheader): without
  * them, the checks that judge them have nothing to read.

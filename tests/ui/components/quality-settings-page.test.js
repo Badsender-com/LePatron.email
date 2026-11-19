@@ -113,9 +113,14 @@ describe('the notes of a blocking card', () => {
     expect(lower).toBeGreaterThan(blocksOn);
   });
 
-  it('names the image checks the format of an unnamed image depends on', () => {
+  // Which image checks, and whether one is on: serverReadsImages, tested
+  // with the helpers.
+  it('says how an unnamed image is judged by whether an image check runs', () => {
     expect(source).toMatch(
-      /IMAGE_READING_CHECKS = \[\s*'image-weight',\s*'images-total-weight',\s*'oversized-images',?\s*\]/
+      /if \(this\.readsImages\) \{\s*return this\.\$t\('qualitySettings\.notes\.unnamedImages'\);/
+    );
+    expect(source).toMatch(
+      /qualitySettings\.notes\.unnamedImagesUnchecked[\s\S]*?IMAGE_SERVER_CHECKS\.map/
     );
   });
 });
