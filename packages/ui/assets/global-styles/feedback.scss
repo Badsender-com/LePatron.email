@@ -7,7 +7,9 @@
 // the alert of the sign-in card (design system: AuthCard) for every page, the
 // four tones sharing one anatomy. Vuetify's own alerts (solid, outlined, text,
 // a bold left border) are overridden here, so that `<v-alert type="warning">`
-// reads the same whichever variant its author picked.
+// reads the same whichever variant its author picked. All but `colored-border`:
+// it gives its tone to the bar alone, which this sheet hides, so the alert
+// would read as information. Leave it out.
 //
 // A tooltip is a dark label, `--gray-900`, white text, on the shadow of a menu.
 // =============================================================================
