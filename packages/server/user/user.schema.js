@@ -8,10 +8,9 @@ const randToken = require('rand-token');
 const moment = require('moment');
 const mongooseHidden = require('mongoose-hidden')();
 
-const config = require('../node.config.js');
 const mail = require('../mailing/mail.service.js');
 const {
-  renderEmail,
+  composeEmail,
   siteOrigin,
   PASSWORD_TEXTS,
 } = require('../email-templates/email-template.js');
@@ -193,8 +192,18 @@ UserSchema.methods.deactivate = function deactivate() {
 // the person asked for a new one (the current password and the open sessions
 // keep working until the emailed link is used, so that asking in someone's
 // name locks nobody out).
+//
+// An account with no password is welcomed, not reset: it never had one. The
+// state is read before the reset clears the password. A welcome link sent
+// again before it was used reads as a reset, nothing keeps the first
+// initialisation (docs/emails/audit-accessibilite.md).
 UserSchema.methods.resetPassword = async function resetPassword(type, lang) {
   const user = this;
+  const texts = !user.password
+    ? PASSWORD_TEXTS.welcome
+    : type === 'user'
+    ? PASSWORD_TEXTS.forgot
+    : PASSWORD_TEXTS.reset;
   if (type !== 'user') {
     user.password = undefined;
     // No session carries this id: the session validation ends them all.
@@ -210,12 +219,7 @@ UserSchema.methods.resetPassword = async function resetPassword(type, lang) {
   }`;
   await mail.send({
     to: updatedUser.email,
-    subject: `${config.emailOptions.passwordSubjectPrefix} – Password reset`,
-    text: `here is the link to enter your new password ${resetUrl}`,
-    html: renderEmail(PASSWORD_TEXTS['reset-password'], lang, {
-      type: type,
-      url: resetUrl,
-    }),
+    ...composeEmail(texts, lang, { url: resetUrl }),
   });
 
   return updatedUser;
@@ -232,12 +236,7 @@ UserSchema.methods.setPassword = async function setPassword(password, lang) {
   const loginUrl = `${siteOrigin()}/account/login`;
   await mail.send({
     to: updatedUser.email,
-    subject: `${config.emailOptions.passwordSubjectPrefix} – password reset`,
-    text: `your password has been successfully been reinitialized. connect at ${loginUrl}`,
-    html: renderEmail(PASSWORD_TEXTS['reset-success'], lang, {
-      type: 'admin',
-      url: loginUrl,
-    }),
+    ...composeEmail(PASSWORD_TEXTS.confirmation, lang, { url: loginUrl }),
   });
   return updatedUser;
 };
