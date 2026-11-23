@@ -189,14 +189,13 @@ describe('spelling correction: a field', () => {
     expect(session.state.corrections[0].status).toBe('stale');
   });
 
-  it('marks a correction not applied when the editor refuses to write it', async () => {
+  it('marks a correction not applied when the editor leaves the field as it was', async () => {
     api.generate.mockResolvedValue({
       corrections: [fix('titleText', 'soldes commence', 'soldes commencent')],
       dropped: 0,
     });
-    editor.writeField = () => {
-      throw new Error('gone');
-    };
+    // As the editor does for a block gone: nothing written, nothing thrown.
+    editor.writeField = () => {};
     const session = open(FIELD_TARGET);
     await session.request();
     expect(session.accept(session.state.corrections[0].id)).toEqual({
@@ -248,6 +247,27 @@ describe('spelling correction: a field', () => {
     expect(editor.html['ko_textBlock_3:titleText']).toBe(
       '<p>Les soldes commencent demain</p>'
     );
+  });
+
+  it('knows an accepted correction after an undo and a redo, its new text elsewhere in the field too', async () => {
+    editor.html['ko_textBlock_3:titleText'] = '<p>ça marche. Et sa ?</p>';
+    api.generate.mockResolvedValue({
+      corrections: [fix('titleText', 'sa', 'ça')],
+      dropped: 0,
+    });
+    const session = open(FIELD_TARGET);
+    await session.request();
+    const [correction] = session.state.corrections;
+    session.accept(correction.id);
+    expect(editor.html['ko_textBlock_3:titleText']).toBe(
+      '<p>ça marche. Et ça ?</p>'
+    );
+    editor.html['ko_textBlock_3:titleText'] = '<p>ça marche. Et sa ?</p>';
+    session.refresh();
+    expect(correction.status).toBe('undone');
+    editor.html['ko_textBlock_3:titleText'] = '<p>ça marche. Et ça ?</p>';
+    session.refresh();
+    expect(correction.status).toBe('accepted');
   });
 
   it('undoes and redoes with the editor', () => {

@@ -79,6 +79,72 @@ describe('spelling correction: a block', () => {
     ).toEqual([40, 5]);
   });
 
+  describe('in several requests', () => {
+    const manyFields = () =>
+      Array.from({ length: 45 }, (_, i) => ({
+        path: `text${i}`,
+        role: 'text',
+        html: i ? `Texte ${i}` : 'Il a manger',
+        hidden: false,
+        sample: false,
+      }));
+
+    beforeEach(() => {
+      editor.textFieldsOf = manyFields;
+      editor.html['ko_textBlock_3:text0'] = 'Il a manger';
+    });
+
+    it('counts the fields left unchecked when one request fails, keeping the others', async () => {
+      api.generate
+        .mockResolvedValueOnce({
+          corrections: [fix('text0', 'a manger', 'a mangé')],
+          dropped: 0,
+        })
+        .mockRejectedValueOnce({ response: { status: 502 } });
+      const session = open(BLOCK_TARGET);
+      await session.request();
+      expect(session.state.unchecked).toBe(5);
+      expect(session.state.corrections).toHaveLength(1);
+      expect(session.state.error).toBeNull();
+    });
+
+    it('reports the failure when every request fails', async () => {
+      api.generate.mockRejectedValue({ response: { status: 502 } });
+      const session = open(BLOCK_TARGET);
+      await session.request();
+      expect(session.state.error).toBe('text-generation-error-failed');
+    });
+
+    it('says it was interrupted when stopped before its last request, and starts again on resume', async () => {
+      const session = open(BLOCK_TARGET);
+      api.generate
+        .mockImplementationOnce(async () => {
+          session.stop();
+          return { corrections: [], dropped: 0 };
+        })
+        .mockResolvedValue({ corrections: [], dropped: 0 });
+      await session.request();
+      expect(api.generate).toHaveBeenCalledTimes(1);
+      expect(session.state.stopped).toBe(true);
+      expect(session.state.canResume).toBe(true);
+      await session.resume();
+      expect(api.generate).toHaveBeenCalledTimes(3);
+      expect(session.state.canResume).toBe(false);
+      expect(session.state.stopped).toBe(false);
+    });
+  });
+
+  it('is not interrupted when stopped during its only request', async () => {
+    const session = open(BLOCK_TARGET);
+    api.generate.mockImplementationOnce(async () => {
+      session.stop();
+      return { corrections: [], dropped: 0 };
+    });
+    await session.request();
+    expect(session.state.canResume).toBe(false);
+    expect(session.state.stopped).toBe(false);
+  });
+
   it('says there is nothing to correct when every field is hidden or left at its sample, without a request', async () => {
     editor.textFieldsOf = () => [
       {
@@ -104,6 +170,54 @@ describe('spelling correction: a block', () => {
     const session = open(BLOCK_TARGET);
     await session.request();
     expect(session.state.corrections[0].role).toBe('alt');
+  });
+
+  it('keeps what the server says of a correction that rewrites', async () => {
+    api.generate.mockResolvedValue({
+      corrections: [
+        {
+          ...fix('titleText', 'soldes commence', 'soldes débutent'),
+          rewrite: true,
+        },
+        fix('titleText', 'demain', 'dès demain'),
+      ],
+      dropped: 0,
+    });
+    const session = open(BLOCK_TARGET);
+    await session.request();
+    expect(session.state.corrections.map((c) => c.rewrite)).toEqual([
+      true,
+      undefined,
+    ]);
+  });
+
+  it('leaves a correction that rewrites out of « Tout accepter »: it is accepted on its own', async () => {
+    api.generate.mockResolvedValue({
+      corrections: [
+        {
+          ...fix('titleText', 'soldes commence', 'soldes débutent'),
+          rewrite: true,
+        },
+        fix('longText', 'la colection', 'la collection'),
+      ],
+      dropped: 0,
+    });
+    const session = open(BLOCK_TARGET);
+    await session.request();
+    expect(session.acceptAll()).toEqual({ accepted: 1, stale: 0 });
+    expect(session.acceptBlock('ko_textBlock_3')).toEqual({
+      accepted: 0,
+      stale: 0,
+    });
+    expect(session.state.corrections.map((c) => c.status)).toEqual([
+      'pending',
+      'accepted',
+    ]);
+    expect(
+      editor.calls.filter(([name]) => name === 'startMultiple')
+    ).toHaveLength(1);
+    const [rewrite] = session.state.corrections;
+    expect(session.accept(rewrite.id)).toEqual({ accepted: 1, stale: 0 });
   });
 
   it('accepts all the corrections of the block as one step of the editor undo', async () => {

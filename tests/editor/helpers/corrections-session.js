@@ -112,6 +112,43 @@ const fix = (field, before, after, reason = 'Orthographe') => ({
   reason,
 });
 
+// An email of blocks of one text field each, `texts[i]` that of block i + 1;
+// or an array of texts, a block of several fields.
+function withBlocks(editor, texts) {
+  const blocks = texts.map((_, i) => ({
+    blockId: `ko_textBlock_${i + 1}`,
+    blockType: 'textBlock',
+  }));
+  const pathsOf = {};
+  texts.forEach((text, i) => {
+    const { blockId } = blocks[i];
+    const list = Array.isArray(text) ? text : [text];
+    pathsOf[blockId] = list.map((_, j) => (j ? `text${j}` : 'text'));
+    list.forEach((value, j) => {
+      editor.html[`${blockId}:${pathsOf[blockId][j]}`] = value;
+    });
+  });
+  editor.blocks = () => blocks;
+  editor.textFieldsOf = (blockId) =>
+    pathsOf[blockId].map((path) => ({
+      path,
+      role: 'text',
+      html: editor.html[`${blockId}:${path}`],
+      hidden: false,
+      sample: false,
+    }));
+  return blocks;
+}
+
+// What the server answers to a request with no mistake.
+const NONE = Object.freeze({ corrections: [], dropped: 0 });
+
+// The blocks a request was sent for, by id.
+const blocksOf = ([, body]) =>
+  body.target.kind === 'blocks'
+    ? body.target.blocks.map((block) => block.blockId)
+    : [body.target.blockId];
+
 // A fresh API, editor and wait for each test, and the session of an action.
 function correctionsSetup() {
   const api = { generate: jest.fn() };
@@ -135,5 +172,8 @@ module.exports = {
   FIELDS,
   fakeEditor,
   fix,
+  withBlocks,
+  NONE,
+  blocksOf,
   correctionsSetup,
 };
