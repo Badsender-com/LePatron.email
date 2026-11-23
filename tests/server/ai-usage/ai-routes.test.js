@@ -49,6 +49,7 @@ describe('AI routes', () => {
         '/api/mailings/:mailingId/duplicate-translate',
         '/api/text-generation/subject',
         '/api/text-generation/preheader',
+        '/api/text-generation/corrections',
       ].sort()
     );
   });

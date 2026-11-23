@@ -34,7 +34,10 @@ function configWith(features) {
   });
 }
 
-const TEXT_GENERATION_SKILLS = ['redaction.objet', 'redaction.pre-header'];
+// Every skill text generation calls, as its manifest declares them.
+const TEXT_GENERATION_SKILLS = require('../../../packages/server/text-generation/skill-manifest.js').usedSkills.map(
+  (used) => used.skillId
+);
 
 // The skills a query finds: those its audience filter lets through.
 function skills(...docs) {

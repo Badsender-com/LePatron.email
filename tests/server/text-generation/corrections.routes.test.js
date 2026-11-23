@@ -28,8 +28,13 @@ jest.mock('../../../packages/server/mailing/mailing.service', () => ({
 jest.mock('../../../packages/server/mailing/mailing-metadata.service', () => ({
   findCanonicalEmailType: jest.fn(),
 }));
+// A query as the service chains it: `findById(id).select(…).lean()`.
+const mockFoundDocument = (document) => ({
+  select: () => ({ lean: () => Promise.resolve(document) }),
+});
 jest.mock('../../../packages/server/common/models.common.js', () => ({
   Templates: { findById: jest.fn() },
+  Groups: { findById: jest.fn(() => mockFoundDocument(null)) },
 }));
 jest.mock('../../../packages/server/account/auth.guard', () => ({
   // The capability guard has its own tests: here it only has to be on the
@@ -141,7 +146,10 @@ function loadModules() {
   mailingMetadataService = require('../../../packages/server/mailing/mailing-metadata.service');
   textGenerationRouter = require('../../../packages/server/text-generation/text-generation.routes');
 
-  mailingService.findOneForUser.mockResolvedValue({ id: MAILING_ID });
+  mailingService.findOneForUser.mockResolvedValue({
+    id: MAILING_ID,
+    _company: 'g1',
+  });
   mailingService.assertUserCanEditMailing.mockResolvedValue();
   mailingMetadataService.findCanonicalEmailType.mockResolvedValue(
     'promotional'
@@ -248,6 +256,7 @@ describe('spelling correction: POST /api/text-generation/corrections', () => {
       expect(findApplicable).toHaveBeenCalledWith({
         scope: 'correction',
         categories: ['redaction'],
+        groupId: 'g1',
       });
     });
 
