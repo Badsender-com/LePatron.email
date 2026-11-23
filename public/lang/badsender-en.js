@@ -1018,6 +1018,8 @@ module.exports = {
   'text-generation-copy-hint':
     "This email's subject is not managed in LePatron: copy a proposal and paste it in your sending platform.",
   'text-generation-applied': 'Applied. Save the email to keep it.',
+  'text-generation-default-email':
+    "The email's text is still the template's: change it before asking for proposals.",
   'text-generation-empty-email':
     'The email has no text yet: add content before asking for proposals.',
   'text-generation-error-disabled':

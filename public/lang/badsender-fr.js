@@ -1054,6 +1054,8 @@ module.exports = {
   'text-generation-copy-hint':
     "L'objet de cet email n'est pas géré dans LePatron : copiez une proposition pour la coller dans votre outil d'envoi.",
   'text-generation-applied': "Appliqué. Enregistrez l'email pour le conserver.",
+  'text-generation-default-email':
+    "Le texte de l'email est encore celui du template : modifiez-le avant de demander des propositions.",
   'text-generation-empty-email':
     "L'email ne contient pas encore de texte : ajoutez du contenu avant de demander des propositions.",
   'text-generation-error-disabled':

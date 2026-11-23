@@ -81,6 +81,22 @@ describe('ai panel: the steps of an AI action', () => {
       });
     });
 
+    it('says the email has no text, and asks nothing', async () => {
+      editor.emailCopy = () => [];
+      editor.hasTemplateCopy = () => false;
+      await session.request();
+      expect(session.state.error).toBe('text-generation-empty-email');
+      expect(api.generate).not.toHaveBeenCalled();
+    });
+
+    it("says the email's text is still the template's, and asks nothing", async () => {
+      editor.emailCopy = () => [];
+      editor.hasTemplateCopy = () => true;
+      await session.request();
+      expect(session.state.error).toBe('text-generation-default-email');
+      expect(api.generate).not.toHaveBeenCalled();
+    });
+
     it('asks for proposals from the email copy, the current subject and the instruction', async () => {
       api.generate.mockResolvedValue(answer('A', 'B', 'C'));
       await session.request({ brief: 'Insister sur la livraison' });

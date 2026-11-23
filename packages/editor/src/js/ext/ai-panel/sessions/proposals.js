@@ -54,7 +54,12 @@ function createProposalsSession({ definition, target, api, editor }) {
   async function ask() {
     const content = editor.emailCopy();
     if (!content.length) {
-      state.error = 'text-generation-empty-email';
+      // Its text is still the template's: nothing the user wrote to work on.
+      const atDefault =
+        typeof editor.hasTemplateCopy === 'function' && editor.hasTemplateCopy();
+      state.error = atDefault
+        ? 'text-generation-default-email'
+        : 'text-generation-empty-email';
       return;
     }
     state.error = null;

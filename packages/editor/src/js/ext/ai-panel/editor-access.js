@@ -139,6 +139,12 @@ function createEditorAccess(viewModel) {
       const canvas = document.getElementById('main-wysiwyg-area') || document;
       return extractEmailCopy(canvas, { sampleFor });
     },
+    // Whether the email shows text at all, the template's own included: an
+    // email with no copy of its own may still hold the template's.
+    hasTemplateCopy() {
+      const canvas = document.getElementById('main-wysiwyg-area') || document;
+      return extractEmailCopy(canvas).length > 0;
+    },
     getSubject: () => getSubject(viewModel) || '',
     knownSubject,
     rememberSubject: (value) => {
