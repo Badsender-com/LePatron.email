@@ -629,7 +629,7 @@ MailingSchema.statics.findOneForMosaico = async function findOneForMosaico(
   const {
     hasTranslationFeature,
     hasTextGenerationFeature,
-  } = await aiFeatureService.getEditorFeatureFlags({ groupId });
+  } = await aiFeatureService.getEditorFeatureFlags({ groupId, group });
 
   // Editorial metadata for the editor's email-settings section, when the company
   // opted in. The policy — which company the typology list is scoped to, what to
