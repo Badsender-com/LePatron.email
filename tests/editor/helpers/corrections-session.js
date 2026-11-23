@@ -32,35 +32,35 @@ const FIELDS = {
       role: 'title',
       html: '<p>Les soldes commence demain</p>',
       hidden: false,
-      sample: false,
+      atDefault: false,
     },
     {
       path: 'longText',
       role: 'text',
       html: '<p>Profitez de <strong>-30 %</strong> sur la colection</p>',
       hidden: false,
-      sample: false,
+      atDefault: false,
     },
     {
       path: 'image.alt',
       role: 'alt',
       html: 'Une robe en lin bleu',
       hidden: false,
-      sample: false,
+      atDefault: false,
     },
     {
       path: 'subtitleText',
       role: 'title',
       html: 'Sous-titre caché',
       hidden: true,
-      sample: false,
+      atDefault: false,
     },
     {
       path: 'buttonText',
       role: 'button',
       html: 'Bouton',
       hidden: false,
-      sample: true,
+      atDefault: true,
     },
   ],
   ko_footerBlock_9: [
@@ -69,7 +69,7 @@ const FIELDS = {
       role: 'text',
       html: 'Vous recevez cet email car vous etes inscrit.',
       hidden: false,
-      sample: false,
+      atDefault: false,
     },
   ],
 };
@@ -135,7 +135,7 @@ function withBlocks(editor, texts) {
       role: 'text',
       html: editor.html[`${blockId}:${path}`],
       hidden: false,
-      sample: false,
+      atDefault: false,
     }));
   return blocks;
 }

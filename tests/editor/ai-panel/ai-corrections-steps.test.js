@@ -102,7 +102,7 @@ function fakeEditor() {
         role: 'title',
         html: html.titleText,
         hidden: false,
-        sample: false,
+        atDefault: false,
       },
     ],
     readField: (_blockId, path) => html[path],

@@ -25,8 +25,8 @@ function fieldsOf(editor, target) {
   }
   const shown = all.filter((field) => !field.hidden);
   return {
-    fields: shown.filter((field) => !field.sample),
-    leftOut: { sample: shown.filter((field) => field.sample).length },
+    fields: shown.filter((field) => !field.atDefault),
+    leftOut: { sample: shown.filter((field) => field.atDefault).length },
   };
 }
 

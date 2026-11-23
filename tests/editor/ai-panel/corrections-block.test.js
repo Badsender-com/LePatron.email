@@ -51,7 +51,7 @@ describe('spelling correction: a block', () => {
         role: 'text',
         html: `<p>${'a'.repeat(5001)}</p>`,
         hidden: false,
-        sample: false,
+        atDefault: false,
       },
     ];
     api.generate.mockResolvedValue({ corrections: [], dropped: 0 });
@@ -70,7 +70,7 @@ describe('spelling correction: a block', () => {
         role: 'text',
         html: `Texte ${i}`,
         hidden: false,
-        sample: false,
+        atDefault: false,
       }));
     api.generate.mockResolvedValue({ corrections: [], dropped: 0 });
     await open(BLOCK_TARGET).request();
@@ -86,7 +86,7 @@ describe('spelling correction: a block', () => {
         role: 'text',
         html: i ? `Texte ${i}` : 'Il a manger',
         hidden: false,
-        sample: false,
+        atDefault: false,
       }));
 
     beforeEach(() => {
@@ -152,7 +152,7 @@ describe('spelling correction: a block', () => {
         role: 'button',
         html: 'Bouton',
         hidden: false,
-        sample: true,
+        atDefault: true,
       },
     ];
     const session = open(BLOCK_TARGET);
