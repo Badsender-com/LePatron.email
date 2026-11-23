@@ -362,6 +362,27 @@ describe('spelling correction: POST /api/text-generation/corrections', () => {
       expect(res.body.dropped).toBe(1);
     });
 
+    it('returns a correction removing its text', async () => {
+      invoke.mockResolvedValue(corrections(fix('longText', ' lin', '')));
+      const res = await post();
+      expect(res.body).toEqual({
+        corrections: [fix('longText', ' lin', '')],
+        dropped: 0,
+      });
+    });
+
+    it('drops and counts a removal whose text is not in the field', async () => {
+      invoke.mockResolvedValue(corrections(fix('titleText', ' bientôt', '')));
+      const res = await post();
+      expect(res.body).toEqual({ corrections: [], dropped: 1 });
+    });
+
+    it('drops and counts a correction whose text after is elsewhere in the field', async () => {
+      invoke.mockResolvedValue(corrections(fix('titleText', 'Lse', 'Les')));
+      const res = await post();
+      expect(res.body).toEqual({ corrections: [], dropped: 1 });
+    });
+
     it('drops and counts a correction found twice in its field', async () => {
       invoke.mockResolvedValue(
         corrections(

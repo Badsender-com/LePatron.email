@@ -12,9 +12,11 @@
  * - `unchanged`: `after` is `before`;
  * - `invalid-text`: `after` holds a control or bidirectional character;
  * - `multiline`: the excerpt straddles two lines of the visible text;
- * - `already-applied`: no `before`, but `after` is there: the text already
- *   holds the correction (a non-breaking space the model could not see);
- * - `not-found`: no whole-word occurrence of `before`;
+ * - `already-applied`: no `before`, but `after` is there and differs from it
+ *   by its spaces only: the text already holds the correction (a
+ *   non-breaking space the model could not see);
+ * - `not-found`: no whole-word occurrence of `before`; a removal (an empty
+ *   `after`) not found is one;
  * - `ambiguous`: several;
  * - `merge-tag`: the occurrence touches a merge tag, or `after` brings one;
  * - `straddles-markup`: the occurrence crosses a tag (a word half in bold).
@@ -38,6 +40,9 @@ const WORD_CHAR = /[\p{L}\p{N}]/u;
 const INVALID_CHAR = /[\u0000-\u0009\u000b-\u001f\u007f\u202a-\u202e\u2066-\u2069]/;
 // Spaces the rendering collapses into one; a non-breaking space is not one.
 const COLLAPSIBLE = /^[ \t\n\r\f]$/;
+// The spaces a model cannot tell apart: a space, a non-breaking one, a narrow
+// one.
+const SPACES = /[ \u00a0\u202f]/g;
 
 function decodeEntity(raw, body) {
   if (body[0] === '#') {
@@ -158,9 +163,10 @@ function flatten(tokens) {
 
 const isWordChar = (char) => Boolean(char) && WORD_CHAR.test(char);
 
-// Whole-word occurrences of `needle` in `text`.
+// Whole-word occurrences of `needle` in `text`; none of an empty one.
 function occurrences(text, needle) {
   const found = [];
+  if (!needle) return found;
   let from = text.indexOf(needle);
   while (from !== -1) {
     const end = from + needle.length;
@@ -189,6 +195,9 @@ function mergeTagSpans(text) {
   return lastSpans;
 }
 
+const differsBySpacesOnly = (a, b) =>
+  a.replace(SPACES, '') === b.replace(SPACES, '');
+
 const mergeTagsOf = (text) => (text.match(MERGE_TAG) || []).sort().join('\n');
 
 /**
@@ -208,9 +217,11 @@ function locateCorrection(text, { before, after }) {
   }
   const found = occurrences(text, before);
   if (!found.length) {
-    return occurrences(text, after).length
-      ? { refused: 'already-applied' }
-      : { refused: 'not-found' };
+    const applied =
+      after !== '' &&
+      differsBySpacesOnly(before, after) &&
+      occurrences(text, after).length > 0;
+    return { refused: applied ? 'already-applied' : 'not-found' };
   }
   if (found.length > 1) return { refused: 'ambiguous' };
   const [index] = found;

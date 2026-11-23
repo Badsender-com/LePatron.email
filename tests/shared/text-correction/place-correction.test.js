@@ -140,6 +140,15 @@ describe('spelling correction: placing a correction', () => {
       ).toEqual({ html: 'Une robe en lin bleu de R&D' });
     });
 
+    it('removes the text before when the text after is empty', () => {
+      expect(
+        placeCorrection('<p>Les soldes commencent demain (sic)</p>', {
+          before: ' (sic)',
+          after: '',
+        })
+      ).toEqual({ html: '<p>Les soldes commencent demain</p>' });
+    });
+
     it('escapes what it writes', () => {
       expect(
         placeCorrection('Notre equipe R et D', {
@@ -209,6 +218,24 @@ describe('spelling correction: placing a correction', () => {
         'already-applied',
         '<p>Verdict&nbsp;: anonymiser</p>',
         { before: 'Verdict : anonymiser', after: 'Verdict\u00a0: anonymiser' },
+      ],
+      [
+        'already-applied',
+        '<p>Prix\u202f: 10 \u20ac</p>',
+        { before: 'Prix :', after: 'Prix\u202f:' },
+      ],
+      // A removal looks for nothing once its text is gone: not found.
+      [
+        'not-found',
+        '<p>Les soldes commencent</p>',
+        { before: ' (sic)', after: '' },
+      ],
+      // Already there means a space the model could not see, nothing else: a
+      // word found elsewhere in the text is no sign the correction was made.
+      [
+        'not-found',
+        '<p>Passez en boutiqe demain. Votre boutique vous attend.</p>',
+        { before: 'boutque', after: 'boutique' },
       ],
     ])(
       'refuses (%s) and leaves the HTML as it was',
