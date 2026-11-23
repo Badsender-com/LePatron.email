@@ -38,7 +38,9 @@ export default {
       default: false,
     },
     // Whether the current group is the platform group. Gates the Skills engine
-    // section (R&D-only for now — no client feature consumes skills yet).
+    // section: the engine of the skills invoked without a feature of their own,
+    // the Playground's among them. A client feature that runs skills, such as
+    // text generation, has its own engine section.
     isPlatform: {
       type: Boolean,
       default: false,
@@ -310,7 +312,8 @@ export default {
           @save="saveFeature"
         />
 
-        <!-- The page's own sections (MCP access), before what is coming. -->
+        <!-- The page's own sections (the content of the AI invocation logs,
+             MCP access), before what is coming. -->
         <slot />
 
         <!-- Section: Coming Soon Features -->
