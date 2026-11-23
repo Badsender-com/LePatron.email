@@ -488,7 +488,7 @@ export default {
   }
 
   tr.is-mapped {
-    background: rgba(0, 172, 220, 0.06);
+    background: var(--accent-tint-selected);
   }
 }
 </style>

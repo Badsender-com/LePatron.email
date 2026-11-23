@@ -70,14 +70,17 @@ var(--v-error-base)
 
 The accent's translucent tints are tokens of `packages/ui/assets/global-styles/design-tokens.scss`, frozen on the default accent: a white label that changes the accent overrides them too.
 
-| Token                          | Usage                                                       |
-| ------------------------------ | ----------------------------------------------------------- |
-| `--accent-tint-hover`          | Row hover                                                   |
-| `--accent-tint-selected`       | Selected row                                                |
-| `--accent-tint-selected-hover` | Selected row, hovered                                       |
-| `--accent-tint-resize`         | Column resize handle                                        |
-| `--accent-tint-resize-active`  | Column resize handle, dragged                               |
-| `--accent-tint-tile`           | Icon tile of a `BsFormSection` card while its feature is on |
+| Token                          | Usage                                                                              |
+| ------------------------------ | ---------------------------------------------------------------------------------- |
+| `--accent-tint-hover`          | Row hover                                                                          |
+| `--accent-tint-selected`       | Selected row                                                                       |
+| `--accent-tint-selected-hover` | Selected row, hovered                                                              |
+| `--accent-tint-resize`         | Column resize handle                                                               |
+| `--accent-tint-resize-active`  | Column resize handle, dragged                                                      |
+| `--accent-tint-tile`           | Icon tile of a `BsFormSection` card while its feature is on, and of a setting card |
+| `--accent-tint-active`         | Current page or module in the sidebar                                              |
+| `--accent-tint-active-hover`   | Current page or module in the sidebar, hovered                                     |
+| `--accent-border-hover`        | Frame of a setting card, hovered                                                   |
 
 ### Editor (LESS Variables)
 

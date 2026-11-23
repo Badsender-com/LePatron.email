@@ -54,6 +54,11 @@
   --accent-tint-selected-hover: rgba(0, 172, 220, 0.1);
   --accent-tint-resize: rgba(0, 172, 220, 0.3);
   --accent-tint-resize-active: rgba(0, 172, 220, 0.5);
+  // The current page or module in the sidebar, and hovered.
+  --accent-tint-active: rgba(0, 172, 220, 0.1);
+  --accent-tint-active-hover: rgba(0, 172, 220, 0.15);
+  // The frame of a setting card, hovered.
+  --accent-border-hover: rgba(0, 172, 220, 0.4);
   // The ground of an icon tile while what it heads is on (BsFormSection card).
   --accent-tint-tile: rgba(0, 172, 220, 0.12);
   // The ground of an icon in a round tile, of an accent badge.

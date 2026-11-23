@@ -116,7 +116,7 @@ export default {
 }
 
 .bs-sidebar-module--active {
-  background: rgba(0, 172, 220, 0.1);
+  background: var(--accent-tint-active);
   color: var(--v-accent-base, #00acdc);
   font-weight: 600;
 }
@@ -140,6 +140,6 @@ export default {
   top: 50%;
   right: 8px;
   transform: translateY(-50%);
-  color: #9e9e9e;
+  color: var(--gray-500);
 }
 </style>

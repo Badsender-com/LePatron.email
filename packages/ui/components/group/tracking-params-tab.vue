@@ -352,7 +352,7 @@ export default {
       border-bottom: none;
     }
     &:hover {
-      background: rgba(0, 172, 220, 0.05);
+      background: var(--accent-tint-hover);
     }
   }
 

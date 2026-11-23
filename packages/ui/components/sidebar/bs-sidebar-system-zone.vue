@@ -161,7 +161,7 @@ export default {
 }
 
 .bs-sidebar-system-item--active {
-  background: rgba(0, 172, 220, 0.1);
+  background: var(--accent-tint-active);
   color: var(--v-primary-base, #093040);
 }
 </style>
