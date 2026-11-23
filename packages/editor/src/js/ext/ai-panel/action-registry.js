@@ -32,7 +32,8 @@ function runs(definition, context) {
  * @param {{ kind: string }} target
  * @param {Object} context what the email offers: the active AI features
  *   (`textGeneration`…), the skills that run for the company (`skills`),
- *   `hasSubject`, `hasSubjectField`, `hasPreheaderField`
+ *   `hasSubject`, `hasSubjectField`, `hasPreheaderField`,
+ *   `blockHasText(blockId)`
  * @param {Array} [definitions] the action definitions, all of them by default
  * @returns {{ actions: Array, opens: 'none'|'action'|'list' }}
  */
@@ -45,7 +46,10 @@ function availableActions(target, context, definitions = ACTIONS) {
   const actions = definitions
     .filter(
       (definition) =>
-        runs(definition, context) && definition.targets.includes(target.kind)
+        runs(definition, context) &&
+        definition.targets.includes(target.kind) &&
+        // What the target itself must hold, read last: it may read the email.
+        (!definition.offeredOn || definition.offeredOn(target, context))
     )
     .map((definition) => {
       const { suggestFirst, ...described } = definition.describe(context);

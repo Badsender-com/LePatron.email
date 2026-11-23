@@ -212,6 +212,9 @@ function createEditorAccess(viewModel) {
         hasSubjectField: canWriteSubject(viewModel),
         // The whole content is read only when an action may need it.
         hasPreheaderField: textGeneration && canWritePreheader(viewModel),
+        // Whether a block has any text, hidden or not, read when an action
+        // asks: a binding that calls it follows the block's fields.
+        blockHasText: (blockId) => textPathsOf(viewModel, blockId).length > 0,
       };
     },
   };

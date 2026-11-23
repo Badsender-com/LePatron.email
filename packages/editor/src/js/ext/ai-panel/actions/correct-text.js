@@ -12,6 +12,11 @@ module.exports = {
   feature: 'textGeneration',
   skill: 'redaction.correction',
   targets: ['blockField', 'block', 'email'],
+  // A block without text has nothing to correct: a separator, an image
+  // without its alternative text. The block toolbar and the panel both ask.
+  offeredOn: (target, context) =>
+    target.kind !== 'block' ||
+    Boolean(context.blockHasText && context.blockHasText(target.blockId)),
   // A correction is always written: block fields are the email's own.
   describe: () => ({ canApply: true }),
 
@@ -19,5 +24,7 @@ module.exports = {
 
   labels: {
     name: 'ai-panel-action-correct',
+    // What an entry point that opens it directly says.
+    entry: 'ai-field-correct-label',
   },
 };

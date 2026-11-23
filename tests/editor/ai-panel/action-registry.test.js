@@ -19,6 +19,7 @@ const ON = {
   hasSubject: true,
   hasSubjectField: true,
   hasPreheaderField: true,
+  blockHasText: () => true,
 };
 
 describe('ai panel: the action registry', () => {
@@ -263,6 +264,34 @@ describe('ai panel: the action registry', () => {
           actions: [{ id: 'correct-text', canApply: true }],
           opens: 'action',
         });
+      });
+
+      // The block toolbar and the panel ask the same question: a separator,
+      // or an image without its alternative text, offers nothing.
+      it('is not offered on a block without text', () => {
+        const blockHasText = jest.fn(() => false);
+        expect(availableActions(BLOCK, { ...ON, blockHasText })).toEqual({
+          actions: [],
+          opens: 'none',
+        });
+        expect(blockHasText).toHaveBeenCalledWith('ko_textBlock_3');
+      });
+
+      it('is not offered when the context cannot tell', () => {
+        expect(
+          availableActions(BLOCK, { ...ON, blockHasText: undefined }).actions
+        ).toEqual([]);
+      });
+
+      it('asks nothing of the block for a field or the whole email', () => {
+        const blockHasText = jest.fn(() => false);
+        expect(ids(availableActions(FIELD, { ...ON, blockHasText }))).toEqual([
+          'correct-text',
+        ]);
+        expect(
+          ids(availableActions({ kind: 'email' }, { ...ON, blockHasText }))
+        ).toContain('correct-text');
+        expect(blockHasText).not.toHaveBeenCalled();
       });
     });
 

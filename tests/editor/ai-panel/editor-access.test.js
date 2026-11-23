@@ -125,5 +125,29 @@ describe('ai panel: what the actions read from the email', () => {
       expect(styles).not.toHaveBeenCalled();
       styles.mockRestore();
     });
+
+    it('tells the registry whether a block has any text', () => {
+      const { editor, image } = editorOf();
+      const { blockHasText } = editor.context();
+      expect(blockHasText('ko_textBlock_3')).toBe(true);
+      expect(blockHasText('ko_separatorBlock_4')).toBe(false);
+      expect(blockHasText('ko_imageBlock_2')).toBe(false);
+
+      // An alternative text typed in afterwards.
+      image().imageAlt('Un chat');
+      expect(blockHasText('ko_imageBlock_2')).toBe(true);
+    });
+
+    // A binding that asks re-reads once the block's text changes.
+    it('is a dependency of whoever asks', () => {
+      const { editor, image } = editorOf();
+      const { blockHasText } = editor.context();
+      const hasText = ko.pureComputed(() => blockHasText('ko_imageBlock_2'));
+      const seen = [];
+      const subscription = hasText.subscribe((value) => seen.push(value));
+      image().imageAlt('Un chat');
+      expect(seen).toEqual([true]);
+      subscription.dispose();
+    });
   });
 });

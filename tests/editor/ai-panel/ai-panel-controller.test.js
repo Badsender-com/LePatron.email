@@ -23,6 +23,7 @@ const CONTEXT = {
   hasSubject: true,
   hasSubjectField: true,
   hasPreheaderField: true,
+  blockHasText: () => true,
 };
 
 const block = (type, id) => ({ type: () => type, id: () => id });
