@@ -311,10 +311,10 @@ describe('ai panel: the controller', () => {
         definitions: [...ACTIONS, rewrite],
       });
       selection(COVER);
-      panel.openTarget(panel.target());
+      panel.openAction('rewrite-block', panel.target());
       const onCover = panel.session();
       panel.showList(targetOfBlock(block('textBlock', 'ko_textBlock_2')));
-      panel.openTarget(panel.target());
+      panel.openAction('rewrite-block', panel.target());
       expect(panel.session()).not.toBe(onCover);
       expect(panel.session().state.target.blockId).toBe('ko_textBlock_2');
     });
