@@ -1092,7 +1092,11 @@ What relies on these names, so a template that wants them must keep them:
 
 - **Quality control and text generation** read and write the preheader at either
   location above. `preheaderVisible: false` counts as no preheader: a generated one
-  is then offered to copy instead.
+  is then offered to copy instead. A template that declares per-market preheaders
+  (any `…PreheaderText` property, at the root or in `preheaderBlock`) has no
+  preheader they can read or write, even when it also declares a generic
+  `preheaderText`: which one the email sends cannot be told. Quality control then
+  does not judge the preheader, and text generation offers it to copy only.
 - **The AI icon of the preheader field** (« Outils IA », ADR 0010) is placed in the
   label of the property editor whose input is bound to `value: preheaderText`.
   Mosaico offers no slot per property, so the binding is the only hook: a template
