@@ -10,8 +10,9 @@
 
 const createError = require('http-errors');
 const { LegacyMinorVersionTexts } = require('../constant/skill-constants.js');
-
-const MAX_RELEASE_NOTE_LENGTH = 500;
+const {
+  MAX_RELEASE_NOTE_LENGTH,
+} = require('../../../shared/ai-skill/constants.js');
 
 const said = (text, generic) => {
   const trimmed = String(text || '').trim();
