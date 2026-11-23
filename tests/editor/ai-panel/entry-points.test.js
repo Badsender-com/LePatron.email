@@ -71,7 +71,15 @@ const PREHEADER = block('preheaderBlock', 1, { preheaderText: 'En ligne' });
 
 function editorViewModel() {
   const vm = {
-    metadata: { id: 'm1', hasTextGenerationFeature: true },
+    metadata: {
+      id: 'm1',
+      hasTextGenerationFeature: true,
+      textGenerationSkills: [
+        'redaction.objet',
+        'redaction.pre-header',
+        'redaction.correction',
+      ],
+    },
     t: (key) => key,
     currentUser: ko.observable({
       capabilities: [CAPABILITIES.MAILING_EDIT_CONTENT],
