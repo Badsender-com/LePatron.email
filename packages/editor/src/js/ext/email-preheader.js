@@ -81,5 +81,4 @@ module.exports = {
   readPreheader,
   canWritePreheader,
   writePreheader,
-  PREHEADER_PATHS,
 };
