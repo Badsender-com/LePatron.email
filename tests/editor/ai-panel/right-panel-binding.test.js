@@ -57,6 +57,21 @@ describe('the right panel binding', () => {
     expect(vm.rightPanel.open()).toBeNull();
   });
 
+  it('stays open on an Escape already consumed inside it', () => {
+    const { vm } = mount();
+    vm.rightPanel.show('quality');
+    const field = document.getElementById('close');
+    field.addEventListener('keydown', (event) => event.preventDefault());
+    field.dispatchEvent(
+      new KeyboardEvent('keydown', {
+        key: 'Escape',
+        bubbles: true,
+        cancelable: true,
+      })
+    );
+    expect(vm.rightPanel.open()).toBe('quality');
+  });
+
   it('gives the focus back to its toggle when it closes', () => {
     jest.useFakeTimers();
     const { vm } = mount();

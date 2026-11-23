@@ -447,6 +447,20 @@ function commentsLoader(opts) {
     };
 
     /**
+     * Escape while the mention suggestions are open closes the suggestions
+     * only: the event is marked as consumed so the right panel stays open.
+     */
+    viewModel.handleCommentKeydown = function (data, event) {
+      if (event.key === 'Escape' && viewModel.showMentionSuggestions()) {
+        event.preventDefault();
+        viewModel.hideMentionSuggestions();
+      }
+      // Knockout's event binding prevents the default unless true: typing
+      // must go through.
+      return true;
+    };
+
+    /**
      * Handle textarea focus - expand textarea
      */
     viewModel.onTextareaFocus = function () {

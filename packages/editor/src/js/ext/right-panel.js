@@ -86,6 +86,9 @@ function registerRightPanelBinding(ko) {
       const panel = bindingContext.$root.rightPanel;
 
       const onKeydown = (event) => {
+        // An Escape already consumed inside the panel (closing a list of
+        // suggestions, a menu) leaves the panel open.
+        if (event.defaultPrevented) return;
         if (event.key === 'Escape' && panel.isOpen(name)) {
           event.stopPropagation();
           panel.hide();

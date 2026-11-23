@@ -499,7 +499,7 @@
       <div class="comment-reply-form">
         <div class="comments-textarea-wrapper">
           <textarea class="comments-textarea comment-textarea-reply" rows="2"
-            data-bind="value: $root.newCommentText, valueUpdate: 'afterkeydown', event: { input: $root.handleCommentInput, blur: function() { setTimeout($root.hideMentionSuggestions, 200); } }, attr: { placeholder: $root.t('comments-placeholder') }"></textarea>
+            data-bind="value: $root.newCommentText, valueUpdate: 'afterkeydown', event: { input: $root.handleCommentInput, keydown: $root.handleCommentKeydown, keydown: $root.handleCommentKeydown, blur: function() { setTimeout($root.hideMentionSuggestions, 200); } }, attr: { placeholder: $root.t('comments-placeholder') }"></textarea>
 
           <!-- Mention suggestions dropdown -->
           <!-- ko if: $root.showMentionSuggestions() && $root.mentionSuggestions().length > 0 -->
@@ -530,7 +530,7 @@
   <div class="comments-form">
     <div class="comments-textarea-wrapper">
       <textarea class="comments-textarea comment-textarea-main" rows="2"
-        data-bind="value: $root.newCommentText, valueUpdate: 'afterkeydown', event: { input: $root.handleCommentInput, focus: $root.onTextareaFocus, blur: $root.onTextareaBlur }, attr: { placeholder: $root.t('comments-placeholder') }, css: { 'is-focused': $root.isCommentTextareaFocused() }"></textarea>
+        data-bind="value: $root.newCommentText, valueUpdate: 'afterkeydown', event: { input: $root.handleCommentInput, keydown: $root.handleCommentKeydown, keydown: $root.handleCommentKeydown, focus: $root.onTextareaFocus, blur: $root.onTextareaBlur }, attr: { placeholder: $root.t('comments-placeholder') }, css: { 'is-focused': $root.isCommentTextareaFocused() }"></textarea>
 
       <!-- Mention suggestions dropdown -->
       <!-- ko if: $root.showMentionSuggestions() && $root.mentionSuggestions().length > 0 -->
