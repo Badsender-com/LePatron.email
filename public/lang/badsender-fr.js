@@ -918,4 +918,160 @@ module.exports = {
   'Copy the link: __link__': 'Copier le lien : __link__',
   'The link could not be copied': "Le lien n'a pas pu être copié",
   'The links could not be loaded': "Les liens n'ont pas pu être chargés",
+
+  // text generation (epic #1163)
+  // AI panel, « Outils IA » (ADR 0010)
+  'ai-panel-title': 'Outils IA',
+  'ai-panel-actions': 'Actions disponibles',
+  'ai-panel-action-subject': "Générer l'objet",
+  'ai-panel-action-preheader': 'Générer le préheader',
+  'ai-panel-copy-only':
+    "Pas de champ dans cet email : la proposition sera à copier pour votre outil d'envoi.",
+  'ai-panel-select-invite':
+    'Sélectionnez un bloc ou un champ pour voir ses actions IA.',
+  'ai-panel-all-actions': 'Toutes les actions',
+  'ai-panel-no-subject':
+    "Cet email n'a pas encore d'objet. Le préheader le complète : mieux vaut commencer par l'objet.",
+  'ai-panel-subject-first': "Générer d'abord l'objet",
+  'ai-panel-preheader-anyway': 'Générer le préheader quand même',
+  'ai-panel-next-preheader': 'Continuer avec le préheader',
+  'ai-panel-loading': 'Génération en cours…',
+  'ai-panel-action-correct': 'Corriger',
+  'ai-panel-selected-field': 'Champ sélectionné',
+  'ai-panel-correcting': 'Analyse en cours…',
+  'ai-panel-no-correction': 'Aucune faute trouvée.',
+  'ai-panel-corrections-count': '__count__ corrections',
+  'ai-panel-corrections-count-one': '1 correction',
+  'ai-panel-accept': 'Accepter',
+  'ai-panel-ignore': 'Ignorer',
+  'ai-panel-accept-all': 'Tout accepter',
+  'ai-panel-correction-accepted': 'Acceptée',
+  'ai-panel-correction-ignored': 'Ignorée',
+  'ai-panel-correction-undone': 'Annulée',
+  'ai-panel-correction-stale':
+    "Non appliquée : le texte a changé depuis l'analyse.",
+  'ai-panel-corrections-accepted': '__count__ corrections acceptées.',
+  'ai-panel-corrections-accepted-one': '1 correction acceptée.',
+  'ai-panel-corrections-stale':
+    "__count__ non appliquées : le texte a changé depuis l'analyse.",
+  'ai-panel-corrections-stale-one':
+    "1 non appliquée : le texte a changé depuis l'analyse.",
+  'ai-panel-correction-undo-hint':
+    '__keys__ annule la dernière correction acceptée.',
+  'ai-panel-correcting-blocks': 'Analyse : bloc __done__ sur __total__…',
+  'ai-panel-correction-paused':
+    "Pause : limite d'utilisation atteinte, reprise dans __seconds__ s.",
+  'ai-panel-correction-stop': "Arrêter l'analyse",
+  'ai-panel-correction-stopped':
+    'Analyse arrêtée après __done__ blocs sur __total__.',
+  'ai-panel-correction-stopped-one':
+    'Analyse arrêtée après 1 bloc sur __total__.',
+  'ai-panel-correction-finished':
+    'Analyse terminée : __count__ corrections à examiner.',
+  'ai-panel-correction-finished-one':
+    'Analyse terminée : 1 correction à examiner.',
+  'ai-panel-blocks-failed':
+    "Ces blocs n'ont pas pu être analysés, réessayez plus tard : __blocks__.",
+  'ai-panel-accept-block': 'Tout accepter dans ce bloc',
+  'ai-panel-go-to-block': 'Aller au bloc',
+  'ai-panel-nothing-to-correct': "Il n'y a pas de texte à corriger ici.",
+  'ai-panel-field-title': 'Titre',
+  'ai-panel-field-text': 'Texte',
+  'ai-panel-field-button': 'Bouton',
+  'ai-panel-field-alt': 'Texte alternatif',
+  'ai-panel-left-out-sample':
+    "__count__ champs encore à leur texte d'exemple laissés de côté.",
+  'ai-panel-left-out-sample-one':
+    "1 champ encore à son texte d'exemple laissé de côté.",
+  'ai-panel-left-out-too-long':
+    '__count__ champs trop longs pour être vérifiés laissés de côté.',
+  'ai-panel-left-out-too-long-one':
+    '1 champ trop long pour être vérifié laissé de côté.',
+  'ai-panel-corrections-dropped':
+    "__count__ corrections écartées : elles ne pouvaient pas s'appliquer sans risque pour la mise en forme ou les variables.",
+  'ai-panel-corrections-dropped-one':
+    "1 correction écartée : elle ne pouvait pas s'appliquer sans risque pour la mise en forme ou les variables.",
+  'ai-panel-correction-before': 'Avant :',
+  'ai-panel-correction-after': 'Après :',
+  'ai-panel-correction-restart': "Relancer l'analyse",
+  'ai-panel-correction-resume': "Reprendre l'analyse",
+  'ai-panel-nothing-checked': "Rien n'a pu être vérifié ici.",
+  'ai-panel-no-applicable-correction': 'Aucune correction applicable.',
+  'ai-panel-no-correction-in-checked':
+    'Aucune faute trouvée dans le texte vérifié.',
+  'ai-panel-unchecked': "__count__ champs n'ont pas pu être vérifiés.",
+  'ai-panel-unchecked-one': "1 champ n'a pas pu être vérifié.",
+  'ai-panel-correction-rewrite': 'Réécriture',
+  'ai-panel-correction-rewrite-hint':
+    "Change plus que l'orthographe : à relire avant d'accepter.",
+  'ai-panel-accept-all-but-rewrites': 'Tout accepter sauf les réécritures',
+  'ai-panel-accept-block-but-rewrites':
+    'Tout accepter dans ce bloc sauf les réécritures',
+  'ai-panel-rewrites-left': '__count__ réécritures restent à relire.',
+  'ai-panel-rewrites-left-one': '1 réécriture reste à relire.',
+  'ai-panel-generate-subject': 'Proposer des objets',
+  'ai-panel-generate-preheader': 'Proposer des préheaders',
+  'ai-panel-proposed-one': '__count__ proposition',
+  'ai-panel-proposed': '__count__ propositions',
+  'ai-panel-undo': 'Annuler la modification',
+  'ai-panel-undone': 'Modification annulée.',
+  'ai-panel-undo-changed':
+    "Le champ a été modifié depuis : rien n'a été annulé.",
+  'ai-panel-selected-block': 'Bloc sélectionné',
+  'ai-panel-no-action-yet': "Pas encore d'action IA pour ce bloc.",
+  'ai-panel-whole-email': "Tout l'email",
+  'ai-panel-selection-changed':
+    'Vous avez sélectionné un autre élément. Cette action reste telle quelle : vous la retrouverez en y revenant.',
+  'ai-panel-see-its-actions': 'Voir ses actions IA',
+  'ai-field-subject-label': "Générer l'objet avec l'IA",
+  'ai-field-preheader-label': "Générer le préheader avec l'IA",
+  'ai-field-correct-label': "Corriger avec l'IA",
+  'text-generation-applied-preheader': 'Préheader :',
+  'text-generation-applied-subject': 'Objet :',
+  'text-generation-long': 'long : la fin sera rarement lue',
+  'text-generation-too-long':
+    'trop long : les messageries le coupent bien avant',
+  'text-generation-copy-hint-preheader':
+    "Ce template n'a pas de préheader modifiable : copiez une proposition pour la coller dans votre outil d'envoi.",
+  'text-generation-preheaders-title': 'Choisissez un préheader',
+  'text-generation-brief-label': 'Consigne (facultatif)',
+  'text-generation-brief-placeholder': 'Ex. insister sur la livraison offerte',
+  'text-generation-more': "Proposer d'autres",
+  'text-generation-subjects-title': 'Choisissez un objet',
+  'text-generation-length': '__count__ caractères',
+  'text-generation-mobile': 'sur mobile : « __preview__… »',
+  'text-generation-dropped':
+    'Propositions écartées car elles ne respectaient pas les règles de rédaction : __count__.',
+  'text-generation-repeated':
+    'Propositions écartées car déjà faites : __count__.',
+  'text-generation-none':
+    "Aucune nouvelle proposition ne respectait les règles de rédaction. Demandez-en d'autres.",
+  'text-generation-nothing-new':
+    "Aucune nouvelle proposition cette fois : les précédentes restent ci-dessous. Demandez-en d'autres ou précisez la consigne.",
+  'text-generation-apply': 'Appliquer',
+  'text-generation-copy': 'Copier',
+  'text-generation-copied': 'Copié',
+  'text-generation-copy-hint':
+    "L'objet de cet email n'est pas géré dans LePatron : copiez une proposition pour la coller dans votre outil d'envoi.",
+  'text-generation-applied': "Appliqué. Enregistrez l'email pour le conserver.",
+  'text-generation-default-email':
+    "Le texte de l'email est encore celui du template : modifiez-le avant de demander des propositions.",
+  'text-generation-empty-email':
+    "L'email ne contient pas encore de texte : ajoutez du contenu avant de demander des propositions.",
+  'text-generation-error-disabled':
+    "La génération de texte n'est pas activée pour votre groupe.",
+  'text-generation-error-forbidden':
+    'Votre rôle ne permet pas de modifier le contenu de cet email.',
+  'text-generation-error-unavailable':
+    "La génération de texte n'est pas disponible pour le moment. Contactez votre administrateur.",
+  'text-generation-error-rate-limited':
+    'Trop de demandes. Réessayez dans quelques minutes.',
+  'text-generation-error-too-large':
+    "L'email est trop long pour être envoyé à l'IA.",
+  'text-generation-error-failed': 'La génération a échoué. Réessayez.',
+  'text-generation-error-network': 'Erreur réseau. Vérifiez votre connexion.',
+  'text-generation-error-signed-out':
+    'Votre session a expiré : rechargez la page pour vous reconnecter.',
+  'text-generation-error-copy':
+    'La copie a échoué : sélectionnez le texte et copiez-le à la main.',
 };

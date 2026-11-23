@@ -11,6 +11,25 @@
 const { createMcpStore } = require('../../../helpers/mcp-fake-models');
 
 const store = createMcpStore();
+// The subject expertise of the fixtures matches text generation's filter
+// (ADR 0016): these tests are about publishing an expertise no feature uses,
+// so text generation's manifest stays out.
+jest.doMock(
+  '../../../../packages/server/ai-skill/services/manifest-registry.js',
+  () => {
+    const actual = jest.requireActual(
+      '../../../../packages/server/ai-skill/services/manifest-registry.js'
+    );
+    return {
+      ...actual,
+      listManifests: () =>
+        actual
+          .listManifests()
+          .filter((manifest) => manifest.featureType !== 'text_generation'),
+    };
+  }
+);
+
 jest.doMock(
   '../../../../packages/server/common/models.common.js',
   () => store.models

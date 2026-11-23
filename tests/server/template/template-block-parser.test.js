@@ -49,7 +49,7 @@ describe('Template Block Parser', () => {
     });
 
     it('should collect href/alt/src fields bound via the -ko-attr-* style pseudo-property', () => {
-      // Real-world shape (see the Clarins "columns_v2Block"): the link URL and
+      // Real-world shape (a client template's "columns_v2Block"): the link URL and
       // the image alt text aren't declared via data-ko-link/data-ko-editable —
       // they're embedded in the style attribute using Mosaico's LESS-based
       // authoring syntax.

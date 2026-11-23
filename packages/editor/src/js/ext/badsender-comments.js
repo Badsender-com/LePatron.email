@@ -18,6 +18,7 @@ const {
   extractMentionIds,
 } = require('./comments-utils.js');
 const { findBlockById, goToBlock } = require('./block-navigation.js');
+const { installRightPanel } = require('./right-panel.js');
 
 /**
  * Comments extension for the Mosaico editor
@@ -31,7 +32,9 @@ function commentsLoader(opts) {
 
   return function (viewModel) {
     // ===== OBSERVABLES =====
-    viewModel.showComments = ko.observable(false);
+    // One of the right panels: opening it closes quality control or the AI
+    // panel (ADR 0010).
+    viewModel.showComments = installRightPanel(viewModel, ko).flag('comments');
     viewModel.comments = ko.observableArray([]);
     viewModel.commentsStatus = ko.observable(false); // false | 'loading' | number
     viewModel.commentCounts = ko.observable({}); // { blockId: count }
@@ -441,6 +444,20 @@ function commentsLoader(opts) {
     viewModel.hideMentionSuggestions = function () {
       viewModel.showMentionSuggestions(false);
       viewModel.mentionQuery('');
+    };
+
+    /**
+     * Escape while the mention suggestions are open closes the suggestions
+     * only: the event is marked as consumed so the right panel stays open.
+     */
+    viewModel.handleCommentKeydown = function (data, event) {
+      if (event.key === 'Escape' && viewModel.showMentionSuggestions()) {
+        event.preventDefault();
+        viewModel.hideMentionSuggestions();
+      }
+      // Knockout's event binding prevents the default unless true: typing
+      // must go through.
+      return true;
     };
 
     /**

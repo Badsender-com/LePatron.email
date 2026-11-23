@@ -1053,16 +1053,18 @@ Based on the versafix-1 template, these are commonly available blocks:
 | `preheaderBlock` | Preheader text area          |
 | `footerBlock`    | Footer with unsubscribe      |
 
-### Header and footer block names matter to the quality control
+### Header and footer block names matter
 
 The quality control (`packages/editor/src/js/ext/quality/`) tolerates a smaller font
 size (12 px instead of 14 px) in the header and footer of an email, where legal
-mentions and preheaders live. It recognizes those blocks **by their type name**: a
-type that starts with `header`, `preheader` or `footer`, or ends with `header`,
-`footer`, `headerBlock` or `footerBlock` (case-insensitive). `headerBlock`,
-`preheaderBlock`, `footerBlock` and `footer-legal` qualify; `HeaderAndText` or
-`sectionHeader` do not, on purpose: they are content blocks. Name your blocks
-accordingly, or the 14 px threshold applies.
+mentions and preheaders live, and text generation leaves them out of the email text
+it sends. Both recognize those blocks **by their type name**
+(`packages/shared/quality/header-footer-blocks.js`): a type that is `header` or
+`preheader` (with an optional `Block` and version suffix), starts with `footer`, or
+ends with `header`, `footer`, `headerBlock` or `footerBlock` (case-insensitive).
+`headerBlock`, `headerBlockV2`, `preheaderBlock`, `footerBlock`, `footer-legal` and
+`sectionHeader` qualify; `HeaderAndText` does not, on purpose: it is a content block.
+Name your blocks accordingly, or the 14 px threshold applies and their text is sent.
 
 ### Where the preheader actually lives
 
@@ -1070,12 +1072,12 @@ The property is always named `preheaderText`, but **its location varies from one
 template to the next**, and there is no convention to fall back on. A survey of the
 templates in the development database (August 2026):
 
-| Location                            | Templates                                                       |
-| ----------------------------------- | --------------------------------------------------------------- |
-| `data.preheaderText` (root)         | Badsender News, Challenges confidentiel, Badsender and comments |
-| `data.preheaderBlock.preheaderText` | Clarins (×2), Shine, Ouest France                               |
+| Location                            | Templates |
+| ----------------------------------- | --------- |
+| `data.preheaderText` (root)         | 3         |
+| `data.preheaderBlock.preheaderText` | 4         |
 
-Some templates go further: Clarins declares **29 per-market variants** of the
+Some templates go further: one declares **29 per-market variants** of the
 property (`autPreheaderText`, `bel_frPreheaderText`, …), each bound to its own market
 block.
 
@@ -1085,6 +1087,22 @@ templates fit neither. It is also the reason the preheader is **not** part of th
 email metadata this phase introduced — the metadata endpoint writes mailing fields,
 and reaching into the template's own `data` would mean settling on a declaration
 convention first.
+
+What relies on these names, so a template that wants them must keep them:
+
+- **Quality control and text generation** read and write the preheader at either
+  location above. `preheaderVisible: false` counts as no preheader: a generated one
+  is then offered to copy instead. A template that declares per-market preheaders
+  (any `…PreheaderText` property, at the root or in `preheaderBlock`) has no
+  preheader they can read or write, even when it also declares a generic
+  `preheaderText`: which one the email sends cannot be told. Quality control then
+  does not judge the preheader, and text generation offers it to copy only.
+- **The AI icon of the preheader field** (« Outils IA », ADR 0010) is placed in the
+  label of the property editor whose input is bound to `value: preheaderText`.
+  Mosaico offers no slot per property, so the binding is the only hook: a template
+  that renames the property, or uses per-market variants, shows no icon.
+- **Selecting a block named `preheaderBlock`** in the canvas makes the AI panel offer
+  the preheader's actions.
 
 ---
 

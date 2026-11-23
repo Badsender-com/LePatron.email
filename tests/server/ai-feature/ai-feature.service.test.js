@@ -7,6 +7,7 @@ jest.mock('../../../packages/server/common/models.common', () => ({
   AIFeatureConfigs: {
     create: jest.fn(),
     findOne: jest.fn(),
+    findOneAndUpdate: jest.fn(),
     findById: jest.fn(),
     findByIdAndUpdate: jest.fn(),
     updateOne: jest.fn(),
@@ -36,6 +37,34 @@ describe('AIFeatureService', () => {
     jest.clearAllMocks();
   });
 
+  // A config holding every feature type (so no backfill), read and written back
+  // as is.
+  function wireCompleteConfig(
+    featureTypes = ['translation', 'skill', 'text_generation']
+  ) {
+    const config = {
+      _id: mockConfigId,
+      _company: mockGroupId,
+      features: featureTypes.map((featureType) => ({
+        featureType,
+        integration: null,
+        isActive: false,
+        config: {},
+      })),
+    };
+    groupService.findById.mockResolvedValue({ _id: mockGroupId });
+    AIFeatureConfigs.findOne.mockReturnValue({
+      populate: jest.fn().mockResolvedValue(config),
+    });
+    AIFeatureConfigs.findOneAndUpdate.mockReturnValue({
+      populate: jest.fn().mockResolvedValue(config),
+    });
+    AIFeatureConfigs.findByIdAndUpdate.mockReturnValue({
+      populate: jest.fn().mockResolvedValue(config),
+    });
+    return config;
+  }
+
   describe('getOrCreateConfig', () => {
     it('should return existing config when found', async () => {
       const existingConfig = {
@@ -55,11 +84,16 @@ describe('AIFeatureService', () => {
             isActive: false,
             config: { availableLanguages: [], defaultSourceLanguage: 'auto' },
           },
+          {
+            featureType: 'text_generation',
+            integration: null,
+            isActive: false,
+          },
         ],
       };
 
       groupService.findById.mockResolvedValue({ _id: mockGroupId });
-      AIFeatureConfigs.findOne.mockReturnValue({
+      AIFeatureConfigs.findOneAndUpdate.mockReturnValue({
         populate: jest.fn().mockResolvedValue(existingConfig),
       });
 
@@ -95,7 +129,7 @@ describe('AIFeatureService', () => {
       };
 
       groupService.findById.mockResolvedValue({ _id: mockGroupId });
-      AIFeatureConfigs.findOne.mockReturnValue({
+      AIFeatureConfigs.findOneAndUpdate.mockReturnValue({
         populate: jest.fn().mockResolvedValue(existingConfig),
       });
       AIFeatureConfigs.updateOne.mockResolvedValue({ modifiedCount: 1 });
@@ -120,26 +154,21 @@ describe('AIFeatureService', () => {
       expect(result.features.map((f) => f.featureType)).toContain('skill');
     });
 
-    it('should create default config when not found', async () => {
+    it('inserts the config with every feature type when the group has none', async () => {
       const createdConfig = {
         _id: mockConfigId,
         _company: mockGroupId,
-        features: [
-          {
-            featureType: 'translation',
+        features: ['translation', 'skill', 'text_generation'].map(
+          (featureType) => ({
+            featureType,
             integration: null,
             isActive: false,
-            config: { availableLanguages: [], defaultSourceLanguage: 'auto' },
-          },
-        ],
+          })
+        ),
       };
 
       groupService.findById.mockResolvedValue({ _id: mockGroupId });
-      AIFeatureConfigs.findOne.mockReturnValue({
-        populate: jest.fn().mockResolvedValue(null),
-      });
-      AIFeatureConfigs.create.mockResolvedValue(createdConfig);
-      AIFeatureConfigs.findById.mockReturnValue({
+      AIFeatureConfigs.findOneAndUpdate.mockReturnValue({
         populate: jest.fn().mockResolvedValue(createdConfig),
       });
 
@@ -147,15 +176,69 @@ describe('AIFeatureService', () => {
         groupId: mockGroupId,
       });
 
-      expect(AIFeatureConfigs.create).toHaveBeenCalledWith(
-        expect.objectContaining({
-          _company: expect.any(Object),
-          features: expect.arrayContaining([
-            expect.objectContaining({ featureType: 'translation' }),
-          ]),
-        })
+      // One upsert: it finds the config, or inserts it, never both.
+      expect(AIFeatureConfigs.findOneAndUpdate).toHaveBeenCalledWith(
+        { _company: expect.any(Object) },
+        {
+          $setOnInsert: {
+            features: [
+              'translation',
+              'skill',
+              'text_generation',
+            ].map((featureType) => expect.objectContaining({ featureType })),
+          },
+        },
+        expect.objectContaining({ upsert: true, new: true })
       );
+      expect(AIFeatureConfigs.create).not.toHaveBeenCalled();
       expect(result).toEqual(createdConfig);
+    });
+
+    // Two first reads at once: the upsert that loses the race on the unique
+    // `_company` reads the config the other one inserted.
+    it('reads the config another request inserted at the same time', async () => {
+      const insertedConfig = {
+        _id: mockConfigId,
+        _company: mockGroupId,
+        features: ['translation', 'skill', 'text_generation'].map(
+          (featureType) => ({
+            featureType,
+            integration: null,
+            isActive: false,
+          })
+        ),
+      };
+      const duplicate = Object.assign(new Error('E11000 duplicate key'), {
+        code: 11000,
+      });
+
+      groupService.findById.mockResolvedValue({ _id: mockGroupId });
+      AIFeatureConfigs.findOneAndUpdate
+        .mockReturnValueOnce({
+          populate: jest.fn().mockRejectedValue(duplicate),
+        })
+        .mockReturnValueOnce({
+          populate: jest.fn().mockResolvedValue(insertedConfig),
+        });
+
+      const result = await aiFeatureService.getOrCreateConfig({
+        groupId: mockGroupId,
+      });
+
+      expect(AIFeatureConfigs.findOneAndUpdate).toHaveBeenCalledTimes(2);
+      expect(result).toEqual(insertedConfig);
+    });
+
+    it('lets any other failure through', async () => {
+      groupService.findById.mockResolvedValue({ _id: mockGroupId });
+      AIFeatureConfigs.findOneAndUpdate.mockReturnValueOnce({
+        populate: jest.fn().mockRejectedValue(new Error('connection lost')),
+      });
+
+      await expect(
+        aiFeatureService.getOrCreateConfig({ groupId: mockGroupId })
+      ).rejects.toThrow('connection lost');
+      expect(AIFeatureConfigs.findOneAndUpdate).toHaveBeenCalledTimes(1);
     });
   });
 
@@ -190,7 +273,7 @@ describe('AIFeatureService', () => {
         _id: mockIntegrationId,
         type: 'ai',
       });
-      AIFeatureConfigs.findOne.mockReturnValue({
+      AIFeatureConfigs.findOneAndUpdate.mockReturnValue({
         populate: jest.fn().mockResolvedValue(existingConfig),
       });
       AIFeatureConfigs.findByIdAndUpdate.mockReturnValue({
@@ -227,7 +310,7 @@ describe('AIFeatureService', () => {
       };
 
       groupService.findById.mockResolvedValue({ _id: mockGroupId });
-      AIFeatureConfigs.findOne.mockReturnValue({
+      AIFeatureConfigs.findOneAndUpdate.mockReturnValue({
         populate: jest.fn().mockResolvedValue(existingConfig),
       });
       AIFeatureConfigs.findByIdAndUpdate.mockReturnValue({
@@ -305,34 +388,9 @@ describe('AIFeatureService', () => {
     // deployment names, self-hosted endpoints), so these cover the format
     // guard that replaces the closed list, not a whitelist.
     describe('model identifier', () => {
+      // `skill` first: the assertions read what was written at index 0.
       function arrangeConfig() {
-        const existingConfig = {
-          _id: mockConfigId,
-          _company: mockGroupId,
-          // Both enum types present: a missing one triggers the backfill in
-          // getOrCreateConfig, which re-reads through findById.
-          features: [
-            {
-              featureType: 'skill',
-              integration: null,
-              isActive: false,
-              config: {},
-            },
-            {
-              featureType: 'translation',
-              integration: null,
-              isActive: false,
-              config: {},
-            },
-          ],
-        };
-        groupService.findById.mockResolvedValue({ _id: mockGroupId });
-        AIFeatureConfigs.findOne.mockReturnValue({
-          populate: jest.fn().mockResolvedValue(existingConfig),
-        });
-        AIFeatureConfigs.findByIdAndUpdate.mockReturnValue({
-          populate: jest.fn().mockResolvedValue(existingConfig),
-        });
+        wireCompleteConfig(['skill', 'translation', 'text_generation']);
       }
 
       function modelWrittenBy(call) {
@@ -429,33 +487,7 @@ describe('AIFeatureService', () => {
     // Persisted since the formality fix: the select was rendered, DeepL knew
     // how to read the value, but nothing ever wrote it.
     it('persists the translation formality', async () => {
-      const existingConfig = {
-        _id: mockConfigId,
-        _company: mockGroupId,
-        // Both enum types present → no backfill (see above).
-        features: [
-          {
-            featureType: 'translation',
-            integration: null,
-            isActive: false,
-            config: { availableLanguages: [], defaultSourceLanguage: 'auto' },
-          },
-          {
-            featureType: 'skill',
-            integration: null,
-            isActive: false,
-            config: {},
-          },
-        ],
-      };
-
-      groupService.findById.mockResolvedValue({ _id: mockGroupId });
-      AIFeatureConfigs.findOne.mockReturnValue({
-        populate: jest.fn().mockResolvedValue(existingConfig),
-      });
-      AIFeatureConfigs.findByIdAndUpdate.mockReturnValue({
-        populate: jest.fn().mockResolvedValue(existingConfig),
-      });
+      wireCompleteConfig();
 
       await aiFeatureService.updateFeatureConfig({
         groupId: mockGroupId,
@@ -516,11 +548,16 @@ describe('AIFeatureService', () => {
             isActive: false,
             config: { availableLanguages: [], defaultSourceLanguage: 'auto' },
           },
+          {
+            featureType: 'text_generation',
+            integration: null,
+            isActive: false,
+          },
         ],
       };
 
       groupService.findById.mockResolvedValue({ _id: mockGroupId });
-      AIFeatureConfigs.findOne.mockReturnValue({
+      AIFeatureConfigs.findOneAndUpdate.mockReturnValue({
         populate: jest.fn().mockResolvedValue(existingConfig),
       });
 
@@ -542,11 +579,16 @@ describe('AIFeatureService', () => {
         features: [
           { featureType: 'translation', integration: null, isActive: false },
           { featureType: 'skill', integration: null, isActive: false },
+          {
+            featureType: 'text_generation',
+            integration: null,
+            isActive: false,
+          },
         ],
       };
 
       groupService.findById.mockResolvedValue({ _id: mockGroupId });
-      AIFeatureConfigs.findOne.mockReturnValue({
+      AIFeatureConfigs.findOneAndUpdate.mockReturnValue({
         populate: jest.fn().mockResolvedValue(existingConfig),
       });
 
@@ -806,6 +848,52 @@ describe('AIFeatureService', () => {
           })
         ).toBeNull();
       }
+    });
+  });
+
+  describe('the engine of a feature that runs skills', () => {
+    const integration = (provider) => ({
+      _id: mockIntegrationId,
+      type: 'ai',
+      provider,
+    });
+
+    it.each(['text_generation', 'skill'])(
+      'refuses a translation-only integration for %s',
+      async (featureType) => {
+        wireCompleteConfig();
+        Integrations.findOne.mockResolvedValue(integration('deepl'));
+        await expect(
+          aiFeatureService.updateFeatureConfig({
+            groupId: mockGroupId,
+            featureType,
+            integrationId: mockIntegrationId,
+          })
+        ).rejects.toThrow('INTEGRATION_CANNOT_GENERATE_TEXT');
+        expect(AIFeatureConfigs.findByIdAndUpdate).not.toHaveBeenCalled();
+      }
+    );
+
+    it('accepts an integration that writes text', async () => {
+      wireCompleteConfig();
+      Integrations.findOne.mockResolvedValue(integration('mistral'));
+      await aiFeatureService.updateFeatureConfig({
+        groupId: mockGroupId,
+        featureType: 'text_generation',
+        integrationId: mockIntegrationId,
+      });
+      expect(AIFeatureConfigs.findByIdAndUpdate).toHaveBeenCalled();
+    });
+
+    it('still accepts DeepL for translation', async () => {
+      wireCompleteConfig();
+      Integrations.findOne.mockResolvedValue(integration('deepl'));
+      await aiFeatureService.updateFeatureConfig({
+        groupId: mockGroupId,
+        featureType: 'translation',
+        integrationId: mockIntegrationId,
+      });
+      expect(AIFeatureConfigs.findByIdAndUpdate).toHaveBeenCalled();
     });
   });
 });

@@ -12,7 +12,11 @@ jest.mock('../../../packages/server/utils/logger.js', () => ({
   error: jest.fn(),
 }));
 jest.mock('../../../packages/server/ai-feature/ai-feature.service', () => ({
-  getActiveFeatureWithIntegration: jest.fn().mockResolvedValue(null),
+  getEditorFeatureFlags: jest.fn().mockResolvedValue({
+    hasTranslationFeature: false,
+    hasTextGenerationFeature: false,
+    textGenerationSkills: [],
+  }),
 }));
 // Whether the user may write where the email lives: the edit rule of the
 // mailing service, stubbed here and tested with the service.
@@ -173,6 +177,28 @@ describe('findOneForMosaico — canWrite', () => {
       user,
       expect.objectContaining({ _id: MAILING })
     );
+  });
+});
+
+// Each AI action of the editor is offered only while the skill it calls runs
+// for the company: the editor is told which ones do.
+describe('findOneForMosaico — the AI features', () => {
+  const aiFeatureService = require('../../../packages/server/ai-feature/ai-feature.service');
+
+  it('sends the text generation flag and the skills that run', async () => {
+    aiFeatureService.getEditorFeatureFlags.mockResolvedValueOnce({
+      hasTranslationFeature: false,
+      hasTextGenerationFeature: true,
+      textGenerationSkills: ['redaction.objet', 'redaction.pre-header'],
+    });
+
+    const result = await call(makeContext({ companyFlag: undefined }));
+
+    expect(result.metadata.hasTextGenerationFeature).toBe(true);
+    expect(result.metadata.textGenerationSkills).toEqual([
+      'redaction.objet',
+      'redaction.pre-header',
+    ]);
   });
 });
 

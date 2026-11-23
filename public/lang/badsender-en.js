@@ -891,4 +891,151 @@ module.exports = {
   'Copy the link: __link__': 'Copy the link: __link__',
   'The link could not be copied': 'The link could not be copied',
   'The links could not be loaded': 'The links could not be loaded',
+
+  // text generation (epic #1163)
+  // AI panel, « Outils IA » (ADR 0010)
+  'ai-panel-title': 'AI tools',
+  'ai-panel-actions': 'Available actions',
+  'ai-panel-action-subject': 'Generate the subject',
+  'ai-panel-action-preheader': 'Generate the preheader',
+  'ai-panel-copy-only':
+    'No field in this email: the proposal will be for you to copy into your sending platform.',
+  'ai-panel-select-invite': 'Select a block or a field to see its AI actions.',
+  'ai-panel-all-actions': 'All actions',
+  'ai-panel-no-subject':
+    'This email has no subject yet. The preheader complements it: better start with the subject.',
+  'ai-panel-subject-first': 'Generate the subject first',
+  'ai-panel-preheader-anyway': 'Generate the preheader anyway',
+  'ai-panel-next-preheader': 'Go on with the preheader',
+  'ai-panel-loading': 'Generating…',
+  'ai-panel-action-correct': 'Correct',
+  'ai-panel-selected-field': 'Selected field',
+  'ai-panel-correcting': 'Checking…',
+  'ai-panel-no-correction': 'No mistake found.',
+  'ai-panel-corrections-count': '__count__ corrections',
+  'ai-panel-corrections-count-one': '1 correction',
+  'ai-panel-accept': 'Accept',
+  'ai-panel-ignore': 'Ignore',
+  'ai-panel-accept-all': 'Accept all',
+  'ai-panel-correction-accepted': 'Accepted',
+  'ai-panel-correction-ignored': 'Ignored',
+  'ai-panel-correction-undone': 'Undone',
+  'ai-panel-correction-stale': 'Not applied: the text changed since the check.',
+  'ai-panel-corrections-accepted': '__count__ corrections accepted.',
+  'ai-panel-corrections-accepted-one': '1 correction accepted.',
+  'ai-panel-corrections-stale':
+    '__count__ not applied: the text changed since the check.',
+  'ai-panel-corrections-stale-one':
+    '1 not applied: the text changed since the check.',
+  'ai-panel-correction-undo-hint':
+    '__keys__ undoes the last accepted correction.',
+  'ai-panel-correcting-blocks': 'Checking: block __done__ of __total__…',
+  'ai-panel-correction-paused':
+    'Paused: usage limit reached, resuming in __seconds__ s.',
+  'ai-panel-correction-stop': 'Stop the check',
+  'ai-panel-correction-stopped':
+    'Check stopped after __done__ blocks of __total__.',
+  'ai-panel-correction-stopped-one':
+    'Check stopped after 1 block of __total__.',
+  'ai-panel-correction-finished':
+    'Check done: __count__ corrections to review.',
+  'ai-panel-correction-finished-one': 'Check done: 1 correction to review.',
+  'ai-panel-blocks-failed':
+    'These blocks could not be checked, try again later: __blocks__.',
+  'ai-panel-accept-block': 'Accept all in this block',
+  'ai-panel-go-to-block': 'Go to block',
+  'ai-panel-nothing-to-correct': 'There is no text to correct here.',
+  'ai-panel-field-title': 'Title',
+  'ai-panel-field-text': 'Text',
+  'ai-panel-field-button': 'Button',
+  'ai-panel-field-alt': 'Alternative text',
+  'ai-panel-left-out-sample':
+    '__count__ fields still at their sample text left out.',
+  'ai-panel-left-out-sample-one': '1 field still at its sample text left out.',
+  'ai-panel-left-out-too-long':
+    '__count__ fields too long to be checked left out.',
+  'ai-panel-left-out-too-long-one': '1 field too long to be checked left out.',
+  'ai-panel-corrections-dropped':
+    '__count__ corrections set aside: they could not be applied safely to the formatting or the merge tags.',
+  'ai-panel-corrections-dropped-one':
+    '1 correction set aside: it could not be applied safely to the formatting or the merge tags.',
+  'ai-panel-correction-before': 'Before:',
+  'ai-panel-correction-after': 'After:',
+  'ai-panel-correction-restart': 'Check again',
+  'ai-panel-correction-resume': 'Resume the check',
+  'ai-panel-nothing-checked': 'Nothing could be checked here.',
+  'ai-panel-no-applicable-correction': 'No correction to apply.',
+  'ai-panel-no-correction-in-checked': 'No mistake found in the text checked.',
+  'ai-panel-unchecked': '__count__ fields could not be checked.',
+  'ai-panel-unchecked-one': '1 field could not be checked.',
+  'ai-panel-correction-rewrite': 'Rewrite',
+  'ai-panel-correction-rewrite-hint':
+    'Changes more than the spelling: read it before accepting.',
+  'ai-panel-accept-all-but-rewrites': 'Accept all but the rewrites',
+  'ai-panel-accept-block-but-rewrites':
+    'Accept all in this block but the rewrites',
+  'ai-panel-rewrites-left': '__count__ rewrites left to review.',
+  'ai-panel-rewrites-left-one': '1 rewrite left to review.',
+  'ai-panel-generate-subject': 'Suggest subjects',
+  'ai-panel-generate-preheader': 'Suggest preheaders',
+  'ai-panel-proposed-one': '__count__ proposal',
+  'ai-panel-proposed': '__count__ proposals',
+  'ai-panel-undo': 'Undo',
+  'ai-panel-undone': 'Change undone.',
+  'ai-panel-undo-changed': 'The field was changed since: nothing was undone.',
+  'ai-panel-selected-block': 'Selected block',
+  'ai-panel-no-action-yet': 'No AI action for this block yet.',
+  'ai-panel-whole-email': 'Whole email',
+  'ai-panel-selection-changed':
+    'You selected another element. This action stays as it is: you will find it again when you come back to it.',
+  'ai-panel-see-its-actions': 'See its AI actions',
+  'ai-field-subject-label': 'Generate the subject with AI',
+  'ai-field-preheader-label': 'Generate the preheader with AI',
+  'ai-field-correct-label': 'Correct with AI',
+  'text-generation-applied-preheader': 'Preheader:',
+  'text-generation-applied-subject': 'Subject:',
+  'text-generation-long': 'long: its end will rarely be read',
+  'text-generation-too-long': 'too long: inboxes cut it well before',
+  'text-generation-copy-hint-preheader':
+    'This template has no editable preheader: copy a proposal and paste it in your sending platform.',
+  'text-generation-preheaders-title': 'Pick a preheader',
+  'text-generation-brief-label': 'Instruction (optional)',
+  'text-generation-brief-placeholder': 'E.g. stress the free delivery',
+  'text-generation-more': 'Suggest others',
+  'text-generation-subjects-title': 'Pick a subject',
+  'text-generation-length': '__count__ characters',
+  'text-generation-mobile': 'on mobile: “__preview__…”',
+  'text-generation-dropped':
+    'Proposals set aside for breaking the copywriting rules: __count__.',
+  'text-generation-repeated': 'Proposals set aside as already made: __count__.',
+  'text-generation-none':
+    'No new proposal respected the copywriting rules. Ask for others.',
+  'text-generation-nothing-new':
+    'No new proposal this time: the previous ones stay below. Ask for others or refine the instruction.',
+  'text-generation-apply': 'Apply',
+  'text-generation-copy': 'Copy',
+  'text-generation-copied': 'Copied',
+  'text-generation-copy-hint':
+    "This email's subject is not managed in LePatron: copy a proposal and paste it in your sending platform.",
+  'text-generation-applied': 'Applied. Save the email to keep it.',
+  'text-generation-default-email':
+    "The email's text is still the template's: change it before asking for proposals.",
+  'text-generation-empty-email':
+    'The email has no text yet: add content before asking for proposals.',
+  'text-generation-error-disabled':
+    'Text generation is not enabled for your group.',
+  'text-generation-error-forbidden':
+    'Your role does not allow editing the content of this email.',
+  'text-generation-error-unavailable':
+    'Text generation is not available right now. Contact your administrator.',
+  'text-generation-error-rate-limited':
+    'Too many requests. Try again in a few minutes.',
+  'text-generation-error-too-large':
+    'The email is too long to be sent to the AI.',
+  'text-generation-error-failed': 'Generation failed. Try again.',
+  'text-generation-error-network': 'Network error. Check your connection.',
+  'text-generation-error-signed-out':
+    'Your session expired: reload the page to sign in again.',
+  'text-generation-error-copy':
+    'Copy failed: select the text and copy it by hand.',
 };

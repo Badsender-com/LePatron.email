@@ -274,7 +274,9 @@ describe('GeminiProvider', () => {
 
     it.each([
       [403, CODES.INVALID_CREDENTIALS],
-      [429, CODES.QUOTA_EXCEEDED],
+      // What a prepaid project answers once its credits are depleted.
+      [402, CODES.QUOTA_EXCEEDED],
+      [429, CODES.RATE_LIMITED],
     ])('turns HTTP %s into %s', async (status, expected) => {
       mockFetch.mockResolvedValue(reply({ error: { message: 'x' } }, status));
 

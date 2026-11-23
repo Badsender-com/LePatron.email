@@ -84,6 +84,8 @@ const { siteOrigin } = require('./utils/site-origin.js');
 const aiPlaygroundRouter = require('./ai-playground/ai-playground.routes');
 const translationRouter = require('./translation/translation.routes');
 const { workerCount } = require('./utils/worker-count.js');
+const textGenerationRouter = require('./text-generation/text-generation.routes.js');
+const { aiBodyParser, AI_ROUTE_PATHS } = require('./ai-usage/ai-rate-limit.js');
 
 process.env.TMPDIR = path.join(process.env.HOME, 'badsender-vips');
 
@@ -171,6 +173,8 @@ if (cluster.isMaster) {
   app.use('/oauth', ...oauthBodyParsers());
   // A skills export is 5 MB at most (ADR 0018).
   app.use('/api/ai-skills/import', aiSkillsImportBodyParser);
+  // What a route forwards to an AI provider is 256 KB at most.
+  app.use(AI_ROUTE_PATHS, aiBodyParser);
   app.use(bodyParser.json({ limit: '50mb' }));
   app.use(bodyParser.urlencoded({ limit: '50mb', extended: false }));
 
@@ -427,6 +431,7 @@ if (cluster.isMaster) {
   app.use('/api/ai-invocations', aiInvocationsRouter);
   app.use('/api/ai-playground', aiPlaygroundRouter);
   app.use('/api/translation', translationRouter);
+  app.use('/api/text-generation', textGenerationRouter);
   app.use('/api/account', accountRouter);
   app.use('/api/version', versionRouter);
   app.use('/api/comments', commentsRouter);

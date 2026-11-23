@@ -1,7 +1,9 @@
 'use strict';
 
-const { stripMergeTags } = require('../merge-tag-syntax');
-const { inboxLength } = require('../copy-fields');
+const {
+  inboxLength,
+  repeatsSubject,
+} = require('../../../../../../shared/quality/copy-rules.js');
 const { orderedThresholds } = require('../settings');
 
 // Thresholds weighed against real truncation and other tools (Notion, "Seuils
@@ -10,31 +12,6 @@ const { orderedThresholds } = require('../settings');
 // decision of 1 October 2026): it can be an editorial choice, and many
 // templates fill the rest of the preview themselves.
 // Thresholds `long` (100) and `tooLong` (140), set by the quality settings.
-
-// Compared without case, spacing, merge tags, accents decomposed, nor the
-// punctuation and symbols around: "« Spring sale ! »" repeats "spring sale 🔥".
-const normalise = (text) =>
-  stripMergeTags(text)
-    .normalize('NFC')
-    .toLowerCase()
-    .replace(/\s+/g, ' ')
-    .replace(/^[\p{P}\p{S}\s]+|[\p{P}\p{S}\s]+$/gu, '')
-    .trim();
-
-// Words are runs of letters or digits: what is left of a merge tag is none.
-const wordCount = (text) => (text.match(/[\p{L}\p{N}]+/gu) || []).length;
-
-// The preheader repeats the subject: the same words, or the subject then more.
-function repeatsSubject(preheader, subject) {
-  const p = normalise(preheader);
-  const s = normalise(subject);
-  // Two words at least: a one-word subject ("New") is only the start of many
-  // preheaders.
-  if (wordCount(s) < 2 || !p.startsWith(s)) return false;
-  // The subject as a whole, not the start of a longer word: "Sale" is not
-  // repeated by "Salesforce".
-  return p.length === s.length || /^[\s\p{P}]/u.test(p.slice(s.length));
-}
 
 module.exports = {
   id: 'preheader',

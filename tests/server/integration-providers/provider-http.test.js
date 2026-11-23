@@ -264,7 +264,10 @@ describe('provider-http', () => {
 
     it.each([
       [401, CODES.INVALID_CREDENTIALS],
-      [429, CODES.QUOTA_EXCEEDED],
+      // Credits or billing exhausted: retrying will not help.
+      [402, CODES.QUOTA_EXCEEDED],
+      // Too many requests: the same call passes a little later.
+      [429, CODES.RATE_LIMITED],
       [500, CODES.API_ERROR],
     ])('maps a %s to %s by default', async (status, expected) => {
       const { fetchProviderJson } = loadWithFetch(

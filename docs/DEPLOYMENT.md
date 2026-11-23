@@ -97,6 +97,14 @@ After deploying a copy whose nightly follow is on, check that the scheduled line
    - `This copy does not follow production at night (SKILLS_SOURCE_NIGHTLY): nothing to do.`: `SKILLS_SOURCE_NIGHTLY` is not `true` on this app.
 3. The next morning, the app's logs show the 3:00 UTC run: one instance follows, and any other instance says it found a follow running or a nightly follow that started less than 60 minutes ago.
 
+## Text generation in the editor
+
+Each AI action of the editor calls one skill: generating the subject `redaction.objet`, generating the preheader `redaction.pre-header`, correcting a text `redaction.correction` (`packages/server/text-generation/skill-manifest.js`). A company sees an action when text generation is on for it, with an active integration, and the skill that action calls is published (it has an active version) and open to it: every company, or the platform company alone while it is tried (ADR 0013). The « Outils IA » button shows while at least one of these actions is offered.
+
+The skills are published one at a time, without taking anything away: a deployment that brings the correction before its skill is published, or while it is kept to the platform company, leaves the client companies the subject and the preheader they already had, and the correction appears for them once its skill is published and opened to every company. No restart is needed: the editor reads the skills when an email is opened.
+
+An action whose skill stops running while an editor is open answers « unavailable » (503 `TEXT_GENERATION_UNAVAILABLE`) until the email is opened again.
+
 ---
 
 ## Optional environment variables
@@ -113,3 +121,15 @@ Two online checks of the quality control need a third party. Both are off while 
 | `QC_DOMAIN_BLOCKLISTS` | Domaines sur liste noire | DNS blocklists as `name=zone` pairs separated by commas, e.g. `Spamhaus DBL=<key>.dbl.dq.spamhaus.net,SURBL=multi.surbl.org` |
 
 Every DNS blocklist asks for a subscription for commercial use, and Spamhaus answers nothing through public resolvers: use its DQS zone with your key.
+
+### AI rate limits
+
+Every route that sends a user's content to an AI provider (translation, duplicate and translate, text generation) shares one ceiling on the requests it lets through. It is a safety net against a loop or a quota burnt in a few minutes, not a commercial quota. A refused request answers 429 with a `Retry-After` header.
+
+| Variable                                  | Default | Ceiling                                                      |
+| ----------------------------------------- | ------- | ------------------------------------------------------------ |
+| `lepatron_aiRateLimits__perUserPerMinute` | 20      | requests per user in a calendar minute                       |
+| `lepatron_aiRateLimits__perUserPerDay`    | 300     | requests per user in a UTC day                               |
+| `lepatron_aiRateLimits__perGroupPerDay`   | 3000    | requests per company in a UTC day, all of its users together |
+
+Each value is a number above 0: the server refuses to start on any other value, naming the variable. A request the user's own ceiling refuses does not count against the company.

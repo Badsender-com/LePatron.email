@@ -18,9 +18,9 @@ Document de conception pour l'ajout de nouveaux rôles au système de rôles et 
 
 - `canIgnoreQuality` (`4dcced21`) et le `GUARD_NOT_REVIEWER` de `PATCH /:mailingId/quality-ignores` (`08b4e64a`) sont remplacés par la capacité `mailing.ignore-quality` (voir plus haut).
 - La révocation d'un lien de partage selon le rôle, côté serveur et éditeur (`c09c99be`), n'est pas rejouée.
-- La route `POST /:mailingId/duplicate-translate` garde `GUARD_NOT_REVIEWER`, mais sans le `aiRateLimit` de la PR IA.
+- ~~La route `POST /:mailingId/duplicate-translate` garde `GUARD_NOT_REVIEWER`, mais sans le `aiRateLimit` de la PR IA.~~ Rejoué : la route porte de nouveau le `aiRateLimit` de la PR IA (#1145).
 - Le correctif `updateLabel` de la galerie (identifiant invalide en 422, dans `7dafb4cb`) et `qualityIgnores` dans `MAILING_LIST_PROJECTION` (`91a62081`) appartiennent à leurs PR.
-- L'ADR 0003 (génération de texte) est absent du tableau de `docs/adr/README.md` : 0004 garde son numéro.
+- La génération de texte a son ADR en 0016, 0003 étant celui du contrôle qualité v2 : 0004 garde son numéro.
 
 **Mise à jour du 2026-10-06** : plusieurs chantiers voisins ont été livrés ou sont en revue sur `develop` depuis la rédaction de ce document, et en changent l'état de départ. La branche `feat/roles-permissions` les a rapatriés (voir « État de départ au 2026-10-06 » ci-dessous). En résumé :
 
@@ -118,7 +118,7 @@ La branche `feat/roles-permissions` a rapatrié toutes les PR ouvertes à cette 
 Écarts connus restants (le détail de ce qui a été fait depuis est dans « Avancement de la reprise du 2026-10-06 » ci-dessous) :
 
 - les règles du QC sur le code HTML ne couvrent que le bloc « code HTML », pas le bloc composé ;
-- les restrictions de rôle sont **UI seule**, sauf la révocation des liens de partage (3.6) : le serveur n'impose toujours rien sur `PUT /mosaico`, le renommage, `quality-ignores` ni `decision` (#1103).
+- les restrictions de rôle sont **UI seule**, sauf la révocation des liens de partage (3.6) : le serveur n'impose toujours rien sur `PUT /mosaico`, le renommage ni `decision` (#1103) ; `quality-ignores` demande `mailing.ignore-quality` depuis le 2026-11-23.
 
 Deux incompatibilités d'intégration ont été corrigées en rapatriant : le moteur QC importait des constantes supprimées de `html-code-block/constants.js` (les règles sur le code HTML ne voyaient plus aucun bloc), et les tests de canevas n'avaient pas de `currentUser()`.
 
@@ -143,7 +143,7 @@ Les capacités de l'éditeur (`canEditStructure`, `canEditContent`, `canEditStyl
 
 **Reste à faire** (dans l'ordre où on comptait les traiter) :
 
-1. ~~Génération de texte IA (B2)~~ **Décidé le 2026-10-13 : ouverte à tous les rôles**, sans garde supplémentaire (le `reviewer` n'a a priori rien à y faire, le panneau lui reste masqué). Reste à vérifier : la configuration par group (B1) côté routes.
+1. ~~Génération de texte IA (B2)~~ **Décidé le 2026-10-13, précisé le 2026-11-23 : ouverte à tous les rôles sauf le `reviewer`**, correction orthographique comprise ([ADR 0011](../adr/0011-spelling-correction-located-in-code.md)), par la capacité `mailing.edit-content` que demandent ses routes. La configuration par group (B1) est réservée à `company_admin_tech` et au `super_admin`, comme la traduction sur la même page ([ADR 0016](../adr/0016-text-generation-skills-and-expertises.md)).
 2. ~~Galerie d'images~~ **Décidé le 2026-10-13 : ouverte à tous les rôles**, inchangé.
 3. ~~Export CDN/FTP/ESP~~ **Décidé le 2026-10-13 : ouvert à tous les rôles**, inchangé (barre du haut et barre d'actions groupées du listing).
 4. ~~Approbation~~ **Décidé le 2026-10-13 : le bouton « Approuver » est visible pour tous les rôles** (`canPostDecision` ne demande plus que l'utilisateur soit chargé). `decision` n'est pas contrôlée côté serveur, ce qui est cohérent avec cette décision.
@@ -163,7 +163,7 @@ Rebase de `feat/roles-permissions` sur `origin/develop` (le 2026-10-13, 51 commi
 - **Décision produit du 2026-10-13 sur l'admin technique** : il est un admin company avec les intégrations en plus (`isGroupAdmin` vrai pour les deux rôles, `isGroupAdminTech` pour lui seul). La matrice 3.2 est lue en conséquence.
 - **Attribution du rôle admin technique (2026-10-13)** : seul un super admin ou un admin technique l'accorde ou le retire (`tech-admin-policy.js`, code `FORBIDDEN_TECH_ADMIN_ROLE_CHANGE`) ; un admin company ne le voit plus dans les sélecteurs de rôle et le serveur le refuse. Un admin company peut en revanche encore modifier, désactiver ou réinitialiser le mot de passe d'un admin technique (non encadré). Le rôle super admin garde sa règle propre (ADR 0002).
 - **Garde serveur du relecteur (2026-10-13)** : `GUARD_NOT_REVIEWER` (`mailing/reviewer-read-only.guard.js`) refuse un `reviewer` sur les routes qui écrivent un mailing (création, renommage, déplacement, copie, suppression, tags, paramètres de l'email, résultats QC ignorés, duplication). L'enregistrement `PUT /mosaico` lui est refusé sauf pour l'email sans aperçu, ce qui conserve la sauvegarde unique faite à l'ouverture. Le rédacteur n'est pas encadré côté serveur (#1103).
-- **Décisions produit du 2026-10-13** : outil Compose confirmé (masqué au `writer`) ; galerie, exports et génération de texte IA ouverts à tous les rôles (inchangé) ; bouton « Approuver » étendu à tous les rôles (`badsender-comments.js`).
+- **Décisions produit du 2026-10-13** : outil Compose confirmé (masqué au `writer`) ; galerie et exports ouverts à tous les rôles (inchangé), génération de texte IA à tous sauf le `reviewer` (précisé le 2026-11-23) ; bouton « Approuver » étendu à tous les rôles (`badsender-comments.js`).
 - **À refaire après ce rebase** : `yarn editor:build`, puis un passage dans le navigateur sur l'éditeur (templates et CSS fusionnés).
 
 ---
@@ -236,7 +236,7 @@ Pas de rôles sur-mesure demandés, et pas de moteur générique de permissions 
 
 **Statut : figée le 2026-09-03** pour les lignes que cet incrément touche réellement (1-8, 11-15) ; les lignes 9-10 et 17/19-23 étaient déjà `super_admin`-only et restent hors scope ; les lignes 16 et 18 restent ouvertes mais ne bloquent pas #1099 (aucune route touchée par cet incrément).
 
-> **Décision du 2026-10-13 : `company_admin_tech` inclut `company_admin`.** Partout où une cellule ci-dessous dit `company_admin`, lire `company_admin` + `company_admin_tech`. Seules les lignes 11 à 15 restent exclusives à `company_admin_tech` (retirées à `company_admin`). Côté code, le virtual `isGroupAdmin` est vrai pour les deux rôles ; `isGroupAdminTech` ne l'est que pour l'admin technique et garde les routes techniques.
+> **Décision du 2026-10-13 : `company_admin_tech` inclut `company_admin`.** Partout où une cellule ci-dessous dit `company_admin`, lire `company_admin` + `company_admin_tech`. Seules les lignes 11 à 15, 27 et 30 sont exclusives à `company_admin_tech` (retirées à `company_admin`), ainsi que l'écriture de la ligne 29, que `company_admin` lit seulement. Côté code, le virtual `isGroupAdmin` est vrai pour les deux rôles ; `isGroupAdminTech` ne l'est que pour l'admin technique et garde les routes techniques.
 
 Légende des colonnes : **Lecture** = consulter la feature/l'écran · **Écriture** = créer et/ou modifier · **Suppression** = supprimer (`—` = l'action n'existe pas pour cette feature). Valeurs possibles par cellule : `company_admin`, `company_admin_tech`, `super_admin`, ou une combinaison (ex. `company_admin + company_admin_tech`). `super_admin` garde de toute façon un accès complet partout (compte env var, inchangé) — omis des cellules sauf quand il est le seul rôle autorisé.
 
@@ -268,12 +268,12 @@ Légende des colonnes : **Lecture** = consulter la feature/l'écran · **Écritu
 | 24  | Contrôle qualité — consulter, relancer, transformer en commentaire, envoi de test, vérifier les ressources | tous les rôles                         | tous les rôles                         | —                                                                                           |
 | 25  | Contrôle qualité — ignorer un résultat                                                                     | tous sauf `writer` et `reviewer`       | tous sauf `writer` et `reviewer`       | —                                                                                           |
 | 26  | Liens de partage                                                                                           | tous les rôles                         | tous les rôles (créer)                 | ses propres liens : tous les rôles ; ceux d'autrui : `company_admin` + `company_admin_tech` |
-| 27  | Génération de texte IA — configuration par group                                                           | `company_admin` + `company_admin_tech` | `company_admin` + `company_admin_tech` | —                                                                                           |
-| 28  | Génération de texte IA — utilisation dans l'éditeur                                                        | —                                      | tous sauf `reviewer`                   | —                                                                                           |
+| 27  | Génération de texte IA — configuration par group                                                           | `company_admin_tech`                   | `company_admin_tech`                   | —                                                                                           |
+| 28  | Génération de texte IA — utilisation dans l'éditeur (sujet, préheader, correction orthographique)          | —                                      | tous sauf `reviewer`                   | —                                                                                           |
 | 29  | Double authentification — l'exiger pour la company                                                         | `company_admin` + `company_admin_tech` | `company_admin_tech`                   | —                                                                                           |
 | 30  | Double authentification — réinitialiser celle d'un membre, changer son adresse                             | —                                      | `company_admin_tech`                   | —                                                                                           |
 
-Lignes 24-28 ajoutées le 2026-10-06 (chantiers rapatriés, détail et statut en 3.2 bis) : décisions produit **à confirmer par tests fonctionnels et review**. Ligne 25 : capacité `mailing.ignore-quality`, que le serveur exige depuis le 2026-11-23. Lignes 29-30 ajoutées le 2026-10-29 (ADR 0008) : réservées à `company_admin_tech` et `super_admin`.
+Lignes 24-28 ajoutées le 2026-10-06 (chantiers rapatriés, détail et statut en 3.2 bis) : décisions produit **à confirmer par tests fonctionnels et review**. Ligne 25 : capacité `mailing.ignore-quality`, que le serveur exige depuis le 2026-11-23. Lignes 29-30 ajoutées le 2026-10-29 (ADR 0008) : réservées à `company_admin_tech` et `super_admin`. Ligne 27 corrigée le 2026-11-23 : la configuration de la génération de texte est réservée à `company_admin_tech` et `super_admin`, comme la traduction sur la même page (ADR 0016).
 
 Décisions actées le 2026-09-03 :
 
@@ -308,12 +308,12 @@ Décisions actées le 2026-09-03 :
 | A8  | Lien de partage — créer                                | oui          | oui       | oui       | oui                | oui           |
 | A9  | Lien de partage — révoquer (les siens / ceux d'autrui) | les siens    | les siens | les siens | ceux d'autrui      | ceux d'autrui |
 
-**B. Génération de texte IA (sujet, préheader)**
+**B. Génération de texte IA (sujet, préheader, correction orthographique)**
 
-| #   | Action                                   | regular_user | writer | reviewer | company_admin_tech | company_admin |
-| --- | ---------------------------------------- | ------------ | ------ | -------- | ------------------ | ------------- |
-| B1  | Configurer la fonctionnalité (par group) | non          | non    | non      | oui                | oui           |
-| B2  | Utiliser la génération dans l'éditeur    | oui          | oui    | non      | oui                | oui           |
+| #   | Action                                                 | regular_user | writer | reviewer | company_admin_tech | company_admin |
+| --- | ------------------------------------------------------ | ------------ | ------ | -------- | ------------------ | ------------- |
+| B1  | Configurer la fonctionnalité (par group)               | non          | non    | non      | oui                | non           |
+| B2  | Utiliser la génération et la correction dans l'éditeur | oui          | oui    | non      | oui                | oui           |
 
 Décisions reportées en 3.2 (lignes 24-28) et 3.6 le 2026-10-06. Reste à : les traduire en `canEdit*`/guards (aujourd'hui aucune de ces actions n'est soumise aux rôles, et les routes `share-links` sont toutes en `GUARD_USER`).
 
@@ -391,7 +391,7 @@ Légende : **Full** = accordé · **Own** = dans sa company · **Assigned** = da
 | Intégrations, AI features, feed mappings, tracking        | —            | —           | —           | Own                | —             |
 | Exports / profils ESP                                     | —            | —           | —           | —                  | —             |
 
-Lignes QC, liens de partage et IA texte ajoutées le 2026-10-06 (décisions produit, à confirmer par tests fonctionnels et review) : aujourd'hui aucune n'est soumise aux rôles côté serveur, et les routes `share-links` sont toutes en `GUARD_USER`. « Siens » = liens dont `_user` est l'utilisateur ; un lien créé par un `super_admin` n'a pas de `_user` (`share-link.service.js`) et ne peut donc être révoqué que par `company_admin`/`company_admin_tech`/`super_admin`. **Enforcement décidé le 2026-10-06 : serveur + interface** pour la révocation (contrairement au reste de 3.3, le serveur sait déjà qui a créé le lien) : `share-link.service.js` calcule `canRevoke` par lien dans la liste (`company_admin`, `company_admin_tech`, `super_admin` : tous ; les autres : leurs propres liens), l'éditeur masque « Turn off » sinon, et `revokeLink` ajoute `_user` au filtre du `findOneAndUpdate` pour les non-administrateurs — un lien d'autrui répond 404, sans fenêtre de course.
+Lignes QC, liens de partage et IA texte ajoutées le 2026-10-06 (décisions produit, à confirmer par tests fonctionnels et review). Ce que le serveur tient aujourd'hui : la génération de texte demande `GUARD_CAN(mailing.edit-content)` sur ses routes (`text-generation.routes.js`), ce qui refuse le `reviewer`, et sa configuration `GUARD_GROUP_ADMIN_TECH` (`PUT /ai-features/groups/:groupId/features/:featureType`) ; ignorer un résultat QC demande `GUARD_CAN(mailing.ignore-quality)`, refusée au `writer` et au `reviewer` ; les routes `share-links` demandent `GUARD_CAN(mailing.send-test)`, que tous les rôles détiennent, et la révocation selon le rôle n'est pas rejouée (voir la mise à jour du 2026-10-15). « Siens » = liens dont `_user` est l'utilisateur ; un lien créé par un `super_admin` n'a pas de `_user` (`share-link.service.js`) et ne peut donc être révoqué que par `company_admin`/`company_admin_tech`/`super_admin`. **Enforcement décidé le 2026-10-06 : serveur + interface** pour la révocation (contrairement au reste de 3.3, le serveur sait déjà qui a créé le lien) : `share-link.service.js` calcule `canRevoke` par lien dans la liste (`company_admin`, `company_admin_tech`, `super_admin` : tous ; les autres : leurs propres liens), l'éditeur masque « Turn off » sinon, et `revokeLink` ajoute `_user` au filtre du `findOneAndUpdate` pour les non-administrateurs — un lien d'autrui répond 404, sans fenêtre de course.
 
 `super_admin` n'apparaît plus dans cette matrice : inchangé par cet incrément (accès complet partout ; depuis l'ADR 0002, ce sont des comptes persistés plutôt que le seul compte env var). `company_admin_tech` a un accès "Full" identique à `regular_user` sur mailing/builder/commentaire (rien ne justifie de le restreindre là-dessus, sa spécificité est uniquement l'accès technique en plus). Le spectateur non loggué n'apparaît pas dans cette matrice : ce n'est pas un `User.role`, c'est un accès dérivé d'un token de partage (section 5), lui-même restreint à créer/répondre (jamais résoudre/supprimer/décider) sur le seul mailing pointé par son lien.
 

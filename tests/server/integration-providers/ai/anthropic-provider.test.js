@@ -864,7 +864,8 @@ describe('AnthropicProvider', () => {
       // permission_error: the key is not valid for this call, which is far
       // more actionable than a generic API error.
       [403, CODES.INVALID_CREDENTIALS],
-      [429, CODES.QUOTA_EXCEEDED],
+      [402, CODES.QUOTA_EXCEEDED],
+      [429, CODES.RATE_LIMITED],
       [500, CODES.API_ERROR],
     ])('turns HTTP %s into %s', async (status, expected) => {
       mockFetch.mockResolvedValue(

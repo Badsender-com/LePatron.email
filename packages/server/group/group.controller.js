@@ -207,8 +207,9 @@ async function create(req, res) {
 
   // Not a company field: the language the default email types are seeded in.
   const { defaultEmailTypesLang, ...groupToCreate } = namedFieldsOf(req.body);
-  // A company starts with its switches off: they are turned on from its
-  // settings, where each one is recorded as a security event. The MCP module
+  // A company starts with its switches as the schema sets them (off, but the
+  // content of its AI invocation logs, kept): they change from its settings,
+  // where each change is recorded as a security event. The MCP module
   // alone may be opened at creation, as the other modules, by the super admin
   // who creates the company (ADR 0017): recorded as its opening.
   const { enableMcpModule } = takeSwitches(groupToCreate);
@@ -549,6 +550,7 @@ async function readColorScheme(req, res) {
  * @apiParam (Body) {String} [ftpEndPoint] the FTP endpoint url to retrieve images
  * @apiParam (Body) {String} [ftpEndPointProcotol] the FTP endpoint protocol
  * @apiParam (Body) {String} [ftpPathOnServer] the FTP path folder where we will save images
+ * @apiParam (Body) {Boolean} [logSkillInvocationContent] whether the AI invocation logs keep their content (tech admin or super admin)
  *
  * @apiUse group
  */
@@ -639,9 +641,17 @@ async function update(req, res) {
       // dropped for a company admin, as the other fields it cannot set.
       // MCP access too: a tech admin connects the company's AI assistants
       // to LePatron, as it sets up its AI features, and decides whether their
-      // session summaries may reach the platform company (ADR 0012).
+      // session summaries may reach the platform company (ADR 0012). And
+      // whether the logs of its AI invocations keep their content, set with
+      // the AI features they log.
       ...(permissions.can(user, CAPABILITIES.GROUP_MANAGE_TECH)
-        ? ['trackingConfig', 'requireTwoFactor', 'enableMcp', 'allowRetex']
+        ? [
+            'trackingConfig',
+            'requireTwoFactor',
+            'enableMcp',
+            'allowRetex',
+            'logSkillInvocationContent',
+          ]
         : []),
     ]);
     // Reinstated after the pick, from the URL, so the whitelist never has to

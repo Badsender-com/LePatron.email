@@ -29,7 +29,7 @@
 │                                                                         │
 │  ┌──────────────────────┐                                               │
 │  │ ☰  LePatron.email    │  ← Toggle collapse                            │
-│  │     Clarins ▼        │  ← Workspace/Company switcher                 │
+│  │     Acme Co ▼        │  ← Workspace/Company switcher                 │
 │  └──────────────────────┘                                               │
 │  │                      │                                               │
 │  │  🔍 Recherche...     │  ← Quick search (ouvre Cmd+K)                 │
@@ -38,7 +38,7 @@
 │  │                      │                                               │
 │  │  📧 EMAIL BUILDER    │  ← Section module (collapsible)               │
 │  │  ├─ ▼ Workspaces     │                                               │
-│  │  │  ├─ ▼ Clarins WS  │                                               │
+│  │  │  ├─ ▼ Acme Co WS  │                                               │
 │  │  │  │  ├─ Dossier 1  │         ┌─────────────────────────────────┐   │
 │  │  │  │  └─ Dossier 2  │         │                                 │   │
 │  │  │  ├─ ▶ Autre WS    │         │      CONTENU PRINCIPAL          │   │
@@ -108,7 +108,7 @@
 ┌─────────────────────────────────────────────────────────────────────────┐
 │                                                                         │
 │  ┌──────────────────────┐                                               │
-│  │ 🏢 Clarins        ▼  │  ← Company/Workspace switcher                 │
+│  │ 🏢 Acme Co        ▼  │  ← Company/Workspace switcher                 │
 │  │ jonathan@email.com   │                                               │
 │  └──────────────────────┘                                               │
 │  │                      │                                               │
@@ -123,7 +123,7 @@
 │  │  ─────────────────── │         ┌─────────────────────────────────┐   │
 │  │                      │         │                                 │   │
 │  │  📧 EMAILS           │         │                                 │   │
-│  │  ├─ 📁 Clarins WS    │         │      CONTENU PRINCIPAL          │   │
+│  │  ├─ 📁 Acme Co WS    │         │      CONTENU PRINCIPAL          │   │
 │  │  │  ├─ 📁 Campagnes  │         │                                 │   │
 │  │  │  │  └─ 📄 Email 1 │         │                                 │   │
 │  │  │  └─ 📁 Templates  │         │                                 │   │
@@ -176,7 +176,7 @@
 │  │  ─────────────────── │         │                                 │   │
 │  │                      │         │                                 │   │
 │  │  NAVIGATION       ▼  │  ← Collapsible section                       │
-│  │  ├─ ▼ Clarins WS     │         │                                 │   │
+│  │  ├─ ▼ Acme Co WS     │         │                                 │   │
 │  │  │  ├─ Dossier 1  ●  │  ← Current location                          │
 │  │  │  └─ Dossier 2     │         │                                 │   │
 │  │  ├─ ▶ Test WS        │         │                                 │   │
@@ -207,7 +207,7 @@ Cette proposition est la plus proche de Linear, avec une organisation très clai
 ┌─────────────────────────────────────────────────────────────────────────┐
 │                                                                         │
 │  ┌──────────────────────┐                                               │
-│  │ [LP] Clarins      ⌄  │  ← Workspace switcher (admins only)           │
+│  │ [LP] Acme Co      ⌄  │  ← Workspace switcher (admins only)           │
 │  └──────────────────────┘                                               │
 │  │                      │                                               │
 │  │  ┌────────────────┐  │                                               │
@@ -218,9 +218,9 @@ Cette proposition est la plus proche de Linear, avec une organisation très clai
 │  │  📊 CRM Intel     >  │                                               │
 │  │                      │                                               │
 │  │  ═══════════════════ │         ┌─────────────────────────────────┐   │
-│  │                      │         │  Clarins WS > Dossier 1         │   │
+│  │                      │         │  Acme Co WS > Dossier 1         │   │
 │  │  ESPACES DE TRAVAIL  │         │  ─────────────────────────────  │   │
-│  │  ▼ Clarins Workspace │         │                                 │   │
+│  │  ▼ Acme Co Workspace │         │                                 │   │
 │  │    ├─ 📁 Dossier 1 ← │ ACTIF   │  [+ Nouveau]  [Filtres]         │   │
 │  │    ├─ 📁 Dossier 2   │         │                                 │   │
 │  │    └─ 📁 Archives    │         │  ┌─────────────────────────┐    │   │
@@ -267,7 +267,7 @@ Cette proposition est la plus proche de Linear, avec une organisation très clai
 │ │ 📊 │                                                               │
 │ │    │                                                               │
 │ │────│                ┌──────────────────────────────────────────┐   │
-│ │    │                │  Clarins WS > Dossier 1                  │   │
+│ │    │                │  Acme Co WS > Dossier 1                  │   │
 │ │ 📁 │  ← Hover shows │  ────────────────────────────────────    │   │
 │ │ 📁 │    folder name │                                          │   │
 │ │ 📁 │                │  [+ Nouveau]  [Filtres]                  │   │

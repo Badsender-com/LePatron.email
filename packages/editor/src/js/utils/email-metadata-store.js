@@ -33,6 +33,8 @@ function createEmailMetadataStore() {
   // the save command must then behave exactly as it did before this feature existed.
   let initial = null;
   let current = null;
+  // The section, told when a field is written from outside it (an AI action).
+  let writeListeners = [];
 
   /** Whether a metadata section is mounted at all. */
   function isActive() {
@@ -52,6 +54,26 @@ function createEmailMetadataStore() {
   function setCurrent(formState) {
     if (!isActive()) return;
     current = { ...formState };
+  }
+
+  /**
+   * Write one field from outside the section, as if the user had typed it:
+   * read back at once, saved with the email, and shown by the section, which
+   * listens through `onWrite`.
+   */
+  function writeField(name, value) {
+    if (!isActive()) return false;
+    current = { ...current, [name]: value };
+    writeListeners.forEach((listener) => listener(name, value));
+    return true;
+  }
+
+  /** The section shows what was written from outside it. */
+  function onWrite(listener) {
+    writeListeners.push(listener);
+    return () => {
+      writeListeners = writeListeners.filter((l) => l !== listener);
+    };
   }
 
   /**
@@ -106,12 +128,15 @@ function createEmailMetadataStore() {
   function dispose() {
     initial = null;
     current = null;
+    writeListeners = [];
   }
 
   return {
     isActive,
     reset,
     setCurrent,
+    writeField,
+    onWrite,
     isDirty,
     payload,
     snapshot,

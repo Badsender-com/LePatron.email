@@ -4,7 +4,7 @@ const {
   isDynamic,
   stripMergeTags,
   SCRIPTING_MARKUP,
-} = require('../../../packages/editor/src/js/ext/quality/merge-tag-syntax.js');
+} = require('../../../packages/shared/quality/merge-tag-syntax.js');
 
 describe('merge-tag-syntax', () => {
   it.each([

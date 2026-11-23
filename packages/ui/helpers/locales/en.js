@@ -643,6 +643,9 @@ export default {
     estimatedTime: '~{time} remaining',
     destination: 'Destination',
     destinationHint: 'Select where to create the translated copy',
+    rateLimitedMinutes: 'AI usage limit reached. Try again in {minutes} min.',
+    rateLimitedHours: 'AI usage limit reached. Try again in {hours} h.',
+    payloadTooLarge: 'This request is too large to be translated.',
   },
   template: {
     noId: 'No ID',
@@ -1966,12 +1969,27 @@ export default {
     },
     textGeneration: {
       title: 'Text generation',
-      description: 'Generate personalized marketing content for your emails.'
+      description: 'Suggests a subject and a preheader in the editor, written from the email content along Badsender\'s copywriting guidelines.',
+      enableLabel: 'Enable text generation',
+      on: 'On',
+      off: 'Off',
+      model: 'AI model',
+      modelHint: 'More powerful models are more accurate but slower and more expensive',
     },
     qualityCheck: {
       title: 'Quality check',
       description: 'Automatically check the quality and consistency of your emails.'
-    }
+    },
+    logContent: {
+      title: 'Content of AI calls',
+      description: 'Every AI call is logged, to follow its cost and its errors. This setting decides whether the log also keeps what was sent and answered.',
+      switch: 'Keep the content of AI calls',
+      on: 'Kept',
+      off: 'Not kept',
+      alwaysLogged: 'Always logged: who made the call, when, with which model, how long it took, its tokens and its outcome.',
+      content: 'On, the log also keeps the text sent to the AI, the instruction and its raw answer. Off, they are never stored.',
+      nextCalls: 'A change applies to the next calls: the logs already written stay until the end of their retention.',
+    },
   },
   colors: {
     palette: 'Color palette',

@@ -8,6 +8,7 @@ const { watchContent } = require('./content-watch');
 const { checkStateOf } = require('./settings');
 const { installQualityGate } = require('./quality-gate');
 const { createRemoteChecks, listedRemoteRules } = require('./remote-checks');
+const { installRightPanel } = require('../right-panel.js');
 
 const { runQualityChecks, DEFAULT_RULES, REMOTE_RULES } = engine;
 
@@ -105,7 +106,8 @@ function installQualityReview(viewModel, ko, deps = {}) {
   });
 
   // Whether the comments panel holds a comment being written: opening the
-  // drawer would close it (qualityDrawerPlugin.js).
+  // drawer would close it, as opening any other right panel does
+  // (ext/right-panel.js).
   const commentDraftInProgress = () =>
     Boolean(ko.unwrap(viewModel.showComments)) &&
     String(ko.unwrap(viewModel.newCommentText) || '').trim().length > 0;
@@ -166,7 +168,9 @@ function installQualityReview(viewModel, ko, deps = {}) {
     (rule) => checkStateOf(settings, rule.id) === 'blocking'
   );
 
-  viewModel.showQuality = ko.observable(false);
+  // One of the right panels: opening it closes the comments or the AI panel
+  // (ADR 0010).
+  viewModel.showQuality = installRightPanel(viewModel, ko).flag('quality');
   // The drawer's tab: the checks, or sending a test.
   const tab = ko.observable('checks');
 

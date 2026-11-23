@@ -166,7 +166,7 @@ describe('OpenAIProvider', () => {
       expect(userMessage).toContain('@[variable]');
     });
 
-    it('should throw ProviderError with QUOTA_EXCEEDED when API returns 429', async () => {
+    it('should throw ProviderError with RATE_LIMITED when API returns 429', async () => {
       mockFetch.mockResolvedValueOnce({
         ok: false,
         status: 429,
@@ -183,7 +183,7 @@ describe('OpenAIProvider', () => {
       ).rejects.toMatchObject({
         name: 'ProviderError',
         message: 'openai API error: 429 - Rate limit exceeded',
-        code: 'PROVIDER_QUOTA_EXCEEDED',
+        code: 'PROVIDER_RATE_LIMITED',
       });
     });
 

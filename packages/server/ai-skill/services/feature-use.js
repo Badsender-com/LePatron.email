@@ -11,6 +11,7 @@
 
 const { Expertises, LePatronSkills } = require('../../common/models.common.js');
 const { SkillStatuses } = require('../constant/skill-constants.js');
+const AIFeatureTypes = require('../../constant/ai-feature-type.js');
 const manifestRegistry = require('./manifest-registry.js');
 
 const KINDS = ['skill', 'expertise'];
@@ -140,9 +141,28 @@ function withUsedBy(kind, entity) {
   return { ...record, usedBy: featuresUsing(kind, record) };
 }
 
+/**
+ * The engine a skill runs on for the people who use it: that of the text
+ * feature whose manifest calls it, the generic skill engine otherwise.
+ *
+ * @param {string} skillId
+ * @returns {string} an AI feature type
+ */
+function engineOf(skillId) {
+  const caller = manifestRegistry
+    .listManifests()
+    .find(
+      (manifest) =>
+        AIFeatureTypes.TEXT_FEATURE_TYPES.includes(manifest.featureType) &&
+        usedSkillIds(manifest).includes(skillId)
+    );
+  return caller ? caller.featureType : AIFeatureTypes.SKILL;
+}
+
 module.exports = {
   asList,
   usedSkillIds,
+  engineOf,
   declaresUse,
   manifestsUsing,
   describeFeature,

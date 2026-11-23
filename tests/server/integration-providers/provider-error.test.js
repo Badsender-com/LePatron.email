@@ -27,6 +27,13 @@ describe('ProviderError', () => {
     expect(error.stack).toBeDefined();
     expect(error.stack).toContain('ProviderError');
   });
+
+  // Translation answers with this status: a rate limit stays a 429 there.
+  it('answers 429 for a quota and for a rate limit', () => {
+    const { QUOTA_EXCEEDED, RATE_LIMITED } = PROVIDER_ERROR_CODES;
+    expect(new ProviderError('x', QUOTA_EXCEEDED).httpStatus).toBe(429);
+    expect(new ProviderError('x', RATE_LIMITED).httpStatus).toBe(429);
+  });
 });
 
 describe('PROVIDER_ERROR_CODES', () => {
@@ -38,6 +45,7 @@ describe('PROVIDER_ERROR_CODES', () => {
     expect(PROVIDER_ERROR_CODES).toEqual({
       INVALID_CREDENTIALS: 'PROVIDER_INVALID_CREDENTIALS',
       QUOTA_EXCEEDED: 'PROVIDER_QUOTA_EXCEEDED',
+      RATE_LIMITED: 'PROVIDER_RATE_LIMITED',
       TIMEOUT: 'PROVIDER_TIMEOUT',
       API_ERROR: 'PROVIDER_API_ERROR',
       INVALID_RESPONSE: 'PROVIDER_INVALID_RESPONSE',

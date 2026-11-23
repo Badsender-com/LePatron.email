@@ -143,7 +143,7 @@
          What could NOT be done: rename the heading above. "Template Options" is
          declared in each client template's own markup (`@supports -ko-blockdefs`),
          not here — 6 of the 7 templates in the dev database use that exact string
-         and Ouest France has no such block at all. Hence two headings joined by a
+         and the seventh has no such block at all. Hence two headings joined by a
          frame, rather than one renamed section.
 
          `hasEmailMetadata` is set once in the plugin's `viewModel` hook and never
@@ -311,14 +311,21 @@
 
 <!-- Quality drawer: Vue component mounted by vue/qualityDrawerPlugin.js.
      Inert while hidden, so Tab never reaches a panel that is off screen. -->
-<div id="toolquality" class="slidebar" data-bind="css: { hidden: $root.showQuality() === false }, attr: { inert: !$root.showQuality() }">
+<div id="toolquality" class="slidebar right-panel" data-bind="rightPanel: 'quality'">
   <div id="quality-drawer">
     <quality-drawer-plugin />
   </div>
 </div>
 
+<!-- AI panel, « Outils IA » (ADR 0010) -->
+<div id="toolai" class="slidebar right-panel" data-bind="rightPanel: 'ai'">
+  <div id="ai-panel">
+    <ai-panel-plugin />
+  </div>
+</div>
+
 <!-- Comments Panel -->
-<div id="toolcomments" class="slidebar" data-bind="css: { hidden: $root.showComments() === false }">
+<div id="toolcomments" class="slidebar right-panel" data-bind="rightPanel: 'comments'">
   <div class="close" data-bind="click: $root.showComments.bind($element, false);">X</div>
   <span class="pane-title">
     <span data-bind="text: $root.t('comments-title')">Comments</span>
@@ -492,7 +499,7 @@
       <div class="comment-reply-form">
         <div class="comments-textarea-wrapper">
           <textarea class="comments-textarea comment-textarea-reply" rows="2"
-            data-bind="value: $root.newCommentText, valueUpdate: 'afterkeydown', event: { input: $root.handleCommentInput, blur: function() { setTimeout($root.hideMentionSuggestions, 200); } }, attr: { placeholder: $root.t('comments-placeholder') }"></textarea>
+            data-bind="value: $root.newCommentText, valueUpdate: 'afterkeydown', event: { input: $root.handleCommentInput, keydown: $root.handleCommentKeydown, keydown: $root.handleCommentKeydown, blur: function() { setTimeout($root.hideMentionSuggestions, 200); } }, attr: { placeholder: $root.t('comments-placeholder') }"></textarea>
 
           <!-- Mention suggestions dropdown -->
           <!-- ko if: $root.showMentionSuggestions() && $root.mentionSuggestions().length > 0 -->
@@ -523,7 +530,7 @@
   <div class="comments-form">
     <div class="comments-textarea-wrapper">
       <textarea class="comments-textarea comment-textarea-main" rows="2"
-        data-bind="value: $root.newCommentText, valueUpdate: 'afterkeydown', event: { input: $root.handleCommentInput, focus: $root.onTextareaFocus, blur: $root.onTextareaBlur }, attr: { placeholder: $root.t('comments-placeholder') }, css: { 'is-focused': $root.isCommentTextareaFocused() }"></textarea>
+        data-bind="value: $root.newCommentText, valueUpdate: 'afterkeydown', event: { input: $root.handleCommentInput, keydown: $root.handleCommentKeydown, keydown: $root.handleCommentKeydown, focus: $root.onTextareaFocus, blur: $root.onTextareaBlur }, attr: { placeholder: $root.t('comments-placeholder') }, css: { 'is-focused': $root.isCommentTextareaFocused() }"></textarea>
 
       <!-- Mention suggestions dropdown -->
       <!-- ko if: $root.showMentionSuggestions() && $root.mentionSuggestions().length > 0 -->

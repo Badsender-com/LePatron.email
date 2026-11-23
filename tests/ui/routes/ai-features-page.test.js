@@ -5,7 +5,8 @@
 
 // The AI features page of a company: a change of its MCP access goes to the
 // user store, whose action knows which company the sidebar reads
-// (tests/ui/store/user-group-changed.test.js).
+// (tests/ui/store/user-group-changed.test.js), and the content of its AI
+// invocation logs, once saved, stays on the page.
 
 const { mountSfc, settle } = require('../../helpers/mount-sfc.js');
 const { CAPABILITIES } = require('../../../packages/shared/access/roles.js');
@@ -16,6 +17,15 @@ const McpAccessOption = {
   props: { group: { type: Object, default: () => ({}) } },
   render(h) {
     return h('div', { class: 'mcp-access-option' });
+  },
+};
+
+// Stands in for the switch of the logs' content.
+const LogContentOption = {
+  name: 'BsGroupAiLogContentOption',
+  props: { group: { type: Object, default: () => ({}) } },
+  render(h) {
+    return h('div', { class: 'ai-log-content-option' });
   },
 };
 
@@ -33,6 +43,7 @@ function mountPage(group) {
         '~/components/layout/bs-page-header.vue': {},
         '~/components/group/ai-features-tab.vue': {},
         '~/components/group/mcp-access-option.vue': McpAccessOption,
+        '~/components/group/ai-log-content-option.vue': LogContentOption,
         '~/store/user': {
           CAN: 'CAN',
           GROUP_CHANGED: 'GROUP_CHANGED',
@@ -61,5 +72,17 @@ describe('the AI features page', () => {
       group: vm.group,
       changes: { enableMcp: true },
     });
+  });
+
+  it('keeps the content switch as saved', async () => {
+    const { vm } = mountPage({ id: 'g1', logSkillInvocationContent: true });
+    await settle(vm);
+
+    const section = vm.$children.find(
+      (child) => child.$options.name === 'BsGroupAiLogContentOption'
+    );
+    section.$emit('update', { id: 'g1', logSkillInvocationContent: false });
+
+    expect(vm.group.logSkillInvocationContent).toBe(false);
   });
 });

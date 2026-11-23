@@ -50,6 +50,19 @@ describe('toIntegrationDto (apiKey never leaks)', () => {
     expect(dto.validationStatus).toBe('valid');
   });
 
+  // The server's one definition of a provider that writes text, given to the
+  // feature selectors with each integration.
+  it.each([
+    ['openai', true],
+    ['mistral', true],
+    ['deepl', false],
+    ['metabase', false],
+  ])('says whether a %s integration can generate text', (provider, can) => {
+    expect(toIntegrationDto({ _id: 'id3', provider }).canGenerateText).toBe(
+      can
+    );
+  });
+
   it('passes through nullish input', () => {
     expect(toIntegrationDto(null)).toBe(null);
     expect(toIntegrationDto(undefined)).toBe(undefined);

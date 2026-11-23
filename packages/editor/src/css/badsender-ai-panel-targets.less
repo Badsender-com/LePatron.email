@@ -1,0 +1,188 @@
+////////
+// AI PANEL — its targets (ADR 0010): the AI icons on the fields, and the parts
+// of the panel that follow the canvas selection. The panel itself is in
+// badsender-ai-panel.less.
+////////
+
+// Right after the label of the subject field and of the preheader property.
+// 24px for a pointer target (WCAG 2.5.8); --primary for a 3:1 contrast.
+.mo .ai-field-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  margin-left: 4px;
+  padding: 0;
+  border: 0;
+  border-radius: 4px;
+  background: transparent;
+  color: var(--primary);
+  font-size: 15px;
+  line-height: 1;
+  vertical-align: middle;
+  cursor: pointer;
+
+  &:hover {
+    background: var(--gray-100);
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 1px;
+  }
+}
+
+// The subject's label row spreads its items apart: the icon stays by the label.
+.mo .email-metadata__label-row > .ai-field-icon {
+  align-self: center;
+  margin-right: auto;
+}
+
+#toolai .ai-panel {
+  &__section {
+    margin-top: 8px;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: var(--gray-600);
+
+    &:first-child {
+      margin-top: 0;
+    }
+  }
+}
+
+// ===== The corrections (ADR 0011) =====
+#toolai .ai-panel {
+  &__corrections-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+  }
+
+  &__corrections {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  &__correction {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    padding: 10px 12px;
+    border: 1px solid var(--gray-300);
+    border-radius: @qc-radius;
+
+    &--accepted,
+    &--ignored,
+    &--stale {
+      background: var(--gray-50);
+    }
+
+    // Answered: the change and its status on one line.
+    &--answered {
+      flex-direction: row;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      padding: 6px 12px;
+    }
+  }
+
+  &__change {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 6px;
+    user-select: text;
+    -webkit-user-select: text;
+  }
+
+  &__before {
+    color: var(--gray-700);
+    text-decoration: line-through;
+  }
+
+  &__after {
+    font-weight: 600;
+    color: var(--gray-900);
+    text-decoration: none;
+  }
+
+  &__buttons--start {
+    justify-content: flex-start;
+  }
+
+  &__status-label {
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--gray-700);
+  }
+
+  // A correction that changes more than the spelling: read before accepting.
+  &__rewrite {
+    display: flex;
+  }
+
+  &__rewrite-badge {
+    padding: 2px 7px;
+    border-radius: 10px;
+    background: @qc-tint-warning;
+    color: @qc-warning-text;
+    font-size: 11px;
+    font-weight: 600;
+    line-height: 1.4;
+  }
+
+  // Given the focus when the analysis starts again, in place of its button.
+  &__status:focus {
+    outline: none;
+  }
+}
+
+#toolai .ai-panel__field-label {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--gray-600);
+}
+
+#toolai .ai-panel {
+  &__group {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  &__group-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    margin-top: 4px;
+
+    // A heading for screen readers' navigation, styled as a section label.
+    h3 {
+      margin: 0;
+    }
+
+    .lucide {
+      margin-left: 4px;
+    }
+  }
+
+  &__accept-block {
+    align-self: flex-start;
+  }
+}
+
+// The AI button of the text editor's toolbar (#1257): TinyMCE names its icon
+// `mce-i-<icon>`.
+.mce-i-ai-bot {
+  .lucide-icon-mask(@lucide-bot);
+}

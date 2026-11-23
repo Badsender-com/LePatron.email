@@ -1,11 +1,26 @@
 const ko = require('knockout');
 const tinymceConfigFull = require('./utils/tinymce-config');
-
+const { companyOffersOn } = require('./ai-panel/text-generation-access');
 
 /**
- * Setup color picker in order to use it with tinyMce
- * text-color and colorpicker plugins
+ * The text editor's options with the AI button, first: the toolbar is wider
+ * than a narrow canvas, its end hidden. Alone in its group, so that it can be
+ * hidden with it (badsender-extend-tinymce.js).
+ * @param {Object} options TinyMCE options, `plugins` a string or an array
+ * @returns {Object} new options; `options` is left as it is
  */
+function withAiActions(options) {
+  const plugins = Array.isArray(options.plugins)
+    ? options.plugins.join(' ')
+    : options.plugins || '';
+  return {
+    ...options,
+    plugins: [`${plugins} aiactions`.trim()],
+    toolbar1: options.toolbar1
+      ? `aiactions | ${options.toolbar1}`
+      : 'aiactions',
+  };
+}
 
 module.exports = (opts) => {
   function viewModel(viewModel) {
@@ -28,6 +43,10 @@ module.exports = (opts) => {
       textcolor_cols: '7',
       textcolor_rows: '3' };
 
+    /**
+     * Setup color picker in order to use it with tinyMce
+     * text-color and colorpicker plugins
+     */
     const tinyMceColorPickerConfig = {
       color_picker_callback: function (callback, currentColor) {
         if (viewModel.colorPicker) {
@@ -58,11 +77,19 @@ module.exports = (opts) => {
     };
 
     //- https://www.tinymce.com/docs/configure/url-handling/#convert_urls
-    const textEditorFullOptions = $.extend(
+    const merged = $.extend(
       { convert_urls: false },
       textEditorOptions,
       opts.tinymce
     );
+    // The AI button opens the field's actions; only a group whose text
+    // generation offers one on a field has any (#1257): the correction's skill
+    // may not run while the subject's does. Added to the toolbar the editor
+    // ends up with, a template's own included.
+    const offersOnFields = companyOffersOn(viewModel.metadata, 'blockField');
+    const textEditorFullOptions = offersOnFields
+      ? withAiActions(merged)
+      : merged;
 
     ko.bindingHandlers.wysiwyg.fullOptions = textEditorFullOptions;
 
@@ -78,3 +105,5 @@ module.exports = (opts) => {
     viewModel,
   };
 };
+
+module.exports.withAiActions = withAiActions;

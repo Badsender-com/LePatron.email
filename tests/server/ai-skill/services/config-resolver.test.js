@@ -24,6 +24,23 @@ describe('config-resolver', () => {
     expect(cfg.source.model).toBe('group');
   });
 
+  it('reasoningEffort: Skill > default, the group never sets it', () => {
+    const fromDefault = resolveConfig({
+      integration,
+      groupFeatureConfig: { reasoningEffort: 'high' },
+      defaults: { reasoningEffort: 'low' },
+    });
+    expect(fromDefault.reasoningEffort).toBe('low');
+    expect(fromDefault.source.reasoningEffort).toBe('default');
+    const fromSkill = resolveConfig({
+      integration,
+      skillModelHints: { reasoningEffort: 'medium' },
+      defaults: { reasoningEffort: 'low' },
+    });
+    expect(fromSkill.reasoningEffort).toBe('medium');
+    expect(fromSkill.source.reasoningEffort).toBe('skill');
+  });
+
   it('model: falls back to skill when group not set', () => {
     const cfg = resolveConfig({
       integration,

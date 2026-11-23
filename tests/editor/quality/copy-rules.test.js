@@ -49,6 +49,8 @@ describe('subject', () => {
     ['RE: your order', [FAKE_REPLY]],
     ['TR : notre offre', [FAKE_REPLY]],
     ['FWD:Important', [FAKE_REPLY]],
+    ['Re[2]: your order', [FAKE_REPLY]],
+    ['RE： votre commande', [FAKE_REPLY]],
     ['Re:Think different', []],
     ['re:boot your routine', []],
     ['HUGE SALE THIS WEEKEND', ['Subject mostly in capital letters']],

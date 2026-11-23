@@ -7,6 +7,7 @@ const _ = require('lodash');
 require('dotenv').config();
 const { mkdirp } = require('fs-extra');
 const { DEFAULTS } = require('./config/dev-defaults.js');
+const { parseAiRateLimits } = require('./ai-usage/ai-rate-limits-config.js');
 
 const localEmail = Object.freeze({
   host: '0.0.0.0',
@@ -57,6 +58,16 @@ const config = rc('lepatron', {
     tmpDir: 'tmp',
     cache: false,
   },
+  // Ceiling on the requests that reach an AI provider (translation, text
+  // generation), shared by every AI feature. A safety net against runaway
+  // loops and quota burning, not a commercial quota. Each one can be set per
+  // environment (lepatron_aiRateLimits__perUserPerMinute…), read as a number
+  // by ai-usage/ai-rate-limits-config.js.
+  aiRateLimits: {
+    perUserPerMinute: 20,
+    perUserPerDay: 300,
+    perGroupPerDay: 3000,
+  },
   admin: {
     id: '576b90a441ceadc005124896',
     username: 'admin',
@@ -95,6 +106,7 @@ const config = rc('lepatron', {
   },
 });
 
+config.aiRateLimits = parseAiRateLimits(config.aiRateLimits);
 config.NODE_ENV = config.NODE_ENV || process.env.NODE_ENV || 'development';
 config.PORT = process.env.PORT || 3000;
 config.isDev = config.NODE_ENV === 'development';

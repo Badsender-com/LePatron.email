@@ -10,6 +10,25 @@
 // guard, or what clients will read) with a key, the second applies the change
 // on that key. A draft is never opened to clients.
 
+// The subject expertise of the fixtures matches text generation's filter
+// (ADR 0016): these tests are about publishing an expertise no feature uses,
+// so text generation's manifest stays out.
+jest.mock(
+  '../../../packages/server/ai-skill/services/manifest-registry.js',
+  () => {
+    const actual = jest.requireActual(
+      '../../../packages/server/ai-skill/services/manifest-registry.js'
+    );
+    return {
+      ...actual,
+      listManifests: () =>
+        actual
+          .listManifests()
+          .filter((manifest) => manifest.featureType !== 'text_generation'),
+    };
+  }
+);
+
 const harness = require('../../helpers/mcp-harness');
 const f = require('../../helpers/mcp-fixtures');
 

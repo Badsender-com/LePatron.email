@@ -655,6 +655,9 @@ export default {
     estimatedTime: '~{time} restantes',
     destination: 'Destination',
     destinationHint: 'Sélectionnez où créer la copie traduite',
+    rateLimitedMinutes: 'Limite d\'utilisation de l\'IA atteinte. Réessayez dans {minutes} min.',
+    rateLimitedHours: 'Limite d\'utilisation de l\'IA atteinte. Réessayez dans {hours} h.',
+    payloadTooLarge: 'Cette demande est trop volumineuse pour être traduite.',
   },
   template: {
     noId: 'Aucun ID',
@@ -1993,12 +1996,27 @@ export default {
     },
     textGeneration: {
       title: 'Génération de texte',
-      description: 'Générez du contenu marketing personnalisé pour vos emails.'
+      description: 'Propose dans l\'éditeur un objet et un préheader rédigés à partir du contenu de l\'email, selon les recommandations de rédaction de Badsender.',
+      enableLabel: 'Activer la génération de texte',
+      on: 'Activée',
+      off: 'Désactivée',
+      model: 'Modèle IA',
+      modelHint: 'Les modèles plus puissants sont plus précis mais plus lents et coûteux',
     },
     qualityCheck: {
       title: 'Contrôle qualité',
       description: 'Vérifiez automatiquement la qualité et la cohérence de vos emails.'
-    }
+    },
+    logContent: {
+      title: 'Contenu des appels à l\'IA',
+      description: 'Chaque appel à l\'IA est journalisé, pour suivre son coût et ses erreurs. Ce réglage décide si le journal garde aussi ce qui a été envoyé et répondu.',
+      switch: 'Garder le contenu des appels à l\'IA',
+      on: 'Gardé',
+      off: 'Non gardé',
+      alwaysLogged: 'Toujours journalisés : qui a fait l\'appel, quand, avec quel modèle, sa durée, ses tokens et son résultat.',
+      content: 'Activé, le journal garde aussi le texte envoyé à l\'IA, la consigne et sa réponse brute. Désactivé, ils ne sont jamais enregistrés.',
+      nextCalls: 'Le changement vaut pour les appels suivants : les journaux déjà écrits restent jusqu\'à la fin de leur durée de conservation.',
+    },
   },
   colors: {
     palette: 'Palette de couleurs',
