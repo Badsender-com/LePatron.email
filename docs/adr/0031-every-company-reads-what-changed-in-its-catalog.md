@@ -2,7 +2,7 @@
 
 - Status: proposed
 - Date: 2026-11-23
-- Epic: #
+- Epic: #1661, #1662
 - Amends: ADR 0014 (what is written at publication), ADR 0019 (the audience keeps its history)
 
 The skills and expertises change every day, and whoever uses them through an assistant cannot tell what changed since they last looked: no tool gives a date, a skill's resource gives only its number, and a minor version is published with a generic sentence that says nothing. The platform company wants to tell its consultants and its clients every week what is new, and an assistant should be able to answer it from LePatron alone, without inventing a date or a reason.
