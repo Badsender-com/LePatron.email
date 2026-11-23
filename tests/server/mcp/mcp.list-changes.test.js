@@ -29,7 +29,7 @@ describe('list_changes', () => {
   afterEach(() => harness.disconnect());
 
   // Turned on by #1667 (created and updated items)
-  describe.skip('created and updated', () => {
+  describe('created and updated', () => {
     it('is a read-only tool every connection is offered, every parameter described', async () => {
       const { tools } = await (await asClient()).listTools();
       const tool = tools.find((t) => t.name === LIST);
