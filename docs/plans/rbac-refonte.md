@@ -143,7 +143,7 @@ Les capacités de l'éditeur (`canEditStructure`, `canEditContent`, `canEditStyl
 
 **Reste à faire** (dans l'ordre où on comptait les traiter) :
 
-1. ~~Génération de texte IA (B2)~~ **Décidé le 2026-10-13, précisé le 2026-11-23 : ouverte à tous les rôles sauf le `reviewer`**, par la capacité `mailing.edit-content` que demandent ses routes. La configuration par group (B1) est réservée à `company_admin_tech` et au `super_admin`, comme la traduction sur la même page ([ADR 0016](../adr/0016-text-generation-skills-and-expertises.md)).
+1. ~~Génération de texte IA (B2)~~ **Décidé le 2026-10-13, précisé le 2026-11-23 : ouverte à tous les rôles sauf le `reviewer`**, correction orthographique comprise ([ADR 0011](../adr/0011-spelling-correction-located-in-code.md)), par la capacité `mailing.edit-content` que demandent ses routes. La configuration par group (B1) est réservée à `company_admin_tech` et au `super_admin`, comme la traduction sur la même page ([ADR 0016](../adr/0016-text-generation-skills-and-expertises.md)).
 2. ~~Galerie d'images~~ **Décidé le 2026-10-13 : ouverte à tous les rôles**, inchangé.
 3. ~~Export CDN/FTP/ESP~~ **Décidé le 2026-10-13 : ouvert à tous les rôles**, inchangé (barre du haut et barre d'actions groupées du listing).
 4. ~~Approbation~~ **Décidé le 2026-10-13 : le bouton « Approuver » est visible pour tous les rôles** (`canPostDecision` ne demande plus que l'utilisateur soit chargé). `decision` n'est pas contrôlée côté serveur, ce qui est cohérent avec cette décision.
@@ -269,7 +269,7 @@ Légende des colonnes : **Lecture** = consulter la feature/l'écran · **Écritu
 | 25  | Contrôle qualité — ignorer un résultat                                                                     | tous sauf `writer` et `reviewer`       | tous sauf `writer` et `reviewer`       | —                                                                                           |
 | 26  | Liens de partage                                                                                           | tous les rôles                         | tous les rôles (créer)                 | ses propres liens : tous les rôles ; ceux d'autrui : `company_admin` + `company_admin_tech` |
 | 27  | Génération de texte IA — configuration par group                                                           | `company_admin_tech`                   | `company_admin_tech`                   | —                                                                                           |
-| 28  | Génération de texte IA — utilisation dans l'éditeur                                                        | —                                      | tous sauf `reviewer`                   | —                                                                                           |
+| 28  | Génération de texte IA — utilisation dans l'éditeur (sujet, préheader, correction orthographique)          | —                                      | tous sauf `reviewer`                   | —                                                                                           |
 | 29  | Double authentification — l'exiger pour la company                                                         | `company_admin` + `company_admin_tech` | `company_admin_tech`                   | —                                                                                           |
 | 30  | Double authentification — réinitialiser celle d'un membre, changer son adresse                             | —                                      | `company_admin_tech`                   | —                                                                                           |
 
@@ -308,12 +308,12 @@ Décisions actées le 2026-09-03 :
 | A8  | Lien de partage — créer                                | oui          | oui       | oui       | oui                | oui           |
 | A9  | Lien de partage — révoquer (les siens / ceux d'autrui) | les siens    | les siens | les siens | ceux d'autrui      | ceux d'autrui |
 
-**B. Génération de texte IA (sujet, préheader)**
+**B. Génération de texte IA (sujet, préheader, correction orthographique)**
 
-| #   | Action                                   | regular_user | writer | reviewer | company_admin_tech | company_admin |
-| --- | ---------------------------------------- | ------------ | ------ | -------- | ------------------ | ------------- |
-| B1  | Configurer la fonctionnalité (par group) | non          | non    | non      | oui                | non           |
-| B2  | Utiliser la génération dans l'éditeur    | oui          | oui    | non      | oui                | oui           |
+| #   | Action                                                 | regular_user | writer | reviewer | company_admin_tech | company_admin |
+| --- | ------------------------------------------------------ | ------------ | ------ | -------- | ------------------ | ------------- |
+| B1  | Configurer la fonctionnalité (par group)               | non          | non    | non      | oui                | non           |
+| B2  | Utiliser la génération et la correction dans l'éditeur | oui          | oui    | non      | oui                | oui           |
 
 Décisions reportées en 3.2 (lignes 24-28) et 3.6 le 2026-10-06. Reste à : les traduire en `canEdit*`/guards (aujourd'hui aucune de ces actions n'est soumise aux rôles, et les routes `share-links` sont toutes en `GUARD_USER`).
 
