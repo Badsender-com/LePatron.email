@@ -945,8 +945,10 @@ module.exports = {
   'text-generation-mobile': 'sur mobile : « __preview__… »',
   'text-generation-dropped':
     'Propositions écartées car elles ne respectaient pas les règles de rédaction : __count__.',
+  'text-generation-repeated':
+    'Propositions écartées car déjà faites : __count__.',
   'text-generation-none':
-    "Aucune proposition ne respectait les règles de rédaction. Demandez-en d'autres.",
+    "Aucune nouvelle proposition ne respectait les règles de rédaction. Demandez-en d'autres.",
   'text-generation-apply': 'Appliquer',
   'text-generation-copy': 'Copier',
   'text-generation-copied': 'Copié',

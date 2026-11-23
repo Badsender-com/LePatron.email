@@ -162,7 +162,7 @@ function toHttpError(err) {
  * @param {Object} params
  * @param {Object} params.user the requesting user
  * @param {Object} params.body { mailingId, content, currentSubject?, brief?, avoid? }
- * @returns {Promise<{ proposals: Array, dropped: number }>}
+ * @returns {Promise<{ proposals: Array, dropped: number, repeated: number }>}
  */
 async function generateSubjects({ user, body }) {
   const request = readRequest(subjectRequestSchema, body);
@@ -211,7 +211,7 @@ async function generateSubjects({ user, body }) {
  * @param {Object} params
  * @param {Object} params.user the requesting user
  * @param {Object} params.body { mailingId, content, subject?, currentPreheader?, brief?, avoid? }
- * @returns {Promise<{ proposals: Array, dropped: number }>}
+ * @returns {Promise<{ proposals: Array, dropped: number, repeated: number }>}
  */
 async function generatePreheaders({ user, body }) {
   const request = readRequest(preheaderRequestSchema, body);

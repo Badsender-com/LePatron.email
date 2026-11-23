@@ -40,6 +40,9 @@ module.exports = `
       <p v-if="current.dropped && current.proposals.length" class="text-generation__hint">
         {{ t('text-generation-dropped', { count: current.dropped }) }}
       </p>
+      <p v-if="current.repeated && current.proposals.length" class="text-generation__hint">
+        {{ t('text-generation-repeated', { count: current.repeated }) }}
+      </p>
       <p v-if="!current.proposals.length" class="text-generation__hint">{{ t('text-generation-none') }}</p>
 
       <ul class="text-generation__proposals" role="radiogroup"

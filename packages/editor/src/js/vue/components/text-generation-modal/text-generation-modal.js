@@ -28,7 +28,9 @@ const ERROR_KEYS = {
 
 const emptyStep = () => ({
   proposals: [],
+  // Set aside by the server: for breaking a rule, for having been made already.
   dropped: 0,
+  repeated: 0,
   // Every proposal shown so far: "Suggest others" asks the skill to move away
   // from them.
   seen: [],
@@ -151,6 +153,7 @@ const TextGenerationModalComponent = Vue.component('TextGenerationModal', {
           ...emptyStep(),
           proposals: data.proposals,
           dropped: data.dropped,
+          repeated: data.repeated,
           seen: state.seen.concat(data.proposals.map((p) => p.text)),
         };
         this.step = kind;
