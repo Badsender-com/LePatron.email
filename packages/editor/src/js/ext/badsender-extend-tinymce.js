@@ -6,6 +6,7 @@ const {
 } = require('./tinymce/tinymce-extend-functions');
 
 require('./link-with-color');
+const { installToolbarInCanvas } = require('./tinymce/toolbar-in-canvas');
 
 /**
  * The AI button of the text editor's toolbar (#1257). Configured for every
@@ -39,6 +40,10 @@ function aiActions(viewModel) {
         editor.on('focus', update);
       },
       onclick() {
+        // What was just typed reaches the email on TinyMCE's « change », fired
+        // when an undo level is added: a toolbar button that runs no command
+        // adds none. Added here, so the AI reads the text on screen.
+        if (editor.undoManager) editor.undoManager.add();
         if (viewModel.openAiOnElement) {
           viewModel.openAiOnElement(editor.getElement());
         }
@@ -69,6 +74,10 @@ function extendTinyMce(opts, viewModel) {
   //----- AI ACTIONS (ADR 0010): the field being edited, in the AI panel
 
   tinymce.PluginManager.add('aiactions', aiActions(viewModel));
+
+  //----- THE TOOLBAR STAYS IN THE CANVAS, a right panel open or not
+
+  installToolbarInCanvas(tinymce);
 }
 
 module.exports = extendTinyMce;

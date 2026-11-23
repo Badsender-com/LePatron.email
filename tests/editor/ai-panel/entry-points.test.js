@@ -302,6 +302,7 @@ describe('the AI entry points of the toolbars', () => {
             handlers[name] = handler;
           },
           getElement: () => element,
+          undoManager: { add: jest.fn() },
         };
         aiActions(vm)(editor);
         const group = { items: () => ({ length: 1 }), visible: jest.fn() };
@@ -312,8 +313,30 @@ describe('the AI entry points of the toolbars', () => {
           aria: jest.fn(),
         };
         settings.onPostRender.call(button);
-        return { settings, group, button, focus: () => handlers.focus() };
+        return {
+          settings,
+          group,
+          button,
+          editor,
+          focus: () => handlers.focus(),
+        };
       }
+
+      it('commits what was just typed before opening the panel', () => {
+        const order = [];
+        const vm = {
+          ...editorViewModel(),
+          openAiOnElement: () => order.push('open'),
+        };
+        document.body.innerHTML = CANVAS;
+        const { settings, editor } = renderButton(
+          vm,
+          document.getElementById('ko_textBlock_3_titleText')
+        );
+        editor.undoManager.add.mockImplementation(() => order.push('commit'));
+        settings.onclick();
+        expect(order).toEqual(['commit', 'open']);
+      });
 
       it('is hidden, with its group, while the panel offers nothing', () => {
         const vm = editorViewModel();
