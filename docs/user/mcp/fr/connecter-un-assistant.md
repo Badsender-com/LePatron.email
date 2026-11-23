@@ -2,7 +2,7 @@
 
 Votre assistant IA (Claude, ChatGPT, Copilot…) peut lire LePatron en votre nom :
 
-- les expertises et les skills de l'entreprise plateforme, pour s'en servir quand vous lui demandez d'écrire ou de relire un email ;
+- les expertises et les skills de l'entreprise plateforme, pour s'en servir quand vous lui demandez d'écrire ou de relire un email, avec leurs nouveautés ([Suivre les nouveautés](./nouveautes.md)) ;
 - vos mailings : il les liste (par workspace, dossier, auteur, tags ou dates, avec leur statut) et en lit le texte, ou le HTML de l'aperçu. Les variables de personnalisation, comme `{{firstname}}`, restent telles quelles. Claude, ChatGPT, Microsoft 365 Copilot et VS Code affichent aussi l'email lui-même dans la conversation, sans exécuter aucun script ; les images hébergées hors de LePatron, comme le logo d'un template sur un CDN, y apparaissent aussi : LePatron les récupère et les sert lui-même. Une image dont l'adresse commence par `http://` et non `https://`, une image qu'il ne peut pas récupérer, ou une image qui n'est ni un PNG, ni un JPEG, ni un GIF, ni un WebP, apparaît par son texte alternatif. Les pixels de suivi de l'email sont récupérés comme les autres images.
 
 Il le fait avec **vos droits**, dans **une seule entreprise** : la vôtre, que l'écran de connexion affiche. Il ne modifie ni vos emails, ni les skills, ni vos réglages : il n'envoie à LePatron que vos avis, quand vous le lui demandez, et vos retours d'expérience, que vous approuvez un par un ([Retours d'expérience](./retours-d-experience.md)).
@@ -42,6 +42,17 @@ Cette connexion passe par le protocole MCP (Model Context Protocol), que ces ass
 L'écran de consentement s'affiche à chaque nouvelle connexion : c'est là qu'un super admin choisit l'entreprise ; tout autre utilisateur y voit la sienne.
 
 Les assistants installés sur votre ordinateur, comme Cursor ou Claude Code, se connectent par une adresse `localhost` : LePatron renvoie sa réponse sur votre propre machine. Un assistant qui demande à revenir par une adresse qui lui est propre (`cursor://…`) est refusé.
+
+## Travailler pour plusieurs entreprises
+
+Une connexion est liée à une seule entreprise, et toutes les conversations d'un même assistant la partagent. Un super admin qui travaille pour plusieurs entreprises ajoute donc **un connecteur par entreprise**, chacun sous son propre nom, et choisit l'entreprise sur l'écran de consentement de chacun. Dans Claude Code, par exemple :
+
+```bash
+claude mcp add --transport http lepatron-plateforme https://app.lepatron.email/mcp
+claude mcp add --transport http lepatron-client https://app.lepatron.email/mcp
+```
+
+Chaque réponse vient ainsi de l'entreprise du connecteur appelé, sans risque qu'une conversation change l'entreprise d'une autre. Une tâche planifiée, comme le suivi hebdomadaire des nouveautés, utilise le connecteur de l'entreprise plateforme.
 
 ## Voir et révoquer vos applications connectées
 
