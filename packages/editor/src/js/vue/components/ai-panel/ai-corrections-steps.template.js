@@ -77,7 +77,7 @@ module.exports = `
     <button v-if="canResume" ref="resume" type="button" class="qc-button qc-button--outline qc-button--sm" @click="resume">
       {{ t('ai-panel-correction-resume') }}
     </button>
-    <button v-if="canRestart" ref="restart" type="button" class="qc-button qc-button--ghost qc-button--sm" @click="restart">
+    <button v-if="canRestart" ref="restart" type="button" class="qc-button qc-button--outline qc-button--sm" @click="restart">
       {{ t('ai-panel-correction-restart') }}
     </button>
   </div>
