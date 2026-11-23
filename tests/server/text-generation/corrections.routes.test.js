@@ -81,6 +81,30 @@ const FIELDS = [
 
 const body = { mailingId: MAILING_ID, target: TARGET, fields: FIELDS };
 
+// Consecutive blocks in one request, each field naming its block; a path
+// may come back in several blocks.
+const BLOCKS_TARGET = {
+  kind: 'blocks',
+  blocks: [
+    { blockId: 'ko_textBlock_3', blockType: 'textBlock' },
+    { blockId: 'ko_textBlock_4', blockType: 'textBlock' },
+  ],
+};
+const BLOCKS_FIELDS = [
+  { blockId: 'ko_textBlock_3', ...FIELDS[0] },
+  {
+    blockId: 'ko_textBlock_4',
+    path: 'titleText',
+    role: 'title',
+    text: 'Livraison offerte jusqu’a dimanche',
+  },
+];
+const blocksBody = {
+  mailingId: MAILING_ID,
+  target: BLOCKS_TARGET,
+  fields: BLOCKS_FIELDS,
+};
+
 let invoke;
 let findApplicable;
 let mailingService;
@@ -227,6 +251,67 @@ describe('spelling correction: POST /api/text-generation/corrections', () => {
             text: 'Texte',
           })),
         },
+      ],
+      [
+        'a block type too long',
+        {
+          ...body,
+          target: { ...TARGET, blockType: 'b'.repeat(101) },
+        },
+      ],
+      [
+        'a field path too long',
+        {
+          ...body,
+          fields: [{ path: 'p'.repeat(201), role: 'text', text: 'Texte' }],
+        },
+      ],
+      [
+        'more than a request holds, the paths counted',
+        {
+          ...body,
+          fields: Array.from({ length: 10 }, (_, i) => ({
+            path: `field-${i}-${'p'.repeat(100)}`,
+            role: 'text',
+            text: 'a'.repeat(4995),
+          })),
+        },
+      ],
+      [
+        'a block target naming a block per field',
+        { ...body, fields: [{ ...FIELDS[0], blockId: 'ko_textBlock_3' }] },
+      ],
+      [
+        'several blocks, one field of a block not named',
+        {
+          ...blocksBody,
+          fields: [...BLOCKS_FIELDS, { ...BLOCKS_FIELDS[0], blockId: 'ko_x' }],
+        },
+      ],
+      [
+        'several blocks, one field naming no block',
+        {
+          ...blocksBody,
+          fields: [...BLOCKS_FIELDS, { path: 'x', role: 'text', text: 'T' }],
+        },
+      ],
+      [
+        'several blocks, one named twice',
+        {
+          ...blocksBody,
+          target: {
+            kind: 'blocks',
+            blocks: [...BLOCKS_TARGET.blocks, BLOCKS_TARGET.blocks[0]],
+          },
+        },
+      ],
+      [
+        'several blocks, one without field',
+        { ...blocksBody, fields: [BLOCKS_FIELDS[0]] },
+      ],
+      [
+        'several blocks, a field sent twice',
+        { ...blocksBody, fields: [...BLOCKS_FIELDS, BLOCKS_FIELDS[0]] },
       ],
       [
         'more text than a block holds',
@@ -520,6 +605,56 @@ describe('spelling correction: POST /api/text-generation/corrections', () => {
       invoke.mockResolvedValue(corrections());
       const res = await post();
       expect(res.body).toEqual({ corrections: [], dropped: 0 });
+    });
+  });
+
+  describe('several blocks', () => {
+    it('gives the skill each field by a key unique in the request, its contract unchanged', async () => {
+      invoke.mockResolvedValue(corrections());
+      const res = await post(blocksBody);
+      expect(res.status).toBe(200);
+      expect(invoke.mock.calls[0][0].input.fields).toEqual([
+        { path: '1:titleText', role: 'title', text: FIELDS[0].text },
+        {
+          path: '2:titleText',
+          role: 'title',
+          text: 'Livraison offerte jusqu’a dimanche',
+        },
+      ]);
+    });
+
+    it('returns each correction with its block and its path', async () => {
+      invoke.mockResolvedValue(
+        corrections(
+          fix('2:titleText', 'jusqu’a', 'jusqu’à', 'Accent'),
+          fix('1:titleText', 'soldes commence', 'soldes commencent')
+        )
+      );
+      const res = await post(blocksBody);
+      expect(res.body).toEqual({
+        corrections: [
+          {
+            ...fix('titleText', 'jusqu’a', 'jusqu’à', 'Accent'),
+            blockId: 'ko_textBlock_4',
+          },
+          {
+            ...fix('titleText', 'soldes commence', 'soldes commencent'),
+            blockId: 'ko_textBlock_3',
+          },
+        ],
+        dropped: 0,
+      });
+    });
+
+    it('drops and counts a correction on a key it did not send', async () => {
+      invoke.mockResolvedValue(
+        corrections(
+          fix('titleText', 'soldes commence', 'soldes commencent'),
+          fix('3:titleText', 'soldes commence', 'soldes commencent')
+        )
+      );
+      const res = await post(blocksBody);
+      expect(res.body).toEqual({ corrections: [], dropped: 2 });
     });
   });
 
