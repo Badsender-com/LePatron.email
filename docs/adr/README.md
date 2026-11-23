@@ -6,7 +6,7 @@ Each file records one decision that is hard to reverse, surprising without conte
 - Format and criteria: [.claude/skills/domain-modeling/ADR-FORMAT.md](../../.claude/skills/domain-modeling/ADR-FORMAT.md).
 - Sequential numbering, `NNNN-slug.md`, in English. A reversed decision gets a new ADR; the old one is marked `superseded by ADR-NNNN`.
 - The repository is public: no client name, no unfixed vulnerability, no secret.
-- A number missing from the table belongs to an ADR of a feature branch not merged yet: 0010 (AI panel), 0011 (spelling correction), 0015 (text generation).
+- A number missing from the table belongs to an ADR of a feature branch not merged yet: 0010 (AI panel), 0011 (spelling correction), 0015 (email dimensions), 0020 (right panels).
 
 | ADR                                                                             | Decision                                                                                                                                                                                           | Status                                   |
 | ------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------- |
