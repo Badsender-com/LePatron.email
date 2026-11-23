@@ -43,6 +43,8 @@ function mount({
   const selection = ko.observable(null);
   const fieldSelection = ko.observable(null);
   let edited = null;
+  // Finding the field being edited reads the block's fields: costly.
+  const editedField = jest.fn(() => edited);
   // The editor's undo stack: each step calls back.
   const history = ko.observable(0);
   const editor = {
@@ -67,7 +69,7 @@ function mount({
     isOpen,
     selection,
     fieldSelection,
-    editedField: () => edited,
+    editedField,
     definitions,
   });
   // The user clicks in a field: the editor selects it, and it is being edited.
@@ -80,7 +82,16 @@ function mount({
   const blur = () => {
     edited = null;
   };
-  return { panel, isOpen, selection, editor, editField, blur, history };
+  return {
+    panel,
+    isOpen,
+    selection,
+    editor,
+    editField,
+    blur,
+    history,
+    editedField,
+  };
 }
 
 const ids = (actions) => actions.map((action) => action.id);
@@ -171,6 +182,60 @@ describe('ai panel: the controller', () => {
       // « Aller au bloc » from the corrections of the whole email.
       selection(COVER);
       expect(panel.selectionChanged()).toBeNull();
+    });
+
+    it('says nothing when the element selected is the one the action is on', () => {
+      const { panel, editField } = mount();
+      const title = {
+        kind: 'blockField',
+        blockId: 'ko_coverBlock_1',
+        blockType: 'coverBlock',
+        field: 'titleText',
+      };
+      panel.openTarget(title);
+      // A click back in the field being corrected.
+      editField(title, COVER);
+      expect(panel.selectionChanged()).toBeNull();
+      // Another field of the same block is another element.
+      editField({ ...title, field: 'longText' }, COVER);
+      expect(panel.selectionChanged()).toEqual({
+        ...title,
+        field: 'longText',
+      });
+    });
+
+    it('looks for the field being edited only while open, and when it opens', () => {
+      const { panel, isOpen, editField, editedField } = mount();
+      editedField.mockClear();
+      const title = {
+        kind: 'blockField',
+        blockId: 'ko_coverBlock_1',
+        blockType: 'coverBlock',
+        field: 'titleText',
+      };
+      // Closed: every click in the canvas costs nothing.
+      editField(title, COVER);
+      editField(title, COVER);
+      expect(editedField).not.toHaveBeenCalled();
+      isOpen(true);
+      expect(editedField).toHaveBeenCalledTimes(1);
+      expect(panel.target()).toEqual(title);
+      expect(ids(panel.targetActions())).toEqual(['correct-text']);
+      // Open: it follows each click.
+      editField(title, COVER);
+      expect(editedField).toHaveBeenCalledTimes(3);
+    });
+
+    it('opens on what an icon names, not on the selection made while closed', () => {
+      const { panel, isOpen, selection } = mount();
+      selection(COVER);
+      panel.openTarget({ kind: 'preheader' });
+      expect(isOpen()).toBe(true);
+      expect(panel.session().state.action).toBe('generate-preheader');
+      expect(panel.selectionChanged()).toBeNull();
+      // « Toutes les actions »: the selection, read when it opened.
+      panel.showList();
+      expect(panel.target()).toEqual(targetOfBlock(COVER));
     });
 
     it('offers the preheader’s actions on the block that holds it', () => {
@@ -294,6 +359,23 @@ describe('ai panel: the controller', () => {
     });
   });
 
+  it('keeps the corrections of the whole email apart from those of a block', () => {
+    const { panel } = mount();
+    panel.openAction('correct-text');
+    const email = panel.session();
+    email.cancel = jest.fn();
+    const onCover = targetOfBlock(COVER);
+    panel.openAction('correct-text', onCover);
+    const block = panel.session();
+    expect(block).not.toBe(email);
+    expect(email.cancel).not.toHaveBeenCalled();
+    panel.showList();
+    panel.openAction('correct-text');
+    expect(panel.session()).toBe(email);
+    panel.openAction('correct-text', onCover);
+    expect(panel.session()).toBe(block);
+  });
+
   describe('an action on a block', () => {
     const rewrite = {
       id: 'rewrite-block',
@@ -306,10 +388,11 @@ describe('ai panel: the controller', () => {
     const context = { ...CONTEXT, skills: [...CONTEXT.skills, rewrite.skill] };
 
     it('opens on its target, which the session knows', () => {
-      const { panel, selection } = mount({
+      const { panel, isOpen, selection } = mount({
         context,
         definitions: [...ACTIONS, rewrite],
       });
+      isOpen(true);
       selection(COVER);
       expect(panel.openAction('rewrite-block', panel.target())).toBe(true);
       expect(panel.session().state.action).toBe('rewrite-block');

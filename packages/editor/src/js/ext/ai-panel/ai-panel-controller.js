@@ -11,11 +11,13 @@ const { EMAIL, targetOfBlock, sameTarget } = require('./targets');
  * panel lists, the action under way, and following the canvas selection. The
  * Vue panel renders it.
  *
- * The last session of each action is kept: going back to the list, or to
- * another action, loses nothing, and opening the action again on the same
- * target finds it as it was — its instruction, its proposals, a request still
- * under way — unless what its proposals were built on has changed since (the
- * subject, for the preheader: `builtOn` in its definition).
+ * The last session of each action is kept, the whole email's apart from the
+ * last block's or field's: going back to the list, or to another action,
+ * loses nothing, correcting a block leaves the corrections of the email as
+ * they were, and opening the action again on the same target finds it as it was —
+ * its instruction, its proposals, a request still under way — unless what its
+ * proposals were built on has changed since (the subject, for the preheader:
+ * `builtOn` in its definition).
  *
  * @param {{
  *   ko: Object,
@@ -48,8 +50,11 @@ function createAiPanel({
   const sessionAction = ko.observable(null);
   // The selection moved during an action, to an element with actions.
   const selectionChanged = ko.observable(null);
-  // The last session of each action, by action id, with what it was built on.
+  // The last session of each action, with what it was built on: one on the
+  // email (its subject and preheader are the email's), one on a block or a
+  // field of a block (keyOf).
   const kept = new Map();
+  const keyOf = (id, on) => `${id}:${on.blockId ? 'block' : 'email'}`;
 
   const offer = (forTarget, context) =>
     availableActions(forTarget, context, definitions);
@@ -73,34 +78,62 @@ function createAiPanel({
 
   // What the canvas selection targets: the field being edited, or else the
   // selected block, or the whole email. Read when the selection changes and
-  // kept: the focus later moves to the panel, the selection does not.
+  // kept: the focus later moves to the panel, the selection does not. Finding
+  // the field is costly: the panel closed, it is read when it opens.
   const selected = () => editedField() || targetOfBlock(selection());
   let selectedTarget = selected();
+  // The selection changed while the panel was closed.
+  let selectionUnread = false;
+  // An entry point opens the panel on what it names, not on the selection.
+  let revealing = false;
 
   // The panel follows the selection while it lists, never in the middle of an
   // action, applied or not: its proposals are not lost to a click elsewhere.
-  function follow() {
+  // Returns whether the list follows it.
+  function readSelection() {
     const block = selection();
     selectedTarget = selected();
+    selectionUnread = false;
     const followed = selectedTarget;
-    if (session()) {
-      // An action of blocks run on the whole email covers every block:
-      // selecting one (« Aller au bloc ») is no other element.
-      const { action, target: under } = session().state;
-      const actsOnBlocks = definitionOf(action, definitions).targets.includes(
-        'block'
-      );
-      if (under.kind === 'email' && actsOnBlocks) {
-        selectionChanged(null);
-        return;
-      }
-      const offers =
-        block && offer(followed, editor.context()).actions.length > 0;
-      selectionChanged(offers ? followed : null);
+    const current = session();
+    if (!current) {
+      target(followed);
+      return true;
+    }
+    const { action, target: under } = current.state;
+    // An action of blocks run on the whole email covers every block:
+    // selecting one (« Aller au bloc ») is no other element; nor is the
+    // element the action is on.
+    const actsOnBlocks = definitionOf(action, definitions).targets.includes(
+      'block'
+    );
+    const covered =
+      (under.kind === 'email' && actsOnBlocks) ||
+      (followed.kind === under.kind && sameTarget(followed, under));
+    const offers =
+      !covered && block && offer(followed, editor.context()).actions.length > 0;
+    selectionChanged(offers ? followed : null);
+    return false;
+  }
+
+  function follow() {
+    if (!isOpen()) {
+      selectionUnread = true;
       return;
     }
-    target(followed);
-    if (isOpen()) refresh();
+    if (readSelection()) refresh();
+  }
+
+  // Opened by an entry point (an icon, the list of a target): the selection
+  // is read, and the panel shows what the entry point named.
+  function reveal() {
+    if (isOpen()) return;
+    revealing = true;
+    try {
+      isOpen(true);
+    } finally {
+      revealing = false;
+    }
   }
 
   // The action shown gives way: it stops asking, as when the panel closes, and
@@ -116,7 +149,7 @@ function createAiPanel({
     selectionChanged(null);
     target(listed);
     refresh();
-    isOpen(true);
+    reveal();
   }
 
   // Another target, or another basis, is other work: its session replaces the
@@ -124,7 +157,8 @@ function createAiPanel({
   function sessionOf(id, on) {
     const { builtOn } = definitionOf(id, definitions) || {};
     const basis = builtOn ? builtOn(editor) : undefined;
-    const last = kept.get(id);
+    const key = keyOf(id, on);
+    const last = kept.get(key);
     if (
       last &&
       sameTarget(last.session.state.target, on) &&
@@ -141,7 +175,7 @@ function createAiPanel({
       editor,
       definitions,
     });
-    kept.set(id, { session: created, basis });
+    kept.set(key, { session: created, basis });
     return created;
   }
 
@@ -159,7 +193,7 @@ function createAiPanel({
     if (session() !== opened) show(opened);
     selectionChanged(null);
     refresh();
-    isOpen(true);
+    reveal();
     return true;
   }
 
@@ -180,8 +214,17 @@ function createAiPanel({
     // Closed: the action under way stops asking, and keeps what it found.
     isOpen.subscribe((open) => {
       const current = session();
-      if (open) refresh();
-      else if (current && current.stop) current.stop();
+      if (!open) {
+        if (current && current.stop) current.stop();
+        return;
+      }
+      if (selectionUnread) {
+        if (revealing) {
+          selectedTarget = selected();
+          selectionUnread = false;
+        } else readSelection();
+      }
+      refresh();
     }),
     selection.subscribe(follow),
     ...(fieldSelection ? [fieldSelection.subscribe(follow)] : []),
