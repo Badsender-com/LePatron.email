@@ -357,6 +357,8 @@ describe('spelling correction: POST /api/text-generation/corrections', () => {
           groupId: 'g1',
           userId: 'u1',
           expertiseConsumed: [],
+          // A lot of the email takes longer than a subject: a higher ceiling.
+          options: { timeoutMs: 90000 },
         })
       );
       expect(call.input).toEqual({ fields: FIELDS, expertise: [] });
@@ -398,6 +400,21 @@ describe('spelling correction: POST /api/text-generation/corrections', () => {
   });
 
   describe('the corrections', () => {
+    it('keeps a correction whose reason is long, its reason cut for the panel', async () => {
+      const long = `Accord du verbe. ${'Explication détaillée. '.repeat(30)}`;
+      invoke.mockResolvedValue(
+        corrections(
+          fix('titleText', 'soldes commence', 'soldes commencent', long)
+        )
+      );
+      const res = await post();
+      expect(res.status).toBe(200);
+      const [kept] = res.body.corrections;
+      expect(kept.after).toBe('soldes commencent');
+      expect(kept.reason.length).toBeLessThanOrEqual(300);
+      expect(kept.reason.endsWith('…')).toBe(true);
+    });
+
     it('returns the corrections the code can place', async () => {
       invoke.mockResolvedValue(
         corrections(

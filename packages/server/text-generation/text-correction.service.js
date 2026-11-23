@@ -43,6 +43,19 @@ const {
 const blockId = z.string().min(1).max(MAX_BLOCK_ID_LENGTH);
 const blockType = z.string().min(1).max(MAX_BLOCK_ID_LENGTH);
 
+// What the panel shows of a correction's reason: a sentence or two. The model
+// may write more; the correction is kept, its reason cut.
+const MAX_SHOWN_REASON = 300;
+const shortReason = (reason) =>
+  reason.length <= MAX_SHOWN_REASON
+    ? reason
+    : `${reason.slice(0, MAX_SHOWN_REASON - 1).trimEnd()}…`;
+
+// A lot of the email, a few thousand characters, takes a reasoning model longer
+// than a subject: the ceiling of one request, not a wait. A fast answer comes
+// back at once; past it, the lot is taken again block by block.
+const CORRECTION_TIMEOUT_MS = 90 * 1000;
+
 const requestSchema = z
   .object({
     mailingId: z.string().min(1),
@@ -162,11 +175,12 @@ function screenCorrections(corrections, fields) {
     return !located.refused;
   });
   return {
-    corrections: kept.map((correction) =>
-      isRewrite(correction.before, correction.after)
-        ? { ...correction, rewrite: true }
-        : correction
-    ),
+    corrections: kept.map((correction) => {
+      const shown = { ...correction, reason: shortReason(correction.reason) };
+      return isRewrite(correction.before, correction.after)
+        ? { ...shown, rewrite: true }
+        : shown;
+    }),
     dropped,
   };
 }
@@ -211,6 +225,7 @@ async function correctText({ user, body }) {
         expertise: expertise.map(toSkillExpertise),
       },
       expertiseConsumed: expertise.map(toConsumed),
+      options: { timeoutMs: CORRECTION_TIMEOUT_MS },
     });
   } catch (err) {
     throw toHttpError(err);

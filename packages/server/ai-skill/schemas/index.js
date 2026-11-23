@@ -139,7 +139,9 @@ const correctionInput = z
 // few words.
 const MAX_CORRECTIONS = 100;
 const MAX_EXCERPT_LENGTH = 1000;
-const MAX_REASON_LENGTH = 300;
+// A reason too long is cut where the panel shows it (text-correction.service),
+// rather than failing a whole lot of the email for one wordy sentence.
+const MAX_REASON_LENGTH = 1000;
 
 const correctionOutput = z
   .object({
