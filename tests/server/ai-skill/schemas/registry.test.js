@@ -82,6 +82,19 @@ describe('zod schema registry', () => {
     ).toBe(false);
   });
 
+  // The angle is shown next to its proposal: a few words, never a page.
+  it('bounds the angle of a text proposal', () => {
+    const output = (angle) => ({
+      proposals: [1, 2, 3].map((n) => ({ text: `Objet ${n}`, angle })),
+    });
+    expect(schemas.subjectGenOutput.safeParse(output('Urgence')).success).toBe(
+      true
+    );
+    expect(
+      schemas.subjectGenOutput.safeParse(output('a'.repeat(201))).success
+    ).toBe(false);
+  });
+
   // A bare `schemas[id]` lookup returned Object.prototype members as truthy
   // non-schemas, which then threw on .safeParse — while hasSchema next to it
   // guarded correctly.

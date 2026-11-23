@@ -62,6 +62,9 @@ const emailCopySchema = z
   )
   .min(1);
 
+// The angle names the approach of a proposal in a few words, shown next to it.
+const MAX_PROPOSAL_ANGLE_LENGTH = 200;
+
 // Three proposals exactly: the feature shows them side by side, and a skill
 // that answers two has not done its job.
 const textProposalsOutput = z
@@ -71,7 +74,7 @@ const textProposalsOutput = z
         z
           .object({
             text: z.string().min(1),
-            angle: z.string().min(1),
+            angle: z.string().min(1).max(MAX_PROPOSAL_ANGLE_LENGTH),
           })
           .strict()
       )

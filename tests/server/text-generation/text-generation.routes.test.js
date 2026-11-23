@@ -553,12 +553,35 @@ describe('text generation: POST /api/text-generation/subject', () => {
         { avoid: ['x'.repeat(301)] },
       ],
       ['an instruction longer than 500 characters', { brief: 'x'.repeat(501) }],
+      [
+        'more than 200 pieces of content',
+        { content: Array(201).fill({ role: 'text', text: 'x' }) },
+      ],
+      [
+        'a piece of content longer than 4,000 characters',
+        { content: [{ role: 'text', text: 'x'.repeat(4001) }] },
+      ],
+      [
+        'content longer than 32,000 characters in all',
+        { content: Array(9).fill({ role: 'text', text: 'x'.repeat(4000) }) },
+      ],
     ])('answers 400 for %s', async (_label, extra) => {
       const res = await request(makeApp())
         .post('/api/text-generation/subject')
         .send({ ...body, ...extra });
       expect(res.status).toBe(400);
       expect(invoke).not.toHaveBeenCalled();
+    });
+
+    it('accepts content of exactly 32,000 characters', async () => {
+      invoke.mockResolvedValue(proposals('Lin : -30 %'));
+      const res = await request(makeApp())
+        .post('/api/text-generation/subject')
+        .send({
+          ...body,
+          content: Array(8).fill({ role: 'text', text: 'x'.repeat(4000) }),
+        });
+      expect(res.status).toBe(200);
     });
   });
 
