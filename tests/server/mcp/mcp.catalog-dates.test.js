@@ -45,7 +45,7 @@ describe('catalog dates and versions', () => {
   afterEach(() => harness.disconnect());
 
   // Turned on by #1664 (version and publication date everywhere)
-  describe.skip('as an assistant reads them', () => {
+  describe('as an assistant reads them', () => {
     it('gives each skill found its version and publication date', async () => {
       const { skills } = await call(
         await harness.connectAs(f.FRANK),

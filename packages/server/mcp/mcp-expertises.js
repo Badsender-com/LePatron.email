@@ -13,6 +13,8 @@ const { withIdentity } = require('./mcp-identity.js');
 const { audienceFilter } = require('../ai-skill/services/audience.js');
 const { draftNotice } = require('./mcp-drafts.js');
 
+const { lastModifiedOf, versionLine } = require('./mcp-catalog-dates.js');
+
 const URI_TEMPLATE = 'lepatron://expertises/{expertiseId}';
 const uriOf = (expertiseId) => `lepatron://expertises/${expertiseId}`;
 
@@ -78,7 +80,7 @@ function asResource({ doc, version, draft }) {
     title: draft ? `${doc.title} (draft ${versionLabel(version)})` : doc.title,
     description: doc.description || undefined,
     mimeType: 'text/markdown',
-    annotations: { lastModified: new Date(version.updatedAt).toISOString() },
+    annotations: { lastModified: lastModifiedOf(version) },
   };
 }
 
@@ -89,13 +91,12 @@ function bulleted(title, examples) {
 
 // One Markdown document: the expertise, its version, its examples.
 function asMarkdown(found) {
-  const { doc, version } = found;
-  const updated = new Date(version.updatedAt).toISOString().slice(0, 10);
+  const { doc, version, draft } = found;
   const notice = draftNotice(found);
   return [
     `# ${doc.title}`,
     '',
-    `Version ${versionLabel(version)}, updated on ${updated}.`,
+    versionLine(version, draft),
     '',
     ...(notice ? [notice, ''] : []),
     version.body,

@@ -20,7 +20,13 @@ const {
 
 // What `published` reads, whatever the caller asks for.
 const DOC_FIELDS = ['status', 'activeVersion'];
-const VERSION_FIELDS = ['versionMajor', 'versionMinor', 'status'];
+// When it was published too: every reader may date it (ADR 0031).
+const VERSION_FIELDS = [
+  'versionMajor',
+  'versionMinor',
+  'status',
+  'activatedAt',
+];
 // What never leaves, whatever the caller asks for: a skill's test cases carry
 // the briefs its authors tried, and the whole history of its versions.
 const NEVER_READ = new Set(['testCases', 'versions']);

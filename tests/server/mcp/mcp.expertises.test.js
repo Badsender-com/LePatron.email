@@ -139,6 +139,8 @@ describe('expertises', () => {
           expertiseId: 'redaction.subject-line',
           title: 'Subject lines',
           version: '2.1',
+          // Its publication was never recorded (ADR 0031).
+          publishedAt: null,
           uri: SUBJECT_LINES,
         },
       ]);
