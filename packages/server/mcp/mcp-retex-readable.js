@@ -42,6 +42,11 @@ function readable(retex, companies) {
     author: retex.author,
     createdAt: retex.createdAt ? new Date(retex.createdAt).toISOString() : null,
     ...(retex.addressedIn && { addressedIn: retex.addressedIn }),
+    // When the version that addressed it was published (ADR 0031).
+    ...(retex.status === 'addressed' &&
+      retex.closedAt && {
+        addressedAt: new Date(retex.closedAt).toISOString(),
+      }),
     ...(retex.dismissal && { dismissal: { reason: retex.dismissal.reason } }),
   };
 }
