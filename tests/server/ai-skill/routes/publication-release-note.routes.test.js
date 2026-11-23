@@ -59,7 +59,7 @@ const activeVersion = async () =>
     .body.activeVersion;
 
 // Turned on by #1665 (a publication requires both texts)
-describe.skip('publication route requires both texts', () => {
+describe('publication route requires both texts', () => {
   it('refuses a minor version without a release note', async () => {
     const res = await publish({ changelog: 'Typo' });
 
