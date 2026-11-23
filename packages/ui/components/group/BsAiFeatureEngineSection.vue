@@ -15,10 +15,7 @@
  * document. Mirrors the translation section; when the étape 2bis hierarchy
  * refactor lands, the translation block can be extracted on the same model.
  */
-import {
-  getProviderLabel,
-  providerConfigs,
-} from '~/components/integrations/provider-configs';
+import { getProviderLabel } from '~/components/integrations/provider-configs';
 import BsSelect from '~/components/form/bs-select.vue';
 import BsAiModelPicker from '~/components/group/bs-ai-model-picker.vue';
 import BsFormSection from '~/components/layout/bs-form-section.vue';
@@ -62,11 +59,9 @@ export default {
       );
     },
     // A skill needs a model that writes: translation-only engines (DeepL)
-    // cannot run one.
+    // cannot run one. The server says which can, and refuses the others.
     generationIntegrations() {
-      return this.integrations.filter(
-        (i) => providerConfigs[i.provider]?.category === 'aiGeneration'
-      );
+      return this.integrations.filter((i) => i.canGenerateText);
     },
     integrationOptions() {
       return [

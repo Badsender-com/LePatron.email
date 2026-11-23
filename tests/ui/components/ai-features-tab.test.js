@@ -160,6 +160,18 @@ describe('the AI features tab and its engine sections', () => {
     });
   });
 
+  // The server says which provider writes text: a section offers those only.
+  it('offers a section the integrations that can generate text', async () => {
+    const vm = mountLoadingTab(axiosFor());
+    await settle(vm);
+
+    const [textGeneration] = sectionsOf(vm);
+    expect(textGeneration.integrationOptions.map((o) => o.value)).toEqual([
+      null,
+      'i1',
+    ]);
+  });
+
   it("saves a section's feature through the tab", async () => {
     const $axios = axiosFor();
     const vm = mountLoadingTab($axios);

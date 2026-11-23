@@ -61,7 +61,13 @@ function toIntegrationDto(integration) {
     typeof integration.toObject === 'function'
       ? integration.toObject()
       : integration;
-  return pick(plain, RESPONSE_FIELDS);
+  return {
+    ...pick(plain, RESPONSE_FIELDS),
+    // Whether it can run a feature that writes text (a skill, text
+    // generation): the server's one definition, which the feature selectors
+    // filter on and the feature update enforces.
+    canGenerateText: ProviderFactory.canGenerateText(plain.provider),
+  };
 }
 
 module.exports = {
