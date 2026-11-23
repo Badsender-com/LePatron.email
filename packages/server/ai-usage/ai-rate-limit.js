@@ -1,5 +1,6 @@
 'use strict';
 
+const bodyParser = require('body-parser');
 const createError = require('http-errors');
 const config = require('../node.config.js');
 const { AIUsageCounters } = require('../common/models.common.js');
@@ -9,10 +10,19 @@ const { selectedGroupIdOf } = require('../account/request-scope.js');
 const MINUTE_MS = 60 * 1000;
 const DAY_MS = 24 * 60 * MINUTE_MS;
 
-// What a single request may carry to a provider. Legitimate payloads — a block,
-// the text of a whole email — stay far below; the global 50 MB body limit of
-// the app is what this replaces on AI routes.
-const DEFAULT_MAX_BODY_BYTES = 256 * 1024;
+// What a single request may carry to a provider. Legitimate payloads (a block,
+// the text of a whole email) stay far below.
+const AI_MAX_BODY = '256kb';
+
+// The routes that forward a user payload to an AI provider, as the app mounts
+// them. Their body is read by aiBodyParser, before the app's own parser, which
+// reads up to 50 MB: once a body is read, no later parser reads it again.
+const AI_ROUTE_PATHS = [
+  '/api/translation/text',
+  '/api/translation/block',
+  '/api/mailings/:mailingId/duplicate-translate',
+  '/api/text-generation',
+];
 
 /**
  * The windows a request is counted in. Shared by every AI route: the provider
@@ -111,27 +121,30 @@ async function consume({ userId, groupId, now = new Date(), limits }) {
   await countIn(groupWindows);
 }
 
-function bodyBytes(body) {
-  if (body === undefined || body === null) return 0;
-  return Buffer.byteLength(JSON.stringify(body), 'utf8');
+/**
+ * Reads the body of an AI route as JSON, up to AI_MAX_BODY. An oversized body
+ * is refused with the AI routes' own code, before it is read in full. Every
+ * content type is read here: a form-encoded body would otherwise fall through
+ * to the app's own parsers.
+ */
+const parseAiBody = bodyParser.json({ limit: AI_MAX_BODY, type: () => true });
+function aiBodyParser(req, res, next) {
+  parseAiBody(req, res, (err) => {
+    if (err && err.type === 'entity.too.large') {
+      return next(createError(413, ERROR_CODES.AI_PAYLOAD_TOO_LARGE));
+    }
+    return next(err);
+  });
 }
 
 /**
  * Express middleware for the routes that forward a user payload to an AI
- * provider: refuses an oversized payload (413), then counts the request
- * against the per-user and per-group windows (429).
- *
- * @param {Object} [options]
- * @param {number} [options.maxBodyBytes]
+ * provider: counts the request against the per-user and per-group windows
+ * (429). Its route's path belongs in AI_ROUTE_PATHS, which caps the body size.
  */
-function aiRateLimit({ maxBodyBytes = DEFAULT_MAX_BODY_BYTES } = {}) {
+function aiRateLimit() {
   return async function aiRateLimitMiddleware(req, res, next) {
     try {
-      // Checked before counting: an oversized payload costs the provider
-      // nothing, since it never reaches it.
-      if (bodyBytes(req.body) > maxBodyBytes) {
-        throw createError(413, ERROR_CODES.AI_PAYLOAD_TOO_LARGE);
-      }
       const { user } = req;
       await consume({
         userId: user.id,
@@ -151,6 +164,8 @@ function aiRateLimit({ maxBodyBytes = DEFAULT_MAX_BODY_BYTES } = {}) {
 
 module.exports = {
   aiRateLimit,
+  aiBodyParser,
   consume,
-  DEFAULT_MAX_BODY_BYTES,
+  AI_MAX_BODY,
+  AI_ROUTE_PATHS,
 };

@@ -8,11 +8,16 @@ jest.mock('../../../packages/server/node.config.js', () => ({
   admin: { id: 'bootstrap-admin' },
 }));
 
+const express = require('express');
+const bodyParser = require('body-parser');
+const request = require('supertest');
+
 const {
   AIUsageCounters,
 } = require('../../../packages/server/common/models.common');
 const {
   aiRateLimit,
+  aiBodyParser,
   consume,
 } = require('../../../packages/server/ai-usage/ai-rate-limit.js');
 const { ROLES } = require('../../../packages/shared/access/roles.js');
@@ -148,16 +153,6 @@ describe('aiRateLimit middleware', () => {
     expect(err).toBeUndefined();
   });
 
-  it('refuses an oversized payload without counting it', async () => {
-    const { err } = await run(aiRateLimit({ maxBodyBytes: 10 }), {
-      user,
-      body: { text: 'far more than ten bytes' },
-    });
-    expect(err.status).toBe(413);
-    expect(err.message).toBe('AI_PAYLOAD_TOO_LARGE');
-    expect(AIUsageCounters.findOneAndUpdate).not.toHaveBeenCalled();
-  });
-
   const today = () => new Date().toISOString().slice(0, 10);
   const groupKeys = () =>
     [...store.keys()].filter((key) => key.startsWith('group:'));
@@ -197,5 +192,46 @@ describe('aiRateLimit middleware', () => {
     const { err, res } = await run(middleware, { user, body: {} });
     expect(err.status).toBe(429);
     expect(res.set).toHaveBeenCalledWith('Retry-After', expect.any(String));
+  });
+});
+
+describe('aiBodyParser', () => {
+  // As index.js mounts it: before the app's own 50 MB parser.
+  const app = express();
+  app.use('/ai', aiBodyParser);
+  app.use(bodyParser.json({ limit: '50mb' }));
+  app.post('*', (req, res) => res.json({ received: req.body }));
+  // eslint-disable-next-line no-unused-vars
+  app.use((err, req, res, next) => {
+    res.status(err.status).json({ status: err.status, message: err.message });
+  });
+
+  it('reads a body under 256 KB', async () => {
+    const res = await request(app).post('/ai').send({ text: 'Bonjour' });
+    expect(res.status).toBe(200);
+    expect(res.body.received).toEqual({ text: 'Bonjour' });
+  });
+
+  it('refuses a larger body with AI_PAYLOAD_TOO_LARGE', async () => {
+    const res = await request(app)
+      .post('/ai')
+      .send({ text: 'x'.repeat(300 * 1024) });
+    expect(res.status).toBe(413);
+    expect(res.body).toEqual({ status: 413, message: 'AI_PAYLOAD_TOO_LARGE' });
+  });
+
+  it('caps a form-encoded body too', async () => {
+    const res = await request(app)
+      .post('/ai')
+      .type('form')
+      .send(`text=${'x'.repeat(300 * 1024)}`);
+    expect(res.status).toBe(413);
+  });
+
+  it('leaves the other routes to the app parser', async () => {
+    const res = await request(app)
+      .post('/other')
+      .send({ text: 'x'.repeat(300 * 1024) });
+    expect(res.status).toBe(200);
   });
 });
