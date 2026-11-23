@@ -6,7 +6,7 @@ const { NotFound, BadRequest } = require('http-errors');
 const ERROR_CODES = require('../constant/error-codes.js');
 const AIFeatureTypes = require('../constant/ai-feature-type.js');
 
-const { AIFeatureTypeValues } = AIFeatureTypes;
+const { AIFeatureTypeValues, TEXT_FEATURE_TYPES } = AIFeatureTypes;
 const { validateFeatureConfig } = require('./ai-feature.validation.js');
 const IntegrationTypes = require('../constant/integration-type.js');
 const groupService = require('../group/group.service.js');
@@ -108,10 +108,6 @@ async function validateIntegrationOwnership({ integrationId, groupId }) {
   return integration;
 }
 
-// The features that run skills, so need an engine that writes text: a
-// translation-only integration (DeepL) would fail every invocation.
-const TEXT_FEATURES = [AIFeatureTypes.SKILL, AIFeatureTypes.TEXT_GENERATION];
-
 // Config sub-fields that can be partially updated via $set
 const FEATURE_CONFIG_FIELDS = [
   'availableLanguages',
@@ -147,7 +143,7 @@ async function updateFeatureConfig({
       groupId,
     });
     if (
-      TEXT_FEATURES.includes(featureType) &&
+      TEXT_FEATURE_TYPES.includes(featureType) &&
       !ProviderFactory.canGenerateText(integration.provider)
     ) {
       throw new BadRequest(ERROR_CODES.INTEGRATION_CANNOT_GENERATE_TEXT);

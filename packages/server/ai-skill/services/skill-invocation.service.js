@@ -37,7 +37,7 @@ const { FeatureResolutionReasons } = aiFeatureService;
 const AIFeatureTypes = require('../../constant/ai-feature-type.js');
 const ERROR_CODES = require('../../constant/error-codes.js');
 
-const { AIFeatureTypeValues } = AIFeatureTypes;
+const { TEXT_FEATURE_TYPES } = AIFeatureTypes;
 const { getSchema } = require('../schemas');
 const {
   buildOutputContract,
@@ -123,8 +123,21 @@ async function invoke({
 }) {
   const startedAt = new Date();
 
-  if (!AIFeatureTypeValues.includes(featureType)) {
-    throw configError(500, `Unknown AI feature type "${featureType}"`);
+  // Only an engine that writes text runs a skill: not translation's, which
+  // can be DeepL.
+  if (!TEXT_FEATURE_TYPES.includes(featureType)) {
+    throw configError(
+      500,
+      `"${featureType}" is not a feature that runs skills`
+    );
+  }
+  // Checked before anything is billed: an entry the log refuses would lose
+  // the invocation's row after the provider call.
+  if (!isConsumedList(expertiseConsumed)) {
+    throw configError(
+      500,
+      'expertiseConsumed must be a list of entries with an expertiseId'
+    );
   }
   const consumed = expertiseConsumed.map((e) => ({
     expertiseId: e.expertiseId,
@@ -431,6 +444,16 @@ function configError(status, message) {
   // instead of defaulting to PROVIDER_ERROR.
   err.invocationStatus = InvocationStatuses.CONFIG_ERROR;
   return err;
+}
+
+function isConsumedList(entries) {
+  return (
+    Array.isArray(entries) &&
+    entries.every(
+      (entry) =>
+        typeof entry?.expertiseId === 'string' && entry.expertiseId !== ''
+    )
+  );
 }
 
 // Why the engine could not be resolved, in words. The shared helper reports a
