@@ -126,7 +126,9 @@ const KINDS = {
  *   preheader must not repeat
  * @param {Object} [context.qualitySettings] the mailing's resolved quality
  *   settings; the defaults when absent
- * @returns {{ proposals: Array<{text, angle, facts}>, dropped: number }}
+ * @returns {{ proposals: Array<{text, angle, facts}>, dropped: number,
+ *   repeated: number }} `dropped`: proposals that broke a rule; `repeated`:
+ *   duplicates and proposals the user already saw
  */
 function screenProposals(
   kind,
@@ -145,18 +147,26 @@ function screenProposals(
   const seen = new Set(avoid.map((text) => text.trim()));
 
   const kept = [];
+  let dropped = 0;
+  let repeated = 0;
   proposals.forEach(({ text, angle }) => {
     const breaks =
       fakeReplyPrefix(text) !== null ||
       breaksRule(text, { subject }) ||
-      variablesIn(text).some(unknownVariable) ||
-      // "Suggest others" must not offer what the user already saw, twice.
-      seen.has(text.trim());
-    if (breaks) return;
+      variablesIn(text).some(unknownVariable);
+    if (breaks) {
+      dropped += 1;
+      return;
+    }
+    // "Suggest others" must not offer what the user already saw, twice.
+    if (seen.has(text.trim())) {
+      repeated += 1;
+      return;
+    }
     seen.add(text.trim());
     kept.push({ text, angle, facts: facts(text, qualitySettings) });
   });
-  return { proposals: kept, dropped: proposals.length - kept.length };
+  return { proposals: kept, dropped, repeated };
 }
 
 module.exports = {

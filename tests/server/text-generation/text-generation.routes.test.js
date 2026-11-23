@@ -413,6 +413,7 @@ describe('text generation: POST /api/text-generation/subject', () => {
           },
         ],
         dropped: 0,
+        repeated: 0,
       });
     });
 
@@ -480,7 +481,7 @@ describe('text generation: POST /api/text-generation/subject', () => {
         .post('/api/text-generation/subject')
         .send(body);
       expect(res.status).toBe(200);
-      expect(res.body).toEqual({ proposals: [], dropped: 3 });
+      expect(res.body).toEqual({ proposals: [], dropped: 3, repeated: 0 });
     });
   });
 
@@ -571,11 +572,21 @@ describe('text generation: POST /api/text-generation/subject', () => {
       }
     );
 
-    it('drops a duplicate and a proposal the user already saw', async () => {
-      await keepsOnly(
-        ['Soldes : -30 % sur le lin', 'Lin : -30 %', 'Lin : -30 %'],
-        ['Lin : -30 %']
+    it('counts a duplicate and a proposal the user already saw apart from the rules', async () => {
+      invoke.mockResolvedValue(
+        proposals(
+          'Soldes : -30 % sur le lin',
+          'Lin : -30 %',
+          'Lin : -30 %',
+          'RE: lin'
+        )
       );
+      const res = await request(makeApp())
+        .post('/api/text-generation/subject')
+        .send(body);
+      expect(res.body.proposals.map((p) => p.text)).toEqual(['Lin : -30 %']);
+      expect(res.body.dropped).toBe(1);
+      expect(res.body.repeated).toBe(2);
     });
 
     it('cuts the mobile preview from the text the length counts', async () => {
@@ -975,6 +986,7 @@ describe('text generation: POST /api/text-generation/preheader', () => {
         },
       ],
       dropped: 0,
+      repeated: 0,
     });
   });
 
@@ -1058,6 +1070,7 @@ describe('text generation: POST /api/text-generation/preheader', () => {
       'Jusqu’au dimanche 12 mai inclus, sur tout le rayon lin',
     ]);
     expect(res.body.dropped).toBe(1);
+    expect(res.body.repeated).toBe(0);
   });
 
   it.each([

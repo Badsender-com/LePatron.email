@@ -917,8 +917,9 @@ module.exports = {
   'text-generation-mobile': 'on mobile: “__preview__…”',
   'text-generation-dropped':
     'Proposals set aside for breaking the copywriting rules: __count__.',
+  'text-generation-repeated': 'Proposals set aside as already made: __count__.',
   'text-generation-none':
-    'No proposal respected the copywriting rules. Ask for others.',
+    'No new proposal respected the copywriting rules. Ask for others.',
   'text-generation-apply': 'Apply',
   'text-generation-copy': 'Copy',
   'text-generation-copied': 'Copied',
