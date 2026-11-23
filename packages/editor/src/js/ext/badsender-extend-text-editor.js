@@ -2,8 +2,13 @@ const ko = require('knockout');
 const tinymceConfigFull = require('./utils/tinymce-config');
 const { companyOffersOn } = require('./ai-panel/text-generation-access');
 
-// The AI button, first: the toolbar is wider than a narrow canvas, its end
-// hidden.
+/**
+ * The text editor's options with the AI button, first: the toolbar is wider
+ * than a narrow canvas, its end hidden. Alone in its group, so that it can be
+ * hidden with it (badsender-extend-tinymce.js).
+ * @param {Object} options TinyMCE options, `plugins` a string or an array
+ * @returns {Object} new options; `options` is left as it is
+ */
 function withAiActions(options) {
   const plugins = Array.isArray(options.plugins)
     ? options.plugins.join(' ')
@@ -100,3 +105,5 @@ module.exports = (opts) => {
     viewModel,
   };
 };
+
+module.exports.withAiActions = withAiActions;

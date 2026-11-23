@@ -13,9 +13,7 @@ const {
   blockTargetOf,
 } = require('../ext/ai-panel/field-target');
 const { targetOfBlock } = require('../ext/ai-panel/targets');
-const {
-  extractBlockTranslatableContent,
-} = require('../utils/block-content-extractor');
+const { definitionOf } = require('../ext/ai-panel/actions');
 const {
   generateSubjects,
   generatePreheaders,
@@ -47,6 +45,10 @@ let viewModel = null;
 const fieldOf = (element) =>
   editor && fieldTargetOf(element, { pathsOf: editor.textPathsOf });
 
+// What the text editor's toolbar works on: the field it edits, or its block
+// when no text field matches it.
+const elementTarget = (element) => fieldOf(element) || blockTargetOf(element);
+
 // A block of the canvas, as the toolbar of the block hands it: the block that
 // holds the preheader is the preheader's target, as in the panel.
 const blockTarget = (block) =>
@@ -55,22 +57,26 @@ const blockTarget = (block) =>
     id: () => ko.unwrap(block.id),
   });
 
-// What the targets offer, the email read once for all the block toolbars
-// rendered together.
-let offers = null;
-function offerOnBlocks(target) {
-  if (!offers) {
-    offers = panel.offerNow();
-    setTimeout(() => {
-      offers = null;
-    });
+/**
+ * What the entry point of a toolbar says on a target, from the action registry
+ * alone: the name of its single action, « Outils IA » for a list, and null
+ * when it offers nothing.
+ *
+ * Read in a binding, the email the registry decides from is no dependency (the
+ * context is built outside of it); what the registry asks of the target itself
+ * is: a block's text, through `blockHasText`.
+ */
+function entryLabelOn(target) {
+  if (!viewModel || !viewModel.aiPanelReady() || !panel || !target) {
+    return null;
   }
-  return offers(target).actions.length > 0;
+  const offerOf = ko.ignoreDependencies(panel.offerNow);
+  const { actions, opens } = offerOf(target);
+  if (opens === 'none') return null;
+  if (opens === 'list') return viewModel.t('ai-panel-title');
+  const { labels } = definitionOf(actions[0].id);
+  return viewModel.t(labels.entry || labels.name);
 }
-
-// Whether a block has any text to work on: cheaper than listing its fields.
-const hasText = (block) =>
-  Object.keys(extractBlockTranslatableContent(ko.toJS(block))).length > 0;
 
 function mount(vm) {
   editor = createEditorAccess(vm);
@@ -108,23 +114,36 @@ module.exports = {
     // editor is initialised: the block toolbar re-reads the offer then.
     vm.aiPanelReady = ko.observable(false);
     viewModel = vm;
-    // Read in a binding: only the panel's readiness is a dependency, not the
-    // content the offer reads, nor the block's own fields.
-    vm.offersAiOnBlock = (block) =>
-      vm.aiPanelReady() &&
-      Boolean(panel) &&
-      ko.ignoreDependencies(() => {
-        const target = blockTarget(block);
-        return (
-          (target.kind !== 'block' || hasText(block)) && offerOnBlocks(target)
-        );
-      });
-    vm.openAiOnBlock = (block) => panel && panel.openTarget(blockTarget(block));
-    // From the text editor's toolbar: the field it edits, or its block when no
-    // text field matches it.
+
+    // The block toolbar's AI tool: shown while the registry offers the block
+    // something, re-read when the panel comes or goes and when the block's
+    // text changes (an alternative text typed in).
+    vm.offersAiOnBlock = (block) => Boolean(entryLabelOn(blockTarget(block)));
+    // Its title and accessible name, read together.
+    vm.aiBlockToolAttributes = (block) => {
+      const label = entryLabelOn(blockTarget(block));
+      return { title: label, 'aria-label': label };
+    };
+    // The block is selected first, as its other tools do (their click reaches
+    // the block); a click on this one stops there, and a key reaches nothing.
+    vm.openAiOnBlock = (block) => {
+      if (!panel) return;
+      vm.selectBlock(block);
+      panel.openTarget(blockTarget(block));
+    };
+    vm.openAiOnBlockByKey = (block, event) => {
+      if (event.key !== 'Enter' && event.key !== ' ') return true;
+      event.preventDefault();
+      vm.openAiOnBlock(block);
+      return false;
+    };
+
+    // The text editor's AI button, for the element it edits.
+    vm.aiLabelOnElement = (element) =>
+      entryLabelOn(element && elementTarget(element));
     vm.openAiOnElement = (element) => {
       if (!panel) return;
-      const target = fieldOf(element) || blockTargetOf(element);
+      const target = elementTarget(element);
       if (target) panel.openTarget(target);
     };
   },
@@ -158,7 +177,6 @@ module.exports = {
       panel = null;
       editor = null;
     }
-    offers = null;
     // Its toolbars offer nothing until a panel exists again.
     if (viewModel) viewModel.aiPanelReady(false);
   },
