@@ -42,12 +42,10 @@ let pending = null;
 let editor = null;
 let viewModel = null;
 
-// The block field an element belongs to (the text being edited).
+// The block field an element belongs to (the text being edited): matched
+// against the paths of its block's text fields alone, read from the model.
 const fieldOf = (element) =>
-  editor &&
-  fieldTargetOf(element, {
-    pathsOf: (blockId) => editor.textFieldsOf(blockId).map((field) => field.path),
-  });
+  editor && fieldTargetOf(element, { pathsOf: editor.textPathsOf });
 
 // A block of the canvas, as the toolbar of the block hands it: the block that
 // holds the preheader is the preheader's target, as in the panel.

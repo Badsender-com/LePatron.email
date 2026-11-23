@@ -11,9 +11,10 @@ const {
 } = require('../email-preheader');
 const { canUseTextGeneration } = require('./text-generation-access');
 const { listTextFields } = require('../block-text-fields');
-const { idOfPath } = require('../block-element-ids');
+const { BLOCK_ID, idOfPath } = require('../block-element-ids');
 const { getBlockDefault } = require('../quality/ownership');
 const {
+  extractBlockTranslatableContent,
   injectBlockTranslations,
 } = require('../../utils/block-content-extractor');
 const { goToBlock, findBlockById } = require('../block-navigation');
@@ -22,14 +23,31 @@ const {
   formatBlockName,
 } = require('../comments-utils');
 
-const BLOCK_ID = /^ko_([A-Za-z][A-Za-z0-9]*)_(\d+)$/;
-
 const unwrap = ko.utils.unwrapObservable;
 
 const hasId = (block, blockId) => {
   const value = unwrap(block);
   return Boolean(value) && typeof value === 'object' && unwrap(value.id) === blockId;
 };
+
+// The blocks of a container of the content (`xBlocks`, converter/parser.js).
+const blocksOf = (container) => {
+  const value = unwrap(container);
+  return (value && unwrap(value.blocks)) || [];
+};
+
+/**
+ * The blocks of the email, from every container of the content
+ * (`mainBlocks`, `headerBlocks`…), in the order the quality engine numbers
+ * them (quality/context.js). Not the template's fixed blocks.
+ */
+function containerBlocks(viewModel) {
+  const content = viewModel.content() || {};
+  return _.flatMap(
+    Object.keys(content).filter((key) => /Blocks$/.test(key)),
+    (key) => blocksOf(content[key])
+  );
+}
 
 /**
  * A block of the email by its id, as the observable its fields are written
@@ -42,14 +60,24 @@ function blockById(viewModel, blockId) {
   for (const key of Object.keys(content)) {
     if (hasId(content[key], blockId)) return content[key];
     if (/Blocks$/.test(key)) {
-      const container = unwrap(content[key]);
-      const blocks = (container && unwrap(container.blocks)) || [];
-      const found = blocks.find((block) => hasId(block, blockId));
+      const found = blocksOf(content[key]).find((block) =>
+        hasId(block, blockId)
+      );
       if (found) return found;
     }
   }
   return null;
 }
+
+/**
+ * The paths of a block's text fields, read from its model alone: the same
+ * fields as `listTextFields`, without their role, sample or rendering. Cheap
+ * enough to ask on each selection and each toolbar.
+ */
+const textPathsOf = (viewModel, blockId) =>
+  Object.keys(
+    extractBlockTranslatableContent(ko.toJS(blockById(viewModel, blockId)))
+  );
 
 // Whether the rendering hides an element: by itself or by an ancestor, up to
 // its block.
@@ -131,16 +159,10 @@ function createEditorAccess(viewModel) {
     },
     // How the quality drawer and the comments name a block: « Texte 2 ».
     blockLabel(blockId) {
-      let blocks = [];
-      try {
-        blocks = viewModel.content().mainBlocks().blocks();
-      } catch (e) {
-        // A template without a main container.
-      }
       // A fixed block of the template (a header, a footer) is named by type.
       const match = BLOCK_ID.exec(blockId);
       return (
-        getBlockLabelWithNumber(blocks, blockId) ||
+        getBlockLabelWithNumber(containerBlocks(viewModel), blockId) ||
         (match ? formatBlockName(match[1]) : blockId)
       );
     },
@@ -157,6 +179,8 @@ function createEditorAccess(viewModel) {
         isHidden: hiddenInCanvas(blockId),
       }).map((field) => ({ ...field, html: field.value }));
     },
+    // Only the paths of those fields: to match the element being edited.
+    textPathsOf: (blockId) => textPathsOf(viewModel, blockId),
     readField: (blockId, path) =>
       _.get(ko.toJS(blockById(viewModel, blockId)), path),
     writeField: (blockId, path, html) =>

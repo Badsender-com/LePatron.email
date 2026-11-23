@@ -98,6 +98,17 @@ describe('spelling correction: the targeted field', () => {
       });
     });
 
+    // As when the block is selected (ext/ai-panel/targets.js).
+    it('is the preheader for the block that holds it', () => {
+      document.body.innerHTML = `
+        <div id="ko_preheaderBlock_1">
+          <div id="custom-id" contenteditable="true">Voir en ligne</div>
+        </div>`;
+      expect(blockTargetOf(document.getElementById('custom-id'))).toEqual({
+        kind: 'preheader',
+      });
+    });
+
     it('is nothing outside any block', () => {
       expect(blockTargetOf(document.getElementById('outside'))).toBeNull();
     });

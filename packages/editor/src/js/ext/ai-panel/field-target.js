@@ -13,6 +13,7 @@
  */
 
 const { BLOCK_ID, idOfPath } = require('../block-element-ids');
+const { targetOfBlock } = require('./targets');
 
 // The container of the block an element is in, or null.
 function blockElementOf(element) {
@@ -22,18 +23,17 @@ function blockElementOf(element) {
 }
 
 /**
- * The block an element is in, for an element no field matches.
+ * The target of the block an element is in, for an element no field matches:
+ * the block's own (ext/ai-panel/targets.js), so the block that holds the
+ * preheader is the preheader's target, as when it is selected.
  * @param {Element} element
- * @returns {{ kind: 'block', blockId: string, blockType: string } | null}
+ * @returns {{ kind: 'block', blockId: string, blockType: string } | { kind: 'preheader' } | null}
  */
 function blockTargetOf(element) {
   const block = element && blockElementOf(element);
   if (!block) return null;
-  return {
-    kind: 'block',
-    blockId: block.id,
-    blockType: BLOCK_ID.exec(block.id)[1],
-  };
+  const blockType = BLOCK_ID.exec(block.id)[1];
+  return targetOfBlock({ type: () => blockType, id: () => block.id });
 }
 
 /**
