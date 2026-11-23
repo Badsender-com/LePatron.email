@@ -351,7 +351,7 @@ _Avoid_: User content
 The links and images of the client's blocks that the editor sends to the server for it to measure. The server measures and answers; it never judges and never stores.
 
 **Ignore**:
-Hide a finding for the whole team, by fingerprint, until its content changes. Stored on the mailing, never copied with it. A finding that blocks cannot be ignored.
+Hide a finding for the whole team, by fingerprint, until its content changes. Stored on the mailing, never copied with it. A finding that blocks cannot be ignored. Ignoring, and stopping, takes `mailing.ignore-quality`, which a writer and a reviewer do not hold.
 _UI_: Ignorer
 _Avoid_: Dismiss, mute
 
