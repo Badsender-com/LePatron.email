@@ -307,9 +307,14 @@ Small icon-only buttons for contextual actions (edit, delete, reply, etc.).
   color: var(--accent);
 }
 
+/* Destructive: red at rest, not only on hover */
+.icon-action-btn.danger {
+  color: var(--color-error);
+}
+
 .icon-action-btn.danger:hover {
-  background: rgba(255, 82, 82, 0.1);
-  color: var(--error);
+  background: var(--color-error-bg);
+  color: var(--color-error);
 }
 
 .icon-action-btn.success:hover {
@@ -318,14 +323,16 @@ Small icon-only buttons for contextual actions (edit, delete, reply, etc.).
 }
 ```
 
+A destructive action (delete, remove) is **red at rest**, so the row says which of its actions cannot be undone before the pointer gets there; the others stay neutral. In the app: `error--text` on the icon of a table row, the `danger` variant of `BsRowActions`. Same rule in [UX_GUIDELINES.md](../UX_GUIDELINES.md) ("Icon color exceptions").
+
 ### Common Actions
 
-| Action  | Icon                    | Hover variant |
-| ------- | ----------------------- | ------------- |
-| Reply   | `reply` / `mdi-reply`   | default       |
-| Edit    | `edit` / `mdi-pencil`   | default       |
-| Resolve | `check` / `mdi-check`   | success       |
-| Delete  | `delete` / `mdi-delete` | danger        |
+| Action  | Icon                    | Variant                  |
+| ------- | ----------------------- | ------------------------ |
+| Reply   | `reply` / `mdi-reply`   | default                  |
+| Edit    | `edit` / `mdi-pencil`   | default                  |
+| Resolve | `check` / `mdi-check`   | success (on hover)       |
+| Delete  | `delete` / `mdi-delete` | danger (red at rest too) |
 
 ---
 
