@@ -55,6 +55,24 @@ describe('publishing a task skill open to every company', () => {
     });
   });
 
+  // Each opening is kept, dated with the publication (ADR 0031).
+  it('records the opening of the skill and of the expertises chosen with it', async () => {
+    await publish({ openToAll: true, openExpertiseIds: ['qc.proving'] });
+
+    const {
+      LePatronSkills,
+    } = require('../../../../packages/server/common/models.common');
+    const skill = await LePatronSkills.findOne({ skillId: 'qc.review' }).lean();
+    const proving = await Expertises.findOne({
+      expertiseId: 'qc.proving',
+    }).lean();
+    expect(skill.audienceHistory.map((c) => c.audience)).toEqual(['all']);
+    expect(new Date(skill.audienceHistory[0].at).getTime()).toBe(
+      new Date(skill.versions[0].activatedAt).getTime()
+    );
+    expect(proving.audienceHistory.map((c) => c.audience)).toEqual(['all']);
+  });
+
   it('keeps it to the platform company unless asked, and warns of nothing kept', async () => {
     const res = await publish({});
 
