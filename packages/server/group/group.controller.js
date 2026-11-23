@@ -207,8 +207,9 @@ async function create(req, res) {
 
   // Not a company field: the language the default email types are seeded in.
   const { defaultEmailTypesLang, ...groupToCreate } = namedFieldsOf(req.body);
-  // A company starts with its switches off: they are turned on from its
-  // settings, where each one is recorded as a security event. The MCP module
+  // A company starts with its switches as the schema sets them (off, but the
+  // content of its AI invocation logs, kept): they change from its settings,
+  // where each change is recorded as a security event. The MCP module
   // alone may be opened at creation, as the other modules, by the super admin
   // who creates the company (ADR 0017): recorded as its opening.
   const { enableMcpModule } = takeSwitches(groupToCreate);
@@ -619,15 +620,6 @@ async function update(req, res) {
     assertTechChecksAllowed(user, storedSettings, qualitySettings);
     qualityUpdate = qualitySettingsUpdate(storedSettings, qualitySettings);
     delete groupToUpdate.qualitySettings;
-  }
-
-  // Whether the company's AI invocation logs keep what was sent and answered;
-  // their metadata is logged either way. A strict boolean, as the company's
-  // other switches: anything but `true` keeps the content out, where Mongoose
-  // would cast `'yes'` or `1` to true.
-  if ('logSkillInvocationContent' in groupToUpdate) {
-    groupToUpdate.logSkillInvocationContent =
-      groupToUpdate.logSkillInvocationContent === true;
   }
 
   // Only reachable by a super admin: the pick below drops it for a company admin.

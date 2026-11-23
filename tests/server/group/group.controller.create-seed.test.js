@@ -123,6 +123,8 @@ describe('POST /groups — the company switches', () => {
     ['enableMcp', true],
     ['enableMcp', { $ne: false }],
     ['allowRetex', true],
+    // Kept by default: a company starts with the content of its AI logs kept.
+    ['logSkillInvocationContent', false],
   ])('creates the company without %s, sent as %p', async (field, value) => {
     await create({ name: 'Acme', [field]: value });
 

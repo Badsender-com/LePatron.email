@@ -11,9 +11,10 @@ const {
 
 const { ObjectId } = Schema.Types;
 
-// An action on an account's two-factor authentication, or on a company's MCP
+// An action on an account's two-factor authentication, on a company's MCP
 // access, retex, clients registered by hand or connected applications (ADR
-// 0012): who did it, to whom, when (ADR 0008). Kept a year, then removed by
+// 0012), or on what its AI invocation logs keep: who did it, to whom, when
+// (ADR 0008). Kept a year, then removed by
 // the TTL index. Not the `Log` collection, whose fields are those
 // of the ESP SOAP calls.
 const SecurityEventSchema = Schema(

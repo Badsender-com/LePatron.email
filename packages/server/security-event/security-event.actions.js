@@ -38,6 +38,13 @@ const RETEX_ACTIONS = Object.freeze({
   DISALLOWED: 'retex.disallowed',
 });
 
+// Whether the logs of a company's AI invocations keep their content: the
+// text sent, the instruction, the raw answer.
+const AI_LOG_CONTENT_ACTIONS = Object.freeze({
+  KEPT: 'ai-log-content.kept',
+  NOT_KEPT: 'ai-log-content.not-kept',
+});
+
 // A client a company registers by hand for its assistants (ADR 0012).
 const MCP_CLIENT_ACTIONS = Object.freeze({
   CREATED: 'mcp-client.created',
@@ -64,6 +71,7 @@ const SECURITY_EVENT_ACTIONS = Object.freeze([
   ...Object.values(MCP_ACCESS_ACTIONS),
   ...Object.values(MCP_MODULE_ACTIONS),
   ...Object.values(RETEX_ACTIONS),
+  ...Object.values(AI_LOG_CONTENT_ACTIONS),
   ...Object.values(MCP_CLIENT_ACTIONS),
   ...Object.values(CONNECTED_APPLICATION_ACTIONS),
   ...Object.values(SKILLS_READ_TOKEN_ACTIONS),
@@ -75,6 +83,7 @@ module.exports = {
   MCP_ACCESS_ACTIONS,
   MCP_MODULE_ACTIONS,
   RETEX_ACTIONS,
+  AI_LOG_CONTENT_ACTIONS,
   MCP_CLIENT_ACTIONS,
   CONNECTED_APPLICATION_ACTIONS,
   SKILLS_READ_TOKEN_ACTIONS,
