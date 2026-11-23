@@ -1,7 +1,9 @@
 'use strict';
 
 const { htmlCodeBlocks } = require('../html-code');
-const { SCRIPTING_MARKUP } = require('../merge-tag-syntax');
+const {
+  SCRIPTING_MARKUP,
+} = require('../../../../../../shared/quality/merge-tag-syntax.js');
 
 // Tags left open or closed in the wrong order in pasted code: browsers guess,
 // email clients guess differently, and Outlook's Word engine guesses worst.

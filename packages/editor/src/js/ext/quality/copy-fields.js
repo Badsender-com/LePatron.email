@@ -1,8 +1,6 @@
 'use strict';
 
 const ko = require('knockout');
-const { stripMergeTags } = require('./merge-tag-syntax');
-const { EMOJI_REGEX } = require('./emoji');
 
 // The copy that lives outside the blocks: the subject (email metadata) and the
 // preheader (a template property). Both are the client's to write.
@@ -63,18 +61,4 @@ function getPreheader(viewModel) {
   };
 }
 
-/**
- * The length of a subject or preheader as an inbox shows it: merge tags out
- * (their value is only known at send time), one emoji one character whatever
- * its code points, and accents composed (an é typed as e + ´ is one).
- */
-const inboxLength = (text) =>
-  Array.from(
-    stripMergeTags(text)
-      .normalize('NFC')
-      .replace(EMOJI_REGEX, 'x')
-      .replace(/\s+/g, ' ')
-      .trim()
-  ).length;
-
-module.exports = { getSubject, getPreheader, inboxLength, PREHEADER_PATHS };
+module.exports = { getSubject, getPreheader, PREHEADER_PATHS };
