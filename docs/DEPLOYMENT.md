@@ -113,3 +113,15 @@ Two online checks of the quality control need a third party. Both are off while 
 | `QC_DOMAIN_BLOCKLISTS` | Domaines sur liste noire | DNS blocklists as `name=zone` pairs separated by commas, e.g. `Spamhaus DBL=<key>.dbl.dq.spamhaus.net,SURBL=multi.surbl.org` |
 
 Every DNS blocklist asks for a subscription for commercial use, and Spamhaus answers nothing through public resolvers: use its DQS zone with your key.
+
+### AI rate limits
+
+Every route that sends a user's content to an AI provider (translation, duplicate and translate, text generation) shares one ceiling on the requests it lets through. It is a safety net against a loop or a quota burnt in a few minutes, not a commercial quota. A refused request answers 429 with a `Retry-After` header.
+
+| Variable                                  | Default | Ceiling                                                      |
+| ----------------------------------------- | ------- | ------------------------------------------------------------ |
+| `lepatron_aiRateLimits__perUserPerMinute` | 20      | requests per user in a calendar minute                       |
+| `lepatron_aiRateLimits__perUserPerDay`    | 300     | requests per user in a UTC day                               |
+| `lepatron_aiRateLimits__perGroupPerDay`   | 3000    | requests per company in a UTC day, all of its users together |
+
+Each value is a number above 0: the server refuses to start on any other value, naming the variable. A request the user's own ceiling refuses does not count against the company.
