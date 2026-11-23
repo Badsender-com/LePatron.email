@@ -122,6 +122,26 @@
     font-weight: 500;
     color: var(--gray-700);
   }
+
+  // A correction that changes more than the spelling: read before accepting.
+  &__rewrite {
+    display: flex;
+  }
+
+  &__rewrite-badge {
+    padding: 2px 7px;
+    border-radius: 10px;
+    background: @qc-tint-warning;
+    color: @qc-warning-text;
+    font-size: 11px;
+    font-weight: 600;
+    line-height: 1.4;
+  }
+
+  // Given the focus when the analysis starts again, in place of its button.
+  &__status:focus {
+    outline: none;
+  }
 }
 
 #toolai .ai-panel__field-label {

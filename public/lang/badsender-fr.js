@@ -993,6 +993,22 @@ module.exports = {
     "1 correction écartée : elle ne pouvait pas s'appliquer sans risque pour la mise en forme ou les variables.",
   'ai-panel-correction-before': 'Avant :',
   'ai-panel-correction-after': 'Après :',
+  'ai-panel-correction-restart': "Relancer l'analyse",
+  'ai-panel-correction-resume': "Reprendre l'analyse",
+  'ai-panel-nothing-checked': "Rien n'a pu être vérifié ici.",
+  'ai-panel-no-applicable-correction': 'Aucune correction applicable.',
+  'ai-panel-no-correction-in-checked':
+    'Aucune faute trouvée dans le texte vérifié.',
+  'ai-panel-unchecked': "__count__ champs n'ont pas pu être vérifiés.",
+  'ai-panel-unchecked-one': "1 champ n'a pas pu être vérifié.",
+  'ai-panel-correction-rewrite': 'Réécriture',
+  'ai-panel-correction-rewrite-hint':
+    "Change plus que l'orthographe : à relire avant d'accepter.",
+  'ai-panel-accept-all-but-rewrites': 'Tout accepter sauf les réécritures',
+  'ai-panel-accept-block-but-rewrites':
+    'Tout accepter dans ce bloc sauf les réécritures',
+  'ai-panel-rewrites-left': '__count__ réécritures restent à relire.',
+  'ai-panel-rewrites-left-one': '1 réécriture reste à relire.',
   'ai-panel-generate-subject': 'Proposer des objets',
   'ai-panel-generate-preheader': 'Proposer des préheaders',
   'ai-panel-proposed-one': '__count__ proposition',
