@@ -55,7 +55,7 @@ describe('search covers the skills', () => {
   afterEach(() => harness.disconnect());
 
   // Turned on by #1671 (search covers the skills)
-  describe.skip('a search', () => {
+  describe('a search', () => {
     it('finds a skill by the words of its title or description', async () => {
       const { results } = await call(
         await harness.connectAs(f.FRANK),
