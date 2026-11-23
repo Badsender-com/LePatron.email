@@ -73,10 +73,53 @@ const FOCUSABLE =
   'button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])';
 
 /**
+ * Moves the focus into the panel when it opens, and gives it back when it
+ * closes: to what had it on open (a toggle, a field's icon), or else to the
+ * button that controls the panel (`aria-controls`).
+ *
+ * Going from one panel to another from inside the first (the quality drawer's
+ * "Add comment") changes `open` once, and each panel's `sync` hears it in the
+ * order the bindings subscribed, that is the order of the panels in the DOM:
+ * `#toolquality` comes before `#toolcomments` in toolbox.tmpl.html. The closing
+ * panel goes first and gives the focus back to its toggle, which the opening
+ * panel then records as its opener. In the other order, the opening panel
+ * would record a button inside the panel being hidden, and closing it later
+ * would send the focus there. Reordering the panels in the template changes
+ * this (tests/editor/ai-panel/right-panel-binding.test.js has the case).
+ *
+ * @param {HTMLElement} element the panel's container
+ * @param {Object} sync the computed saying whether the panel is open
+ * @returns {{ dispose: Function }} what to release with the binding
+ */
+function trackFocus(element, sync) {
+  let opener = null;
+
+  return sync.subscribe((isOpen) => {
+    if (isOpen) {
+      const active = document.activeElement;
+      opener = active && active !== document.body ? active : null;
+      // After the panel's own content has rendered, and only if the panel
+      // has not already put the focus where it wants it.
+      setTimeout(() => {
+        if (element.contains(document.activeElement)) return;
+        const first = element.querySelector(FOCUSABLE);
+        if (first) first.focus();
+      }, 0);
+      return;
+    }
+    if (!element.contains(document.activeElement)) return;
+    const toggle =
+      element.id && document.querySelector(`[aria-controls="${element.id}"]`);
+    const back = opener && opener.isConnected ? opener : toggle;
+    opener = null;
+    if (back) back.focus();
+  });
+}
+
+/**
  * `data-bind="rightPanel: 'quality'"` on a panel's container: shown when its
  * panel is the open one, `inert` otherwise; Escape closes it; opening moves the
- * focus inside it, closing gives it back to the button that controls it
- * (`aria-controls`).
+ * focus inside it, closing gives it back (`trackFocus`).
  */
 function registerRightPanelBinding(ko) {
   if (ko.bindingHandlers.rightPanel) return;
@@ -103,36 +146,11 @@ function registerRightPanelBinding(ko) {
         else element.setAttribute('inert', '');
         return isOpen;
       });
-
-      // What had the focus when the panel opened (a toggle, a field's icon):
-      // the focus goes back there when it closes.
-      let opener = null;
-
-      const focusSub = sync.subscribe((isOpen) => {
-        if (isOpen) {
-          const active = document.activeElement;
-          opener = active && active !== document.body ? active : null;
-          // After the panel's own content has rendered, and only if the panel
-          // has not already put the focus where it wants it.
-          setTimeout(() => {
-            if (element.contains(document.activeElement)) return;
-            const first = element.querySelector(FOCUSABLE);
-            if (first) first.focus();
-          }, 0);
-          return;
-        }
-        if (!element.contains(document.activeElement)) return;
-        const toggle =
-          element.id &&
-          document.querySelector(`[aria-controls="${element.id}"]`);
-        const back = opener && opener.isConnected ? opener : toggle;
-        opener = null;
-        if (back) back.focus();
-      });
+      const focus = trackFocus(element, sync);
 
       ko.utils.domNodeDisposal.addDisposeCallback(element, () => {
         element.removeEventListener('keydown', onKeydown);
-        focusSub.dispose();
+        focus.dispose();
         sync.dispose();
       });
     },

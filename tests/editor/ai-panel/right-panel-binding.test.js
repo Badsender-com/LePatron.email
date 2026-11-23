@@ -14,14 +14,15 @@ const {
   installRightPanel,
 } = require('../../../packages/editor/src/js/ext/right-panel');
 
-function mount() {
+// `after`: other panels, after the quality one as in toolbox.tmpl.html.
+function mount(after = '') {
   document.body.innerHTML = `
     <button id="toggle" aria-controls="toolquality">Tester</button>
     <button id="field-icon">Icône d'un champ</button>
     <div id="toolquality" class="slidebar right-panel" data-bind="rightPanel: 'quality'">
       <h2 id="title" tabindex="-1">Titre</h2>
       <button id="close">Fermer</button>
-    </div>`;
+    </div>${after}`;
   const vm = {};
   installRightPanel(vm, ko);
   ko.applyBindings(vm, document.body);
@@ -99,6 +100,25 @@ describe('the right panel binding', () => {
     jest.runAllTimers();
     vm.rightPanel.hide();
     expect(document.activeElement.id).toBe('field-icon');
+  });
+
+  it('opened from inside another panel, gives the focus back to that panel toggle', () => {
+    jest.useFakeTimers();
+    const { vm } = mount(`
+      <div id="toolcomments" data-bind="rightPanel: 'comments'">
+        <textarea id="comment-field"></textarea>
+      </div>`);
+
+    vm.rightPanel.show('quality');
+    jest.runAllTimers();
+    // "Add comment", inside the quality panel.
+    document.getElementById('close').focus();
+    vm.rightPanel.show('comments');
+    jest.runAllTimers();
+    expect(document.activeElement.id).toBe('comment-field');
+
+    vm.rightPanel.hide();
+    expect(document.activeElement.id).toBe('toggle');
   });
 
   it('hides a panel when another one opens', () => {
