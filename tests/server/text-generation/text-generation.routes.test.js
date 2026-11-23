@@ -723,15 +723,21 @@ describe('text generation: POST /api/text-generation/subject', () => {
       }
     );
 
-    it('still answers 502 when the provider hits a passing error', async () => {
-      const err = failedInvocation(502, 'PROVIDER_ERROR');
-      err.failureCode = 'PROVIDER_API_ERROR';
-      invoke.mockRejectedValue(err);
-      const res = await request(makeApp())
-        .post('/api/text-generation/subject')
-        .send(body);
-      expect(res.status).toBe(502);
-    });
+    it.each([
+      ['hits a passing error', 'PROVIDER_API_ERROR'],
+      ['limits the rate of requests', 'PROVIDER_RATE_LIMITED'],
+    ])(
+      'still answers 502 when the provider %s',
+      async (_label, failureCode) => {
+        const err = failedInvocation(502, 'PROVIDER_ERROR');
+        err.failureCode = failureCode;
+        invoke.mockRejectedValue(err);
+        const res = await request(makeApp())
+          .post('/api/text-generation/subject')
+          .send(body);
+        expect(res.status).toBe(502);
+      }
+    );
 
     it.each([
       ['the provider fails', 502, 'PROVIDER_ERROR'],

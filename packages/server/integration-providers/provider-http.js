@@ -94,8 +94,9 @@ function toProviderError(error, label) {
 function mapHttpStatusToCode(status) {
   if (status === 401) return CODES.INVALID_CREDENTIALS;
   // 402: the account's credits or billing ran out (prepaid Gemini, OpenAI
-  // billing). Like a rate limit, retrying will not help until someone acts.
-  if (status === 402 || status === 429) return CODES.QUOTA_EXCEEDED;
+  // billing): retrying will not help until someone acts. A 429 passes.
+  if (status === 402) return CODES.QUOTA_EXCEEDED;
+  if (status === 429) return CODES.RATE_LIMITED;
   return CODES.API_ERROR;
 }
 

@@ -245,7 +245,16 @@ describe.each([
 
   it('still defers to the dialect for the other statuses', () => {
     expect(build()._mapErrorToCode(402, {})).toBe(CODES.QUOTA_EXCEEDED);
-    expect(build()._mapErrorToCode(429, {})).toBe(CODES.QUOTA_EXCEEDED);
+    expect(build()._mapErrorToCode(429, {})).toBe(CODES.RATE_LIMITED);
     expect(build()._mapErrorToCode(500, {})).toBe(CODES.API_ERROR);
+  });
+
+  // OpenAI answers 429 for a billing quota exhausted too, with its own code:
+  // that one waits for someone to act, a rate limit passes.
+  it('reads a 429 for an exhausted billing quota as a quota', () => {
+    const insufficientQuota = { error: { code: 'insufficient_quota' } };
+    expect(build()._mapErrorToCode(429, insufficientQuota)).toBe(
+      CODES.QUOTA_EXCEEDED
+    );
   });
 });

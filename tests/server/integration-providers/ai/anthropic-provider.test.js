@@ -865,7 +865,7 @@ describe('AnthropicProvider', () => {
       // more actionable than a generic API error.
       [403, CODES.INVALID_CREDENTIALS],
       [402, CODES.QUOTA_EXCEEDED],
-      [429, CODES.QUOTA_EXCEEDED],
+      [429, CODES.RATE_LIMITED],
       [500, CODES.API_ERROR],
     ])('turns HTTP %s into %s', async (status, expected) => {
       mockFetch.mockResolvedValue(

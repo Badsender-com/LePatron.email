@@ -222,7 +222,8 @@ class AnthropicProvider extends BaseLLMProvider {
     // generic API error, and far more actionable for the admin.
     if (status === 401 || status === 403) return CODES.INVALID_CREDENTIALS;
     // 402: credits or billing exhausted — a quota, not a passing error.
-    if (status === 402 || status === 429) return CODES.QUOTA_EXCEEDED;
+    if (status === 402) return CODES.QUOTA_EXCEEDED;
+    if (status === 429) return CODES.RATE_LIMITED;
     return CODES.API_ERROR;
   }
 

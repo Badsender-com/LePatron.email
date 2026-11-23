@@ -8,6 +8,9 @@ const {
   PROVIDER_ERROR_CODES: CODES,
 } = require('../provider-error.js');
 
+// The error code OpenAI gives a 429 whose billing quota is exhausted.
+const INSUFFICIENT_QUOTA = 'insufficient_quota';
+
 /**
  * The OpenAI chat-completions dialect: how a request is shaped and how a
  * response is read.
@@ -180,11 +183,16 @@ const openAIDialect = {
    * status means what — Google answers 400 for an invalid key, Anthropic 403 —
    * so this is a hook rather than a shared table.
    */
-  // eslint-disable-next-line no-unused-vars
   _mapErrorToCode(status, errorData) {
     if (status === 401) return CODES.INVALID_CREDENTIALS;
     // 402: credits or billing exhausted — a quota, not a passing error.
-    if (status === 402 || status === 429) return CODES.QUOTA_EXCEEDED;
+    if (status === 402) return CODES.QUOTA_EXCEEDED;
+    // OpenAI answers 429 for an exhausted billing quota too, and says so.
+    if (status === 429) {
+      return errorData?.error?.code === INSUFFICIENT_QUOTA
+        ? CODES.QUOTA_EXCEEDED
+        : CODES.RATE_LIMITED;
+    }
     return CODES.API_ERROR;
   },
 
