@@ -10,7 +10,7 @@ jest.mock('../../../packages/server/node.config.js', () => ({
 
 const express = require('express');
 const bodyParser = require('body-parser');
-const request = require('supertest');
+const request = require('../../helpers/local-request.js');
 
 const {
   AIUsageCounters,
