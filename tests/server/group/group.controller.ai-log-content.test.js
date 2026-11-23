@@ -4,11 +4,13 @@
 // sent, the instruction, the raw answer): on unless the company turns it off.
 // Set by whoever sets up the company's AI features, its tech admin or a super
 // admin; the group update keeps it out of everyone else's reach, as every
-// field they may not set. The invocation log reads it
+// field they may not set. Each change is a security event, as the company's
+// other switches. The invocation log reads it
 // (tests/server/ai-skill/services/skill-invocation.test.js).
 
 const mongoose = require('mongoose');
 const {
+  SecurityEvents,
   groupService,
   GROUP_ID,
   companyAdmin,
@@ -102,5 +104,68 @@ describe('PUT /groups/:groupId — the content of the AI invocation logs', () =>
 
     expect(payload).not.toHaveProperty('logSkillInvocationContent');
     expect(groupService.updateGroup).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe('PUT /groups/:groupId — the content of the AI logs, the security event', () => {
+  it('records the content no longer kept, by whom, in which company', async () => {
+    await update(techAdmin, { logSkillInvocationContent: false });
+
+    expect(SecurityEvents.create).toHaveBeenCalledTimes(1);
+    expect(SecurityEvents.create).toHaveBeenCalledWith({
+      action: 'ai-log-content.not-kept',
+      actor: 'a2',
+      group: GROUP_ID,
+    });
+  });
+
+  it('records it kept again', async () => {
+    storedGroup({ logSkillInvocationContent: false });
+
+    await update(superAdmin, { logSkillInvocationContent: true });
+
+    expect(SecurityEvents.create).toHaveBeenCalledWith({
+      action: 'ai-log-content.kept',
+      actor: 'a3',
+      group: GROUP_ID,
+    });
+  });
+
+  it('records nothing when it does not change', async () => {
+    await update(techAdmin, { logSkillInvocationContent: true });
+
+    expect(SecurityEvents.create).not.toHaveBeenCalled();
+  });
+
+  it('records nothing from a company admin, whose request drops it', async () => {
+    await update(companyAdmin, { logSkillInvocationContent: false });
+
+    expect(SecurityEvents.create).not.toHaveBeenCalled();
+  });
+
+  // A company stored before the switch existed has no value: it keeps the
+  // content, as the schema's default says.
+  it('judges a company that never set it as keeping the content', async () => {
+    storedGroup({});
+    await update(techAdmin, { logSkillInvocationContent: true });
+    expect(SecurityEvents.create).not.toHaveBeenCalled();
+
+    storedGroup({});
+    await update(techAdmin, { logSkillInvocationContent: false });
+    expect(SecurityEvents.create).toHaveBeenCalledWith({
+      action: 'ai-log-content.not-kept',
+      actor: 'a2',
+      group: GROUP_ID,
+    });
+  });
+
+  it('is one of the actions a security event may record', () => {
+    const {
+      SECURITY_EVENT_ACTIONS,
+    } = require('../../../packages/server/security-event/security-event.actions.js');
+
+    expect(SECURITY_EVENT_ACTIONS).toEqual(
+      expect.arrayContaining(['ai-log-content.kept', 'ai-log-content.not-kept'])
+    );
   });
 });

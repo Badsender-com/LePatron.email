@@ -21,6 +21,7 @@ const SWITCHES = [
   'enableMcp',
   'allowRetex',
   'requireTwoFactor',
+  'logSkillInvocationContent',
 ];
 
 let saved;

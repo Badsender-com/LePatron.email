@@ -9,17 +9,25 @@ const {
   forgetRetex,
 } = require('../mcp/mcp-access-option.js');
 const { revokeConnections } = require('../mcp/mcp-connections.js');
+const {
+  recordLogContentChange,
+} = require('../ai-skill/services/log-content-option.js');
 
 // The company's switches: two-factor authentication for every member (ADR
 // 0008), the MCP module a super admin opens (ADR 0017), MCP access and the
-// retex of its assistants' sessions (ADR 0012). Each one switched is a
-// security event.
+// retex of its assistants' sessions (ADR 0012), and whether its AI invocation
+// logs keep their content. Each one switched is a security event.
 const SWITCHES = Object.freeze([
   'requireTwoFactor',
   'enableMcpModule',
   'enableMcp',
   'allowRetex',
+  'logSkillInvocationContent',
 ]);
+
+// The switches on by default (group.schema.js): a company stored before one
+// existed has no value for it, and holds the default.
+const ON_BY_DEFAULT = Object.freeze(['logSkillInvocationContent']);
 
 // The security event each switch records, by field.
 const RECORDERS = Object.freeze({
@@ -27,7 +35,14 @@ const RECORDERS = Object.freeze({
   enableMcpModule: recordMcpModuleChange,
   enableMcp: recordMcpAccessChange,
   allowRetex: recordRetexChange,
+  logSkillInvocationContent: recordLogContentChange,
 });
+
+// What a switch was before the write, its default when it was never stored.
+function storedValue(before, field) {
+  if (before[field] == null) return ON_BY_DEFAULT.includes(field);
+  return Boolean(before[field]);
+}
 
 /**
  * Takes the company's switches out of a group update, each a strict boolean:
@@ -67,7 +82,7 @@ async function writeSwitches(groupId, switches) {
   if (!before) return {};
   return Object.fromEntries(
     fields
-      .filter((field) => Boolean(before[field]) !== switches[field])
+      .filter((field) => storedValue(before, field) !== switches[field])
       .map((field) => [field, switches[field]])
   );
 }
