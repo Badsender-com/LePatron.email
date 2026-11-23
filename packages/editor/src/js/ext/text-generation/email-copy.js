@@ -12,14 +12,21 @@
  *
  * Every editable text is rendered with the id `ko_<block>_<n>_<field>`, under
  * its block's container `ko_<block>_<n>`. Left out:
- * - the header and footer blocks: the frame of the email, not its message;
+ * - the header and footer blocks: the frame of the email, not its message,
+ *   told apart by their type as the quality control does (a `HeaderAndText`
+ *   block is content);
+ * - what is no text of the rendering: an image's alternative, a link's
+ *   address;
  * - a field the rendering hides;
  * - a text left at the template's sample value ("Title", "CALL TO ACTION"):
  *   nobody wrote it, and it would mislead the model.
  */
 
+const {
+  isHeaderOrFooterBlock,
+} = require('../../../../../shared/quality/header-footer-blocks.js');
+
 const BLOCK_ID = /^ko_([A-Za-z][A-Za-z0-9]*)_(\d+)$/;
-const FRAME_BLOCK = /header|footer|preheader/i;
 const TITLE = /title|heading/i;
 const BUTTON = /button|cta/i;
 const BLOCK_LEVEL = 'p, div, li, h1, h2, h3, h4, h5, h6, td, tr';
@@ -72,7 +79,7 @@ function extractEmailCopy(root, { sampleFor = () => undefined } = {}) {
     const match = BLOCK_ID.exec(block.id);
     if (!match) return;
     const blockType = match[1];
-    if (FRAME_BLOCK.test(blockType)) return;
+    if (isHeaderOrFooterBlock(blockType)) return;
 
     const prefix = `${block.id}_`;
     block.querySelectorAll('[contenteditable]').forEach((field) => {
