@@ -4,10 +4,11 @@
  * The replay behind the publication guard (ADR 0019, #1430).
  *
  * Publishing a version a feature uses first replays the test cases of the
- * feature skills concerned, through the skill invocation and the platform
- * group's AI engine: once as production runs today (before), once with the
- * version about to be published (after). A failure is reported, never
- * thrown: an AI's output has no automatic pass or fail, the person decides.
+ * feature skills concerned, through the skill invocation, on the platform
+ * group's engine of the feature calling each skill, the model its users get:
+ * once as production runs today (before), once with the version about to be
+ * published (after). A failure is reported, never thrown: an AI's output has
+ * no automatic pass or fail, the person decides.
  */
 
 const createError = require('http-errors');
@@ -25,7 +26,9 @@ const manifestRegistry = require('./manifest-registry.js');
 const { projectVersion } = require('../repositories/expertise.repository.js');
 const skillInvocation = require('./skill-invocation.service.js');
 const { findVersion, findActiveVersion } = require('./version-helpers.js');
-const { asList, usedSkillIds, declaresUse } = require('./feature-use.js');
+const featureUse = require('./feature-use.js');
+
+const { asList, usedSkillIds, declaresUse, engineOf } = featureUse;
 
 const NOT_ARCHIVED = { $ne: SkillStatuses.ARCHIVED };
 const isArchived = (doc) => doc.status === SkillStatuses.ARCHIVED;
@@ -205,6 +208,7 @@ async function runOnce({ skillId, version, input, groupId }) {
       skillId,
       input,
       groupId,
+      featureType: engineOf(skillId),
       invocationSource: SOURCE,
       version: { major: version.versionMajor, minor: version.versionMinor },
       options: { skipLogging: true, unpublished: true },
