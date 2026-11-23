@@ -166,7 +166,7 @@ function toHttpError(err) {
  */
 async function generateSubjects({ user, body }) {
   const request = readRequest(subjectRequestSchema, body);
-  const { groupId, emailType, expertise } = await prepare({
+  const { groupId, emailType, expertise, qualitySettings } = await prepare({
     user,
     mailingId: request.mailingId,
     scope: 'subject',
@@ -200,6 +200,7 @@ async function generateSubjects({ user, body }) {
       request.currentSubject || '',
     ],
     avoid: request.avoid,
+    qualitySettings,
   });
 }
 
@@ -214,7 +215,7 @@ async function generateSubjects({ user, body }) {
  */
 async function generatePreheaders({ user, body }) {
   const request = readRequest(preheaderRequestSchema, body);
-  const { groupId, emailType, expertise } = await prepare({
+  const { groupId, emailType, expertise, qualitySettings } = await prepare({
     user,
     mailingId: request.mailingId,
     scope: 'preheader',
@@ -250,6 +251,8 @@ async function generatePreheaders({ user, body }) {
       request.currentPreheader || '',
     ],
     avoid: request.avoid,
+    subject: request.subject,
+    qualitySettings,
   });
 }
 

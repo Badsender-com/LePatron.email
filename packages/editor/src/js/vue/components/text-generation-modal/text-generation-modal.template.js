@@ -54,8 +54,8 @@ module.exports = `
           <span class="text-generation__facts">
             {{ t('text-generation-length', { count: proposal.facts.length }) }}<template
               v-if="proposal.facts.truncatedOnMobile"> — {{ t('text-generation-mobile', { preview: proposal.facts.mobilePreview }) }}</template><template
-              v-if="proposal.facts.tooShort"> — {{ t('text-generation-short') }}</template><template
-              v-if="proposal.facts.tooLong"> — {{ t('text-generation-long') }}</template>
+              v-if="proposal.facts.tooLong"> — {{ t('text-generation-too-long') }}</template><template
+              v-else-if="proposal.facts.long"> — {{ t('text-generation-long') }}</template>
           </span>
           <button v-if="!canApply" type="button" class="btn-flat text-generation__copy" @click="copy(index)">
             {{ current.copiedIndex === index ? t('text-generation-copied') : t('text-generation-copy') }}

@@ -923,8 +923,8 @@ module.exports = {
   'text-generation-applied-preheader': 'Préheader :',
   'text-generation-applied-subject': 'Objet :',
   'text-generation-long': 'long : la fin sera rarement lue',
-  'text-generation-short':
-    "court : certaines messageries le complètent avec le début de l'email",
+  'text-generation-too-long':
+    'trop long : les messageries le coupent bien avant',
   'text-generation-copy-hint-preheader':
     "Ce template n'a pas de préheader modifiable : copiez une proposition pour la coller dans votre outil d'envoi.",
   'text-generation-back': 'Retour',
