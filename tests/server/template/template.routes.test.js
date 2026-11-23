@@ -156,7 +156,8 @@ describe('a template id that is not an ObjectId', () => {
       );
 
   it('covers every route that takes one', () => {
-    expect(routesWithId()).toHaveLength(11);
+    // The adoption routes (ADR-0024) among them.
+    expect(routesWithId()).toHaveLength(12);
   });
 
   it.each(['undefined', 'not-an-id', `${OWN_TEMPLATE}x`])(
