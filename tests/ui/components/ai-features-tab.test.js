@@ -35,7 +35,7 @@ function mountTab() {
       '~/components/layout/bs-form-section.vue': componentOf(
         'packages/ui/components/layout/bs-form-section.vue'
       ),
-      '~/components/group/BsAiFeatureEngineSection.vue': {},
+      '~/components/group/bs-ai-feature-engine-section.vue': {},
       '~/components/group/feature-switch.vue': {},
       'lucide-vue': {},
     },
@@ -87,18 +87,21 @@ describe('the AI features tab and its engine sections', () => {
   ];
 
   const engineSection = () =>
-    componentOf('packages/ui/components/group/BsAiFeatureEngineSection.vue', {
-      '~/components/integrations/provider-configs': {
-        getProviderLabel: (provider) => provider,
-      },
-      '~/components/form/bs-select.vue': {},
-      '~/components/group/bs-ai-model-picker.vue': {},
-      '~/components/layout/bs-form-section.vue': componentOf(
-        'packages/ui/components/layout/bs-form-section.vue'
-      ),
-      '~/components/group/feature-switch.vue': {},
-      'lucide-vue': {},
-    });
+    componentOf(
+      'packages/ui/components/group/bs-ai-feature-engine-section.vue',
+      {
+        '~/components/integrations/provider-configs': {
+          getProviderLabel: (provider) => provider,
+        },
+        '~/components/form/bs-select.vue': {},
+        '~/components/group/bs-ai-model-picker.vue': {},
+        '~/components/layout/bs-form-section.vue': componentOf(
+          'packages/ui/components/layout/bs-form-section.vue'
+        ),
+        '~/components/group/feature-switch.vue': {},
+        'lucide-vue': {},
+      }
+    );
 
   function mountLoadingTab($axios) {
     // The sections are children: they read the translations from Vue.
@@ -122,7 +125,7 @@ describe('the AI features tab and its engine sections', () => {
         '~/components/layout/bs-form-section.vue': componentOf(
           'packages/ui/components/layout/bs-form-section.vue'
         ),
-        '~/components/group/BsAiFeatureEngineSection.vue': engineSection(),
+        '~/components/group/bs-ai-feature-engine-section.vue': engineSection(),
         '~/components/group/feature-switch.vue': {},
         'lucide-vue': {},
       },
