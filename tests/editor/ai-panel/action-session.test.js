@@ -176,10 +176,50 @@ describe('ai panel: the steps of an AI action', () => {
       expect(editor.state.subject).toBe('B, retouché');
     });
 
-    it('reports an error the user can act on, by status', async () => {
-      api.generate.mockRejectedValue({ response: { status: 403 } });
+    // By the code the server sends (constant/error-codes.js): a 403 says the
+    // feature is off only when the server says so.
+    it.each([
+      [403, 'TEXT_GENERATION_DISABLED', 'text-generation-error-disabled'],
+      [403, 'FORBIDDEN_CAPABILITY', 'text-generation-error-forbidden'],
+      [403, 'FORBIDDEN_RESOURCE_OR_ACTION', 'text-generation-error-forbidden'],
+      [413, 'AI_PAYLOAD_TOO_LARGE', 'text-generation-error-too-large'],
+      [429, 'AI_RATE_LIMITED', 'text-generation-error-rate-limited'],
+      [502, 'TEXT_GENERATION_FAILED', 'text-generation-error-failed'],
+      [503, 'TEXT_GENERATION_UNAVAILABLE', 'text-generation-error-unavailable'],
+    ])(
+      'reports a %i %s as what the user can act on',
+      async (status, message, key) => {
+        api.generate.mockRejectedValue({
+          response: { status, data: { message } },
+        });
+        await session.request({});
+        expect(session.state.error).toBe(key);
+      }
+    );
+
+    // A code it does not know, or none: the status, as a last resort.
+    it.each([
+      [403, undefined, 'text-generation-error-forbidden'],
+      [403, 'SOMETHING_ELSE', 'text-generation-error-forbidden'],
+      [429, undefined, 'text-generation-error-rate-limited'],
+      [503, undefined, 'text-generation-error-unavailable'],
+      [500, 'toString', 'text-generation-error-failed'],
+      [400, 'INVALID_TEXT_GENERATION_REQUEST', 'text-generation-error-failed'],
+    ])(
+      'falls back on the status for a %i with code %s',
+      async (status, message, key) => {
+        api.generate.mockRejectedValue({
+          response: { status, data: message ? { message } : {} },
+        });
+        await session.request({});
+        expect(session.state.error).toBe(key);
+      }
+    );
+
+    it('reports a network error when no response came back', async () => {
+      api.generate.mockRejectedValue(new Error('Network Error'));
       await session.request({});
-      expect(session.state.error).toBe('text-generation-error-disabled');
+      expect(session.state.error).toBe('text-generation-error-network');
     });
   });
 

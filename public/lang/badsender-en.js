@@ -950,6 +950,8 @@ module.exports = {
     'The email has no text yet: add content before asking for proposals.',
   'text-generation-error-disabled':
     'Text generation is not enabled for your group.',
+  'text-generation-error-forbidden':
+    'Your role does not allow editing the content of this email.',
   'text-generation-error-unavailable':
     'Text generation is not available right now. Contact your administrator.',
   'text-generation-error-rate-limited':

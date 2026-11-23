@@ -1,6 +1,7 @@
 'use strict';
 
 const { orUndefined } = require('../actions/text');
+const { errorKey } = require('./errors');
 
 /**
  * The steps of an action of the "proposals" family (text generation): ask for
@@ -15,21 +16,6 @@ const { orUndefined } = require('../actions/text');
 
 // The proposals already seen that "Proposer d'autres" sends back (server limit).
 const MAX_AVOID = 30;
-
-// What the user can act on, by status of the text generation routes.
-const ERROR_KEYS = {
-  403: 'text-generation-error-disabled',
-  413: 'text-generation-error-too-large',
-  429: 'text-generation-error-rate-limited',
-  502: 'text-generation-error-failed',
-  503: 'text-generation-error-unavailable',
-};
-
-const errorKey = (err) => {
-  const status = err && err.response && err.response.status;
-  if (!status) return 'text-generation-error-network';
-  return ERROR_KEYS[status] || 'text-generation-error-failed';
-};
 
 const compact = (object) =>
   Object.fromEntries(
