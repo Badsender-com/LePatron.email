@@ -11,6 +11,7 @@ module.exports = {
   id: 'generate-subject',
   family: 'proposals',
   feature: 'textGeneration',
+  skill: 'redaction.objet',
   targets: ['email', 'subject'],
   // Without a subject field the proposals are offered to copy.
   describe: (context) => ({ canApply: Boolean(context.hasSubjectField) }),

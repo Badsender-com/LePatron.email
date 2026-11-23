@@ -93,6 +93,9 @@ function startEditor({ feature = true, canWrite } = {}) {
     id: 'm1',
     groupId: 'g1',
     hasTextGenerationFeature: feature,
+    textGenerationSkills: feature
+      ? ['redaction.objet', 'redaction.pre-header', 'redaction.correction']
+      : [],
     canWrite,
   };
   const vm = {

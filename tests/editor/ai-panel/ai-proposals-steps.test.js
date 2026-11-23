@@ -102,6 +102,44 @@ describe('ai panel: the steps of a proposals action, rendered', () => {
     document.body.innerHTML = '';
   });
 
+  // The preheader follows the subject only where the registry offers it: its
+  // skill may not run for the company while the subject's does.
+  describe('the action that follows', () => {
+    async function applySubject(action) {
+      const session = createActionSession({
+        action: 'generate-subject',
+        api,
+        editor: fakeEditor(),
+      });
+      Vue.observable(session.state);
+      steps = new AiProposalsSteps({
+        propsData: {
+          vm: { t },
+          session,
+          action,
+          labelsOf: (id) => definitionOf(id).labels,
+        },
+      }).$mount();
+      api.generate.mockResolvedValue(answer([preheader('Les soldes')]));
+      await session.request({});
+      session.select(0);
+      session.apply();
+      await Vue.nextTick();
+    }
+    const continueLabel = en['ai-panel-next-preheader'];
+
+    it('is offered once the subject is applied, when the registry offers it', async () => {
+      await applySubject({ canApply: true, next: 'generate-preheader' });
+      expect(button(continueLabel)).toBeTruthy();
+    });
+
+    it('is not offered when the registry does not', async () => {
+      await applySubject({ canApply: true });
+      expect(text()).toContain(en['text-generation-applied']);
+      expect(button(continueLabel)).toBeUndefined();
+    });
+  });
+
   describe('the facts of a preheader', () => {
     it('says "long" past the recommended length, as quality control will', async () => {
       api.generate.mockResolvedValue(

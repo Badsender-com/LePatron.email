@@ -2,8 +2,9 @@
 
 /**
  * The AI actions, one definition each (ADR 0010, amended by #1192): which
- * targets offer it and in what context, the family of its steps, how it asks
- * and writes, its words. The registry, the session, the controller and the
+ * targets offer it and in what context, the skill it calls (offered only while
+ * it runs for the company), the family of its steps, how it asks and writes,
+ * its words. The registry, the session, the controller and the
  * panel derive from these; adding an action means adding its definition here.
  *
  * In the order the panel lists them.

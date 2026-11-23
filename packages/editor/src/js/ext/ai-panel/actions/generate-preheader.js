@@ -12,6 +12,7 @@ module.exports = {
   id: 'generate-preheader',
   family: 'proposals',
   feature: 'textGeneration',
+  skill: 'redaction.pre-header',
   targets: ['email', 'preheader'],
   describe: (context) => ({
     // Without a preheader in the template the proposals are offered to copy.

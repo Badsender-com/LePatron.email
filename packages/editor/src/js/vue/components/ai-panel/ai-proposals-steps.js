@@ -17,7 +17,7 @@ const AiProposalsSteps = Vue.component('AiProposalsSteps', {
   props: {
     vm: { type: Object, required: true },
     session: { type: Object, required: true },
-    // What the action offers now: canApply, suggestFirst.
+    // What the action offers now: canApply, suggestFirst, next.
     action: { type: Object, default: null },
     labelsOf: { type: Function, required: true },
   },
@@ -55,8 +55,11 @@ const AiProposalsSteps = Vue.component('AiProposalsSteps', {
       const { applied } = this.state;
       return applied ? Object.values(applied)[0] : '';
     },
+    // The action that follows, once this one is applied or copied, where the
+    // registry offers it: not when the skill it calls does not run.
     nextAction() {
-      return this.session.nextAction();
+      const next = this.session.nextAction();
+      return next && this.action && this.action.next === next ? next : null;
     },
     // Said when a request brought nothing new: over the proposals kept, or
     // where the first ones would have been.

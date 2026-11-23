@@ -179,6 +179,11 @@ function createEditorAccess(viewModel) {
       const textGeneration = canUseTextGeneration(viewModel);
       return {
         textGeneration,
+        // The skills that run for the email's company: an action is offered
+        // only while the skill it calls is published and open to it.
+        skills:
+          (viewModel.metadata && viewModel.metadata.textGenerationSkills) ||
+          [],
         hasSubject: Boolean(knownSubject().trim()),
         hasSubjectField: canWriteSubject(viewModel),
         // The whole content is read only when an action may need it.

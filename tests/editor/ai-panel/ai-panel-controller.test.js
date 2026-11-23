@@ -19,6 +19,7 @@ const {
 
 const CONTEXT = {
   textGeneration: true,
+  skills: ['redaction.objet', 'redaction.pre-header', 'redaction.correction'],
   hasSubject: true,
   hasSubjectField: true,
   hasPreheaderField: true,
@@ -297,12 +298,15 @@ describe('ai panel: the controller', () => {
       id: 'rewrite-block',
       family: 'proposals',
       feature: 'textGeneration',
+      skill: 'redaction.reecriture',
       targets: ['block'],
       describe: () => ({ canApply: true }),
     };
+    const context = { ...CONTEXT, skills: [...CONTEXT.skills, rewrite.skill] };
 
     it('opens on its target, which the session knows', () => {
       const { panel, selection } = mount({
+        context,
         definitions: [...ACTIONS, rewrite],
       });
       selection(COVER);
@@ -317,6 +321,7 @@ describe('ai panel: the controller', () => {
 
     it('starts afresh on another block, which is other work', () => {
       const { panel, selection } = mount({
+        context,
         definitions: [...ACTIONS, rewrite],
       });
       selection(COVER);

@@ -1,6 +1,7 @@
 'use strict';
 
 const { userCan } = require('../user-can.js');
+const { availableActions } = require('./action-registry');
 const { CAPABILITIES } = require('../../../../../shared/access/roles.js');
 
 /**
@@ -24,4 +25,24 @@ function canUseTextGeneration(vm) {
   );
 }
 
-module.exports = { canUseTextGeneration };
+/**
+ * Whether the company's text generation offers an AI action on a kind of
+ * target: the registry asked with the company's data alone, the feature and
+ * the skills that run for it. For what is built once, before the current user
+ * is known, as the text editor's toolbar: the panel checks the user's right
+ * when it is opened from there.
+ *
+ * @param {Object} [metadata] the editor metadata
+ * @param {string} kind a target kind (ext/ai-panel/targets.js)
+ * @returns {boolean}
+ */
+function companyOffersOn(metadata, kind) {
+  if (!metadata) return false;
+  const context = {
+    textGeneration: Boolean(metadata.hasTextGenerationFeature),
+    skills: metadata.textGenerationSkills || [],
+  };
+  return availableActions({ kind }, context).actions.length > 0;
+}
+
+module.exports = { canUseTextGeneration, companyOffersOn };

@@ -24,6 +24,7 @@ Vue.config.devtools = false;
 
 const CONTEXT = {
   textGeneration: true,
+  skills: ['redaction.objet', 'redaction.pre-header', 'redaction.correction'],
   hasSubject: true,
   hasSubjectField: true,
   hasPreheaderField: true,

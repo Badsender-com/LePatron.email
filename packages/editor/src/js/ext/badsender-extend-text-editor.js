@@ -1,5 +1,6 @@
 const ko = require('knockout');
 const tinymceConfigFull = require('./utils/tinymce-config');
+const { companyOffersOn } = require('./ai-panel/text-generation-access');
 
 
 /**
@@ -78,13 +79,14 @@ module.exports = (opts) => {
       textEditorOptions,
       opts.tinymce
     );
-    // The AI button opens the field's actions; only a group with text
-    // generation has any (#1257). Added to the toolbar the editor ends up
-    // with, a template's own included.
-    const textEditorFullOptions =
-      viewModel.metadata && viewModel.metadata.hasTextGenerationFeature
-        ? withAiActions(merged)
-        : merged;
+    // The AI button opens the field's actions; only a group whose text
+    // generation offers one on a field has any (#1257): the correction's skill
+    // may not run while the subject's does. Added to the toolbar the editor
+    // ends up with, a template's own included.
+    const offersOnFields = companyOffersOn(viewModel.metadata, 'blockField');
+    const textEditorFullOptions = offersOnFields
+      ? withAiActions(merged)
+      : merged;
 
     ko.bindingHandlers.wysiwyg.fullOptions = textEditorFullOptions;
 
