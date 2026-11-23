@@ -10,7 +10,8 @@
  * stay as they were. A correction it cannot place safely is refused, with the
  * reason:
  * - `unchanged`: `after` is `before`;
- * - `invalid-text`: `after` holds a control or bidirectional character;
+ * - `invalid-text`: `after` holds a control, bidirectional or invisible
+ *   character;
  * - `multiline`: the excerpt straddles two lines of the visible text;
  * - `already-applied`: no `before`, but `after` is there and differs from it
  *   by its spaces only: the text already holds the correction (a
@@ -44,10 +45,11 @@ const MERGE_TAG = new RegExp(
 );
 const DELIMITER = new RegExp(`${ESP_DELIMITER.source}|@\\[`, 'g');
 const WORD_CHAR = /[\p{L}\p{N}]/u;
-// Never text a reader sees: control characters other than a line break, and
-// the bidirectional ones, which would disguise the change shown for review.
+// Never text a reader sees: control characters other than a line break, the
+// bidirectional ones, which would disguise the change shown for review, and
+// the invisible ones (soft hyphen, zero width, separators, byte order mark).
 // eslint-disable-next-line no-control-regex
-const INVALID_CHAR = /[\u0000-\u0009\u000b-\u001f\u007f\u202a-\u202e\u2066-\u2069]/;
+const INVALID_CHAR = /[\u0000-\u0009\u000b-\u001f\u007f\u00ad\u061c\u200b-\u200f\u2028\u2029\u202a-\u202e\u2060-\u2064\u2066-\u2069\ufeff]/;
 // Spaces the rendering collapses into one; a non-breaking space is not one.
 const COLLAPSIBLE = /^[ \t\n\r\f]$/;
 // The spaces a model cannot tell apart: a space, a non-breaking one, a narrow

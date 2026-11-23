@@ -210,6 +210,29 @@ describe('spelling correction: placing a correction', () => {
     /* eslint-enable no-template-curly-in-string */
   });
 
+  // Characters a reader never sees would change the email unseen.
+  it.each([
+    ['a soft hyphen', '\u00ad'],
+    ['an Arabic letter mark', '\u061c'],
+    ['a zero width space', '\u200b'],
+    ['a zero width non-joiner', '\u200c'],
+    ['a zero width joiner', '\u200d'],
+    ['a left-to-right mark', '\u200e'],
+    ['a right-to-left mark', '\u200f'],
+    ['a line separator', '\u2028'],
+    ['a paragraph separator', '\u2029'],
+    ['a word joiner', '\u2060'],
+    ['an invisible plus', '\u2064'],
+    ['a byte order mark', '\ufeff'],
+  ])('refuses a text after holding %s', (_label, char) => {
+    expect(
+      placeCorrection('<p>Les solde</p>', {
+        before: 'solde',
+        after: `sol${char}des`,
+      })
+    ).toEqual({ refused: 'invalid-text' });
+  });
+
   describe('refusing a correction it cannot place safely', () => {
     it.each([
       [
