@@ -196,7 +196,7 @@ _UI_: Expertise
 _Avoid_: Doctrine, knowledge base, guideline (a client's writing guidelines belong to its CRM governance)
 
 **Scope**:
-The part of an email an expertise covers (subject, preheader, call to action…); a transversal expertise has none and applies to every part.
+What an expertise covers: a part of the email (subject, preheader, call to action…) or an AI action (`correction`); a transversal expertise has none and applies to every part of the email.
 _Avoid_: Perimeter, category (an expertise has a category too, which is another thing)
 
 **Feature skill**:
@@ -425,12 +425,12 @@ _UI_: Action IA
 _Avoid_: AI tool, AI command, prompt
 
 **AI panel**:
-The right-hand panel where the user picks an AI action, gives its options and instruction, and chooses among its proposals; it shares its place with the comments and the quality control panels, one open at a time.
+The right-hand panel where the user picks an AI action, gives its options and instruction, chooses among its proposals or accepts its corrections; it shares its place with the comments and the quality control panels, one open at a time.
 _UI_: Outils IA
 _Avoid_: AI sidebar, AI drawer, assistant
 
 **Correction**:
-One localized change to the spelling, grammar or typography of a text, with the text before, the text after and the reason; the user accepts it or ignores it, and nothing is written until they accept. Never a change of style or meaning.
+One localized change to the spelling, grammar or typography of a text, with the text before, the text after and the reason; the user accepts it or ignores it, and nothing is written until they accept. Never a change of style or meaning: one that changes more than three words is flagged as a rewriting, left out of accepting them all.
 _UI_: Correction
 _Avoid_: Suggestion, fix, mistake
 
