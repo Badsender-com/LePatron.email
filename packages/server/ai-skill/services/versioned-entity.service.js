@@ -28,11 +28,7 @@
 
 const createError = require('http-errors');
 const ERROR_CODES = require('../../constant/error-codes.js');
-const {
-  SkillStatuses,
-  MinorVersionDefaults,
-  Audiences,
-} = require('../constant/skill-constants.js');
+const { SkillStatuses, Audiences } = require('../constant/skill-constants.js');
 const {
   findVersion,
   findActiveVersion,
@@ -49,6 +45,7 @@ const {
   readAtOf,
   saveIfUnchanged,
 } = require('./versioned-draft.js');
+const { assertReleaseTexts } = require('./release-texts.js');
 
 /**
  * @param {Object} options
@@ -115,10 +112,9 @@ function createVersionedEntityService({
     'releaseNotes',
   ];
 
-  // A minor draft on top of the active version: a minor release carries no
-  // doctrine change, so it is pre-filled and the activation gate does not ask
-  // for it (unlike a major). These are stored CONTENT, displayed as authored —
-  // see MinorVersionDefaults for why they are French and not an i18n key.
+  // A minor draft on top of the active version. Its changelog and release
+  // notes start empty, as a major's: every publication requires both (ADR
+  // 0031).
   function minorDraftOf(doc, active, userId) {
     const now = new Date();
     return {
@@ -126,8 +122,8 @@ function createVersionedEntityService({
       versionMinor: maxMinorFor(doc, active.versionMajor) + 1,
       status: 'DRAFT',
       ...cloneVersionContent(active),
-      changelog: MinorVersionDefaults.changelog,
-      releaseNotes: MinorVersionDefaults.releaseNotes,
+      changelog: '',
+      releaseNotes: '',
       createdBy: userId,
       createdAt: now,
       updatedBy: userId,
@@ -367,15 +363,12 @@ function createVersionedEntityService({
 
     if (activationGate) await activationGate(version, doc);
 
-    // Major releases require explicit changelog and releaseNotes. Minor
-    // releases inherit the auto-filled defaults from createMinorVersion.
-    const isMajor = version.versionMinor === 0;
-    if (isMajor && (!payload.changelog || !payload.releaseNotes)) {
-      throw createError(
-        400,
-        'changelog and releaseNotes are required to activate a major version'
-      );
-    }
+    // Every publication, minor or major, says what changes and why (ADR
+    // 0031): the texts given, or the draft's own.
+    assertReleaseTexts({
+      changelog: payload.changelog || version.changelog,
+      releaseNotes: payload.releaseNotes || version.releaseNotes,
+    });
     return { version, readAt };
   }
 

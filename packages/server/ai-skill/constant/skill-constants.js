@@ -43,13 +43,10 @@ const InvocationStatuses = Object.freeze({
 
 const InvocationStatusValues = Object.values(InvocationStatuses);
 
-// Default release notes of a minor version, written into the document at
-// creation. French on purpose and by exception: this is editorial CONTENT
-// stored next to the doctrine an author writes — the same French as the prompts
-// and the expertise bodies — not a code message, a log or a UI label. An i18n
-// key cannot be used: the value is persisted once and then displayed and edited
-// as authored, with no locale at hand at creation time.
-const MinorVersionDefaults = Object.freeze({
+// The generic texts a minor version used to get by default, before every
+// publication required its own (ADR 0031): recognised, never written again.
+// French, as they were stored next to the doctrine an author writes.
+const LegacyMinorVersionTexts = Object.freeze({
   changelog: 'Correction mineure',
   releaseNotes: 'Correction mineure sans changement de doctrine.',
 });
@@ -72,7 +69,7 @@ module.exports = {
   SkillStatusValues,
   InvocationStatuses,
   InvocationStatusValues,
-  MinorVersionDefaults,
+  LegacyMinorVersionTexts,
   SkillIdRegex,
   SectionIdRegex,
   MaxSkillIdLength,

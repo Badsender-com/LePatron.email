@@ -56,7 +56,12 @@ const save = (consumedExpertiseIds) =>
   );
 
 const publish = () =>
-  skillService.activateVersion(SKILL_ID, { major: 1, minor: 1 }, {}, null);
+  skillService.activateVersion(
+    SKILL_ID,
+    { major: 1, minor: 1 },
+    { changelog: 'c', releaseNotes: 'r' },
+    null
+  );
 
 beforeEach(() => {
   jest.clearAllMocks();

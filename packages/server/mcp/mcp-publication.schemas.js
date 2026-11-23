@@ -5,6 +5,9 @@
 const { z } = require('zod');
 const { ID } = require('./mcp-authoring.schemas.js');
 const { MAX_KEY_LENGTH } = require('./mcp-confirmation.js');
+const {
+  MAX_RELEASE_NOTE_LENGTH,
+} = require('../ai-skill/services/release-texts.js');
 
 // What an assistant may send: bounded, like every input of this server.
 const MAX_TEXT_LENGTH = 2000;
@@ -43,14 +46,14 @@ const PUBLISH_INPUT = z.object({
     .max(MAX_TEXT_LENGTH)
     .optional()
     .describe(
-      "What changes and why, in French. Default: the draft's own changelog. A major version needs one. Give the same at both calls."
+      "How and why the version was written, in French, for the platform company alone. Default: the draft's own changelog. Every version needs one. Give the same at both calls."
     ),
   releaseNotes: z
     .string()
-    .max(MAX_TEXT_LENGTH)
+    .max(MAX_RELEASE_NOTE_LENGTH)
     .optional()
     .describe(
-      "What users of the features will notice, in French. Default: the draft's own notes. A major version needs them. Give the same at both calls."
+      `The release note every company reading the item reads: what changes for whoever uses it, in French, ${MAX_RELEASE_NOTE_LENGTH} characters at most. Default: the draft's own. Every version needs one. Give the same at both calls.`
     ),
 });
 
