@@ -46,6 +46,9 @@ const CAPABILITIES = Object.freeze({
   MAILING_EDIT_STYLE: 'mailing.edit-style',
   // Comment, reply, resolve, approve.
   MAILING_COMMENT: 'mailing.comment',
+  // Ignore a quality finding, or stop ignoring it: the choice holds for
+  // everyone who works on the email, so it is not the writer's to make.
+  MAILING_IGNORE_QUALITY: 'mailing.ignore-quality',
   MAILING_SEND_TEST: 'mailing.send-test',
   // ZIP, FTP or CDN hosting, ESP.
   MAILING_EXPORT: 'mailing.export',
@@ -87,6 +90,7 @@ const WRITER_CAPABILITIES = REVIEWER_CAPABILITIES.concat([
 const REGULAR_USER_CAPABILITIES = WRITER_CAPABILITIES.concat([
   C.MAILING_CREATE,
   C.MAILING_DELETE,
+  C.MAILING_IGNORE_QUALITY,
   C.MAILING_EDIT_STRUCTURE,
   C.MAILING_EDIT_STYLE,
   C.FOLDER_DELETE,

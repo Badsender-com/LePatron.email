@@ -110,7 +110,7 @@ const ROLE_ROUTES = {
   'POST /api/mailings/:mailingId/mosaico/download-zip': C.MAILING_EXPORT,
   'POST /api/mailings/download-multiple-zip': C.MAILING_EXPORT,
   'POST /api/profiles/:mailingId/send-campaign-mail': C.MAILING_EXPORT,
-  'PATCH /api/mailings/:mailingId/quality-ignores': C.MAILING_EDIT_CONTENT,
+  'PATCH /api/mailings/:mailingId/quality-ignores': C.MAILING_IGNORE_QUALITY,
   'POST /api/mailings/:mailingId/share-links': C.MAILING_SEND_TEST,
   'DELETE /api/mailings/:mailingId/share-links/:linkId': C.MAILING_SEND_TEST,
   'POST /api/folders': C.FOLDER_MANAGE,

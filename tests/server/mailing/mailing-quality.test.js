@@ -1,9 +1,10 @@
 'use strict';
 
-// Ignoring a quality finding is shared by everyone who edits the email, so the
-// endpoint takes the same access control as editing it. The access control is
-// the real one (mailing.service): only the database and the two access
-// services behind it are stubbed.
+// Ignoring a quality finding is shared by everyone who works on the email: on
+// top of its capability (mailing.routes.quality.test.js), the endpoint takes
+// the same access control as editing it. The access control is the real one
+// (mailing.service): only the database and the two access services behind it
+// are stubbed.
 
 jest.mock('../../../packages/server/common/models.common.js', () => ({
   Mailings: { findOne: jest.fn(), updateOne: jest.fn() },

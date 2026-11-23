@@ -37,8 +37,9 @@ const QualityDrawer = Vue.component('QualityDrawer', {
     // The row a blocking modal asked to show (viewModel.quality.reveal).
     focus: null,
     errorCount: 0,
-    // Ignoring is shared by everyone who edits the email, so it takes the
-    // same right: a reviewer sees the button, greyed out.
+    // Ignoring is shared by everyone who works on the email, so it takes its
+    // own right (`mailing.ignore-quality`): a writer or a reviewer sees the
+    // button, greyed out.
     ignoreLocked: true,
   }),
   computed: {
@@ -90,7 +91,7 @@ const QualityDrawer = Vue.component('QualityDrawer', {
       this.subscriptions.push(
         bind(this.vm.currentUser, () => {
           this.ignoreLocked = !this.vm.userCan(
-            CAPABILITIES.MAILING_EDIT_CONTENT
+            CAPABILITIES.MAILING_IGNORE_QUALITY
           );
         })
       );

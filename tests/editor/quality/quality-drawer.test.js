@@ -19,7 +19,9 @@ const {
   installQualityReview,
 } = require('../../../packages/editor/src/js/ext/quality/quality-review.js');
 const { fakeViewModel } = require('./fake-view-model');
-const { CAPABILITIES } = require('../../../packages/shared/access/roles.js');
+const { userOfRole } = require('../helpers/current-user');
+const { userCan } = require('../../../packages/editor/src/js/ext/user-can.js');
+const { ROLES } = require('../../../packages/shared/access/roles.js');
 const en = require('../../../public/lang/badsender-en.js');
 const fr = require('../../../public/lang/badsender-fr.js');
 
@@ -49,16 +51,18 @@ const sizeCheck = {
 const apps = [];
 let changeContent = () => {};
 
-// `user` as the editor loads it: null until known. `canEdit` stands for the
-// right to edit the content (ext/user-can.js), which ignoring takes.
-// `strings`, a language of public/lang, translates the drawer as the editor
-// does; `qualitySettings`, the mailing's resolved quality settings.
+const regularUser = () => userOfRole(ROLES.REGULAR_USER)();
+
+// `user` as the editor loads it: null until known, then with the capabilities
+// of its role (ext/user-can.js). `ignored`, the fingerprints the email already
+// ignores. `strings`, a language of public/lang, translates the drawer as the
+// editor does; `qualitySettings`, the mailing's resolved quality settings.
 async function mountDrawer(
   result,
   {
     ignoreUrl = '/api/m1/ignores',
-    user = { id: 'u1' },
-    canEdit = true,
+    user = regularUser(),
+    ignored = [],
     strings,
     qualitySettings,
   } = {}
@@ -70,13 +74,11 @@ async function mountDrawer(
   }
   if (qualitySettings) vm.metadata.qualitySettings = qualitySettings;
   vm.currentUser = ko.observable(user);
-  vm.userCan = (capability) =>
-    !!vm.currentUser() &&
-    canEdit &&
-    capability === CAPABILITIES.MAILING_EDIT_CONTENT;
+  vm.userCan = (capability) => userCan(vm, capability);
   vm.selectBlock = jest.fn();
   vm.notifier = { warning: jest.fn(), error: jest.fn() };
   vm.metadata.url = { qualityIgnores: ignoreUrl };
+  vm.metadata.qualityIgnores = ignored;
   installQualityReview(vm, ko, {
     run: () => result,
     defer: (fn) => fn(),
@@ -427,22 +429,95 @@ describe('QualityDrawer', () => {
     expect(el.querySelector('.qc-undo')).toBeNull();
   });
 
-  it('greys out Ignore for a role that may not edit the email', async () => {
-    const { vm, el } = await mountDrawer(
-      { findings: [linkFinding], checks: [] },
-      { canEdit: false }
-    );
+  // Ignoring hides a finding for everyone who works on the email: the authors
+  // decide it, not the writer nor the reviewer (docs/plans/rbac-refonte.md,
+  // row 25). The same right stops ignoring.
+  const MAY_IGNORE = {
+    [ROLES.SUPER_ADMIN]: true,
+    [ROLES.GROUP_ADMIN_TECH]: true,
+    [ROLES.GROUP_ADMIN]: true,
+    [ROLES.REGULAR_USER]: true,
+    [ROLES.WRITER]: false,
+    [ROLES.REVIEWER]: false,
+  };
+  const ignoredFinding = {
+    ...linkFinding,
+    blockId: 'b2',
+    fingerprint: 'unfilled-links|b2|-|x',
+  };
+
+  it('settles Ignore for every role', () => {
+    expect(Object.keys(MAY_IGNORE).sort()).toEqual(Object.values(ROLES).sort());
+  });
+
+  it.each(Object.values(ROLES))(
+    'offers Ignore and Stop ignoring to a %s only if they may ignore',
+    async (role) => {
+      const { vm, el } = await mountDrawer(
+        { findings: [linkFinding, ignoredFinding], checks: [] },
+        { user: userOfRole(role)(), ignored: [ignoredFinding.fingerprint] }
+      );
+      vm.quality.run();
+      await Vue.nextTick();
+      const locked = !MAY_IGNORE[role];
+
+      el.querySelector('.qc-row__head').click();
+      await Vue.nextTick();
+      const ignore = buttonNamed(el, 'quality-action-ignore');
+      expect(ignore.disabled).toBe(locked);
+      expect(ignore.getAttribute('title')).toBe(
+        locked ? 'quality-ignore-locked' : null
+      );
+
+      el.querySelector('.qc-group--ignored .qc-group__toggle').click();
+      await Vue.nextTick();
+      el.querySelector('.qc-group--ignored .qc-row__head').click();
+      await Vue.nextTick();
+      const stop = buttonNamed(el, 'Stop ignoring');
+      expect(stop.disabled).toBe(locked);
+      expect(stop.getAttribute('title')).toBe(
+        locked ? 'quality-ignore-locked' : null
+      );
+    }
+  );
+
+  it.each([ROLES.WRITER, ROLES.REVIEWER])(
+    'stores nothing when a %s clicks the greyed-out buttons',
+    async (role) => {
+      const { vm, el } = await mountDrawer(
+        { findings: [linkFinding, ignoredFinding], checks: [] },
+        { user: userOfRole(role)(), ignored: [ignoredFinding.fingerprint] }
+      );
+      vm.quality.run();
+      await Vue.nextTick();
+
+      el.querySelector('.qc-row__head').click();
+      await Vue.nextTick();
+      buttonNamed(el, 'quality-action-ignore').click();
+      el.querySelector('.qc-group--ignored .qc-group__toggle').click();
+      await Vue.nextTick();
+      el.querySelector('.qc-group--ignored .qc-row__head').click();
+      await Vue.nextTick();
+      buttonNamed(el, 'Stop ignoring').click();
+      await Vue.nextTick();
+
+      expect(vm.quality.ignored()).toEqual([ignoredFinding.fingerprint]);
+    }
+  );
+
+  it('greys out Ignore where the email may only be read', async () => {
+    const { vm, el } = await mountDrawer({
+      findings: [linkFinding],
+      checks: [],
+    });
+    vm.canWriteMailing = false;
+    vm.currentUser(regularUser());
     vm.quality.run();
     await Vue.nextTick();
     el.querySelector('.qc-row__head').click();
     await Vue.nextTick();
 
-    const ignore = buttonNamed(el, 'quality-action-ignore');
-    expect(ignore.disabled).toBe(true);
-    expect(ignore.getAttribute('title')).toBe('quality-ignore-locked');
-    ignore.click();
-    await Vue.nextTick();
-    expect(vm.quality.ignored()).toEqual([]);
+    expect(buttonNamed(el, 'quality-action-ignore').disabled).toBe(true);
   });
 
   it('keeps Ignore locked until the user is known', async () => {
@@ -456,7 +531,7 @@ describe('QualityDrawer', () => {
     await Vue.nextTick();
     expect(buttonNamed(el, 'quality-action-ignore').disabled).toBe(true);
 
-    vm.currentUser({ id: 'u1' });
+    vm.currentUser(regularUser());
     await Vue.nextTick();
     const ignore = buttonNamed(el, 'quality-action-ignore');
     expect(ignore.disabled).toBe(false);

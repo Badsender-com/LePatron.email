@@ -26,9 +26,11 @@ module.exports = {
  *
  * @apiSuccess {String[]} qualityIgnores the fingerprints ignored on the email
  *
- * @apiDescription Ignoring a finding is shared by everyone who edits the email,
- *   so it takes the same right as editing it. Any other key in the body is a
- *   422 `INVALID_QUALITY_IGNORE`.
+ * @apiDescription Ignoring a finding is shared by everyone who works on the
+ *   email: it takes its own capability (`mailing.ignore-quality`, which a
+ *   writer and a reviewer do not hold, 403 `FORBIDDEN_CAPABILITY`) and the
+ *   right to write where the email lives. Any other key in the body is a 422
+ *   `INVALID_QUALITY_IGNORE`.
  */
 async function updateQualityIgnores(req, res) {
   const { user } = req;

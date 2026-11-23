@@ -501,7 +501,7 @@ module.exports = {
   'quality-action-cancel': 'Cancel',
   'quality-action-ignore': 'Ignore',
   'quality-ignore-locked':
-    'Only someone who can edit this mailing can ignore a finding',
+    'You are not allowed to ignore a finding on this email',
   'quality-action-undo': 'Undo',
   // The editor's own undo button (undomanager/undomain.js).
   Undo: 'Undo',

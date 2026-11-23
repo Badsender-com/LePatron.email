@@ -516,7 +516,7 @@ module.exports = {
   'quality-action-cancel': 'Annuler',
   'quality-action-ignore': 'Ignorer',
   'quality-ignore-locked':
-    'Seule une personne qui peut modifier cet email peut ignorer un résultat',
+    "Vous n'avez pas le droit d'ignorer un résultat sur cet email",
   'quality-action-undo': 'Annuler',
   // The editor's own undo button (undomanager/undomain.js).
   Undo: 'Annuler',
