@@ -14,14 +14,14 @@ const { FIELD_TARGETS } = require('./targets');
 
 const ATTRIBUTE = 'data-ai-target';
 
-function createIcon(kind, { onOpen, label, anchor }) {
+function createIcon(kind, { onOpen, label }) {
   const icon = document.createElement('button');
   icon.type = 'button';
   icon.className = 'ai-field-icon';
   icon.setAttribute(ATTRIBUTE, kind);
   icon.setAttribute('aria-label', label);
-  // A Mosaico property label already shows its own tooltip on hover.
-  if (!anchor.closest('[title]')) icon.title = label;
+  // Its own, over the help a Mosaico property label shows on hover.
+  icon.title = label;
   icon.innerHTML = '<span class="lucide lucide-bot" aria-hidden="true"></span>';
   icon.addEventListener('click', (event) => {
     // The preheader label sits in a property editor that selects on click.
@@ -53,7 +53,7 @@ function placeFieldIcons(
       return;
     }
     if (existing) return;
-    const icon = createIcon(kind, { onOpen, label: labelFor(kind), anchor });
+    const icon = createIcon(kind, { onOpen, label: labelFor(kind) });
     // Right after the field's label, the same for both fields.
     const label = anchor.querySelector('label, span');
     if (label) label.after(icon);

@@ -108,6 +108,25 @@ describe('ai panel: AI icons on the fields', () => {
     ).toBe('Générer : preheader');
   });
 
+  it('shows the name of its action on hover, over the help of the property it sits in', () => {
+    const root = render(
+      PREHEADER_FIELD.replace(
+        '<span class="propLabel">',
+        '<span class="propLabel" title="This text will be shown in the inbox">'
+      )
+    );
+    placeFieldIcons(root, {
+      actionsFor: always,
+      onOpen: jest.fn(),
+      labelFor: () => 'Générer le préheader avec l’IA',
+    });
+    const icon = root.querySelector('[data-ai-target="preheader"]');
+    expect(icon.title).toBe('Générer le préheader avec l’IA');
+    expect(icon.getAttribute('aria-label')).toBe(
+      'Générer le préheader avec l’IA'
+    );
+  });
+
   it('opens its target on click, and is a labelled button', () => {
     const onOpen = jest.fn();
     const root = render(PREHEADER_FIELD);
