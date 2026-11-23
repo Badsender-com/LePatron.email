@@ -163,7 +163,7 @@ export default {
   margin: 0 auto;
   border: none;
   border-radius: 50%;
-  background: rgba(0, 172, 220, 0.1);
+  background: var(--accent-tint-active);
   color: var(--v-primary-base, #093040);
   font-size: 13px;
   font-weight: 600;
@@ -171,7 +171,7 @@ export default {
 }
 
 .bs-sidebar-company-switcher__badge:hover {
-  background: rgba(0, 172, 220, 0.2);
+  background: var(--accent-tint-active-hover);
 }
 
 .bs-sidebar-company-switcher__select ::v-deep .v-input__slot {

@@ -279,7 +279,7 @@ export default {
               {{ $t('groups.modules.crmIntelligence.description') }}
             </template>
             <template v-if="localModel.enableCrmIntelligence" #hint>
-              <lucide-arrow-right :size="14" color="#9e9e9e" />
+              <lucide-arrow-right :size="14" />
               {{ $t('groups.modules.crmIntelligence.configHint') }}
             </template>
             <template #control>

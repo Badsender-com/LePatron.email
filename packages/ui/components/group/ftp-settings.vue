@@ -322,7 +322,7 @@ export default {
     }
 
     &.v-input--is-focused ::v-deep .v-input__slot {
-      border-color: #00acdc !important;
+      border-color: var(--v-accent-base) !important;
     }
 
     &.error--text ::v-deep .v-input__slot {

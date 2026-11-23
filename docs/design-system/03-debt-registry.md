@@ -62,12 +62,13 @@ _Measured in November 2026 on `packages/ui` (counts are of occurrences found in 
 
 ### DEBT-004: Hardcoded Colors
 
-|               |                                                                                           |
-| ------------- | ----------------------------------------------------------------------------------------- |
-| **Severity**  | Low                                                                                       |
-| **Plan**      | Phase 2                                                                                   |
-| **Current**   | About 167 hexadecimal literals in `.vue` styles                                           |
-| **Direction** | Replace with CSS variables (see [01-tokens.md](./01-tokens.md#brand-colors-customizable)) |
+|               |                                                                                                                                                                                                              |
+| ------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| **Severity**  | Low                                                                                                                                                                                                          |
+| **Plan**      | Phase 2                                                                                                                                                                                                      |
+| **Current**   | About 167 hexadecimal literals in `.vue` styles                                                                                                                                                              |
+| **Accent**    | The company settings and the sidebar take the `--accent-tint-*` tokens; 17 accent tints in `rgba(0, 172, 220, …)` remain in 8 files (template form and tracking, the templates, profiles and mailings lists) |
+| **Direction** | Replace with CSS variables (see [01-tokens.md](./01-tokens.md#brand-colors-customizable))                                                                                                                    |
 
 ---
 

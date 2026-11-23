@@ -152,7 +152,7 @@ export default {
 }
 
 .dashboard-item--active {
-  background-color: rgba(0, 172, 220, 0.1);
+  background-color: var(--accent-tint-active);
   color: var(--v-accent-base);
   font-weight: 500;
 }

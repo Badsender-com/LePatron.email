@@ -1055,10 +1055,10 @@ export default {
     }
 
     .v-treeview-node--active > .v-treeview-node__root {
-      background-color: rgba(0, 172, 220, 0.1);
+      background-color: var(--accent-tint-active);
 
       &:hover {
-        background-color: rgba(0, 172, 220, 0.15);
+        background-color: var(--accent-tint-active-hover);
       }
     }
 

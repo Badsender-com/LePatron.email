@@ -50,7 +50,7 @@ export default {
   }
 
   &:hover {
-    border-color: rgba(0, 172, 220, 0.4);
+    border-color: var(--accent-border-hover);
   }
 
   &__row {
@@ -73,10 +73,10 @@ export default {
     display: flex;
     align-items: center;
     justify-content: center;
-    background-color: rgba(0, 172, 220, 0.1);
+    background-color: var(--accent-tint-tile);
     border-radius: 8px;
     flex-shrink: 0;
-    color: #00acdc;
+    color: var(--v-accent-base);
   }
 
   &__info {

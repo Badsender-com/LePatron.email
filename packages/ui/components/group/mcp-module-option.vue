@@ -94,7 +94,7 @@ export default {
         {{ $t('groups.modules.mcp.description') }}
       </template>
       <template v-if="group.enableMcpModule" #hint>
-        <lucide-arrow-right :size="14" color="#9e9e9e" />
+        <lucide-arrow-right :size="14" />
         {{ $t('groups.modules.mcp.configHint') }}
       </template>
       <template #control>

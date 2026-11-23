@@ -203,12 +203,12 @@ export default {
     justify-content: center;
 
     &:hover {
-      border-color: #00acdc;
-      background: rgba(0, 172, 220, 0.05);
+      border-color: var(--v-accent-base);
+      background: var(--accent-tint-hover);
 
       .color-card__add-icon,
       .color-card__add-label {
-        color: #00acdc;
+        color: var(--v-accent-base);
       }
     }
   }
