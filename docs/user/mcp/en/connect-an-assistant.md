@@ -2,7 +2,7 @@
 
 Your AI assistant (Claude, ChatGPT, Copilot…) can read LePatron on your behalf:
 
-- the platform company's expertises and skills, to use them when you ask it to write or review an email;
+- the platform company's expertises and skills, to use them when you ask it to write or review an email, and what is new in them ([Following what is new](./catalog-changes.md));
 - your mailings: it lists them (by workspace, folder, author, tags or dates, with their status) and reads their text, or the HTML of their preview. Personalization variables, such as `{{firstname}}`, stay as they are. Claude, ChatGPT, Microsoft 365 Copilot and VS Code also show the email itself in the conversation, without running any script; images hosted outside LePatron, such as a template's logo on a CDN, show too: LePatron fetches and serves them itself. An image at an `http://` address rather than an `https://` one, an image it cannot fetch, or one that is neither a PNG, a JPEG, a GIF nor a WebP, shows as its alternative text. The email's tracking pixels are fetched like the other images.
 
 It does so with **your rights**, in **one company only**: yours, which the connection screen shows. It changes nothing in your emails, skills or settings: the only things it sends LePatron are your feedback, when you ask it to, and your retex, which you approve one by one ([Retex](./retex.md)).
@@ -42,6 +42,17 @@ The connection uses MCP (Model Context Protocol), which all these assistants sup
 The consent screen shows at every new connection: that is where a super admin picks the company; any other user sees their own there.
 
 Assistants installed on your computer, such as Cursor or Claude Code, connect through a `localhost` address: LePatron sends its answer back to your own machine. An assistant that asks to come back through an address of its own (`cursor://…`) is refused.
+
+## Working for several companies
+
+A connection is bound to one company, and every conversation of the same assistant shares it. A super admin who works for several companies therefore adds **one connector per company**, each under its own name, and picks the company on the consent screen of each. In Claude Code, for instance:
+
+```bash
+claude mcp add --transport http lepatron-platform https://app.lepatron.email/mcp
+claude mcp add --transport http lepatron-client https://app.lepatron.email/mcp
+```
+
+Each answer then comes from the company of the connector called, with no risk of one conversation changing another's company. A scheduled task, such as the weekly follow-up of what is new, uses the platform company's connector.
 
 ## See and revoke your connected applications
 
