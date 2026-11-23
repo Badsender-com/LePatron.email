@@ -896,8 +896,7 @@ module.exports = {
   'text-generation-applied-preheader': 'Preheader:',
   'text-generation-applied-subject': 'Subject:',
   'text-generation-long': 'long: its end will rarely be read',
-  'text-generation-short':
-    'short: some inboxes complete it with the start of the email',
+  'text-generation-too-long': 'too long: inboxes cut it well before',
   'text-generation-copy-hint-preheader':
     'This template has no editable preheader: copy a proposal and paste it in your sending platform.',
   'text-generation-back': 'Back',

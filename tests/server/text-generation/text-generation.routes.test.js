@@ -26,9 +26,18 @@ jest.mock('../../../packages/server/mailing/mailing.service', () => ({
 }));
 jest.mock('../../../packages/server/mailing/mailing-metadata.service', () => ({
   findCanonicalEmailType: jest.fn(),
+  // The limit saving the subject applies: a proposal past it is dropped.
+  MAX_SUBJECT_LENGTH: jest.requireActual(
+    '../../../packages/server/mailing/mailing-metadata.service'
+  ).MAX_SUBJECT_LENGTH,
 }));
+// A query as the service chains it: `findById(id).select(…).lean()`.
+const mockFoundDocument = (document) => ({
+  select: () => ({ lean: () => Promise.resolve(document) }),
+});
 jest.mock('../../../packages/server/common/models.common.js', () => ({
   Templates: { findById: jest.fn() },
+  Groups: { findById: jest.fn(() => mockFoundDocument(null)) },
 }));
 jest.mock('../../../packages/server/account/auth.guard', () => ({
   // The capability guard has its own tests: here it only has to be on the
@@ -398,7 +407,7 @@ describe('text generation: POST /api/text-generation/subject', () => {
             angle: 'Personnalisation',
             facts: {
               length: 7,
-              mobilePreview: 'Bonjour {{prenom}}',
+              mobilePreview: 'Bonjour',
               truncatedOnMobile: false,
             },
           },
@@ -537,11 +546,50 @@ describe('text generation: POST /api/text-generation/subject', () => {
       await keepsOnly(['L'.repeat(256), 'Lin : -30 %'], ['Lin : -30 %']);
     });
 
+    it('measures the limit of the subject field on the text as saved, variables included', async () => {
+      // 250 characters in an inbox, 261 in the field.
+      await keepsOnly(
+        [`{{prenom}} ${'L'.repeat(250)}`, 'Lin : -30 %'],
+        ['Lin : -30 %']
+      );
+    });
+
+    it('keeps a brand name that only looks like a reply prefix', async () => {
+      await keepsOnly(
+        ['Re:Think : le lin à -30 %'],
+        ['Re:Think : le lin à -30 %']
+      );
+    });
+
+    it.each([
+      ['a Liquid tag', 'Lin : -30 % {% if vip %}en avant-première{% endif %}'],
+      ['an Adobe Campaign tag', '<%= recipient.firstName %>, le lin à -30 %'],
+    ])(
+      'drops a proposal with %s the email does not use',
+      async (_label, text) => {
+        await keepsOnly([text, 'Lin : -30 %'], ['Lin : -30 %']);
+      }
+    );
+
     it('drops a duplicate and a proposal the user already saw', async () => {
       await keepsOnly(
         ['Soldes : -30 % sur le lin', 'Lin : -30 %', 'Lin : -30 %'],
         ['Lin : -30 %']
       );
+    });
+
+    it('cuts the mobile preview from the text the length counts', async () => {
+      invoke.mockResolvedValue(
+        proposals('{{prenom}}, la collection lin est à -30 % jusqu’à dimanche')
+      );
+      const res = await request(makeApp())
+        .post('/api/text-generation/subject')
+        .send(body);
+      expect(res.body.proposals[0].facts).toEqual({
+        length: 48,
+        mobilePreview: ', la collection lin est à -30 % jus',
+        truncatedOnMobile: true,
+      });
     });
   });
 
@@ -890,15 +938,17 @@ describe('text generation: POST /api/text-generation/preheader', () => {
     });
   });
 
-  it('returns each proposal with its length and the short and long signals', async () => {
+  it('returns each proposal with its length and the long signals of the quality control, never a short one', async () => {
+    const long = `Jusqu’au dimanche 12 mai inclus, ${'sur tout le rayon '.repeat(
+      4
+    )}`;
+    const tooLong = `${long}${'et en magasin '.repeat(4)}`;
     invoke.mockResolvedValue({
       output: {
         proposals: [
           { text: 'Mardi 15 mars à 11h, en ligne', angle: 'Date' },
-          {
-            text: 'Jusqu’au dimanche 12 mai inclus, sur tout le rayon hiver',
-            angle: 'Condition',
-          },
+          { text: long, angle: 'Condition' },
+          { text: tooLong, angle: 'Lieu' },
         ],
       },
     });
@@ -911,16 +961,103 @@ describe('text generation: POST /api/text-generation/preheader', () => {
         {
           text: 'Mardi 15 mars à 11h, en ligne',
           angle: 'Date',
-          facts: { length: 29, tooShort: true, tooLong: false },
+          facts: { length: 29, long: false, tooLong: false },
         },
         {
-          text: 'Jusqu’au dimanche 12 mai inclus, sur tout le rayon hiver',
+          text: long,
           angle: 'Condition',
-          facts: { length: 56, tooShort: false, tooLong: false },
+          facts: { length: 104, long: true, tooLong: false },
+        },
+        {
+          text: tooLong,
+          angle: 'Lieu',
+          facts: { length: 160, long: true, tooLong: true },
         },
       ],
       dropped: 0,
     });
+  });
+
+  describe('with the quality settings of the mailing', () => {
+    const models = () =>
+      require('../../../packages/server/common/models.common.js');
+    const settings = (preheader) => ({
+      qualitySettings: { checks: { preheader } },
+    });
+    const factsOf = async (text) => {
+      invoke.mockResolvedValue(proposals(text));
+      const res = await request(makeApp())
+        .post('/api/text-generation/preheader')
+        .send(body);
+      return res.body.proposals[0].facts;
+    };
+
+    beforeEach(() => {
+      mailingService.findOneForUser.mockResolvedValue({
+        id: MAILING_ID,
+        _wireframe: 't1',
+      });
+      models().Templates.findById.mockReturnValue(
+        mockFoundDocument({ _company: 'g1' })
+      );
+      models().Groups.findById.mockReturnValue(
+        mockFoundDocument(settings({ thresholds: { long: 40, tooLong: 50 } }))
+      );
+    });
+
+    const text = 'Jusqu’au dimanche 12 mai inclus, sur tout le rayon hiver';
+
+    it('signals a length past the thresholds of the company', async () => {
+      expect(await factsOf(text)).toEqual({
+        length: 56,
+        long: true,
+        tooLong: true,
+      });
+      expect(models().Groups.findById).toHaveBeenCalledWith('g1');
+    });
+
+    it('takes the thresholds of the template over the company', async () => {
+      models().Templates.findById.mockReturnValue(
+        mockFoundDocument({
+          _company: 'g1',
+          ...settings({ thresholds: { tooLong: 60 } }),
+        })
+      );
+      expect(await factsOf(text)).toEqual({
+        length: 56,
+        long: true,
+        tooLong: false,
+      });
+    });
+
+    it('signals nothing when the company turned the preheader check off', async () => {
+      models().Groups.findById.mockReturnValue(
+        mockFoundDocument(
+          settings({ state: 'off', thresholds: { long: 40, tooLong: 50 } })
+        )
+      );
+      expect(await factsOf(text)).toEqual({
+        length: 56,
+        long: false,
+        tooLong: false,
+      });
+    });
+  });
+
+  it('drops a proposal that repeats the picked subject, as a broken rule', async () => {
+    invoke.mockResolvedValue(
+      proposals(
+        'Lin : -30 % et livraison offerte, jusqu’à dimanche',
+        'Jusqu’au dimanche 12 mai inclus, sur tout le rayon lin'
+      )
+    );
+    const res = await request(makeApp())
+      .post('/api/text-generation/preheader')
+      .send(body);
+    expect(res.body.proposals.map((p) => p.text)).toEqual([
+      'Jusqu’au dimanche 12 mai inclus, sur tout le rayon lin',
+    ]);
+    expect(res.body.dropped).toBe(1);
   });
 
   it.each([

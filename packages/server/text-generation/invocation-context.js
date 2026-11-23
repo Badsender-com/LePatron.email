@@ -9,6 +9,7 @@ const ERROR_CODES = require('../constant/error-codes.js');
 const { Templates } = require('../common/models.common.js');
 const { resourceGroupIdOf } = require('../account/request-scope.js');
 const manifest = require('./skill-manifest.js');
+const { qualitySettingsOf } = require('./proposal-settings.js');
 
 // What every invocation of text generation starts from (ADR 0016): the
 // mailing the user may edit, the group of the request, the email type and the
@@ -83,7 +84,12 @@ async function prepare({ user, mailingId, scope }) {
     })
   );
 
-  return { groupId, emailType: emailType || undefined, expertise };
+  return {
+    groupId,
+    emailType: emailType || undefined,
+    expertise,
+    qualitySettings: await qualitySettingsOf(mailing),
+  };
 }
 
 module.exports = { prepare, compact };
