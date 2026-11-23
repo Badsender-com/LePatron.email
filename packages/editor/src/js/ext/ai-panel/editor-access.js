@@ -8,6 +8,7 @@ const {
   canWritePreheader,
   writePreheader,
 } = require('../email-preheader');
+const { canUseTextGeneration } = require('./text-generation-access');
 
 /**
  * What the AI actions read from and write into the email being edited: the
@@ -55,9 +56,9 @@ function createEditorAccess(viewModel) {
     stopMultiple: () => viewModel.stopMultiple(),
     // The context the action registry decides from.
     context() {
-      const textGeneration = Boolean(
-        viewModel.metadata.hasTextGenerationFeature
-      );
+      // For this user on this email, not only for the company: what the
+      // text generation routes would accept.
+      const textGeneration = canUseTextGeneration(viewModel);
       return {
         textGeneration,
         hasSubject: Boolean(knownSubject().trim()),

@@ -5,6 +5,9 @@ const { AiPanel } = require('./components/ai-panel/ai-panel');
 const { installRightPanel } = require('../ext/right-panel');
 const { createEditorAccess } = require('../ext/ai-panel/editor-access');
 const { createAiPanel } = require('../ext/ai-panel/ai-panel-controller');
+const {
+  canUseTextGeneration,
+} = require('../ext/ai-panel/text-generation-access');
 const { generateSubjects, generatePreheaders } = require('./utils/apis');
 
 // The text generation routes the "proposals" actions call, by route name.
@@ -17,37 +20,57 @@ const api = {
 
 let app = null;
 let panel = null;
+// The view model the panel waits for the current user of: a template swapped
+// in the meantime mounts nothing for the one it left.
+let pending = null;
+
+function mount(vm) {
+  panel = createAiPanel({
+    ko,
+    editor: createEditorAccess(vm),
+    api,
+    isOpen: vm.showAi,
+    selection: vm.selectedBlock,
+  });
+
+  Vue.component('AiPanelPlugin', {
+    components: { AiPanel },
+    data: () => ({ viewModel: vm, panel }),
+    template: '<ai-panel :vm="viewModel" :panel="panel"></ai-panel>',
+  });
+
+  app = new Vue({ el: '#ai-panel' });
+}
 
 module.exports = {
   viewModel(vm) {
     // Before bindings: the top bar button and the panel bind to this flag of
     // the editor's one right panel (ext/right-panel.js).
     vm.showAi = installRightPanel(vm, ko).flag('ai');
+    // The condition of the top bar button, the same as the panel's.
+    vm.canUseTextGeneration = () => canUseTextGeneration(vm);
   },
   init(vm) {
-    // Nothing to offer without an AI action: no panel, no work behind it.
-    if (!vm.metadata.hasTextGenerationFeature) return;
     if (!document.getElementById('ai-panel')) return;
-
-    panel = createAiPanel({
-      ko,
-      editor: createEditorAccess(vm),
-      api,
-      isOpen: vm.showAi,
-      selection: vm.selectedBlock,
-    });
-
-    Vue.component('AiPanelPlugin', {
-      components: { AiPanel },
-      data: () => ({ viewModel: vm, panel }),
-      template: '<ai-panel :vm="viewModel" :panel="panel"></ai-panel>',
-    });
-
-    app = new Vue({ el: '#ai-panel' });
+    // The rights come with the current user, loaded after the editor starts.
+    // Nothing to offer without an AI action for this user on this email: no
+    // panel, no work behind it.
+    pending = vm;
+    const mountIfAllowed = () => {
+      if (pending !== vm) return;
+      pending = null;
+      if (canUseTextGeneration(vm)) mount(vm);
+    };
+    if (typeof vm.whenCurrentUser === 'function') {
+      vm.whenCurrentUser(mountIfAllowed);
+    } else {
+      mountIfAllowed();
+    }
   },
   // Called by the template loader when the editor swaps templates: the panel
   // lets go of the view model it subscribed to.
   dispose() {
+    pending = null;
     if (app) {
       app.$destroy();
       app = null;

@@ -42,6 +42,49 @@ describe('ai panel: the action registry', () => {
     });
   });
 
+  // The context says what the user may do on this email
+  // (ext/ai-panel/text-generation-access.js): without the right to edit the
+  // content, text generation is off, as when the group has it off.
+  describe('a user who may not run the actions', () => {
+    const DENIED = { ...ON, textGeneration: false };
+
+    it.each([
+      [{ kind: 'email' }],
+      [{ kind: 'subject' }],
+      [{ kind: 'preheader' }],
+    ])('offers nothing on %o', (target) => {
+      expect(availableActions(target, DENIED)).toEqual({
+        actions: [],
+        opens: 'none',
+      });
+    });
+
+    it('opens nothing from a field icon, nor an action asked by its id', () => {
+      const ko = require('knockout');
+      const {
+        createAiPanel,
+      } = require('../../../packages/editor/src/js/ext/ai-panel/ai-panel-controller');
+      const isOpen = ko.observable(false);
+      const panel = createAiPanel({
+        ko,
+        editor: { context: () => DENIED },
+        api: { generate: jest.fn() },
+        isOpen,
+        selection: ko.observable(null),
+      });
+
+      panel.openTarget({ kind: 'subject' });
+      panel.openTarget({ kind: 'preheader' });
+      expect(panel.openAction('generate-subject', { kind: 'email' })).toBe(
+        false
+      );
+      expect(isOpen()).toBe(false);
+      expect(panel.session()).toBeNull();
+      expect(panel.offerNow()({ kind: 'subject' }).actions).toEqual([]);
+      panel.dispose();
+    });
+  });
+
   describe('the subject field', () => {
     it('opens its single action directly', () => {
       const result = availableActions({ kind: 'subject' }, ON);
