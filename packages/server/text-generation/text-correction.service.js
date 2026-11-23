@@ -9,6 +9,7 @@ const {
   locateCorrection,
   isNoLoss,
 } = require('../../shared/text-correction/place-correction.js');
+const { isRewrite } = require('../../shared/text-correction/rewrite.js');
 const {
   readRequest,
   prepare,
@@ -25,6 +26,9 @@ const {
  * code keeps only those it can place in the text it sent — found once, whole
  * words, touching no merge tag, changing something, on a field it sent. The
  * editor places them again in the HTML when the user accepts one.
+ *
+ * A correction changing more than three words is a rewrite: returned all the
+ * same, marked `rewrite: true` for the panel to say so.
  */
 
 // A block's fields, each a few lines of an email: these keep a request to a
@@ -84,9 +88,9 @@ const fromSkill = (correction) => ({
   after: fromSkillText(correction.after),
 });
 
-// Corrections the code can place in the text it sent; the others are
-// counted, except those that are no loss: changing nothing, or already in
-// the text.
+// Corrections the code can place in the text it sent, a rewrite marked; the
+// others are counted, except those that are no loss: changing nothing, or
+// already in the text.
 function screenCorrections(corrections, fields) {
   const textOf = new Map(fields.map((field) => [field.path, field.text]));
   // A correction the model repeats is one correction.
@@ -111,14 +115,22 @@ function screenCorrections(corrections, fields) {
     if (located.refused && !isNoLoss(located)) dropped += 1;
     return !located.refused;
   });
-  return { corrections: kept, dropped };
+  return {
+    corrections: kept.map((correction) =>
+      isRewrite(correction.before, correction.after)
+        ? { ...correction, rewrite: true }
+        : correction
+    ),
+    dropped,
+  };
 }
 
 /**
  * @param {Object} params
  * @param {Object} params.user the requesting user
  * @param {Object} params.body { mailingId, target, fields: [{ path, role, text }] }
- * @returns {Promise<{ corrections: Array, dropped: number }>}
+ * @returns {Promise<{ corrections: Array, dropped: number }>} each correction
+ *   `{ field, before, after, reason }`, plus `rewrite: true` on a rewrite
  */
 async function correctText({ user, body }) {
   const request = readRequest(requestSchema, body);

@@ -401,6 +401,26 @@ describe('spelling correction: POST /api/text-generation/corrections', () => {
       expect(res.body).toEqual({ corrections: [], dropped: 1 });
     });
 
+    it('marks a rewrite, a correction changing more than three words, and returns it', async () => {
+      const rewrite = fix(
+        'titleText',
+        'Les soldes commence demain',
+        'Nos promotions d\u00e9butent d\u00e8s aujourd\u2019hui',
+        'Style'
+      );
+      invoke.mockResolvedValue(
+        corrections(rewrite, fix('longText', 'la colection', 'la collection'))
+      );
+      const res = await post();
+      expect(res.body).toEqual({
+        corrections: [
+          { ...rewrite, rewrite: true },
+          fix('longText', 'la colection', 'la collection'),
+        ],
+        dropped: 0,
+      });
+    });
+
     it('drops and counts a correction found twice in its field', async () => {
       invoke.mockResolvedValue(
         corrections(
