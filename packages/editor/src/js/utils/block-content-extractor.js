@@ -18,13 +18,18 @@
  * - Mosaico variables and ESP tags
  */
 
+// Style values: no text at all, even in a field named like one
+const STYLE_VALUE_PATTERNS = [
+  /^(#[0-9a-f]{3,8}|rgba?\([^)]+\)|transparent)$/i, // Color values
+  /^-?\d+(\.\d+)?(px|em|rem|%)?$/, // Numeric values
+];
+
 // Patterns for content that should NOT be translated
 const NON_TRANSLATABLE_PATTERNS = [
   /^(https?:\/\/|mailto:|tel:)/i, // URLs
   /^[^\s@]+@[^\s@]+\.[^\s@]+$/, // Email addresses
-  /^(#[0-9a-f]{3,8}|rgba?\([^)]+\)|transparent)$/i, // Color values
   /^@\[[^\]]+\]$/, // Pure Mosaico variables (keeps mixed content like "Hello @[name]")
-  /^-?\d+(\.\d+)?(px|em|rem|%)?$/, // Numeric values
+  ...STYLE_VALUE_PATTERNS,
 ];
 
 // Field name patterns that typically contain translatable text
@@ -116,13 +121,32 @@ function isTranslatableValue(value) {
 }
 
 /**
+ * Check if a value is a style value (a colour, a size), which no reader reads
+ * as text
+ * @param {*} value - Value to check
+ * @returns {boolean} True if value is a style value
+ */
+function isStyleValue(value) {
+  return (
+    typeof value === 'string' &&
+    STYLE_VALUE_PATTERNS.some((pattern) => pattern.test(value.trim()))
+  );
+}
+
+/**
  * Recursively extract translatable fields from a block object
  * @param {Object} obj - Object to extract from
  * @param {string} prefix - Current key prefix (for dot notation)
  * @param {Object} result - Accumulator object
+ * @param {Function} accept - Which values of a named text field to extract
  * @returns {Object} Result object with extracted texts
  */
-function extractFromObject(obj, prefix = '', result = {}) {
+function extractFromObject(
+  obj,
+  prefix = '',
+  result = {},
+  accept = isTranslatableValue
+) {
   if (!obj || typeof obj !== 'object') {
     return result;
   }
@@ -132,8 +156,10 @@ function extractFromObject(obj, prefix = '', result = {}) {
     obj.forEach((item, index) => {
       const key = prefix ? `${prefix}.${index}` : `${index}`;
       if (typeof item === 'object') {
-        extractFromObject(item, key, result);
+        extractFromObject(item, key, result, accept);
       } else if (typeof item === 'string' && isTranslatableValue(item)) {
+        // A string in a list is no named text field: translation's own test
+        // keeps it, whatever `accept` says.
         result[key] = item;
       }
     });
@@ -154,13 +180,13 @@ function extractFromObject(obj, prefix = '', result = {}) {
     if (
       isTranslatableFieldName(fieldName) &&
       typeof value === 'string' &&
-      isTranslatableValue(value)
+      accept(value)
     ) {
       result[key] = value;
     }
     // Recursively process nested objects/arrays
     else if (typeof value === 'object') {
-      extractFromObject(value, key, result);
+      extractFromObject(value, key, result, accept);
     }
   });
 
@@ -170,6 +196,10 @@ function extractFromObject(obj, prefix = '', result = {}) {
 /**
  * Extract translatable content from a single block
  * @param {Object} blockData - Unwrapped block data (plain JavaScript object)
+ * @param {Object} [options]
+ * @param {Function} [options.accept] - Which values of a named text field
+ *   to extract, translatable ones by default; a string in a list is always
+ *   judged as translation judges it
  * @returns {Object} Flat object with translatable texts (dot-notation keys)
  *
  * @example
@@ -185,13 +215,16 @@ function extractFromObject(obj, prefix = '', result = {}) {
  * extractBlockTranslatableContent(block);
  * // Returns: { "text": "Hello world", "buttonText": "Click here" }
  */
-function extractBlockTranslatableContent(blockData) {
+function extractBlockTranslatableContent(
+  blockData,
+  { accept = isTranslatableValue } = {}
+) {
   if (!blockData || typeof blockData !== 'object') {
     return {};
   }
 
   const result = {};
-  extractFromObject(blockData, '', result);
+  extractFromObject(blockData, '', result, accept);
   return result;
 }
 
@@ -299,4 +332,5 @@ module.exports = {
   // Export for testing
   isTranslatableFieldName,
   isTranslatableValue,
+  isStyleValue,
 };

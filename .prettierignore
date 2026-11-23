@@ -14,6 +14,10 @@ packages/editor/src/js/*
 packages/editor/src/js/ext/*
 # The quality control is new code written to the repository's style: formatted.
 !packages/editor/src/js/ext/quality/
+# And the modules it shares with the AI actions.
+!packages/editor/src/js/ext/block-text-fields.js
+!packages/editor/src/js/ext/style-declarations.js
+!packages/editor/src/js/ext/visible-text.js
 
 packages/documentation/.vuepress/dist/
 packages/documentation/api/

@@ -27,6 +27,10 @@ packages/editor/src/js/*
 !packages/editor/src/js/ext/
 packages/editor/src/js/ext/*
 !packages/editor/src/js/ext/quality/
+# And the modules it shares with the AI actions.
+!packages/editor/src/js/ext/block-text-fields.js
+!packages/editor/src/js/ext/style-declarations.js
+!packages/editor/src/js/ext/visible-text.js
 # Vue 3 SFC, compiled at build time by scripts/compile-block-builder-components.js.
 # The project's eslint is configured for Vue 2 and cannot parse <script setup>.
 packages/shared/block-builder/components/*.vue
