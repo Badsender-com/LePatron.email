@@ -28,39 +28,30 @@
 
 const createError = require('http-errors');
 
-const ProviderFactory = require('../../integration-providers/provider-factory.js');
-const { LePatronSkills, Groups } = require('../../common/models.common.js');
-const aiFeatureService = require('../../ai-feature/ai-feature.service.js');
-
-const { FeatureResolutionReasons } = aiFeatureService;
-
 const AIFeatureTypes = require('../../constant/ai-feature-type.js');
 const ERROR_CODES = require('../../constant/error-codes.js');
 
-const { TEXT_FEATURE_TYPES } = AIFeatureTypes;
 const { getSchema } = require('../schemas');
-const {
-  buildOutputContract,
-  buildOutputJsonSchema,
-} = require('../schemas/output-contract.js');
-const {
-  SkillStatuses,
-  InvocationStatuses,
-} = require('../constant/skill-constants.js');
-const { resolveConfig } = require('./config-resolver.service.js');
+const { buildOutputContract } = require('../schemas/output-contract.js');
+const { InvocationStatuses } = require('../constant/skill-constants.js');
 const { isAvailableTo } = require('./audience.js');
 const { buildFieldErrors } = require('./format-validation-error.js');
+const { buildPrompt } = require('./prompt-builder.service.js');
 const {
-  buildPrompt,
-  parseJsonFromLLM,
-} = require('./prompt-builder.service.js');
-const {
-  logInvocation,
   logFailure,
   formatZodError,
-  callWithTimeout,
-  truncate,
 } = require('./invocation-logger.service.js');
+const { readArguments } = require('./invocation-arguments.js');
+const {
+  loadSkillVersion,
+  versionSchemas,
+} = require('./skill-version-loader.js');
+const {
+  loadGroup,
+  loggingPolicy,
+  resolveEngine,
+} = require('./invocation-engine.js');
+const { runInvocation } = require('./invocation-run.js');
 
 const DEFAULT_TIMEOUT_MS = 30000;
 
@@ -77,7 +68,7 @@ const DEFAULT_TIMEOUT_MS = 30000;
  *   • `featureType`: ENGINE RESOLUTION. The AIFeatureConfig entry whose
  *     integration and model power the call — 'skill' by default, the consuming
  *     feature's own type otherwise ('text_generation'). It says nothing about
- *     analytics. See resolveGroupIntegration().
+ *     analytics. See resolveEngine() in invocation-engine.js.
  *   `featureType` once named the analytics tag too, an invariant held by
  *   documentation alone; the distinct names are the invariant now.
  *
@@ -122,275 +113,17 @@ async function invoke({
   options = {},
 }) {
   const startedAt = new Date();
-
-  // Only an engine that writes text runs a skill: not translation's, which
-  // can be DeepL.
-  if (!TEXT_FEATURE_TYPES.includes(featureType)) {
-    throw configError(
-      500,
-      `"${featureType}" is not a feature that runs skills`
-    );
-  }
-  // Checked before anything is billed: an entry the log refuses would lose
-  // the invocation's row after the provider call.
-  if (!isConsumedList(expertiseConsumed)) {
-    throw configError(
-      500,
-      'expertiseConsumed must be a list of entries with an expertiseId'
-    );
-  }
-  const consumed = expertiseConsumed.map((e) => ({
-    expertiseId: e.expertiseId,
-    versionMajor: e.versionMajor,
-    versionMinor: e.versionMinor,
-  }));
-
-  // ─── 1. Load the skill and pick the version (pinned or active) ─────────
-  const skill = await LePatronSkills.findOne(
-    {
-      skillId,
-      ...(!(options.unpublished && versionRef) && {
-        status: SkillStatuses.ACTIVE,
-      }),
-    },
-    {
-      skillId: 1,
-      audience: 1,
-      activeVersion: 1,
-      versions: 1,
-    }
-  );
-  if (!skill) {
-    // Typed like the group/integration failures below: "this environment's data
-    // does not match the deployed code" is a configuration problem, and the
-    // caller must be able to tell it apart from a provider outage.
-    throw configError(404, `Skill "${skillId}" not found or not ACTIVE`);
-  }
-
-  const activeRef = skill.activeVersion || {};
-  const wantedMajor = versionRef ? versionRef.major : activeRef.major;
-  const wantedMinor = versionRef ? versionRef.minor || 0 : activeRef.minor || 0;
-  const version = (skill.versions || []).find(
-    (v) => v.versionMajor === wantedMajor && v.versionMinor === wantedMinor
-  );
-  if (!version) {
-    // A missing pinned version is the caller's mistake (404); a missing
-    // active version is a data integrity bug (500). Both are configuration
-    // failures, not provider failures.
-    throw configError(
-      versionRef ? 404 : 500,
-      versionRef
-        ? `Version ${wantedMajor}.${wantedMinor} of skill "${skillId}" not found`
-        : `Skill "${skillId}" has activeVersion=${wantedMajor}.${wantedMinor} but the version is missing`
-    );
-  }
-
-  // ─── 2. The audience: a skill still proven by the platform company is not
-  // used on behalf of a client's user (ADR 0013) ─────────────────────────────
-  const group = await loadGroup(groupId);
-  if (!options.everyAudience && !isAvailableTo(skill, group)) {
-    throw createError(403, ERROR_CODES.SKILL_NOT_AVAILABLE_TO_COMPANY);
-  }
-
-  // ─── 3. Validate input against zod schema (schemas live on the version) ──
-  const inputSchema = getSchema(version.inputSchemaId);
-  if (!inputSchema) {
-    throw configError(
-      500,
-      `Skill "${skillId}" v${wantedMajor}.${wantedMinor} references unknown input schema "${version.inputSchemaId}"`
-    );
-  }
-  // Checked here, next to the input schema, rather than where it is used at
-  // step 7: an id that no longer resolves (schema renamed or removed in code
-  // while a version still points at it) otherwise surfaced as a TypeError
-  // *after* the provider call had been made and billed.
-  if (!getSchema(version.outputSchemaId)) {
-    throw configError(
-      500,
-      `Skill "${skillId}" v${wantedMajor}.${wantedMinor} references unknown output schema "${version.outputSchemaId}"`
-    );
-  }
-  const inputParse = inputSchema.safeParse(input);
-  if (!inputParse.success) {
-    return logFailure({
-      skill,
-      version,
-      groupId,
-      userId,
-      invocationSource,
-      expertiseConsumed: consumed,
-      variantPath,
-      input,
-      startedAt,
-      status: InvocationStatuses.VALIDATION_ERROR,
-      error: {
-        code: 'INPUT_VALIDATION',
-        message: formatZodError(inputParse.error),
-      },
-      // Structured per-field errors for UI display. Top-level on purpose:
-      // `error` is persisted as-is into AISkillInvocation.error (typed
-      // subdoc) — fieldErrors only decorate the thrown error, transiently.
-      fieldErrors: buildFieldErrors(inputParse.error, input),
-      skipLogging: options.skipLogging,
-    });
-  }
-
-  // ─── 4. Resolve provider config (Group > Skill > default) ──────────────
-  const { integration, groupFeatureConfig } = await resolveGroupIntegration(
-    groupId,
-    featureType
-  );
-  // Group-level content-logging opt-out — applies to success AND failure
-  // paths below. (Not to the INPUT_VALIDATION failure above: nothing was sent
-  // to a provider at that point.)
-  const allowContent = group ? group.logSkillInvocationContent !== false : true;
-  // Passed to every log call below so the TTL deadline is stamped without the
-  // logger having to re-read the Group.
-  const retentionDays = group ? group.logRetentionDays : undefined;
-  const config = resolveConfig({
-    integration,
-    groupFeatureConfig,
-    skillModelHints: version.modelHints || {},
-    defaults: {},
-  });
-
-  // ─── 5. Build the prompt with random XML tags ──────────────────────────
-  // The output-format contract is derived from the skill's outputSchemaId and
-  // injected automatically — skill authors must not write it by hand.
-  const { messages } = buildPrompt({
+  const consumed = readArguments({ featureType, expertiseConsumed });
+  const {
+    skill,
     version,
-    input: inputParse.data,
-    outputContract: buildOutputContract(version.outputSchemaId),
-  });
+    group,
+    inputSchema,
+    outputSchema,
+  } = await resolveSkill({ skillId, versionRef, groupId, options });
 
-  if (options.dryRun) {
-    return {
-      output: null,
-      invocationId: null,
-      resolvedConfig: config,
-      tokenUsage: { promptTokens: 0, completionTokens: 0, cachedTokens: 0 },
-      latencyMs: 0,
-      messages,
-    };
-  }
-
-  // ─── 6. Call the provider ──────────────────────────────────────────────
-  const provider = ProviderFactory.createProvider(
-    integration,
-    groupFeatureConfig
-  );
-  // Native JSON mode when the provider guarantees it: LLMs hand-writing JSON
-  // produce raw newlines / unescaped quotes inside long strings (two real QC
-  // runs failed in OUTPUT_PARSE). The repair pass in parseJsonFromLLM stays as
-  // defense-in-depth for providers without JSON mode.
-  // The schema rides along: providers that can enforce a shape rather than
-  // ask for one need it (Anthropic decodes its answer against it). Those
-  // that cannot simply ignore the extra field.
-  const responseFormat =
-    typeof provider.supportsJsonResponseFormat === 'function' &&
-    provider.supportsJsonResponseFormat()
-      ? {
-          type: 'json_object',
-          schema: buildOutputJsonSchema(version.outputSchemaId),
-        }
-      : undefined;
-  let providerResponse;
-  try {
-    providerResponse = await callWithTimeout(
-      provider.chatComplete({
-        model: config.model,
-        messages,
-        temperature: config.temperature,
-        maxTokens: config.maxTokens,
-        responseFormat,
-      }),
-      options.timeoutMs || DEFAULT_TIMEOUT_MS
-    );
-  } catch (err) {
-    const isTimeout = err && err.code === 'SKILL_TIMEOUT';
-    return logFailure({
-      skill,
-      version,
-      groupId,
-      userId,
-      invocationSource,
-      expertiseConsumed: consumed,
-      variantPath,
-      input: inputParse.data,
-      startedAt,
-      resolvedConfig: config,
-      allowContent,
-      retentionDays,
-      status: isTimeout
-        ? InvocationStatuses.TIMEOUT
-        : InvocationStatuses.PROVIDER_ERROR,
-      error: {
-        code: err && err.code ? String(err.code) : 'PROVIDER_ERROR',
-        message: err && err.message ? err.message : 'Provider call failed',
-        stack: err && err.stack ? truncate(err.stack, 2000) : undefined,
-      },
-      skipLogging: options.skipLogging,
-    });
-  }
-
-  // ─── 7. Parse + validate output ────────────────────────────────────────
-  const outputSchema = getSchema(version.outputSchemaId);
-  let parsedOutput;
-  try {
-    parsedOutput = parseJsonFromLLM(providerResponse.content);
-  } catch (err) {
-    return logFailure({
-      skill,
-      version,
-      groupId,
-      userId,
-      invocationSource,
-      expertiseConsumed: consumed,
-      variantPath,
-      input: inputParse.data,
-      rawOutput: providerResponse.content,
-      startedAt,
-      resolvedConfig: config,
-      tokenUsage: providerResponse.usage,
-      allowContent,
-      retentionDays,
-      status: InvocationStatuses.VALIDATION_ERROR,
-      error: { code: 'OUTPUT_PARSE', message: err.message },
-      skipLogging: options.skipLogging,
-    });
-  }
-
-  const outputParse = outputSchema.safeParse(parsedOutput);
-  if (!outputParse.success) {
-    return logFailure({
-      skill,
-      version,
-      groupId,
-      userId,
-      invocationSource,
-      expertiseConsumed: consumed,
-      variantPath,
-      input: inputParse.data,
-      rawOutput: providerResponse.content,
-      startedAt,
-      resolvedConfig: config,
-      tokenUsage: providerResponse.usage,
-      allowContent,
-      retentionDays,
-      status: InvocationStatuses.VALIDATION_ERROR,
-      error: {
-        code: 'OUTPUT_VALIDATION',
-        message: formatZodError(outputParse.error),
-      },
-      skipLogging: options.skipLogging,
-    });
-  }
-
-  // ─── 8. Log success ────────────────────────────────────────────────────
-  const completedAt = new Date();
-  const latencyMs = completedAt - startedAt;
-
-  const invocationId = await logInvocation({
+  // What every log of this invocation records, whatever its outcome.
+  const logged = {
     skill,
     version,
     groupId,
@@ -398,115 +131,88 @@ async function invoke({
     invocationSource,
     expertiseConsumed: consumed,
     variantPath,
-    input: inputParse.data,
-    output: outputParse.data,
-    rawOutput: providerResponse.content,
-    resolvedConfig: config,
-    tokenUsage: providerResponse.usage,
     startedAt,
-    completedAt,
-    latencyMs,
-    status: InvocationStatuses.SUCCESS,
-    allowContent,
-    retentionDays,
     skipLogging: options.skipLogging,
+  };
+  const validInput = await parseInput(inputSchema, input, logged);
+
+  // The engine and its settings (Group > Skill > default).
+  const engine = await resolveEngine({ groupId, featureType, version });
+  // From here on something reaches a provider: the group's content opt-out
+  // and retention apply to every log, success and failure alike.
+  const attempt = {
+    ...logged,
+    input: validInput,
+    resolvedConfig: engine.config,
+    ...loggingPolicy(group),
+  };
+
+  // The prompt, with random XML tags. The output-format contract is derived from the skill's outputSchemaId and
+  // injected automatically — skill authors must not write it by hand.
+  const { messages } = buildPrompt({
+    version,
+    input: validInput,
+    outputContract: buildOutputContract(version.outputSchemaId),
   });
 
-  return {
-    output: outputParse.data,
-    invocationId,
-    resolvedConfig: config,
-    tokenUsage: providerResponse.usage,
-    latencyMs,
-  };
+  if (options.dryRun) {
+    return {
+      output: null,
+      invocationId: null,
+      resolvedConfig: engine.config,
+      tokenUsage: { promptTokens: 0, completionTokens: 0, cachedTokens: 0 },
+      latencyMs: 0,
+      messages,
+    };
+  }
+  return runInvocation({
+    attempt,
+    engine,
+    messages,
+    version,
+    outputSchema,
+    timeoutMs: options.timeoutMs || DEFAULT_TIMEOUT_MS,
+  });
 }
 
 /**
- * Resolve the Integration to use for a Group via the AIFeatureConfig.
- *
- * ENGINE RESOLUTION axis (NOT analytics — that is invoke()'s
- * `invocationSource` param). Resolves exactly the feature type the caller
- * names, with no fallback to 'skill': a group that has not enabled a client
- * feature must not get it through the generic engine.
- *
- * Throws a CONFIG_ERROR if not configured.
+ * The skill at the version pinned or active, which a skill
+ * still proven by the platform company is not used on behalf of a client's
+ * user (ADR 0013), and the schemas that version names.
  */
-/**
- * Every failure that means "this environment's data does not match the deployed
- * code" — missing/archived skill, missing active version, unresolvable schema
- * id, no configured engine. Grouping them under CONFIG_ERROR lets a caller tell
- * a misconfiguration apart from a provider outage, which is the difference
- * between "fix the setup" and "retry later".
- */
-function configError(status, message) {
-  const err = createError(status, message);
-  // Lets callers (the playground runner) persist the right run status
-  // instead of defaulting to PROVIDER_ERROR.
-  err.invocationStatus = InvocationStatuses.CONFIG_ERROR;
-  return err;
-}
-
-function isConsumedList(entries) {
-  return (
-    Array.isArray(entries) &&
-    entries.every(
-      (entry) =>
-        typeof entry?.expertiseId === 'string' && entry.expertiseId !== ''
-    )
-  );
-}
-
-// Why the engine could not be resolved, in words. The shared helper reports a
-// reason code; turning it back into a sentence stays here because the wording is
-// about skills ("configure a 'skill' integration"), not about the generic
-// feature machinery. This is what delegating must not lose: the helper used to
-// return a bare null, and these distinct messages are the reason ai-skill had
-// reimplemented the walk in the first place.
-const ENGINE_ERROR_MESSAGES = {
-  [FeatureResolutionReasons.NO_CONFIG]: (groupId, featureType) =>
-    `Group ${groupId} has no AIFeatureConfig — configure a '${featureType}' integration`,
-  [FeatureResolutionReasons.FEATURE_INACTIVE]: (groupId, featureType) =>
-    `Group ${groupId} has no active '${featureType}' feature configuration`,
-  [FeatureResolutionReasons.NO_INTEGRATION]: (groupId, featureType) =>
-    `Group ${groupId} has an active '${featureType}' feature but no integration selected`,
-  [FeatureResolutionReasons.INTEGRATION_INACTIVE]: (groupId, featureType) =>
-    `Group ${groupId} has a '${featureType}' integration that is inactive`,
-};
-
-// The Group document itself stays this module's business: it carries whether
-// it is the platform company, the RGPD content opt-out and the log retention
-// window, none of which the shared feature helper knows or should know about.
-async function loadGroup(groupId) {
-  const group = await Groups.findById(groupId).lean();
-  if (!group) {
-    throw configError(404, `Group ${groupId} not found`);
-  }
-  return group;
-}
-
-async function resolveGroupIntegration(groupId, featureType) {
-  const resolved = await aiFeatureService.resolveActiveFeature({
-    groupId,
-    featureType,
+async function resolveSkill({ skillId, versionRef, groupId, options }) {
+  const { skill, version } = await loadSkillVersion({
+    skillId,
+    versionRef,
+    unpublished: options.unpublished,
   });
-  if (!resolved.ok) {
-    const toMessage = ENGINE_ERROR_MESSAGES[resolved.reason];
-    const err = configError(
-      400,
-      toMessage
-        ? toMessage(groupId, featureType)
-        : `Group ${groupId} has no usable '${featureType}' engine (${resolved.reason})`
-    );
-    // Lets a client feature tell "not enabled for this group" apart from any
-    // other configuration failure, without parsing the message.
-    err.featureResolutionReason = resolved.reason;
-    throw err;
+  const group = await loadGroup(groupId);
+  if (!options.everyAudience && !isAvailableTo(skill, group)) {
+    throw createError(403, ERROR_CODES.SKILL_NOT_AVAILABLE_TO_COMPANY);
   }
+  return { skill, version, group, ...versionSchemas(skillId, version) };
+}
 
-  return {
-    integration: resolved.integration,
-    groupFeatureConfig: resolved.feature.config || {},
-  };
+/**
+ * The input against the version's schema. A refused input is logged
+ * and thrown; nothing has reached a provider yet.
+ */
+async function parseInput(inputSchema, input, logged) {
+  const inputParse = inputSchema.safeParse(input);
+  if (inputParse.success) return inputParse.data;
+  return logFailure({
+    ...logged,
+    input,
+    status: InvocationStatuses.VALIDATION_ERROR,
+    error: {
+      code: 'INPUT_VALIDATION',
+      message: formatZodError(inputParse.error),
+    },
+    // Structured per-field errors for UI display. Top-level on purpose:
+    // `error` is persisted as-is into AISkillInvocation.error (typed
+    // subdoc) — fieldErrors only decorate the thrown error, transiently.
+    fieldErrors: buildFieldErrors(inputParse.error, input),
+  });
 }
 
 /**
