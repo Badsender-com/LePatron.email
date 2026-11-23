@@ -1,28 +1,18 @@
 'use strict';
 
-const _ = require('lodash');
 const { getBlockDefault, isImageUnset } = require('../ownership');
 const { blockTexts, blockImages, isShown } = require('../exported-content');
 const { hasBackgroundImage } = require('./background-images');
-const {
-  isTranslatableFieldName,
-} = require('../../../utils/block-content-extractor');
+const { listTextFields } = require('../../block-text-fields');
 
-// Text properties of a model, by the naming convention of our templates
-// (block-content-extractor.js: titleText, label, caption, heading…), with
-// something to read by default. An alternative text is read, not shown.
-const isTextKey = (key) =>
-  isTranslatableFieldName(key || '') && !/alt$/i.test(key || '');
-const hasDefaultText = (value, key) => {
-  if (typeof value === 'string') {
-    return isTextKey(key) && /\p{L}/u.test(value.replace(/<[^>]*>/g, ''));
-  }
-  return (
-    !!value &&
-    typeof value === 'object' &&
-    Object.keys(value).some((k) => hasDefaultText(value[k], k))
+// The template ships text for a block when its definition holds a text field
+// (the one listing of a block's text, #1253) whose visible text has a letter.
+// Every field a reader sees counts, a lone merge tag or an address too, not
+// only what translation translates. An alternative text is read, not shown.
+const shipsText = (blockDef) =>
+  listTextFields(blockDef, { untranslatable: true }).some(
+    (field) => field.role !== 'alt' && /\p{L}/u.test(field.text)
   );
-};
 
 // A block that shows nothing: no text, no image. Spacers and dividers have no
 // text to begin with and are left alone: only a block whose template ships
@@ -50,9 +40,7 @@ module.exports = {
       .filter((block) => block && block.id in texts)
       .filter((block) => !texts[block.id] && !withImages.has(block.id))
       .filter((block) => !hasBackgroundImage(ctx, block))
-      .filter((block) =>
-        hasDefaultText(_.omit(getBlockDefault(ctx.blockDefs, block.type), 'id'))
-      )
+      .filter((block) => shipsText(getBlockDefault(ctx.blockDefs, block.type)))
       .map((block) => ({
         messageKey: 'Empty block: it shows no text and no image',
         blockId: block.id,

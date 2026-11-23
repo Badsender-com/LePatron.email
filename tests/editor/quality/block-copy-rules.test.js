@@ -11,6 +11,7 @@ const {
   TRANSPARENT_GIF,
 } = require('../../../packages/editor/src/js/ext/quality/ownership.js');
 const { copyViewModel, exportOf } = require('./fake-view-model');
+const VERSAFIX_BLOCKS = require('../../../packages/editor/spec/data/template-versafix-1.blocks.json');
 
 const RULES = '../../../packages/editor/src/js/ext/quality/rules';
 const mergeTags = require(`${RULES}/merge-tags`);
@@ -174,6 +175,79 @@ describe('empty-blocks', () => {
     });
     expect(findings).toHaveLength(1);
   });
+
+  // The template's text is what the listing of a block's text fields reads
+  // (ext/block-text-fields.js), every field a reader sees.
+  const emptiedFrom = (blockDef) =>
+    findingsOf(emptyBlocks, {
+      blocks: [{ id: 'b1', type: blockDef.type }],
+      blockDefs: [blockDef],
+      html: exportOf({ b1: '' }),
+    });
+
+  it('reads a button of the template, a link object’s text, as text it ships', () => {
+    const findings = emptiedFrom({
+      type: 'buttonBlock',
+      buttonLink: { text: 'BUTTON', url: '' },
+    });
+    expect(findings).toHaveLength(1);
+  });
+
+  it.each([
+    ['a lone merge tag', { titleText: '@[prenom]' }],
+    ['a merge tag in a paragraph', { titleText: '<p>@[prenom]</p>' }],
+    ['a web address', { longText: 'https://example.com' }],
+    ['an email address', { caption: 'contact@example.com' }],
+    ['a list of texts', { items: ['Livraison offerte'] }],
+  ])('counts %s as text the template ships', (_label, fields) => {
+    expect(emptiedFrom({ type: 'shownBlock', ...fields })).toHaveLength(1);
+  });
+
+  it.each([
+    ['a non-breaking space', { longText: '<p>&nbsp;</p>' }],
+    ['a zero-width non-joiner', { longText: '<p>&zwnj;</p>' }],
+    ['an ampersand alone', { longText: '<p>&amp;</p>' }],
+    [
+      'a size or a colour',
+      { titleText: '12px', caption: '#fafafa', heading: 'transparent' },
+    ],
+    ['an alternative text alone', { image: { alt: 'Logo', src: 'a.png' } }],
+    ['an alternative text named first', { altText: 'Logo' }],
+    ['an address in a list', { items: ['https://example.com'] }],
+    [
+      'text the markup hides',
+      { longText: '<p style="display:none">Bonjour</p>' },
+    ],
+    ['a stylesheet', { longText: '<style>p { color: red }</style>' }],
+  ])('counts %s as no text the template ships', (_label, fields) => {
+    expect(emptiedFrom({ type: 'blankBlock', ...fields })).toEqual([]);
+  });
+
+  // Whether each block of the versafix template ships text, as the rule sees it.
+  it.each([
+    ['logoBlock', false],
+    ['sideArticleBlock', true],
+    ['singleArticleBlock', true],
+    ['titleBlock', true],
+    ['textBlock', true],
+    ['tripleArticleBlock', true],
+    ['doubleArticleBlock', true],
+    ['hrBlock', false],
+    ['buttonBlock', true],
+    ['imageBlock', false],
+    ['doubleImageBlock', false],
+    ['tripleImageBlock', false],
+    ['bigSocialBlock', false],
+    ['shareBlock', true],
+    ['spacerBlock', false],
+    ['socialBlock', true],
+  ])(
+    'reports an emptied versafix %s only if it ships text: %s',
+    (type, ships) => {
+      const blockDef = VERSAFIX_BLOCKS.find((block) => block.type === type);
+      expect(emptiedFrom(blockDef)).toHaveLength(ships ? 1 : 0);
+    }
+  );
 });
 
 describe('uppercase-text', () => {
