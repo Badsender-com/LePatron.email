@@ -2,7 +2,9 @@
 
 const _ = require('lodash');
 const { blockLinks, textOf } = require('../exported-content');
-const { PAIRS } = require('../merge-tag-syntax');
+const {
+  PAIRS,
+} = require('../../../../../../shared/quality/merge-tag-syntax.js');
 
 // A tag opened and never closed is sent as is: "Hello {{first_name," reaches
 // the recipient. Every text of a block is read, hidden or not: a tag left open

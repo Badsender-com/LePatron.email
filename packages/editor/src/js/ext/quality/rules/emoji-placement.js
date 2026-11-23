@@ -1,7 +1,7 @@
 'use strict';
 
 const { blockTexts, excerpt } = require('../exported-content');
-const { EMOJI } = require('../emoji');
+const { EMOJI } = require('../../../../../../shared/quality/emoji.js');
 
 // Screen readers read an emoji's name ("fire", "red heart"): inside a
 // sentence it breaks it, several in a row turn into a list. At the end of a

@@ -6,7 +6,9 @@
 
 // A URL carrying an ESP merge tag is only known once the ESP sends the email,
 // so it is never judged on its form (merge-tag-syntax.js).
-const { isDynamic } = require('./merge-tag-syntax');
+const {
+  isDynamic,
+} = require('../../../../../shared/quality/merge-tag-syntax.js');
 const { declarationsOf } = require('./inline-style');
 
 const textOf = (node) => (node.textContent || '').replace(/\s+/g, ' ').trim();

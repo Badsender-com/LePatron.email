@@ -1,7 +1,10 @@
 'use strict';
 
-const { countEmojis } = require('../emoji');
-const { inboxLength } = require('../copy-fields');
+const { countEmojis } = require('../../../../../../shared/quality/emoji.js');
+const {
+  inboxLength,
+  fakeReplyPrefix,
+} = require('../../../../../../shared/quality/copy-rules.js');
 const { orderedThresholds } = require('../settings');
 
 // Truncation, not performance: subject length does not change read rates
@@ -9,13 +12,6 @@ const { orderedThresholds } = require('../settings');
 // characters ideally, never over 60 (thresholds `long` and `tooLong`, set by
 // the company's quality settings).
 
-// Reply and forward prefixes, in the languages our clients write in. Gmail
-// asks not to fake them. A prefix of one or two letters must end the word
-// ("RE: offer"): "Re:Think" and "re:boot" are brand names.
-const SHORT_PREFIX = /^\s*(re|fw|tr|aw|wg|rv|sv|vs|r)\s*:(?=\s|$)/i;
-const LONG_PREFIX = /^\s*(fwd|odp|antw)\s*:/i;
-const fakeReply = (subject) =>
-  SHORT_PREFIX.exec(subject) || LONG_PREFIX.exec(subject);
 const REPEATED_PUNCTUATION = /(!{2,}|\?{2,}|\${2,}|€{2,})/;
 const MIN_LETTERS_FOR_CAPS = 8;
 const CAPS_RATIO = 0.7;
@@ -78,12 +74,12 @@ module.exports = {
         params: { count, max: long },
       });
     }
-    const prefix = fakeReply(subject);
+    const prefix = fakeReplyPrefix(subject);
     if (prefix) {
       findings.push({
         messageKey:
           'Subject starts like a reply or a forward (__prefix__) without being one',
-        params: { prefix: prefix[0].trim() },
+        params: { prefix },
       });
     }
     const aggressive = aggressiveness(subject);

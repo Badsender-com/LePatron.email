@@ -1,7 +1,8 @@
 'use strict';
 
 // The personalization syntax of the ESPs our clients use, in one place: every
-// rule that skips, strips or checks merge tags reads it here.
+// quality rule that skips, strips or checks merge tags reads it here, and so
+// does the server when it screens the subjects and preheaders a model proposes.
 //   {{x}} and {% x %} (Handlebars, Liquid), %%x%% (Salesforce), *|X|*
 //   (Mailchimp), [[x]], <%= x %> (Adobe Campaign), ${x}, [unsubscribe_link].
 
@@ -29,4 +30,17 @@ const isDynamic = (value) => DYNAMIC_PATTERN.test(value || '');
 
 const stripMergeTags = (text) => (text || '').replace(MERGE_TAG, ' ');
 
-module.exports = { PAIRS, SCRIPTING_MARKUP, isDynamic, stripMergeTags };
+// Every whole tag of a text, as written.
+const mergeTagsIn = (text) => (text || '').match(MERGE_TAG) || [];
+
+// `[x]`, the one form that also reads as plain text: "[IMPORTANT] Incident".
+const BRACKETED_WORD = /^\[[a-z0-9_-]+\]$/i;
+
+module.exports = {
+  PAIRS,
+  SCRIPTING_MARKUP,
+  BRACKETED_WORD,
+  isDynamic,
+  stripMergeTags,
+  mergeTagsIn,
+};

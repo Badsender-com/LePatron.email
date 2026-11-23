@@ -24,4 +24,9 @@ const EMOJI_REGEX = new RegExp(EMOJI, 'gu');
 
 const countEmojis = (text) => ((text || '').match(EMOJI_REGEX) || []).length;
 
-module.exports = { EMOJI, EMOJI_REGEX, countEmojis };
+// Read before the words it precedes: a subject that opens on one makes a screen
+// reader start with its name.
+const LEADING_EMOJI = new RegExp(`^\\s*${EMOJI}`, 'u');
+const startsWithEmoji = (text) => LEADING_EMOJI.test(text || '');
+
+module.exports = { EMOJI, EMOJI_REGEX, countEmojis, startsWithEmoji };
