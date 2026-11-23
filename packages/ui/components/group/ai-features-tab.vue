@@ -5,7 +5,7 @@ import { LANGUAGE_OPTIONS } from '~/helpers/constants/languages.js';
 import BsSelect from '~/components/form/bs-select.vue';
 import BsAiModelPicker from '~/components/group/bs-ai-model-picker.vue';
 import BsFormSection from '~/components/layout/bs-form-section.vue';
-import BsAiFeatureEngineSection from '~/components/group/BsAiFeatureEngineSection.vue';
+import BsAiFeatureEngineSection from '~/components/group/bs-ai-feature-engine-section.vue';
 import BsGroupFeatureSwitch from '~/components/group/feature-switch.vue';
 import { Languages, FileText, BadgeCheck, Sparkles } from 'lucide-vue';
 
