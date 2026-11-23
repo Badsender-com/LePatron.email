@@ -13,6 +13,7 @@ const {
   InvocationStatuses,
 } = require('../ai-skill/constant/skill-constants.js');
 const { Templates } = require('../common/models.common.js');
+const { resourceGroupIdOf } = require('../account/request-scope.js');
 const { screenProposals } = require('./proposal-checks.js');
 const {
   PROVIDER_ERROR_CODES,
@@ -115,29 +116,48 @@ const compact = (object) =>
   );
 
 /**
- * The group whose engine serves the request and whose quota it counts against.
- *
- * A regular user only reaches the mailings of their own group. A super admin
- * has no group: the mailing's company pays — or, for a mailing an admin created
- * before companies were stamped on mailings, the company of its template, which
- * is the group the editor asked to show the button for.
+ * The group of the request is the email's (ADR 0002), whoever asks: its engine
+ * serves the request, its audience decides which skills and expertises apply,
+ * its settings decide what is logged. A super admin's own group is the
+ * platform's, never the one of the email it opens. A mailing created before
+ * companies were stamped on mailings takes the company of its template, the
+ * group the editor shows the button for.
  */
-async function billedGroupId(user, mailing) {
-  if (user.group?.id) return user.group.id;
-  if (mailing._company) return mailing._company;
-  const template = await Templates.findById(mailing._wireframe)
-    .select({ _company: 1 })
-    .lean();
-  return template?._company;
+async function requestGroupId(user, mailing) {
+  let groupId = mailing._company;
+  if (!groupId) {
+    const template = await Templates.findById(mailing._wireframe)
+      .select({ _company: 1 })
+      .lean();
+    groupId = template?._company;
+  }
+  if (!groupId) throw createError(404, ERROR_CODES.GROUP_NOT_FOUND);
+  return resourceGroupIdOf(user, groupId);
 }
+
+// What the generation reads of the mailing: its group, its type, and where it
+// lives for the right to edit it. Never its content: the editor sends the text
+// it shows.
+const MAILING_PROJECTION = {
+  _company: 1,
+  _wireframe: 1,
+  _emailType: 1,
+  _workspace: 1,
+  _parentFolder: 1,
+};
 
 /**
  * What every invocation of this feature starts from: access to the mailing, its
- * email type, and the expertises of the scope.
+ * group, its email type, and the expertises of the scope that group may read.
  */
 async function prepare({ user, mailingId, scope }) {
-  const mailing = await mailingService.findOneForUser(mailingId, user);
+  const mailing = await mailingService.findOneForUser(
+    mailingId,
+    user,
+    MAILING_PROJECTION
+  );
   await mailingService.assertUserCanEditMailing(user, mailing);
+  const groupId = await requestGroupId(user, mailing);
 
   const emailType = await mailingMetadataService.findCanonicalEmailType(
     mailing
@@ -147,14 +167,11 @@ async function prepare({ user, mailingId, scope }) {
       scope,
       categories: expertiseCategories(scope),
       emailType: emailType || undefined,
+      groupId,
     })
   );
 
-  return {
-    groupId: await billedGroupId(user, mailing),
-    emailType: emailType || undefined,
-    expertise,
-  };
+  return { groupId, emailType: emailType || undefined, expertise };
 }
 
 const ACCOUNT_FAILURES = new Set([
