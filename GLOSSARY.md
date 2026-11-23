@@ -185,10 +185,19 @@ _Avoid_: Send time, scheduled date
 
 ### Skills and expertises
 
+**Skill**:
+Versioned instructions the platform company writes and publishes in the admin for a model to follow: a feature skill or a task skill, as its version says.
+_UI_: Skill
+_Avoid_: Prompt, agent
+
 **Expertise**:
-A piece of email know-how the platform company writes, in Markdown and versioned, that a feature, a skill or an assistant reads before acting.
+A piece of email know-how the platform company writes, in Markdown and versioned, that a feature, a skill or an assistant reads before acting. It is either transversal or tied to one scope.
 _UI_: Expertise
 _Avoid_: Doctrine, knowledge base, guideline (a client's writing guidelines belong to its CRM governance)
+
+**Scope**:
+The part of an email an expertise covers (subject, preheader, call to action…); a transversal expertise has none and applies to every part.
+_Avoid_: Perimeter, category (an expertise has a category too, which is another thing)
 
 **Feature skill**:
 A skill a LePatron feature calls as a function: its input fills a template, its output follows a contract LePatron checks.
@@ -198,6 +207,15 @@ _UI_: Skill de fonctionnalité
 A skill written as a procedure for an assistant, with the expertises it consumes in order, and no template or contract.
 _UI_: Skill de tâche
 _Avoid_: Workflow, playbook, recipe
+
+**Invocation**:
+One call of one skill by LePatron, with one input: the unit of logging, cost and traceability. An AI feature may make several invocations, chained in its own code.
+_Avoid_: Run, execution, request
+
+**Proposal**:
+One piece of text an AI feature offers the user, who picks it or not; nothing is written into the email until the user picks.
+_UI_: Proposition
+_Avoid_: Suggestion, variant, generation
 
 **Audience**:
 The companies that may use a skill or an expertise, in the editor as through an assistant: the platform company alone, while it is tried, or every company. A new one starts with the platform company.
@@ -400,29 +418,6 @@ _Avoid_: Feature config, AI module
 The AI feature that writes text for the user to pick from: today the subject and the preheader of an email.
 _UI_: Génération de texte
 _Avoid_: Textgen, copywriting, AI writing
-
-**Skill**:
-A versioned prompt, written by Badsender consultants, that turns one input into one output; it never fetches context and never calls another skill.
-_UI_: Skill
-_Avoid_: Prompt, agent
-
-**Expertise**:
-A piece of Badsender know-how in structured Markdown, split into sections, that a skill reads as part of its input; either transversal or tied to one kind of content (its scope).
-_UI_: Expertise
-_Avoid_: Knowledge base, doctrine, guideline
-
-**Scope**:
-The kind of content an expertise is about (subject, preheader, call to action…); a transversal expertise has none and applies to every kind.
-_Avoid_: Category, perimeter
-
-**Invocation**:
-One call of one skill with one input; the unit of logging, cost and traceability. An AI feature may make several invocations, chained in its own code.
-_Avoid_: Run, execution, request
-
-**Proposal**:
-One piece of text an AI feature offers the user, who picks it or not; nothing is written into the email until the user picks.
-_UI_: Proposition
-_Avoid_: Suggestion, variant, generation
 
 ### Email
 
