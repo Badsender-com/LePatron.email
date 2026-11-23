@@ -351,6 +351,39 @@ describe('publishing what a feature uses', () => {
       ]);
     });
 
+    // The replay compares the model the feature's users get: the engine of
+    // the text feature calling the skill, the generic one for any other.
+    describe('engine', () => {
+      const engines = async () => {
+        const aiFeatureService = require('../../../packages/server/ai-feature/ai-feature.service.js');
+        aiFeatureService.resolveActiveFeature.mockClear();
+        await publication.guardPublication(
+          { kind: 'skill', id: SUBJECT_IDEAS, version: { major: 1, minor: 3 } },
+          ALICE
+        );
+        return new Set(
+          aiFeatureService.resolveActiveFeature.mock.calls.map(
+            ([params]) => params.featureType
+          )
+        );
+      };
+
+      it('is the text feature that calls the skill', async () => {
+        SUBJECT_FEATURE.featureType = 'text_generation';
+        try {
+          await expect(engines()).resolves.toEqual(
+            new Set(['text_generation'])
+          );
+        } finally {
+          SUBJECT_FEATURE.featureType = 'subject_generation';
+        }
+      });
+
+      it('is the generic skill engine for a feature that runs no skill itself', async () => {
+        await expect(engines()).resolves.toEqual(new Set(['skill']));
+      });
+    });
+
     // The replay is bounded (ADR 0019): a cap of calls, said in the plan,
     // and a few calls at a time.
     describe('bounded', () => {
