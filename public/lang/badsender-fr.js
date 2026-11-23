@@ -948,7 +948,7 @@ module.exports = {
   'ai-panel-no-action-yet': "Pas encore d'action IA pour ce bloc.",
   'ai-panel-whole-email': "Tout l'email",
   'ai-panel-selection-changed':
-    'Vous avez sélectionné un autre élément. Ces propositions restent ici.',
+    'Vous avez sélectionné un autre élément. Cette action reste telle quelle : vous la retrouverez en y revenant.',
   'ai-panel-see-its-actions': 'Voir ses actions IA',
   'ai-field-subject-label': "Générer l'objet avec l'IA",
   'ai-field-preheader-label': "Générer le préheader avec l'IA",

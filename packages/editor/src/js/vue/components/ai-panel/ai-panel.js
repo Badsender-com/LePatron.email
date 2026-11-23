@@ -48,7 +48,8 @@ const AiPanel = Vue.component('AiPanel', {
     session: null,
     sessionAction: null,
     selectionChanged: null,
-    // A new key for each session: its steps start afresh.
+    // A new key each time another session is shown: its steps are drawn from
+    // its state, a request it left under way announces nothing here.
     sessionKey: 0,
     // Said to screen readers: proposals arrived, copied, undone.
     liveMessage: '',
@@ -102,8 +103,14 @@ const AiPanel = Vue.component('AiPanel', {
       this.panel.showList(target);
       this.focusHeading();
     },
+    // The action shown again keeps its steps: the focus still goes to it.
     openAction(id, target) {
       this.panel.openAction(id, target);
+      this.focusHeading();
+    },
+    openTarget(target) {
+      this.panel.openTarget(target);
+      this.focusHeading();
     },
     announce(message) {
       this.liveMessage = message;
@@ -118,7 +125,7 @@ const AiPanel = Vue.component('AiPanel', {
         this.iconsTimer = null;
         placeFieldIcons(root, {
           actionsFor: this.panel.offerNow(),
-          onOpen: this.panel.openTarget,
+          onOpen: this.openTarget,
           labelFor: (kind) => this.t(FIELD_TARGETS[kind].labelKey),
         });
       };

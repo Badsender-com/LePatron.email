@@ -21,10 +21,11 @@ const AiProposalsSteps = Vue.component('AiProposalsSteps', {
     action: { type: Object, default: null },
     labelsOf: { type: Function, required: true },
   },
-  data: () => ({
+  data: (vm) => ({
     // The user chose to go on without what the action suggests first.
     goOnAnyway: false,
-    brief: '',
+    // The instruction last sent, when the user comes back to the action.
+    brief: vm.session.state.brief,
     copyError: false,
     undoRefused: false,
   }),

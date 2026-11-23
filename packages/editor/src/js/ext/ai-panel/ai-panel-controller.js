@@ -3,13 +3,18 @@
 const { availableActions } = require('./action-registry');
 const { ACTIONS } = require('./actions');
 const { createActionSession } = require('./action-session');
-const { EMAIL, targetOfBlock } = require('./targets');
+const { EMAIL, targetOfBlock, sameTarget } = require('./targets');
 
 /**
  * The AI panel's state and decisions, outside any component (#1192), as
  * quality control keeps its own in ext/quality/quality-review.js: what the
  * panel lists, the action under way, and following the canvas selection. The
  * Vue panel renders it.
+ *
+ * The last session of each action is kept: going back to the list, or to
+ * another action, loses nothing, and opening the action again on the same
+ * target finds it as it was — its instruction, its proposals, a request still
+ * under way.
  *
  * @param {{
  *   ko: Object,
@@ -38,6 +43,8 @@ function createAiPanel({
   const sessionAction = ko.observable(null);
   // The selection moved during an action, to an element with actions.
   const selectionChanged = ko.observable(null);
+  // The last session of each action, by action id.
+  const kept = new Map();
 
   const offer = (forTarget, context) =>
     availableActions(forTarget, context, definitions);
@@ -81,8 +88,23 @@ function createAiPanel({
     isOpen(true);
   }
 
+  // Another target is other work: its session replaces the action's last one.
+  function sessionOf(id, on) {
+    const last = kept.get(id);
+    if (last && sameTarget(last.state.target, on)) return last;
+    const created = createActionSession({
+      action: id,
+      target: on,
+      api,
+      editor,
+      definitions,
+    });
+    kept.set(id, created);
+    return created;
+  }
+
   /**
-   * Open an action on its target.
+   * Open an action on its target, as the user left it if they already had.
    * @returns {boolean} false when the target does not offer it
    */
   function openAction(id, on = EMAIL) {
@@ -90,9 +112,9 @@ function createAiPanel({
       (action) => action.id === id
     );
     if (!offered) return false;
-    session(
-      createActionSession({ action: id, target: on, api, editor, definitions })
-    );
+    const opened = sessionOf(id, on);
+    // The one already shown: the panel keeps its steps as they are.
+    if (session() !== opened) session(opened);
     selectionChanged(null);
     refresh();
     isOpen(true);
@@ -133,6 +155,7 @@ function createAiPanel({
     offerNow,
     dispose() {
       subscriptions.forEach((subscription) => subscription.dispose());
+      kept.clear();
     },
   };
 }

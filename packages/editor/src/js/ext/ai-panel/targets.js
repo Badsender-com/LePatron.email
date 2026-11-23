@@ -27,6 +27,19 @@ function targetOfBlock(block) {
   return { kind: 'block', blockId: block.id(), blockType };
 }
 
+/**
+ * Whether an action opened on `a` and one opened on `b` work on the same thing:
+ * the same block, or the same field of a block. The whole email and its
+ * subject and preheader fields are one: the subject and preheader actions
+ * write to their field whether opened from it or from the whole email.
+ */
+function sameTarget(a, b) {
+  return (
+    (a.blockId || null) === (b.blockId || null) &&
+    (a.field || null) === (b.field || null)
+  );
+}
+
 const PREHEADER_BINDING = /^\s*value:\s*preheaderText\b/;
 
 /**
@@ -56,4 +69,4 @@ const FIELD_TARGETS = Object.freeze({
   },
 });
 
-module.exports = { EMAIL, targetOfBlock, FIELD_TARGETS };
+module.exports = { EMAIL, targetOfBlock, sameTarget, FIELD_TARGETS };

@@ -919,7 +919,7 @@ module.exports = {
   'ai-panel-no-action-yet': 'No AI action for this block yet.',
   'ai-panel-whole-email': 'Whole email',
   'ai-panel-selection-changed':
-    'You selected another element. These proposals stay here.',
+    'You selected another element. This action stays as it is: you will find it again when you come back to it.',
   'ai-panel-see-its-actions': 'See its AI actions',
   'ai-field-subject-label': 'Generate the subject with AI',
   'ai-field-preheader-label': 'Generate the preheader with AI',

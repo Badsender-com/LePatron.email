@@ -76,10 +76,76 @@ afterEach(() => {
   jest.useRealTimers();
 });
 
+const flush = async () => {
+  await Promise.resolve();
+  await Vue.nextTick();
+};
+const liveRegion = (root) => root.querySelector('[aria-live]');
+const heading = (root) => root.querySelector('#ai-panel-title');
 const subjectIcon = () =>
   document.querySelector('#toolcontents [data-ai-target="subject"]');
 
 describe('ai panel: the panel', () => {
+  describe('coming back to an action', () => {
+    it('finds the action as it was, and takes the focus, when its icon is clicked again', async () => {
+      const { isOpen, root } = mount();
+      subjectIcon().click();
+      await flush();
+      const brief = root.querySelector('#ai-panel-brief');
+      brief.value = 'Ton enjoué';
+      brief.dispatchEvent(new Event('input'));
+      root.querySelector('.ai-panel__start').click();
+      await flush();
+      await flush();
+      isOpen(false);
+      document.getElementById('outside').focus();
+      subjectIcon().click();
+      await flush();
+      expect(isOpen()).toBe(true);
+      expect(document.activeElement).toBe(heading(root));
+      expect(root.querySelector('#ai-panel-brief').value).toBe('Ton enjoué');
+      expect(root.querySelectorAll('.ai-panel__proposal')).toHaveLength(1);
+    });
+
+    it('draws the instruction last sent when the user comes back from another action', async () => {
+      const { panel, root } = mount();
+      panel.openAction('generate-subject');
+      await flush();
+      const brief = root.querySelector('#ai-panel-brief');
+      brief.value = 'Court';
+      brief.dispatchEvent(new Event('input'));
+      root.querySelector('.ai-panel__start').click();
+      await flush();
+      panel.openAction('generate-preheader');
+      await flush();
+      panel.openAction('generate-subject');
+      await flush();
+      expect(root.querySelector('#ai-panel-brief').value).toBe('Court');
+    });
+
+    it('announces nothing, and moves no focus, for a request ending in an action no longer shown', async () => {
+      let answer;
+      const generate = jest.fn(
+        () =>
+          new Promise((resolve) => {
+            answer = resolve;
+          })
+      );
+      const { panel, root } = mount({ generate });
+      panel.openAction('generate-subject');
+      await flush();
+      root.querySelector('.ai-panel__start').click();
+      panel.openAction('generate-preheader');
+      await flush();
+      const focused = document.activeElement;
+      answer(PROPOSALS);
+      await flush();
+      await flush();
+      expect(liveRegion(root).textContent).not.toContain('ai-panel-proposed');
+      expect(document.activeElement).toBe(focused);
+    });
+  });
+
   describe('the AI icons on the fields', () => {
     it('places them where the fields live, not in the panels beside them', () => {
       mount();
