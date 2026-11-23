@@ -8,6 +8,7 @@
  * leaves the open task skills that consume it without it.
  */
 
+const { audienceUpdate } = require('./audience-history.js');
 const createError = require('http-errors');
 const logger = require('../../utils/logger.js');
 const { Expertises, LePatronSkills } = require('../../common/models.common.js');
@@ -76,12 +77,14 @@ const OPEN_EXPERTISES_FAILED = 'OPEN_EXPERTISES_FAILED';
  * @returns {Promise<Array<{code: string, expertiseIds: string[]}>>} the
  *   warning of the expertises not opened, if any
  */
-async function openExpertises(ids, skillId) {
+async function openExpertises(ids, skillId, userId) {
   if (!ids.length) return [];
+  // Each opening kept, as any change of audience (ADR 0031).
+  const { filter, update } = audienceUpdate(Audiences.ALL, userId);
   try {
     await Expertises.updateMany(
-      { expertiseId: { $in: ids } },
-      { $set: { audience: Audiences.ALL } }
+      { expertiseId: { $in: ids }, ...filter },
+      update
     );
     return [];
   } catch (error) {

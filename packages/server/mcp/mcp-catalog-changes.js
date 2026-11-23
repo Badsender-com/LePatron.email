@@ -2,10 +2,12 @@
 
 /**
  * The catalog changes of an item, as a company sees them (ADR 0031): each
- * version published, created or updated, dated by its publication. A company
- * other than the platform company sees an item only while it was open to
- * every company, so a version published while the item was kept to the
- * platform company is never one of its changes.
+ * version published, created or updated, dated by its publication; each
+ * opening to every company and each withdrawal, by its audience history and
+ * its archiving. A company other than the platform company sees an item only
+ * while it was open to every company: its opening is when the item appears,
+ * created, or opened again after a withdrawal; a version published while the
+ * item was kept to the platform company is never one of its changes.
  *
  * Pure: it reads the item as stored, its versions, its audience and its
  * audience history, and answers plain changes, with what each reader may
@@ -58,7 +60,14 @@ function openSpans(item) {
     .filter((span) => span.from < span.to);
 }
 
-const within = (spans, at) => spans.some((s) => s.from <= at && at < s.to);
+// A version published as the item opened is told by the opening.
+const within = (spans, at) => spans.some((s) => s.from < at && at < s.to);
+
+// The version an item was at, at a date: the last published by then.
+function versionAt(item, at) {
+  const before = publications(item).filter((v) => time(v.activatedAt) <= at);
+  return before.length ? before[before.length - 1] : null;
+}
 
 /**
  * The versions an item published, each as a change: `created` for its first,
@@ -79,6 +88,68 @@ function publicationChanges(item, { everyAudience }) {
       version,
     }))
     .filter(({ at }) => everyAudience || within(spans, at));
+}
+
+/**
+ * The openings and withdrawals a reader sees: the platform company each
+ * change of audience and the archiving; another company the start of each
+ * span it was open to it, its first as a creation, and each end.
+ */
+function audienceChanges(item, { everyAudience }) {
+  if (everyAudience) {
+    const changes = (item.audienceHistory || []).map((change) => ({
+      change: change.audience === Audiences.ALL ? 'opened' : 'withdrawn',
+      at: time(change.at),
+    }));
+    if (item.archivedAt) {
+      changes.push({ change: 'withdrawn', at: time(item.archivedAt) });
+    }
+    return changes.map((found) => ({
+      ...found,
+      version: versionAt(item, found.at),
+    }));
+  }
+  return openSpans(item).flatMap((span, index) => [
+    ...(span.from > -Infinity && versionAt(item, span.from)
+      ? [
+          {
+            change: index === 0 ? 'created' : 'opened',
+            at: span.from,
+            version: versionAt(item, span.from),
+          },
+        ]
+      : []),
+    ...(span.to < Infinity ? [{ change: 'withdrawn', at: span.to }] : []),
+  ]);
+}
+
+// A withdrawn item is told by its title alone: it may no longer be read.
+function asWithdrawal(kind, item, { at }) {
+  return {
+    kind,
+    id: item.id,
+    title: item.title,
+    change: 'withdrawn',
+    at: isoOf(at),
+  };
+}
+
+// An opening says the version opened, and no release note: none was
+// written for it.
+function asOpening(kind, item, found, reader) {
+  return {
+    kind,
+    id: item.id,
+    title: item.title,
+    category: item.category,
+    change: found.change,
+    at: isoOf(found.at),
+    fromVersion: null,
+    toVersion: found.version ? versionLabel(found.version) : null,
+    releaseNote: null,
+    ...(reader.everyAudience && { audience: item.audience }),
+    ...(item.uri && { uri: item.uri }),
+  };
 }
 
 /**
@@ -117,9 +188,19 @@ function asChange(kind, item, found, reader) {
  * @param {{ since: number, until: number }} period in milliseconds, inclusive
  */
 function changesOf(kind, item, reader, { since, until }) {
-  return publicationChanges(item, reader)
-    .filter(({ at }) => at >= since && at <= until)
-    .map((found) => asChange(kind, item, found, reader));
+  const inPeriod = ({ at }) => at >= since && at <= until;
+  return [
+    ...publicationChanges(item, reader)
+      .filter(inPeriod)
+      .map((found) => asChange(kind, item, found, reader)),
+    ...audienceChanges(item, reader)
+      .filter(inPeriod)
+      .map((found) =>
+        found.change === 'withdrawn'
+          ? asWithdrawal(kind, item, found)
+          : asOpening(kind, item, found, reader)
+      ),
+  ];
 }
 
 module.exports = { changesOf, openSpans, publications };
