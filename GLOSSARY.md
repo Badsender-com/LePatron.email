@@ -213,7 +213,7 @@ One call of one skill by LePatron, with one input: the unit of logging, cost and
 _Avoid_: Run, execution, request
 
 **Proposal**:
-One piece of text an AI feature offers the user, who picks it or not; nothing is written into the email until the user picks.
+One piece of text an AI feature offers the user, who picks it or not; nothing is written into the email until the user applies it.
 _UI_: Proposition
 _Avoid_: Suggestion, variant, generation
 
