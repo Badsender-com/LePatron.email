@@ -26,6 +26,9 @@ module.exports = {
     subject: orUndefined(editor.knownSubject()),
     currentPreheader: orUndefined(editor.getPreheader()),
   }),
+  // Proposals built on another subject are not this email's any more: once the
+  // subject changes, the action starts afresh.
+  builtOn: (editor) => editor.knownSubject() || '',
   canWrite: (editor) => editor.canApplyPreheader,
   read: (editor) => editor.getPreheader() || '',
   write: (editor, target, value) => {

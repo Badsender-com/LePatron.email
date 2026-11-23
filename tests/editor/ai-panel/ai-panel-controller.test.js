@@ -44,7 +44,10 @@ function mount({
     mailingId: 'mailing-1',
     emailCopy: () => [{ role: 'title', text: 'Les soldes' }],
     getSubject: () => 'Les soldes',
-    knownSubject: () => 'Les soldes',
+    subject: 'Les soldes',
+    knownSubject() {
+      return this.subject;
+    },
     getPreheader: () => '',
   };
   const panel = createAiPanel({
@@ -55,7 +58,7 @@ function mount({
     selection,
     definitions,
   });
-  return { panel, isOpen, selection };
+  return { panel, isOpen, selection, editor };
 }
 
 const ids = (actions) => actions.map((action) => action.id);
@@ -154,6 +157,21 @@ describe('ai panel: the controller', () => {
       panel.showList();
       panel.openAction('generate-subject');
       expect(panel.session()).toBe(opened);
+    });
+
+    it('starts the preheader afresh once the subject it was built on changed', async () => {
+      const { panel, editor } = mount();
+      panel.openAction('generate-preheader');
+      const onFirstSubject = panel.session();
+      await onFirstSubject.request();
+      panel.showList();
+      panel.openAction('generate-preheader');
+      expect(panel.session()).toBe(onFirstSubject);
+
+      editor.subject = 'Dernier jour des soldes';
+      panel.openAction('generate-preheader');
+      expect(panel.session()).not.toBe(onFirstSubject);
+      expect(panel.session().state.proposals).toEqual([]);
     });
 
     it('keeps the last session of each action, and the list keeps them all', async () => {
