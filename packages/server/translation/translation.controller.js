@@ -10,9 +10,10 @@ const ERROR_CODES = require('../constant/error-codes.js');
 const { selectedGroupIdOf } = require('../account/request-scope.js');
 
 // /translation/block, /translation/text and /mailings/:id/duplicate-translate
-// forward user payloads to an external provider: their routes go through
-// aiRateLimit (ai-usage/ai-rate-limit.js), which caps the payload size and
-// counts each request against per-user and per-group windows.
+// forward user payloads to an external provider: their paths are in
+// AI_ROUTE_PATHS (ai-usage/ai-rate-limit.js), which caps the payload size, and
+// their routes go through aiRateLimit, which counts each request against
+// per-user and per-group windows.
 
 module.exports = {
   duplicateAndTranslate: asyncHandler(duplicateAndTranslate),
