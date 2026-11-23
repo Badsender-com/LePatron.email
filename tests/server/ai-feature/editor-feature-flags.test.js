@@ -4,9 +4,11 @@
  * Acceptance tests of text generation (epic #1163): what the editor is told.
  *
  * The editor shows the text generation button only when the group can use it:
- * the feature on, with an active integration, and its two skills active and
- * open to the group (ADR 0013). It does not depend on the email metadata —
- * without them, the proposal is offered to copy.
+ * the feature on, with an active integration, and at least one of its skills
+ * active and open to the group (ADR 0013). It is told which skills run: each
+ * action is offered only while the skill it calls does, so a skill not
+ * published yet hides its own action, not the others. It does not depend on
+ * the email metadata — without them, the proposal is offered to copy.
  */
 
 jest.mock('../../../packages/server/common/models.common', () => ({
@@ -77,6 +79,7 @@ describe('editor data: text generation flag', () => {
     ).resolves.toEqual({
       hasTranslationFeature: false,
       hasTextGenerationFeature: true,
+      textGenerationSkills: TEXT_GENERATION_SKILLS,
     });
   });
 
@@ -108,6 +111,7 @@ describe('editor data: text generation flag', () => {
     ).resolves.toEqual({
       hasTranslationFeature: false,
       hasTextGenerationFeature: false,
+      textGenerationSkills: [],
     });
   });
 
@@ -129,6 +133,7 @@ describe('editor data: text generation flag', () => {
     ).resolves.toEqual({
       hasTranslationFeature: true,
       hasTextGenerationFeature: false,
+      textGenerationSkills: [],
     });
   });
 
@@ -137,19 +142,23 @@ describe('editor data: text generation flag', () => {
       { featureType: 'text_generation', isActive: true, integration: active },
     ];
 
-    it('is off for a client company when a skill is kept to the platform company', async () => {
+    it('leaves out, for a client company, a skill kept to the platform company', async () => {
       configWith(on);
       skills(
         openSkill('redaction.objet'),
-        platformSkill('redaction.pre-header')
+        openSkill('redaction.pre-header'),
+        platformSkill('redaction.correction')
       );
-      const flags = await aiFeatureService.getEditorFeatureFlags({
-        groupId: GROUP_ID,
+      await expect(
+        aiFeatureService.getEditorFeatureFlags({ groupId: GROUP_ID })
+      ).resolves.toEqual({
+        hasTranslationFeature: false,
+        hasTextGenerationFeature: true,
+        textGenerationSkills: ['redaction.objet', 'redaction.pre-header'],
       });
-      expect(flags.hasTextGenerationFeature).toBe(false);
     });
 
-    it('is on for the platform company, which uses every audience', async () => {
+    it('gives the platform company every skill, whatever its audience', async () => {
       configWith(on);
       companyIs({ isPlatform: true });
       skills(...TEXT_GENERATION_SKILLS.map(platformSkill));
@@ -157,15 +166,43 @@ describe('editor data: text generation flag', () => {
         groupId: GROUP_ID,
       });
       expect(flags.hasTextGenerationFeature).toBe(true);
+      expect(flags.textGenerationSkills).toEqual(TEXT_GENERATION_SKILLS);
     });
 
-    it('is off when a skill is not active in the environment', async () => {
+    // A deployment that brings the correction before its skill is published
+    // keeps the subject and the preheader the companies already had.
+    it('leaves out a skill not active in the environment, and keeps the others', async () => {
       configWith(on);
-      skills(openSkill('redaction.objet'));
+      skills(openSkill('redaction.objet'), openSkill('redaction.pre-header'));
       const flags = await aiFeatureService.getEditorFeatureFlags({
         groupId: GROUP_ID,
       });
-      expect(flags.hasTextGenerationFeature).toBe(false);
+      expect(flags.hasTextGenerationFeature).toBe(true);
+      expect(flags.textGenerationSkills).toEqual([
+        'redaction.objet',
+        'redaction.pre-header',
+      ]);
+    });
+
+    it('lists the skills in the order of the manifest, whatever the read returns', async () => {
+      configWith(on);
+      skills(...TEXT_GENERATION_SKILLS.slice().reverse().map(openSkill));
+      const flags = await aiFeatureService.getEditorFeatureFlags({
+        groupId: GROUP_ID,
+      });
+      expect(flags.textGenerationSkills).toEqual(TEXT_GENERATION_SKILLS);
+    });
+
+    it('is off when none of its skills runs for the company', async () => {
+      configWith(on);
+      skills(...TEXT_GENERATION_SKILLS.map(platformSkill));
+      await expect(
+        aiFeatureService.getEditorFeatureFlags({ groupId: GROUP_ID })
+      ).resolves.toEqual({
+        hasTranslationFeature: false,
+        hasTextGenerationFeature: false,
+        textGenerationSkills: [],
+      });
     });
 
     it('reads the active skills open to the company in one projected query', async () => {
@@ -201,8 +238,11 @@ describe('editor data: text generation flag', () => {
           integration: active,
         },
       ]);
-      await aiFeatureService.getEditorFeatureFlags({ groupId: GROUP_ID });
+      const flags = await aiFeatureService.getEditorFeatureFlags({
+        groupId: GROUP_ID,
+      });
       expect(LePatronSkills.find).not.toHaveBeenCalled();
+      expect(flags.textGenerationSkills).toEqual([]);
     });
   });
 });

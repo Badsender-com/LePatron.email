@@ -15,6 +15,7 @@ jest.mock('../../../packages/server/ai-feature/ai-feature.service', () => ({
   getEditorFeatureFlags: jest.fn().mockResolvedValue({
     hasTranslationFeature: false,
     hasTextGenerationFeature: false,
+    textGenerationSkills: [],
   }),
 }));
 // Whether the user may write where the email lives: the edit rule of the

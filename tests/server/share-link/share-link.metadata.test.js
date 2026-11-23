@@ -15,6 +15,7 @@ jest.mock('../../../packages/server/ai-feature/ai-feature.service', () => ({
   getEditorFeatureFlags: jest.fn().mockResolvedValue({
     hasTranslationFeature: false,
     hasTextGenerationFeature: false,
+    textGenerationSkills: [],
   }),
 }));
 jest.mock(

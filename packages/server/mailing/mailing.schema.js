@@ -629,6 +629,7 @@ MailingSchema.statics.findOneForMosaico = async function findOneForMosaico(
   const {
     hasTranslationFeature,
     hasTextGenerationFeature,
+    textGenerationSkills,
   } = await aiFeatureService.getEditorFeatureFlags({ groupId, group });
 
   // Editorial metadata for the editor's email-settings section, when the company
@@ -687,6 +688,9 @@ MailingSchema.statics.findOneForMosaico = async function findOneForMosaico(
       // The text generation button. Independent of the email metadata: without
       // them, the subject proposal is offered to copy.
       hasTextGenerationFeature,
+      // The skills of text generation that run for the company: each action
+      // of the editor is offered only while the skill it calls is there.
+      textGenerationSkills,
       // Drive palette visibility of the two synthetic blocks only — their
       // definitions are always injected client-side. Independent of each other.
       // Named after the descriptors' flags, which the editor reads them by.

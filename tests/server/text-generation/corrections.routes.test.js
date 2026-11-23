@@ -537,5 +537,16 @@ describe('spelling correction: POST /api/text-generation/corrections', () => {
       expect(res.status).toBe(503);
       expect(res.body.message).toBe('TEXT_GENERATION_UNAVAILABLE');
     });
+
+    // The editor hides the action then; a request sent all the same, from an
+    // editor opened before the change, still gets an answer it can show.
+    it('answers 503 TEXT_GENERATION_UNAVAILABLE when the skill is kept to the platform company', async () => {
+      invoke.mockRejectedValue(
+        createError(403, 'SKILL_NOT_AVAILABLE_TO_COMPANY')
+      );
+      const res = await post();
+      expect(res.status).toBe(503);
+      expect(res.body.message).toBe('TEXT_GENERATION_UNAVAILABLE');
+    });
   });
 });
