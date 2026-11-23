@@ -37,6 +37,11 @@ const ModelHintsSchema = new Schema(
     temperature: { type: Number },
     maxTokens: { type: Number },
     topP: { type: Number },
+    // For a reasoning model: how long it thinks. Unset, the feature decides.
+    reasoningEffort: {
+      type: String,
+      enum: ['minimal', 'low', 'medium', 'high'],
+    },
   },
   { _id: false }
 );

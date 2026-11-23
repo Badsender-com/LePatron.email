@@ -593,6 +593,45 @@ describe('skill-invocation.invoke', () => {
       });
     });
 
+    it('asks a reasoning model to think little for text generation, unless the skill says otherwise', async () => {
+      wireHappyPath();
+      await skillInvocation.invoke({
+        skillId: 'generic.text',
+        input: { prompt: 'x' },
+        groupId: GROUP_ID,
+        featureType: 'text_generation',
+      });
+      expect(mockProvider.chatComplete.mock.calls[0][0].reasoningEffort).toBe(
+        'low'
+      );
+
+      mockProvider.chatComplete.mockClear();
+      const skill = buildSkill();
+      skill.versions[0].modelHints = { reasoningEffort: 'medium' };
+      wireHappyPath({ skill });
+      await skillInvocation.invoke({
+        skillId: 'generic.text',
+        input: { prompt: 'x' },
+        groupId: GROUP_ID,
+        featureType: 'text_generation',
+      });
+      expect(mockProvider.chatComplete.mock.calls[0][0].reasoningEffort).toBe(
+        'medium'
+      );
+    });
+
+    it('leaves the reasoning to the model for the generic skill engine', async () => {
+      wireHappyPath();
+      await skillInvocation.invoke({
+        skillId: 'generic.text',
+        input: { prompt: 'x' },
+        groupId: GROUP_ID,
+      });
+      expect(
+        mockProvider.chatComplete.mock.calls[0][0].reasoningEffort
+      ).toBeUndefined();
+    });
+
     // No fallback to 'skill': a group that has not enabled a client feature
     // must not get it through the generic engine.
     it('names the missing feature and its reason when that engine is off', async () => {

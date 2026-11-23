@@ -67,6 +67,9 @@ const SKILL = z.object({
         temperature: z.number().optional(),
         maxTokens: z.number().optional(),
         topP: z.number().optional(),
+        reasoningEffort: z
+          .enum(['minimal', 'low', 'medium', 'high'])
+          .optional(),
       })
       .optional(),
     testCases: z.array(TEST_CASE).optional(),

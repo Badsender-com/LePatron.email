@@ -60,6 +60,7 @@ function prepareProviderCall({
         messages,
         temperature: config.temperature,
         maxTokens: config.maxTokens,
+        reasoningEffort: config.reasoningEffort,
         responseFormat,
       }),
       timeoutMs

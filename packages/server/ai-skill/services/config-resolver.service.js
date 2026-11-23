@@ -9,6 +9,7 @@
  *   - temperature   → Skill > Group > default
  *   - maxTokens     → Skill > Group > default
  *   - topP          → Skill > Group > default
+ *   - reasoningEffort → Skill > default (the feature's, for a reasoning model)
  *
  * @param {Object} params
  * @param {Object} params.integration              Group's resolved Integration (provider + apiKey).
@@ -53,18 +54,28 @@ function resolveConfig({
     [def.topP, 'default'],
   ]);
 
+  const {
+    value: reasoningEffort,
+    source: reasoningEffortSource,
+  } = pickWithSource([
+    [skillCfg.reasoningEffort, 'skill'],
+    [def.reasoningEffort, 'default'],
+  ]);
+
   return {
     provider,
     model,
     temperature,
     maxTokens,
     topP,
+    reasoningEffort,
     source: {
       provider: 'group',
       model: modelSource,
       temperature: temperatureSource,
       maxTokens: maxTokensSource,
       topP: topPSource,
+      reasoningEffort: reasoningEffortSource,
     },
   };
 }

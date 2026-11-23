@@ -4,6 +4,7 @@ const { Groups } = require('../../common/models.common.js');
 const aiFeatureService = require('../../ai-feature/ai-feature.service.js');
 const { resolveConfig } = require('./config-resolver.service.js');
 const { configError } = require('./invocation-config-error.js');
+const AIFeatureTypes = require('../../constant/ai-feature-type.js');
 
 const { FeatureResolutionReasons } = aiFeatureService;
 
@@ -86,6 +87,13 @@ async function resolveGroupIntegration(groupId, featureType) {
   };
 }
 
+// What a feature asks of a reasoning model by default. Text generation writes
+// a few lines or spots mistakes: thinking at length makes a lot of the email
+// time out and bills the reasoning, as translation found (llm-translation.js).
+const FEATURE_DEFAULTS = Object.freeze({
+  [AIFeatureTypes.TEXT_GENERATION]: Object.freeze({ reasoningEffort: 'low' }),
+});
+
 /**
  * The engine of the invocation and the settings it runs with: the group's
  * feature config, over the version's model hints, over the defaults.
@@ -101,7 +109,7 @@ async function resolveEngine({ groupId, featureType, version }) {
     integration,
     groupFeatureConfig,
     skillModelHints: version.modelHints || {},
-    defaults: {},
+    defaults: FEATURE_DEFAULTS[featureType] || {},
   });
   return { integration, groupFeatureConfig, config };
 }
