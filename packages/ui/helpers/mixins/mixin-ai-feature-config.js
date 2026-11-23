@@ -3,8 +3,9 @@ import { PAGE, SHOW_SNACKBAR } from '~/store/page.js';
 import * as apiRoutes from '~/helpers/api-routes.js';
 
 // The AI feature configuration of a group and its AI integrations: loaded
-// together, saved one feature at a time. Shared by the translation section and
-// the generic engine section, which each render a part of the same document.
+// together, once, by the AI features tab, saved one feature at a time. The
+// tab hands them to its engine sections, which each render a part of the same
+// document and ask the tab to save theirs.
 //
 // The host component must provide `groupId`.
 export default {

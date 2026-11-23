@@ -9,13 +9,12 @@
  * - 'text_generation', the engine of the editor's text generation (subject,
  *   preheader).
  *
- * Self-contained: fetches its own config / integrations / models so the parent
- * tab only needs to drop
- * <bs-ai-feature-engine-section feature-type="..." labels="..." :group-id="..."/>.
- * Mirrors the translation section; when the étape 2bis hierarchy refactor lands,
- * the translation block can be extracted on the same model.
+ * The tab loads the group's config and integrations once and hands them to
+ * each section, which asks the tab to save its feature (`save`, with the
+ * feature type and the fields): every section edits a part of the same
+ * document. Mirrors the translation section; when the étape 2bis hierarchy
+ * refactor lands, the translation block can be extracted on the same model.
  */
-import mixinAiFeatureConfig from '~/helpers/mixins/mixin-ai-feature-config.js';
 import {
   getProviderLabel,
   providerConfigs,
@@ -35,9 +34,13 @@ export default {
     BsGroupFeatureSwitch,
     LucideCpu: Cpu,
   },
-  mixins: [mixinAiFeatureConfig],
   props: {
-    groupId: { type: String, required: true },
+    // The group's AIFeatureConfig and its AI integrations, as the tab loaded
+    // them.
+    config: { type: Object, default: null },
+    integrations: { type: Array, default: () => [] },
+    // While the tab saves a feature, every section waits.
+    saving: { type: Boolean, default: false },
     // The AIFeatureConfig entry this section edits.
     featureType: { type: String, required: true },
     // Locale namespace holding title, description, enableLabel, on, off,
@@ -117,7 +120,7 @@ export default {
   },
   methods: {
     updateFeature(data) {
-      return this.saveFeature(this.featureType, data);
+      this.$emit('save', this.featureType, data);
     },
   },
 };
@@ -142,46 +145,42 @@ export default {
         :label="$t(`${labels}.enableLabel`)"
         :on-text="$t(`${labels}.on`)"
         :off-text="$t(`${labels}.off`)"
-        :disabled="loading || saving || !hasActiveIntegration"
+        :disabled="saving || !hasActiveIntegration"
         :loading="saving"
       />
     </template>
 
-    <v-skeleton-loader v-if="loading" type="article" />
+    <!-- Warning if selected integration is inactive -->
+    <v-alert
+      v-if="selectedIntegrationId && !hasActiveIntegration"
+      type="warning"
+      dense
+      outlined
+      class="mb-4"
+    >
+      {{ $t('aiFeatures.integrationInactiveWarning') }}
+    </v-alert>
 
-    <template v-else>
-      <!-- Warning if selected integration is inactive -->
-      <v-alert
-        v-if="selectedIntegrationId && !hasActiveIntegration"
-        type="warning"
-        dense
-        outlined
-        class="mb-4"
-      >
-        {{ $t('aiFeatures.integrationInactiveWarning') }}
-      </v-alert>
+    <v-row>
+      <v-col cols="12" md="6">
+        <bs-select
+          v-model="selectedIntegrationId"
+          :items="integrationOptions"
+          :label="$t('aiFeatures.selectIntegration')"
+          :disabled="saving"
+        />
+      </v-col>
 
-      <v-row>
-        <v-col cols="12" md="6">
-          <bs-select
-            v-model="selectedIntegrationId"
-            :items="integrationOptions"
-            :label="$t('aiFeatures.selectIntegration')"
-            :disabled="saving"
-          />
-        </v-col>
-
-        <v-col v-show="supportsModelSelection" cols="12" md="6">
-          <bs-ai-model-picker
-            v-model="selectedModel"
-            :integration-id="selectedIntegrationId"
-            :label="$t(`${labels}.model`)"
-            :hint="$t(`${labels}.modelHint`)"
-            :disabled="saving"
-            @capabilities="capabilities = $event"
-          />
-        </v-col>
-      </v-row>
-    </template>
+      <v-col v-show="supportsModelSelection" cols="12" md="6">
+        <bs-ai-model-picker
+          v-model="selectedModel"
+          :integration-id="selectedIntegrationId"
+          :label="$t(`${labels}.model`)"
+          :hint="$t(`${labels}.modelHint`)"
+          :disabled="saving"
+          @capabilities="capabilities = $event"
+        />
+      </v-col>
+    </v-row>
   </bs-form-section>
 </template>

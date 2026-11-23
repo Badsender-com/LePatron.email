@@ -29,28 +29,16 @@ module.exports = {
   FeatureResolutionReasons,
 };
 
+// MongoDB's answer to an insert that would break a unique index.
+const DUPLICATE_KEY = 11000;
+
 /**
  * Get or create AI feature configuration for a group
  */
 async function getOrCreateConfig({ groupId }) {
   await groupService.findById(groupId);
 
-  let config = await AIFeatureConfigs.findOne({
-    _company: Types.ObjectId(groupId),
-  }).populate('features.integration');
-
-  if (!config) {
-    // Create default config with all feature types
-    config = await AIFeatureConfigs.create({
-      _company: Types.ObjectId(groupId),
-      features: AIFeatureTypeValues.map(defaultFeature),
-    });
-
-    config = await AIFeatureConfigs.findById(config._id).populate(
-      'features.integration'
-    );
-    return config;
-  }
+  let config = await findOrInsertConfig(groupId);
 
   // Backfill feature types added to the enum AFTER this config was created
   // (e.g. 'skill' on configs that predate it). Without this, a missing feature
@@ -74,6 +62,28 @@ async function getOrCreateConfig({ groupId }) {
   }
 
   return config;
+}
+
+/**
+ * The group's config, inserted with every feature type when it has none, in
+ * one operation: two first reads at once (two tabs, two requests of a page)
+ * would otherwise both insert, and the second fail on the unique `_company`.
+ * The upsert that still loses that race finds, when tried again, the config
+ * the other one inserted.
+ */
+async function findOrInsertConfig(groupId) {
+  const upsert = () =>
+    AIFeatureConfigs.findOneAndUpdate(
+      { _company: Types.ObjectId(groupId) },
+      { $setOnInsert: { features: AIFeatureTypeValues.map(defaultFeature) } },
+      { upsert: true, new: true, setDefaultsOnInsert: true }
+    ).populate('features.integration');
+  try {
+    return await upsert();
+  } catch (error) {
+    if (error?.code !== DUPLICATE_KEY) throw error;
+    return upsert();
+  }
 }
 
 function defaultFeature(featureType) {
