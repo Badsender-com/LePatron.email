@@ -33,9 +33,11 @@ const {
 
 // A block's fields, each a few lines of an email: these keep a request to a
 // block, not a document. The AI rate limit caps the request itself.
-const MAX_FIELDS = 40;
-const MAX_FIELD_LENGTH = 5000;
-const MAX_TOTAL_LENGTH = 50000;
+const {
+  MAX_FIELDS,
+  MAX_FIELD_LENGTH,
+  MAX_TOTAL_LENGTH,
+} = require('../../shared/text-correction/limits.js');
 
 const requestSchema = z
   .object({

@@ -19,11 +19,12 @@ function fieldsOf(editor, target) {
   };
 }
 
-// What the corrections route accepts in one request
-// (server/text-generation/text-correction.service.js).
-const MAX_FIELDS = 40;
-const MAX_FIELD_LENGTH = 5000;
-const MAX_TOTAL_LENGTH = 50000;
+// What the corrections route accepts in one request.
+const {
+  MAX_FIELDS,
+  MAX_FIELD_LENGTH,
+  MAX_TOTAL_LENGTH,
+} = require('../../../../../../shared/text-correction/limits.js');
 
 // The fields of a block in requests the route accepts, in their order.
 function batchesOf(fields) {
