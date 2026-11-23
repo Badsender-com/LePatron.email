@@ -10,6 +10,9 @@ const {
   InvocationStatuses,
 } = require('../ai-skill/constant/skill-constants.js');
 const { screenProposals } = require('./proposal-checks.js');
+const {
+  EMAIL_COPY_LIMITS,
+} = require('../../shared/text-generation/email-copy-limits.js');
 const { prepare, compact } = require('./invocation-context.js');
 const {
   PROVIDER_ERROR_CODES,
@@ -32,11 +35,6 @@ const {
 const MAX_USER_TEXT_LENGTH = 500;
 const MAX_AVOID_LENGTH = 300;
 const MAX_AVOID_ITEMS = 30;
-// The email copy, sent whole to the model on the company's key: room for a
-// long newsletter, not for whatever a request carries.
-const MAX_CONTENT_ITEMS = 200;
-const MAX_CONTENT_TEXT_LENGTH = 4000;
-const MAX_CONTENT_LENGTH = 32000;
 
 const optionalText = z
   .string()
@@ -53,16 +51,16 @@ const requestSchema = z.object({
         role: z.enum(['title', 'text', 'button']),
         text: z
           .string()
-          .max(MAX_CONTENT_TEXT_LENGTH)
+          .max(EMAIL_COPY_LIMITS.maxTextLength)
           .refine((text) => text.trim().length > 0),
       })
     )
     .min(1)
-    .max(MAX_CONTENT_ITEMS)
+    .max(EMAIL_COPY_LIMITS.maxItems)
     .refine(
       (content) =>
         content.reduce((total, piece) => total + piece.text.length, 0) <=
-        MAX_CONTENT_LENGTH
+        EMAIL_COPY_LIMITS.maxTotalLength
     ),
   brief: optionalText,
   avoid: z

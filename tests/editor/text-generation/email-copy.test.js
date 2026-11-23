@@ -202,4 +202,19 @@ describe('editor: extracting the email copy', () => {
     expect(extractEmailCopy(root)).toEqual([]);
     expect(extractEmailCopy(render(''))).toEqual([]);
   });
+  it('sends no more text than the server accepts, from the top of the email', () => {
+    const long = 'a'.repeat(5000);
+    const blocks = Array.from(
+      { length: 10 },
+      (_, i) =>
+        `<div id="ko_textBlock_${i}">${field(
+          `ko_textBlock_${i}`,
+          'text',
+          long
+        )}</div>`
+    ).join('');
+    const copy = extractEmailCopy(render(blocks));
+    expect(copy[0].text).toHaveLength(4000);
+    expect(copy.reduce((sum, piece) => sum + piece.text.length, 0)).toBe(32000);
+  });
 });

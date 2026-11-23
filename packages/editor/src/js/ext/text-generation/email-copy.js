@@ -25,6 +25,9 @@
 const {
   isHeaderOrFooterBlock,
 } = require('../../../../../shared/quality/header-footer-blocks.js');
+const {
+  fitEmailCopy,
+} = require('../../../../../shared/text-generation/email-copy-limits.js');
 
 const BLOCK_ID = /^ko_([A-Za-z][A-Za-z0-9]*)_(\d+)$/;
 const TITLE = /title|heading/i;
@@ -93,7 +96,7 @@ function extractEmailCopy(root, { sampleFor = () => undefined } = {}) {
       copy.push({ role: roleOf(field, name), text });
     });
   });
-  return copy;
+  return fitEmailCopy(copy);
 }
 
 module.exports = { extractEmailCopy };
