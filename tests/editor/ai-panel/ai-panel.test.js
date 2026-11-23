@@ -31,6 +31,10 @@ const CONTEXT = {
 const PROPOSALS = {
   proposals: [{ text: 'Les soldes commencent', angle: 'direct', facts: {} }],
 };
+const PREHEADER_BLOCK = {
+  type: () => 'preheaderBlock',
+  id: () => 'ko_preheaderBlock_1',
+};
 
 const SUBJECT_FIELD = `
   <div class="email-metadata__label-row"><label for="email-metadata-subject">Objet</label></div>
@@ -86,6 +90,47 @@ const subjectIcon = () =>
   document.querySelector('#toolcontents [data-ai-target="subject"]');
 
 describe('ai panel: the panel', () => {
+  describe('its lists', () => {
+    it('heads each list, which its heading labels', async () => {
+      const { selection, isOpen, root } = mount();
+      isOpen(true);
+      selection(PREHEADER_BLOCK);
+      await flush();
+      const lists = [...root.querySelectorAll('ul.ai-panel__actions')];
+      expect(lists).toHaveLength(2);
+      lists.forEach((list) => {
+        const title = document.getElementById(
+          list.getAttribute('aria-labelledby')
+        );
+        expect(title.tagName).toBe('H3');
+      });
+      expect(
+        lists.map(
+          (list) =>
+            document.getElementById(list.getAttribute('aria-labelledby'))
+              .textContent
+        )
+      ).toEqual(['ai-panel-selected-block', 'ai-panel-whole-email']);
+    });
+
+    it('says an action can only be copied, in the selected element’s list too', async () => {
+      const { selection, isOpen, root } = mount({
+        context: { ...CONTEXT, hasPreheaderField: false },
+      });
+      isOpen(true);
+      selection(PREHEADER_BLOCK);
+      await flush();
+      const [selected] = root.querySelectorAll('ul.ai-panel__actions');
+      expect(selected.textContent).toContain('ai-panel-copy-only');
+    });
+
+    it('names its close button with a translated label', () => {
+      const { root } = mount();
+      const close = root.querySelector('.right-panel__header button');
+      expect(close.getAttribute('aria-label')).toBe('quality-action-close');
+    });
+  });
+
   describe('coming back to an action', () => {
     it('finds the action as it was, and takes the focus, when its icon is clicked again', async () => {
       const { isOpen, root } = mount();
@@ -144,6 +189,15 @@ describe('ai panel: the panel', () => {
       expect(liveRegion(root).textContent).not.toContain('ai-panel-proposed');
       expect(document.activeElement).toBe(focused);
     });
+  });
+
+  it('says the selection changed as its notice appears', async () => {
+    const { panel, selection, root } = mount();
+    panel.openAction('generate-subject');
+    selection(PREHEADER_BLOCK);
+    await flush();
+    expect(root.querySelector('.ai-panel__moved')).not.toBeNull();
+    expect(liveRegion(root).textContent).toBe('ai-panel-selection-changed');
   });
 
   describe('the AI icons on the fields', () => {

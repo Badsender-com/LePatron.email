@@ -3,7 +3,7 @@
 const Vue = require('vue/dist/vue.common');
 const { definitionOf } = require('../../../ext/ai-panel/actions');
 const { placeFieldIcons } = require('../../../ext/ai-panel/field-icons');
-const { FIELD_TARGETS } = require('../../../ext/ai-panel/targets');
+const { EMAIL, FIELD_TARGETS } = require('../../../ext/ai-panel/targets');
 const { AiProposalsSteps } = require('./ai-proposals-steps');
 const template = require('./ai-panel.template');
 
@@ -51,12 +51,35 @@ const AiPanel = Vue.component('AiPanel', {
     // A new key each time another session is shown: its steps are drawn from
     // its state, a request it left under way announces nothing here.
     sessionKey: 0,
-    // Said to screen readers: proposals arrived, copied, undone.
+    // Said to screen readers: proposals arrived, copied, undone, the
+    // selection moved.
     liveMessage: '',
     subscriptions: [],
     iconsObserver: null,
     iconsTimer: null,
   }),
+  computed: {
+    // The lists of actions: the selected element's, under its own heading,
+    // then the whole email's.
+    lists() {
+      const email = {
+        id: 'ai-panel-email-actions',
+        actions: this.actions,
+        target: EMAIL,
+      };
+      if (this.target.kind === 'email') return [email];
+      return [
+        {
+          id: 'ai-panel-target-actions',
+          title: 'ai-panel-selected-block',
+          actions: this.targetActions,
+          target: this.target,
+          empty: 'ai-panel-no-action-yet',
+        },
+        { ...email, title: 'ai-panel-whole-email' },
+      ];
+    },
+  },
   created() {
     this.sync();
     this.subscriptions = MIRRORED.map((name) =>
@@ -83,6 +106,12 @@ const AiPanel = Vue.component('AiPanel', {
         this.sessionKey += 1;
         this.liveMessage = '';
         this.focusHeading();
+      }
+      // Seen as it appears, said as well.
+      if (changed === 'selectionChanged') {
+        this.liveMessage = this.selectionChanged
+          ? this.t('ai-panel-selection-changed')
+          : '';
       }
     },
     labelsOf(id) {

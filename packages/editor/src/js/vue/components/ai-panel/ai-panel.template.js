@@ -5,9 +5,9 @@
  * grows past what is comfortable to read. Header, buttons, notices and spinner
  * come from the right panels' shared kit (badsender-right-panel-ui.less).
  *
- * Two views: the lists of actions (the selected element's, the whole email's),
- * and the steps of the action under way, rendered by the component of its
- * family (ai-proposals-steps.js for text generation).
+ * Two views: the lists of actions (the selected element's, the whole email's,
+ * one markup for both), and the steps of the action under way, rendered by the
+ * component of its family (ai-proposals-steps.js for text generation).
  */
 
 module.exports = `
@@ -19,7 +19,7 @@ module.exports = `
         {{ session ? t(labelsOf(session.state.action).name) : t('ai-panel-actions') }}
       </h2>
     </div>
-    <button type="button" class="qc-icon-button" :aria-label="t('Close')" :title="t('Close')" @click="close">
+    <button type="button" class="qc-icon-button" :aria-label="t('quality-action-close')" :title="t('quality-action-close')" @click="close">
       <span class="lucide lucide-x" aria-hidden="true"></span>
     </button>
   </header>
@@ -28,28 +28,20 @@ module.exports = `
     <p class="qc-sr-only" aria-live="polite">{{ liveMessage }}</p>
 
     <template v-if="!session">
-      <template v-if="target.kind !== 'email'">
-        <p class="ai-panel__section">{{ t('ai-panel-selected-block') }}</p>
-        <ul v-if="targetActions.length" class="ai-panel__actions">
-          <li v-for="item in targetActions" :key="item.id">
-            <button type="button" class="ai-panel__action" @click="openAction(item.id, target)">
+      <template v-for="list in lists">
+        <h3 v-if="list.title" :id="list.id" :key="list.id + '-title'" class="ai-panel__section">{{ t(list.title) }}</h3>
+        <ul v-if="list.actions.length" :key="list.id + '-list'" class="ai-panel__actions"
+            :aria-labelledby="list.title ? list.id : null">
+          <li v-for="item in list.actions" :key="item.id">
+            <button type="button" class="ai-panel__action" @click="openAction(item.id, list.target)">
               <span class="lucide lucide-bot" aria-hidden="true"></span>
               <span>{{ t(labelsOf(item.id).name) }}</span>
             </button>
+            <p v-if="!item.canApply" class="ai-panel__hint">{{ t('ai-panel-copy-only') }}</p>
           </li>
         </ul>
-        <p v-else class="ai-panel__hint">{{ t('ai-panel-no-action-yet') }}</p>
-        <p class="ai-panel__section">{{ t('ai-panel-whole-email') }}</p>
+        <p v-else-if="list.empty" :key="list.id + '-empty'" class="ai-panel__hint">{{ t(list.empty) }}</p>
       </template>
-      <ul class="ai-panel__actions">
-        <li v-for="item in actions" :key="item.id">
-          <button type="button" class="ai-panel__action" @click="openAction(item.id)">
-            <span class="lucide lucide-bot" aria-hidden="true"></span>
-            <span>{{ t(labelsOf(item.id).name) }}</span>
-          </button>
-          <p v-if="!item.canApply" class="ai-panel__hint">{{ t('ai-panel-copy-only') }}</p>
-        </li>
-      </ul>
       <p v-if="target.kind === 'email'" class="ai-panel__invite">
         <span class="lucide lucide-info" aria-hidden="true"></span>
         {{ t('ai-panel-select-invite') }}
@@ -61,6 +53,7 @@ module.exports = `
         <span class="lucide lucide-arrow-left" aria-hidden="true"></span>{{ t('ai-panel-all-actions') }}
       </button>
 
+      <!-- Said through the panel's live region as it appears. -->
       <p v-if="selectionChanged" class="qc-notice ai-panel__moved">
         <span class="qc-notice__text">{{ t('ai-panel-selection-changed') }}</span>
         <button type="button" class="qc-link-button" @click="showList(selectionChanged)">
