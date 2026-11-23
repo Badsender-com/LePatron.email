@@ -680,6 +680,17 @@ describe('text generation: POST /api/text-generation/subject', () => {
       expect(res.body.message).toBe('TEXT_GENERATION_UNAVAILABLE');
     });
 
+    it('answers 503 TEXT_GENERATION_UNAVAILABLE when the skill is kept to the platform company', async () => {
+      invoke.mockRejectedValue(
+        createError(403, 'SKILL_NOT_AVAILABLE_TO_COMPANY')
+      );
+      const res = await request(makeApp())
+        .post('/api/text-generation/subject')
+        .send(body);
+      expect(res.status).toBe(503);
+      expect(res.body.message).toBe('TEXT_GENERATION_UNAVAILABLE');
+    });
+
     it('answers 503 when the active skill refuses the input this feature builds', async () => {
       const err = failedInvocation(400, 'VALIDATION_ERROR');
       err.skillError = {

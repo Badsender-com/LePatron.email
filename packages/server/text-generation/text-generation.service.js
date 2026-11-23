@@ -202,14 +202,18 @@ function toHttpError(err) {
   if (err?.featureResolutionReason) {
     return createError(403, ERROR_CODES.TEXT_GENERATION_DISABLED);
   }
-  // Failures that retrying will not fix: the skill refusing the input this
-  // feature built (its active version expects another contract), or a provider
-  // refusing the account itself — key, quota, credits, configuration. An
-  // administrator has to act, so the user is told so, not to retry.
+  // Failures that retrying will not fix: a skill missing or kept to the
+  // platform company, the skill refusing the input this feature built (its
+  // active version expects another contract), or a provider refusing the
+  // account itself — key, credits, configuration. An administrator has to act,
+  // so the user is told so, not to retry.
+  const skillClosed =
+    err?.message === ERROR_CODES.SKILL_NOT_AVAILABLE_TO_COMPANY;
   const contractBroken = err?.skillError?.code === 'INPUT_VALIDATION';
   const accountRefused = ACCOUNT_FAILURES.has(err?.failureCode);
   if (
     err?.invocationStatus === InvocationStatuses.CONFIG_ERROR ||
+    skillClosed ||
     contractBroken ||
     accountRefused
   ) {
