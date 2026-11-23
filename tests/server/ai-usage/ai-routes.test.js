@@ -10,7 +10,7 @@ jest.mock('puppeteer', () => ({}));
 
 const path = require('path');
 const express = require('express');
-const request = require('supertest');
+const request = require('../../helpers/local-request.js');
 
 const SERVER = path.join(__dirname, '../../../packages/server');
 const load = (file) => require(path.join(SERVER, file));
