@@ -2,12 +2,6 @@ const ko = require('knockout');
 const tinymceConfigFull = require('./utils/tinymce-config');
 const { companyOffersOn } = require('./ai-panel/text-generation-access');
 
-
-/**
- * Setup color picker in order to use it with tinyMce
- * text-color and colorpicker plugins
- */
-
 // The AI button, first: the toolbar is wider than a narrow canvas, its end
 // hidden.
 function withAiActions(options) {
@@ -44,6 +38,10 @@ module.exports = (opts) => {
       textcolor_cols: '7',
       textcolor_rows: '3' };
 
+    /**
+     * Setup color picker in order to use it with tinyMce
+     * text-color and colorpicker plugins
+     */
     const tinyMceColorPickerConfig = {
       color_picker_callback: function (callback, currentColor) {
         if (viewModel.colorPicker) {
