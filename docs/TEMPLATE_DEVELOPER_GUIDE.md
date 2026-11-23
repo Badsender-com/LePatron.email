@@ -1053,16 +1053,18 @@ Based on the versafix-1 template, these are commonly available blocks:
 | `preheaderBlock` | Preheader text area          |
 | `footerBlock`    | Footer with unsubscribe      |
 
-### Header and footer block names matter to the quality control
+### Header and footer block names matter
 
 The quality control (`packages/editor/src/js/ext/quality/`) tolerates a smaller font
 size (12 px instead of 14 px) in the header and footer of an email, where legal
-mentions and preheaders live. It recognizes those blocks **by their type name**: a
-type that starts with `header`, `preheader` or `footer`, or ends with `header`,
-`footer`, `headerBlock` or `footerBlock` (case-insensitive). `headerBlock`,
-`preheaderBlock`, `footerBlock` and `footer-legal` qualify; `HeaderAndText` or
-`sectionHeader` do not, on purpose: they are content blocks. Name your blocks
-accordingly, or the 14 px threshold applies.
+mentions and preheaders live, and text generation leaves them out of the email text
+it sends. Both recognize those blocks **by their type name**
+(`packages/shared/quality/header-footer-blocks.js`): a type that is `header` or
+`preheader` (with an optional `Block` and version suffix), starts with `footer`, or
+ends with `header`, `footer`, `headerBlock` or `footerBlock` (case-insensitive).
+`headerBlock`, `headerBlockV2`, `preheaderBlock`, `footerBlock`, `footer-legal` and
+`sectionHeader` qualify; `HeaderAndText` does not, on purpose: it is a content block.
+Name your blocks accordingly, or the 14 px threshold applies and their text is sent.
 
 ### Where the preheader actually lives
 

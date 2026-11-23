@@ -112,6 +112,34 @@ describe('editor: extracting the email copy', () => {
     ]);
   });
 
+  it('keeps a content block whose type merely mentions a header', () => {
+    const root = render(`
+      <div id="ko_HeaderAndText_2">
+        ${field('ko_HeaderAndText_2', 'titleText', 'Nos nouveautés', 'h2')}
+        ${field('ko_HeaderAndText_2', 'longText', 'La collection lin arrive')}
+      </div>`);
+    expect(extractEmailCopy(root)).toEqual([
+      { role: 'title', text: 'Nos nouveautés' },
+      { role: 'text', text: 'La collection lin arrive' },
+    ]);
+  });
+
+  it('leaves out image alternatives and link addresses', () => {
+    const root = render(`
+      <div id="ko_imageTextBlock_1">
+        <img id="ko_imageTextBlock_1_image" alt="Un manteau rouge" src="https://example.com/manteau.png">
+        ${field(
+          'ko_imageTextBlock_1',
+          'longText',
+          '<img alt="Pictogramme livraison" src="https://example.com/truck.png">Livraison offerte <a href="https://example.com/lin">sur le lin</a>',
+          'div'
+        )}
+      </div>`);
+    expect(extractEmailCopy(root)).toEqual([
+      { role: 'text', text: 'Livraison offerte sur le lin' },
+    ]);
+  });
+
   it('leaves out a text left at the template sample value', () => {
     const root = render(`
       <div id="ko_coverBlock_3">

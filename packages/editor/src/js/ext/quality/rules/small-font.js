@@ -4,18 +4,17 @@ const { userDeclarations, hasText } = require('../user-styles');
 const { textOf, excerpt } = require('../exported-content');
 const { toPx } = require('../inline-style');
 const { thresholdOf } = require('../settings');
+const {
+  isHeaderOrFooterBlock,
+} = require('../../../../../../shared/quality/header-footer-blocks.js');
 
 // The Badsender integration charter: 14 px minimum for body text. Only sizes
 // the client set by hand are judged; the template's own sizes (a 12 px footer)
 // are Badsender's choice. At 2 px and under, "hidden-text" reports it.
 // Header and footer blocks (legal notice, view online) may go down to 12 px
-// (team decision of 1 October 2026). Told apart by their block type: a type
-// that is a header or a footer (`headerBlock`, `headerBlockV2`,
-// `preheaderBlock`, `footerBlock`, `footer-legal`, `footerSocialBlock`,
-// `sectionHeader`), not a content block that merely mentions one
-// (`HeaderAndText`), nor a legal block the template does not name as a footer.
-// Its minimum is the threshold `minSizeHeaderFooter`.
-const HEADER_OR_FOOTER = /^(pre)?header([-_]?block)?(v\d+)?$|^footer|(header|footer)([-_]?block)?$/i;
+// (team decision of 1 October 2026), told apart by their block type
+// (shared/quality/header-footer-blocks.js). Their minimum is the threshold
+// `minSizeHeaderFooter`.
 const HIDDEN_SIZE = 2;
 
 module.exports = {
@@ -35,7 +34,7 @@ module.exports = {
       ctx.blocks.filter(Boolean).map((block) => [block.id, block.type])
     );
     const minFor = (blockId) =>
-      HEADER_OR_FOOTER.test(types.get(blockId) || '')
+      isHeaderOrFooterBlock(types.get(blockId))
         ? thresholdOf(ctx, 'small-font', 'minSizeHeaderFooter')
         : thresholdOf(ctx, 'small-font', 'minSize');
     return userDeclarations(ctx)
