@@ -121,9 +121,9 @@ export default {
                     label: row.label,
                   })
                 "
+                color="accent"
                 dense
                 hide-details
-                inset
                 class="ma-0"
                 @change="everywhere(row.id)"
               />
