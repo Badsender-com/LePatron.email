@@ -6,6 +6,7 @@ import mixinSettingsTitle from '~/helpers/mixins/mixin-settings-title.js';
 import BsPageHeader from '~/components/layout/bs-page-header.vue';
 import BsGroupAiFeaturesTab from '~/components/group/ai-features-tab.vue';
 import BsGroupMcpAccessOption from '~/components/group/mcp-access-option.vue';
+import BsGroupAiLogContentOption from '~/components/group/ai-log-content-option.vue';
 import { CAN, GROUP_CHANGED, USER } from '~/store/user';
 import { CAPABILITIES } from '../../../../../shared/access/roles.js';
 
@@ -15,6 +16,7 @@ export default {
     BsPageHeader,
     BsGroupAiFeaturesTab,
     BsGroupMcpAccessOption,
+    BsGroupAiLogContentOption,
   },
   mixins: [mixinSettingsTitle],
   meta: {
@@ -38,6 +40,14 @@ export default {
     },
   },
   methods: {
+    // The page keeps what was saved, so the switch reads it on its return.
+    onLogContentUpdate(saved) {
+      this.$set(
+        this.group,
+        'logSkillInvocationContent',
+        saved.logSkillInvocationContent
+      );
+    },
     // The MCP section saves the access and the retex: the page follows, and
     // the sidebar's connected applications link with it.
     onMcpUpdate(saved) {
@@ -73,6 +83,11 @@ export default {
           :active="true"
           :is-platform="!!group.isPlatform"
         >
+          <bs-group-ai-log-content-option
+            v-if="group.id"
+            :group="group"
+            @update="onLogContentUpdate"
+          />
           <bs-group-mcp-access-option
             v-if="group.id"
             :group="group"

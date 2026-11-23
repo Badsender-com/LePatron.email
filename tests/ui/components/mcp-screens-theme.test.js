@@ -19,6 +19,7 @@ const SCREENS = [
   'packages/ui/components/modal/bs-secret-once-dialog.vue',
   'packages/ui/components/layout/bs-form-section.vue',
   'packages/ui/components/group/ai-features-tab.vue',
+  'packages/ui/components/group/ai-log-content-option.vue',
   'packages/ui/routes/ai-skills/index.vue',
   'packages/ui/routes/ai-skills/_skillId/index.vue',
   'packages/ui/routes/ai-expertise/_expertiseId/index.vue',

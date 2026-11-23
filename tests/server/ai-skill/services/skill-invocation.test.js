@@ -257,6 +257,22 @@ describe('skill-invocation.invoke', () => {
       expect(logged.rawOutput).toBeNull();
     });
 
+    // A company stored before the switch existed keeps its logs as they were.
+    it('keeps the content of a company that never set the switch', async () => {
+      wireHappyPath();
+      Groups.findById.mockReturnValue({
+        lean: () => Promise.resolve({ _id: GROUP_ID }),
+      });
+      await skillInvocation.invoke({
+        skillId: 'generic.text',
+        input: { prompt: 'hi' },
+        groupId: GROUP_ID,
+      });
+      const logged = AISkillInvocations.create.mock.calls[0][0];
+      expect(logged.input).not.toBeNull();
+      expect(logged.rawOutput).not.toBeNull();
+    });
+
     it('executes the pinned version when params.version is provided', async () => {
       wireHappyPath({
         skill: buildSkill({
