@@ -3,7 +3,7 @@
 /**
  * LePatron Skills IA — the skills and expertise filters of text generation
  * (subject and preheader in the editor, ADR 0016; spelling correction, ADR
- * 0005). Read by scripts/check-skill-usage.js and by the activation-impact
+ * 0011). Read by scripts/check-skill-usage.js and by the activation-impact
  * alert.
  */
 module.exports = {
