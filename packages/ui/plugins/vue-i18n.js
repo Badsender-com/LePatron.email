@@ -26,15 +26,22 @@ export default ({ app, store }) => {
     // dateTimeFormats,
   });
 
+  // Vuetify's own texts (a field's clear button, "Chargement…") follow the
+  // app's language: from the start, then at each change.
+  const followLocale = () => {
+    if (app.context?.$vuetify?.lang && app.i18n.locale) {
+      app.context.$vuetify.lang.current = app.i18n.locale;
+    }
+  };
+  followLocale();
+
   // https://vuex.vuejs.org/api/#watch
   store.watch(
     () => store.getters[`${USER}/${LOCALE}`],
     (userLocale) => {
       if (userLocale && app.i18n) {
         app.i18n.locale = userLocale;
-        if (app.context?.$vuetify?.lang && app.i18n.locale) {
-          app.context.$vuetify.lang.current = app.i18n.locale;
-        }
+        followLocale();
       }
     }
   );
@@ -43,10 +50,7 @@ export default ({ app, store }) => {
     () => store.getters[`${PAGE}/${DEFAULT_LOCALE}`],
     (appLocale) => {
       app.i18n.locale = store.getters[`${USER}/${LOCALE}`] || appLocale;
-
-      if (app.context?.$vuetify?.lang && app.i18n.locale) {
-        app.context.$vuetify.lang.current = app.i18n.locale;
-      }
+      followLocale();
     }
   );
 };

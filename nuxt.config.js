@@ -13,8 +13,10 @@ const path = require('path');
 // Don't use ESM
 // • this will be also required in express app
 const pkg = require('./package.json');
-const fr = require('./locales/fr').default;
-const en = require('./locales/en').default;
+// Vuetify's own texts, from the installed Vuetify: a copy would miss the
+// keys of its later versions (`input.clear`, `loading`).
+const fr = require('vuetify/es5/locale/fr').default;
+const en = require('vuetify/es5/locale/en').default;
 const config = require('./packages/server/node.config.js');
 
 module.exports = {
@@ -63,7 +65,6 @@ module.exports = {
   // https://nuxtjs.org/guide/modules#build-only-modules
   buildModules: ['@nuxtjs/vuetify'],
   vuetify: {
-    optionsPath: './vuetify.options.js',
     icons: { iconfont: 'md' },
     theme: {
       options: {
