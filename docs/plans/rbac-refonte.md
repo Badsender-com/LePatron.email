@@ -18,7 +18,7 @@ Document de conception pour l'ajout de nouveaux rôles au système de rôles et 
 
 - `canIgnoreQuality` (`4dcced21`) et le `GUARD_NOT_REVIEWER` de `PATCH /:mailingId/quality-ignores` (`08b4e64a`) sont remplacés par la capacité `mailing.ignore-quality` (voir plus haut).
 - La révocation d'un lien de partage selon le rôle, côté serveur et éditeur (`c09c99be`), n'est pas rejouée.
-- La route `POST /:mailingId/duplicate-translate` garde `GUARD_NOT_REVIEWER`, mais sans le `aiRateLimit` de la PR IA.
+- ~~La route `POST /:mailingId/duplicate-translate` garde `GUARD_NOT_REVIEWER`, mais sans le `aiRateLimit` de la PR IA.~~ Rejoué : la route porte de nouveau le `aiRateLimit` de la PR IA (#1145).
 - Le correctif `updateLabel` de la galerie (identifiant invalide en 422, dans `7dafb4cb`) et `qualityIgnores` dans `MAILING_LIST_PROJECTION` (`91a62081`) appartiennent à leurs PR.
 - La génération de texte a son ADR en 0016, 0003 étant celui du contrôle qualité v2 : 0004 garde son numéro.
 
@@ -143,7 +143,7 @@ Les capacités de l'éditeur (`canEditStructure`, `canEditContent`, `canEditStyl
 
 **Reste à faire** (dans l'ordre où on comptait les traiter) :
 
-1. ~~Génération de texte IA (B2)~~ **Décidé le 2026-10-13 : ouverte à tous les rôles**, sans garde supplémentaire (le `reviewer` n'a a priori rien à y faire, le panneau lui reste masqué). Reste à vérifier : la configuration par group (B1) côté routes.
+1. ~~Génération de texte IA (B2)~~ **Décidé le 2026-10-13, précisé le 2026-11-23 : ouverte à tous les rôles sauf le `reviewer`**, par la capacité `mailing.edit-content` que demandent ses routes. La configuration par group (B1) est réservée à `company_admin_tech` et au `super_admin`, comme la traduction sur la même page ([ADR 0016](../adr/0016-text-generation-skills-and-expertises.md)).
 2. ~~Galerie d'images~~ **Décidé le 2026-10-13 : ouverte à tous les rôles**, inchangé.
 3. ~~Export CDN/FTP/ESP~~ **Décidé le 2026-10-13 : ouvert à tous les rôles**, inchangé (barre du haut et barre d'actions groupées du listing).
 4. ~~Approbation~~ **Décidé le 2026-10-13 : le bouton « Approuver » est visible pour tous les rôles** (`canPostDecision` ne demande plus que l'utilisateur soit chargé). `decision` n'est pas contrôlée côté serveur, ce qui est cohérent avec cette décision.
@@ -163,7 +163,7 @@ Rebase de `feat/roles-permissions` sur `origin/develop` (le 2026-10-13, 51 commi
 - **Décision produit du 2026-10-13 sur l'admin technique** : il est un admin company avec les intégrations en plus (`isGroupAdmin` vrai pour les deux rôles, `isGroupAdminTech` pour lui seul). La matrice 3.2 est lue en conséquence.
 - **Attribution du rôle admin technique (2026-10-13)** : seul un super admin ou un admin technique l'accorde ou le retire (`tech-admin-policy.js`, code `FORBIDDEN_TECH_ADMIN_ROLE_CHANGE`) ; un admin company ne le voit plus dans les sélecteurs de rôle et le serveur le refuse. Un admin company peut en revanche encore modifier, désactiver ou réinitialiser le mot de passe d'un admin technique (non encadré). Le rôle super admin garde sa règle propre (ADR 0002).
 - **Garde serveur du relecteur (2026-10-13)** : `GUARD_NOT_REVIEWER` (`mailing/reviewer-read-only.guard.js`) refuse un `reviewer` sur les routes qui écrivent un mailing (création, renommage, déplacement, copie, suppression, tags, paramètres de l'email, résultats QC ignorés, duplication). L'enregistrement `PUT /mosaico` lui est refusé sauf pour l'email sans aperçu, ce qui conserve la sauvegarde unique faite à l'ouverture. Le rédacteur n'est pas encadré côté serveur (#1103).
-- **Décisions produit du 2026-10-13** : outil Compose confirmé (masqué au `writer`) ; galerie, exports et génération de texte IA ouverts à tous les rôles (inchangé) ; bouton « Approuver » étendu à tous les rôles (`badsender-comments.js`).
+- **Décisions produit du 2026-10-13** : outil Compose confirmé (masqué au `writer`) ; galerie et exports ouverts à tous les rôles (inchangé), génération de texte IA à tous sauf le `reviewer` (précisé le 2026-11-23) ; bouton « Approuver » étendu à tous les rôles (`badsender-comments.js`).
 - **À refaire après ce rebase** : `yarn editor:build`, puis un passage dans le navigateur sur l'éditeur (templates et CSS fusionnés).
 
 ---
@@ -268,12 +268,12 @@ Légende des colonnes : **Lecture** = consulter la feature/l'écran · **Écritu
 | 24  | Contrôle qualité — consulter, relancer, transformer en commentaire, envoi de test, vérifier les ressources | tous les rôles                         | tous les rôles                         | —                                                                                           |
 | 25  | Contrôle qualité — ignorer un résultat                                                                     | tous sauf `writer` et `reviewer`       | tous sauf `writer` et `reviewer`       | —                                                                                           |
 | 26  | Liens de partage                                                                                           | tous les rôles                         | tous les rôles (créer)                 | ses propres liens : tous les rôles ; ceux d'autrui : `company_admin` + `company_admin_tech` |
-| 27  | Génération de texte IA — configuration par group                                                           | `company_admin` + `company_admin_tech` | `company_admin` + `company_admin_tech` | —                                                                                           |
+| 27  | Génération de texte IA — configuration par group                                                           | `company_admin_tech`                   | `company_admin_tech`                   | —                                                                                           |
 | 28  | Génération de texte IA — utilisation dans l'éditeur                                                        | —                                      | tous sauf `reviewer`                   | —                                                                                           |
 | 29  | Double authentification — l'exiger pour la company                                                         | `company_admin` + `company_admin_tech` | `company_admin_tech`                   | —                                                                                           |
 | 30  | Double authentification — réinitialiser celle d'un membre, changer son adresse                             | —                                      | `company_admin_tech`                   | —                                                                                           |
 
-Lignes 24-28 ajoutées le 2026-10-06 (chantiers rapatriés, détail et statut en 3.2 bis) : décisions produit **à confirmer par tests fonctionnels et review**. Ligne 25 : capacité `mailing.ignore-quality`, que le serveur exige depuis le 2026-11-23. Lignes 29-30 ajoutées le 2026-10-29 (ADR 0008) : réservées à `company_admin_tech` et `super_admin`.
+Lignes 24-28 ajoutées le 2026-10-06 (chantiers rapatriés, détail et statut en 3.2 bis) : décisions produit **à confirmer par tests fonctionnels et review**. Ligne 25 : capacité `mailing.ignore-quality`, que le serveur exige depuis le 2026-11-23. Lignes 29-30 ajoutées le 2026-10-29 (ADR 0008) : réservées à `company_admin_tech` et `super_admin`. Ligne 27 corrigée le 2026-11-23 : la configuration de la génération de texte est réservée à `company_admin_tech` et `super_admin`, comme la traduction sur la même page (ADR 0016).
 
 Décisions actées le 2026-09-03 :
 
@@ -312,7 +312,7 @@ Décisions actées le 2026-09-03 :
 
 | #   | Action                                   | regular_user | writer | reviewer | company_admin_tech | company_admin |
 | --- | ---------------------------------------- | ------------ | ------ | -------- | ------------------ | ------------- |
-| B1  | Configurer la fonctionnalité (par group) | non          | non    | non      | oui                | oui           |
+| B1  | Configurer la fonctionnalité (par group) | non          | non    | non      | oui                | non           |
 | B2  | Utiliser la génération dans l'éditeur    | oui          | oui    | non      | oui                | oui           |
 
 Décisions reportées en 3.2 (lignes 24-28) et 3.6 le 2026-10-06. Reste à : les traduire en `canEdit*`/guards (aujourd'hui aucune de ces actions n'est soumise aux rôles, et les routes `share-links` sont toutes en `GUARD_USER`).
