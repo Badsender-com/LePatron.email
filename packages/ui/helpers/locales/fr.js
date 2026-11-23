@@ -2006,7 +2006,17 @@ export default {
     qualityCheck: {
       title: 'Contrôle qualité',
       description: 'Vérifiez automatiquement la qualité et la cohérence de vos emails.'
-    }
+    },
+    logContent: {
+      title: 'Contenu des appels à l\'IA',
+      description: 'Chaque appel à l\'IA est journalisé, pour suivre son coût et ses erreurs. Ce réglage décide si le journal garde aussi ce qui a été envoyé et répondu.',
+      switch: 'Garder le contenu des appels à l\'IA',
+      on: 'Gardé',
+      off: 'Non gardé',
+      alwaysLogged: 'Toujours journalisés : qui a fait l\'appel, quand, avec quel modèle, sa durée, ses tokens et son résultat.',
+      content: 'Activé, le journal garde aussi le texte envoyé à l\'IA, la consigne et sa réponse brute. Désactivé, ils ne sont jamais enregistrés.',
+      nextCalls: 'Le changement vaut pour les appels suivants : les journaux déjà écrits restent jusqu\'à la fin de leur durée de conservation.',
+    },
   },
   colors: {
     palette: 'Palette de couleurs',

@@ -549,6 +549,7 @@ async function readColorScheme(req, res) {
  * @apiParam (Body) {String} [ftpEndPoint] the FTP endpoint url to retrieve images
  * @apiParam (Body) {String} [ftpEndPointProcotol] the FTP endpoint protocol
  * @apiParam (Body) {String} [ftpPathOnServer] the FTP path folder where we will save images
+ * @apiParam (Body) {Boolean} [logSkillInvocationContent] whether the AI invocation logs keep their content (tech admin or super admin)
  *
  * @apiUse group
  */
@@ -620,6 +621,15 @@ async function update(req, res) {
     delete groupToUpdate.qualitySettings;
   }
 
+  // Whether the company's AI invocation logs keep what was sent and answered;
+  // their metadata is logged either way. A strict boolean, as the company's
+  // other switches: anything but `true` keeps the content out, where Mongoose
+  // would cast `'yes'` or `1` to true.
+  if ('logSkillInvocationContent' in groupToUpdate) {
+    groupToUpdate.logSkillInvocationContent =
+      groupToUpdate.logSkillInvocationContent === true;
+  }
+
   // Only reachable by a super admin: the pick below drops it for a company admin.
   if ('idpCert' in groupToUpdate) {
     groupToUpdate.idpCert = normalizeIdpCert(groupToUpdate.idpCert);
@@ -639,9 +649,17 @@ async function update(req, res) {
       // dropped for a company admin, as the other fields it cannot set.
       // MCP access too: a tech admin connects the company's AI assistants
       // to LePatron, as it sets up its AI features, and decides whether their
-      // session summaries may reach the platform company (ADR 0012).
+      // session summaries may reach the platform company (ADR 0012). And
+      // whether the logs of its AI invocations keep their content, set with
+      // the AI features they log.
       ...(permissions.can(user, CAPABILITIES.GROUP_MANAGE_TECH)
-        ? ['trackingConfig', 'requireTwoFactor', 'enableMcp', 'allowRetex']
+        ? [
+            'trackingConfig',
+            'requireTwoFactor',
+            'enableMcp',
+            'allowRetex',
+            'logSkillInvocationContent',
+          ]
         : []),
     ]);
     // Reinstated after the pick, from the URL, so the whitelist never has to

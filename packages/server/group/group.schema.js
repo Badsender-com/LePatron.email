@@ -220,6 +220,9 @@ const GroupSchema = Schema(
       min: 7,
       max: 365,
     },
+    // Whether an AI invocation log keeps its content (the text sent, the
+    // instruction, the raw answer); its metadata is logged either way. Set by
+    // the company's tech admin from its AI features, or by a super admin.
     logSkillInvocationContent: {
       type: Boolean,
       default: true,

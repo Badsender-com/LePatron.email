@@ -1979,7 +1979,17 @@ export default {
     qualityCheck: {
       title: 'Quality check',
       description: 'Automatically check the quality and consistency of your emails.'
-    }
+    },
+    logContent: {
+      title: 'Content of AI calls',
+      description: 'Every AI call is logged, to follow its cost and its errors. This setting decides whether the log also keeps what was sent and answered.',
+      switch: 'Keep the content of AI calls',
+      on: 'Kept',
+      off: 'Not kept',
+      alwaysLogged: 'Always logged: who made the call, when, with which model, how long it took, its tokens and its outcome.',
+      content: 'On, the log also keeps the text sent to the AI, the instruction and its raw answer. Off, they are never stored.',
+      nextCalls: 'A change applies to the next calls: the logs already written stay until the end of their retention.',
+    },
   },
   colors: {
     palette: 'Color palette',
