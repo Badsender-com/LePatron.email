@@ -4,6 +4,7 @@ const createError = require('http-errors');
 const config = require('../node.config.js');
 const { AIUsageCounters } = require('../common/models.common.js');
 const ERROR_CODES = require('../constant/error-codes.js');
+const { selectedGroupIdOf } = require('../account/request-scope.js');
 
 const MINUTE_MS = 60 * 1000;
 const DAY_MS = 24 * 60 * MINUTE_MS;
@@ -20,31 +21,38 @@ const DEFAULT_MAX_BODY_BYTES = 256 * 1024;
 function windowsFor({ userId, groupId, now, limits }) {
   const minute = now.toISOString().slice(0, 16); // 2026-10-01T09:41
   const day = now.toISOString().slice(0, 10); // 2026-10-01
-  const windows = [
+  const userWindows = [
     {
       key: `user:${userId}:minute:${minute}`,
-      max: limits.perUserPerMinute,
+      max: Number(limits.perUserPerMinute),
       // Kept one window past its end so a request at hh:mm:59.9 still finds it.
       expiresAt: new Date(now.getTime() + 2 * MINUTE_MS),
       retryAfterSeconds: 60 - now.getUTCSeconds(),
     },
     {
       key: `user:${userId}:day:${day}`,
-      max: limits.perUserPerDay,
+      max: Number(limits.perUserPerDay),
       expiresAt: new Date(now.getTime() + 2 * DAY_MS),
       retryAfterSeconds: secondsToEndOfDay(now),
     },
   ];
-  // The super-admin pseudo-user has no group: only its own windows apply.
-  if (groupId) {
-    windows.push({
-      key: `group:${groupId}:day:${day}`,
-      max: limits.perGroupPerDay,
-      expiresAt: new Date(now.getTime() + 2 * DAY_MS),
-      retryAfterSeconds: secondsToEndOfDay(now),
-    });
-  }
-  return windows.filter((w) => Number.isFinite(w.max) && w.max > 0);
+  // A super admin with no company selected has no group to count against:
+  // only its own windows apply.
+  const groupWindows = groupId
+    ? [
+        {
+          key: `group:${groupId}:day:${day}`,
+          max: Number(limits.perGroupPerDay),
+          expiresAt: new Date(now.getTime() + 2 * DAY_MS),
+          retryAfterSeconds: secondsToEndOfDay(now),
+        },
+      ]
+    : [];
+  const isSet = (w) => Number.isFinite(w.max) && w.max > 0;
+  return {
+    userWindows: userWindows.filter(isSet),
+    groupWindows: groupWindows.filter(isSet),
+  };
 }
 
 function secondsToEndOfDay(now) {
@@ -57,17 +65,13 @@ function secondsToEndOfDay(now) {
 }
 
 /**
- * Count one request against every window, and refuse it if one is exceeded.
- *
- * Every window is incremented, even when an earlier one already refuses: the
- * order of the writes would otherwise decide which counters a hammering client
- * still feeds. A refused request therefore counts — which is what makes
- * hammering useless.
+ * Increments every window at once, and refuses the request if one is exceeded.
+ * All of them are incremented, even when one already refuses, so a refused
+ * request still counts: hammering never resets a window.
  *
  * @throws {HttpError} 429 AI_RATE_LIMITED, with `retryAfterSeconds`
  */
-async function consume({ userId, groupId, now = new Date(), limits }) {
-  const windows = windowsFor({ userId, groupId, now, limits });
+async function countIn(windows) {
   const counters = await Promise.all(
     windows.map((w) =>
       AIUsageCounters.findOneAndUpdate(
@@ -85,6 +89,26 @@ async function consume({ userId, groupId, now = new Date(), limits }) {
     );
     throw err;
   }
+}
+
+/**
+ * Count one request against the user's windows, then the group's.
+ *
+ * A request the user's own ceiling refuses counts against that user only: the
+ * group's window is incremented once the user's windows have let it through,
+ * so one account in a loop cannot use up its colleagues' day.
+ *
+ * @throws {HttpError} 429 AI_RATE_LIMITED, with `retryAfterSeconds`
+ */
+async function consume({ userId, groupId, now = new Date(), limits }) {
+  const { userWindows, groupWindows } = windowsFor({
+    userId,
+    groupId,
+    now,
+    limits,
+  });
+  await countIn(userWindows);
+  await countIn(groupWindows);
 }
 
 function bodyBytes(body) {
@@ -111,7 +135,8 @@ function aiRateLimit({ maxBodyBytes = DEFAULT_MAX_BODY_BYTES } = {}) {
       const { user } = req;
       await consume({
         userId: user.id,
-        groupId: user.group?.id,
+        // The company the request works in: a super admin's selected one.
+        groupId: selectedGroupIdOf(user),
         limits: config.aiRateLimits || {},
       });
       next();

@@ -5,6 +5,7 @@ jest.mock('../../../packages/server/common/models.common', () => ({
 }));
 jest.mock('../../../packages/server/node.config.js', () => ({
   aiRateLimits: { perUserPerMinute: 2, perUserPerDay: 5, perGroupPerDay: 10 },
+  admin: { id: 'bootstrap-admin' },
 }));
 
 const {
@@ -14,6 +15,7 @@ const {
   aiRateLimit,
   consume,
 } = require('../../../packages/server/ai-usage/ai-rate-limit.js');
+const { ROLES } = require('../../../packages/shared/access/roles.js');
 
 const LIMITS = { perUserPerMinute: 2, perUserPerDay: 5, perGroupPerDay: 10 };
 const NOW = new Date('2026-10-01T09:41:30.000Z');
@@ -80,9 +82,42 @@ describe('consume', () => {
     expect(store.get('group:g1:day:2026-10-01')).toBe(11);
   });
 
-  it('counts only the user windows when there is no group (super-admin)', async () => {
+  it('counts only the user windows when there is no group', async () => {
     await consume({ userId: 'admin', now: NOW, limits: LIMITS });
     expect([...store.keys()].some((k) => k.startsWith('group:'))).toBe(false);
+  });
+
+  it('reads limits given as strings, as an environment variable sets them', async () => {
+    const limits = {
+      perUserPerMinute: '2',
+      perUserPerDay: '5',
+      perGroupPerDay: '10',
+    };
+    await consume({ userId: 'u1', groupId: 'g1', now: NOW, limits });
+    await consume({ userId: 'u1', groupId: 'g1', now: NOW, limits });
+    const err = await consume({
+      userId: 'u1',
+      groupId: 'g1',
+      now: NOW,
+      limits,
+    }).catch((e) => e);
+    expect(err.status).toBe(429);
+  });
+
+  it('does not count in the group window a request the user window refuses', async () => {
+    const refusals = [];
+    for (let i = 0; i < 6; i += 1) {
+      await consume({
+        userId: 'u1',
+        groupId: 'g1',
+        now: NOW,
+        limits: LIMITS,
+      }).catch((e) => refusals.push(e));
+    }
+    expect(refusals).toHaveLength(4);
+    // The user's own windows still count the refused requests.
+    expect(store.get('user:u1:minute:2026-10-01T09:41')).toBe(6);
+    expect(store.get('group:g1:day:2026-10-01')).toBe(2);
   });
 
   it('ignores a window whose limit is not set', async () => {
@@ -121,6 +156,38 @@ describe('aiRateLimit middleware', () => {
     expect(err.status).toBe(413);
     expect(err.message).toBe('AI_PAYLOAD_TOO_LARGE');
     expect(AIUsageCounters.findOneAndUpdate).not.toHaveBeenCalled();
+  });
+
+  const today = () => new Date().toISOString().slice(0, 10);
+  const groupKeys = () =>
+    [...store.keys()].filter((key) => key.startsWith('group:'));
+
+  it("counts a user's request against the user's own company", async () => {
+    await run(aiRateLimit(), { user, body: {} });
+    expect(groupKeys()).toEqual([`group:g1:day:${today()}`]);
+  });
+
+  it("counts a super admin's request against the company it has selected", async () => {
+    const superAdmin = {
+      id: 'sa',
+      role: ROLES.SUPER_ADMIN,
+      // A persisted super admin belongs to the platform group (ADR 0002).
+      group: { id: 'platform' },
+      selectedGroup: { id: 'client' },
+    };
+    await run(aiRateLimit(), { user: superAdmin, body: {} });
+    expect(groupKeys()).toEqual([`group:client:day:${today()}`]);
+  });
+
+  it('counts only its own windows for a super admin with no company selected', async () => {
+    const superAdmin = {
+      id: 'sa',
+      role: ROLES.SUPER_ADMIN,
+      group: { id: 'platform' },
+    };
+    const { err } = await run(aiRateLimit(), { user: superAdmin, body: {} });
+    expect(err).toBeUndefined();
+    expect(groupKeys()).toEqual([]);
   });
 
   it('sets Retry-After when it refuses', async () => {
