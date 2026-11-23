@@ -184,7 +184,10 @@ function loadModules() {
   mailingMetadataService = require('../../../packages/server/mailing/mailing-metadata.service');
   textGenerationRouter = require('../../../packages/server/text-generation/text-generation.routes');
 
-  mailingService.findOneForUser.mockResolvedValue({ id: MAILING_ID });
+  mailingService.findOneForUser.mockResolvedValue({
+    id: MAILING_ID,
+    _company: 'g1',
+  });
   mailingService.assertUserCanEditMailing.mockResolvedValue();
   mailingMetadataService.findCanonicalEmailType.mockResolvedValue(
     'promotional'
@@ -250,8 +253,22 @@ describe('text generation: POST /api/text-generation/subject', () => {
       await request(makeApp()).post('/api/text-generation/subject').send(body);
       expect(mailingService.findOneForUser).toHaveBeenCalledWith(
         MAILING_ID,
-        USER
+        USER,
+        expect.any(Object)
       );
+    });
+
+    it('reads what the access, the group and the email type need, never the content', async () => {
+      invoke.mockResolvedValue(proposals('Lin : -30 % et livraison offerte'));
+      await request(makeApp()).post('/api/text-generation/subject').send(body);
+      const projection = mailingService.findOneForUser.mock.calls[0][2];
+      expect(projection).toEqual({
+        _company: 1,
+        _wireframe: 1,
+        _emailType: 1,
+        _workspace: 1,
+        _parentFolder: 1,
+      });
     });
   });
 
@@ -291,6 +308,7 @@ describe('text generation: POST /api/text-generation/subject', () => {
         scope: 'subject',
         categories: ['redaction', 'deliverability'],
         emailType: 'promotional',
+        groupId: 'g1',
       });
     });
 
@@ -300,11 +318,12 @@ describe('text generation: POST /api/text-generation/subject', () => {
       expect(findApplicable).toHaveBeenCalledWith({
         scope: 'subject',
         categories: ['redaction', 'deliverability'],
+        groupId: 'g1',
       });
       expect(invoke.mock.calls[0][0].input).not.toHaveProperty('emailType');
     });
 
-    it('invokes the subject skill on the text generation engine, for the user and their group', async () => {
+    it('invokes the subject skill on the text generation engine, for the user and the email company', async () => {
       await request(makeApp()).post('/api/text-generation/subject').send(body);
       expect(invoke).toHaveBeenCalledTimes(1);
       expect(invoke).toHaveBeenCalledWith(
@@ -543,19 +562,40 @@ describe('text generation: POST /api/text-generation/subject', () => {
     });
   });
 
-  describe('for a super admin, who has no group', () => {
-    const admin = { id: 'admin', isAdmin: true };
+  describe('for a super admin, whose own group is the platform group', () => {
+    const superAdmin = {
+      id: 'sa1',
+      role: 'super_admin',
+      group: { id: 'g-platform' },
+    };
 
-    it('serves the request with the engine of the mailing company', async () => {
+    beforeEach(() => {
+      invoke.mockResolvedValue(proposals('Lin : -30 %'));
+    });
+
+    it('serves the request with the engine and the expertises of the email company', async () => {
       mailingService.findOneForUser.mockResolvedValue({
         id: MAILING_ID,
         _company: 'g-mailing',
       });
-      invoke.mockResolvedValue(proposals('Lin : -30 %'));
-      await request(makeApp({ user: admin }))
+      const res = await request(makeApp({ user: superAdmin }))
         .post('/api/text-generation/subject')
         .send(body);
+      expect(res.status).toBe(200);
       expect(invoke.mock.calls[0][0].groupId).toBe('g-mailing');
+      expect(findApplicable.mock.calls[0][0].groupId).toBe('g-mailing');
+    });
+
+    it('serves the platform group only for an email of the platform group', async () => {
+      mailingService.findOneForUser.mockResolvedValue({
+        id: MAILING_ID,
+        _company: 'g-platform',
+      });
+      await request(makeApp({ user: superAdmin }))
+        .post('/api/text-generation/subject')
+        .send(body);
+      expect(invoke.mock.calls[0][0].groupId).toBe('g-platform');
+      expect(findApplicable.mock.calls[0][0].groupId).toBe('g-platform');
     });
 
     it('falls back on the company of the template for a mailing without one', async () => {
@@ -571,13 +611,23 @@ describe('text generation: POST /api/text-generation/subject', () => {
         id: MAILING_ID,
         _wireframe: 't1',
       });
-      invoke.mockResolvedValue(proposals('Lin : -30 %'));
-      await request(makeApp({ user: admin }))
+      await request(makeApp({ user: superAdmin }))
         .post('/api/text-generation/subject')
         .send(body);
       expect(Templates.findById).toHaveBeenCalledWith('t1');
       expect(invoke.mock.calls[0][0].groupId).toBe('g-template');
     });
+  });
+
+  it('refuses the bootstrap account, which stays in the settings', async () => {
+    const config = require('../../../packages/server/node.config.js');
+    const res = await request(
+      makeApp({ user: { id: config.admin.id, isAdmin: true } })
+    )
+      .post('/api/text-generation/subject')
+      .send(body);
+    expect(res.status).toBe(403);
+    expect(invoke).not.toHaveBeenCalled();
   });
 
   describe('when generation is not possible', () => {
@@ -770,6 +820,7 @@ describe('text generation: POST /api/text-generation/preheader', () => {
       scope: 'preheader',
       categories: ['redaction', 'deliverability'],
       emailType: 'promotional',
+      groupId: 'g1',
     });
   });
 
