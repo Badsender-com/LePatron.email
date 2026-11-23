@@ -373,6 +373,29 @@ describe('text generation: POST /api/text-generation/subject', () => {
   });
 
   describe('the proposals', () => {
+    // A model sometimes answers more than asked: the first three that respect
+    // the rules are shown, the rest is left out, and not counted as dropped.
+    it('shows the first three proposals when the skill answers more', async () => {
+      invoke.mockResolvedValue(
+        proposals(
+          'Lin : -30 % et livraison offerte',
+          'Le lin de saison à -30 %',
+          'Votre été en lin, -30 %',
+          'Dernière ligne droite pour le lin'
+        )
+      );
+      const res = await request(makeApp())
+        .post('/api/text-generation/subject')
+        .send(body);
+      expect(res.status).toBe(200);
+      expect(res.body.proposals.map((p) => p.text)).toEqual([
+        'Lin : -30 % et livraison offerte',
+        'Le lin de saison à -30 %',
+        'Votre été en lin, -30 %',
+      ]);
+      expect(res.body.dropped).toBe(0);
+    });
+
     it('returns each proposal with its angle and the facts measured on it', async () => {
       invoke.mockResolvedValue({
         output: {

@@ -65,8 +65,12 @@ const emailCopySchema = z
 // The angle names the approach of a proposal in a few words, shown next to it.
 const MAX_PROPOSAL_ANGLE_LENGTH = 200;
 
-// Three proposals exactly: the feature shows them side by side, and a skill
-// that answers two has not done its job.
+// Three proposals or more: the feature shows three side by side, the first
+// that respect its rules. A skill that answers two has not done its job; a
+// model that answers four, though asked for three, is not refused for it. Ten
+// at most: past that, the answer is not one of proposals.
+const MIN_PROPOSALS = 3;
+const MAX_PROPOSALS = 10;
 const textProposalsOutput = z
   .object({
     proposals: z
@@ -78,7 +82,8 @@ const textProposalsOutput = z
           })
           .strict()
       )
-      .length(3),
+      .min(MIN_PROPOSALS)
+      .max(MAX_PROPOSALS),
   })
   .strict();
 

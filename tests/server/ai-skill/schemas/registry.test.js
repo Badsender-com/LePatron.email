@@ -82,6 +82,21 @@ describe('zod schema registry', () => {
     ).toBe(false);
   });
 
+  // The feature shows three: a model that answers more is not refused for it,
+  // one that answers fewer has not done its job.
+  it('subjectGenOutput takes three proposals or more, never fewer', () => {
+    const of = (n) => ({
+      proposals: Array.from({ length: n }, (_, i) => ({
+        text: `Objet ${i}`,
+        angle: 'bénéfice direct',
+      })),
+    });
+    expect(schemas.subjectGenOutput.safeParse(of(3)).success).toBe(true);
+    expect(schemas.subjectGenOutput.safeParse(of(4)).success).toBe(true);
+    expect(schemas.subjectGenOutput.safeParse(of(2)).success).toBe(false);
+    expect(schemas.subjectGenOutput.safeParse(of(11)).success).toBe(false);
+  });
+
   // The angle is shown next to its proposal: a few words, never a page.
   it('bounds the angle of a text proposal', () => {
     const output = (angle) => ({

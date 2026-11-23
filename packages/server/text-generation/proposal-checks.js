@@ -42,6 +42,9 @@ const {
 const SUSPECTED_VARIABLE_PATTERN = /\{[A-Za-z_][\w.]{0,50}\}|%[A-Za-z_][\w.]{0,50}%/g;
 
 // What a mobile inbox shows of a subject.
+// How many proposals the feature shows, side by side.
+const SHOWN = 3;
+
 const SUBJECT_MOBILE_LENGTH = 35;
 
 // No company may accept a longer preheader (the bound of its `tooLong`
@@ -166,7 +169,10 @@ function screenProposals(
     seen.add(text.trim());
     kept.push({ text, angle, facts: facts(text, qualitySettings) });
   });
-  return { proposals: kept, dropped, repeated };
+  // Three are shown, the first that respect the rules: a model sometimes
+  // answers more than it was asked for. The others are not counted as set
+  // aside: nothing was wrong with them.
+  return { proposals: kept.slice(0, SHOWN), dropped, repeated };
 }
 
 module.exports = {
