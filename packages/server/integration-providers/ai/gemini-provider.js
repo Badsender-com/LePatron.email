@@ -146,7 +146,8 @@ class GeminiProvider extends BaseLLMProvider {
   _mapErrorToCode(status, errorData) {
     if (status === 403) return CODES.INVALID_CREDENTIALS;
     // 402 is what a prepaid project answers once its credits are depleted.
-    if (status === 402 || status === 429) return CODES.QUOTA_EXCEEDED;
+    if (status === 402) return CODES.QUOTA_EXCEEDED;
+    if (status === 429) return CODES.RATE_LIMITED;
     // Google answers 400, not 401, for a bad key. Left as a generic API error
     // it reads as "something went wrong" when the fix is to paste a new key.
     if (status === 400) {
