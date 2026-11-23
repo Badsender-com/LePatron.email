@@ -14,5 +14,13 @@ const AIFeatureTypes = {
 
 const AIFeatureTypeValues = Object.values(AIFeatureTypes);
 
+// The features that run skills, so need an engine that writes text: a
+// translation-only integration (DeepL) would fail every invocation.
+const TEXT_FEATURE_TYPES = Object.freeze([
+  AIFeatureTypes.SKILL,
+  AIFeatureTypes.TEXT_GENERATION,
+]);
+
 module.exports = AIFeatureTypes;
 module.exports.AIFeatureTypeValues = AIFeatureTypeValues;
+module.exports.TEXT_FEATURE_TYPES = TEXT_FEATURE_TYPES;

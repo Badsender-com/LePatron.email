@@ -602,6 +602,50 @@ describe('skill-invocation.invoke', () => {
       expect(aiFeatureService.resolveActiveFeature).toHaveBeenCalledTimes(1);
     });
 
+    // Translation's engine can be DeepL, which writes no text a skill needs.
+    it.each(['translation', 'redaction'])(
+      'refuses the feature type %s, which runs no skill, before anything else',
+      async (featureType) => {
+        wireHappyPath();
+        const caught = await skillInvocation
+          .invoke({
+            skillId: 'generic.text',
+            input: { prompt: 'x' },
+            groupId: GROUP_ID,
+            featureType,
+          })
+          .catch((err) => err);
+        expect(caught.invocationStatus).toBe('CONFIG_ERROR');
+        expect(LePatronSkills.findOne).not.toHaveBeenCalled();
+      }
+    );
+
+    // An entry the log refuses would lose the invocation's row after a
+    // billed call: the list is checked before anything happens.
+    it.each([
+      ['null', null],
+      ['not a list', { expertiseId: 'a' }],
+      ['an entry without expertiseId', [{ versionMajor: 1 }]],
+      ['an empty entry', [null]],
+    ])(
+      'refuses expertiseConsumed given as %s before anything else',
+      async (_label, expertiseConsumed) => {
+        wireHappyPath();
+        const caught = await skillInvocation
+          .invoke({
+            skillId: 'generic.text',
+            input: { prompt: 'x' },
+            groupId: GROUP_ID,
+            expertiseConsumed,
+          })
+          .catch((err) => err);
+        expect(caught.invocationStatus).toBe('CONFIG_ERROR');
+        expect(caught.message).toMatch(/expertiseConsumed/);
+        expect(LePatronSkills.findOne).not.toHaveBeenCalled();
+        expect(mockProvider.chatComplete).not.toHaveBeenCalled();
+      }
+    );
+
     it('refuses an unknown feature type before anything else', async () => {
       wireHappyPath();
       const caught = await skillInvocation
