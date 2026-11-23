@@ -53,7 +53,7 @@ describe('audience history taking back', () => {
   beforeEach(() => harness.seed(SEED));
 
   // Turned on by #1669 (take back the past openings, dry first)
-  describe.skip('from the call log', () => {
+  describe('from the call log', () => {
     it('lists, dry, the openings it found, and writes nothing', async () => {
       const report = await takeBack({ write: false });
 
