@@ -12,8 +12,8 @@ const meta = `
                 <ul class="ai-panel__facts">
                   <li>{{ t('text-generation-length', { count: proposal.facts.length }) }}</li>
                   <li v-if="proposal.facts.truncatedOnMobile">{{ t('text-generation-mobile', { preview: proposal.facts.mobilePreview }) }}</li>
-                  <li v-if="proposal.facts.tooShort">{{ t('text-generation-short') }}</li>
-                  <li v-if="proposal.facts.tooLong">{{ t('text-generation-long') }}</li>
+                  <li v-if="proposal.facts.tooLong">{{ t('text-generation-too-long') }}</li>
+                  <li v-else-if="proposal.facts.long">{{ t('text-generation-long') }}</li>
                 </ul>`;
 
 module.exports = `
@@ -55,16 +55,21 @@ module.exports = `
               :placeholder="t('text-generation-brief-placeholder')"></textarea>
 
     <template v-if="!state.proposals.length">
-      <p v-if="state.dropped" class="ai-panel__hint">{{ t('text-generation-none') }}</p>
+      <p v-if="state.nothingNew" class="ai-panel__hint">{{ t(nothingNewKey) }}</p>
       <button type="button" class="qc-button qc-button--cta ai-panel__start" :disabled="state.isLoading" @click="generate">
         {{ t(labels.generate) }}
       </button>
     </template>
 
     <template v-else>
+      <div v-if="state.nothingNew" class="qc-notice ai-panel__notice ai-panel__nothing-new">
+        <span class="lucide lucide-info" aria-hidden="true"></span>
+        <p class="qc-notice__text">{{ t(nothingNewKey) }}</p>
+      </div>
       <p id="ai-panel-proposals" ref="proposals" tabindex="-1" class="ai-panel__intro">{{ t(labels.proposals) }}</p>
       <p v-if="!canApply" class="ai-panel__hint">{{ t(labels.copyHint) }}</p>
       <p v-if="state.dropped" class="ai-panel__hint">{{ t('text-generation-dropped', { count: state.dropped }) }}</p>
+      <p v-if="state.repeated" class="ai-panel__hint">{{ t('text-generation-repeated', { count: state.repeated }) }}</p>
 
       <div v-if="canApply" class="ai-panel__proposals" role="radiogroup" aria-labelledby="ai-panel-proposals">
         <div v-for="(proposal, index) in state.proposals" :key="proposal.text" class="ai-panel__proposal"

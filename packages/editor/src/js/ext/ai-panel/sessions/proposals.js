@@ -34,7 +34,12 @@ function createProposalsSession({ definition, target, api, editor }) {
     isLoading: false,
     error: null,
     proposals: [],
+    // Set aside by the server: for breaking a rule, or as already made.
     dropped: 0,
+    repeated: 0,
+    // The last request brought no new proposal: the ones shown, if any, are
+    // the previous ones, and the panel says so.
+    nothingNew: false,
     // Every proposal shown so far: "Proposer d'autres" moves away from them.
     seen: [],
     selectedIndex: null,
@@ -53,6 +58,7 @@ function createProposalsSession({ definition, target, api, editor }) {
       return;
     }
     state.error = null;
+    state.nothingNew = false;
     state.isLoading = true;
     try {
       const data = await api.generate(
@@ -68,8 +74,10 @@ function createProposalsSession({ definition, target, api, editor }) {
         })
       );
       state.dropped = data.dropped || 0;
+      state.repeated = data.repeated || 0;
+      state.nothingNew = !data.proposals.length;
       // Others all set aside: the proposals shown stay, rather than none.
-      if (data.proposals.length || !state.proposals.length) {
+      if (!state.nothingNew || !state.proposals.length) {
         state.proposals = data.proposals;
         state.seen = state.seen.concat(data.proposals.map((p) => p.text));
         state.selectedIndex = null;

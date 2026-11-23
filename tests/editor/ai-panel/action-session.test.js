@@ -164,6 +164,23 @@ describe('ai panel: the steps of an AI action', () => {
         'C',
       ]);
       expect(session.state.dropped).toBe(3);
+      expect(session.state.nothingNew).toBe(true);
+    });
+
+    it('counts the proposals set aside as already made, and says when new ones came', async () => {
+      api.generate
+        .mockResolvedValueOnce(answer('A', 'B', 'C'))
+        .mockResolvedValueOnce({ proposals: [], dropped: 0, repeated: 3 })
+        .mockResolvedValueOnce({ ...answer('D'), repeated: 2 });
+      await session.request({});
+      await session.requestMore();
+      expect(session.state.repeated).toBe(3);
+      expect(session.state.nothingNew).toBe(true);
+
+      await session.requestMore();
+      expect(session.state.proposals.map((p) => p.text)).toEqual(['D']);
+      expect(session.state.repeated).toBe(2);
+      expect(session.state.nothingNew).toBe(false);
     });
 
     it('does not undo over what the user changed by hand since', async () => {

@@ -938,6 +938,7 @@ module.exports = {
   'ai-panel-loading': 'Génération en cours…',
   'ai-panel-generate-subject': 'Proposer des objets',
   'ai-panel-generate-preheader': 'Proposer des préheaders',
+  'ai-panel-proposed-one': '__count__ proposition',
   'ai-panel-proposed': '__count__ propositions',
   'ai-panel-undo': 'Annuler la modification',
   'ai-panel-undone': 'Modification annulée.',
@@ -971,6 +972,8 @@ module.exports = {
     'Propositions écartées car déjà faites : __count__.',
   'text-generation-none':
     "Aucune nouvelle proposition ne respectait les règles de rédaction. Demandez-en d'autres.",
+  'text-generation-nothing-new':
+    "Aucune nouvelle proposition cette fois : les précédentes restent ci-dessous. Demandez-en d'autres ou précisez la consigne.",
   'text-generation-apply': 'Appliquer',
   'text-generation-copy': 'Copier',
   'text-generation-copied': 'Copié',

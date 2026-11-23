@@ -4,10 +4,11 @@ const Vue = require('vue/dist/vue.common');
 const template = require('./ai-proposals-steps.template');
 
 /**
- * The steps of a "proposals" action in the AI panel (text generation, ADR
- * 0004): the instruction, the proposals, pick, apply or copy, undo. The steps
- * themselves live in the session (ext/ai-panel/sessions/proposals.js); this
- * renders them and keeps the focus where the user goes on.
+ * The steps of a "proposals" action in the AI panel (ADR 0010; text
+ * generation, ADR 0016): the instruction, the proposals, pick, apply or copy,
+ * undo. The steps themselves live in the session
+ * (ext/ai-panel/sessions/proposals.js); this renders them and keeps the focus
+ * where the user goes on.
  *
  * Emits `open-action` (the suggested or next action), `announce` (said to
  * screen readers) and `changed` (the email changed: the panel re-reads it).
@@ -56,6 +57,13 @@ const AiProposalsSteps = Vue.component('AiProposalsSteps', {
     nextAction() {
       return this.session.nextAction();
     },
+    // Said when a request brought nothing new: over the proposals kept, or
+    // where the first ones would have been.
+    nothingNewKey() {
+      return this.state.proposals.length
+        ? 'text-generation-nothing-new'
+        : 'text-generation-none';
+    },
   },
   methods: {
     t(key, params) {
@@ -78,10 +86,19 @@ const AiProposalsSteps = Vue.component('AiProposalsSteps', {
       this.undoRefused = false;
       this.$emit('announce', this.t('ai-panel-loading'));
       await request;
-      if (this.state.error || !this.state.proposals.length) return;
+      if (this.state.error) return;
+      // Nothing new: the focus stays on the button the user pressed, and the
+      // proposals kept are not announced as new ones.
+      if (this.state.nothingNew) {
+        this.$emit('announce', this.t(this.nothingNewKey));
+        return;
+      }
+      const count = this.state.proposals.length;
       this.$emit(
         'announce',
-        this.t('ai-panel-proposed', { count: this.state.proposals.length })
+        this.t(count === 1 ? 'ai-panel-proposed-one' : 'ai-panel-proposed', {
+          count,
+        })
       );
       this.focusAfterRender('proposals');
     },

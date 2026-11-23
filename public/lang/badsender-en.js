@@ -910,6 +910,7 @@ module.exports = {
   'ai-panel-loading': 'Generating…',
   'ai-panel-generate-subject': 'Suggest subjects',
   'ai-panel-generate-preheader': 'Suggest preheaders',
+  'ai-panel-proposed-one': '__count__ proposal',
   'ai-panel-proposed': '__count__ proposals',
   'ai-panel-undo': 'Undo',
   'ai-panel-undone': 'Change undone.',
@@ -940,6 +941,8 @@ module.exports = {
   'text-generation-repeated': 'Proposals set aside as already made: __count__.',
   'text-generation-none':
     'No new proposal respected the copywriting rules. Ask for others.',
+  'text-generation-nothing-new':
+    'No new proposal this time: the previous ones stay below. Ask for others or refine the instruction.',
   'text-generation-apply': 'Apply',
   'text-generation-copy': 'Copy',
   'text-generation-copied': 'Copied',
