@@ -12,6 +12,12 @@ const STEPS_BY_FAMILY = {
   proposals: 'AiProposalsSteps',
 };
 
+// Where the fields that carry an AI icon live: the email settings and the
+// property editors of the content tab, not the right panels beside them.
+const FIELDS_ROOT_ID = 'toolcontents';
+// The fields re-render in bursts: their icons are placed once the burst ends.
+const ICONS_DELAY_MS = 100;
+
 // What the controller holds, mirrored here so Vue renders it.
 const MIRRORED = [
   'target',
@@ -48,6 +54,7 @@ const AiPanel = Vue.component('AiPanel', {
     liveMessage: '',
     subscriptions: [],
     iconsObserver: null,
+    iconsTimer: null,
   }),
   created() {
     this.sync();
@@ -61,6 +68,7 @@ const AiPanel = Vue.component('AiPanel', {
   beforeDestroy() {
     this.subscriptions.forEach((subscription) => subscription.dispose());
     if (this.iconsObserver) this.iconsObserver.disconnect();
+    clearTimeout(this.iconsTimer);
   },
   methods: {
     t(key, params) {
@@ -101,14 +109,13 @@ const AiPanel = Vue.component('AiPanel', {
       this.liveMessage = message;
     },
     // The subject and preheader fields re-render (Vue, Knockout): the icons are
-    // placed again on every change of the toolbox, never twice; the email is
+    // placed again on every change where they live, never twice; the email is
     // read once for all of them.
     watchFieldIcons() {
-      const root = document.getElementById('main-toolbox');
+      const root = document.getElementById(FIELDS_ROOT_ID);
       if (!root) return;
-      let pending = null;
       const place = () => {
-        pending = null;
+        this.iconsTimer = null;
         placeFieldIcons(root, {
           actionsFor: this.panel.offerNow(),
           onOpen: this.panel.openTarget,
@@ -116,7 +123,9 @@ const AiPanel = Vue.component('AiPanel', {
         });
       };
       this.iconsObserver = new MutationObserver(() => {
-        if (!pending) pending = setTimeout(place, 100);
+        if (!this.iconsTimer) {
+          this.iconsTimer = setTimeout(place, ICONS_DELAY_MS);
+        }
       });
       this.iconsObserver.observe(root, { childList: true, subtree: true });
       place();
