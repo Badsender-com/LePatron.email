@@ -643,6 +643,9 @@ export default {
     estimatedTime: '~{time} remaining',
     destination: 'Destination',
     destinationHint: 'Select where to create the translated copy',
+    rateLimitedMinutes: 'AI usage limit reached. Try again in {minutes} min.',
+    rateLimitedHours: 'AI usage limit reached. Try again in {hours} h.',
+    payloadTooLarge: 'This request is too large to be translated.',
   },
   template: {
     noId: 'No ID',

@@ -16,6 +16,8 @@ import {
   nextPollDelay,
 } from '~/helpers/poll-delay';
 
+const SECONDS_PER_HOUR = 3600;
+
 export default {
   name: 'BsMailingModalDuplicateTranslate',
   components: {
@@ -397,16 +399,41 @@ export default {
           this.close();
         }
       } catch (error) {
-        const errorResponse = error.response && error.response.data;
-        const message =
-          (errorResponse && errorResponse.message) ||
-          this.$t('global.errors.errorOccured');
         this.showSnackbar({
-          text: message,
+          text: this.translateErrorMessage(error),
           color: 'error',
         });
         this.translating = false;
       }
+    },
+
+    // The AI rate limit (429) says how long to wait in Retry-After, in
+    // seconds: the minute window ends within a minute, the day ones at
+    // midnight UTC.
+    translateErrorMessage(error) {
+      const response = error.response || {};
+      if (response.status === 429) {
+        const headers = response.headers || {};
+        const seconds = Number(headers['retry-after']);
+        if (!Number.isFinite(seconds) || seconds <= 0) {
+          return this.$t('global.errors.tooManyRequests');
+        }
+        if (seconds <= SECONDS_PER_HOUR) {
+          return this.$t('translation.rateLimitedMinutes', {
+            minutes: Math.ceil(seconds / 60),
+          });
+        }
+        return this.$t('translation.rateLimitedHours', {
+          hours: Math.ceil(seconds / SECONDS_PER_HOUR),
+        });
+      }
+      if (response.status === 413) {
+        return this.$t('translation.payloadTooLarge');
+      }
+      return (
+        (response.data && response.data.message) ||
+        this.$t('global.errors.errorOccured')
+      );
     },
   },
   watch: {

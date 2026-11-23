@@ -655,6 +655,9 @@ export default {
     estimatedTime: '~{time} restantes',
     destination: 'Destination',
     destinationHint: 'Sélectionnez où créer la copie traduite',
+    rateLimitedMinutes: 'Limite d\'utilisation de l\'IA atteinte. Réessayez dans {minutes} min.',
+    rateLimitedHours: 'Limite d\'utilisation de l\'IA atteinte. Réessayez dans {hours} h.',
+    payloadTooLarge: 'Cette demande est trop volumineuse pour être traduite.',
   },
   template: {
     noId: 'Aucun ID',
