@@ -159,6 +159,57 @@ describe('spelling correction: placing a correction', () => {
     });
   });
 
+  // Every syntax of the sending platforms (shared/quality/merge-tag-syntax.js)
+  // and Mosaico's own variables.
+  describe('merge tags', () => {
+    /* eslint-disable no-template-curly-in-string */
+    it.each([
+      ['${x}', '<p>Bonjour ${prenom}, \u00e0 bient\u00f4t</p>'],
+      ['{% x %}', '<p>{% if prenom %}Bonjour{% endif %} \u00e0 tous</p>'],
+      ['<%= x %>', '<p>Bonjour &lt;%= prenom %&gt;, merci</p>'],
+      ['{{x}}', '<p>Bonjour {{prenom}}, merci</p>'],
+      ['%%x%%', '<p>Bonjour %%prenom%%, merci</p>'],
+      ['*|x|*', '<p>Bonjour *|prenom|*, merci</p>'],
+      ['[[x]]', '<p>Bonjour [[prenom]], merci</p>'],
+      ['[x]', '<p>Bonjour [prenom], merci</p>'],
+      ['@[x]', '<p>Bonjour @[prenom], merci</p>'],
+    ])('never corrects inside %s', (_syntax, html) => {
+      expect(
+        placeCorrection(html, { before: 'prenom', after: 'pr\u00e9nom' })
+      ).toEqual({ refused: 'merge-tag' });
+    });
+
+    it.each([
+      ['${', 'Bonjour ${'],
+      ['{%', 'Bonjour {%'],
+      ['<%', 'Bonjour <%'],
+      ['{{', 'Bonjour {{'],
+      ['%%', 'Bonjour %%'],
+      ['*|', 'Bonjour *|'],
+      ['[[', 'Bonjour [['],
+      ['@[', 'Bonjour @['],
+      ['[x]', 'Bonjour [prenom]'],
+      ['${x}', 'Bonjour ${prenom}'],
+    ])('never brings %s the text before did not have', (_syntax, after) => {
+      expect(
+        placeCorrection('<p>Bonjour, \u00e0 demain</p>', {
+          before: 'Bonjour',
+          after,
+        })
+      ).toEqual({ refused: 'merge-tag' });
+    });
+
+    it('corrects the text around one', () => {
+      expect(
+        placeCorrection('<p>Bonjour ${prenom}, \u00e0 bientot</p>', {
+          before: '\u00e0 bientot',
+          after: '\u00e0 bient\u00f4t',
+        })
+      ).toEqual({ html: '<p>Bonjour ${prenom}, \u00e0 bient\u00f4t</p>' });
+    });
+    /* eslint-enable no-template-curly-in-string */
+  });
+
   describe('refusing a correction it cannot place safely', () => {
     it.each([
       [

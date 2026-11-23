@@ -383,6 +383,24 @@ describe('spelling correction: POST /api/text-generation/corrections', () => {
       expect(res.body).toEqual({ corrections: [], dropped: 1 });
     });
 
+    it('drops and counts a correction inside a merge tag of any platform', async () => {
+      invoke.mockResolvedValue(
+        corrections(fix('longText', 'prenom', 'pr\u00e9nom'))
+      );
+      const res = await post({
+        ...body,
+        fields: [
+          {
+            path: 'longText',
+            role: 'text',
+            // eslint-disable-next-line no-template-curly-in-string
+            text: 'Bonjour ${prenom}, \u00e0 bient\u00f4t',
+          },
+        ],
+      });
+      expect(res.body).toEqual({ corrections: [], dropped: 1 });
+    });
+
     it('drops and counts a correction found twice in its field', async () => {
       invoke.mockResolvedValue(
         corrections(

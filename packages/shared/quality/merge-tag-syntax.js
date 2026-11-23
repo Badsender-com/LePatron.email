@@ -15,8 +15,14 @@ const PAIRS = [
   ['<%', '%>'],
 ];
 
+// Each delimiter that opens or closes a tag, `${` included.
+const DELIMITER = /\{\{|\}\}|\{%|%\}|%%|\*\||\|\*|\[\[|\]\]|<%|%>|\$\{/g;
+
 // A value carrying any of them is only known once the ESP sends the email.
-const DYNAMIC_PATTERN = /\{\{|\}\}|\{%|%\}|%%|\*\||\|\*|\[\[|\]\]|<%|%>|\$\{|\[[a-z0-9_-]+\]/i;
+const DYNAMIC_PATTERN = new RegExp(
+  `${DELIMITER.source}|\\[[a-z0-9_-]+\\]`,
+  'i'
+);
 
 // A whole tag, as the recipient never sees it. Each body is bounded: an
 // opener left unclosed must not make the scan read on to the end of the text.
@@ -37,6 +43,10 @@ const mergeTagsIn = (text) => (text || '').match(MERGE_TAG) || [];
 const BRACKETED_WORD = /^\[[a-z0-9_-]+\]$/i;
 
 module.exports = {
+  // Global patterns, to read with match, matchAll or replace, or to compose
+  // with: the placing of a spelling correction (text-correction/).
+  MERGE_TAG,
+  DELIMITER,
   PAIRS,
   SCRIPTING_MARKUP,
   BRACKETED_WORD,

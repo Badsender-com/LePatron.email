@@ -18,7 +18,8 @@
  * - `not-found`: no whole-word occurrence of `before`; a removal (an empty
  *   `after`) not found is one;
  * - `ambiguous`: several;
- * - `merge-tag`: the occurrence touches a merge tag, or `after` brings one;
+ * - `merge-tag`: the occurrence touches a merge tag, or `after` brings one,
+ *   or a delimiter of one, that `before` did not have;
  * - `straddles-markup`: the occurrence crosses a tag (a word half in bold).
  *
  * Shared by the server, which drops what cannot be placed in the text, and by
@@ -26,13 +27,22 @@
  */
 
 const { NAMED_ENTITIES } = require('./html-entities.js');
+const {
+  MERGE_TAG: ESP_MERGE_TAG,
+  DELIMITER: ESP_DELIMITER,
+} = require('../quality/merge-tag-syntax.js');
 
 const ENTITY = /&(#\d+|#x[0-9a-f]+|[a-z][a-z0-9]*);/gi;
 const MAX_CODE_POINT = 0x10ffff;
 // Tags whose boundary separates lines of text, as the reader sees them.
 const BLOCK_TAG = /^(p|div|li|ul|ol|h[1-6]|tr|td|th|table|blockquote|br)$/;
-// The personalization variables of the sending platforms and of Mosaico.
-const MERGE_TAG = /\{\{[^}]*\}\}|%%[^%]*%%|\*\|[^|]*\|\*|\[\[[^\]]*\]\]|@\[[^\]]*\]/g;
+// The personalization variables of the sending platforms
+// (quality/merge-tag-syntax.js) and Mosaico's own, @[x], with their delimiters.
+const MERGE_TAG = new RegExp(
+  `${ESP_MERGE_TAG.source}|@\\[[^\\]]{0,200}\\]`,
+  'gi'
+);
+const DELIMITER = new RegExp(`${ESP_DELIMITER.source}|@\\[`, 'g');
 const WORD_CHAR = /[\p{L}\p{N}]/u;
 // Never text a reader sees: control characters other than a line break, and
 // the bidirectional ones, which would disguise the change shown for review.
@@ -200,6 +210,21 @@ const differsBySpacesOnly = (a, b) =>
 
 const mergeTagsOf = (text) => (text.match(MERGE_TAG) || []).sort().join('\n');
 
+// Whether `after` holds a delimiter more often than `before`: a variable
+// half written is one still, for the sending platform.
+function bringsDelimiter(before, after) {
+  const counted = (text) =>
+    (text.match(DELIMITER) || []).reduce(
+      (counts, delimiter) =>
+        counts.set(delimiter, (counts.get(delimiter) || 0) + 1),
+      new Map()
+    );
+  const had = counted(before);
+  return Array.from(counted(after)).some(
+    ([delimiter, count]) => count > (had.get(delimiter) || 0)
+  );
+}
+
 /**
  * Where a correction goes in a text, or why it cannot go there.
  * @param {string} text the visible text of a field
@@ -212,7 +237,10 @@ function locateCorrection(text, { before, after }) {
   if (before.includes('\n') || after.includes('\n')) {
     return { refused: 'multiline' };
   }
-  if (mergeTagsOf(before) !== mergeTagsOf(after)) {
+  if (
+    mergeTagsOf(before) !== mergeTagsOf(after) ||
+    bringsDelimiter(before, after)
+  ) {
     return { refused: 'merge-tag' };
   }
   const found = occurrences(text, before);
