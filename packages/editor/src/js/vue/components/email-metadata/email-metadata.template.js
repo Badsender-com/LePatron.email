@@ -8,7 +8,7 @@
  * options. Note what could NOT be done: the "Template Options" heading above is
  * not ours to rename — it is declared in each client template's markup, in its
  * `@supports -ko-blockdefs` block (6 of the 7 templates in the dev database say
- * "Template Options"; Ouest France has no such block at all). So the two headings
+ * "Template Options"; the seventh has no such block at all). So the two headings
  * stay, styled alike and joined by a continuous frame, rather than merged into one.
  *
  * There is no save button. Metadata are written by the editor's Save, with the

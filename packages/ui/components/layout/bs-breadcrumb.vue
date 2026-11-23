@@ -10,7 +10,7 @@ export default {
     items: {
       type: Array,
       required: true,
-      // Format: [{ text: 'Workspaces', to: '/mailings' }, { text: 'Clarins', to: null }]
+      // Format: [{ text: 'Workspaces', to: '/mailings' }, { text: 'Acme', to: null }]
       // Last item (current page) should have to: null
     },
   },

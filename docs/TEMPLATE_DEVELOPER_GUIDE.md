@@ -1072,12 +1072,12 @@ The property is always named `preheaderText`, but **its location varies from one
 template to the next**, and there is no convention to fall back on. A survey of the
 templates in the development database (August 2026):
 
-| Location                            | Templates                                                       |
-| ----------------------------------- | --------------------------------------------------------------- |
-| `data.preheaderText` (root)         | Badsender News, Challenges confidentiel, Badsender and comments |
-| `data.preheaderBlock.preheaderText` | Clarins (×2), Shine, Ouest France                               |
+| Location                            | Templates |
+| ----------------------------------- | --------- |
+| `data.preheaderText` (root)         | 3         |
+| `data.preheaderBlock.preheaderText` | 4         |
 
-Some templates go further: Clarins declares **29 per-market variants** of the
+Some templates go further: one declares **29 per-market variants** of the
 property (`autPreheaderText`, `bel_frPreheaderText`, …), each bound to its own market
 block.
 
