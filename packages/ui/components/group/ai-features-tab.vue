@@ -284,9 +284,12 @@ export default {
         <!-- Section: Text generation (subject and preheader in the editor),
              backed by the Skills module. -->
         <bs-ai-feature-engine-section
-          :group-id="groupId"
+          :config="config"
+          :integrations="integrations"
+          :saving="saving"
           feature-type="text_generation"
           labels="aiFeatures.textGeneration"
+          @save="saveFeature"
         >
           <template #icon>
             <lucide-file-text :size="20" />
@@ -299,9 +302,12 @@ export default {
              type, like text_generation above. -->
         <bs-ai-feature-engine-section
           v-if="isPlatform"
-          :group-id="groupId"
+          :config="config"
+          :integrations="integrations"
+          :saving="saving"
           feature-type="skill"
           labels="aiFeatures.skill"
+          @save="saveFeature"
         />
 
         <!-- The page's own sections (MCP access), before what is coming. -->
