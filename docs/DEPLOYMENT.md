@@ -96,3 +96,20 @@ After deploying a copy whose nightly follow is on, check that the scheduled line
    - `This instance follows no production: nothing to do.`: the command does not see `SKILLS_SOURCE_URL` and `SKILLS_SOURCE_TOKEN`;
    - `This copy does not follow production at night (SKILLS_SOURCE_NIGHTLY): nothing to do.`: `SKILLS_SOURCE_NIGHTLY` is not `true` on this app.
 3. The next morning, the app's logs show the 3:00 UTC run: one instance follows, and any other instance says it found a follow running or a nightly follow that started less than 60 minutes ago.
+
+---
+
+## Optional environment variables
+
+Set them in the application's environment variables, on Clever Cloud as on Scalingo.
+
+### Quality control
+
+Two online checks of the quality control need a third party. Both are off while their variable is unset: the editor then leaves them out of the checks it lists.
+
+| Variable               | Check                    | Value                                                                                                                        |
+| ---------------------- | ------------------------ | ---------------------------------------------------------------------------------------------------------------------------- |
+| `QC_WEB_RISK_API_KEY`  | Liens dangereux          | a Google Web Risk API key                                                                                                    |
+| `QC_DOMAIN_BLOCKLISTS` | Domaines sur liste noire | DNS blocklists as `name=zone` pairs separated by commas, e.g. `Spamhaus DBL=<key>.dbl.dq.spamhaus.net,SURBL=multi.surbl.org` |
+
+Every DNS blocklist asks for a subscription for commercial use, and Spamhaus answers nothing through public resolvers: use its DQS zone with your key.

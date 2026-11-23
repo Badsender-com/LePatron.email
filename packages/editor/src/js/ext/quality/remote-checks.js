@@ -1,0 +1,208 @@
+'use strict';
+
+const { REMOTE_RULES, LATE_RULES } = require('./engine');
+const { hasResources } = require('./resources');
+const remoteApi = require('./quality-remote');
+
+// The server's part of a quality review (links, image weight, blocklists):
+// it comes after the local checks, on the export they just read, and its
+// results join theirs in the drawer unless a newer run started. The server
+// runs one check at a time per user: a request waits for the previous one,
+// and is not sent at all if a newer run replaced it.
+
+// The server's checks that are always listed; a blocklist is only where the
+// platform subscribed to one.
+const listedRemoteRules = REMOTE_RULES.filter((rule) => !rule.optional);
+
+const remoteCheck = (status) => (rule) => ({
+  ruleId: rule.id,
+  category: rule.category,
+  titleKey: rule.titleKey,
+  status,
+});
+
+// A check listed by both runs (a local rule with a second look at the
+// server's answer) is listed once: failed if either run found something, else
+// not run if the second look could not run, so never passed on half a look.
+const STATUS_RANK = { passed: 0, error: 1, cancelled: 1, failed: 2 };
+function mergeChecks(local, remote) {
+  const byId = new Map(local.map((check) => [check.ruleId, check]));
+  const added = [];
+  remote.forEach((check) => {
+    const listed = byId.get(check.ruleId);
+    if (!listed) {
+      added.push(check);
+      return;
+    }
+    byId.set(check.ruleId, {
+      ...listed,
+      status:
+        STATUS_RANK[check.status] > STATUS_RANK[listed.status]
+          ? check.status
+          : listed.status,
+      count: (listed.count || 0) + (check.count || 0),
+    });
+  });
+  return local.map((check) => byId.get(check.ruleId)).concat(added);
+}
+
+// The local checks whose second look asked the server: named in the request
+// only when they had images to read (resources.js).
+function askedLateRules(local) {
+  const named = (local.resources && local.resources.checks) || [];
+  return LATE_RULES.filter((rule) => named.includes(rule.id));
+}
+
+/**
+ * @param {Object} options
+ * @param {Object} options.state - the review's observables: `findings`,
+ *   `checks`, `remoteStatus`, `remoteError`
+ * @param {Function} options.isCurrent - `(id)`: whether run `id` still owns
+ *   the drawer
+ * @param {Function} options.surface - `(id)`: opens the drawer on run `id`
+ * @param {Function} options.isOn - `(rule)`: whether a check is on
+ * @param {string} [options.url] - where to ask; nothing is asked without one
+ * @param {Function} options.checkResources - quality-remote's postResources
+ * @param {Function} options.runRules - the engine's `runRules(ctx, rules)`
+ * @param {Function} options.run - `(options)`: the engine's whole run, for an
+ *   engine that hands no context back
+ */
+function createRemoteChecks(options) {
+  const { state, isCurrent, surface, isOn, url } = options;
+  const { checkResources, runRules, run: runEngine } = options;
+  const listed = listedRemoteRules.filter(isOn);
+  // Nothing to ask the server when every one of its checks is off: a local
+  // check with a second look (the format of an image without an extension)
+  // asks nothing on its own (resources.js).
+  const anyOn = REMOTE_RULES.some(isOn);
+  let inFlight = Promise.resolve();
+  let pending = null;
+  // The local results the server's checks complete.
+  let lastLocal = null;
+
+  // A run the server did not answer: its checks are listed as not run, and
+  // so is a local check whose second look had images to read, rather than
+  // passed on the images it saw alone.
+  function unanswered(local, status) {
+    const late = askedLateRules(local).map(remoteCheck(status));
+    return mergeChecks(local.checks, late).concat(
+      listed.map(remoteCheck(status))
+    );
+  }
+
+  // The server's rules, and the local ones whose second look asked it,
+  // read its answer on the context of the local pass (parsed once).
+  function evaluate(local, answer) {
+    const rules = REMOTE_RULES.concat(askedLateRules(local));
+    if (local.ctx && typeof runRules === 'function') {
+      local.ctx.remote = answer;
+      return runRules(local.ctx, rules);
+    }
+    // An engine that hands no context back: the export is read again.
+    return runEngine({ html: local.html, rules, remote: answer });
+  }
+
+  // The answer to the previous run would be dropped: aborted rather than
+  // waited for, it frees the server's turn for the next one.
+  const abortPending = () => pending && pending.cancel();
+
+  function ask(id, local, { cancel, answer, purpose }) {
+    // An export's runs are counted apart from the drawer's on the server.
+    const body = purpose ? { ...local.resources, purpose } : local.resources;
+    const request = inFlight
+      .catch(() => {})
+      .then(() =>
+        isCurrent(id) || answer
+          ? checkResources(url, body, { cancelToken: cancel.token })
+          : null
+      );
+    inFlight = request;
+    return request;
+  }
+
+  /**
+   * Asks the server about the export the local checks just read.
+   * @param {number} id - the run
+   * @param {Object} local - its local results
+   * @param {Object} [runOptions] - `silent`: never opens the drawer;
+   *   `answer`: asked even when a later run replaced this one, for a gate
+   *   that waits on it, and aborted only through its own `cancel`;
+   *   `purpose`: 'export' for the gate of an export (quality-limits.js on
+   *   the server), left out for the drawer
+   * @returns {Promise<Object>} what the run ends up with: `findings` and
+   *   `checks`, the local ones and the server's; `status`: 'idle' (not
+   *   asked) | 'done' | 'error'; `failure`: 'too-frequent' | 'failed' | null
+   */
+  function run(id, local, runOptions = {}) {
+    const { silent = false, answer = false, purpose } = runOptions;
+    const cancel = runOptions.cancel || remoteApi.createCancel();
+    abortPending();
+    const asLocal = { ...local, status: 'idle', failure: null };
+    if (!url || !anyOn || !hasResources(local.resources)) {
+      if (isCurrent(id)) state.remoteStatus('idle');
+      return Promise.resolve(asLocal);
+    }
+    lastLocal = local;
+    state.remoteStatus('running');
+    state.remoteError(null);
+    pending = answer ? null : cancel;
+    return ask(id, local, { cancel, answer, purpose })
+      .then((remote) => {
+        if (remote === null) return asLocal;
+        const result = evaluate(local, remote);
+        const outcome = {
+          findings: local.findings.concat(result.findings),
+          checks: mergeChecks(local.checks, result.checks),
+          status: 'done',
+          failure: null,
+        };
+        if (!isCurrent(id)) return outcome;
+        state.findings(outcome.findings);
+        state.checks(outcome.checks);
+        state.remoteStatus('done');
+        if (!silent) surface(id);
+        return outcome;
+      })
+      .catch((err) => {
+        // Aborted (an export that stopped waiting): not run, not failed.
+        if (remoteApi.isCancel(err)) {
+          const cancelled = {
+            ...asLocal,
+            checks: unanswered(local, 'cancelled'),
+          };
+          if (isCurrent(id)) {
+            state.checks(cancelled.checks);
+            state.remoteStatus('idle');
+          }
+          return cancelled;
+        }
+        // Listed as checks that could not run, never as passed. A blocklist
+        // may not even be configured: it is left out.
+        const outcome = {
+          findings: local.findings,
+          checks: unanswered(local, 'error'),
+          status: 'error',
+          failure: remoteApi.isTooFrequent(err) ? 'too-frequent' : 'failed',
+        };
+        if (!isCurrent(id)) return outcome;
+        console.error('Quality checks on the server failed', err);
+        state.checks(outcome.checks);
+        state.remoteError(outcome.failure);
+        state.remoteStatus('error');
+        return outcome;
+      });
+  }
+
+  /** Stops the server's part of the run: its checks are listed as cancelled. */
+  function cancel() {
+    abortPending();
+    if (state.remoteStatus() !== 'running') return;
+    // Not run, and said so: they never count as passed.
+    if (lastLocal) state.checks(unanswered(lastLocal, 'cancelled'));
+    state.remoteStatus('idle');
+  }
+
+  return { run, cancel, abortPending, listedCount: listed.length };
+}
+
+module.exports = { createRemoteChecks, listedRemoteRules, mergeChecks };

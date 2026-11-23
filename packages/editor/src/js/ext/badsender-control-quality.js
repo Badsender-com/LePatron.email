@@ -1,252 +1,183 @@
-const _ = require('lodash');
 const $ = require('jquery');
+const { messageText } = require('./quality/message-params');
 
-function formatBlockName(blockName) {
-  return _.startCase(blockName.replace('Block', ''))
-}
+// The modals of the export gate (ext/quality/quality-gate.js): the wait for
+// the server's checks, with its "Cancel", and the findings that stop the
+// download or the ESP send. They reuse the editor's modal framework
+// (.bs-modal-overlay / .bs-modal-card / .modal-content / .modal-footer /
+// .btn / .btn-flat, badsender-modal.less). Everything is escaped: a message
+// may quote the email's own content (a link label).
 
-function getAlertText(blockName, type, missingText) {
-  return `Block ${blockName} ${type} - ${missingText}`
-}
-
-function isElementEmpty(element) {
-  const imageEmpty = 'data:image/gif;base64,R0lGODlhAQABAIAAAP///wAAACH5BAEAAAAALAAAAAABAAEAAAICRAEAOw==';
-  const pngEmpty = 'https://live.lepatron.email/clarins/mastertemplate/bg.png';
-  return element === null || element === '' || element === 'none' || element === imageEmpty || element === pngEmpty;
-}
-
-function getErrorsForControlQuality(viewModel) {
-  checkAndDisplaySizeWarning(viewModel)
-  const htmlToExport = viewModel.exportHTML()
-  const parsedHtml = $.parseHTML(htmlToExport);
-  const extraItems = [];
-  const itemsForBackgroundImage = viewModel?.content()?.mainBlocks()?.blocks()
-    .filter(block => {
-      if (block()?.bgOptions &&
-          block()?.bgOptions()?.outlookBgImageVisible &&
-          block()?.bgOptions()?.outlookBgImage
-        ) {
-        if (block()?.bgOptions()?.outlookBgImageVisible()) {
-          const hasAlert = isElementEmpty(block()?.bgOptions()?.outlookBgImage());
-          if (hasAlert) {
-            return true;
-          }
-        }
-      }
-      if (block()?.bgOptions &&
-          block()?.bgOptions()?.mobileBgImageChoice &&
-          block()?.bgOptions()?.mobileBgimage
-        ) {
-        if (block()?.bgOptions()?.mobileBgImageChoice() === 'mobile') {
-          const hasAlert = isElementEmpty(block()?.bgOptions()?.mobileBgimage());
-          if (hasAlert) {
-            return true;
-          }
-        }
-      }
-      if (block()?.bgOptions &&
-          (block()?.bgOptions()?.bgImageChoice || block()?.bgOptions()?.bgImageVisible) &&
-          block()?.bgOptions()?.bgimage
-        ) {
-        if (block()?.bgOptions()?.bgImageChoice && block()?.bgOptions()?.bgImageChoice() === 'custom' ||
-          block()?.bgOptions()?.bgImageVisible && block()?.bgOptions()?.bgImageVisible()
-        ) {
-          const hasAlert = isElementEmpty(block()?.bgOptions()?.bgimage());
-          if (hasAlert) {
-            return true;
-          }
-        }
-      }
-
-      return false;
-    })
-    .map(block => {
-      if (block()?.bgOptions) {
-        if (block()?.bgOptions()?.outlookBgImageVisible && block()?.bgOptions()?.outlookBgImageVisible()) {
-          const hasToAddNewItem = isElementEmpty(block()?.bgOptions()?.outlookBgImage());
-          if (hasToAddNewItem) {
-            extraItems.push(getAlertText(formatBlockName(block().type()), 'Outlook', viewModel.t('Missing background image')));
-          }
-        }
-        if (block()?.bgOptions()?.mobileBgImageChoice && block()?.bgOptions()?.mobileBgImageChoice() === 'mobile') {
-          const hasToAddNewItem = isElementEmpty(block()?.bgOptions()?.mobileBgimage());
-          if (hasToAddNewItem) {
-            extraItems.push(getAlertText(formatBlockName(block().type()), 'Mobile', viewModel.t('Missing background image')));
-          }
-        }
-        if (block()?.bgOptions()?.bgImageChoice && block()?.bgOptions()?.bgImageChoice() === 'custom' ||
-          block()?.bgOptions()?.bgImageVisible && block()?.bgOptions()?.bgImageVisible()
-        ) {
-          const hasToAddNewItem = isElementEmpty(block()?.bgOptions()?.bgimage());
-          if (hasToAddNewItem) {
-            extraItems.push(getAlertText(formatBlockName(block().type()), '', viewModel.t('Missing background image')));
-          }
-        }
-        return null;
-      }
-      return newItem;
-    })
-    .filter(block => block && block !== null);
-
-  const itemsForLinks = $(parsedHtml)
-    .find('a[href="#toreplace"]')
-    .toArray()
-    .map(e => `${e.textContent?.trim() ? `${viewModel.t('Missing link label:')} ${e.textContent?.trim()}` : viewModel.t('Picture with no link')}`);
-
-  return itemsForBackgroundImage.concat(itemsForLinks).concat(extraItems);
-}
-
-function displayErrors (errors, viewModel) {
-  $('.error-message').remove();
-
-  const $errorMessageTitle = $(`<h3>${viewModel.t('Your email was successfully exported')}</h3>`);
-  const $errorMessageDescription = $(`<p>${viewModel.t('We noticed some missing details while executing quality controls:')}</p>`);
-  // As text, never as markup: an error line quotes the label of a link, which is
-  // the email's own content — an HTML code block can put anything there, and
-  // `textContent` has already decoded its entities.
-  const $errorLines = errors.map(error => $('<li></li>').text(error));
-  const $errorsDiv = $('<ul></ul>').append($errorLines);
-
-  const $errorMessageDiv = $('<div class="error-message"></div>');
-  $errorMessageDiv.insertBefore('replacedbody');
-  $errorMessageDiv.append($errorMessageTitle, $errorMessageDescription, $errorsDiv);
-}
-
-function checkAndDisplaySizeWarning(viewModel) {
-
-  const sizeThreshold = 102 * 1024;   // 102KB in octets
-  const htmlToExport = viewModel.exportHTML();
-  const exportedHtmlSize = new Blob([htmlToExport]).size; // to calculate the size of the exported HTML in octets
-
-  if (exportedHtmlSize > sizeThreshold) {
-    displaySizeWarning(viewModel);
-  } else {
-    // Remove any existing size warning message
-    $('.size-warning-message').remove();
-  }
-}
-
-function displaySizeWarning(viewModel) {
-  // Remove any existing size warning message
-  $('.size-warning-message').remove();
-
-  // Define the default English messages with keys for translation
-  const warningTitleKey = 'Excessive Size';
-  const warningDescriptionKey = 'The exported HTML exceeds 102KB, which may result in clipping email on Gmail.';
-
-  // Construct the warning message elements with translation keys
-  const $warningMessageTitle = $(`<h3>${viewModel.t(warningTitleKey)}</h3>`);
-  const $warningMessageDescription = $(`<p>${viewModel.t(warningDescriptionKey)}</p>`);
-
-  // Create the warning message container with styling
-  const $warningMessageDiv = $('<div class="size-warning-message"></div>');
-
-  // Insert the warning message before the specified body location
-  $warningMessageDiv.insertBefore('replacedbody');
-  // Append the title and description to the container
-  $warningMessageDiv.append($warningMessageTitle, $warningMessageDescription);
-}
-
-
-
-
-/**
- * Returns the list of required tracking keys (as defined by the group config)
- * that have no value set in vm.content().tracking().trackingUrls.
- */
-function checkRequiredTrackingParams(viewModel) {
-  const cfg = viewModel && viewModel.metadata && viewModel.metadata.trackingConfig;
-  if (!cfg || !cfg.enabled || !Array.isArray(cfg.params)) return [];
-  const requiredKeys = cfg.params
-    .filter((p) => p && p.required)
-    .map((p) => p.key);
-  if (requiredKeys.length === 0) return [];
-
-  let trackingUrls = [];
-  try {
-    trackingUrls = viewModel.content().tracking().trackingUrls() || [];
-  } catch (_e) {
-    trackingUrls = [];
-  }
-  const filled = new Set(
-    trackingUrls
-      .filter((tu) => tu && tu.key && tu.value && String(tu.value).length > 0)
-      .map((tu) => tu.key)
+const escapeText = (s) =>
+  String(s).replace(
+    /[&<>"']/g,
+    (c) =>
+      ({
+        '&': '&amp;',
+        '<': '&lt;',
+        '>': '&gt;',
+        '"': '&quot;',
+        "'": '&#39;',
+      }[c])
   );
-  return requiredKeys.filter((k) => !filled.has(k));
+
+const SPINNER =
+  '<div class="bs-modal-spinner quality-wait-modal__spinner" aria-hidden="true"><svg class="bs-modal-spinner-svg" viewBox="0 0 50 50"><circle class="bs-modal-spinner-circle" cx="25" cy="25" r="20" fill="none" stroke-width="4"></circle></svg></div>';
+
+// The namespace of the document events a modal of the gate listens to.
+const EVENTS = '.qualityModal';
+
+// Tab and Shift+Tab loop over the modal's buttons.
+function trapTab(evt, buttons, inside) {
+  if (!buttons.length) return;
+  const first = buttons[0];
+  const last = buttons[buttons.length - 1];
+  const active = document.activeElement;
+  let target = null;
+  if (!inside(active)) target = evt.shiftKey ? last : first;
+  else if (evt.shiftKey && active === first) target = last;
+  else if (!evt.shiftKey && active === last) target = first;
+  if (!target) return;
+  evt.preventDefault();
+  target.focus();
 }
 
 /**
- * Display a blocking-style modal when required tracking params are missing.
- * Reuses the editor's existing modal framework (.bs-modal-overlay /
- * .bs-modal-card / .modal-content / .modal-footer / .btn / .btn-flat) so the
- * look-and-feel matches save-block-modal, delete-block-modal, etc.
+ * Appends a modal of the editor's framework, wires its closing and keeps
+ * the focus in it.
+ * @param {Object} options
+ * @param {string} options.name - its class
+ * @param {string} options.content - HTML of .modal-content, escaped
+ * @param {string} options.footer - HTML of .modal-footer, escaped
+ * @param {Function} options.onEscape - what the Escape key does
+ * @param {boolean} [options.dismissible] - a click outside closes it
+ * @returns {Object} the overlay, and `close()`
  */
-function displayTrackingError(missingKeys, viewModel) {
-  $('.bs-modal-overlay.tracking-modal').remove();
-
-  const title = viewModel.t('trackingRequiredTitle');
-  const description = viewModel.t('trackingRequiredDescription');
-  const closeLabel = viewModel.t('trackingRequiredClose');
-
-  const escapeHtml = (s) =>
-    String(s).replace(/[&<>"']/g, (c) => ({
-      '&': '&amp;',
-      '<': '&lt;',
-      '>': '&gt;',
-      '"': '&quot;',
-      "'": '&#39;',
-    }[c]));
-  const keysHtml = missingKeys
-    .map((k) => `<code class="tracking-modal__key">${escapeHtml(k)}</code>`)
-    .join(' ');
-
-  // Lucide alert-circle, inlined to avoid asset dependencies
-  const alertIcon =
-    '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>';
-
+function mountModal({ name, content, footer, onEscape, dismissible = false }) {
+  // One modal of the gate at a time: a new one replaces the one before, its
+  // keys and its hold on the focus with it.
+  $('.bs-modal-overlay.quality-modal').remove();
+  $(document).off(EVENTS);
   const $overlay = $(`
-    <div class="bs-modal-overlay tracking-modal small-modal" role="dialog" aria-modal="true" aria-labelledby="tracking-modal-title">
+    <div class="bs-modal-overlay quality-modal ${name} small-modal" role="dialog" aria-modal="true" aria-labelledby="${name}-title">
       <div class="bs-modal-container">
         <div class="bs-modal-card">
           <div class="bs-modal-content-wrapper">
-            <div class="modal-content">
-              <h5 id="tracking-modal-title">${escapeHtml(title)}</h5>
-              <div class="tracking-modal__alert">
-                <span class="tracking-modal__alert-icon">${alertIcon}</span>
-                <span>${escapeHtml(description)}</span>
-              </div>
-              <div class="tracking-modal__keys">${keysHtml}</div>
-            </div>
-            <div class="modal-footer">
-              <button type="button" class="btn waves-effect waves-light tracking-modal__close">${escapeHtml(closeLabel)}</button>
-            </div>
+            <div class="modal-content">${content}</div>
+            <div class="modal-footer">${footer}</div>
           </div>
         </div>
       </div>
     </div>
   `);
-
   const close = () => {
     $overlay.remove();
-    $(document).off('keydown.bsTrackingModal');
+    $(document).off(EVENTS);
   };
-
-  $overlay.on('click', (evt) => {
-    if (evt.target === $overlay[0]) close();
+  if (dismissible) {
+    $overlay.on('click', (evt) => {
+      if (evt.target === $overlay[0]) close();
+    });
+  }
+  // The focus stays in the modal: the editor behind it cannot change the
+  // email the gate is checking.
+  const buttons = () => $overlay.find('button:not([disabled])').toArray();
+  const inside = (node) => $overlay[0].contains(node);
+  $(document).on(`keydown${EVENTS}`, (evt) => {
+    if (evt.key === 'Escape') onEscape();
+    if (evt.key === 'Tab') trapTab(evt, buttons(), inside);
   });
-  $overlay.on('click', '.tracking-modal__close', close);
-  $(document).on('keydown.bsTrackingModal', (evt) => {
-    if (evt.key === 'Escape') close();
+  $(document).on(`focusin${EVENTS}`, (evt) => {
+    const [first] = buttons();
+    if (first && !inside(evt.target)) first.focus();
   });
-
   $('body').append($overlay);
-  $overlay.find('.tracking-modal__close').focus();
+  return { $overlay, close };
 }
 
-module.exports = {
-  getErrorsForControlQuality,
-  displayErrors,
-  checkRequiredTrackingParams,
-  displayTrackingError,
+/**
+ * Shows that the export waits for the server's checks of the links and
+ * images. "Cancel" (or Escape) abandons the export.
+ * @param {Object} viewModel - for its translations
+ * @param {Object} options
+ * @param {number} options.seconds - how long the export waits at most
+ * @param {Function} options.onCancel
+ * @returns {{ close: Function }}
+ */
+function displayWaitingForChecks(viewModel, { seconds, onCancel }) {
+  const t = (key, params) => viewModel.t(key, params);
+  const cancel = () => {
+    modal.close();
+    onCancel();
+  };
+  const modal = mountModal({
+    name: 'quality-wait-modal',
+    content: `
+      ${SPINNER}
+      <h5 id="quality-wait-modal-title">${escapeText(
+        t('Checking links and images…')
+      )}</h5>
+      <p class="quality-wait-modal__text">${escapeText(
+        t('The export goes on once they are checked, within about __seconds__ seconds.', { seconds })
+      )}</p>`,
+    footer: `<button type="button" class="btn-flat waves-effect quality-wait-modal__cancel">${escapeText(
+      t('quality-action-cancel')
+    )}</button>`,
+    onEscape: cancel,
+  });
+  modal.$overlay.attr('aria-busy', 'true');
+  modal.$overlay.on('click', '.quality-wait-modal__cancel', cancel);
+  modal.$overlay.find('.quality-wait-modal__cancel').focus();
+  return { close: modal.close };
 }
+
+/**
+ * Lists the findings that stop the download or the ESP send.
+ * @param {Array} findings - findings with `blocking`, as the engine returns them
+ * @param {Object} viewModel - for its translations
+ * @param {Object} [options]
+ * @param {Function} [options.onReveal] - "See in the quality control": shows
+ *   the first of them in the drawer
+ */
+function displayBlockingFindings(findings, viewModel, { onReveal } = {}) {
+  const t = (key, params) => viewModel.t(key, params);
+  const items = findings
+    .map((finding) => {
+      const where = finding.blockLabel ? ` · ${finding.blockLabel}` : '';
+      const message = messageText(t, finding.messageKey, finding.params);
+      return `<li class="blocking-modal__item"><strong>${escapeText(
+        t(finding.titleKey)
+      )}</strong>${escapeText(where)}<br>${escapeText(message)}</li>`;
+    })
+    .join('');
+  const reveal = onReveal
+    ? `<button type="button" class="btn waves-effect waves-light blocking-modal__reveal">${escapeText(
+        t('See in the quality control')
+      )}</button>`
+    : '';
+  const close = () => modal.close();
+  const modal = mountModal({
+    name: 'blocking-modal',
+    content: `
+      <h5 id="blocking-modal-title">${escapeText(
+        t('This email cannot leave yet')
+      )}</h5>
+      <div class="quality-modal__alert"><span>${escapeText(
+        t('Your company made these checks blocking: fix them before downloading or sending the email.')
+      )}</span></div>
+      <ul class="blocking-modal__list">${items}</ul>`,
+    footer: `<button type="button" class="btn-flat waves-effect blocking-modal__close">${escapeText(
+      t('quality-action-close')
+    )}</button>${reveal}`,
+    onEscape: close,
+    dismissible: true,
+  });
+  modal.$overlay.on('click', '.blocking-modal__close', close);
+  modal.$overlay.on('click', '.blocking-modal__reveal', () => {
+    close();
+    onReveal();
+  });
+  modal.$overlay.find('.blocking-modal__close').focus();
+}
+
+module.exports = { displayBlockingFindings, displayWaitingForChecks };

@@ -145,7 +145,7 @@ describe('a template id that is not an ObjectId', () => {
       );
 
   it('covers every route that takes one', () => {
-    expect(routesWithId()).toHaveLength(10);
+    expect(routesWithId()).toHaveLength(11);
   });
 
   it.each(['undefined', 'not-an-id', `${OWN_TEMPLATE}x`])(

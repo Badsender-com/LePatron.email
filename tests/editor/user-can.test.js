@@ -18,6 +18,24 @@ describe('userCan', () => {
     expect(userCan(vm, 'mailing.edit-structure')).toBe(false);
   });
 
+  it('leaves ignoring a quality finding to the authors, where they may write', () => {
+    expect(
+      userCan(
+        { currentUser: userOfRole('regular_user') },
+        'mailing.ignore-quality'
+      )
+    ).toBe(true);
+    expect(
+      userCan({ currentUser: userOfRole('writer') }, 'mailing.ignore-quality')
+    ).toBe(false);
+    expect(
+      userCan(
+        { currentUser: userOfRole('regular_user'), canWriteMailing: false },
+        'mailing.ignore-quality'
+      )
+    ).toBe(false);
+  });
+
   // currentUser is loaded asynchronously: until then, nothing is allowed.
   it('refuses everything until the user is loaded', () => {
     expect(userCan({ currentUser: () => null }, 'mailing.comment')).toBe(false);

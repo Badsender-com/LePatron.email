@@ -1,0 +1,215 @@
+'use strict';
+
+/**
+ * The quality control's checks, as a group's quality settings see them
+ * (docs/adr/0009-quality-settings-per-group-and-template.md).
+ *
+ * One table for the editor, which runs the checks (ext/quality/rules), the
+ * server, which validates a group's or a template's settings, and the admin
+ * pages, which edit them: a setting the server accepts is always one the
+ * editor knows and the pages offer.
+ *
+ * Each check has its category (as the editor's rule declares it), a default
+ * state, when it has some, thresholds with their default, bounds and unit,
+ * and what it asks of the server, if anything (`server`).
+ * The defaults are the quality control as it was before groups could set it:
+ * every check on, the required tracking parameters blocking.
+ *
+ * No syntax that needs a Babel helper here (spread, destructuring, classes,
+ * `for...of`): the UI's build compiles this file, and an injected helper
+ * import would turn it into a module that can no longer use `module.exports`.
+ */
+
+const CHECK_STATES = Object.freeze(['off', 'on', 'blocking']);
+
+const t = (value, min, max, unit) =>
+  Object.freeze({ default: value, min, max, unit });
+
+// `ordered`: thresholds that go together, lowest first (an info then a
+// warning, a warning then an error); a group cannot set them the other way.
+const check = (category, thresholds = {}, defaultState = 'on', ordered = []) =>
+  Object.freeze({
+    category,
+    defaultState,
+    thresholds: Object.freeze(thresholds),
+    ordered: Object.freeze(ordered.map((pair) => Object.freeze(pair))),
+    server: null,
+  });
+
+// What a check asks of the server: `task`, what the server does for it (visit
+// the links, ask Web Risk, ask the blocklists, download the images), and
+// `awaited`, whether the export waits for the answer when the check blocks.
+const askingServer = (task, awaited, base) =>
+  Object.freeze(
+    Object.assign({}, base, {
+      server: Object.freeze({ task: task, awaited: awaited }),
+    })
+  );
+// Run by the server on the export, once the local checks are done: when it
+// blocks, the export waits for its answer, 30 s at most and cancellable (the
+// editor's quality-gate.js).
+const runByServer = (task, base) => askingServer(task, true, base);
+// A local check with a second look at the server's answer: its findings never
+// block, so the export never waits for them.
+const secondLook = (task, base) => askingServer(task, false, base);
+
+const CHECKS = Object.freeze({
+  // Copy
+  subject: check(
+    'copy',
+    {
+      long: t(40, 10, 200, 'characters'),
+      tooLong: t(60, 10, 255, 'characters'),
+    },
+    'on',
+    [['long', 'tooLong']]
+  ),
+  preheader: check(
+    'copy',
+    {
+      long: t(100, 20, 300, 'characters'),
+      tooLong: t(140, 20, 500, 'characters'),
+    },
+    'on',
+    [['long', 'tooLong']]
+  ),
+  'merge-tags': check('copy'),
+  'empty-blocks': check('copy'),
+  // Accessibility
+  'uppercase-text': check('accessibility', {
+    maxWords: t(5, 2, 30, 'words'),
+  }),
+  'hidden-text': check('accessibility'),
+  'small-font': check('accessibility', {
+    minSize: t(14, 6, 24, 'px'),
+    minSizeHeaderFooter: t(12, 6, 24, 'px'),
+  }),
+  'color-contrast': check('accessibility'),
+  'text-layout': check('accessibility', {
+    minLineHeight: t(1, 0.5, 2, 'ratio'),
+    centredMaxChars: t(200, 20, 5000, 'characters'),
+  }),
+  'indistinct-links': check('accessibility'),
+  headings: check('accessibility'),
+  'alt-redundant': check('accessibility'),
+  'emoji-placement': check('accessibility'),
+  'unnamed-image-links': check('accessibility'),
+  'alt-text-quality': check('accessibility', {
+    maxLength: t(150, 20, 1000, 'characters'),
+  }),
+  // Content
+  'tracking-params': check('content', {}, 'blocking'),
+  'unfilled-links': check('content'),
+  'malformed-links': check('content'),
+  'displayed-urls': check('content'),
+  'suspicious-links': check('content'),
+  'images-without-link': check('content'),
+  'unreplaced-images': check('content'),
+  'background-images': check('content'),
+  // At 0 the check could never fire: any text is at least 0 characters long.
+  'image-only-email': check('content', {
+    minTextLength: t(100, 1, 5000, 'characters'),
+  }),
+  'broken-links': runByServer('linkProbes', check('content')),
+  'dangerous-links': runByServer('webRisk', check('content')),
+  'domain-blocklists': runByServer('blocklists', check('content')),
+  // Technical
+  'insecure-urls': check('technical'),
+  // Judged again on the type the server reads, for an image whose address
+  // names no format: the server downloads that image.
+  'unsupported-image-formats': secondLook('images', check('technical')),
+  'forbidden-code': check('technical'),
+  'malformed-html': check('technical'),
+  'unsupported-code': check('technical'),
+  'loose-code': check('technical'),
+  'html-size': check('technical', { maxKb: t(100, 10, 2048, 'KB') }),
+  // Performance, checked by the server
+  'image-weight': runByServer(
+    'images',
+    check('performance', {
+      // The server measures 10 MB at most: a ceiling of 10,240 KB would
+      // never be exceeded.
+      maxKb: t(500, 10, 10239, 'KB'),
+      maxGifKb: t(1024, 10, 10239, 'KB'),
+    })
+  ),
+  'images-total-weight': runByServer(
+    'images',
+    check(
+      'performance',
+      {
+        warningKb: t(500, 10, 20480, 'KB'),
+        errorKb: t(1024, 10, 20480, 'KB'),
+      },
+      'on',
+      [['warningKb', 'errorKb']]
+    )
+  ),
+  'oversized-images': runByServer(
+    'images',
+    check('performance', {
+      maxRatio: t(2, 1, 10, 'ratio'),
+    })
+  ),
+});
+
+const defaultThresholds = (checkId) => {
+  const thresholds = CHECKS[checkId].thresholds;
+  return Object.fromEntries(
+    Object.keys(thresholds).map((name) => [name, thresholds[name].default])
+  );
+};
+
+/**
+ * The resolved settings of a group or template that set nothing: every check
+ * with its default state and all its default thresholds.
+ * @returns {{ checks: Object<string, { state: string, thresholds: Object }> }}
+ */
+function defaultQualitySettings() {
+  return {
+    checks: Object.fromEntries(
+      Object.keys(CHECKS).map((id) => [
+        id,
+        { state: CHECKS[id].defaultState, thresholds: defaultThresholds(id) },
+      ])
+    ),
+  };
+}
+
+const asksServer = (id) => CHECKS[id].server !== null;
+
+// The checks the server runs on the export (runByServer): when one of them
+// blocks, the export waits for its answer. The editor's REMOTE_RULES. The
+// image format check also reads the server's answer, but never makes the
+// export wait: it is not one of them.
+const SERVER_CHECKS = Object.freeze(
+  Object.keys(CHECKS).filter(
+    (id) => asksServer(id) && CHECKS[id].server.awaited
+  )
+);
+
+// Every check that reads the server's answer, and what it has the server do:
+// the checks the editor may name to the server, and the tasks a run does.
+const SERVER_TASKS = Object.freeze(
+  Object.fromEntries(
+    Object.keys(CHECKS)
+      .filter(asksServer)
+      .map((id) => [id, CHECKS[id].server.task])
+  )
+);
+
+// The checks that belong to the company's technical settings: only a user who
+// sets those (a tech admin, a super admin) sets their state and thresholds,
+// in the general settings and on a template. The required tracking parameters
+// are set with the company's tracking (ADR 0004).
+const TECH_CHECKS = Object.freeze(['tracking-params']);
+
+module.exports = {
+  CHECK_STATES,
+  CHECKS,
+  SERVER_CHECKS,
+  SERVER_TASKS,
+  TECH_CHECKS,
+  defaultThresholds,
+  defaultQualitySettings,
+};

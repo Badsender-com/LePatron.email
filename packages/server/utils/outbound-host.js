@@ -159,11 +159,15 @@ async function assertOutboundHostAllowed(apiHost, options = {}) {
   let addresses;
   try {
     addresses = await dns.lookup(hostname, { all: true });
-  } catch (_) {
-    throw outboundHostError(
+  } catch (lookupError) {
+    const error = outboundHostError(
       'Host DNS resolution failed',
       OUTBOUND_HOST_ERRORS.DNS_FAILED
     );
+    // A name that does not exist (ENOTFOUND) and a resolver having a bad
+    // moment (EAI_AGAIN) call for different answers: the cause tells them apart.
+    error.cause = lookupError;
+    throw error;
   }
 
   if (!addresses || addresses.length === 0) {

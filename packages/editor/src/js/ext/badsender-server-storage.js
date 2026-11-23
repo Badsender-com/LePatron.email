@@ -10,12 +10,6 @@ const {
 } = require('../utils/editor-only-metadata-keys');
 const { errorKeyFor } = require('../utils/email-metadata');
 const { saveErrorKeyFor } = require('./synthetic-blocks/save-error.js');
-const {
-  getErrorsForControlQuality,
-  displayErrors,
-  checkRequiredTrackingParams,
-  displayTrackingError,
-} = require('../ext/badsender-control-quality');
 
 function getData(viewModel) {
   // gather meta
@@ -175,17 +169,6 @@ function loader(opts) {
     };
 
     /// ///
-    // EMAIL
-    /// ///
-    const testCmd = {
-      name: 'Test', // l10n happens in the template
-      enabled: ko.observable(true),
-    };
-    testCmd.execute = function () {
-      viewModel.openTestModal(true);
-    };
-
-    /// ///
     // ZIP
     /// ///
 
@@ -200,32 +183,27 @@ function loader(opts) {
 
     const dlDefault = { forCdn: false, forFtp: false };
     downloadCmd.execute = function downloadMail(downloadOptions = dlDefault) {
-      // ====================================
-      // Block download if required tracking params are missing
-      const missingTracking = checkRequiredTrackingParams(viewModel);
-      if (missingTracking.length > 0) {
-        displayTrackingError(missingTracking, viewModel);
-        document.getElementById('main-wysiwyg-area').scrollTo({
-          behavior: 'smooth',
-          top: 0,
+      // One export at a time: the button waits for the checks' verdict, and
+      // greys out before they run.
+      if (!downloadCmd.enabled()) return;
+      downloadCmd.enabled(false);
+      // The quality gate of the same export the ZIP is built from
+      // (ext/quality/quality-gate.js, ADR 0009). Taken at the click, with the
+      // tracking it goes with: an edit made while the checks run does not
+      // leave unchecked.
+      const exported = {
+        html: viewModel.exportHTML(),
+        tracking: ko.toJS(viewModel.content().tracking),
+      };
+      viewModel.quality
+        .gate({ html: exported.html, target: 'download' })
+        .then(({ leaves }) => {
+          if (leaves) download(exported, downloadOptions);
+          else downloadCmd.enabled(true);
         });
-        return;
-      }
+    };
 
-      // ====================================
-      // Check for missing input values
-      const errors = getErrorsForControlQuality(viewModel);
-      if (errors && errors.length > 0) {
-        displayErrors(errors, viewModel);
-        // Scroll to top so the user can see warnings if there is any
-        document.getElementById('main-wysiwyg-area').scrollTo({
-          behavior: 'smooth',
-          top: 0,
-        })
-      } else {
-        $('.error-message').remove();
-      }
-
+    function download({ html, tracking }, downloadOptions) {
       downloadCmd.enabled(false);
 
       viewModel.notifier.info(viewModel.t('Downloading...'));
@@ -235,14 +213,14 @@ function loader(opts) {
         method: 'POST',
         contentType: 'application/json',
         data: JSON.stringify({
-          html: viewModel.exportHTML(),
+          html,
           filename: viewModel.metadata.name(),
           downLoadForCdn: downloadOptions.forCdn,
           downLoadForFtp: downloadOptions.forFtp,
-          // Send the live tracking state from the builder so the backend
-          // validates / rewrites against the latest values rather than the
-          // last saved snapshot in mailing.data.tracking.
-          tracking: ko.toJS(viewModel.content().tracking),
+          // The live tracking state from the builder, as it was checked, so
+          // the backend validates / rewrites against it rather than the last
+          // saved snapshot in mailing.data.tracking.
+          tracking,
         }),
         xhrFields: { responseType: 'blob' },
         success: function(blob) {
@@ -262,10 +240,10 @@ function loader(opts) {
           downloadCmd.enabled(true);
         },
       });
-    };
+    }
 
     viewModel.save = saveCmd;
-    viewModel.test = testCmd;
+    // Sending a test lives in the quality drawer (viewModel.quality.open('send')).
     viewModel.download = downloadCmd;
   };
 }

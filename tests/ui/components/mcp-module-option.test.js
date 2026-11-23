@@ -253,6 +253,7 @@ describe('the MCP module in the company form', () => {
         '~/store/page': { PAGE: 'page', SHOW_SNACKBAR: 'SHOW_SNACKBAR' },
         '~/helpers/constants/status': { Status: {} },
         '~/components/modal-confirm-form': {},
+        '~/components/modal-confirm': {},
         '~/components/form/bs-text-field': {},
         '~/components/form/bs-textarea.vue': {},
         '~/components/form/bs-select': {},

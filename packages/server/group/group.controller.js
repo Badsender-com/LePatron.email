@@ -44,6 +44,13 @@ const {
 const {
   sanitizeEmailMetadata,
 } = require('../utils/sanitize-email-metadata.js');
+const {
+  sanitizeQualitySettings,
+  qualitySettingsUpdate,
+} = require('../utils/sanitize-quality-settings.js');
+const {
+  assertTechChecksAllowed,
+} = require('../account/tech-quality-checks.js');
 
 /**
  * The company fields a request names: its own keys, but those that start
@@ -216,6 +223,11 @@ async function create(req, res) {
   if ('emailMetadata' in groupToCreate) {
     groupToCreate.emailMetadata = sanitizeEmailMetadata(
       groupToCreate.emailMetadata
+    );
+  }
+  if ('qualitySettings' in groupToCreate) {
+    groupToCreate.qualitySettings = sanitizeQualitySettings(
+      groupToCreate.qualitySettings
     );
   }
 
@@ -590,6 +602,24 @@ async function update(req, res) {
     );
   }
 
+  // The quality settings, merged into what is stored: a page that changes one
+  // check must not reset the others. A company admin sets those of their own
+  // group (ADR 0009): they are written check by check, apart from the fields
+  // the whitelist below keeps (qualitySettingsUpdate).
+  let qualityUpdate = {};
+  if ('qualitySettings' in groupToUpdate) {
+    const storedSettings = (
+      await Groups.findById(req.params.groupId, { qualitySettings: 1 }).lean()
+    )?.qualitySettings;
+    const qualitySettings = sanitizeQualitySettings(
+      groupToUpdate.qualitySettings,
+      storedSettings
+    );
+    assertTechChecksAllowed(user, storedSettings, qualitySettings);
+    qualityUpdate = qualitySettingsUpdate(storedSettings, qualitySettings);
+    delete groupToUpdate.qualitySettings;
+  }
+
   // Only reachable by a super admin: the pick below drops it for a company admin.
   if ('idpCert' in groupToUpdate) {
     groupToUpdate.idpCert = normalizeIdpCert(groupToUpdate.idpCert);
@@ -634,7 +664,8 @@ async function update(req, res) {
   // operation that tells what they were: a security event is recorded for a
   // switch this request changed, and for it only.
   const switches = takeSwitches(groupToUpdate);
-  await groupService.updateGroup(groupToUpdate);
+
+  await groupService.updateGroup(groupToUpdate, qualityUpdate);
   const switched = await writeSwitches(req.params.groupId, switches);
   await recordSwitches(user, req.params.groupId, switched);
   await forgetSwitchedOff(req.params.groupId, switches);

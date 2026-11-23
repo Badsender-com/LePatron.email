@@ -37,7 +37,9 @@ module.exports = {
 
 /**
  * Throws 422 (TRACKING_REQUIRED_PARAMS_MISSING + missingParams[]) when the
- * resolved tracking config of the mailing has required keys without a value.
+ * resolved tracking config of the mailing has required keys without a value
+ * and the `tracking-params` check is blocking for the mailing's template and
+ * company (ADR 0009). Otherwise lets the export through.
  *
  * Acts as an early upstream gate before any ESP export entry point so we fail
  * BEFORE making any API call to the provider. The same validation also runs
@@ -54,7 +56,8 @@ async function assertRequiredTrackingParamsFilled({
     mailingId,
     user,
   });
-  // resolveMailingTrackingContext throws 422 itself when params are missing.
+  // resolveMailingTrackingContext throws 422 itself when params are missing
+  // and the check blocks.
   // Pass freshTracking when available so we validate the live builder state
   // instead of the (possibly stale) persisted mailing.data.tracking.
   await mailingService.resolveMailingTrackingContext(mailing, freshTracking);
@@ -199,6 +202,7 @@ async function updateEspCampaign({
 }) {
   const { subject, campaignMailName, planification } = espSendingMailData;
   // Block ESP export when required group/template tracking params are missing
+  // and that check is blocking for the mailing
   await assertRequiredTrackingParamsFilled({ mailingId, user, freshTracking });
   const profile = await findOne(profileId);
 
@@ -286,6 +290,7 @@ async function sendEspCampaign({
 }) {
   const { subject, campaignMailName, planification } = espSendingMailData;
   // Block ESP export when required group/template tracking params are missing
+  // and that check is blocking for the mailing
   await assertRequiredTrackingParamsFilled({ mailingId, user, freshTracking });
   const profile = await findOne(profileId);
 

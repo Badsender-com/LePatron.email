@@ -76,6 +76,12 @@ const config = rc('lepatron', {
   // `<version>:<secret>` (lepatron_relayedImagesKey). Unset, a key derived
   // from sessionSecret signs them (mcp/mcp-relayed-image-address.js).
   relayedImagesKey: undefined,
+  // The quality checks the server runs that need a third party; both off
+  // unless set (mailing/quality-web-risk.service.js, quality-blocklists.service.js).
+  qualityControl: {
+    webRiskApiKey: process.env.QC_WEB_RISK_API_KEY,
+    domainBlocklists: process.env.QC_DOMAIN_BLOCKLISTS,
+  },
   NODE_ENV: process.env.NODE_ENV,
   helpUrl: process.env.HELP_URL || 'https://docs.lepatron.email',
   // A copy (staging, development) follows production's skills and

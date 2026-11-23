@@ -48,4 +48,8 @@ module.exports = Object.freeze({
   McpConnectionModel: 'McpConnection',
   // The retex loop (ADR 0021)
   McpRetexModel: 'McpRetex',
+  // Public preview links (quality drawer)
+  ShareLinkModel: 'ShareLink',
+  // Daily budgets of the paid quality lookups
+  QualityBudgetModel: 'QualityBudget',
 });

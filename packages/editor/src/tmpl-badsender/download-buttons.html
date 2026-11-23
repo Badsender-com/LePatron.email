@@ -103,11 +103,14 @@
     <hr class="download-form__menu-divider" />
     <div data-bind="foreach: profiles">
       <!-- ko if: $root.downloadFtp || type === 'ADOBE' -->
+        <!-- While the quality gate checks the email for this profile
+             (ext/quality/quality-gate.js), it spins and the others wait. -->
         <a href="javascript:void(0)" data-bind="
           click: $root.setSelectedProfile.bind($index()),
+          attr: { 'aria-busy': $root.quality.gating() === $data ? 'true' : 'false' },
           button: {
-          disabled: !$root.download.enabled(),
-          icons: { primary: 'lucide lucide-fw lucide-cable' },
+          disabled: !$root.download.enabled() || !!$root.quality.gating(),
+          icons: { primary: $root.quality.gating() === $data ? 'lucide lucide-fw lucide-loader lucide-spin' : 'lucide lucide-fw lucide-cable' },
           label: name,
         }">
           Link
