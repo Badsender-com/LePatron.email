@@ -671,7 +671,7 @@ describe('QualityDrawer', () => {
   });
 
   // Escape and focus are the right panel's, for every panel alike: see
-  // tests/editor/right-panel-binding.test.js.
+  // tests/editor/ai-panel/right-panel-binding.test.js.
 
   it('lets go of its subscriptions when destroyed', async () => {
     const { vm, app } = await mountDrawer({ findings: [], checks: [] });

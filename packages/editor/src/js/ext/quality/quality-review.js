@@ -106,7 +106,8 @@ function installQualityReview(viewModel, ko, deps = {}) {
   });
 
   // Whether the comments panel holds a comment being written: opening the
-  // drawer would close it (qualityDrawerPlugin.js).
+  // drawer would close it, as opening any other right panel does
+  // (ext/right-panel.js).
   const commentDraftInProgress = () =>
     Boolean(ko.unwrap(viewModel.showComments)) &&
     String(ko.unwrap(viewModel.newCommentText) || '').trim().length > 0;
