@@ -158,7 +158,7 @@ async function deleteTaxonomyItem({ user, itemId }) {
   // typology of its own company — `transferToUser` clears `_emailType` when a
   // transfer moves the mailing (mailing.controller.js). The email type has its
   // own field on the email; every other dimension's value sits in the one list
-  // (ADR-0014).
+  // (ADR-0032).
   const usageCount = await Mailings.countDocuments({
     _company: item._company,
     ...(item.type === StandardDimensions.EMAIL_TYPE
