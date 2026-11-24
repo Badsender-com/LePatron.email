@@ -264,18 +264,6 @@ export default {
       @blur="$v.form.description.$touch()"
     />
 
-    <!-- The trigger carries no design token: nothing to win. -->
-    <bs-text-field
-      v-if="isEditing && form.name !== 'trigger'"
-      v-model="form.precedence"
-      :label="$t('taxonomy.dimensions.form.precedence')"
-      :hint="$t('taxonomy.dimensions.form.precedenceHint')"
-      :disabled="loading"
-      type="number"
-      step="1"
-      persistent-hint
-    />
-
     <bs-select
       v-if="isEditing && !isStandard"
       v-model="form.role"

@@ -439,6 +439,10 @@ export function taxonomyDimensionsOrder() {
   return '/taxonomy-dimensions/order';
 }
 
+export function taxonomyDimensionsPrecedence() {
+  return '/taxonomy-dimensions/precedence';
+}
+
 export function taxonomyItemsOrder() {
   return '/taxonomy-items/order';
 }
