@@ -28,6 +28,7 @@ const {
 } = require('./stored-elements.js');
 const {
   readRows,
+  holdsNothing,
   elementsOf,
   isFlatComposition,
   singleColumnElements,
@@ -123,8 +124,8 @@ const EMPTY = Object.freeze({ state: null, empty: true });
  * `empty` tells the two reasons apart. An empty composition is what the editor
  * stores when everything was removed and applied: an empty block, which
  * generates no markup. Anything else without a state is unreadable — corrupt,
- * from a later version, or over the limits — and must not be rebuilt into
- * nothing.
+ * from a later version, over the limits, or made only of elements this version
+ * does not know — and must not be rebuilt into nothing.
  *
  * @param {*} serialised the stored string
  * @returns {{ state: Object|null, empty: boolean }}
@@ -132,12 +133,13 @@ const EMPTY = Object.freeze({ state: null, empty: true });
 function readState(serialised) {
   const parsed = readEnvelope(serialised);
   if (!parsed) return UNREADABLE;
+  if (holdsNothing(parsed)) return EMPTY;
 
   const rows = readRows(parsed);
   if (rows === null) return UNREADABLE;
 
   const elements = elementsOf(rows);
-  if (elements.length === 0) return EMPTY;
+  if (elements.length === 0) return UNREADABLE;
   // Unique across the WHOLE composition, not column by column: selection and
   // drag address an element by id alone, so two elements sharing one in
   // different columns would select and move as one.
@@ -169,7 +171,10 @@ const parseState = (serialised) => readState(serialised).state;
  * @param {*} serialised the stored string
  * @returns {boolean}
  */
-const isEmptyComposition = (serialised) => readState(serialised).empty;
+function isEmptyComposition(serialised) {
+  const parsed = readEnvelope(serialised);
+  return parsed !== null && holdsNothing(parsed);
+}
 
 module.exports = {
   serialiseState,

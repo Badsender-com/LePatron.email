@@ -178,6 +178,35 @@ function readRows(parsed) {
 }
 
 /**
+ * Whether a stored composition holds no element at all, judged on what is
+ * stored rather than on what reading it would keep: an element of a type this
+ * version does not know is still an element, and a composition made only of
+ * those is not an empty one.
+ *
+ * @param {Object} parsed what came out of JSON.parse
+ * @returns {boolean}
+ */
+function holdsNothing(parsed) {
+  if (Array.isArray(parsed.elements) && parsed.elements.length > 0) {
+    return false;
+  }
+  if (!Array.isArray(parsed.rows)) return true;
+  if (parsed.rows.length > MAX_ROWS) return false;
+
+  return parsed.rows.every(
+    (row) =>
+      !isObject(row) ||
+      !Array.isArray(row.columns) ||
+      row.columns.every(
+        (column) =>
+          !isObject(column) ||
+          !Array.isArray(column.elements) ||
+          column.elements.length === 0
+      )
+  );
+}
+
+/**
  * Every element of a list of rows, in document order: row by row, column by
  * column.
  *
@@ -260,6 +289,7 @@ module.exports = {
   areUsableWidths,
   singleColumnRows,
   readRows,
+  holdsNothing,
   elementsOf,
   elementsOfState,
   isFlatComposition,

@@ -150,6 +150,27 @@ describe('rebuildComposedMarkup — a state it cannot read', () => {
     ],
     ['a state of another shape', JSON.stringify({ v: 1 }), ''],
     ['markup without any state', '', '<p>markup</p>'],
+    // Not one element this version knows, yet not an empty composition:
+    // rebuilt, it would be saved empty and its elements lost.
+    [
+      'elements of an unknown type only',
+      JSON.stringify({ v: 1, elements: [{ id: 'e', type: 'fromTheFuture' }] }),
+      '<p>markup</p>',
+    ],
+    ['an element that is null', JSON.stringify({ v: 1, elements: [null] }), ''],
+    [
+      'an element that is a number',
+      JSON.stringify({ v: 1, elements: [42] }),
+      '',
+    ],
+    [
+      'a column of unknown elements',
+      JSON.stringify({
+        v: 2,
+        rows: [{ columns: [{ width: 100, elements: [{ type: 'nope' }, 42] }] }],
+      }),
+      '',
+    ],
     [
       'more rows than a composition may hold',
       JSON.stringify({
