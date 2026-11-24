@@ -436,6 +436,10 @@ module.exports = {
   'block-builder-row-label': 'Ligne __n__ · __count__ colonnes',
   'block-builder-row-label-one': 'Ligne __n__ · 1 colonne',
   'block-builder-column-width': 'Largeur de la colonne __n__',
+  'block-builder-elements-folded':
+    '__count__ éléments déplacés dans la colonne __column__.',
+  'block-builder-elements-folded-one':
+    '1 élément déplacé dans la colonne __column__.',
   'block-builder-add-row': 'Ajouter une ligne',
   'block-builder-structure': 'Structure de la ligne',
   'block-builder-structure-full': 'Une colonne',

@@ -97,6 +97,7 @@ module.exports = `<modal-component
               <span>%</span>
             </label>
           </div>
+          <p class="bb-modal__folded" role="status">{{ foldedMessage }}</p>
         </div>
 
         <p :id="listLabelId" class="bb-modal__section">{{ vm.t('block-builder-elements') }}</p>

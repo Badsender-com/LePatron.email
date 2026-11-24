@@ -36,6 +36,8 @@ const ROW_LABEL_KEYS = [
   'block-builder-row-label',
   'block-builder-row-label-one',
   'block-builder-column-width',
+  'block-builder-elements-folded',
+  'block-builder-elements-folded-one',
 ];
 
 const sameWidths = (a, b) =>
@@ -44,6 +46,11 @@ const sameWidths = (a, b) =>
 const RowSettingsMixin = {
   mixins: [ListboxMixin],
   data: () => ({
+    // Where the elements of the columns a structure change removed went:
+    // `{ rowId, count, column }`, or null. Said once, under the structure, and
+    // gone at the next change — a user who changes the structure again has
+    // moved on from the last one.
+    foldedNotice: null,
     minColumnWidth: MIN_COLUMN_WIDTH,
     fullWidth: FULL_WIDTH,
   }),
@@ -68,10 +75,31 @@ const RowSettingsMixin = {
       return row ? row.columns.map((column) => column.width) : [];
     },
 
+    foldedMessage() {
+      const notice = this.foldedNotice;
+      if (!notice || notice.rowId !== this.selectedRowId) return '';
+      const key =
+        notice.count === 1
+          ? 'block-builder-elements-folded-one'
+          : 'block-builder-elements-folded';
+      return this.vm.t(key, { count: notice.count, column: notice.column });
+    },
+
     selectedRowIndex() {
       return (this.state.rows || []).findIndex(
         (row) => row.id === this.selectedRowId
       );
+    },
+  },
+
+  watch: {
+    // Another row, or none: the notice was about the row the user left. Only
+    // then — watchers run after the tick, so a row selected and restructured in
+    // the same tick would otherwise lose its notice on arrival.
+    selectedRowId(id) {
+      if (this.foldedNotice && this.foldedNotice.rowId !== id) {
+        this.foldedNotice = null;
+      }
     },
   },
 
@@ -138,6 +166,8 @@ const RowSettingsMixin = {
      * column, its elements move to the last column that survives rather than
      * being dropped: losing a paragraph to a layout change is the kind of thing
      * a user never forgives and never reports precisely enough to reproduce.
+     * And the panel says where they went (`foldedNotice`), or the user would
+     * look for them in the column that is gone.
      *
      * No render is asked for: the preview watches its markup, and a structure
      * that did not change the markup has nothing to redraw.
@@ -170,6 +200,10 @@ const RowSettingsMixin = {
       row.columns = widths.map((width, index) =>
         kept[index] ? { ...kept[index], width } : { width, elements: [] }
       );
+
+      this.foldedNotice = folded.length
+        ? { rowId, count: folded.length, column: widths.length }
+        : null;
       return true;
     },
 

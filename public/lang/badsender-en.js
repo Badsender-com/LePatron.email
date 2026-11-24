@@ -422,6 +422,9 @@ module.exports = {
   'block-builder-row-label': 'Row __n__ · __count__ columns',
   'block-builder-row-label-one': 'Row __n__ · 1 column',
   'block-builder-column-width': 'Column __n__ width',
+  'block-builder-elements-folded':
+    '__count__ elements moved to column __column__.',
+  'block-builder-elements-folded-one': '1 element moved to column __column__.',
   'block-builder-add-row': 'Add a row',
   'block-builder-structure': 'Row structure',
   'block-builder-structure-full': 'One column',

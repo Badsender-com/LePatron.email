@@ -5,7 +5,7 @@
 'use strict';
 
 // The rows panel: the list of rows, and the structure of the selected one —
-// its presets and its widths.
+// its presets, its widths, and what it says when a column disappears (#1210).
 //
 // Through the French dictionary, substituted as the editor does (`vm.tt`), so
 // a label is read as a user reads it.
@@ -36,6 +36,8 @@ const rowOptions = () =>
   Array.from(document.querySelectorAll('.bb-modal__rows [role="option"]'));
 const widthFields = () =>
   Array.from(document.querySelectorAll('.bb-modal__width input'));
+const foldedText = () =>
+  document.querySelector('.bb-modal__folded').textContent.trim();
 
 function press(target, key) {
   const event = new window.KeyboardEvent('keydown', {
@@ -50,6 +52,13 @@ function press(target, key) {
 function change(input, value) {
   input.value = value;
   input.dispatchEvent(new window.Event('change', { bubbles: true }));
+}
+
+/** Puts an element of the first column into another one of the same row. */
+function placeIn(modal, columnIndex) {
+  const [row] = modal.state.rows;
+  const [element] = row.columns[0].elements.splice(-1, 1);
+  row.columns[columnIndex].elements.push(element);
 }
 
 afterEach(unmountAll);
@@ -231,5 +240,89 @@ describe('a change of structure', () => {
     modal.setRowWidths(modal.state.rows[0].id, [50, 50]);
 
     expect(render).not.toHaveBeenCalled();
+  });
+});
+
+// The criterion of #1210: the elements of a column that disappears are kept,
+// and the user is told where they went.
+describe('the elements of a column that disappears', () => {
+  async function thirdsHoldingTwo() {
+    const modal = await openWith(['text', 'button', 'divider']);
+    const [row] = modal.state.rows;
+    modal.selectRow(row.id);
+    modal.setRowWidths(row.id, [33, 33, 34]);
+    placeIn(modal, 2);
+    placeIn(modal, 2);
+    await Vue.nextTick();
+    return modal;
+  }
+
+  it('are counted, with the column they went to', async () => {
+    const modal = await thirdsHoldingTwo();
+
+    modal.setRowWidths(modal.state.rows[0].id, [50, 50]);
+    await Vue.nextTick();
+
+    expect(foldedText()).toBe('2 éléments déplacés dans la colonne 2.');
+    expect(
+      modal.state.rows[0].columns[1].elements.map((element) => element.type)
+    ).toEqual(['divider', 'button']);
+  });
+
+  it('are counted in the singular when there is one', async () => {
+    const modal = await openWith(['text', 'button']);
+    const [row] = modal.state.rows;
+    modal.selectRow(row.id);
+    modal.setRowWidths(row.id, [50, 50]);
+    placeIn(modal, 1);
+
+    modal.setRowWidths(row.id, [FULL_WIDTH]);
+    await Vue.nextTick();
+
+    expect(foldedText()).toBe('1 élément déplacé dans la colonne 1.');
+  });
+
+  it('is said in a region a screen reader announces', async () => {
+    await thirdsHoldingTwo();
+
+    expect(
+      document.querySelector('.bb-modal__folded').getAttribute('role')
+    ).toBe('status');
+  });
+
+  it('is not said when a column that goes held nothing', async () => {
+    const modal = await openWith(['text']);
+    const [row] = modal.state.rows;
+    modal.selectRow(row.id);
+    modal.setRowWidths(row.id, [50, 50]);
+
+    modal.setRowWidths(row.id, [FULL_WIDTH]);
+    await Vue.nextTick();
+
+    expect(foldedText()).toBe('');
+  });
+
+  it('is no longer said after the next change', async () => {
+    const modal = await thirdsHoldingTwo();
+    const [row] = modal.state.rows;
+    modal.setRowWidths(row.id, [50, 50]);
+
+    modal.setRowWidths(row.id, [66, 34]);
+    await Vue.nextTick();
+
+    expect(foldedText()).toBe('');
+  });
+
+  it('is no longer said once another row is selected', async () => {
+    const modal = await thirdsHoldingTwo();
+    modal.setRowWidths(modal.state.rows[0].id, [50, 50]);
+    // Selects the new row.
+    modal.addRow();
+    await Vue.nextTick();
+
+    modal.selectRow(modal.state.rows[0].id);
+    await Vue.nextTick();
+
+    expect(foldedText()).toBe('');
   });
 });

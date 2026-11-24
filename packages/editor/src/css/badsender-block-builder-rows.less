@@ -94,4 +94,13 @@
   &__width-label {
     color: #777;
   }
+
+  // Where the elements of a column that disappeared went. Always in the DOM,
+  // empty until there is something to say: a status region inserted with its
+  // message is not reliably announced.
+  &__folded:not(:empty) {
+    margin: 0.5rem 0 0;
+    font-size: 0.75rem;
+    color: rgba(0, 0, 0, 0.72);
+  }
 }
