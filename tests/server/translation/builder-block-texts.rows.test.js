@@ -5,9 +5,9 @@
 // Found by driving the editor in a browser, not by the suite: duplicating and
 // translating an email failed outright — "Cannot read properties of undefined
 // (reading 'forEach')" — as soon as it held one block composed in rows. The
-// translation read the composition's flat `elements` view, which a block
-// stored in rows no longer has: the generator tells the two shapes apart by
-// that very absence (state.js parseState).
+// translation read the composition's flat `elements` list, which only a
+// composition stored as version 1 has. It now reads every element through
+// elementsOfState (composition.js), whatever the stored shape.
 //
 // The elements are numbered in document order, row by row and column by
 // column — the order a flat composition already used — so the keys of a block

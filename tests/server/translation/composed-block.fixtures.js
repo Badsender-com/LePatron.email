@@ -48,16 +48,15 @@ const button = (label) => ({ id: 'e2', type: 'button', label, href: '#' });
 const image = (alt) => ({ id: 'e3', type: 'image', alt, src: '', href: '' });
 
 /**
- * A composed block stored in rows of columns, as the modal stores it since it
- * composes rows: no flat `elements` view, so the generator renders the rows.
+ * A composed block stored in rows of columns. One that is more than a single
+ * full-width column is stored as `{ v: 2, rows }` and renders its rows.
  *
  * @param {Array<Array<Array<Object>>>} rows each row a list of columns, each
  *   column a list of elements; columns share the row's width evenly
  */
 function rowsBlock(rows) {
-  const { elements: _flatView, ...base } = emptyState();
   const state = {
-    ...base,
+    ...emptyState(),
     rows: rows.map((columns, rowIndex) => ({
       id: `row-${rowIndex + 1}`,
       columns: columns.map((elements) => ({
