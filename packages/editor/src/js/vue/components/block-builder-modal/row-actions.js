@@ -152,6 +152,40 @@ const RowActionsMixin = {
       return this.selectedRowId ? this.deleteRow(this.selectedRowId) : false;
     },
 
+    /**
+     * ↑ or ↓ in the selected row's bar: the same move as Alt+↑ or Alt+↓.
+     *
+     * The focus stays on the button pressed while it still works, so a row
+     * goes down three places in three presses. At the top or the bottom of
+     * the list that button is disabled, and a disabled button drops the
+     * focus: it goes to the other one, which now works.
+     *
+     * @param {number} offset -1 or 1
+     */
+    onRowMoveClick(offset) {
+      if (!this.moveSelectedRow(offset)) return;
+      this.$nextTick(() => {
+        const { rowMoveUp, rowMoveDown } = this.$refs;
+        const [pressed, other] =
+          offset < 0 ? [rowMoveUp, rowMoveDown] : [rowMoveDown, rowMoveUp];
+        const target = pressed && !pressed.disabled ? pressed : other;
+        if (target && !target.disabled) target.focus();
+      });
+    },
+
+    // The bar goes with the last row, and the focus with it, onto the body.
+    // "Add a row", right below, is where a keyboard user carries on — and with
+    // no row left, the only thing the panel offers for rows. With a row left,
+    // a neighbour is selected, the bar stays, and the focus on it.
+    onRowDeleteClick() {
+      if (!this.deleteSelectedRow()) return;
+      this.$nextTick(() => {
+        if (this.selectedRow) return;
+        const { addRowButton } = this.$refs;
+        if (addRowButton) addRowButton.focus();
+      });
+    },
+
     canMoveRow(offset) {
       const from = this.selectedRowIndex;
       const target = from + offset;
