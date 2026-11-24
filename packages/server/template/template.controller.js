@@ -19,6 +19,7 @@ const fileManager = require('../common/file-manage.service.js');
 const generatePreview = require('./generate-preview.controller.js');
 const templateBlocks = require('./template-blocks.controller.js');
 const _getTemplateImagePrefix = require('../utils/get-template-image-prefix.js');
+const { contractOfTemplate } = require('./template-contract.service.js');
 const {
   sanitizeQualitySettings,
   qualitySettingsUpdate,
@@ -118,6 +119,9 @@ async function read(req, res) {
     select: 'id name',
   });
   if (!template) throw new createError.NotFound(ERROR_CODES.TEMPLATE_NOT_FOUND);
+  // A template saved before ADR-0024, or read by an older reader, has its
+  // contract read again now: the service decides.
+  template.contract = await contractOfTemplate(templateId);
   res.json(template);
 }
 

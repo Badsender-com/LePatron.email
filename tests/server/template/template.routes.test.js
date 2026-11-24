@@ -16,6 +16,17 @@ jest.mock('../../../packages/server/common/models.common.js', () => ({
   Galleries: {},
   Users: {},
 }));
+// The template's contract (ADR-0024) is read from the stored markup; these
+// tests are about who reads which template, not what its contract says.
+jest.mock(
+  '../../../packages/server/template/template-contract.service.js',
+  () => ({
+    contractOfTemplate: jest.fn(() =>
+      Promise.resolve({ declared: {}, read: [], adopt: {} })
+    ),
+    listContracts: jest.fn(() => Promise.resolve([])),
+  })
+);
 jest.mock('../../../packages/server/common/file-manage.service.js', () => ({
   parseMultipart: jest.fn(),
 }));
