@@ -198,6 +198,16 @@ A named set of column widths offered in the panel (1, 2×50, 66/34, 34/66, 33/33
 _UI_: Structure
 _Avoid_: Layout (taken by the layout component)
 
+**Gutter**:
+A row setting: the horizontal space between its columns on a desktop, from 0 to 40 px, never on the outer edges of the row. Dropped on a phone, where the columns stack at full width. Only a row of several columns has one.
+_UI_: Gouttière (bureau)
+_Avoid_: Margin, column gap (alone: it does not say which device)
+
+**Stack spacing**:
+A row setting: the vertical space between its columns once they stack on a phone, from 0 to 40 px in steps of 4, never after the last one. Independent of the gutter. Only a row of several columns has one.
+_UI_: Espacement empilé (mobile)
+_Avoid_: Mobile gutter, row gap
+
 ### Generation
 
 **Slot**:

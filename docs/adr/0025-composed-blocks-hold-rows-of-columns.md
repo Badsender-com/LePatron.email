@@ -21,6 +21,19 @@ A rollback to a version without columns only loses the blocks that use the new s
 - **An entry of `rows` that is not an object is ignored.** It holds nothing to keep.
 - **More than four columns (`MAX_COLUMNS`) in a row: the extra columns are folded into the fourth.** Their elements are appended to it, in order, and the widths are recomputed: kept when the four still add up to 100 with no column under 10%, equal shares otherwise, the remainder going to the last column. A layout nobody can see any more is a visible problem; a paragraph that silently disappeared is not.
 
+## Row settings: the space between columns
+
+A row of several columns carries two settings, independent of each other, set in the structure panel (#1683):
+
+- **Gutter (desktop)**: `gutter`, the horizontal space between the columns, 0 to 40 px. It is inline padding on the cells, half of it on each side that faces another column and none on the outer edges of the row: padding on a table cell is what Outlook on Windows lays out natively, and the cells keep their percentage widths. An odd gutter gives the extra pixel to the left column of each pair, so the two halves always add up. An element told its column's width (an image's `width` attribute) is told the column minus that padding.
+- **Stack spacing (mobile)**: `stackSpacing`, the vertical space between the columns once they stack on a phone, 0 to 40 px **in steps of 4**. On a phone the gutter does not apply: the stacked columns take the full width.
+
+Both only exist on a row of several columns. They are neither offered nor stored for a row of one column, which stays flat (see "Stored shape"); a row that goes down to one column loses them. A setting at 0 is not stored at all, so a row at the defaults is written and rendered byte for byte as before the settings existed. Read from storage, a setting is kept only when it is a number: rounded to whole px, brought within the bounds, the stack spacing rounded to its step; anything else is dropped. No other value reaches the markup or the stylesheet.
+
+**The mobile half stays a closed list.** The derived stylesheet holds only rules the generator owns, from a list it fixes, never a stored value. So the stack spacing does not write its value into a rule: it picks a generated class, one per step (`lp-stack-spacing-4` … `lp-stack-spacing-40`), carried by every stacked cell but the last. A row with a gutter puts `lp-gutter` on its cells, which drops their side padding on a phone. That is why the stack spacing goes by steps: forty values would be forty rules, ten keep the list short, and a step of 4 px is finer than anyone tells apart on a phone. The panel says the value is rounded.
+
+**The classes are decided per cell**, since the last cell of a spaced row carries no spacing below it, and one function (`rowClasses` in `row-markup.js`) decides them for both the markup and the stylesheet.
+
 ## The MARKUP context
 
 Every slot of a compiled component declares the escaping context its value goes through. **MARKUP is the only context that escapes nothing.** It exists because a column cell has to contain the rendered HTML of its elements, and escaped markup is destroyed markup.
@@ -57,10 +70,13 @@ Not exposed in this slice. No MCP tool writes an email's content or the block li
 - **`generate()` returning `{ html, css }`**: rejected. Two of its five callers compare its result to the stored `builderHtml` to detect an altered block; a `collectCss(state)` beside it keeps those comparisons markup-to-markup, and keeps the frozen artifact and the recomputed value from sharing one return value.
 - **Writing every composition as `v: 2`**: one shape on disk, but a rollback would then lose every composed block, including the single-column ones the previous version reads perfectly well.
 
+- **A stack spacing written into the stylesheet as typed** (`padding-bottom:13px` from the stored value): any value, no steps. Rejected because the derived stylesheet would then carry a stored value, and keeping it a closed list of the generator's own rules is what lets it skip the gate the author's stylesheet goes through.
+- **A gutter as spacer cells between the columns**: no padding to take off the images. Rejected because each spacer is one more cell that has to vanish when the columns stack, and the cell count would no longer be the column count the drag and the stacking rely on.
+
 ## Consequences
 
 - **Comment threads are anchored on `blockId`**, so a row inside a composed block cannot carry its own thread: a five-row block is one thread. Accepted for this slice — per-row comments would mean changing the `Comment` model and its index. Duplicating a row becomes an action inside the builder instead.
 - **The head-CSS channel refused the composed block on purpose** (`exported-css.js`: _"The HTML code block only, not the builder's"_), on the then-true grounds that the builder wrote everything inline. The derived stylesheet now goes through it, under the rules above; the author's stylesheet keeps its own.
-- **The stacking class names what the column does on a phone** (`lp-stack`), as one value among others to come, rather than standing for "the mobile class". Mobile behaviour is not configurable in this slice, but it will be: a second behaviour gets a second class beside the first, with no stored block to migrate, and the setting that picks it will live on the row object.
+- **The stacking class names what the column does on a phone** (`lp-stack`), as one value among others to come, rather than standing for "the mobile class". Whether a row stacks is not configurable, but it will be: a second behaviour gets a second class beside the first, with no stored block to migrate, and the setting that picks it will live on the row object, as the stack spacing already does.
 - **Widths are stored, presets are not.** Presets (1, 2×50, 66/34, 34/66, 33/33/34, 4×25) are shortcuts in the panel that write widths, and each adds up to 100. Storing a preset name beside the widths would be a second source of truth, and the two would drift.
 - **Free ratios cost nothing.** A column's desktop width travels in its `width` attribute and inline style, not in a class, so arbitrary ratios emit no extra CSS — the stacking rule is identical for every column whatever its ratio.
