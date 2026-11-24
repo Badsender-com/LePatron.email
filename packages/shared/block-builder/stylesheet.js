@@ -1,7 +1,10 @@
 'use strict';
 
-const { MOBILE_DECLARATIONS } = require('./generated-classes.js');
-const { rowClass, BLOCK_WIDTH } = require('./row-markup.js');
+const {
+  MOBILE_DECLARATIONS,
+  isGeneratedClass,
+} = require('./generated-classes.js');
+const { rowClasses, BLOCK_WIDTH } = require('./row-markup.js');
 
 // The stylesheet a composition derives.
 //
@@ -15,7 +18,7 @@ const { rowClass, BLOCK_WIDTH } = require('./row-markup.js');
 // stored markup to detect an altered block, and those comparisons have to stay
 // markup-to-markup. Keeping the two apart also keeps the frozen artifact and
 // the recomputed value from sharing one shape. What keeps them in step is that
-// both ask rowClass (row-markup.js) which class a row carries.
+// both ask rowClasses (row-markup.js) which classes a row's cells carry.
 //
 // Never stored. It is recomputed wherever the composition is rendered, which
 // is also why a block saved to the library needs nothing extra to keep
@@ -40,8 +43,12 @@ function classesOf(composition) {
     composition && Array.isArray(composition.rows) ? composition.rows : [];
 
   const names = rows.reduce((found, row) => {
-    const name = rowClass(row);
-    if (name !== '') found.add(name);
+    rowClasses(row).forEach((classes) =>
+      classes
+        .split(' ')
+        .filter(Boolean)
+        .forEach((name) => found.add(name))
+    );
     return found;
   }, new Set());
 
@@ -55,9 +62,11 @@ function classesOf(composition) {
  * @returns {string} one media query holding a rule per class, or ''
  */
 function cssForClasses(names) {
-  const rules = [...new Set(names)].map(
-    (name) => `.${name}{${MOBILE_DECLARATIONS[name]}}`
-  );
+  // Only names the generator owns: the stylesheet is made of its rules alone,
+  // whatever list it is handed.
+  const rules = [...new Set(names)]
+    .filter((name) => isGeneratedClass(name))
+    .map((name) => `.${name}{${MOBILE_DECLARATIONS[name]}}`);
 
   if (rules.length === 0) return '';
 

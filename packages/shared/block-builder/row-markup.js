@@ -8,8 +8,13 @@
 
 const { resolveElement, definitionOf } = require('./element-markup.js');
 const { escapeForContext, ATTR } = require('./slot-contexts.js');
-const { stackClassFor } = require('./generated-classes.js');
+const {
+  stackClassFor,
+  gutterClassFor,
+  stackSpacingClassFor,
+} = require('./generated-classes.js');
 const { usableWidths } = require('./composition.js');
+const { rowSpacing, gutterSides } = require('./row-spacing.js');
 const { defineLayout } = require('./template.js');
 const columnTemplates = require('./components/column.compiled.js');
 const rowTemplates = require('./components/row.compiled.js');
@@ -19,6 +24,10 @@ const COLUMN_VARIANTS = {
   stacked: {
     filled: defineLayout(columnTemplates.filled),
     empty: defineLayout(columnTemplates.empty),
+  },
+  padded: {
+    filled: defineLayout(columnTemplates.filledPadded),
+    empty: defineLayout(columnTemplates.emptyPadded),
   },
   alone: {
     filled: defineLayout(columnTemplates.filledAlone),
@@ -125,31 +134,73 @@ function isEmptyColumn(column) {
 }
 
 /**
- * The class the cells of these columns carry, or '' for none.
+ * The classes each cell of a row carries, in column order, '' for none.
  *
- * @param {Array<{elements: *}>} columns what columnsOf returned
- * @returns {string}
+ * Every cell of a row of several columns stacks; with a gutter, every one drops
+ * it on a phone; with a stack spacing, every one but the last keeps that space
+ * under it. A row of one column has nothing to stack, and a row holding nothing
+ * renders nothing (see generateRow): neither carries a class, nor may ask the
+ * stylesheet for a rule.
+ *
+ * @param {Object} row as stored or edited
+ * @param {Array<{elements: *}>} columns what columnsOf returned for it
+ * @returns {Array<string>}
  */
-function classOfColumns(columns) {
-  // A row with nothing in any column renders nothing (see generateRow), so it
-  // carries no class either — and must not ask the stylesheet for a rule.
-  if (columns.every(isEmptyColumn)) return '';
-  return stackClassFor(columns.length);
+function classesOfCells(row, columns) {
+  const stack = columns.every(isEmptyColumn)
+    ? ''
+    : stackClassFor(columns.length);
+  if (stack === '') return columns.map(() => '');
+
+  const { gutter, stackSpacing } = rowSpacing(row, columns.length);
+  const shared = [stack, gutterClassFor(gutter)];
+  const spaced = stackSpacingClassFor(stackSpacing);
+  return columns.map((_, index) =>
+    shared
+      .concat(index < columns.length - 1 ? spaced : '')
+      .filter(Boolean)
+      .join(' ')
+  );
 }
 
 /**
- * The class a row's cells carry, or '' when they carry none: a row of one
- * column has nothing to stack, and a row holding nothing renders nothing.
+ * The classes a row's cells carry, one string per cell, '' for a cell that
+ * carries none.
  *
  * The one place that decides it. The markup (generateRow) and the stylesheet
  * (stylesheet.js) both ask here, so the stylesheet never holds a rule for a
- * class no cell carries, nor the reverse.
+ * class no cell carries, nor the reverse. One string per cell rather than one
+ * for the row: the last cell of a row with a stack spacing has no space under
+ * it.
  *
  * @param {Object} row one entry of a composition's `rows`, as stored
- * @returns {string}
+ * @returns {Array<string>}
  */
-function rowClass(row) {
-  return classOfColumns(columnsOf(row));
+function rowClasses(row) {
+  return classesOfCells(row, columnsOf(row));
+}
+
+/**
+ * The elements of each column, resolved for the room the column leaves them:
+ * its share of the block, minus its half of the gutter on each side that faces
+ * another column. An image is told that room, or Outlook would lay it out wider
+ * than the cell.
+ *
+ * @param {Array<{width: number, elements: *}>} columns what columnsOf returned
+ * @param {Array<{left: number, right: number}>} sides each cell's padding
+ * @param {Object} [options] see generate
+ * @returns {Array<Array<{markup: string, attributes: string}>>}
+ */
+function resolveColumns(columns, sides, options) {
+  return columns.map((column, index) =>
+    resolveColumn(
+      column.elements,
+      options,
+      Math.floor((BLOCK_WIDTH * column.width) / 100) -
+        sides[index].left -
+        sides[index].right
+    )
+  );
 }
 
 /**
@@ -177,16 +228,20 @@ function generateRow(row, options) {
   // an empty row is somewhere a user can still drop.
   if (!chrome && columns.every(isEmptyColumn)) return '';
 
-  const resolved = columns.map((column) =>
-    resolveColumn(
-      column.elements,
-      options,
-      Math.floor((BLOCK_WIDTH * column.width) / 100)
-    )
+  const { gutter } = rowSpacing(row, columns.length);
+  const sides = columns.map((_, index) =>
+    gutterSides(index, columns.length, gutter)
   );
+  const resolved = resolveColumns(columns, sides, options);
 
-  const stackClass = classOfColumns(columns);
-  const variants = stackClass ? COLUMN_VARIANTS.stacked : COLUMN_VARIANTS.alone;
+  const classes = classesOfCells(row, columns);
+  // A gutter only exists on a row of several columns (rowSpacing), so the
+  // padded variants are stacking ones; a row that carries no class (one
+  // column, or nothing in any, shown in the preview) takes neither.
+  let variants = COLUMN_VARIANTS.alone;
+  if (classes[0]) {
+    variants = gutter > 0 ? COLUMN_VARIANTS.padded : COLUMN_VARIANTS.stacked;
+  }
   const rowId = chrome ? escapeForContext(row.id, ATTR) : '';
 
   const cells = columns.map((column, index) => {
@@ -194,7 +249,9 @@ function generateRow(row, options) {
     const content = renderColumnContent(elements);
     const values = {
       width: `${column.width}%`,
-      stackClass,
+      classes: classes[index],
+      gutterLeft: sides[index].left,
+      gutterRight: sides[index].right,
       // A box the cursor can be inside, even when the column holds nothing —
       // which is the whole point for an empty one. A div inside the cell
       // rather than attributes on the cell itself: the cell is email markup,
@@ -222,7 +279,7 @@ function generateRow(row, options) {
 
 module.exports = {
   generateRow,
-  rowClass,
+  rowClasses,
   BLOCK_WIDTH,
   COLUMN_ROW_ATTRIBUTE,
   COLUMN_INDEX_ATTRIBUTE,

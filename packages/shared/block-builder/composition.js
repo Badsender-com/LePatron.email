@@ -18,6 +18,7 @@ const {
   newRowId,
 } = require('./stored-elements.js');
 const lookup = require('./composition-lookup.js');
+const { storedSpacing } = require('./row-spacing.js');
 
 const { withoutEmptyRows } = lookup;
 
@@ -98,7 +99,7 @@ function usableWidths(widths) {
  * A stored row brought back to something renderable.
  *
  * @param {Object} source a stored row, already known to be an object
- * @returns {Object} `{ id, columns }`
+ * @returns {Object} `{ id, columns, gutter?, stackSpacing? }`
  */
 function cleanRow(source) {
   const stored = Array.isArray(source.columns) ? source.columns : [];
@@ -131,6 +132,10 @@ function cleanRow(source) {
       width: widths[index],
       elements: column.elements,
     })),
+    // The spacing between columns, normalised (row-spacing.js): read only for
+    // a row of several columns, and only when it is not 0, so a row at the
+    // defaults reads exactly as it did before the settings existed.
+    ...storedSpacing(source, kept.length),
   };
 }
 

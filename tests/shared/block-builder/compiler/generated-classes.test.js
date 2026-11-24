@@ -27,7 +27,13 @@ const { compileFixture } = require('./fixture.js');
 
 describe('a class the generator owns', () => {
   it('is one the closed list names', () => {
-    expect(GENERATED_CLASSES).toEqual([STACK_CLASS]);
+    expect(GENERATED_CLASSES).toEqual([
+      STACK_CLASS,
+      'lp-gutter',
+      ...[4, 8, 12, 16, 20, 24, 28, 32, 36, 40].map(
+        (spacing) => `lp-stack-spacing-${spacing}`
+      ),
+    ]);
     expect(isGeneratedClass(STACK_CLASS)).toBe(true);
   });
 

@@ -5,8 +5,10 @@
 // the component and fails on any difference.
 'use strict';
 module.exports = {
-  "filled": "<td width=\"[[width|CSS_VALUE|100%]]\" class=\"[[stackClass|ATTR|]]\" valign=\"top\" style=\"width:[[width|CSS_VALUE|100%]];\">[[content|MARKUP]]</td>",
-  "empty": "<td width=\"[[width|CSS_VALUE|100%]]\" class=\"[[stackClass|ATTR|]]\" valign=\"top\" style=\"width:[[width|CSS_VALUE|100%]]; font-size:0; line-height:0;\">&nbsp;</td>",
+  "filled": "<td width=\"[[width|CSS_VALUE|100%]]\" class=\"[[classes|ATTR|]]\" valign=\"top\" style=\"width:[[width|CSS_VALUE|100%]];\">[[content|MARKUP]]</td>",
+  "empty": "<td width=\"[[width|CSS_VALUE|100%]]\" class=\"[[classes|ATTR|]]\" valign=\"top\" style=\"width:[[width|CSS_VALUE|100%]]; font-size:0; line-height:0;\">&nbsp;</td>",
+  "filledPadded": "<td width=\"[[width|CSS_VALUE|100%]]\" class=\"[[classes|ATTR|]]\" valign=\"top\" style=\"width:[[width|CSS_VALUE|100%]];padding-left:[[gutterLeft|PX|0]]px;padding-right:[[gutterRight|PX|0]]px;\">[[content|MARKUP]]</td>",
+  "emptyPadded": "<td width=\"[[width|CSS_VALUE|100%]]\" class=\"[[classes|ATTR|]]\" valign=\"top\" style=\"width:[[width|CSS_VALUE|100%]]; padding-left:[[gutterLeft|PX|0]]px; padding-right:[[gutterRight|PX|0]]px; font-size:0; line-height:0;\">&nbsp;</td>",
   "filledAlone": "<td width=\"[[width|CSS_VALUE|100%]]\" valign=\"top\" style=\"width:[[width|CSS_VALUE|100%]];\">[[content|MARKUP]]</td>",
   "emptyAlone": "<td width=\"[[width|CSS_VALUE|100%]]\" valign=\"top\" style=\"width:[[width|CSS_VALUE|100%]]; font-size:0; line-height:0;\">&nbsp;</td>"
 };

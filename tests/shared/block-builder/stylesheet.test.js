@@ -16,7 +16,7 @@ const {
   generate,
 } = require('../../../packages/shared/block-builder/generate.js');
 const {
-  rowClass,
+  rowClasses,
   BLOCK_WIDTH,
 } = require('../../../packages/shared/block-builder/row-markup.js');
 const {
@@ -106,26 +106,36 @@ const emptyRow = (...columns) => ({
   columns: columns.map((elements) => ({ width: 50, elements })),
 });
 
-describe('the class a row carries', () => {
-  it('is the stacking class for a row of several columns holding something', () => {
-    expect(rowClass(composition([50, 50]).rows[0])).toBe('lp-stack');
+describe('the classes a row carries', () => {
+  it('is the stacking class on every cell of a row of several columns holding something', () => {
+    expect(rowClasses(composition([50, 50]).rows[0])).toEqual([
+      'lp-stack',
+      'lp-stack',
+    ]);
   });
 
   it('is nothing for a row of one column', () => {
-    expect(rowClass(composition([100]).rows[0])).toBe('');
+    expect(rowClasses(composition([100]).rows[0])).toEqual(['']);
   });
 
   test.each([
-    ['empty columns', emptyRow([], [])],
-    ['columns of unknown elements', emptyRow([{ type: 'nope' }], [null])],
-    ['no column', { id: 'r', columns: [] }],
-    ['not a row', null],
-  ])('is nothing for %s', (_label, row) => {
-    expect(rowClass(row)).toBe('');
+    ['empty columns', emptyRow([], []), ['', '']],
+    [
+      'columns of unknown elements',
+      emptyRow([{ type: 'nope' }], [null]),
+      ['', ''],
+    ],
+    ['no column', { id: 'r', columns: [] }, []],
+    ['not a row', null, []],
+  ])('is nothing for %s', (_label, row, expected) => {
+    expect(rowClasses(row)).toEqual(expected);
   });
 
   it('is the stacking class as soon as one column holds something', () => {
-    expect(rowClass(emptyRow([], [text('a')]))).toBe('lp-stack');
+    expect(rowClasses(emptyRow([], [text('a')]))).toEqual([
+      'lp-stack',
+      'lp-stack',
+    ]);
   });
 });
 
@@ -146,7 +156,7 @@ describe('every generated class', () => {
 
 describe('the markup and the stylesheet agree', () => {
   // The two are separate derivations of one composition, which is the point —
-  // and also the risk. Both ask rowClass, and this test keeps it that way.
+  // and also the risk. Both ask rowClasses, and this test keeps it that way.
   it('emits no class the markup does not carry', () => {
     const subject = composition([50, 50], [100], [33, 33, 34]);
     const html = generate(subject);
