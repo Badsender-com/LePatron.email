@@ -13,6 +13,9 @@ const {
 } = require('../../../../../../shared/block-builder/generate.js');
 const { showDropLine, clearDropLine } = require('./drop-line.js');
 const { dropTargetAt, columnElements } = require('./drop-target.js');
+const {
+  isFlatComposition,
+} = require('../../../../../../shared/block-builder/composition.js');
 
 // Dragging in the preview, two gestures in one: an element from the palette,
 // to insert it, or a row already in the block, to move it. Same indicator and
@@ -285,7 +288,12 @@ const DragSurfaceMixin = {
       if (!doc || !doc.body) return;
       doc.body.classList.add(DRAGGING_CLASS);
 
-      const target = dropTargetAt(doc, event.clientX, event.clientY);
+      const target = dropTargetAt(
+        doc,
+        event.clientX,
+        event.clientY,
+        this.flatRowId()
+      );
       this.setDropTarget(target);
       if (!target) return;
 
@@ -323,9 +331,22 @@ const DragSurfaceMixin = {
       this.dropTarget = target;
     },
 
+    /**
+     * The id of the composition's only row while it is flat, or null.
+     *
+     * A flat composition renders without column chrome (generate.js), so its
+     * preview has no column to find: the whole document is that column.
+     */
+    flatRowId() {
+      return isFlatComposition(this.state) ? this.state.rows[0].id : null;
+    },
+
     /** The column element a target names, in the preview. */
     columnElementAt(doc, target) {
       if (!doc || !doc.body || !target) return null;
+      if (target.rowId === this.flatRowId() && target.columnIndex === 0) {
+        return doc.body;
+      }
       return doc.body.querySelector(
         `[${COLUMN_ROW_ATTRIBUTE}="${target.rowId}"]` +
           `[${COLUMN_INDEX_ATTRIBUTE}="${target.columnIndex}"]`
@@ -352,7 +373,9 @@ const DragSurfaceMixin = {
       // browser does not.
       const target =
         this.dropTarget ||
-        (doc ? dropTargetAt(doc, event.clientX, event.clientY) : null);
+        (doc
+          ? dropTargetAt(doc, event.clientX, event.clientY, this.flatRowId())
+          : null);
       const type = this.draggingType;
       const id = this.draggingId;
 

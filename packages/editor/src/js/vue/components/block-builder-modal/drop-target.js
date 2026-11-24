@@ -71,15 +71,29 @@ function columnElements(column) {
  * released a few pixels past the edge of the block is a drop the user meant,
  * and refusing it reads as the gesture having failed.
  *
+ * A flat composition — one row of one full-width column — renders exactly as
+ * it did before columns (generate.js), so its preview carries no column
+ * chrome. Its whole document is then that one column, and `flatRowId` names
+ * the row it belongs to.
+ *
  * @param {Document} doc the preview document
  * @param {number} clientX
  * @param {number} clientY
+ * @param {string|null} [flatRowId] the id of the composition's only row, when
+ *   the composition is flat
  * @returns {{rowId: string, columnIndex: number, index: number}|null} null
  *   when the preview holds no column at all
  */
-function dropTargetAt(doc, clientX, clientY) {
+function dropTargetAt(doc, clientX, clientY, flatRowId) {
   const columns = previewColumns(doc);
-  if (columns.length === 0) return null;
+  if (columns.length === 0) {
+    if (!flatRowId || !doc || !doc.body) return null;
+    return {
+      rowId: flatRowId,
+      columnIndex: 0,
+      index: dropIndexAt(columnElements(doc.body), clientY),
+    };
+  }
 
   const boxes = columns.map((column) => column.getBoundingClientRect());
   let best = 0;
