@@ -1,7 +1,7 @@
 'use strict';
 
 // Acceptance tests of an email carrying its company dimensions (epic #1351,
-// ADR-0014).
+// ADR-0032).
 //
 // The email type and the trigger keep their own fields. Every company dimension
 // is carried as one list of values, `taxonomyItemIds` in the request, at most one

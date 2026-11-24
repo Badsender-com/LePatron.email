@@ -1,6 +1,6 @@
 'use strict';
 
-// Acceptance tests of the values of a dimension (epic #1351, ADR-0014).
+// Acceptance tests of the values of a dimension (epic #1351, ADR-0032).
 //
 // A value is one of the possibilities of a dimension: Canada, French, Newsletter.
 // Nothing is ever rewritten silently: deleting a value something still depends on

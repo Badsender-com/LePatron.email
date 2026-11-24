@@ -1,6 +1,6 @@
 'use strict';
 
-// Acceptance tests of the dimensions (epic #1351, ADR-0014 and ADR-0015).
+// Acceptance tests of the dimensions (epic #1351, ADR-0032 and ADR-0015).
 //
 // A dimension is an axis a company declines its emails by. Two are standard, the
 // email type and the email trigger; every other one is declared by the company.
