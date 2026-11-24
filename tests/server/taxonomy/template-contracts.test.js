@@ -84,3 +84,62 @@ describe("the company's templates with their contract", () => {
     ]);
   });
 });
+
+// Review of #1547: one query for the list, and only a contract stored by an
+// older reader is read from the markup again.
+describe('the contracts read in one query', () => {
+  const {
+    CONTRACT_READER_VERSION,
+  } = require('../../../packages/server/template/template-contract.js');
+  const stored = {
+    declared: {},
+    read: ['stored'],
+    adopt: {},
+    compared: [],
+  };
+
+  beforeEach(() => {
+    models.Templates.reset();
+    models.Templates.seed([
+      {
+        _id: '507f1f77bcf86cd799439f01',
+        _company: COMPANY_A,
+        name: 'Current',
+        markup: '<p data-ko-display="_root_.market eq \'be\'">B</p>',
+        contract: stored,
+        contractVersion: CONTRACT_READER_VERSION,
+      },
+      {
+        _id: '507f1f77bcf86cd799439f02',
+        _company: COMPANY_A,
+        name: 'Older',
+        markup: '<p data-ko-display="_root_.market eq \'be\'">B</p>',
+        contract: { declared: {}, read: [], adopt: {}, compared: {} },
+        contractVersion: CONTRACT_READER_VERSION - 1,
+      },
+    ]);
+  });
+
+  it('keeps a current contract as stored, and reads only the older one again', async () => {
+    const findOne = jest.spyOn(models.Templates, 'findOne');
+
+    const listed = await listTemplateContracts({ user: techAdminA });
+
+    expect(listed.find((t) => t.name === 'Current').contract).toEqual(stored);
+    expect(listed.find((t) => t.name === 'Older').contract.compared).toEqual([
+      { property: 'market', literal: 'be', count: 1 },
+    ]);
+    expect(findOne).toHaveBeenCalledTimes(1);
+    findOne.mockRestore();
+  });
+
+  it('stores the contract read again, so the next list reads no markup', async () => {
+    await listTemplateContracts({ user: techAdminA });
+    const findOne = jest.spyOn(models.Templates, 'findOne');
+
+    await listTemplateContracts({ user: techAdminA });
+
+    expect(findOne).not.toHaveBeenCalled();
+    findOne.mockRestore();
+  });
+});

@@ -431,7 +431,7 @@ export function taxonomyDimensionsItem(dimensionId) {
 }
 
 export function taxonomyTemplateContracts(groupId) {
-  return `/taxonomy-dimensions/templates?groupId=${groupId}`;
+  return `/taxonomy-dimensions/templates?${new URLSearchParams({ groupId })}`;
 }
 
 // A drop sends the whole new order; the company travels in the body.

@@ -1,14 +1,21 @@
 <script>
 import { valuesProposed } from '~/helpers/taxonomy-preview.js';
+import mixinTaxonomyManage from '~/helpers/mixins/mixin-taxonomy-manage.js';
+import BsTemplateAdoption from '~/components/template/template-adoption.vue';
 
 /**
  * What an email of a template proposes (ADR-0026): pick a template, read the
  * dimensions it offers, their values, under which parent value each child
  * value is offered, the defaults, and the design tokens it reads. Emits
  * `select-template` with a template id.
+ *
+ * Below it, for whoever builds the taxonomy, the adoption of the template's
+ * emails (ADR-0024): the tech admin has no access to the template page.
  */
 export default {
   name: 'BsTaxonomyTemplatePreview',
+  components: { BsTemplateAdoption },
+  mixins: [mixinTaxonomyManage],
   props: {
     templates: { type: Array, default: () => [] },
     templateId: { type: String, default: null },
@@ -116,6 +123,11 @@ export default {
           {{ $t('taxonomy.workspace.preview.legend') }}
         </p>
       </div>
+      <bs-template-adoption
+        v-if="canManageTaxonomy"
+        :key="template.id"
+        :template-id="template.id"
+      />
     </template>
   </section>
 </template>

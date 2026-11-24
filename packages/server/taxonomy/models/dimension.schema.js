@@ -109,6 +109,10 @@ const TaxonomyDimensionSchema = Schema(
       type: Number,
       default: 0,
     },
+    // A write under way on the dimension and its values, until this date
+    // (services/dimension-lock.js). Never shown.
+    writeLockUntil: { type: Date, default: null, select: false },
+    writeLockToken: { type: String, default: null, select: false },
   },
   { timestamps: true, toJSON: { virtuals: true }, toObject: { virtuals: true } }
 );

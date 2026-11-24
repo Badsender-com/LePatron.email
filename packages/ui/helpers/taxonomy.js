@@ -135,6 +135,14 @@ export function taxonomyErrorFor(error) {
         field: 'isDefault',
       };
 
+    case ERROR_CODES.TAXONOMY_WRITE_IN_PROGRESS:
+      return {
+        key: 'taxonomy.errors.writeInProgress',
+        params: {},
+        count: null,
+        field: null,
+      };
+
     case ERROR_CODES.DIMENSION_NAME_ALREADY_EXISTS:
       return {
         key: 'taxonomy.errors.dimensionNameAlreadyExists',

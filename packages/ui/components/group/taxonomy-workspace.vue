@@ -111,13 +111,11 @@ export default {
   watch: {
     // A super admin switching company keeps this component mounted.
     groupId() {
-      this.fetchDimensions();
-      this.fetchTemplates();
+      this.loadAll();
     },
   },
   mounted() {
-    this.fetchDimensions();
-    this.fetchTemplates();
+    this.loadAll();
   },
   methods: {
     openView(view, template = null) {
@@ -209,7 +207,7 @@ export default {
       :tab="selection.tab"
       :tree-open="treeOpen"
       @preview="openView('preview', $event)"
-      @saved="fetchValues"
+      @saved="fetchValues([selected.name])"
       @error="reportError"
       @toggle-tree="treeOpen = !treeOpen"
       @select-tab="select(selected.name, $event)"
