@@ -185,7 +185,7 @@ One horizontal band of a composition, holding one to four columns. A composition
 _UI_: Ligne
 
 **Column**:
-One cell of a row, carrying a width in percent and a list of elements. A column keeps its cell in the export even when it holds nothing, so the layout does not collapse.
+One cell of a row, carrying a width in px, the width of its content, and a list of elements. A column keeps its cell in the export even when it holds nothing, so the layout does not collapse.
 _UI_: Colonne
 
 **Element**:
@@ -194,17 +194,21 @@ _UI_: Élément
 _Avoid_: Component, widget, module
 
 **Preset**:
-A named set of column widths offered in the panel (1, 2×50, 66/34, 34/66, 33/33/34, 4×25), each adding up to 100. A shortcut for writing widths, never stored as such.
+A named set of column proportions offered in the panel (1, 2×50, 66/34, 34/66, 33/33/34, 4×25), each adding up to 100, applied to what the gutters leave. A shortcut for writing widths, never stored as such.
 _UI_: Structure
 _Avoid_: Layout (taken by the layout component)
 
+**Row layout**:
+How a row shares the width of the block: its columns' widths and the gutters between them, together filling it. Set on the bar of the structure panel.
+_UI_: Largeurs et gouttières
+
 **Gutter**:
-A row setting: the horizontal space between its columns on a desktop, from 0 to 40 px, never on the outer edges of the row. Dropped on a phone, where the columns stack at full width. Only a row of several columns has one.
-_UI_: Gouttière (bureau)
+The horizontal space between two neighbouring columns of a row on a desktop, from 0 to 40 px: one per interval, each set on its own, never on the outer edges of the row. Dropped on a phone, where the columns stack at full width. Only a row of several columns has any.
+_UI_: Gouttière
 _Avoid_: Margin, column gap (alone: it does not say which device)
 
 **Stack spacing**:
-A row setting: the vertical space between its columns once they stack on a phone, from 0 to 40 px in steps of 4, never after the last one. Independent of the gutter. Only a row of several columns has one.
+A row setting: the vertical space between its columns once they stack on a phone, from 0 to 40 px in steps of 4, only between two columns that hold something. Independent of the gutters. Only a row of several columns has one.
 _UI_: Espacement empilé (mobile)
 _Avoid_: Mobile gutter, row gap
 
