@@ -6,18 +6,61 @@
 
 The Block Builder shipped single-column: a composed block was a flat list of elements, and every style it produced was inline. Columns break both halves of that. A block now holds **rows**, each row holds **columns**, and each column holds elements — because a saved block has to be a whole structure (a one-column title row, then a two-column row with an image facing text and a button) rather than one row that only becomes a layout once several blocks sit next to each other. And because a stacking rule cannot be inlined by definition — it only means anything inside a media query — the generator now derives a stylesheet from the state alongside the markup, recomputed at export and never stored.
 
+## Stored shape
+
+- **In memory, a composition is always made of rows.** Every reader, the modal and the generator included, works on rows; there is no flat view beside them.
+- **On disk, the version number says the shape.** A composition of one row holding one column, with no row setting, is written `{ v: 1, elements }`. Any other composition is written `{ v: 2, rows }`.
+- **Rendering follows the same rule.** A composition that would be written `v: 1` renders flat, as it did before columns: the elements' own tables, with no table of column cells around them. Anything else renders as rows of percentage cells. So a block stored in `v: 1` reads as one row of one column, renders identically, and is written back identically.
+- **The server keeps `builderState` as it was sent.** It reads the state to rebuild the markup, and checks that it can be read, but it never normalises the stored string: what the author's editor wrote is what the next editor reads, and the one copy that has to match the generator, the markup, is the one the server regenerates.
+
+A rollback to a version without columns only loses the blocks that use the new structure: several columns, or several rows. A block of one row and one column is still `v: 1`, which that version reads. A `v: 2` block is unreadable there: the older editor offers to replace it with an empty block, and applying that loses the composition. That cost is accepted, and kept to the blocks that could not be written any other way.
+
+## Bounds
+
+- **More than 50 rows (`MAX_ROWS`): the composition is refused, not folded.** `parseState` returns `null`, and the server answers `BLOCK_BUILDER_STATE_UNREADABLE`. Refuse rather than lose: folding the extra rows into the last one would rewrite a composition nobody asked to change, and the next save would store the rewrite. A refusal leaves the stored block as it was and tells the author.
+- **An entry of `rows` that is not an object is ignored.** It holds nothing to keep.
+- **More than four columns (`MAX_COLUMNS`) in a row: the extra columns are folded into the fourth.** Their elements are appended to it, in order, and the widths are recomputed: kept when the four still add up to 100 with no column under 10%, equal shares otherwise, the remainder going to the last column. A layout nobody can see any more is a visible problem; a paragraph that silently disappeared is not.
+
+## The MARKUP context
+
+Every slot of a compiled component declares the escaping context its value goes through. **MARKUP is the only context that escapes nothing.** It exists because a column cell has to contain the rendered HTML of its elements, and escaped markup is destroyed markup.
+
+It is reserved to **layout components** (`kind: 'layout'` in the manifest), whose slots only the generator fills, with markup it built itself from escaped values. An element's slots are filled from the stored state, from what a user typed, so an element may never declare one. The compiler refuses a MARKUP slot outside a layout when the components are built (`scripts/block-builder/component-checks.js`), and the template engine refuses it at run time too, so the rule does not rest on the build alone.
+
+## The author's stylesheet and the derived one
+
+An export carries two stylesheets, gated differently because they are different things. The rule lives in one place per side, applied to the same data: `headCssToExport` in `packages/editor/src/js/ext/head-css/exported-css.js` (export and canvas preview) and in `packages/server/mailing/head-css-guard.js` (the copies the server writes, such as a translated duplicate), both on `stylesheetForComposedBlocks` from `packages/shared/block-builder/block-stylesheet.js`.
+
+- **The derived stylesheet is always kept.** It is computed from the composed blocks of the email, so it exists only while one of them has a row of several columns. No gate, no flag.
+- **The author's stylesheet (head CSS) is kept while the email holds an HTML code block**, and only then. A composed block does not keep it: an email whose only synthetic block is composed exports the derived stylesheet and nothing else. This is the rule of the head-CSS channel, which this slice does not reopen ([head-css-channel plan, §4](../plans/head-css-channel.md#4-décisions)). Left out of the export, the author's CSS is not deleted: it stays stored, and comes back with an HTML code block.
+- **Derived first, author last.** At equal specificity the last rule wins, so a hand-written rule can still override a generated one.
+- **The `lp-` prefix belongs to the generator.** Nothing refuses an author's rule on an `lp-` class, but it is not a supported hook: the generator may rename or drop its classes.
+
+## Rights
+
+Composing a block is editing an email, with nothing granted on top:
+
+- **Server.** A composed block reaches the database through two writes, and both go through `normalizeAndGuardSyntheticContent`. The email save (`PUT /mailings/:mailingId/mosaico`) needs `mailing.edit-content`, finds the email through `addGroupFilter` (the user's company), then `assertUserCanEditMailing` (write access to its workspace or folder). The block library needs `block-library.add` to save a block, and the company admin to update or delete one, with the company checked from the request.
+- **Template flag.** `blockBuilderEnabled`, set by a super admin on the template. Flag off, a composed block the email does not already store, word for word, is refused (`BLOCK_BUILDER_DISABLED`); one already stored can still be moved, duplicated or deleted, so its authors keep their own email.
+- **Editor.** The Block Builder opens only with the flag on and `mailing.edit-structure`: composing rewrites the block's markup. As for every structure limit of the writer, the server does not hold that one yet ([ADR 0004](./0004-reviewer-writer-tech-admin-roles.md), until #1103).
+- **Refused by default.** A missing flag is off, a capability a role does not list is refused, and a state the server cannot read is refused rather than rebuilt into nothing.
+
+## MCP exposure
+
+Not exposed in this slice. No MCP tool writes an email's content or the block library, and the read tools see a composed block only as part of the email's rendered markup, like any other block. Composing through MCP would need a tool that writes a composition, so the same pipeline, rights and refusals as the editor; it is a separate decision, taken when such a tool is wanted.
+
 ## Considered Options
 
 - **One row per block** (the earlier decision, reversed here): keeps a row addressable by Mosaico itself — moved, duplicated, commented on. Rejected because it makes the saved-block library useless for anything but fragments: a reusable structure is several rows by nature.
 - **Fluid hybrid layout** (`inline-block` + `max-width`): stacks with no stylesheet at all, so no head-CSS work. Rejected because it brings Outlook ghost tables back for every column, against three builders out of three (Dartagnan, Brevo, and Badsender's own templates) that use real percentage table cells.
 - **Columns that shrink instead of stacking**: what the default rendering already does, and what Brevo ships for thumbnails. Kept as the degraded rendering, not as the design.
 - **`generate()` returning `{ html, css }`**: rejected. Two of its five callers compare its result to the stored `builderHtml` to detect an altered block; a `collectCss(state)` beside it keeps those comparisons markup-to-markup, and keeps the frozen artifact and the recomputed value from sharing one return value.
+- **Writing every composition as `v: 2`**: one shape on disk, but a rollback would then lose every composed block, including the single-column ones the previous version reads perfectly well.
 
 ## Consequences
 
 - **Comment threads are anchored on `blockId`**, so a row inside a composed block cannot carry its own thread: a five-row block is one thread. Accepted for this slice — per-row comments would mean changing the `Comment` model and its index. Duplicating a row becomes an action inside the builder instead.
-- **The head-CSS channel refused the composed block on purpose** (`exported-css.js`: _"The HTML code block only, not the builder's"_), on the then-true grounds that the builder wrote everything inline. Both gates — export and canvas preview — now read "what the export would carry" over both sources. Generated CSS needs no gate of its own: being derived from the model, it cannot exist without a composed block to derive it from.
-- **The stacking class is named after the behaviour, not after stacking.** Mobile behaviour is not configurable in this slice, but it will be; a class whose name is a value admits a second value without a migration, and the row object is where that future setting hangs.
-- **Widths are stored, layouts are not.** Presets (1, 2×50, 66/33, 33/66, 3×33, 4×25) are shortcuts in the panel that write widths. Storing a `layout` name beside the widths would be a second source of truth, and the two would drift.
-- **A stored `v: 1` state reads as one single-column row**, in memory, with nothing rewritten in the database. `parseState` already refuses a state from a higher version than it knows, so a `v: 2` state opened by an older editor is refused rather than emptied.
+- **The head-CSS channel refused the composed block on purpose** (`exported-css.js`: _"The HTML code block only, not the builder's"_), on the then-true grounds that the builder wrote everything inline. The derived stylesheet now goes through it, under the rules above; the author's stylesheet keeps its own.
+- **The stacking class names what the column does on a phone** (`lp-stack`), as one value among others to come, rather than standing for "the mobile class". Mobile behaviour is not configurable in this slice, but it will be: a second behaviour gets a second class beside the first, with no stored block to migrate, and the setting that picks it will live on the row object.
+- **Widths are stored, presets are not.** Presets (1, 2×50, 66/34, 34/66, 33/33/34, 4×25) are shortcuts in the panel that write widths, and each adds up to 100. Storing a preset name beside the widths would be a second source of truth, and the two would drift.
 - **Free ratios cost nothing.** A column's desktop width travels in its `width` attribute and inline style, not in a class, so arbitrary ratios emit no extra CSS — the stacking rule is identical for every column whatever its ratio.

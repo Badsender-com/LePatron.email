@@ -44,8 +44,9 @@ describe('a composition renders as rows of columns', () => {
     } = require('../../../packages/shared/block-builder/state.js'));
   });
 
-  // In memory a composition is always rows. One row of one full-width column
-  // renders flat, as it did before columns; anything else renders its rows.
+  // In memory a composition is always rows (ADR 0025, "Stored shape"). One row
+  // of one full-width column renders flat, as it did before columns; anything
+  // else renders its rows.
   const composition = (rows) => ({ ...emptyState(), rows });
   const render = (...rows) => generate(composition(rows));
 
@@ -144,8 +145,12 @@ describe('a composition renders as rows of columns', () => {
         ])
       );
 
-      expect(html).toContain('&nbsp;');
-      expect(html).toMatch(/font-size:\s*0/);
+      // On the empty cell itself: a spacer element renders a non-breaking
+      // space at a zero font size too, so a match anywhere would prove nothing.
+      const emptyCell = html.match(/<td\b[^>]*>\s*&nbsp;\s*<\/td>/i);
+      expect(emptyCell).not.toBeNull();
+      expect(emptyCell[0]).toContain('width="50%"');
+      expect(emptyCell[0]).toMatch(/font-size:\s*0/);
     });
 
     it('drops a row where every column is empty', () => {

@@ -165,15 +165,20 @@ _UI_: Bloc Code HTML
 
 **Composed block**:
 The synthetic block whose content is assembled in the Block Builder. LePatron owns the markup it ships, and regenerates it from the composition.
-_UI_: Composer un bloc
+_UI_: Bloc composé
 _Avoid_: Builder block, custom block, personalized block
 
 **Block Builder**:
-The tool a composed block is assembled in: a palette, a composition area and a settings panel.
+The tool a composed block is assembled in: a palette, a composition area and a settings panel. Its title and the button that opens it from the block's panel both read « Composer un bloc », even on a block already composed; the block's toolbar says « Composer le bloc ».
 _UI_: Composer un bloc
 
+**Saved block**:
+A block an author stored in the company's block library, for one template, to insert again in other emails. Any block can be saved, a composed block included: saving copies it, and the copy is no longer tied to the email. Not to be confused with a composed block, which is a kind of block, not a place it is kept.
+_UI_: Bloc personnalisé, Enregistrer dans la bibliothèque de blocs
+_Avoid_: Personalized block (the code's name, `PersonalizedBlock`), custom block
+
 **Composition**:
-What a composed block holds, as stored: the rows, their columns, the elements inside them, and the block's own styling. Read and written as a serialised string.
+What a composed block holds: the rows, their columns, the elements inside them, and the block's own styling. Always rows in memory. Stored as a serialised string whose version says its shape: `v: 1` for one row of one column with no row setting, written as a flat list of elements; `v: 2`, written as rows, for anything else.
 
 **Row**:
 One horizontal band of a composition, holding one to four columns. A composition is a list of rows; a row is not addressable by Mosaico, only from inside the Block Builder.
@@ -189,16 +194,28 @@ _UI_: Élément
 _Avoid_: Component, widget, module
 
 **Preset**:
-A named set of column widths offered in the panel (1, 2×50, 66/33, 33/66, 3×33, 4×25). A shortcut for writing widths, never stored as such.
+A named set of column widths offered in the panel (1, 2×50, 66/34, 34/66, 33/33/34, 4×25), each adding up to 100. A shortcut for writing widths, never stored as such.
 _UI_: Structure
+_Avoid_: Layout (taken by the layout component)
 
 ### Generation
 
 **Slot**:
-A hole in a compiled element template, declaring the escaping context its value goes through. A value cannot reach the markup without passing one.
+A hole in a compiled component template, element or layout, declaring the escaping context its value goes through. A value cannot reach the markup without passing one.
 
 **Escaping context**:
 What a slot declares about where its value lands — text, attribute, URL, colour, pixels, CSS value, rich text, or markup. It carries the escaping, so escaping is a property of the slot rather than the author's vigilance.
+
+**MARKUP context**:
+The one escaping context that escapes nothing: the value is markup the generator built, inserted as it is. Only a layout component may declare it, which the compiler checks at build time and the template engine at run time.
+_Avoid_: Raw, HTML context
+
+**Layout component**:
+A compiled component that places other markup rather than showing content, declared `kind: 'layout'` in its manifest: today the column cell. Its slots are filled by the generator alone, never from the stored composition's text, which is what lets it hold a MARKUP slot.
+_Avoid_: Layout (alone: it also reads as a preset)
+
+**Generated class**:
+A class the generator puts on the markup it ships, for the few rules that cannot be inlined, such as stacking columns on a phone. Owned by the generator, prefixed `lp-`, and listed in `generated-classes.js`, where the markup and the generated CSS agree on its name. Not a hook for the author's stylesheet.
 
 **Generated CSS**:
 The stylesheet derived from a composition at export time, for the rules that cannot be inlined. Never stored: it is recomputed wherever the composition is rendered.

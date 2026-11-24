@@ -4,8 +4,13 @@
 
 'use strict';
 
-// Acceptance tests for the columns slice, at the third seam: the modal, through
-// its props and events (epic #1194).
+// Acceptance tests for the columns slice, at the third seam: the modal (epic
+// #1194).
+//
+// Through what a user does where jsdom can reproduce it — a click in the
+// preview, a click on a row in the panel, Apply — and through what the modal
+// writes back. Where it cannot, a drop that needs a laid-out page, the tests
+// call the method the gesture ends in, and say so.
 //
 // Only what needs a DOM lives here. Everything about the markup a composition
 // produces is checked on the pure functions instead — see
@@ -15,11 +20,26 @@
 // What genuinely needs the component: a drop target is now two-dimensional, and
 // selection has two kinds where it had one.
 
-const { openModal, fireIn, startPaletteDrag } = require('./drag-helpers.js');
+const Vue = require('vue/dist/vue.common');
+
+const {
+  openModal,
+  fireIn,
+  startPaletteDrag,
+  rowOf,
+} = require('./drag-helpers.js');
 
 afterEach(() => {
   document.body.innerHTML = '';
 });
+
+/** A real click, bubbling, as a browser delivers it. */
+function clickOn(target) {
+  const view = target.ownerDocument.defaultView;
+  target.dispatchEvent(
+    new view.MouseEvent('click', { bubbles: true, cancelable: true })
+  );
+}
 
 /** The composition as types, row by row and column by column. */
 const shapeOf = (modal) =>
@@ -35,22 +55,35 @@ describe.skip('selecting a row', () => {
     expect(shapeOf(modal)).toEqual([[['text']]]);
   });
 
+  // In the second column on purpose: the first column is where every element
+  // sat before columns, so a click there would pass on the old selection code.
   it('selects the element when the click lands inside a column', async () => {
-    const { modal, doc } = await openModal(['text']);
-    const [element] = modal.state.rows[0].columns[0].elements;
+    const { modal, doc } = await openModal(['text', 'button']);
+    const [row] = modal.state.rows;
+    modal.setRowWidths(row.id, [50, 50]);
+    const button = modal.state.rows[0].columns[0].elements[1];
+    modal.moveElement(button.id, { rowId: row.id, columnIndex: 1, index: 0 });
+    modal.selectRow(row.id);
+    modal.renderPreview();
 
-    modal.selectElement(element.id);
+    const rendered = rowOf(doc, button.id);
+    expect(rendered).not.toBeNull();
+    // A word inside the element rather than its wrapper: nobody clicks the
+    // wrapper.
+    clickOn(rendered.querySelector('a, td') || rendered);
 
-    expect(modal.selectedElementId).toBe(element.id);
+    expect(modal.selectedElementId).toBe(button.id);
     expect(modal.selectedRowId).toBeNull();
-    expect(doc).toBeTruthy();
   });
 
   it('selects the row when the click lands on its handle', async () => {
     const { modal } = await openModal(['text']);
     const [row] = modal.state.rows;
+    await Vue.nextTick();
 
-    modal.selectRow(row.id);
+    const handle = document.querySelector('.bb-modal__row');
+    expect(handle).not.toBeNull();
+    clickOn(handle);
 
     expect(modal.selectedRowId).toBe(row.id);
     expect(modal.selectedElementId).toBeNull();
@@ -104,7 +137,7 @@ describe.skip('selecting a row', () => {
 
       modal.setRowWidths(row.id, [20, 20, 20, 20, 20]);
 
-      expect(modal.state.rows[0].columns.length).toBeLessThanOrEqual(4);
+      expect(modal.state.rows[0].columns.map((c) => c.width)).toEqual([100]);
     });
 
     // Losing a paragraph to a structure change is the kind of thing a user
@@ -293,23 +326,34 @@ describe.skip('duplicating and deleting a row', () => {
     expect(shapeOf(modal)).toEqual([[[]]]);
   });
 
-  // Nothing to select, nothing to render, and the modal still has to open.
+  // Nothing to select, nothing to render, and the modal still has to work:
+  // the next element the user adds has to land somewhere.
   it('leaves something that still opens when the last row goes', async () => {
     const { modal } = await openModal(['text']);
 
     modal.deleteRow(modal.state.rows[0].id);
 
-    expect(modal.state.rows.length).toBeGreaterThanOrEqual(0);
+    expect(shapeOf(modal).flat(2)).toEqual([]);
+    expect(modal.html).toBe('');
     expect(() => modal.renderPreview()).not.toThrow();
+
+    modal.addElement('button');
+
+    expect(shapeOf(modal).flat(2)).toEqual(['button']);
   });
 
+  // The duplicate is made inside the modal, and reaches the email on Apply:
+  // one undo step for the whole composition, copy included.
   it('counts a duplication as one undo step', async () => {
-    const { modal } = await openModal(['text']);
+    const { modal, markup } = await openModal(['text']);
+    modal.state.rows[0].columns[0].elements[0].content = 'Bonjour';
     modal.duplicateRow(modal.state.rows[0].id);
 
-    modal.apply();
+    modal.handleApply();
 
     expect(modal.vm.startMultiple).toHaveBeenCalledTimes(1);
     expect(modal.vm.stopMultiple).toHaveBeenCalledTimes(1);
+    expect(markup.writes).toHaveLength(1);
+    expect(markup.writes[0].match(/Bonjour/g)).toHaveLength(2);
   });
 });
