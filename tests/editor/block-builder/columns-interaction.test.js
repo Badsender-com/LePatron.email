@@ -176,6 +176,23 @@ describe('dropping into a column', () => {
     expect(shapeOf(modal)).toEqual([[['text'], ['button']]]);
   });
 
+  // "Drop here" is shown when the last row is gone, and it has to mean it:
+  // with no column to aim at, the drop lands in a row made for it.
+  it('inserts a drop on "drop here" once the last row is deleted', async () => {
+    const { modal, doc } = await openModal(['text']);
+    modal.deleteRow(modal.state.rows[0].id);
+    modal.renderPreview();
+    const zone = doc.getElementById('lp-bb-empty-drop');
+    expect(zone).not.toBeNull();
+
+    startPaletteDrag('text');
+    fireIn(doc, 'dragover', zone, 10);
+    fireIn(doc, 'drop', zone, 10);
+
+    expect(shapeOf(modal)).toEqual([[['text']]]);
+    expect(modal.selected.type).toBe('text');
+  });
+
   it('moves an element from one column into another', async () => {
     const { modal } = await openModal(['text', 'button']);
     const [row] = modal.state.rows;

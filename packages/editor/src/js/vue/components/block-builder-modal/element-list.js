@@ -8,6 +8,7 @@ const {
 } = require('../../../../../../shared/block-builder/state.js');
 const {
   singleColumnRows,
+  columnAt,
 } = require('../../../../../../shared/block-builder/composition.js');
 const { ListboxMixin } = require('./listbox.js');
 
@@ -23,7 +24,7 @@ const { ListboxMixin } = require('./listbox.js');
 // palette adds to.
 //
 // The component is expected to provide: `state`, `columnElements`,
-// `selectedElementId`, `selectElement`, `locateElement`, `rowById`
+// `selectedElementId`, `selectElement`, `locateElement`, `activeColumn`
 // (selection.js) and `vm`.
 
 const PALETTE = [
@@ -83,7 +84,13 @@ const ElementListMixin = {
       const place = this.locateElement(this.selectedElementId);
       return this.insertElement(
         type,
-        place ? place.index + 1 : this.columnElements.length
+        place
+          ? {
+              rowId: place.row.id,
+              columnIndex: place.row.columns.indexOf(place.column),
+              index: place.index + 1,
+            }
+          : null
       );
     },
 
@@ -106,48 +113,37 @@ const ElementListMixin = {
       this.addElement(type);
     },
 
-    insertElement(type, index) {
+    /**
+     * Adds a new element of `type` into a column, at a position inside it.
+     *
+     * The one insertion. The palette's click reaches it with the place after
+     * the selection (addElement), a drop with the place its line shows. A
+     * target that names no column of the composition — no target at all, as
+     * when a drop lands on a preview with no column to aim at, after the last
+     * row was deleted — lands at the end of the active column instead.
+     *
+     * @param {string} type
+     * @param {{rowId: string, columnIndex: number, index: number}|null} [target]
+     * @returns {Object|null} the element, or null for a type the palette does
+     *   not offer
+     */
+    insertElement(type, target) {
       if (!PALETTE.some((item) => item.type === type)) return null;
+
+      // A composition left without any row still takes an element: it gets
+      // the row a new block starts with, rather than an element spliced into
+      // a list that belongs to nothing.
+      if (!this.activeColumn) this.state.rows.push(...singleColumnRows());
+      const aimed = columnAt(this.state, target);
+      const { elements } = aimed || this.activeColumn;
+      const wanted =
+        aimed && Number.isInteger(target.index) ? target.index : elements.length;
 
       // Blank, as its defaults have it. What the preview shows in a blank
       // element is a starter drawn there and nowhere else (see STARTERS in
       // element-settings.js): nothing the user did not type reaches the state.
       const element = { id: newElementId(), type, ...defaultsFor(type) };
-      // A composition left without any row still takes an element: it gets
-      // the row a new block starts with, rather than an element spliced into
-      // a list that belongs to nothing.
-      if (!this.activeColumn) this.state.rows.push(...singleColumnRows());
-      const elements = this.columnElements;
-      const at = Math.max(0, Math.min(index, elements.length));
-      elements.splice(at, 0, element);
-      // Selected on arrival, so the settings panel is already on it — dropping
-      // and editing are one gesture, not two.
-      this.selectElement(element.id);
-      return element;
-    },
-
-    /**
-     * Adds a new element of `type` into a column, at a position inside it.
-     *
-     * The column-aware twin of `insertElement`, which still serves the palette
-     * click: that one appends to wherever the list is working, this one takes
-     * the place a drag chose.
-     *
-     * @param {string} type
-     * @param {{rowId: string, columnIndex: number, index: number}} target
-     * @returns {Object|null} the element, or null when the target is gone
-     */
-    insertElementInto(type, target) {
-      if (!PALETTE.some((item) => item.type === type)) return null;
-      const row = this.rowById(target && target.rowId);
-      const column = row && row.columns[target.columnIndex];
-      if (!column) return null;
-
-      // Blank, as its defaults have it. What the preview shows in a blank
-      // element is a starter drawn there and nowhere else.
-      const element = { id: newElementId(), type, ...defaultsFor(type) };
-      const at = Math.max(0, Math.min(target.index, column.elements.length));
-      column.elements.splice(at, 0, element);
+      elements.splice(Math.max(0, Math.min(wanted, elements.length)), 0, element);
       // Selected on arrival, so the settings panel is already on it — dropping
       // and editing are one gesture, not two. Rendered by the preview's
       // watcher, like every other change.
@@ -220,8 +216,7 @@ const ElementListMixin = {
      */
     moveElement(id, target) {
       const from = this.locateElement(id);
-      const row = this.rowById(target && target.rowId);
-      const to = row && row.columns[target.columnIndex];
+      const to = columnAt(this.state, target);
       if (!from || !to) return false;
 
       const [element] = from.column.elements.splice(from.index, 1);

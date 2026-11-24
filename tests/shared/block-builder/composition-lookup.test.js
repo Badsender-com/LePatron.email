@@ -6,6 +6,7 @@
 const {
   locateElement,
   rowById,
+  columnAt,
   elementsOfState,
 } = require('../../../packages/shared/block-builder/composition.js');
 
@@ -86,5 +87,40 @@ describe('rowById', () => {
   it.each([[null], [''], ['row-z-9']])('finds nothing for %p', (id) => {
     expect(rowById(composition(), id)).toBeNull();
     expect(rowById({ rows: 'x' }, id)).toBeNull();
+  });
+});
+
+describe('columnAt', () => {
+  it('finds the live column a target names', () => {
+    const state = composition();
+
+    const column = columnAt(state, { rowId: 'row-b-2', columnIndex: 1 });
+
+    expect(column).toBe(state.rows[1].columns[1]);
+  });
+
+  it('finds an empty column, which is still somewhere to drop', () => {
+    const state = composition();
+
+    expect(columnAt(state, { rowId: 'row-b-2', columnIndex: 0 })).toBe(
+      state.rows[1].columns[0]
+    );
+  });
+
+  it.each([
+    ['no target', null],
+    ['a row that is gone', { rowId: 'row-z-9', columnIndex: 0 }],
+    ['an index past the columns', { rowId: 'row-a-1', columnIndex: 1 }],
+    ['an index that is not one', { rowId: 'row-a-1', columnIndex: '0' }],
+    ['no row', { columnIndex: 0 }],
+  ])('finds nothing for %s', (_name, target) => {
+    expect(columnAt(composition(), target)).toBeNull();
+  });
+
+  it('reads a malformed column as none', () => {
+    const state = { rows: [{ id: 'row-a-1', columns: [null, { width: 50 }] }] };
+
+    expect(columnAt(state, { rowId: 'row-a-1', columnIndex: 0 })).toBeNull();
+    expect(columnAt(state, { rowId: 'row-a-1', columnIndex: 1 })).toBeNull();
   });
 });

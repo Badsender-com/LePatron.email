@@ -1,7 +1,8 @@
 'use strict';
 
 // Finding things in a composition: every element in document order, the place
-// of one element, a row by its id, and the rows that hold anything.
+// of one element, a row by its id, a column by row and index, and the rows
+// that hold anything.
 //
 // Plain readers over the in-memory shape (see composition.js), shared by the
 // modal and the server so that "every element" and "where an element is" mean
@@ -100,6 +101,25 @@ function rowById(state, id) {
 }
 
 /**
+ * The column a target names — a row id and an index among its columns — or
+ * null when there is none: the row is gone, the index is past its columns, or
+ * the target names nothing.
+ *
+ * What a drop aims at, read back into the composition: the live column, so a
+ * splice into its `elements` changes the composition.
+ *
+ * @param {Object} state
+ * @param {{rowId: string, columnIndex: number}|null} target
+ * @returns {Object|null}
+ */
+function columnAt(state, target) {
+  if (!isObject(target) || !Number.isInteger(target.columnIndex)) return null;
+  const row = rowById(state, target.rowId);
+  const column = row ? listOf(row.columns)[target.columnIndex] : null;
+  return isObject(column) && Array.isArray(column.elements) ? column : null;
+}
+
+/**
  * Whether a row holds at least one element, in any of its columns.
  *
  * @param {Object} row
@@ -132,5 +152,6 @@ module.exports = {
   elementsOfState,
   locateElement,
   rowById,
+  columnAt,
   withoutEmptyRows,
 };

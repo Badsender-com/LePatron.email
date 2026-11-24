@@ -15,6 +15,7 @@ const { showDropLine, clearDropLine } = require('./drop-line.js');
 const { dropTargetAt, columnElements } = require('./drop-target.js');
 const {
   flatRowOf,
+  columnAt,
 } = require('../../../../../../shared/block-builder/composition.js');
 
 // Dragging in the preview, two gestures in one: an element from the palette,
@@ -32,7 +33,7 @@ const {
 // `freezeRender` / `thawRender` to hold it still, `elementRowFromEvent` to
 // find the row picked up, `previewDocument` and `previewRows` to measure it,
 // which drop-line.js turns into a drop position. `insertElement` and
-// `moveElementTo` come from the element list.
+// `moveElement` come from the element list.
 
 // What either drag puts on the dataTransfer. A type of our own, never
 // `text/plain`: a drag released over the settings panel's TinyMCE field would
@@ -358,9 +359,7 @@ const DragSurfaceMixin = {
     // Every column accepts a drop, empty ones included — that is most of why
     // an empty column keeps a box worth aiming at.
     canDropInto(target) {
-      if (!target) return false;
-      const row = this.rowById(target.rowId);
-      return Boolean(row && row.columns[target.columnIndex]);
+      return Boolean(columnAt(this.state, target));
     },
 
     handlePreviewDrop(event) {
@@ -382,10 +381,15 @@ const DragSurfaceMixin = {
       // Ended as a drop, not a cancel: the selection goes to what moved.
       this.draggingId = null;
       this.handleDragEnd();
-      if (!target || !this.canDropInto(target)) return;
 
-      if (id) this.moveElement(id, target);
-      else this.insertElementInto(type, target);
+      // A move needs the column it aims at. An insertion lands even without
+      // one — a preview with no column to aim at, after the last row was
+      // deleted: in the active column, which makes a row if there is none.
+      if (id) {
+        if (this.canDropInto(target)) this.moveElement(id, target);
+      } else {
+        this.insertElement(type, target);
+      }
     },
   },
 };
