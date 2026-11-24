@@ -14,7 +14,7 @@ const {
 const { showDropLine, clearDropLine } = require('./drop-line.js');
 const { dropTargetAt, columnElements } = require('./drop-target.js');
 const {
-  isFlatComposition,
+  flatRowOf,
 } = require('../../../../../../shared/block-builder/composition.js');
 
 // Dragging in the preview, two gestures in one: an element from the palette,
@@ -335,10 +335,12 @@ const DragSurfaceMixin = {
      * The id of the composition's only row while it is flat, or null.
      *
      * A flat composition renders without column chrome (generate.js), so its
-     * preview has no column to find: the whole document is that column.
+     * preview has no column to find: the whole document is that column. Which
+     * row that is comes from flatRowOf, the rule generate follows: rows that
+     * hold nothing are not written, so it is not always the first one.
      */
     flatRowId() {
-      return isFlatComposition(this.state) ? this.state.rows[0].id : null;
+      return flatRowOf(this.state)?.id || null;
     },
 
     /** The column element a target names, in the preview. */
@@ -356,10 +358,8 @@ const DragSurfaceMixin = {
     // Every column accepts a drop, empty ones included — that is most of why
     // an empty column keeps a box worth aiming at.
     canDropInto(target) {
-      if (!target || !target.rowId) return false;
-      const row = (this.state.rows || []).find(
-        (entry) => entry.id === target.rowId
-      );
+      if (!target) return false;
+      const row = this.rowById(target.rowId);
       return Boolean(row && row.columns[target.columnIndex]);
     },
 

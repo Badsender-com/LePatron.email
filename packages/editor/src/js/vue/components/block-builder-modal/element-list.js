@@ -139,9 +139,7 @@ const ElementListMixin = {
      */
     insertElementInto(type, target) {
       if (!PALETTE.some((item) => item.type === type)) return null;
-      const row = (this.state.rows || []).find(
-        (entry) => entry.id === (target && target.rowId)
-      );
+      const row = this.rowById(target && target.rowId);
       const column = row && row.columns[target.columnIndex];
       if (!column) return null;
 
@@ -151,9 +149,9 @@ const ElementListMixin = {
       const at = Math.max(0, Math.min(target.index, column.elements.length));
       column.elements.splice(at, 0, element);
       // Selected on arrival, so the settings panel is already on it — dropping
-      // and editing are one gesture, not two.
+      // and editing are one gesture, not two. Rendered by the preview's
+      // watcher, like every other change.
       this.selectElement(element.id);
-      this.scheduleRender();
       return element;
     },
 

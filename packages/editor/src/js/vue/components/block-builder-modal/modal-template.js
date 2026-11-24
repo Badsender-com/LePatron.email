@@ -58,6 +58,7 @@ module.exports = `<modal-component
             class="bb-modal__row"
             :class="{ 'bb-modal__row--on': row.id === selectedRowId }"
             draggable="true"
+            :aria-keyshortcuts="rowMoveShortcuts"
             @click="selectRow(row.id)"
             @keydown="onRowKeydown($event, index)"
             @dragstart="startRowDrag(row.id)"

@@ -10,6 +10,7 @@ const { ElementListMixin } = require('./element-list.js');
 const { DismissalMixin } = require('./dismissal.js');
 const { DragSurfaceMixin } = require('./drag-surface.js');
 const { RowSettingsMixin } = require('./row-settings.js');
+const { RowActionsMixin } = require('./row-actions.js');
 const { SelectionMixin } = require('./selection.js');
 const MODAL_TEMPLATE = require('./modal-template.js');
 const {
@@ -58,13 +59,15 @@ const BlockBuilderModalComponent = Vue.component('BlockBuilderModal', {
   // element-list.js. The drag adds the gesture on top of the preview — see
   // drag-surface.js. And Escape or a backdrop click ask before losing work —
   // see dismissal.js.
-  // What is selected is one state of its own — see selection.js.
+  // What is selected is one state of its own — see selection.js. A row's
+  // structure is row-settings.js, and moving one is row-actions.js.
   mixins: [
     SelectionMixin,
     PreviewSurfaceMixin,
     ElementListMixin,
     DragSurfaceMixin,
     RowSettingsMixin,
+    RowActionsMixin,
     DismissalMixin,
   ],
   props: {

@@ -39,11 +39,12 @@ const widthFields = () =>
 const foldedText = () =>
   document.querySelector('.bb-modal__folded').textContent.trim();
 
-function press(target, key) {
+function press(target, key, modifiers) {
   const event = new window.KeyboardEvent('keydown', {
     key,
     bubbles: true,
     cancelable: true,
+    ...modifiers,
   });
   target.dispatchEvent(event);
   return event;
@@ -148,6 +149,78 @@ describe('the row list', () => {
 
     expect(document.activeElement).toBe(rowOptions()[1]);
     expect(modal.selectedElementId).toBeNull();
+  });
+});
+
+// Moving a row from the keyboard (#1211). The arrows alone walk the list, as
+// in the element list, so moving takes Alt with them.
+describe('moving a row from the keyboard', () => {
+  const rowIds = (modal) => modal.state.rows.map((row) => row.id);
+
+  async function threeRows() {
+    const modal = await openWith(['text']);
+    modal.addRow();
+    modal.addRow();
+    await Vue.nextTick();
+    return modal;
+  }
+
+  it('moves the row up with Alt and the up arrow, focus going with it', async () => {
+    const modal = await threeRows();
+    const [first, second, third] = rowIds(modal);
+
+    expect(
+      press(rowOptions()[2], 'ArrowUp', { altKey: true }).defaultPrevented
+    ).toBe(true);
+    await Vue.nextTick();
+
+    expect(rowIds(modal)).toEqual([first, third, second]);
+    expect(modal.selectedRowId).toBe(third);
+    expect(document.activeElement).toBe(rowOptions()[1]);
+  });
+
+  it('moves the row down with Alt and the down arrow', async () => {
+    const modal = await threeRows();
+    const [first, second, third] = rowIds(modal);
+
+    press(rowOptions()[0], 'ArrowDown', { altKey: true });
+    await Vue.nextTick();
+
+    expect(rowIds(modal)).toEqual([second, first, third]);
+    expect(modal.selectedRowId).toBe(first);
+    expect(document.activeElement).toBe(rowOptions()[1]);
+  });
+
+  it('leaves the order alone on an arrow without Alt', async () => {
+    const modal = await threeRows();
+    const before = rowIds(modal);
+
+    press(rowOptions()[2], 'ArrowUp');
+    press(rowOptions()[0], 'ArrowDown');
+    await Vue.nextTick();
+
+    expect(rowIds(modal)).toEqual(before);
+  });
+
+  it('stops at the ends of the list', async () => {
+    const modal = await threeRows();
+    const before = rowIds(modal);
+
+    press(rowOptions()[0], 'ArrowUp', { altKey: true });
+    press(rowOptions()[2], 'ArrowDown', { altKey: true });
+    await Vue.nextTick();
+
+    expect(rowIds(modal)).toEqual(before);
+  });
+
+  it('announces the shortcut on each row', async () => {
+    await threeRows();
+
+    rowOptions().forEach((option) => {
+      expect(option.getAttribute('aria-keyshortcuts')).toBe(
+        'Alt+ArrowUp Alt+ArrowDown'
+      );
+    });
   });
 });
 
