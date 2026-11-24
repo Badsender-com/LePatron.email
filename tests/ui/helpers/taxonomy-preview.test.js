@@ -14,8 +14,7 @@ const {
 
 const template = (id) => TEMPLATES.find((t) => t.id === `tpl-${id}`);
 
-// Turned on by #1556 (what an email of a template proposes)
-describe.skip('values a template proposes', () => {
+describe('values a template proposes', () => {
   let valuesProposed;
   let templatesReading;
 

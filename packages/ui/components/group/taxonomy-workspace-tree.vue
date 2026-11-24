@@ -20,6 +20,8 @@ export default {
     rows: { type: Array, default: () => [] },
     selected: { type: String, default: null },
     reorderable: { type: Boolean, default: false },
+    // The preview by template is the view shown.
+    previewOn: { type: Boolean, default: false },
   },
   data() {
     return { dragged: null, over: null };
@@ -76,6 +78,14 @@ export default {
 
 <template>
   <nav class="taxonomy-tree" :aria-label="$t('taxonomy.workspace.tree')">
+    <button
+      type="button"
+      class="taxonomy-tree__view"
+      :class="{ 'taxonomy-tree__view--on': previewOn }"
+      @click="$emit('preview')"
+    >
+      {{ $t('taxonomy.workspace.preview.title') }}
+    </button>
     <template v-for="row in rows">
       <div
         v-if="row.kind === 'section'"
@@ -138,6 +148,21 @@ export default {
   display: flex;
   flex-direction: column;
   gap: 2px;
+
+  &__view {
+    width: 100%;
+    padding: 8px 10px;
+    border-radius: 6px;
+    font-size: 13px;
+    font-weight: 500;
+    text-align: left;
+    color: var(--v-primary-base);
+
+    &:hover,
+    &--on {
+      background: rgba(0, 172, 220, 0.1);
+    }
+  }
 
   &__section {
     padding: 12px 10px 4px;
