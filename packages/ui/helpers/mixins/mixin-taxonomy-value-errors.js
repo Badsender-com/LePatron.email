@@ -18,9 +18,12 @@ export default {
      *
      * @param {string} field `label` or `canonicalType`
      * @param {string} message already translated
-     * @returns {boolean} whether this form has that field
+     * @returns {boolean} whether this form, open, has that field
      */
     setFieldError(field, message) {
+      // A closed panel shows nothing: the quick add's refusal goes to the
+      // snackbar instead.
+      if (!this.$refs.modal || !this.$refs.modal.isOpen) return false;
       if (field === 'label') {
         this.serverLabelError = message;
         this.$v.form.label.$touch();

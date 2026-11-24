@@ -17,6 +17,7 @@
  * doctrine's.
  */
 import { STANDARD_DIMENSIONS } from './taxonomy-builder.js';
+import { comparedLiterals } from '../../shared/taxonomy/compared-literals.js';
 
 const ids = (list) => (list || []).map(String);
 const plainTokens = (tokens) =>
@@ -105,8 +106,8 @@ function literalsNotCarried(dimension, own, templates) {
   const carried = new Set(own.map((value) => value.canonicalType));
   const comparing = new Map();
   templates.forEach((template) => {
-    const literals = (template.contract?.compared || {})[dimension.name] || {};
-    Object.keys(literals)
+    comparedLiterals(template.contract, dimension.name)
+      .map((entry) => entry.literal)
       .filter((literal) => !carried.has(literal))
       .forEach((literal) => {
         if (!comparing.has(literal)) comparing.set(literal, []);

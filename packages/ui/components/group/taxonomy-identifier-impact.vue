@@ -5,8 +5,9 @@ import * as apiRoutes from '~/helpers/api-routes.js';
 /**
  * Shown in a value's panel while its identifier differs from the saved one
  * (ADR-0026): the emails carrying the value, the templates comparing the old
- * identifier. With no email carrying it, the change is free. Otherwise the
- * admin confirms it (`input` true) or keeps the old one (`keep`).
+ * identifier. With neither, the change is free. Otherwise the admin confirms
+ * it (`input` true) or keeps the old one (`keep`). An impact that could not be
+ * worked out is offered again, never taken as free.
  */
 export default {
   name: 'BsTaxonomyIdentifierImpact',
@@ -20,11 +21,14 @@ export default {
     value: { type: Boolean, default: false },
   },
   data() {
-    return { impact: null, loading: false };
+    return { impact: null, loading: false, failed: false, request: 0 };
   },
   computed: {
-    carried() {
-      return !!this.impact && this.impact.emails > 0;
+    needsConfirmation() {
+      return (
+        !!this.impact &&
+        (this.impact.emails > 0 || this.impact.templates.length > 0)
+      );
     },
   },
   watch: {
@@ -35,17 +39,23 @@ export default {
   },
   methods: {
     async fetch() {
+      // A late answer for another value is dropped.
+      const request = ++this.request;
+      this.loading = true;
+      this.failed = false;
       try {
-        this.loading = true;
-        this.impact = await this.$axios.$get(
+        const impact = await this.$axios.$get(
           apiRoutes.taxonomyItemIdentifierImpact(this.itemId)
         );
-        // Free: nothing to confirm.
-        if (!this.carried) this.$emit('input', true);
+        if (request !== this.request) return;
+        this.impact = impact;
+        if (!this.needsConfirmation) this.$emit('input', true);
       } catch (error) {
+        if (request !== this.request) return;
         this.impact = null;
+        this.failed = true;
       } finally {
-        this.loading = false;
+        if (request === this.request) this.loading = false;
       }
     },
   },
@@ -53,24 +63,36 @@ export default {
 </script>
 
 <template>
-  <div class="identifier-impact" role="alert">
+  <div class="identifier-impact">
     <strong class="identifier-impact__title">
       <lucide-alert-triangle :size="16" />
       {{ $t('taxonomy.workspace.impact.title', { label }) }}
     </strong>
-    <p v-if="loading" class="mb-0">
+    <p v-if="loading" class="mb-0" role="status">
       {{ $t('taxonomy.workspace.impact.checking') }}
     </p>
+    <div v-else-if="failed" class="identifier-impact__actions" role="alert">
+      <span class="identifier-impact__failed">
+        {{ $t('taxonomy.workspace.impact.failed') }}
+      </span>
+      <v-btn text small color="accent" @click="fetch">
+        {{ $t('taxonomy.workspace.impact.retry') }}
+      </v-btn>
+    </div>
     <template v-else-if="impact">
-      <p class="mb-1">
-        {{
-          $tc('taxonomy.workspace.impact.emails', impact.emails, {
-            label,
-            next,
-          })
-        }}
+      <p v-if="!needsConfirmation" class="mb-0">
+        {{ $t('taxonomy.workspace.impact.free', { label, previous }) }}
       </p>
-      <template v-if="carried">
+      <template v-else>
+        <p class="mb-1">
+          {{
+            $tc('taxonomy.workspace.impact.emails', impact.emails, {
+              label,
+              next,
+              n: impact.emails,
+            })
+          }}
+        </p>
         <p v-if="impact.templates.length" class="mb-1">
           {{ $t('taxonomy.workspace.impact.templates', { previous }) }}
         </p>
@@ -92,7 +114,7 @@ export default {
         <p v-if="value" class="identifier-impact__confirmed mb-0">
           {{ $t('taxonomy.workspace.impact.confirmed') }}
         </p>
-        <div v-else class="identifier-impact__actions">
+        <div v-else class="identifier-impact__actions" role="alert">
           <v-btn text small @click="$emit('keep')">
             {{ $t('taxonomy.workspace.impact.keep', { previous }) }}
           </v-btn>
@@ -142,6 +164,11 @@ export default {
 
   &__confirmed {
     font-weight: 600;
+  }
+
+  &__failed {
+    flex: 1;
+    align-self: center;
   }
 }
 </style>

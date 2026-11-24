@@ -12,9 +12,12 @@
  *   condition, a style or an attribute binding. A design token is read this way.
  * - `adopt`: for a property, the source its value is adopted from when the
  *   template renamed it (`siloBrand { adopt: brand_[silo]; }`).
- * - `compared`: for a root property, the literals the template compares it
- *   against and how many times (`_root_.market eq 'be'` → `{ market: { be: 1 } }`),
- *   read to show the impact of changing a value's identifier (ADR-0026).
+ * - `compared`: the literals the template compares a root property against and
+ *   how many times (`_root_.market eq 'be'` →
+ *   `[{ property: 'market', literal: 'be', count: 1 }]`), read to show the
+ *   impact of changing a value's identifier (ADR-0026). A list rather than an
+ *   object keyed by literal: a literal is markup, and as a key it could hold a
+ *   dot Mongo refuses to store, or a name an object reserves.
  *
  * Read by scanning the markup rather than by running Mosaico, which needs a
  * browser: the definitions live in the template's `<style>` blocks, in a syntax
@@ -24,9 +27,22 @@
  */
 
 const ROOT_READ = /_root_\.([A-Za-z_][A-Za-z0-9_]*)/g;
-// `_root_.x eq 'literal'`, `neq`, `==` or `!=`, single or double quotes. Each
-// part is a run of one class of characters: nothing to backtrack on.
-const ROOT_COMPARED = /_root_\.([A-Za-z_][A-Za-z0-9_]*)\s*(?:neq|eq|!==?|===?)\s*(['"])([^'"]*)\2/g;
+// `_root_.x eq 'literal'`, `neq`, `==` or `!=`, single or double quotes, on
+// either side. A word operator stands between spaces, so `_root_.marketneq` is
+// no comparison. Each part is a run of one class of characters, ended by a
+// character it cannot hold: nothing to backtrack on.
+const OPERATOR = String.raw`(?:\s+n?eq\s+|\s*[!=]==?\s*)`;
+const PROPERTY = String.raw`_root_\.([A-Za-z_][A-Za-z0-9_]*)`;
+const LITERAL = String.raw`(?:'([^']*)'|"([^"]*)")`;
+const ROOT_COMPARED = new RegExp(
+  `${PROPERTY}${OPERATOR}${LITERAL}|${LITERAL}${OPERATOR}${PROPERTY}`,
+  'g'
+);
+// Quotes a template wrote as entities inside an attribute.
+const QUOTE_ENTITIES = [
+  [/&quot;|&#0*34;|&#x0*22;/gi, '"'],
+  [/&apos;|&#0*39;|&#x0*27;/gi, "'"],
+];
 const IDENTIFIER_CHAR = /[A-Za-z0-9_]/;
 const WHITESPACE = /\s/;
 
@@ -34,7 +50,8 @@ const WHITESPACE = /\s/;
 // reader is read again on its next need (template-contract.service.js).
 // 2: comments other than Outlook's conditional ones are not read.
 // 3: the literals a root property is compared against are recorded.
-const CONTRACT_READER_VERSION = 3;
+// 4: they are recorded as a list, and read on either side of the operator.
+const CONTRACT_READER_VERSION = 4;
 
 module.exports = {
   readTemplateContract,
@@ -57,11 +74,11 @@ function refreshContract(template) {
 
 /**
  * @param {string} [markup] a template's HTML
- * @returns {{declared: Object<string, string>, read: string[], adopt: Object<string, string>, compared: Object<string, Object<string, number>>}}
+ * @returns {{declared: Object<string, string>, read: string[], adopt: Object<string, string>, compared: Array<{property: string, literal: string, count: number}>}}
  */
 function readTemplateContract(markup) {
   if (typeof markup !== 'string' || markup === '') {
-    return { declared: {}, read: [], adopt: {}, compared: {} };
+    return { declared: {}, read: [], adopt: {}, compared: [] };
   }
 
   const definitions = definitionsOf(markup);
@@ -75,13 +92,28 @@ function readTemplateContract(markup) {
 }
 
 function rootComparisons(markup) {
-  const compared = {};
-  [...markup.matchAll(ROOT_COMPARED)].forEach(([, property, , literal]) => {
-    compared[property] = compared[property] || {};
-    compared[property][literal] = (compared[property][literal] || 0) + 1;
+  const text = QUOTE_ENTITIES.reduce(
+    (decoded, [entity, quote]) => decoded.replace(entity, quote),
+    markup
+  );
+  const counts = new Map();
+  [...text.matchAll(ROOT_COMPARED)].forEach((match) => {
+    const property = match[1] || match[6];
+    const literal = [match[2], match[3], match[4], match[5]].find(
+      (part) => part !== undefined
+    );
+    const key = JSON.stringify([property, literal]);
+    const entry = counts.get(key) || { property, literal, count: 0 };
+    entry.count += 1;
+    counts.set(key, entry);
   });
-  return compared;
+  return [...counts.values()].sort(
+    (a, b) =>
+      compareText(a.property, b.property) || compareText(a.literal, b.literal)
+  );
 }
+
+const compareText = (a, b) => (a < b ? -1 : a > b ? 1 : 0);
 
 function rootReads(markup) {
   return [

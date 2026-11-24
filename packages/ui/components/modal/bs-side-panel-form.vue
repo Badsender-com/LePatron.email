@@ -20,12 +20,17 @@ export default {
     loading: { type: Boolean, default: false },
     submitDisabled: { type: Boolean, default: false },
     showSubmit: { type: Boolean, default: true },
-    // Kept for parity with BsModalForm: a panel never closes on its own
-    // while a request runs.
+    // As BsModalForm: a click outside does not close a persistent panel, and
+    // no panel closes while a request runs.
     persistent: { type: Boolean, default: false },
   },
   data() {
-    return { isOpen: false };
+    return {
+      isOpen: false,
+      titleId: `bs-side-panel-${this._uid}`,
+      // Where the focus goes back to once the panel closes.
+      opener: null,
+    };
   },
   computed: {
     computedSubmitLabel() {
@@ -37,12 +42,26 @@ export default {
   },
   methods: {
     open() {
+      this.opener = document.activeElement;
       this.isOpen = true;
       this.$emit('open');
+      this.$nextTick(() => {
+        const field = this.$el.querySelector(
+          '.bs-side-panel__content input, .bs-side-panel__content textarea'
+        );
+        if (field) field.focus();
+      });
     },
     close() {
       this.isOpen = false;
       this.$emit('close');
+      if (this.opener && typeof this.opener.focus === 'function') {
+        this.opener.focus();
+      }
+      this.opener = null;
+    },
+    onEscape() {
+      if (!this.loading) this.onCancel();
     },
     onCancel() {
       this.$emit('cancel');
@@ -51,12 +70,9 @@ export default {
     onSubmit() {
       this.$emit('submit');
     },
+    // A click outside a panel that may close: a cancel.
     onInput(open) {
-      if (!open && this.loading) {
-        this.isOpen = true;
-        return;
-      }
-      if (!open) this.close();
+      if (!open && this.isOpen) this.onCancel();
     },
   },
 };
@@ -69,12 +85,20 @@ export default {
     right
     fixed
     temporary
+    :stateless="persistent || loading"
     :width="width"
+    role="dialog"
+    aria-modal="true"
+    :aria-labelledby="titleId"
     @input="onInput"
   >
-    <form class="bs-side-panel__form" @submit.prevent="onSubmit">
+    <form
+      class="bs-side-panel__form"
+      @submit.prevent="onSubmit"
+      @keydown.esc.stop="onEscape"
+    >
       <header class="bs-side-panel__header">
-        <h2 class="bs-side-panel__title">{{ title }}</h2>
+        <h2 :id="titleId" class="bs-side-panel__title">{{ title }}</h2>
         <v-btn
           icon
           small

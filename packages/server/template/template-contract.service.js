@@ -10,7 +10,7 @@ const NO_CONTRACT = Object.freeze({
   declared: {},
   read: [],
   adopt: {},
-  compared: {},
+  compared: [],
 });
 
 module.exports = { contractOfTemplate };

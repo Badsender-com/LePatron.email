@@ -86,6 +86,10 @@ const SEGMENTS_OF_A_DIMENSION = ['tokens', 'templates', 'settings'];
 export function segmentsOf(dimension) {
   if (!dimension) return ['values'];
   if (dimension.name === STANDARD_DIMENSIONS.TRIGGER) return ['values'];
+  // The email type has no default (ADR-0024).
+  if (dimension.name === STANDARD_DIMENSIONS.EMAIL_TYPE) {
+    return ['values', ...SEGMENTS_OF_A_DIMENSION];
+  }
   return [
     'values',
     dimension.parentName ? 'crossings' : 'defaults',

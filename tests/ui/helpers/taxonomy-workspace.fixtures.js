@@ -113,7 +113,7 @@ const VALUES = [
   }),
 ];
 
-// `compared` is what the version 3 reader records (#1554).
+// `compared` is what the contract reader records (#1554, review of #1547).
 const TEMPLATES = [
   {
     id: 'tpl-newsletter',
@@ -122,10 +122,12 @@ const TEMPLATES = [
       declared: { market: 'fr' },
       read: ['market', 'language', 'brand', 'mainColorVar', 'logoUrl'],
       adopt: {},
-      compared: {
-        market: { fr: 2, be: 1, uk: 1 },
-        language: { fr: 1 },
-      },
+      compared: [
+        { property: 'language', literal: 'fr', count: 1 },
+        { property: 'market', literal: 'be', count: 1 },
+        { property: 'market', literal: 'fr', count: 2 },
+        { property: 'market', literal: 'uk', count: 1 },
+      ],
     },
   },
   {
@@ -135,13 +137,13 @@ const TEMPLATES = [
       declared: {},
       read: ['market'],
       adopt: {},
-      compared: { market: { be: 1 } },
+      compared: [{ property: 'market', literal: 'be', count: 1 }],
     },
   },
   {
     id: 'tpl-catalogue',
     name: 'Catalogue',
-    contract: { declared: {}, read: ['range'], adopt: {}, compared: {} },
+    contract: { declared: {}, read: ['range'], adopt: {}, compared: [] },
   },
 ];
 

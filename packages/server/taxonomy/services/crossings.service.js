@@ -35,6 +35,8 @@ const invalid = () => new BadRequest(ERROR_CODES.INVALID_TAXONOMY_ITEM);
 async function saveCrossings({ user, groupId, type, crossings }) {
   logger.log('crossingsService:saveCrossings');
   const companyId = resolveCompanyId(user, groupId);
+  // A name, never a query: it goes into the filters below.
+  if (typeof type !== 'string') throw invalid();
   const dimension = await TaxonomyDimensions.findOne({
     _company: companyId,
     name: type,
@@ -44,7 +46,9 @@ async function saveCrossings({ user, groupId, type, crossings }) {
   }
 
   const [values, parentValues] = await Promise.all([
-    TaxonomyItems.find({ _company: companyId, type }).select({ _id: 1 }).lean(),
+    TaxonomyItems.find({ _company: companyId, type })
+      .select({ _id: 1, label: 1 })
+      .lean(),
     TaxonomyItems.find({ _company: companyId, type: dimension.parentName })
       .select({ _id: 1 })
       .lean(),
@@ -54,7 +58,10 @@ async function saveCrossings({ user, groupId, type, crossings }) {
     valueIds: values.map((value) => String(value._id)),
     parentIds: parentValues.map((value) => String(value._id)),
   });
-  assertDefaults(entries);
+  const labels = new Map(
+    values.map((value) => [String(value._id), value.label])
+  );
+  assertDefaults(entries, labels);
 
   await Promise.all(
     entries.map((entry) =>
@@ -71,9 +78,11 @@ async function saveCrossings({ user, groupId, type, crossings }) {
   );
 }
 
+const hasDuplicates = (list) => new Set(list).size !== list.length;
+
 /**
  * Every value of the dimension exactly once, every parent id a value of the
- * parent dimension.
+ * parent dimension, once per list.
  */
 function readEntries({ crossings, valueIds, parentIds }) {
   const entries = crossings.map((crossing) => ({
@@ -94,6 +103,9 @@ function readEntries({ crossings, valueIds, parentIds }) {
     }
     entry.parentIds = entry.parentIds.map(String);
     entry.defaultUnder = entry.defaultUnder.map(String);
+    if (hasDuplicates(entry.parentIds) || hasDuplicates(entry.defaultUnder)) {
+      throw invalid();
+    }
     const known = [...entry.parentIds, ...entry.defaultUnder].every((id) =>
       parentIds.includes(id)
     );
@@ -102,8 +114,11 @@ function readEntries({ crossings, valueIds, parentIds }) {
   return entries;
 }
 
-/** A default where the value is offered, and one per parent value. */
-function assertDefaults(entries) {
+/**
+ * A default where the value is offered, and one per parent value. The refusal
+ * names the value holding it first, as a default set value by value does.
+ */
+function assertDefaults(entries, labels) {
   entries.forEach((entry) => {
     const everywhere = entry.parentIds.length === 0;
     const offered = entry.defaultUnder.every(
@@ -118,7 +133,7 @@ function assertDefaults(entries) {
     entry.defaultUnder.forEach((parentId) => {
       if (holders.has(parentId)) {
         const error = new Conflict(ERROR_CODES.TAXONOMY_DEFAULT_TAKEN);
-        error.details = { itemId: holders.get(parentId) };
+        error.details = { holder: labels.get(holders.get(parentId)) || '' };
         throw error;
       }
       holders.set(parentId, entry.itemId);

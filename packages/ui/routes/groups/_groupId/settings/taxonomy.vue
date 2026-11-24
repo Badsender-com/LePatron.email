@@ -7,6 +7,7 @@ import BsPageHeader from '~/components/layout/bs-page-header.vue';
 import BsTaxonomyWorkspace from '~/components/group/taxonomy-workspace.vue';
 import BsTaxonomyGettingStarted from '~/components/group/taxonomy-getting-started.vue';
 import { hasNoCompanyDimension } from '~/helpers/taxonomy-suggestions.js';
+import { DIMENSIONS_PER_COMPANY } from '~/helpers/taxonomy-builder.js';
 import { Eye, Plus } from 'lucide-vue';
 import { CAPABILITIES } from '../../../../../shared/access/roles.js';
 
@@ -23,10 +24,14 @@ export default {
   meta: {
     acl: acls.ACL_GROUP_MANAGE,
   },
-  // An unsaved crossings matrix warns before the page is left.
+  // An unsaved crossings matrix warns before the page is left, before the
+  // browser goes back to another dimension or company, and before the tab
+  // closes.
   beforeRouteLeave(to, from, next) {
-    const detail = this.$refs.workspace && this.$refs.workspace.$refs.detail;
-    next(!detail || detail.confirmLeave());
+    next(this.confirmLeave());
+  },
+  beforeRouteUpdate(to, from, next) {
+    next(this.confirmLeave());
   },
   async asyncData(nuxtContext) {
     return safeFetchGroup(nuxtContext);
@@ -42,6 +47,10 @@ export default {
     return { title: this.settingsTitle };
   },
   computed: {
+    // As in the tree: told before the click rather than by a refusal.
+    isFull() {
+      return this.dimensions.length >= DIMENSIONS_PER_COMPANY;
+    },
     isEmpty() {
       return hasNoCompanyDimension(this.dimensions);
     },
@@ -49,7 +58,28 @@ export default {
       return this.can(CAPABILITIES.PLATFORM_MANAGE) && this.group.name;
     },
   },
+  mounted() {
+    window.addEventListener('beforeunload', this.warnBeforeUnload);
+  },
+  beforeDestroy() {
+    window.removeEventListener('beforeunload', this.warnBeforeUnload);
+  },
   methods: {
+    detail() {
+      return (
+        (this.$refs.workspace && this.$refs.workspace.$refs.detail) || null
+      );
+    },
+    confirmLeave() {
+      const detail = this.detail();
+      return !detail || detail.confirmLeave();
+    },
+    warnBeforeUnload(event) {
+      const detail = this.detail();
+      if (!detail || !detail.dirty) return;
+      event.preventDefault();
+      event.returnValue = '';
+    },
     suggest(suggestion) {
       this.$refs.workspace.openDeclareForm(suggestion.parentName, {
         label: this.$t(suggestion.labelKey),
@@ -90,6 +120,7 @@ export default {
           v-if="canManageTaxonomy"
           color="accent"
           elevation="0"
+          :disabled="isFull"
           @click="$refs.workspace.openDeclareForm()"
         >
           <lucide-plus :size="18" class="mr-2" />

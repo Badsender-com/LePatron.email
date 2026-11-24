@@ -5,7 +5,9 @@ import * as apiRoutes from '~/helpers/api-routes.js';
 /**
  * The Defaults segment of a first-level dimension (ADR-0024): the value a new
  * email takes when its template gives none, or none. Saved at once: the value
- * holding the place is unmarked first. Emits `saved` and `error`.
+ * holding the place is unmarked first, and marked again when the new one is
+ * refused, so a failure never leaves the dimension without its default.
+ * Emits `saved` and `error`.
  */
 export default {
   name: 'BsTaxonomyDefaultValue',
@@ -33,12 +35,18 @@ export default {
       if (id === this.current || this.saving) return;
       const patch = (itemId, isDefault) =>
         this.$axios.$patch(apiRoutes.taxonomyItemsItem(itemId), { isDefault });
+      const previous = this.current;
+      let unmarked = false;
       try {
         this.saving = true;
-        if (this.current) await patch(this.current, false);
+        if (previous) {
+          await patch(previous, false);
+          unmarked = true;
+        }
         if (id) await patch(id, true);
         this.$emit('saved');
       } catch (error) {
+        if (unmarked) await patch(previous, true).catch(() => {});
         this.$emit('error', error);
         this.$emit('saved');
       } finally {

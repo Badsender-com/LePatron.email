@@ -129,7 +129,12 @@ export default {
     select(name, tab = 'values') {
       if (this.$refs.detail && !this.$refs.detail.confirmLeave()) return;
       this.treeOpen = false;
-      if (name === this.selection.dimension && tab === this.selection.tab) {
+      // From a view, the dimension the URL falls back to is still a move.
+      const here =
+        !this.view &&
+        name === this.selection.dimension &&
+        tab === this.selection.tab;
+      if (here) {
         return;
       }
       this.$router.push({
