@@ -57,13 +57,17 @@ export default {
     };
   },
   computed: {
+    selectedPoints() {
+      const name = this.selected && this.selected.name;
+      return this.points.filter((point) => point.dimension === name);
+    },
     isPreview() {
       return this.$route.query.view === 'preview';
     },
     treeRows() {
       return dimensionTree({
         dimensions: this.dimensions,
-        values: Object.values(this.valuesByType).flat(),
+        values: this.allValues,
       });
     },
     selection() {
@@ -150,6 +154,7 @@ export default {
       :rows="treeRows"
       :selected="isPreview ? null : selection.dimension"
       :preview-on="isPreview"
+      :warnings="pointCounts"
       :reorderable="canManageTaxonomy && !saving"
       @preview="openPreview(null)"
       @select="select"
@@ -186,13 +191,14 @@ export default {
       :templates="templates"
       :template-id="$route.query.template || null"
       :dimensions="dimensions"
-      :values="Object.values(valuesByType).flat()"
+      :values="allValues"
       @select-template="openPreview"
     />
     <bs-taxonomy-workspace-detail
       v-else-if="selected"
       ref="detail"
       :templates="templates"
+      :points="selectedPoints"
       :values-by-type="valuesByType"
       class="taxonomy-workspace__detail"
       :dimension="selected"

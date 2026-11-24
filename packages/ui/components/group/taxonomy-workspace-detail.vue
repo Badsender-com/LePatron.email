@@ -7,6 +7,7 @@ import BsTaxonomyDimensionSettings from '~/components/group/taxonomy-dimension-s
 import BsTaxonomyCrossingsMatrix from '~/components/group/taxonomy-crossings-matrix.vue';
 import BsTaxonomyDefaultValue from '~/components/group/taxonomy-default-value.vue';
 import BsTaxonomyDimensionTemplates from '~/components/group/taxonomy-dimension-templates.vue';
+import BsTaxonomyPointsCallout from '~/components/group/taxonomy-points-callout.vue';
 
 /**
  * The selected dimension of the taxonomy workspace, in segments (ADR-0026).
@@ -24,6 +25,7 @@ export default {
     BsTaxonomyCrossingsMatrix,
     BsTaxonomyDefaultValue,
     BsTaxonomyDimensionTemplates,
+    BsTaxonomyPointsCallout,
     LucidePanelLeft: PanelLeft,
   },
   props: {
@@ -35,6 +37,7 @@ export default {
     // Values per dimension name, for the crossings and the defaults.
     valuesByType: { type: Object, default: () => ({}) },
     templates: { type: Array, default: () => [] },
+    points: { type: Array, default: () => [] },
   },
   data() {
     return { dirty: false };
@@ -87,6 +90,12 @@ export default {
       </nav>
     </div>
 
+    <bs-taxonomy-points-callout
+      :points="points"
+      :values="Object.values(valuesByType).flat()"
+      :templates="templates"
+      @go="$emit('select-tab', $event)"
+    />
     <bs-taxonomy-crossings-matrix
       v-if="tab === 'crossings' && parent"
       :dimension="dimension"
