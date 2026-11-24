@@ -8,7 +8,11 @@
 const {
   ELEMENTS,
   elementFor,
+  checkElement,
 } = require('../../../packages/shared/block-builder/elements/index.js');
+const {
+  defineLayout,
+} = require('../../../packages/shared/block-builder/template.js');
 
 const HOSTILE = '"><script>alert(1)</script>';
 
@@ -194,5 +198,30 @@ describe('divider and spacer', () => {
     expect(html).toContain('height="40"');
     expect(html).toContain('font-size:0');
     expect(html).toContain('&nbsp;');
+  });
+});
+
+// An element is filled from stored state, so a MARKUP slot there would ship
+// what a user typed unescaped. `defineTemplate` refuses one; the registry
+// catches an element built with `defineLayout` instead.
+describe('the element registry', () => {
+  it('accepts every element it ships', () => {
+    ELEMENTS.forEach((element) => {
+      expect(checkElement(element)).toBe(element);
+    });
+  });
+
+  it('refuses an element with a MARKUP slot', () => {
+    const render = defineLayout('<td>[[content|MARKUP]]</td>');
+    expect(() => checkElement({ type: 'rogue', render })).toThrow(
+      /element "rogue" has slot "content" in MARKUP/
+    );
+  });
+
+  it('refuses one hidden in a variant', () => {
+    const render = () => '';
+    render.slots = [];
+    render.variants = { raw: defineLayout('<td>[[content|MARKUP]]</td>') };
+    expect(() => checkElement({ type: 'rogue', render })).toThrow(/MARKUP/);
   });
 });

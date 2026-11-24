@@ -15,18 +15,28 @@ const {
 } = require('../../../../packages/shared/block-builder/slot-contexts.js');
 const {
   isGeneratedClass,
-  GENERATED_CLASS_PREFIX,
+  stackClassFor,
+  GENERATED_CLASSES,
 } = require('../../../../packages/shared/block-builder/generated-classes.js');
+
+const STACK_CLASS = 'lp-stack';
+const {
+  defineLayout,
+} = require('../../../../packages/shared/block-builder/template.js');
 const { compileFixture } = require('./fixture.js');
 
 describe('a class the generator owns', () => {
-  it('is recognised by its prefix', () => {
-    expect(isGeneratedClass(`${GENERATED_CLASS_PREFIX}stack`)).toBe(true);
+  it('is one the closed list names', () => {
+    expect(GENERATED_CLASSES).toEqual([STACK_CLASS]);
+    expect(isGeneratedClass(STACK_CLASS)).toBe(true);
   });
 
+  // The prefix is shared with the editor's own markers, so it proves nothing.
   test.each([
     ['a Tailwind utility', 'text-center'],
-    ['something that only contains the prefix', 'not-lp-stack'],
+    ['something that only contains the name', 'not-lp-stack'],
+    ['a typo with the right prefix', 'lp-stak'],
+    ['a class of the editor', 'lp-bb-selected'],
     ['nothing at all', ''],
     ['a non-string', null],
   ])('does not recognise %s', (_label, value) => {
@@ -38,22 +48,22 @@ describe('a class the generator owns', () => {
   // stripping every class is what made a responsive rule unreachable.
   it('survives compilation', async () => {
     const compiled = await compileFixture({
-      template: `<table><tr><td class="${GENERATED_CLASS_PREFIX}stack">{{ label }}</td></tr></table>`,
+      template: `<table><tr><td class="${STACK_CLASS}">{{ label }}</td></tr></table>`,
       slots: { label: { context: 'TEXT' } },
     });
 
-    expect(compiled.default).toContain(`${GENERATED_CLASS_PREFIX}stack`);
+    expect(compiled.default).toContain(`${STACK_CLASS}`);
   });
 
   // The other half: a utility that was inlined has no business shipping its
   // name to every recipient.
   it('does not keep a Tailwind utility beside it', async () => {
     const compiled = await compileFixture({
-      template: `<table><tr><td class="text-center ${GENERATED_CLASS_PREFIX}stack">{{ label }}</td></tr></table>`,
+      template: `<table><tr><td class="text-center ${STACK_CLASS}">{{ label }}</td></tr></table>`,
       slots: { label: { context: 'TEXT' } },
     });
 
-    expect(compiled.default).toContain(`${GENERATED_CLASS_PREFIX}stack`);
+    expect(compiled.default).toContain(`${STACK_CLASS}`);
     expect(compiled.default).not.toContain('text-center');
     expect(compiled.default).toMatch(/text-align:\s*center/);
   });
@@ -74,10 +84,21 @@ describe('a class the generator owns', () => {
   it('is exempt from the check that a class must inline', async () => {
     await expect(
       compileFixture({
-        template: `<table><tr><td class="${GENERATED_CLASS_PREFIX}whatever-we-emit">{{ label }}</td></tr></table>`,
+        template: `<table><tr><td class="${STACK_CLASS}">{{ label }}</td></tr></table>`,
         slots: { label: { context: 'TEXT' } },
       })
     ).resolves.toBeDefined();
+  });
+
+  // Only the listed names are: a typo with the prefix is a typo.
+  it('does not exempt a name the list does not hold', async () => {
+    await expect(
+      compileFixture({
+        template:
+          '<table><tr><td class="lp-stak">{{ label }}</td></tr></table>',
+        slots: { label: { context: 'TEXT' } },
+      })
+    ).rejects.toThrow(/"lp-stak" inlines to nothing/);
   });
 
   it('still refuses a utility that inlines to nothing', async () => {
@@ -88,6 +109,58 @@ describe('a class the generator owns', () => {
         slots: { label: { context: 'TEXT' } },
       })
     ).rejects.toThrow(/inlines to nothing/);
+  });
+});
+
+// An element's slots are filled from stored state: escaped, a value in `class`
+// could still name any class the template or the head CSS defines. A layout's
+// class slot is filled by the generator with a name of its own.
+describe('a slot in a class attribute', () => {
+  const template = '<table><tr><td :class="tone">a</td></tr></table>';
+  const slots = { tone: { context: 'ATTR' } };
+
+  it('is refused in an element, naming the slot', async () => {
+    await expect(compileFixture({ template, slots })).rejects.toThrow(
+      /the slot "tone" fills a class attribute, which only a layout may do/
+    );
+  });
+
+  it("says to declare `kind: 'layout'` only for the generator", async () => {
+    await expect(compileFixture({ template, slots })).rejects.toThrow(
+      /declare `kind: 'layout'` in the manifest only if the generator/
+    );
+  });
+
+  it('is refused beside a static class too', async () => {
+    await expect(
+      compileFixture({
+        template: `<table><tr><td class="${STACK_CLASS}" :class="tone">a</td></tr></table>`,
+        slots,
+      })
+    ).rejects.toThrow(/fills a class attribute/);
+  });
+
+  it('is kept in a layout', async () => {
+    const compiled = await compileFixture({ template, slots, kind: 'layout' });
+
+    expect(compiled.default).toContain('class="[[tone|ATTR|]]"');
+  });
+});
+
+describe('the class a column stacks with', () => {
+  it('is the listed class for a row of several columns', () => {
+    expect(stackClassFor(2)).toBe(STACK_CLASS);
+  });
+
+  it('is nothing for a row of one column', () => {
+    expect(stackClassFor(1)).toBe('');
+  });
+
+  // Whatever the column count, so a typo cannot hide behind a single column.
+  test.each([1, 2])('refuses a behaviour the list does not name (%i)', (n) => {
+    expect(() => stackClassFor(n, 'stak')).toThrow(
+      /no generated class for the behaviour "stak"/
+    );
   });
 });
 
@@ -115,7 +188,7 @@ describe('the markup context', () => {
 
   describe('where it may be declared', () => {
     const template = '<table><tr><td>{{ inner }}</td></tr></table>';
-    const slots = { inner: { context: 'MARKUP', default: '' } };
+    const slots = { inner: { context: 'MARKUP' } };
 
     // The entire security argument. An element's slots are filled from stored
     // state — from what a user typed — so a MARKUP slot there would hand that
@@ -128,18 +201,50 @@ describe('the markup context', () => {
 
     it('says what to do about it', async () => {
       await expect(compileFixture({ template, slots })).rejects.toThrow(
-        /filled from stored state/
+        /Add `kind: 'layout'` to the manifest only if the generator/
       );
     });
 
-    it('is accepted in a layout', async () => {
+    // Accepted, and actually emitted: the placeholder reaches the compiled
+    // template, and a layout's render writes the markup as it was built.
+    it('is accepted in a layout, and emitted', async () => {
       const compiled = await compileFixture({
         template,
         slots,
         kind: 'layout',
       });
 
-      expect(compiled.default).toBeDefined();
+      expect(compiled.default).toContain('[[inner|MARKUP]]');
+      expect(defineLayout(compiled.default)({ inner: '<p>a</p>' })).toBe(
+        '<table><tr><td><p>a</p></td></tr></table>'
+      );
+    });
+
+    // Being a layout lets MARKUP sit between tags, nowhere else: an attribute
+    // or a style would take the markup unescaped into a quoted value.
+    test.each([
+      ['an attribute', '<table><tr><td :title="inner">a</td></tr></table>'],
+      [
+        'a style',
+        // A Vue template literal, written as the component would.
+        // eslint-disable-next-line no-template-curly-in-string
+        '<table><tr><td :style="`width:${inner};`">a</td></tr></table>',
+      ],
+    ])('is refused in %s, even in a layout', async (_label, inAttribute) => {
+      await expect(
+        compileFixture({ template: inAttribute, slots, kind: 'layout' })
+      ).rejects.toThrow(/"inner" is MARKUP but lands in/);
+    });
+
+    // The engine never substitutes a fallback for MARKUP: a refused value
+    // renders nothing. So a default would be a promise nothing keeps.
+    test.each([
+      ['a default', { context: 'MARKUP', default: '' }],
+      ['a fallback', { context: 'MARKUP', fallback: '' }],
+    ])('takes no %s', async (_label, slot) => {
+      await expect(
+        compileFixture({ template, slots: { inner: slot }, kind: 'layout' })
+      ).rejects.toThrow(/MARKUP: it takes no default and no fallback/);
     });
 
     // Being a layout unlocks MARKUP, not an absence of checking.

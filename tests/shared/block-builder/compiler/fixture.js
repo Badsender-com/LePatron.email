@@ -33,12 +33,13 @@ function sfc({ template, slots, variants, script, extra = '' }) {
 }
 
 // Every slot needs a default of its context's type; a fixture that is not
-// testing defaults should not have to spell one out.
+// testing defaults should not have to spell one out. MARKUP takes none.
 const withDefaults = (slots) =>
   Object.keys(slots).reduce((all, name) => {
     const slot = slots[name];
     const fill = slot.context === 'PX' ? 0 : '';
-    all[name] = 'default' in slot ? slot : { ...slot, default: fill };
+    const needsDefault = !('default' in slot) && slot.context !== 'MARKUP';
+    all[name] = needsDefault ? { ...slot, default: fill } : slot;
     return all;
   }, {});
 

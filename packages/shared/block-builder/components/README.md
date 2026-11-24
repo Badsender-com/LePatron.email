@@ -1,9 +1,10 @@
 # Block builder components
 
 The markup of the block builder's five elements (text, image, button, divider,
-spacer) is written here as Vue single-file components with Tailwind classes —
-the dialect of Maizzle 6 — and compiled **once, at build time**, into the
-templates the generator renders on every keystroke in the editor.
+spacer) and of its one layout (column) is written here as Vue single-file
+components with Tailwind classes — the dialect of Maizzle 6 — and compiled
+**once, at build time**, into the templates the generator renders on every
+keystroke in the editor.
 
 Vue never reaches the browser. What ships is the committed `*.compiled.js`: email
 HTML with typed `[[name|CONTEXT|fallback]]` holes, which the template engine
@@ -23,12 +24,37 @@ button.vue + button.slots.js ──yarn block-builder:compile──► button.co
 | `<name>.compiled.js` | the compiler | the output — never edit it by hand                                                              |
 
 The element modules (`../elements/<name>.js`) read the compiled file and take
-their defaults from the manifest; they normally need no change.
+their defaults from the manifest; they normally need no change. A layout's
+compiled file is read by the generator (`../generate.js`).
+
+## Elements and layouts
+
+An **element** is what a user places and edits: its slots are filled from the
+stored state, so from what a user typed. Every one of them is escaped.
+
+A **layout** holds other markup: a column holds the rendered elements it
+contains. Its manifest says so out loud with `kind: 'layout'`, which unlocks
+two things an element may never do:
+
+- a `MARKUP` slot, the one context that is not escaped. The generator fills it
+  with markup it built itself, and nothing else does. The rule is about that
+  slot: a layout's other slots may come from the stored composition (a
+  column's `width`), and they are escaped like an element's.
+- a slot in a `class` attribute, which the generator fills with a name from
+  the closed list of generated classes (see Tailwind below). In an element, a
+  user's value there could pick any class the template defines.
+
+`MARKUP` is refused twice. The compiler refuses it in a manifest that is not a
+layout's. At runtime, `defineTemplate` refuses it and only `defineLayout`
+accepts it (`../template.js`), and the element registry
+(`../elements/index.js`) refuses an element that holds one.
 
 ### The manifest
 
 ```js
 module.exports = {
+  // Only for a layout, and only when the generator fills its MARKUP slot.
+  // kind: 'layout',
   slots: {
     label: { context: 'TEXT', default: '' },
     href: { context: 'URL', default: '', fallback: '#' },
@@ -41,10 +67,12 @@ module.exports = {
 ```
 
 - `context` is what makes a value safe where it lands: `TEXT`, `RICH_TEXT`,
-  `ATTR`, `URL`, `COLOR`, `PX`, `CSS_VALUE` (see `../slot-contexts.js`).
+  `ATTR`, `URL`, `COLOR`, `PX`, `CSS_VALUE`, and `MARKUP` in a layout only (see
+  `../slot-contexts.js`).
 - `default` is the value a new element starts with — an integer for `PX`, a
   string otherwise — and what the generator falls back to when a value is
-  refused (a size that is not one).
+  refused (a size that is not one). A `MARKUP` slot takes no default and no
+  fallback: a refused value renders nothing.
 - `fallback` overrides that second use, when the default would be wrong in the
   markup (an empty `href` links to the page itself).
 - `translatable: true` marks an `ATTR` slot whose value is prose (an image
@@ -98,8 +126,10 @@ render time, and `undefined`, `null` or `NaN` in the output.
 - Each slot's context must fit where it lands: `TEXT`/`RICH_TEXT` in text
   content; `URL` as the whole value of `href`, `src` (and other fetched
   attributes); `COLOR`/`PX`/`CSS_VALUE` in `style` or other attribute values;
-  `ATTR` in attribute values other than `style`. A prop landing in two places
-  no single context covers must be split into two slots.
+  `ATTR` in attribute values other than `style`; `MARKUP` in text content only,
+  never in an attribute or a `style`, even in a layout. A prop landing in two
+  places no single context covers must be split into two slots.
+- A slot in a `class` attribute only in a layout.
 - A fallback may not contain `[`, `]` or `|` (they would break the
   placeholder), and must be a value its own context accepts unchanged.
 - `translatable`, when given, is a boolean on an `ATTR` slot.
@@ -109,7 +139,19 @@ render time, and `undefined`, `null` or `NaN` in the output.
 The classes are resolved with an email-safe config
 (`scripts/block-builder/tailwind.config.js`: the default theme in `px`, colours
 as hex, `underline`/`no-underline` as the `text-decoration` shorthand), inlined
-into `style`, and the class attributes dropped. The build fails on:
+into `style`, and the class names dropped.
+
+Two kinds of class survive, because they only mean something in a media query
+the document head carries, and so cannot be inlined:
+
+- a **generated class**, one of the closed list `GENERATED_CLASSES`
+  (`../generated-classes.js`; `lp-stack` today). Not every `lp-` name: the
+  editor's own markers share the prefix, and `lp-stak` is a typo the build
+  refuses like any other. A new behaviour adds its name to the list.
+- a slot in a layout's `class` attribute, filled by the generator with one of
+  those names.
+
+The build fails on:
 
 - a class that inlines to nothing — unknown, disabled, or a utility that needs
   a selector inline styles cannot express (`space-y-*`, `divide-*`);

@@ -9,19 +9,19 @@
 const { resolveElement } = require('./element-markup.js');
 const { stackClassFor } = require('./generated-classes.js');
 const { usableWidths } = require('./composition.js');
-const { defineTemplate } = require('./template.js');
+const { defineLayout } = require('./template.js');
 const columnTemplates = require('./components/column.compiled.js');
 const rowTemplates = require('./components/row.compiled.js');
 
-const renderRow = defineTemplate(rowTemplates.default);
+const renderRow = defineLayout(rowTemplates.default);
 const COLUMN_VARIANTS = {
   stacked: {
-    filled: defineTemplate(columnTemplates.filled),
-    empty: defineTemplate(columnTemplates.empty),
+    filled: defineLayout(columnTemplates.filled),
+    empty: defineLayout(columnTemplates.empty),
   },
   alone: {
-    filled: defineTemplate(columnTemplates.filledAlone),
-    empty: defineTemplate(columnTemplates.emptyAlone),
+    filled: defineLayout(columnTemplates.filledAlone),
+    empty: defineLayout(columnTemplates.emptyAlone),
   },
 };
 

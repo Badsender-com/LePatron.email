@@ -16,7 +16,8 @@ module.exports = {
     // satisfy every position it fills. PX would strip the unit.
     width: { context: 'CSS_VALUE', default: '100%' },
     stackClass: { context: 'ATTR', default: '' },
-    content: { context: 'MARKUP', default: '' },
+    // No default: the generator always fills it (see slot-contexts.js).
+    content: { context: 'MARKUP' },
   },
 
   // A cell of a row of several columns stacks on a phone; the cell of a row of

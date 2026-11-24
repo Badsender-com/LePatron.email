@@ -8,6 +8,7 @@ module.exports = {
   kind: 'layout',
 
   slots: {
-    cells: { context: 'MARKUP', default: '' },
+    // No default: the generator always fills it (see slot-contexts.js).
+    cells: { context: 'MARKUP' },
   },
 };

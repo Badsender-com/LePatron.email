@@ -19,12 +19,38 @@ const {
 } = require('../../packages/shared/block-builder/generated-classes.js');
 const { SENTINEL_PREFIX } = require('./markup-pipeline.js');
 
-// A slot can land in a `class` attribute — a layout's stacking class is one —
+// A layout's slot can land in a `class` attribute — the stacking class is one —
 // and at this point it is still a sentinel. It is neither a utility to inline
 // nor dead weight to strip: it is a hole the generator fills with a name it
-// owns, so it is left exactly as it is.
+// owns, so it is left exactly as it is. Only in a layout: see checkSlotClasses.
 const isSentinel = (name) => name.startsWith(SENTINEL_PREFIX);
 const isOurs = (name) => isGeneratedClass(name) || isSentinel(name);
+
+/**
+ * A slot in a `class` attribute, only in a layout.
+ *
+ * An element's slots are filled from stored state. A value there is escaped,
+ * but it could still name any class the template or the head CSS defines, and
+ * restyle the block in a way no one reviewed. A layout's class slot is filled
+ * by the generator, with a name from GENERATED_CLASSES.
+ *
+ * @param {string} label
+ * @param {string} html
+ * @param {boolean} isLayout
+ */
+function checkSlotClasses(label, html, isLayout) {
+  if (isLayout) return;
+  const sentinel = classesOf(html).find(isSentinel);
+  if (!sentinel) return;
+  const slot = sentinel.slice(SENTINEL_PREFIX.length).replace(/X\d+$/, '');
+  throw new Error(
+    `${label}: the slot "${slot}" fills a class attribute, which only a ` +
+      "layout may do — an element's slots come from stored state, and would " +
+      'pick any class the template defines. Bind the value to a style, or ' +
+      "declare `kind: 'layout'` in the manifest only if the generator, never " +
+      'a user, fills it.'
+  );
+}
 
 // What email clients drop, and why it is refused rather than shipped.
 const UNSAFE = [
@@ -130,9 +156,13 @@ function checkInlineStyles(label, html) {
  *
  * @param {string} html
  * @param {string} label e.g. `button (default)`, for the messages
+ * @param {Object} [options]
+ * @param {boolean} [options.isLayout] lets a slot fill a class attribute
  * @returns {Promise<string>}
  */
-async function inlineStyles(html, label) {
+async function inlineStyles(html, label, { isLayout = false } = {}) {
+  checkSlotClasses(label, html, isLayout);
+
   const { root, css } = await postcss([
     tailwind({ ...config, content: [{ raw: html, extension: 'html' }] }),
   ]).process('@tailwind utilities;', { from: undefined });
@@ -141,6 +171,8 @@ async function inlineStyles(html, label) {
   // A class the generator owns is not a utility that failed to inline: it is
   // one that MUST NOT be, because it only means anything inside a media query.
   // Checking it the same way would refuse exactly the thing it is there for.
+  // Only the names on GENERATED_CLASSES are exempt: `lp-stak` is a typo, and
+  // it is refused like any other class that inlines to nothing.
   classesOf(html)
     .filter((name) => !isOurs(name))
     .forEach((name) => checkClass(label, name, declarations.get(name)));

@@ -20,7 +20,7 @@
 // today, produced by Maizzle and compiled at build time if the team prefers.
 // This module only cares about the placeholders, which keeps that choice open.
 
-const { escapeForContext, CONTEXTS } = require('./slot-contexts.js');
+const { escapeForContext, CONTEXTS, MARKUP } = require('./slot-contexts.js');
 
 // `[[name|CONTEXT|fallback]]`. Double brackets rather than `{{ }}` or `%% %%`:
 // those are ESP personalisation tags, which templates legitimately contain and
@@ -31,11 +31,12 @@ const KNOWN_CONTEXTS = new Set(CONTEXTS);
 
 /**
  * @param {string} descriptor the inside of a placeholder
+ * @param {boolean} layout whether the template is a layout's
  * @returns {{name: string, context: string, fallback: string}}
  * @throws {Error} on a malformed or unknown declaration — a template bug, which
  *   must fail loudly at build time rather than silently at render time
  */
-function parseDescriptor(descriptor) {
+function parseDescriptor(descriptor, layout) {
   const [name, context, fallback = ''] = descriptor.split('|');
 
   if (!name || !name.trim()) {
@@ -49,15 +50,28 @@ function parseDescriptor(descriptor) {
         `Expected one of ${[...KNOWN_CONTEXTS].join(', ')}.`
     );
   }
+  // The compiler already refuses MARKUP outside a layout's manifest, but that
+  // only covers what goes through the compiler. This covers what reaches the
+  // engine at all: a template has to be DEFINED as a layout to hold markup
+  // that is not escaped.
+  if (context === MARKUP && !layout) {
+    throw new Error(
+      `block-builder: slot "${name}" is MARKUP, which only a layout may ` +
+        'hold — its value is written unescaped. Define the template with ' +
+        '`defineLayout` only if the generator, never a user, fills this slot.'
+    );
+  }
 
   return { name: name.trim(), context, fallback };
 }
 
 /**
  * @param {string} source email HTML with `[[name|CONTEXT|fallback]]` placeholders
+ * @param {Object} [options]
+ * @param {boolean} [options.layout] lets the template hold MARKUP slots
  * @returns {{chunks: Array<string>, slots: Array<Object>}}
  */
-function compileTemplate(source) {
+function compileTemplate(source, { layout = false } = {}) {
   if (typeof source !== 'string') {
     throw new Error('block-builder: a template must be a string');
   }
@@ -73,7 +87,7 @@ function compileTemplate(source) {
   let match = PLACEHOLDER.exec(source);
   while (match !== null) {
     chunks.push(source.slice(lastIndex, match.index));
-    slots.push(parseDescriptor(match[1]));
+    slots.push(parseDescriptor(match[1], layout));
     lastIndex = match.index + match[0].length;
     match = PLACEHOLDER.exec(source);
   }
@@ -108,15 +122,8 @@ function renderTemplate(template, values) {
   return out;
 }
 
-/**
- * Compiles once and returns a render function. This is what element modules
- * export, so a template is parsed when the bundle loads and never again.
- *
- * @param {string} source
- * @returns {function(Object): string}
- */
-function defineTemplate(source) {
-  const compiled = compileTemplate(source);
+function define(source, options) {
+  const compiled = compileTemplate(source, options);
   const render = (values) => renderTemplate(compiled, values);
   // Kept reachable for tests and for the gallery, which lists what a template
   // expects without rendering it.
@@ -124,8 +131,37 @@ function defineTemplate(source) {
   return render;
 }
 
+/**
+ * Compiles once and returns a render function. This is what element modules
+ * export, so a template is parsed when the bundle loads and never again.
+ *
+ * Refuses a MARKUP slot: an element's values come from stored state.
+ *
+ * @param {string} source
+ * @returns {function(Object): string}
+ */
+function defineTemplate(source) {
+  return define(source, { layout: false });
+}
+
+/**
+ * The same, for a layout: the one kind of template that may hold MARKUP,
+ * because the generator fills that slot with markup it built itself.
+ *
+ * Its own name rather than an option, so the exception reads in the code that
+ * takes it — and so a search for `defineLayout` lists every template that
+ * writes a value unescaped.
+ *
+ * @param {string} source
+ * @returns {function(Object): string}
+ */
+function defineLayout(source) {
+  return define(source, { layout: true });
+}
+
 module.exports = {
   compileTemplate,
   renderTemplate,
   defineTemplate,
+  defineLayout,
 };

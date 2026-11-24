@@ -5,5 +5,5 @@
 // the component and fails on any difference.
 'use strict';
 module.exports = {
-  "default": "<table role=\"presentation\" cellpadding=\"0\" cellspacing=\"0\" border=\"0\" width=\"100%\"><tr>[[cells|MARKUP|]]</tr></table>"
+  "default": "<table role=\"presentation\" cellpadding=\"0\" cellspacing=\"0\" border=\"0\" width=\"100%\"><tr>[[cells|MARKUP]]</tr></table>"
 };

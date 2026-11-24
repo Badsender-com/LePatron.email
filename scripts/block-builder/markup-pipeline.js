@@ -3,6 +3,9 @@
 const {
   fallbackOf,
 } = require('../../packages/shared/block-builder/manifest.js');
+const {
+  MARKUP,
+} = require('../../packages/shared/block-builder/slot-contexts.js');
 
 // Everything that happens to the markup between Vue and the committed file.
 //
@@ -29,11 +32,15 @@ const sentinelFor = (name) =>
 /**
  * The `[[name|CONTEXT|fallback]]` placeholder a slot compiles to.
  *
+ * `[[name|MARKUP]]` for a MARKUP slot: the engine never substitutes a fallback
+ * for it, so writing one would only suggest it might.
+ *
  * @param {string} name
  * @param {Object} slot its manifest entry
  * @returns {string}
  */
 function placeholderFor(name, slot) {
+  if (slot.context === MARKUP) return `[[${name}|${MARKUP}]]`;
   return `[[${name}|${slot.context}|${fallbackOf(slot)}]]`;
 }
 

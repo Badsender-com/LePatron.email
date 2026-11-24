@@ -23,6 +23,17 @@ const {
  * detail of the literal.
  */
 function checkDefault(where, slot) {
+  // The generator always fills a MARKUP slot, and a value it refuses renders
+  // as nothing rather than as a fallback: a default would never be read.
+  if (slot.context === MARKUP) {
+    if (slot.default !== undefined || slot.fallback !== undefined) {
+      throw new Error(
+        `${where} is MARKUP: it takes no default and no fallback. The ` +
+          'generator always fills it, and a refused value renders nothing.'
+      );
+    }
+    return;
+  }
   if (slot.context === 'PX') {
     if (!Number.isInteger(slot.default)) {
       throw new Error(`${where} is PX: its default must be an integer.`);
@@ -92,7 +103,7 @@ function checkFallback(where, slot) {
  *
  * @param {string} name
  * @param {Object} manifest what `<name>.slots.js` exports
- * @returns {{slots: Object, variants: Object}}
+ * @returns {{slots: Object, variants: Object, isLayout: boolean}}
  */
 function checkManifest(name, manifest) {
   const slots = (manifest && manifest.slots) || {};
@@ -134,7 +145,7 @@ function checkManifest(name, manifest) {
   // `{ default: {} }` keeps the two cases on the same path.
   const variants = manifest.variants || { default: {} };
 
-  return { slots, variants };
+  return { slots, variants, isLayout };
 }
 
 const quoted = (names) => names.map((n) => `"${n}"`).join(', ');
