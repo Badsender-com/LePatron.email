@@ -19,8 +19,12 @@ module.exports = {
     content: { context: 'MARKUP', default: '' },
   },
 
+  // A cell of a row of several columns stacks on a phone; the cell of a row of
+  // one has nothing to stack, and no `class` attribute at all.
   variants: {
-    filled: { filled: true },
-    empty: { filled: false },
+    filled: { filled: true, stacks: true },
+    empty: { filled: false, stacks: true },
+    filledAlone: { filled: true, stacks: false },
+    emptyAlone: { filled: false, stacks: false },
   },
 };

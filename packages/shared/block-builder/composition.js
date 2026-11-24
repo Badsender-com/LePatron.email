@@ -287,6 +287,7 @@ module.exports = {
   FULL_WIDTH,
   newRowId,
   areUsableWidths,
+  usableWidths,
   singleColumnRows,
   readRows,
   holdsNothing,

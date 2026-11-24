@@ -1,0 +1,327 @@
+[
+  {
+    "name": "text, defaults (export)",
+    "state": "{\"v\":1,\"gen\":\"1.0.0\",\"elements\":[{\"id\":\"t1\",\"type\":\"text\",\"content\":\"Lorem ipsum dolor sit amet, consectetur adipiscing elit.\"}]}",
+    "mode": "export",
+    "html": "<table role=\"presentation\" cellpadding=\"0\" cellspacing=\"0\" border=\"0\" width=\"100%\" bgcolor=\"transparent\" style=\"background-color:transparent;\"><tr><td style=\"padding:0px 0 0px 0;\"><table role=\"presentation\" cellpadding=\"0\" cellspacing=\"0\" border=\"0\" width=\"100%\"><tr><td><table role=\"presentation\" cellpadding=\"0\" cellspacing=\"0\" border=\"0\" width=\"100%\"><tr><td align=\"left\" style=\"padding:8px 24px 8px 24px; font-family:Arial, Helvetica, sans-serif; font-size:14px; line-height:21px; color:#000000; mso-line-height-rule:exactly;\">Lorem ipsum dolor sit amet, consectetur adipiscing elit.</td></tr></table></td></tr></table></td></tr></table>"
+  },
+  {
+    "name": "text, defaults (preview)",
+    "state": "{\"v\":1,\"gen\":\"1.0.0\",\"elements\":[{\"id\":\"t1\",\"type\":\"text\",\"content\":\"Lorem ipsum dolor sit amet, consectetur adipiscing elit.\"}]}",
+    "mode": "preview",
+    "options": {
+      "elementIds": true,
+      "starters": {
+        "text": {
+          "key": "content",
+          "text": "Votre texte ici"
+        },
+        "button": {
+          "key": "label",
+          "text": "Votre bouton"
+        }
+      }
+    },
+    "html": "<table role=\"presentation\" cellpadding=\"0\" cellspacing=\"0\" border=\"0\" width=\"100%\" bgcolor=\"transparent\" style=\"background-color:transparent;\"><tr><td style=\"padding:0px 0 0px 0;\"><table role=\"presentation\" cellpadding=\"0\" cellspacing=\"0\" border=\"0\" width=\"100%\"><tr><td data-lp-el=\"t1\"><table role=\"presentation\" cellpadding=\"0\" cellspacing=\"0\" border=\"0\" width=\"100%\"><tr><td align=\"left\" style=\"padding:8px 24px 8px 24px; font-family:Arial, Helvetica, sans-serif; font-size:14px; line-height:21px; color:#000000; mso-line-height-rule:exactly;\">Lorem ipsum dolor sit amet, consectetur adipiscing elit.</td></tr></table></td></tr></table></td></tr></table>"
+  },
+  {
+    "name": "text, every option (export)",
+    "state": "{\"v\":1,\"gen\":\"1.0.0\",\"elements\":[{\"id\":\"t1\",\"type\":\"text\",\"content\":\"<strong>Gras</strong>, <em>italique</em>, <u>souligné</u>, <a href=\\\"https://www.badsender.com\\\">lien</a><br />fin\",\"align\":\"center\",\"fontFamily\":\"Georgia, serif\",\"fontSize\":18,\"lineHeight\":26,\"color\":\"#1b1d29\",\"paddingTop\":16,\"paddingRight\":12,\"paddingBottom\":4,\"paddingLeft\":12}]}",
+    "mode": "export",
+    "html": "<table role=\"presentation\" cellpadding=\"0\" cellspacing=\"0\" border=\"0\" width=\"100%\" bgcolor=\"transparent\" style=\"background-color:transparent;\"><tr><td style=\"padding:0px 0 0px 0;\"><table role=\"presentation\" cellpadding=\"0\" cellspacing=\"0\" border=\"0\" width=\"100%\"><tr><td><table role=\"presentation\" cellpadding=\"0\" cellspacing=\"0\" border=\"0\" width=\"100%\"><tr><td align=\"center\" style=\"padding:16px 12px 4px 12px; font-family:Georgia, serif; font-size:18px; line-height:26px; color:#1b1d29; mso-line-height-rule:exactly;\"><strong>Gras</strong>, <em>italique</em>, <u>souligné</u>, <a href=\"https://www.badsender.com\">lien</a><br />fin</td></tr></table></td></tr></table></td></tr></table>"
+  },
+  {
+    "name": "text, every option (preview)",
+    "state": "{\"v\":1,\"gen\":\"1.0.0\",\"elements\":[{\"id\":\"t1\",\"type\":\"text\",\"content\":\"<strong>Gras</strong>, <em>italique</em>, <u>souligné</u>, <a href=\\\"https://www.badsender.com\\\">lien</a><br />fin\",\"align\":\"center\",\"fontFamily\":\"Georgia, serif\",\"fontSize\":18,\"lineHeight\":26,\"color\":\"#1b1d29\",\"paddingTop\":16,\"paddingRight\":12,\"paddingBottom\":4,\"paddingLeft\":12}]}",
+    "mode": "preview",
+    "options": {
+      "elementIds": true,
+      "starters": {
+        "text": {
+          "key": "content",
+          "text": "Votre texte ici"
+        },
+        "button": {
+          "key": "label",
+          "text": "Votre bouton"
+        }
+      }
+    },
+    "html": "<table role=\"presentation\" cellpadding=\"0\" cellspacing=\"0\" border=\"0\" width=\"100%\" bgcolor=\"transparent\" style=\"background-color:transparent;\"><tr><td style=\"padding:0px 0 0px 0;\"><table role=\"presentation\" cellpadding=\"0\" cellspacing=\"0\" border=\"0\" width=\"100%\"><tr><td data-lp-el=\"t1\"><table role=\"presentation\" cellpadding=\"0\" cellspacing=\"0\" border=\"0\" width=\"100%\"><tr><td align=\"center\" style=\"padding:16px 12px 4px 12px; font-family:Georgia, serif; font-size:18px; line-height:26px; color:#1b1d29; mso-line-height-rule:exactly;\"><strong>Gras</strong>, <em>italique</em>, <u>souligné</u>, <a href=\"https://www.badsender.com\">lien</a><br />fin</td></tr></table></td></tr></table></td></tr></table>"
+  },
+  {
+    "name": "text, empty (export)",
+    "state": "{\"v\":1,\"gen\":\"1.0.0\",\"elements\":[{\"id\":\"t1\",\"type\":\"text\",\"content\":\"\"}]}",
+    "mode": "export",
+    "html": "<table role=\"presentation\" cellpadding=\"0\" cellspacing=\"0\" border=\"0\" width=\"100%\" bgcolor=\"transparent\" style=\"background-color:transparent;\"><tr><td style=\"padding:0px 0 0px 0;\"><table role=\"presentation\" cellpadding=\"0\" cellspacing=\"0\" border=\"0\" width=\"100%\"><tr><td><table role=\"presentation\" cellpadding=\"0\" cellspacing=\"0\" border=\"0\" width=\"100%\"><tr><td align=\"left\" style=\"padding:8px 24px 8px 24px; font-family:Arial, Helvetica, sans-serif; font-size:14px; line-height:21px; color:#000000; mso-line-height-rule:exactly;\"></td></tr></table></td></tr></table></td></tr></table>"
+  },
+  {
+    "name": "text, empty (preview)",
+    "state": "{\"v\":1,\"gen\":\"1.0.0\",\"elements\":[{\"id\":\"t1\",\"type\":\"text\",\"content\":\"\"}]}",
+    "mode": "preview",
+    "options": {
+      "elementIds": true,
+      "starters": {
+        "text": {
+          "key": "content",
+          "text": "Votre texte ici"
+        },
+        "button": {
+          "key": "label",
+          "text": "Votre bouton"
+        }
+      }
+    },
+    "html": "<table role=\"presentation\" cellpadding=\"0\" cellspacing=\"0\" border=\"0\" width=\"100%\" bgcolor=\"transparent\" style=\"background-color:transparent;\"><tr><td style=\"padding:0px 0 0px 0;\"><table role=\"presentation\" cellpadding=\"0\" cellspacing=\"0\" border=\"0\" width=\"100%\"><tr><td data-lp-el=\"t1\" data-lp-starter=\"text\"><table role=\"presentation\" cellpadding=\"0\" cellspacing=\"0\" border=\"0\" width=\"100%\"><tr><td align=\"left\" style=\"padding:8px 24px 8px 24px; font-family:Arial, Helvetica, sans-serif; font-size:14px; line-height:21px; color:#000000; mso-line-height-rule:exactly;\">Votre texte ici</td></tr></table></td></tr></table></td></tr></table>"
+  },
+  {
+    "name": "text, blank rich text (export)",
+    "state": "{\"v\":1,\"gen\":\"1.0.0\",\"elements\":[{\"id\":\"t1\",\"type\":\"text\",\"content\":\"<p><br></p>&nbsp;\"}]}",
+    "mode": "export",
+    "html": "<table role=\"presentation\" cellpadding=\"0\" cellspacing=\"0\" border=\"0\" width=\"100%\" bgcolor=\"transparent\" style=\"background-color:transparent;\"><tr><td style=\"padding:0px 0 0px 0;\"><table role=\"presentation\" cellpadding=\"0\" cellspacing=\"0\" border=\"0\" width=\"100%\"><tr><td><table role=\"presentation\" cellpadding=\"0\" cellspacing=\"0\" border=\"0\" width=\"100%\"><tr><td align=\"left\" style=\"padding:8px 24px 8px 24px; font-family:Arial, Helvetica, sans-serif; font-size:14px; line-height:21px; color:#000000; mso-line-height-rule:exactly;\"><br />&nbsp;</td></tr></table></td></tr></table></td></tr></table>"
+  },
+  {
+    "name": "text, blank rich text (preview)",
+    "state": "{\"v\":1,\"gen\":\"1.0.0\",\"elements\":[{\"id\":\"t1\",\"type\":\"text\",\"content\":\"<p><br></p>&nbsp;\"}]}",
+    "mode": "preview",
+    "options": {
+      "elementIds": true,
+      "starters": {
+        "text": {
+          "key": "content",
+          "text": "Votre texte ici"
+        },
+        "button": {
+          "key": "label",
+          "text": "Votre bouton"
+        }
+      }
+    },
+    "html": "<table role=\"presentation\" cellpadding=\"0\" cellspacing=\"0\" border=\"0\" width=\"100%\" bgcolor=\"transparent\" style=\"background-color:transparent;\"><tr><td style=\"padding:0px 0 0px 0;\"><table role=\"presentation\" cellpadding=\"0\" cellspacing=\"0\" border=\"0\" width=\"100%\"><tr><td data-lp-el=\"t1\" data-lp-starter=\"text\"><table role=\"presentation\" cellpadding=\"0\" cellspacing=\"0\" border=\"0\" width=\"100%\"><tr><td align=\"left\" style=\"padding:8px 24px 8px 24px; font-family:Arial, Helvetica, sans-serif; font-size:14px; line-height:21px; color:#000000; mso-line-height-rule:exactly;\">Votre texte ici</td></tr></table></td></tr></table></td></tr></table>"
+  },
+  {
+    "name": "text, hostile content (export)",
+    "state": "{\"v\":1,\"gen\":\"1.0.0\",\"elements\":[{\"id\":\"t1\",\"type\":\"text\",\"content\":\"<script>alert(1)</script><img src=x onerror=alert(1)>Texte\"}]}",
+    "mode": "export",
+    "html": "<table role=\"presentation\" cellpadding=\"0\" cellspacing=\"0\" border=\"0\" width=\"100%\" bgcolor=\"transparent\" style=\"background-color:transparent;\"><tr><td style=\"padding:0px 0 0px 0;\"><table role=\"presentation\" cellpadding=\"0\" cellspacing=\"0\" border=\"0\" width=\"100%\"><tr><td><table role=\"presentation\" cellpadding=\"0\" cellspacing=\"0\" border=\"0\" width=\"100%\"><tr><td align=\"left\" style=\"padding:8px 24px 8px 24px; font-family:Arial, Helvetica, sans-serif; font-size:14px; line-height:21px; color:#000000; mso-line-height-rule:exactly;\">Texte</td></tr></table></td></tr></table></td></tr></table>"
+  },
+  {
+    "name": "text, hostile content (preview)",
+    "state": "{\"v\":1,\"gen\":\"1.0.0\",\"elements\":[{\"id\":\"t1\",\"type\":\"text\",\"content\":\"<script>alert(1)</script><img src=x onerror=alert(1)>Texte\"}]}",
+    "mode": "preview",
+    "options": {
+      "elementIds": true,
+      "starters": {
+        "text": {
+          "key": "content",
+          "text": "Votre texte ici"
+        },
+        "button": {
+          "key": "label",
+          "text": "Votre bouton"
+        }
+      }
+    },
+    "html": "<table role=\"presentation\" cellpadding=\"0\" cellspacing=\"0\" border=\"0\" width=\"100%\" bgcolor=\"transparent\" style=\"background-color:transparent;\"><tr><td style=\"padding:0px 0 0px 0;\"><table role=\"presentation\" cellpadding=\"0\" cellspacing=\"0\" border=\"0\" width=\"100%\"><tr><td data-lp-el=\"t1\"><table role=\"presentation\" cellpadding=\"0\" cellspacing=\"0\" border=\"0\" width=\"100%\"><tr><td align=\"left\" style=\"padding:8px 24px 8px 24px; font-family:Arial, Helvetica, sans-serif; font-size:14px; line-height:21px; color:#000000; mso-line-height-rule:exactly;\">Texte</td></tr></table></td></tr></table></td></tr></table>"
+  },
+  {
+    "name": "image, defaults (export)",
+    "state": "{\"v\":1,\"gen\":\"1.0.0\",\"elements\":[{\"id\":\"i1\",\"type\":\"image\",\"src\":\"https://placehold.co/600x200/png\"}]}",
+    "mode": "export",
+    "html": "<table role=\"presentation\" cellpadding=\"0\" cellspacing=\"0\" border=\"0\" width=\"100%\" bgcolor=\"transparent\" style=\"background-color:transparent;\"><tr><td style=\"padding:0px 0 0px 0;\"><table role=\"presentation\" cellpadding=\"0\" cellspacing=\"0\" border=\"0\" width=\"100%\"><tr><td><table role=\"presentation\" cellpadding=\"0\" cellspacing=\"0\" border=\"0\" width=\"100%\"><tr><td align=\"center\" style=\"padding:0px 0px 0px 0px;\"><img src=\"https://placehold.co/600x200/png\" alt=\"\" width=\"600\" style=\"display:block; border:none; outline:none; text-decoration:none; width:100%; max-width:600px; height:auto;\" /></td></tr></table></td></tr></table></td></tr></table>"
+  },
+  {
+    "name": "image, defaults (preview)",
+    "state": "{\"v\":1,\"gen\":\"1.0.0\",\"elements\":[{\"id\":\"i1\",\"type\":\"image\",\"src\":\"https://placehold.co/600x200/png\"}]}",
+    "mode": "preview",
+    "options": {
+      "elementIds": true,
+      "starters": {
+        "text": {
+          "key": "content",
+          "text": "Votre texte ici"
+        },
+        "button": {
+          "key": "label",
+          "text": "Votre bouton"
+        }
+      }
+    },
+    "html": "<table role=\"presentation\" cellpadding=\"0\" cellspacing=\"0\" border=\"0\" width=\"100%\" bgcolor=\"transparent\" style=\"background-color:transparent;\"><tr><td style=\"padding:0px 0 0px 0;\"><table role=\"presentation\" cellpadding=\"0\" cellspacing=\"0\" border=\"0\" width=\"100%\"><tr><td data-lp-el=\"i1\"><table role=\"presentation\" cellpadding=\"0\" cellspacing=\"0\" border=\"0\" width=\"100%\"><tr><td align=\"center\" style=\"padding:0px 0px 0px 0px;\"><img src=\"https://placehold.co/600x200/png\" alt=\"\" width=\"600\" style=\"display:block; border:none; outline:none; text-decoration:none; width:100%; max-width:600px; height:auto;\" /></td></tr></table></td></tr></table></td></tr></table>"
+  },
+  {
+    "name": "image, linked and reduced (export)",
+    "state": "{\"v\":1,\"gen\":\"1.0.0\",\"elements\":[{\"id\":\"i1\",\"type\":\"image\",\"src\":\"https://placehold.co/600x200/png\",\"alt\":\"Un \\\"visuel\\\" & co\",\"href\":\"https://www.badsender.com\",\"width\":300,\"align\":\"right\",\"paddingTop\":10,\"paddingBottom\":10}]}",
+    "mode": "export",
+    "html": "<table role=\"presentation\" cellpadding=\"0\" cellspacing=\"0\" border=\"0\" width=\"100%\" bgcolor=\"transparent\" style=\"background-color:transparent;\"><tr><td style=\"padding:0px 0 0px 0;\"><table role=\"presentation\" cellpadding=\"0\" cellspacing=\"0\" border=\"0\" width=\"100%\"><tr><td><table role=\"presentation\" cellpadding=\"0\" cellspacing=\"0\" border=\"0\" width=\"100%\"><tr><td align=\"right\" style=\"padding:10px 0px 10px 0px;\"><a href=\"https://www.badsender.com\" target=\"_blank\" style=\"text-decoration:none;\"><img src=\"https://placehold.co/600x200/png\" alt=\"Un &quot;visuel&quot; &amp; co\" width=\"300\" style=\"display:block; border:none; outline:none; text-decoration:none; width:100%; max-width:300px; height:auto;\" /></a></td></tr></table></td></tr></table></td></tr></table>"
+  },
+  {
+    "name": "image, linked and reduced (preview)",
+    "state": "{\"v\":1,\"gen\":\"1.0.0\",\"elements\":[{\"id\":\"i1\",\"type\":\"image\",\"src\":\"https://placehold.co/600x200/png\",\"alt\":\"Un \\\"visuel\\\" & co\",\"href\":\"https://www.badsender.com\",\"width\":300,\"align\":\"right\",\"paddingTop\":10,\"paddingBottom\":10}]}",
+    "mode": "preview",
+    "options": {
+      "elementIds": true,
+      "starters": {
+        "text": {
+          "key": "content",
+          "text": "Votre texte ici"
+        },
+        "button": {
+          "key": "label",
+          "text": "Votre bouton"
+        }
+      }
+    },
+    "html": "<table role=\"presentation\" cellpadding=\"0\" cellspacing=\"0\" border=\"0\" width=\"100%\" bgcolor=\"transparent\" style=\"background-color:transparent;\"><tr><td style=\"padding:0px 0 0px 0;\"><table role=\"presentation\" cellpadding=\"0\" cellspacing=\"0\" border=\"0\" width=\"100%\"><tr><td data-lp-el=\"i1\"><table role=\"presentation\" cellpadding=\"0\" cellspacing=\"0\" border=\"0\" width=\"100%\"><tr><td align=\"right\" style=\"padding:10px 0px 10px 0px;\"><a href=\"https://www.badsender.com\" target=\"_blank\" style=\"text-decoration:none;\"><img src=\"https://placehold.co/600x200/png\" alt=\"Un &quot;visuel&quot; &amp; co\" width=\"300\" style=\"display:block; border:none; outline:none; text-decoration:none; width:100%; max-width:300px; height:auto;\" /></a></td></tr></table></td></tr></table></td></tr></table>"
+  },
+  {
+    "name": "image, no source (export)",
+    "state": "{\"v\":1,\"gen\":\"1.0.0\",\"elements\":[{\"id\":\"i1\",\"type\":\"image\"}]}",
+    "mode": "export",
+    "html": "<table role=\"presentation\" cellpadding=\"0\" cellspacing=\"0\" border=\"0\" width=\"100%\" bgcolor=\"transparent\" style=\"background-color:transparent;\"><tr><td style=\"padding:0px 0 0px 0;\"><table role=\"presentation\" cellpadding=\"0\" cellspacing=\"0\" border=\"0\" width=\"100%\"><tr><td><table role=\"presentation\" cellpadding=\"0\" cellspacing=\"0\" border=\"0\" width=\"100%\"><tr><td align=\"center\" style=\"padding:0px 0px 0px 0px;\"><img src=\"\" alt=\"\" width=\"600\" style=\"display:block; border:none; outline:none; text-decoration:none; width:100%; max-width:600px; height:auto;\" /></td></tr></table></td></tr></table></td></tr></table>"
+  },
+  {
+    "name": "image, no source (preview)",
+    "state": "{\"v\":1,\"gen\":\"1.0.0\",\"elements\":[{\"id\":\"i1\",\"type\":\"image\"}]}",
+    "mode": "preview",
+    "options": {
+      "elementIds": true,
+      "starters": {
+        "text": {
+          "key": "content",
+          "text": "Votre texte ici"
+        },
+        "button": {
+          "key": "label",
+          "text": "Votre bouton"
+        }
+      }
+    },
+    "html": "<table role=\"presentation\" cellpadding=\"0\" cellspacing=\"0\" border=\"0\" width=\"100%\" bgcolor=\"transparent\" style=\"background-color:transparent;\"><tr><td style=\"padding:0px 0 0px 0;\"><table role=\"presentation\" cellpadding=\"0\" cellspacing=\"0\" border=\"0\" width=\"100%\"><tr><td data-lp-el=\"i1\"><table role=\"presentation\" cellpadding=\"0\" cellspacing=\"0\" border=\"0\" width=\"100%\"><tr><td align=\"center\" style=\"padding:0px 0px 0px 0px;\"><img src=\"\" alt=\"\" width=\"600\" style=\"display:block; border:none; outline:none; text-decoration:none; width:100%; max-width:600px; height:auto;\" /></td></tr></table></td></tr></table></td></tr></table>"
+  },
+  {
+    "name": "button, every option (export)",
+    "state": "{\"v\":1,\"gen\":\"1.0.0\",\"elements\":[{\"id\":\"b1\",\"type\":\"button\",\"label\":\"Je découvre\",\"href\":\"https://www.badsender.com\",\"backgroundColor\":\"#a9a2f7\",\"color\":\"#1b1d29\",\"borderRadius\":50,\"fontSize\":18,\"align\":\"left\"}]}",
+    "mode": "export",
+    "html": "<table role=\"presentation\" cellpadding=\"0\" cellspacing=\"0\" border=\"0\" width=\"100%\" bgcolor=\"transparent\" style=\"background-color:transparent;\"><tr><td style=\"padding:0px 0 0px 0;\"><table role=\"presentation\" cellpadding=\"0\" cellspacing=\"0\" border=\"0\" width=\"100%\"><tr><td><table role=\"presentation\" cellpadding=\"0\" cellspacing=\"0\" border=\"0\" width=\"100%\"><tr><td align=\"left\" style=\"padding:8px 24px 8px 24px;\"><table role=\"presentation\" cellpadding=\"0\" cellspacing=\"0\" border=\"0\"><tr><td align=\"center\" bgcolor=\"#a9a2f7\" style=\"background-color:#a9a2f7; border-radius:50px;\"><a href=\"https://www.badsender.com\" target=\"_blank\" style=\"display: inline-block; padding: 14px 28px; font-family: Arial, Helvetica, sans-serif; font-size: 18px; line-height: 20px; color: #1b1d29; text-decoration: none; border-radius: 50px; mso-line-height-rule: exactly;\">Je découvre</a></td></tr></table></td></tr></table></td></tr></table></td></tr></table>"
+  },
+  {
+    "name": "button, every option (preview)",
+    "state": "{\"v\":1,\"gen\":\"1.0.0\",\"elements\":[{\"id\":\"b1\",\"type\":\"button\",\"label\":\"Je découvre\",\"href\":\"https://www.badsender.com\",\"backgroundColor\":\"#a9a2f7\",\"color\":\"#1b1d29\",\"borderRadius\":50,\"fontSize\":18,\"align\":\"left\"}]}",
+    "mode": "preview",
+    "options": {
+      "elementIds": true,
+      "starters": {
+        "text": {
+          "key": "content",
+          "text": "Votre texte ici"
+        },
+        "button": {
+          "key": "label",
+          "text": "Votre bouton"
+        }
+      }
+    },
+    "html": "<table role=\"presentation\" cellpadding=\"0\" cellspacing=\"0\" border=\"0\" width=\"100%\" bgcolor=\"transparent\" style=\"background-color:transparent;\"><tr><td style=\"padding:0px 0 0px 0;\"><table role=\"presentation\" cellpadding=\"0\" cellspacing=\"0\" border=\"0\" width=\"100%\"><tr><td data-lp-el=\"b1\"><table role=\"presentation\" cellpadding=\"0\" cellspacing=\"0\" border=\"0\" width=\"100%\"><tr><td align=\"left\" style=\"padding:8px 24px 8px 24px;\"><table role=\"presentation\" cellpadding=\"0\" cellspacing=\"0\" border=\"0\"><tr><td align=\"center\" bgcolor=\"#a9a2f7\" style=\"background-color:#a9a2f7; border-radius:50px;\"><a href=\"https://www.badsender.com\" target=\"_blank\" style=\"display: inline-block; padding: 14px 28px; font-family: Arial, Helvetica, sans-serif; font-size: 18px; line-height: 20px; color: #1b1d29; text-decoration: none; border-radius: 50px; mso-line-height-rule: exactly;\">Je découvre</a></td></tr></table></td></tr></table></td></tr></table></td></tr></table>"
+  },
+  {
+    "name": "button, empty label (export)",
+    "state": "{\"v\":1,\"gen\":\"1.0.0\",\"elements\":[{\"id\":\"b1\",\"type\":\"button\",\"label\":\"\"}]}",
+    "mode": "export",
+    "html": "<table role=\"presentation\" cellpadding=\"0\" cellspacing=\"0\" border=\"0\" width=\"100%\" bgcolor=\"transparent\" style=\"background-color:transparent;\"><tr><td style=\"padding:0px 0 0px 0;\"><table role=\"presentation\" cellpadding=\"0\" cellspacing=\"0\" border=\"0\" width=\"100%\"><tr><td><table role=\"presentation\" cellpadding=\"0\" cellspacing=\"0\" border=\"0\" width=\"100%\"><tr><td align=\"center\" style=\"padding:8px 24px 8px 24px;\"><table role=\"presentation\" cellpadding=\"0\" cellspacing=\"0\" border=\"0\"><tr><td align=\"center\" bgcolor=\"#000000\" style=\"background-color:#000000; border-radius:4px;\"><a href=\"#\" target=\"_blank\" style=\"display: inline-block; padding: 14px 28px; font-family: Arial, Helvetica, sans-serif; font-size: 16px; line-height: 20px; color: #ffffff; text-decoration: none; border-radius: 4px; mso-line-height-rule: exactly;\"></a></td></tr></table></td></tr></table></td></tr></table></td></tr></table>"
+  },
+  {
+    "name": "button, empty label (preview)",
+    "state": "{\"v\":1,\"gen\":\"1.0.0\",\"elements\":[{\"id\":\"b1\",\"type\":\"button\",\"label\":\"\"}]}",
+    "mode": "preview",
+    "options": {
+      "elementIds": true,
+      "starters": {
+        "text": {
+          "key": "content",
+          "text": "Votre texte ici"
+        },
+        "button": {
+          "key": "label",
+          "text": "Votre bouton"
+        }
+      }
+    },
+    "html": "<table role=\"presentation\" cellpadding=\"0\" cellspacing=\"0\" border=\"0\" width=\"100%\" bgcolor=\"transparent\" style=\"background-color:transparent;\"><tr><td style=\"padding:0px 0 0px 0;\"><table role=\"presentation\" cellpadding=\"0\" cellspacing=\"0\" border=\"0\" width=\"100%\"><tr><td data-lp-el=\"b1\" data-lp-starter=\"button\"><table role=\"presentation\" cellpadding=\"0\" cellspacing=\"0\" border=\"0\" width=\"100%\"><tr><td align=\"center\" style=\"padding:8px 24px 8px 24px;\"><table role=\"presentation\" cellpadding=\"0\" cellspacing=\"0\" border=\"0\"><tr><td align=\"center\" bgcolor=\"#000000\" style=\"background-color:#000000; border-radius:4px;\"><a href=\"#\" target=\"_blank\" style=\"display: inline-block; padding: 14px 28px; font-family: Arial, Helvetica, sans-serif; font-size: 16px; line-height: 20px; color: #ffffff; text-decoration: none; border-radius: 4px; mso-line-height-rule: exactly;\">Votre bouton</a></td></tr></table></td></tr></table></td></tr></table></td></tr></table>"
+  },
+  {
+    "name": "divider and spacer, options (export)",
+    "state": "{\"v\":1,\"gen\":\"1.0.0\",\"elements\":[{\"id\":\"d1\",\"type\":\"divider\",\"color\":\"#a9a2f7\",\"thickness\":3,\"width\":\"50%\"},{\"id\":\"s1\",\"type\":\"spacer\",\"height\":40},{\"id\":\"d2\",\"type\":\"divider\"},{\"id\":\"s2\",\"type\":\"spacer\"}]}",
+    "mode": "export",
+    "html": "<table role=\"presentation\" cellpadding=\"0\" cellspacing=\"0\" border=\"0\" width=\"100%\" bgcolor=\"transparent\" style=\"background-color:transparent;\"><tr><td style=\"padding:0px 0 0px 0;\"><table role=\"presentation\" cellpadding=\"0\" cellspacing=\"0\" border=\"0\" width=\"100%\"><tr><td><table role=\"presentation\" cellpadding=\"0\" cellspacing=\"0\" border=\"0\" width=\"100%\"><tr><td style=\"padding:8px 24px 8px 24px;\"><table role=\"presentation\" cellpadding=\"0\" cellspacing=\"0\" border=\"0\" width=\"50%\" align=\"center\"><tr><td style=\"border-top:3px solid #a9a2f7; font-size:0; line-height:0;\">&nbsp;</td></tr></table></td></tr></table></td></tr><tr><td><table role=\"presentation\" cellpadding=\"0\" cellspacing=\"0\" border=\"0\" width=\"100%\"><tr><td height=\"40\" style=\"height:40px; font-size:0; line-height:0;\" aria-hidden=\"true\">&nbsp;</td></tr></table></td></tr><tr><td><table role=\"presentation\" cellpadding=\"0\" cellspacing=\"0\" border=\"0\" width=\"100%\"><tr><td style=\"padding:8px 24px 8px 24px;\"><table role=\"presentation\" cellpadding=\"0\" cellspacing=\"0\" border=\"0\" width=\"100%\" align=\"center\"><tr><td style=\"border-top:1px solid #cccccc; font-size:0; line-height:0;\">&nbsp;</td></tr></table></td></tr></table></td></tr><tr><td><table role=\"presentation\" cellpadding=\"0\" cellspacing=\"0\" border=\"0\" width=\"100%\"><tr><td height=\"24\" style=\"height:24px; font-size:0; line-height:0;\" aria-hidden=\"true\">&nbsp;</td></tr></table></td></tr></table></td></tr></table>"
+  },
+  {
+    "name": "divider and spacer, options (preview)",
+    "state": "{\"v\":1,\"gen\":\"1.0.0\",\"elements\":[{\"id\":\"d1\",\"type\":\"divider\",\"color\":\"#a9a2f7\",\"thickness\":3,\"width\":\"50%\"},{\"id\":\"s1\",\"type\":\"spacer\",\"height\":40},{\"id\":\"d2\",\"type\":\"divider\"},{\"id\":\"s2\",\"type\":\"spacer\"}]}",
+    "mode": "preview",
+    "options": {
+      "elementIds": true,
+      "starters": {
+        "text": {
+          "key": "content",
+          "text": "Votre texte ici"
+        },
+        "button": {
+          "key": "label",
+          "text": "Votre bouton"
+        }
+      }
+    },
+    "html": "<table role=\"presentation\" cellpadding=\"0\" cellspacing=\"0\" border=\"0\" width=\"100%\" bgcolor=\"transparent\" style=\"background-color:transparent;\"><tr><td style=\"padding:0px 0 0px 0;\"><table role=\"presentation\" cellpadding=\"0\" cellspacing=\"0\" border=\"0\" width=\"100%\"><tr><td data-lp-el=\"d1\"><table role=\"presentation\" cellpadding=\"0\" cellspacing=\"0\" border=\"0\" width=\"100%\"><tr><td style=\"padding:8px 24px 8px 24px;\"><table role=\"presentation\" cellpadding=\"0\" cellspacing=\"0\" border=\"0\" width=\"50%\" align=\"center\"><tr><td style=\"border-top:3px solid #a9a2f7; font-size:0; line-height:0;\">&nbsp;</td></tr></table></td></tr></table></td></tr><tr><td data-lp-el=\"s1\"><table role=\"presentation\" cellpadding=\"0\" cellspacing=\"0\" border=\"0\" width=\"100%\"><tr><td height=\"40\" style=\"height:40px; font-size:0; line-height:0;\" aria-hidden=\"true\">&nbsp;</td></tr></table></td></tr><tr><td data-lp-el=\"d2\"><table role=\"presentation\" cellpadding=\"0\" cellspacing=\"0\" border=\"0\" width=\"100%\"><tr><td style=\"padding:8px 24px 8px 24px;\"><table role=\"presentation\" cellpadding=\"0\" cellspacing=\"0\" border=\"0\" width=\"100%\" align=\"center\"><tr><td style=\"border-top:1px solid #cccccc; font-size:0; line-height:0;\">&nbsp;</td></tr></table></td></tr></table></td></tr><tr><td data-lp-el=\"s2\"><table role=\"presentation\" cellpadding=\"0\" cellspacing=\"0\" border=\"0\" width=\"100%\"><tr><td height=\"24\" style=\"height:24px; font-size:0; line-height:0;\" aria-hidden=\"true\">&nbsp;</td></tr></table></td></tr></table></td></tr></table>"
+  },
+  {
+    "name": "every element, block settings (export)",
+    "state": "{\"v\":1,\"gen\":\"1.0.0\",\"block\":{\"backgroundColor\":\"#f6f6f6\",\"paddingTop\":32,\"paddingBottom\":24},\"elements\":[{\"id\":\"i1\",\"type\":\"image\",\"src\":\"https://placehold.co/600x200/png\",\"alt\":\"\"},{\"id\":\"t1\",\"type\":\"text\",\"content\":\"<strong>Titre</strong>\",\"fontSize\":24},{\"id\":\"t2\",\"type\":\"text\",\"content\":\"Lorem ipsum dolor sit amet, consectetur adipiscing elit.\"},{\"id\":\"b1\",\"type\":\"button\",\"label\":\"Passer à l'action\",\"href\":\"https://www.badsender.com\"},{\"id\":\"s1\",\"type\":\"spacer\",\"height\":16},{\"id\":\"d1\",\"type\":\"divider\"}]}",
+    "mode": "export",
+    "html": "<table role=\"presentation\" cellpadding=\"0\" cellspacing=\"0\" border=\"0\" width=\"100%\" bgcolor=\"#f6f6f6\" style=\"background-color:#f6f6f6;\"><tr><td style=\"padding:32px 0 24px 0;\"><table role=\"presentation\" cellpadding=\"0\" cellspacing=\"0\" border=\"0\" width=\"100%\"><tr><td><table role=\"presentation\" cellpadding=\"0\" cellspacing=\"0\" border=\"0\" width=\"100%\"><tr><td align=\"center\" style=\"padding:0px 0px 0px 0px;\"><img src=\"https://placehold.co/600x200/png\" alt=\"\" width=\"600\" style=\"display:block; border:none; outline:none; text-decoration:none; width:100%; max-width:600px; height:auto;\" /></td></tr></table></td></tr><tr><td><table role=\"presentation\" cellpadding=\"0\" cellspacing=\"0\" border=\"0\" width=\"100%\"><tr><td align=\"left\" style=\"padding:8px 24px 8px 24px; font-family:Arial, Helvetica, sans-serif; font-size:24px; line-height:21px; color:#000000; mso-line-height-rule:exactly;\"><strong>Titre</strong></td></tr></table></td></tr><tr><td><table role=\"presentation\" cellpadding=\"0\" cellspacing=\"0\" border=\"0\" width=\"100%\"><tr><td align=\"left\" style=\"padding:8px 24px 8px 24px; font-family:Arial, Helvetica, sans-serif; font-size:14px; line-height:21px; color:#000000; mso-line-height-rule:exactly;\">Lorem ipsum dolor sit amet, consectetur adipiscing elit.</td></tr></table></td></tr><tr><td><table role=\"presentation\" cellpadding=\"0\" cellspacing=\"0\" border=\"0\" width=\"100%\"><tr><td align=\"center\" style=\"padding:8px 24px 8px 24px;\"><table role=\"presentation\" cellpadding=\"0\" cellspacing=\"0\" border=\"0\"><tr><td align=\"center\" bgcolor=\"#000000\" style=\"background-color:#000000; border-radius:4px;\"><a href=\"https://www.badsender.com\" target=\"_blank\" style=\"display: inline-block; padding: 14px 28px; font-family: Arial, Helvetica, sans-serif; font-size: 16px; line-height: 20px; color: #ffffff; text-decoration: none; border-radius: 4px; mso-line-height-rule: exactly;\">Passer à l'action</a></td></tr></table></td></tr></table></td></tr><tr><td><table role=\"presentation\" cellpadding=\"0\" cellspacing=\"0\" border=\"0\" width=\"100%\"><tr><td height=\"16\" style=\"height:16px; font-size:0; line-height:0;\" aria-hidden=\"true\">&nbsp;</td></tr></table></td></tr><tr><td><table role=\"presentation\" cellpadding=\"0\" cellspacing=\"0\" border=\"0\" width=\"100%\"><tr><td style=\"padding:8px 24px 8px 24px;\"><table role=\"presentation\" cellpadding=\"0\" cellspacing=\"0\" border=\"0\" width=\"100%\" align=\"center\"><tr><td style=\"border-top:1px solid #cccccc; font-size:0; line-height:0;\">&nbsp;</td></tr></table></td></tr></table></td></tr></table></td></tr></table>"
+  },
+  {
+    "name": "every element, block settings (preview)",
+    "state": "{\"v\":1,\"gen\":\"1.0.0\",\"block\":{\"backgroundColor\":\"#f6f6f6\",\"paddingTop\":32,\"paddingBottom\":24},\"elements\":[{\"id\":\"i1\",\"type\":\"image\",\"src\":\"https://placehold.co/600x200/png\",\"alt\":\"\"},{\"id\":\"t1\",\"type\":\"text\",\"content\":\"<strong>Titre</strong>\",\"fontSize\":24},{\"id\":\"t2\",\"type\":\"text\",\"content\":\"Lorem ipsum dolor sit amet, consectetur adipiscing elit.\"},{\"id\":\"b1\",\"type\":\"button\",\"label\":\"Passer à l'action\",\"href\":\"https://www.badsender.com\"},{\"id\":\"s1\",\"type\":\"spacer\",\"height\":16},{\"id\":\"d1\",\"type\":\"divider\"}]}",
+    "mode": "preview",
+    "options": {
+      "elementIds": true,
+      "starters": {
+        "text": {
+          "key": "content",
+          "text": "Votre texte ici"
+        },
+        "button": {
+          "key": "label",
+          "text": "Votre bouton"
+        }
+      }
+    },
+    "html": "<table role=\"presentation\" cellpadding=\"0\" cellspacing=\"0\" border=\"0\" width=\"100%\" bgcolor=\"#f6f6f6\" style=\"background-color:#f6f6f6;\"><tr><td style=\"padding:32px 0 24px 0;\"><table role=\"presentation\" cellpadding=\"0\" cellspacing=\"0\" border=\"0\" width=\"100%\"><tr><td data-lp-el=\"i1\"><table role=\"presentation\" cellpadding=\"0\" cellspacing=\"0\" border=\"0\" width=\"100%\"><tr><td align=\"center\" style=\"padding:0px 0px 0px 0px;\"><img src=\"https://placehold.co/600x200/png\" alt=\"\" width=\"600\" style=\"display:block; border:none; outline:none; text-decoration:none; width:100%; max-width:600px; height:auto;\" /></td></tr></table></td></tr><tr><td data-lp-el=\"t1\"><table role=\"presentation\" cellpadding=\"0\" cellspacing=\"0\" border=\"0\" width=\"100%\"><tr><td align=\"left\" style=\"padding:8px 24px 8px 24px; font-family:Arial, Helvetica, sans-serif; font-size:24px; line-height:21px; color:#000000; mso-line-height-rule:exactly;\"><strong>Titre</strong></td></tr></table></td></tr><tr><td data-lp-el=\"t2\"><table role=\"presentation\" cellpadding=\"0\" cellspacing=\"0\" border=\"0\" width=\"100%\"><tr><td align=\"left\" style=\"padding:8px 24px 8px 24px; font-family:Arial, Helvetica, sans-serif; font-size:14px; line-height:21px; color:#000000; mso-line-height-rule:exactly;\">Lorem ipsum dolor sit amet, consectetur adipiscing elit.</td></tr></table></td></tr><tr><td data-lp-el=\"b1\"><table role=\"presentation\" cellpadding=\"0\" cellspacing=\"0\" border=\"0\" width=\"100%\"><tr><td align=\"center\" style=\"padding:8px 24px 8px 24px;\"><table role=\"presentation\" cellpadding=\"0\" cellspacing=\"0\" border=\"0\"><tr><td align=\"center\" bgcolor=\"#000000\" style=\"background-color:#000000; border-radius:4px;\"><a href=\"https://www.badsender.com\" target=\"_blank\" style=\"display: inline-block; padding: 14px 28px; font-family: Arial, Helvetica, sans-serif; font-size: 16px; line-height: 20px; color: #ffffff; text-decoration: none; border-radius: 4px; mso-line-height-rule: exactly;\">Passer à l'action</a></td></tr></table></td></tr></table></td></tr><tr><td data-lp-el=\"s1\"><table role=\"presentation\" cellpadding=\"0\" cellspacing=\"0\" border=\"0\" width=\"100%\"><tr><td height=\"16\" style=\"height:16px; font-size:0; line-height:0;\" aria-hidden=\"true\">&nbsp;</td></tr></table></td></tr><tr><td data-lp-el=\"d1\"><table role=\"presentation\" cellpadding=\"0\" cellspacing=\"0\" border=\"0\" width=\"100%\"><tr><td style=\"padding:8px 24px 8px 24px;\"><table role=\"presentation\" cellpadding=\"0\" cellspacing=\"0\" border=\"0\" width=\"100%\" align=\"center\"><tr><td style=\"border-top:1px solid #cccccc; font-size:0; line-height:0;\">&nbsp;</td></tr></table></td></tr></table></td></tr></table></td></tr></table>"
+  },
+  {
+    "name": "unknown type and hostile id (export)",
+    "state": "{\"v\":1,\"gen\":\"1.0.0\",\"elements\":[{\"id\":\"a\\\"><script>\",\"type\":\"text\",\"content\":\"Bonjour\"},{\"id\":\"x1\",\"type\":\"carousel\"},{\"id\":\"b1\",\"type\":\"button\",\"label\":\"OK\"}]}",
+    "mode": "export",
+    "html": "<table role=\"presentation\" cellpadding=\"0\" cellspacing=\"0\" border=\"0\" width=\"100%\" bgcolor=\"transparent\" style=\"background-color:transparent;\"><tr><td style=\"padding:0px 0 0px 0;\"><table role=\"presentation\" cellpadding=\"0\" cellspacing=\"0\" border=\"0\" width=\"100%\"><tr><td><table role=\"presentation\" cellpadding=\"0\" cellspacing=\"0\" border=\"0\" width=\"100%\"><tr><td align=\"left\" style=\"padding:8px 24px 8px 24px; font-family:Arial, Helvetica, sans-serif; font-size:14px; line-height:21px; color:#000000; mso-line-height-rule:exactly;\">Bonjour</td></tr></table></td></tr><tr><td><table role=\"presentation\" cellpadding=\"0\" cellspacing=\"0\" border=\"0\" width=\"100%\"><tr><td align=\"center\" style=\"padding:8px 24px 8px 24px;\"><table role=\"presentation\" cellpadding=\"0\" cellspacing=\"0\" border=\"0\"><tr><td align=\"center\" bgcolor=\"#000000\" style=\"background-color:#000000; border-radius:4px;\"><a href=\"#\" target=\"_blank\" style=\"display: inline-block; padding: 14px 28px; font-family: Arial, Helvetica, sans-serif; font-size: 16px; line-height: 20px; color: #ffffff; text-decoration: none; border-radius: 4px; mso-line-height-rule: exactly;\">OK</a></td></tr></table></td></tr></table></td></tr></table></td></tr></table>"
+  },
+  {
+    "name": "unknown type and hostile id (preview)",
+    "state": "{\"v\":1,\"gen\":\"1.0.0\",\"elements\":[{\"id\":\"a\\\"><script>\",\"type\":\"text\",\"content\":\"Bonjour\"},{\"id\":\"x1\",\"type\":\"carousel\"},{\"id\":\"b1\",\"type\":\"button\",\"label\":\"OK\"}]}",
+    "mode": "preview",
+    "options": {
+      "elementIds": true,
+      "starters": {
+        "text": {
+          "key": "content",
+          "text": "Votre texte ici"
+        },
+        "button": {
+          "key": "label",
+          "text": "Votre bouton"
+        }
+      }
+    },
+    "html": "<table role=\"presentation\" cellpadding=\"0\" cellspacing=\"0\" border=\"0\" width=\"100%\" bgcolor=\"transparent\" style=\"background-color:transparent;\"><tr><td style=\"padding:0px 0 0px 0;\"><table role=\"presentation\" cellpadding=\"0\" cellspacing=\"0\" border=\"0\" width=\"100%\"><tr><td data-lp-el=\"a&quot;&gt;&lt;script&gt;\"><table role=\"presentation\" cellpadding=\"0\" cellspacing=\"0\" border=\"0\" width=\"100%\"><tr><td align=\"left\" style=\"padding:8px 24px 8px 24px; font-family:Arial, Helvetica, sans-serif; font-size:14px; line-height:21px; color:#000000; mso-line-height-rule:exactly;\">Bonjour</td></tr></table></td></tr><tr><td data-lp-el=\"b1\"><table role=\"presentation\" cellpadding=\"0\" cellspacing=\"0\" border=\"0\" width=\"100%\"><tr><td align=\"center\" style=\"padding:8px 24px 8px 24px;\"><table role=\"presentation\" cellpadding=\"0\" cellspacing=\"0\" border=\"0\"><tr><td align=\"center\" bgcolor=\"#000000\" style=\"background-color:#000000; border-radius:4px;\"><a href=\"#\" target=\"_blank\" style=\"display: inline-block; padding: 14px 28px; font-family: Arial, Helvetica, sans-serif; font-size: 16px; line-height: 20px; color: #ffffff; text-decoration: none; border-radius: 4px; mso-line-height-rule: exactly;\">OK</a></td></tr></table></td></tr></table></td></tr></table></td></tr></table>"
+  }
+]

@@ -37,6 +37,25 @@ describe('specimens', () => {
     expect(new Set(ids).size).toBe(ids.length);
   });
 
+  // What #1207 asks the client tests to cover: the three presets, each with an
+  // image and some text.
+  test.each([[[50, 50]], [[33, 33, 34]], [[66, 34]]])(
+    'lays out a row of %j with an image and a text',
+    (widths) => {
+      const spec = specimens().find(
+        (candidate) =>
+          Array.isArray(candidate.state.rows) &&
+          JSON.stringify(
+            candidate.state.rows[0].columns.map((column) => column.width)
+          ) === JSON.stringify(widths)
+      );
+      const types = elementsOfState(spec.state).map((element) => element.type);
+
+      expect(types).toContain('image');
+      expect(types).toContain('text');
+    }
+  );
+
   // Called twice by a watcher, or by a test and then a build.
   it('is stable across calls', () => {
     expect(JSON.stringify(specimens())).toBe(JSON.stringify(specimens()));
@@ -56,6 +75,11 @@ describe('renderGallery', () => {
     specimens().forEach((spec) => {
       expect(html).toContain(spec.title);
     });
+  });
+
+  it('stacks the columns on a phone', () => {
+    expect(html).toMatch(/@media[^{]*max-width:600px\)\{\.lp-stack\{/);
+    expect(html).toContain('class="lp-stack"');
   });
 
   it('leaves no placeholder behind', () => {
