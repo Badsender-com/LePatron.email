@@ -21,14 +21,14 @@ const trimOptionalString = (value) =>
  * @apiSuccess {String} name what a template reads, write-once (ADR-0015)
  * @apiSuccess {String} label the company's own word for it
  * @apiSuccess {String} description what this dimension means for the company
- * @apiSuccess {Boolean} standard the email type or the trigger (ADR-0014)
+ * @apiSuccess {Boolean} standard the email type or the trigger (ADR-0032)
  * @apiSuccess {Boolean} isActive
  * @apiSuccess {Number} order display position
  * @apiSuccess {Number} precedence who wins a design token two dimensions carry
  */
 
 /**
- * A dimension a company declines its emails by (ADR-0014). The email type and
+ * A dimension a company declines its emails by (ADR-0032). The email type and
  * the trigger are standard and seeded for every company; every other one is
  * declared by the company.
  *

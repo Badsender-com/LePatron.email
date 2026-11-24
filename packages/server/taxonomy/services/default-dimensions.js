@@ -4,7 +4,7 @@ const { StandardDimensions } = require('../../constant/taxonomy-type.js');
 const { pickSeedLang } = require('./default-email-types.js');
 
 /**
- * The two standard dimensions (ADR-0014), seeded for every company.
+ * The two standard dimensions (ADR-0032), seeded for every company.
  *
  * Their name is the doctrine's and fixed; their label, description, order and
  * precedence are the company's from the first edit on. The descriptions are read

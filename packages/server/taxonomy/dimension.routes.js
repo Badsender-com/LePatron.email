@@ -12,7 +12,7 @@ const {
 } = require('../group/group.guard.js');
 const dimension = require('./controllers/dimension.controller.js');
 
-// The dimensions a company declines its emails by (ADR-0014). A resource of its
+// The dimensions a company declines its emails by (ADR-0032). A resource of its
 // own, not a path under /taxonomy-items: a value belongs to a dimension, and
 // nesting the two would make "dimensions" a candidate itemId.
 //

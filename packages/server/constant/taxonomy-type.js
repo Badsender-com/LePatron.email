@@ -1,7 +1,7 @@
 'use strict';
 
 /**
- * The two standard dimensions (ADR-0014): the doctrine defines them, so every
+ * The two standard dimensions (ADR-0032): the doctrine defines them, so every
  * company has them and none can deactivate or delete them. Every other dimension
  * (market, language, brand, audience…) is declared by the company itself, and
  * the product knows nothing of it but its name.

@@ -1,5 +1,5 @@
 /**
- * Pure helpers for the taxonomy screen's dimensions (ADR-0014).
+ * Pure helpers for the taxonomy screen's dimensions (ADR-0032).
  *
  * The screen's components stay thin: what it decides lives here, covered by
  * tests/ui/helpers/taxonomy-builder.test.js, since the project has no
