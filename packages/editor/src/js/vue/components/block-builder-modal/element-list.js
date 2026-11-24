@@ -10,6 +10,9 @@ const {
   singleColumnRows,
   columnAt,
 } = require('../../../../../../shared/block-builder/composition.js');
+const {
+  moveInList,
+} = require('../../../../../../shared/block-builder/move-in-list.js');
 const { ListboxMixin } = require('./listbox.js');
 
 // The element list: what can be added, and what has been — adding, selecting,
@@ -193,11 +196,7 @@ const ElementListMixin = {
       if (from === -1) return;
 
       this.selectElement(id);
-      const to = index > from ? index - 1 : index;
-      if (to === from) return;
-
-      const [element] = elements.splice(from, 1);
-      elements.splice(to, 0, element);
+      moveInList(elements, from, index);
     },
 
     /**
@@ -219,16 +218,15 @@ const ElementListMixin = {
       const to = columnAt(this.state, target);
       if (!from || !to) return false;
 
-      const [element] = from.column.elements.splice(from.index, 1);
-      // Counted with the element still in place, as a drop position is: taking
-      // it out first shifts everything after it up by one. Only within the same
-      // column — across columns nothing moved underneath.
-      const sameColumn = from.column === to;
-      const at =
-        sameColumn && target.index > from.index
-          ? target.index - 1
-          : target.index;
-      to.elements.splice(Math.max(0, Math.min(at, to.elements.length)), 0, element);
+      // Within its own column, a drop position counts the element still in
+      // place (move-in-list.js). Across columns nothing moves underneath.
+      if (from.column === to) {
+        moveInList(to.elements, from.index, target.index);
+      } else {
+        const [element] = from.column.elements.splice(from.index, 1);
+        const at = Math.max(0, Math.min(target.index, to.elements.length));
+        to.elements.splice(at, 0, element);
+      }
 
       // Rendered by the preview's watcher, like every other change.
       this.selectElement(id);

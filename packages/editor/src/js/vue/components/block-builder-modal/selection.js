@@ -29,6 +29,11 @@ const {
 // A Vue 2 mixin, like the element list and the row settings: the selection is
 // read by every surface of the modal, and a mixin keeps `this` meaning the
 // component. The component is expected to provide `state`.
+//
+// It calls no other mixin: everything else reads the selection from here —
+// `selectedRow` and `selectedRowIndex` for the rows panel (row-settings.js)
+// and the row actions (row-actions.js), `activeColumn` and `columnElements`
+// for the element list (element-list.js).
 
 const ELEMENT = 'element';
 const ROW = 'row';
@@ -48,6 +53,18 @@ const SelectionMixin = {
     selectedRowId() {
       const { selection } = this;
       return selection && selection.kind === ROW ? selection.id : null;
+    },
+
+    /** The selected row, or null — none when an element is selected. */
+    selectedRow() {
+      return this.rowById(this.selectedRowId);
+    },
+
+    /** Where the selected row sits among the rows, or -1. */
+    selectedRowIndex() {
+      return (this.state.rows || []).findIndex(
+        (row) => row.id === this.selectedRowId
+      );
     },
 
     /** The selected element, wherever it sits, or null. */

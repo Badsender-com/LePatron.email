@@ -16,35 +16,12 @@
     .bb-pickable();
   }
 
-  &__row-actions {
-    display: flex;
-    gap: 0.25rem;
-    margin: 0.25rem 0 0.75rem;
-
-    button:not(.bb-modal__add-row) {
-      width: 1.75rem;
-      cursor: pointer;
-      border: 1px solid #d5d5d5;
-      border-radius: 2px;
-      background: #fff;
-
-      &:hover {
-        border-color: @bs-accent-color;
-        color: @bs-accent-color;
-      }
-
-      // Duplicating at the row limit. After :hover, as for "Add a row".
-      &:disabled {
-        cursor: default;
-        opacity: 0.4;
-        border-color: #d5d5d5;
-        color: inherit;
-      }
-    }
-  }
-
+  // The selected row's actions are the element's bar (`__actions` and
+  // `__action`, in badsender-block-builder.less), between the list and this.
   &__add-row {
-    flex: 1;
+    display: block;
+    width: 100%;
+    margin: 0.25rem 0 0.75rem;
     padding: 0.3125rem;
     font-size: 0.8125rem;
     cursor: pointer;

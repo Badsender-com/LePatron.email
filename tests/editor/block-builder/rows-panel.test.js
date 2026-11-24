@@ -72,9 +72,51 @@ describe('the row list', () => {
     await Vue.nextTick();
 
     expect(rowOptions().map((option) => option.textContent.trim())).toEqual([
-      'Ligne 1 · 1 colonne',
-      'Ligne 2 · 3 colonnes',
+      'Ligne 1 · 1 colonne — Texte',
+      'Ligne 2 · 3 colonnes — vide',
     ]);
+  });
+
+  // Place and structure alone read the same for a row and its copy, or for
+  // two rows swapped: the first element tells them apart, in the words of the
+  // element list.
+  it('names each row by its first element too', async () => {
+    const modal = await openWith(['text']);
+    modal.state.rows[0].columns[0].elements[0].content = '<p>Bonjour</p>';
+    modal.addRow();
+    modal.addElement('button');
+    modal.state.rows[1].columns[0].elements[0].label = 'Acheter';
+    await Vue.nextTick();
+
+    expect(rowOptions().map((option) => option.textContent.trim())).toEqual([
+      'Ligne 1 · 1 colonne — Texte — Bonjour',
+      'Ligne 2 · 1 colonne — Bouton — Acheter',
+    ]);
+  });
+
+  // The first in document order: column by column, so an empty first column
+  // hands over to the next.
+  it('takes the first element of the row, whatever column holds it', async () => {
+    const modal = await openWith(['button']);
+    modal.setRowWidths(modal.state.rows[0].id, [50, 50]);
+    placeIn(modal, 1);
+    await Vue.nextTick();
+
+    expect(rowOptions()[0].textContent.trim()).toBe(
+      'Ligne 1 · 2 colonnes — Bouton'
+    );
+  });
+
+  // The dictionary substitutes with String#replace, which would read `$&` in
+  // a user's text as "the matched placeholder".
+  it('shows a dollar sign in the text as typed', async () => {
+    const modal = await openWith(['text']);
+    modal.state.rows[0].columns[0].elements[0].content = '<p>5 $& 6 $$</p>';
+    await Vue.nextTick();
+
+    expect(rowOptions()[0].textContent.trim()).toBe(
+      'Ligne 1 · 1 colonne — Texte — 5 $& 6 $$'
+    );
   });
 
   // One Tab stop for the whole list, as the element list below it.

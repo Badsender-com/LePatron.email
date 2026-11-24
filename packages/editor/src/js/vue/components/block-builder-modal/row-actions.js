@@ -7,8 +7,12 @@ const {
 const {
   newElementId,
 } = require('../../../../../../shared/block-builder/state.js');
+const {
+  moveInList,
+} = require('../../../../../../shared/block-builder/move-in-list.js');
 
-// Rows: moving one, by drag or by keyboard; duplicating one, and deleting it.
+// Rows: moving one, duplicating one, and deleting it — the operations, and the
+// buttons of the selected row's bar that call them.
 //
 // Apart from the row settings (row-settings.js), which set what a row IS —
 // its structure and its widths — these act on the row as a whole.
@@ -17,11 +21,18 @@ const {
 // the component's `state` and its selection, and a mixin keeps `this` meaning
 // the component.
 //
-// The component is expected to provide: `state`, `selectRow`,
-// `selectElement`, `rowById` (selection.js), `selectedRowId` and
-// `selectedRowIndex` (row-settings.js). Nothing here asks
-// for a render: the preview watches its markup, and a row that moved changed
-// it.
+// The component is expected to provide: `state`, and from selection.js
+// `selectRow`, `selectElement`, `rowById`, `selectedRowId`, `selectedRow` and
+// `selectedRowIndex`. Nothing here calls the other mixins.
+//
+// Called from outside:
+//   - `moveRowByKey` by the row list's keyboard (`onRowKeydown`,
+//     row-settings.js);
+//   - `moveRow` by the end of a row drag in the list, with a drop position;
+//   - the rest by the template's row bar.
+//
+// Nothing here asks for a render: the preview watches its markup, and a row
+// that moved changed it.
 
 // The keys that move a row, with Alt held. Alt because the arrows alone walk
 // the list (listbox.js), as they do in the element list: a keyboard user who
@@ -41,12 +52,11 @@ const RowActionsMixin = {
 
   methods: {
     /**
-     * Moves a row to a position among the rows.
+     * Moves a row to a drop position among the rows.
      *
      * `index` counts rows as they sit NOW, with the moved one still among
-     * them — the same convention as an element's drop position, and the same
-     * off-by-one if it is forgotten: taking the row out first shifts
-     * everything after it up by one.
+     * them — the convention of every move in the builder (move-in-list.js):
+     * 0 is above the first row, `rows.length` below the last.
      *
      * @param {string} rowId
      * @param {number} index
@@ -58,12 +68,7 @@ const RowActionsMixin = {
       if (from === -1) return false;
 
       this.selectRow(rowId);
-      const to = index > from ? index - 1 : index;
-      if (to === from || to < 0 || to >= rows.length) return false;
-
-      const [row] = rows.splice(from, 1);
-      rows.splice(to, 0, row);
-      return true;
+      return moveInList(rows, from, index);
     },
 
     // The keyboard path, through the same move so the splice exists once.
@@ -87,10 +92,12 @@ const RowActionsMixin = {
      *
      * A deep copy with fresh ids throughout. A shared id would make the two
      * rows the same row as far as selection and drag are concerned, so
-     * editing one would appear to edit both; a shared element OBJECT would be
-     * worse still, since typing in one would change the other. Whatever else
-     * the row and its columns hold is copied with them, as a change of width
-     * keeps it (setRowWidths).
+     * editing one would appear to edit both; a shared OBJECT anywhere inside
+     * would be worse still, since typing in one would change the other.
+     * Copied through JSON, which a composition goes through anyway to be
+     * stored (serialiseState): whatever survives that survives this, at any
+     * depth, and whatever else the row and its columns hold comes with it,
+     * as a change of width keeps it (setRowWidths).
      *
      * Refused at the row limit, like "Add a row": a copy is a row too, and
      * past MAX_ROWS the composition could not be read back.
@@ -103,17 +110,13 @@ const RowActionsMixin = {
       const source = this.rowById(rowId);
       if (!source || !canAddRow(this.state)) return null;
 
-      const copy = {
-        ...source,
-        id: newRowId(),
-        columns: source.columns.map((column) => ({
-          ...column,
-          elements: column.elements.map((element) => ({
-            ...element,
-            id: newElementId(),
-          })),
-        })),
-      };
+      const copy = JSON.parse(JSON.stringify(source));
+      copy.id = newRowId();
+      copy.columns.forEach((column) => {
+        column.elements.forEach((element) => {
+          element.id = newElementId();
+        });
+      });
 
       const { rows } = this.state;
       rows.splice(rows.indexOf(source) + 1, 0, copy);
@@ -154,6 +157,40 @@ const RowActionsMixin = {
 
     deleteSelectedRow() {
       return this.selectedRowId ? this.deleteRow(this.selectedRowId) : false;
+    },
+
+    /**
+     * ↑ or ↓ in the selected row's bar: the same move as Alt+↑ or Alt+↓.
+     *
+     * The focus stays on the button pressed while it still works, so a row
+     * goes down three places in three presses. At the top or the bottom of
+     * the list that button is disabled, and a disabled button drops the
+     * focus: it goes to the other one, which now works.
+     *
+     * @param {number} offset -1 or 1
+     */
+    onRowMoveClick(offset) {
+      if (!this.moveSelectedRow(offset)) return;
+      this.$nextTick(() => {
+        const { rowMoveUp, rowMoveDown } = this.$refs;
+        const [pressed, other] =
+          offset < 0 ? [rowMoveUp, rowMoveDown] : [rowMoveDown, rowMoveUp];
+        const target = pressed && !pressed.disabled ? pressed : other;
+        if (target && !target.disabled) target.focus();
+      });
+    },
+
+    // The bar goes with the last row, and the focus with it, onto the body.
+    // "Add a row", right below, is where a keyboard user carries on — and with
+    // no row left, the only thing the panel offers for rows. With a row left,
+    // a neighbour is selected, the bar stays, and the focus on it.
+    onRowDeleteClick() {
+      if (!this.deleteSelectedRow()) return;
+      this.$nextTick(() => {
+        if (this.selectedRow) return;
+        const { addRowButton } = this.$refs;
+        if (addRowButton) addRowButton.focus();
+      });
     },
 
     canMoveRow(offset) {

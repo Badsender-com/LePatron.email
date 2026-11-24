@@ -370,4 +370,23 @@ describe('duplicating and deleting a row', () => {
     expect(markup.writes).toHaveLength(1);
     expect(markup.writes[0].match(/Bonjour/g)).toHaveLength(2);
   });
+
+  // The same for a deletion: the row leaves the email in the one step that
+  // applies the composition, markup and state together.
+  it('counts a deletion as one undo step', async () => {
+    const { modal, markup } = await openModal(['text']);
+    modal.state.rows[0].columns[0].elements[0].content = 'Bonjour';
+    modal.addRow();
+    modal.addElement('text');
+    modal.state.rows[1].columns[0].elements[0].content = 'Au revoir';
+    modal.deleteRow(modal.state.rows[0].id);
+
+    modal.handleApply();
+
+    expect(modal.vm.startMultiple).toHaveBeenCalledTimes(1);
+    expect(modal.vm.stopMultiple).toHaveBeenCalledTimes(1);
+    expect(markup.writes).toHaveLength(1);
+    expect(markup.writes[0]).not.toContain('Bonjour');
+    expect(markup.writes[0]).toContain('Au revoir');
+  });
 });

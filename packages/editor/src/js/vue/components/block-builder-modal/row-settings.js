@@ -3,6 +3,7 @@
 const {
   MIN_COLUMN_WIDTH,
   MAX_ROWS,
+  elementsOf,
   FULL_WIDTH,
   singleColumnRows,
   canAddRow,
@@ -10,14 +11,20 @@ const {
 } = require('../../../../../../shared/block-builder/composition.js');
 const { ListboxMixin } = require('./listbox.js');
 
-// Rows: selecting one, and setting its structure.
+// Rows: the list of them, and the structure of the selected one.
 //
 // A Vue 2 mixin for the same reason as the element list: every one of these
 // reads or writes the component's `state` and its selection, and a mixin keeps
 // `this` meaning the component.
 //
-// The component is expected to provide: `state`, `selectedRowId`,
-// `selectRow` (selection.js) and `vm`.
+// The component is expected to provide: `state`, `vm`, and
+//   - from selection.js: `selectedRowId`, `selectedRow`, `selectedRowIndex`,
+//     `selectRow`, `rowById`;
+//   - from element-list.js: `labelFor`, so a row is named by its first element
+//     in the words the element list uses;
+//   - from row-actions.js: `moveRowByKey`, which the row list's keyboard hands
+//     Alt+arrow to before walking the list.
+// No other mixin calls into this one.
 
 // The structures offered as one click each. They are nothing but widths — a
 // row reached through a preset and the same row typed by hand are the same
@@ -37,6 +44,8 @@ const PRESETS = [
 const ROW_LABEL_KEYS = [
   'block-builder-row-label',
   'block-builder-row-label-one',
+  'block-builder-row-label-empty',
+  'block-builder-row-label-empty-one',
   'block-builder-column-width',
   'block-builder-elements-folded',
   'block-builder-elements-folded-one',
@@ -72,10 +81,6 @@ const RowSettingsMixin = {
       return MAX_ROWS;
     },
 
-    selectedRow() {
-      return this.rowById(this.selectedRowId);
-    },
-
     // What the panel shows: a row's structure, or an element's settings. One
     // of the two, never both, so the panel never has to choose.
     selectedRowWidths() {
@@ -91,12 +96,6 @@ const RowSettingsMixin = {
           ? 'block-builder-elements-folded-one'
           : 'block-builder-elements-folded';
       return this.vm.t(key, { count: notice.count, column: notice.column });
-    },
-
-    selectedRowIndex() {
-      return (this.state.rows || []).findIndex(
-        (row) => row.id === this.selectedRowId
-      );
     },
   },
 
@@ -120,13 +119,23 @@ const RowSettingsMixin = {
       return this.vm.t(`block-builder-structure-${preset.key}`);
     },
 
-    // "Row 2 · 3 columns": the position, and the structure in words a screen
-    // reader can say.
+    // "Row 2 · 3 columns — Text — Hello": the position, the structure in
+    // words a screen reader can say, and the row's first element as the
+    // element list names it — or "empty". Position and structure alone say
+    // nothing of what a row holds: rows of the same structure read alike,
+    // and after a move or a duplication the list reads exactly as before.
     rowLabel(row, index) {
       const count = row.columns.length;
-      const key =
-        count === 1 ? 'block-builder-row-label-one' : 'block-builder-row-label';
-      return this.vm.t(key, { n: index + 1, count });
+      const [first] = elementsOf([row]);
+      const key = [
+        'block-builder-row-label',
+        first ? '' : '-empty',
+        count === 1 ? '-one' : '',
+      ].join('');
+      // `vm.t` substitutes through String#replace, which reads `$&` and its
+      // kind in the replacement: doubled, the user's own `$` shows as typed.
+      const label = first ? this.labelFor(first).replace(/\$/g, '$$$$') : '';
+      return this.vm.t(key, { n: index + 1, count, first: label });
     },
 
     columnWidthLabel(index) {
