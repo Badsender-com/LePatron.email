@@ -22,6 +22,10 @@ const logger = require('../../utils/logger.js');
 
 const { reorderValues } = require('./order.service.js');
 const { saveCrossings } = require('./crossings.service.js');
+const {
+  impactOf,
+  assertChangeConfirmed,
+} = require('./identifier-impact.service.js');
 
 module.exports = {
   listTaxonomyItems,
@@ -30,6 +34,7 @@ module.exports = {
   deleteTaxonomyItem,
   reorderValues,
   saveCrossings,
+  identifierImpact,
   resolveCompanyId,
 };
 
@@ -119,10 +124,11 @@ async function updateTaxonomyItem({ user, itemId, payload = {} }) {
   logger.log('taxonomyService:updateTaxonomyItem');
 
   const item = await findScopedItem({ user, itemId });
+  const { confirmIdentifierChange, ...editable } = payload;
   const fields = await readValueFields({
     companyId: item._company,
     type: item.type,
-    payload,
+    payload: editable,
     partial: true,
   });
 
@@ -144,6 +150,7 @@ async function updateTaxonomyItem({ user, itemId, payload = {} }) {
       identifier: fields.canonicalType,
       exceptId: item._id,
     });
+    await assertChangeConfirmed(item, confirmIdentifierChange);
   }
   await assertDefaults({
     companyId: item._company,
@@ -235,4 +242,13 @@ async function findScopedItem({ user, itemId }) {
   }
 
   return item;
+}
+
+/**
+ * What changing a value's identifier would touch (ADR-0026): the emails
+ * carrying it, and the templates comparing its current identifier.
+ */
+async function identifierImpact({ user, itemId }) {
+  const item = await findScopedItem({ user, itemId });
+  return impactOf(item);
 }

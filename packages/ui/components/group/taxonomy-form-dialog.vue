@@ -2,6 +2,8 @@
 import { validationMixin } from 'vuelidate';
 import { required, maxLength } from 'vuelidate/lib/validators';
 import BsSidePanelForm from '~/components/modal/bs-side-panel-form.vue';
+import BsTaxonomyIdentifierImpact from '~/components/group/taxonomy-identifier-impact.vue';
+import mixinTaxonomyValueErrors from '~/helpers/mixins/mixin-taxonomy-value-errors.js';
 import BsTextField from '~/components/form/bs-text-field.vue';
 import BsSelect from '~/components/form/bs-select.vue';
 import BsTextarea from '~/components/form/bs-textarea.vue';
@@ -31,8 +33,9 @@ export default {
     BsTaxonomyCodeField,
     BsTaxonomyDefaultField,
     BsTaxonomyDefaultUnderField,
+    BsTaxonomyIdentifierImpact,
   },
-  mixins: [validationMixin],
+  mixins: [validationMixin, mixinTaxonomyValueErrors],
   props: {
     loading: { type: Boolean, default: false },
     // The email type maps a value onto the doctrine's six types; any other
@@ -48,13 +51,11 @@ export default {
     return {
       form: valueFormFor(null),
       editingId: null,
-      // A refusal the server alone can decide — a label already taken — shown next
-      // to the field rather than in a snackbar at the other end of the screen.
-      serverLabelError: null,
-      serverIdentifierError: null,
-      serverDefaultError: null,
       // The identifier follows the label until the admin writes their own.
       identifierTouched: false,
+      // The identifier saved, and whether changing it was confirmed.
+      initialIdentifier: null,
+      identifierConfirmed: false,
     };
   },
   validations: {
@@ -66,6 +67,15 @@ export default {
   computed: {
     wording() {
       return this.isEmailType ? 'taxonomy' : 'taxonomy.values';
+    },
+    // An identifier changed on a saved value: its impact is shown first.
+    identifierChanged() {
+      return (
+        !!this.editingId &&
+        !this.isEmailType &&
+        !!this.initialIdentifier &&
+        this.form.canonicalType !== this.initialIdentifier
+      );
     },
     identifierMaxLength() {
       return TAXONOMY_LIMITS.CANONICAL_TYPE;
@@ -130,35 +140,11 @@ export default {
       this.serverIdentifierError = null;
       this.serverDefaultError = null;
       this.identifierTouched = false;
+      this.initialIdentifier = (item && item.canonicalType) || null;
+      this.identifierConfirmed = false;
       this.form = valueFormFor(item, suggestedOrder);
       this.$v.$reset();
       this.$refs.modal.open();
-    },
-
-    /**
-     * Attach a server-side refusal to its field. Called by the parent, which is
-     * the one that talks to the API.
-     *
-     * @param {string} field `label` or `canonicalType`
-     * @param {string} message already translated
-     * @returns {boolean} whether this form has that field
-     */
-    setFieldError(field, message) {
-      if (field === 'label') {
-        this.serverLabelError = message;
-        this.$v.form.label.$touch();
-        return true;
-      }
-      if (field === 'canonicalType' && !this.isEmailType) {
-        this.serverIdentifierError = message;
-        return true;
-      }
-      // The email type has no default (ADR-0024).
-      if (field === 'isDefault' && !this.isEmailType) {
-        this.serverDefaultError = message;
-        return true;
-      }
-      return false;
     },
 
     onIdentifierInput(value) {
@@ -184,6 +170,9 @@ export default {
         hasParent: Boolean(this.parentValues),
         role: this.role,
       });
+      if (this.identifierChanged) {
+        payload.confirmIdentifierChange = this.identifierConfirmed;
+      }
       this.$emit('save', { id: this.editingId, payload });
     },
   },
@@ -238,8 +227,6 @@ export default {
       :disabled="loading"
       clearable
     />
-    <!-- Proposed from the label, and the admin's to change: templates compare
-         against it, so it is worth reading before saving. -->
     <bs-text-field
       v-else
       :value="form.canonicalType"
@@ -250,6 +237,15 @@ export default {
       :maxlength="identifierMaxLength"
       persistent-hint
       @input="onIdentifierInput"
+    />
+    <bs-taxonomy-identifier-impact
+      v-if="identifierChanged"
+      v-model="identifierConfirmed"
+      :item-id="editingId"
+      :label="form.label"
+      :previous="initialIdentifier"
+      :next="form.canonicalType || ''"
+      @keep="form.canonicalType = initialIdentifier"
     />
 
     <bs-taxonomy-code-field
