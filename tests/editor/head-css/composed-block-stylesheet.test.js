@@ -26,7 +26,9 @@ jest.mock(
 
 const ko = require('knockout');
 
-const AUTHOR_CSS = '.lp-author{color:red}';
+// Not an `lp-` class: that prefix belongs to the generator (ADR 0025), and an
+// author's rule written on it would read as a generated one in these tests.
+const AUTHOR_CSS = '.author-note{color:red}';
 
 /** A composed block holding two columns, so it derives a stacking rule. */
 const composedBlock = () => ({
@@ -82,16 +84,33 @@ describe.skip('a mailing whose only synthetic block is composed', () => {
     expect(headCssToExport(contentWith(composedBlock()), '')).not.toBe('');
   });
 
+  // With an HTML code block too, because that is what the author's stylesheet
+  // follows — the rule this slice did not reopen (ADR 0025). A mailing holding
+  // only a composed block carries the derived stylesheet and nothing else,
+  // which the next case pins.
   it('carries both, the derived one first', () => {
-    const css = headCssToExport(contentWith(composedBlock()), AUTHOR_CSS);
+    const css = headCssToExport(
+      contentWith(composedBlock(), htmlBlock()),
+      AUTHOR_CSS
+    );
 
-    expect(css).toContain('.lp-author');
-    expect(css).toMatch(/display:\s*block/);
+    // Searched as a pattern, spaces allowed: a fixed string would not be
+    // found in a spaced-out stylesheet, and the order below would then
+    // compare -1 against a position and pass on nothing.
+    const derivedAt = css.search(/display:\s*block/);
+    const authorAt = css.indexOf('.author-note');
+    expect(derivedAt).toBeGreaterThan(-1);
+    expect(authorAt).toBeGreaterThan(-1);
     // Last wins in CSS at equal specificity, so a hand-written rule has to come
     // after the generated one to be able to override it.
-    expect(css.indexOf('display:block')).toBeLessThan(
-      css.indexOf('.lp-author')
-    );
+    expect(derivedAt).toBeLessThan(authorAt);
+  });
+
+  it('leaves the author stylesheet out while no HTML code block is there', () => {
+    const css = headCssToExport(contentWith(composedBlock()), AUTHOR_CSS);
+
+    expect(css).toMatch(/display:\s*block/);
+    expect(css).not.toContain('.author-note');
   });
 
   it('derives nothing from a single-column composition', () => {
@@ -136,7 +155,7 @@ describe.skip('what the existing rule must keep doing', () => {
 
   it('still exports the author stylesheet while an HTML code block is there', () => {
     expect(headCssToExport(contentWith(htmlBlock()), AUTHOR_CSS)).toContain(
-      '.lp-author'
+      '.author-note'
     );
   });
 
@@ -156,8 +175,13 @@ describe.skip('what the existing rule must keep doing', () => {
       mainBlocks: { blocks: [composedBlock()] },
     };
 
-    expect(serverGuard.headCssToExport(model, '')).toBe(
-      headCssToExport(contentWith(composedBlock()), '')
+    const inTheEditor = headCssToExport(contentWith(composedBlock()), '');
+
+    // Two empty strings agree too: the comparison only means something once
+    // there is a stylesheet to compare.
+    expect(inTheEditor).not.toBe('');
+    expect(serverGuard.headCssToExport({ data: model, headCss: '' })).toBe(
+      inTheEditor
     );
   });
 });
