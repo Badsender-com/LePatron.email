@@ -92,7 +92,7 @@ function checkFallback(where, slot) {
  *
  * @param {string} name
  * @param {Object} manifest what `<name>.slots.js` exports
- * @returns {{slots: Object, variants: Object}}
+ * @returns {{slots: Object, variants: Object, isLayout: boolean}}
  */
 function checkManifest(name, manifest) {
   const slots = (manifest && manifest.slots) || {};
@@ -134,7 +134,7 @@ function checkManifest(name, manifest) {
   // `{ default: {} }` keeps the two cases on the same path.
   const variants = manifest.variants || { default: {} };
 
-  return { slots, variants };
+  return { slots, variants, isLayout };
 }
 
 const quoted = (names) => names.map((n) => `"${n}"`).join(', ');

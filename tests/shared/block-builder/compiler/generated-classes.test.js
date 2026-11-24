@@ -17,6 +17,9 @@ const {
   isGeneratedClass,
   GENERATED_CLASS_PREFIX,
 } = require('../../../../packages/shared/block-builder/generated-classes.js');
+const {
+  defineLayout,
+} = require('../../../../packages/shared/block-builder/template.js');
 const { compileFixture } = require('./fixture.js');
 
 describe('a class the generator owns', () => {
@@ -128,18 +131,39 @@ describe('the markup context', () => {
 
     it('says what to do about it', async () => {
       await expect(compileFixture({ template, slots })).rejects.toThrow(
-        /filled from stored state/
+        /Add `kind: 'layout'` to the manifest only if the generator/
       );
     });
 
-    it('is accepted in a layout', async () => {
+    // Accepted, and actually emitted: the placeholder reaches the compiled
+    // template, and a layout's render writes the markup as it was built.
+    it('is accepted in a layout, and emitted', async () => {
       const compiled = await compileFixture({
         template,
         slots,
         kind: 'layout',
       });
 
-      expect(compiled.default).toBeDefined();
+      expect(compiled.default).toContain('[[inner|MARKUP');
+      expect(defineLayout(compiled.default)({ inner: '<p>a</p>' })).toBe(
+        '<table><tr><td><p>a</p></td></tr></table>'
+      );
+    });
+
+    // Being a layout lets MARKUP sit between tags, nowhere else: an attribute
+    // or a style would take the markup unescaped into a quoted value.
+    test.each([
+      ['an attribute', '<table><tr><td :title="inner">a</td></tr></table>'],
+      [
+        'a style',
+        // A Vue template literal, written as the component would.
+        // eslint-disable-next-line no-template-curly-in-string
+        '<table><tr><td :style="`width:${inner};`">a</td></tr></table>',
+      ],
+    ])('is refused in %s, even in a layout', async (_label, inAttribute) => {
+      await expect(
+        compileFixture({ template: inAttribute, slots, kind: 'layout' })
+      ).rejects.toThrow(/"inner" is MARKUP but lands in/);
     });
 
     // Being a layout unlocks MARKUP, not an absence of checking.

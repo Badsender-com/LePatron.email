@@ -48,7 +48,7 @@ const COMPONENTS_DIR = path.join(
  * @param {string} name e.g. `button`
  * @param {string} source the `.vue` file
  * @param {Object} manifest what its `.slots.js` exports
- * @returns {{ssrRender: Function, slots: Object, variants: Object}}
+ * @returns {{ssrRender: Function, slots: Object, variants: Object, isLayout: boolean}}
  */
 function loadComponent(name, source, manifest) {
   const { descriptor, errors } = parse(source, { filename: `${name}.vue` });
@@ -65,7 +65,7 @@ function loadComponent(name, source, manifest) {
   checkScriptSetup(name, script.scriptSetupAst);
   checkSingleRoot(name, descriptor.template.ast);
 
-  const { slots, variants } = checkManifest(name, manifest);
+  const { slots, variants, isLayout } = checkManifest(name, manifest);
   const bindings = script.bindings || {};
   checkPropsDeclared(name, bindings, slots, variants);
 
@@ -75,7 +75,7 @@ function loadComponent(name, source, manifest) {
     bindings
   );
   checkTemplateReferences(name, code);
-  return { ssrRender, slots, variants };
+  return { ssrRender, slots, variants, isLayout };
 }
 
 /**
@@ -100,9 +100,10 @@ async function compileVariant(name, component, variant) {
   // Compiled by the real engine before being written. It is the engine that
   // knows which contexts exist, and it throws on one it does not — so an
   // unknown context fails the build here rather than shipping a template the
-  // editor cannot render. The invariant is checked too, since everything
-  // downstream relies on it.
-  const compiled = compileTemplate(html);
+  // editor cannot render. It refuses MARKUP too unless told the template is a
+  // layout's, as the runtime does. The invariant is checked too, since
+  // everything downstream relies on it.
+  const compiled = compileTemplate(html, { layout: component.isLayout });
   if (compiled.chunks.length !== compiled.slots.length + 1) {
     throw new Error(`${label}: compiled template is inconsistent.`);
   }

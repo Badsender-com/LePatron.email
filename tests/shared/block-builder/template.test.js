@@ -15,6 +15,7 @@ const {
   compileTemplate,
   renderTemplate,
   defineTemplate,
+  defineLayout,
 } = require('../../../packages/shared/block-builder/template.js');
 
 describe('compileTemplate', () => {
@@ -138,5 +139,41 @@ describe('defineTemplate', () => {
 
   it('throws at definition time on a template bug', () => {
     expect(() => defineTemplate('[[a|NOPE]]')).toThrow();
+  });
+});
+
+// MARKUP writes its value unescaped. The compiler only lets a layout's
+// manifest declare it, but the engine is reachable without the compiler, so it
+// refuses it too unless the template is defined as a layout.
+describe('a MARKUP slot', () => {
+  const source = '<td>[[content|MARKUP]]</td>';
+
+  it('is refused by compileTemplate by default', () => {
+    expect(() => compileTemplate(source)).toThrow(/only a layout may hold/);
+  });
+
+  it('is refused by defineTemplate, which names the way out', () => {
+    expect(() => defineTemplate(source)).toThrow(/defineLayout/);
+  });
+
+  it('is accepted by compileTemplate for a layout', () => {
+    const { slots } = compileTemplate(source, { layout: true });
+    expect(slots).toEqual([
+      { name: 'content', context: 'MARKUP', fallback: '' },
+    ]);
+  });
+
+  it('is rendered as it was built by defineLayout', () => {
+    const render = defineLayout(source);
+    expect(render({ content: '<p>a</p>' })).toBe('<td><p>a</p></td>');
+  });
+
+  it('leaves every other context escaped in a layout', () => {
+    const render = defineLayout(
+      '<td title="[[label|ATTR]]">[[content|MARKUP]]</td>'
+    );
+    expect(render({ label: '"><b>', content: '<p>a</p>' })).toBe(
+      '<td title="&quot;&gt;&lt;b&gt;"><p>a</p></td>'
+    );
   });
 });

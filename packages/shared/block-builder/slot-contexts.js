@@ -38,10 +38,17 @@ const RICH_TEXT = 'RICH_TEXT';
 // its columns, and markup escaped is markup destroyed.
 //
 // What keeps it honest is not what it does but WHERE IT MAY BE DECLARED: in a
-// layout's manifest, never an element's. An element's slots are filled from
-// stored state — from what a user typed — while a layout's are filled by
-// `generate` with its own output, and by nothing else. The compiler enforces
-// that (scripts/block-builder/component-checks.js); this comment does not.
+// layout, never an element. An element's slots are filled from stored state —
+// from what a user typed. A layout's MARKUP slot is filled by `generate` with
+// its own output, and by nothing else. The rule is about that slot, not about
+// the whole layout: a layout's other slots may come from the stored
+// composition (a column's width does), and they are escaped like an element's.
+//
+// Enforced twice. The compiler refuses MARKUP in a manifest that is not
+// `kind: 'layout'` (scripts/block-builder/component-checks.js). At runtime,
+// `defineTemplate` refuses it and only `defineLayout` accepts it (template.js),
+// and the element registry refuses an element that holds one
+// (elements/index.js).
 const MARKUP = 'MARKUP';
 
 // What a CSS value may be made of: words, numbers, units, commas, `#` and
@@ -57,13 +64,18 @@ const COLOR_VALUE = /^(#[0-9a-f]{3,8}|rgba?\([\d\s.,%]+\)|[a-z]+)$/i;
 /**
  * Escapes a value for the place it is about to land in.
  *
- * Refused values become an empty string — or, for a colour or a size, the
- * fallback the template declared. Never a throw: a generator that throws on a
- * value the user typed takes the whole canvas down with it.
+ * Refused values become an empty string — or, for a URL, a colour or a size,
+ * the fallback the template declared. Never a throw: a generator that throws on
+ * a value the user typed takes the whole canvas down with it.
+ *
+ * MARKUP is the exception to escaping: a string passes through as it is,
+ * anything else becomes an empty string, and it has no fallback. Only a
+ * layout's template may hold it (see MARKUP above).
  *
  * @param {*} value
- * @param {string} context one of TEXT, ATTR, URL, COLOR, PX, CSS_VALUE, RICH_TEXT
- * @param {*} [fallback] used when the value is refused
+ * @param {string} context one of TEXT, ATTR, URL, COLOR, PX, CSS_VALUE,
+ *   RICH_TEXT, MARKUP
+ * @param {*} [fallback] used when the value is refused; ignored for MARKUP
  * @returns {string}
  */
 function escapeForContext(value, context, fallback) {
