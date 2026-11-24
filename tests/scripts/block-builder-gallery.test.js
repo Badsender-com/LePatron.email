@@ -58,15 +58,15 @@ describe('specimens', () => {
 
   // #1683: two images side by side, with a space between them on a desktop and
   // once stacked on a phone.
-  it('lays out a row with a gutter and a stack spacing', () => {
+  it('lays out a row with gutters that differ, and a stack spacing', () => {
     const spec = specimens().find(
       (candidate) =>
-        candidate.state.rows[0].gutter > 0 &&
+        Array.isArray(candidate.state.rows[0].gutters) &&
         candidate.state.rows[0].stackSpacing > 0
     );
 
     expect(spec).toBeDefined();
-    expect(spec.state.rows[0].columns.length).toBeGreaterThan(1);
+    expect(new Set(spec.state.rows[0].gutters).size).toBeGreaterThan(1);
   });
 
   // Called twice by a watcher, or by a test and then a build.
@@ -95,9 +95,12 @@ describe('renderGallery', () => {
     expect(html).toContain('class="lp-stack"');
   });
 
-  it('pads the columns of the row with a gutter, and spaces them on a phone', () => {
-    expect(html).toMatch(/padding-left:0px;\s*padding-right:12px;/);
+  it('pads the columns after each gutter, and spaces them on a phone', () => {
+    expect(html).toMatch(/padding-left:12px;/);
+    expect(html).toMatch(/padding-left:36px;/);
+    expect(html).toContain('class="lp-stack lp-stack-spacing-16"');
     expect(html).toContain('class="lp-stack lp-gutter lp-stack-spacing-16"');
+    expect(html).toContain('class="lp-stack lp-gutter"');
     expect(html).toContain(
       '.lp-gutter{padding-left:0 !important;padding-right:0 !important;}'
     );

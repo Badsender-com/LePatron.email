@@ -234,16 +234,18 @@ function specimens() {
       [34, [picture]],
     ]),
 
-    // Two images side by side used to touch. On a desktop, 24px between the
-    // columns and none on the outer edges, each image 12px narrower than its
-    // column; on a phone, no gutter, and 16px between the stacked images.
+    // Images side by side used to touch. On a desktop, two gutters of their
+    // own, 12px then 36px, none on the outer edges, and three images of the
+    // same 184px; on a phone, no gutter, and 16px between the stacked images.
+    // Widths in px from here on: the columns and the gutters fill the 600px.
     rowSpecimen(
-      'Colonnes — 50 / 50, gouttière 24 px (bureau), espacement 16 px (mobile)',
+      'Colonnes — 3 × 184 px, gouttières 12 et 36 px (bureau), espacement 16 px (mobile)',
       [
-        [50, [picture]],
-        [50, [picture]],
+        [184, [picture]],
+        [184, [picture]],
+        [184, [picture]],
       ],
-      { gutter: 24, stackSpacing: 16 }
+      { gutters: [12, 36], stackSpacing: 16 }
     ),
   ];
 }
