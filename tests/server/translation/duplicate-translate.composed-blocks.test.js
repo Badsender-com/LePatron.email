@@ -26,6 +26,9 @@ const {
 const {
   parseState,
 } = require('../../../packages/shared/block-builder/state.js');
+const {
+  elementsOfState,
+} = require('../../../packages/shared/block-builder/composition.js');
 
 const COMPOSED = composedBlock([
   element('el-1', 'text', { content: 'Bonjour <strong>à tous</strong>' }),
@@ -96,11 +99,9 @@ describe('duplicate + translate a mailing with a composed block', () => {
     const block = composedOf(data);
 
     const state = parseState(block.builderState);
-    expect(state.elements.map((e) => e.content || e.alt || e.label)).toEqual([
-      'Hello <strong>everyone</strong>',
-      'A cat',
-      'Discover',
-    ]);
+    expect(
+      elementsOfState(state).map((e) => e.content || e.alt || e.label)
+    ).toEqual(['Hello <strong>everyone</strong>', 'A cat', 'Discover']);
     // Never translated, only regenerated: the markup is what the state makes.
     expect(block.builderHtml).toBe(generate(state));
     expect(block.builderHtml).toContain('alt="A cat"');

@@ -199,10 +199,8 @@ describe('a composition of rows and columns', () => {
   // stored — a read that renders nothing gets written back as nothing, and the
   // composition is gone on the next save.
   //
-  // `generate` chooses its shape by the ABSENCE of a flat `elements` view.
-  // That absence has to be real, not merely conditional: `emptyState()` hands
-  // one out, so a rule that only adds the view for a flat composition never
-  // takes it away from a row-shaped one.
+  // In memory a composition is only rows: `generate` renders a flat one — one
+  // row of one full-width column — as a flat list, and any other as rows.
   describe('read back for the server to regenerate', () => {
     let generate;
 

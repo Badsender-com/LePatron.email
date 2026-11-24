@@ -5,7 +5,16 @@
 
 const {
   injectBuilderTexts,
+  extractBuilderTexts,
 } = require('../../../packages/server/translation/builder-block-texts.js');
+const {
+  generate,
+  emptyState,
+} = require('../../../packages/shared/block-builder/generate.js');
+const {
+  serialiseState,
+  parseState,
+} = require('../../../packages/shared/block-builder/state.js');
 const {
   composedBlock,
   text,
@@ -157,5 +166,54 @@ describe('a translation that does not fit is dropped, never guessed', () => {
       applied: 0,
     });
     expect(data.mainBlocks.blocks[0].builderHtml).toBe(before);
+  });
+});
+
+describe('a composition of rows', () => {
+  const twoColumns = () => {
+    const state = {
+      ...emptyState(),
+      rows: [
+        {
+          id: 'row-a-1',
+          columns: [
+            { width: 66, elements: [text('Bonjour')] },
+            { width: 34, elements: [button('Cliquez')] },
+          ],
+        },
+      ],
+    };
+    return {
+      type: 'blockBuilderBlock',
+      builderState: serialiseState(state),
+      builderHtml: generate(state),
+    };
+  };
+
+  it('is keyed in document order, column by column', () => {
+    expect(extractBuilderTexts(modelWith(twoColumns()))).toEqual({
+      'builderBlock.mainBlocks.0.0.content': 'Bonjour',
+      'builderBlock.mainBlocks.0.1.label': 'Cliquez',
+    });
+  });
+
+  it('keeps its rows and columns through a translation', () => {
+    const data = modelWith(twoColumns());
+
+    injectBuilderTexts(data, {
+      'builderBlock.mainBlocks.0.0.content': 'Hello',
+      'builderBlock.mainBlocks.0.1.label': 'Click',
+    });
+
+    const [block] = data.mainBlocks.blocks;
+    const stored = JSON.parse(block.builderState);
+    expect(stored.v).toBe(2);
+    expect(stored.elements).toBeUndefined();
+    const { columns } = parseState(block.builderState).rows[0];
+    expect(columns.map((column) => column.width)).toEqual([66, 34]);
+    expect(columns[0].elements[0].content).toBe('Hello');
+    expect(columns[1].elements[0].label).toBe('Click');
+    expect(block.builderHtml).toBe(generate(parseState(block.builderState)));
+    expect(block.builderHtml).toContain('width="66%"');
   });
 });

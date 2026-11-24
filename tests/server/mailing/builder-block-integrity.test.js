@@ -25,11 +25,14 @@ const {
   serialiseState,
   parseState,
 } = require('../../../packages/shared/block-builder/state.js');
+const {
+  singleColumnRows,
+} = require('../../../packages/shared/block-builder/composition.js');
 
 const stateWith = (content) =>
   serialiseState({
     ...emptyState(),
-    elements: [{ id: 'el-1', type: 'text', content }],
+    rows: singleColumnRows([{ id: 'el-1', type: 'text', content }]),
   });
 
 const composed = (builderState, builderHtml) => ({

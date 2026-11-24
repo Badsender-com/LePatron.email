@@ -35,11 +35,11 @@ describe('re-opening a block', () => {
   it('restores what was composed before', () => {
     const { modal } = open({ markup: '<p>x</p>', state: composedState() });
 
-    expect(modal.state.elements.map((e) => e.type)).toEqual([
+    expect(modal.columnElements.map((e) => e.type)).toEqual([
       'text',
       'divider',
     ]);
-    expect(modal.state.elements[0].content).toBe('Déjà écrit');
+    expect(modal.columnElements[0].content).toBe('Déjà écrit');
   });
 
   it('selects the first element, so the panel is not empty', () => {
@@ -86,7 +86,7 @@ describe('re-opening a block', () => {
       const { modal } = open({ markup: '<p>écrit à la main</p>', state: '' });
 
       expect(modal.replacesExistingMarkup).toBe(true);
-      expect(modal.state.elements).toEqual([]);
+      expect(modal.columnElements).toEqual([]);
     });
 
     it('says nothing on an empty block', () => {

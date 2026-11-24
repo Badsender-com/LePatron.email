@@ -3,24 +3,42 @@
 // The shape of a composition: rows, each holding columns, each column holding
 // elements.
 //
-// Split out of state.js because reading a stored composition is now two jobs
-// that have little to do with each other — bringing each element back to the
-// keys its template declares, and bringing the structure around them back into
-// something renderable. Everything here treats what it is given as HOSTILE: it
-// has been in a database for months, written by an older version, possibly
-// hand-edited, possibly truncated.
+// In memory, a composition is ALWAYS rows — whichever version stored it. A
+// composition stored before columns reads as one row of one full-width column,
+// and a composition of that shape is written back the way it was stored (see
+// isFlatComposition, and serialiseState in state.js).
+//
+// Everything here treats what it is given as HOSTILE: it has been in a database
+// for months, written by an older version, possibly hand-edited, possibly
+// truncated.
 
-const { cleanElements, newRowId } = require('./stored-elements.js');
+const {
+  cleanElements,
+  ensureUniqueIds,
+  newRowId,
+} = require('./stored-elements.js');
 
 // Four is where a 600px email stops working: below roughly 60px a cell no
 // longer holds a word, and Outlook's rounding of percentages starts to show.
 const MAX_COLUMNS = 4;
 
-// Same reasoning from the other end. A column narrower than this is not a
-// layout choice, it is a mistake or a corrupted value.
+// Same reasoning as MAX_COLUMNS from the other end. A column narrower than
+// this is not a layout choice, it is a mistake or a corrupted value.
 const MIN_COLUMN_WIDTH = 10;
 
 const FULL_WIDTH = 100;
+
+// The keys a row and a column hold when nothing about them was set. A key
+// beyond these is a setting, and a setting makes the composition more than a
+// flat list (see isFlatComposition).
+const BARE_ROW_KEYS = ['id', 'columns'];
+const BARE_COLUMN_KEYS = ['width', 'elements'];
+
+const isObject = (value) =>
+  value !== null && typeof value === 'object' && !Array.isArray(value);
+
+const hasOnlyKeys = (object, keys) =>
+  Object.keys(object).every((key) => keys.includes(key));
 
 /**
  * Whether a list of widths is one a row may have: one to MAX_COLUMNS finite
@@ -71,11 +89,11 @@ function usableWidths(widths) {
  * @returns {Object} `{ id, columns }`
  */
 function cleanRow(row) {
-  const source = row && typeof row === 'object' ? row : {};
+  const source = isObject(row) ? row : {};
   const stored = Array.isArray(source.columns) ? source.columns : [];
 
   const columns = (stored.length === 0 ? [{}] : stored).map((column) => {
-    const from = column && typeof column === 'object' ? column : {};
+    const from = isObject(column) ? column : {};
     return {
       width: typeof from.width === 'number' ? from.width : Number(from.width),
       elements: cleanElements(
@@ -105,6 +123,22 @@ function cleanRow(row) {
 }
 
 /**
+ * Rows of one full-width column holding `elements`: what a composition stored
+ * before columns reads as, and what a new one starts from.
+ *
+ * @param {Array<Object>} [elements]
+ * @returns {Array<Object>}
+ */
+function singleColumnRows(elements) {
+  return [
+    {
+      id: newRowId(),
+      columns: [{ width: FULL_WIDTH, elements: elements || [] }],
+    },
+  ];
+}
+
+/**
  * The rows of a stored composition, whichever version wrote it.
  *
  * A composition written before columns is a flat list of elements. It reads as
@@ -116,20 +150,22 @@ function cleanRow(row) {
  * @returns {Array<Object>}
  */
 function readRows(parsed) {
+  let rows;
   if (Array.isArray(parsed.rows)) {
-    return parsed.rows.map(cleanRow);
+    rows = parsed.rows.map(cleanRow);
+  } else {
+    rows = singleColumnRows(
+      cleanElements(Array.isArray(parsed.elements) ? parsed.elements : [])
+    );
   }
 
-  const elements = cleanElements(
-    Array.isArray(parsed.elements) ? parsed.elements : []
-  );
-  if (elements.length === 0) return [];
-
-  return [{ id: '', columns: [{ width: FULL_WIDTH, elements }] }];
+  ensureUniqueIds(rows, newRowId);
+  return rows;
 }
 
 /**
- * Every element of a composition, in document order.
+ * Every element of a list of rows, in document order: row by row, column by
+ * column.
  *
  * @param {Array<Object>} rows
  * @returns {Array<Object>}
@@ -147,12 +183,70 @@ function elementsOf(rows) {
   return all;
 }
 
+/**
+ * Every element of a composition, in document order, whatever its shape.
+ *
+ * The elements are the composition's own objects: a value written into one is
+ * written into the composition.
+ *
+ * @param {Object} state
+ * @returns {Array<Object>}
+ */
+const elementsOfState = (state) => elementsOf(state && state.rows);
+
+/**
+ * Whether a composition is a flat list of elements: exactly one row of exactly
+ * one full-width column, with nothing set on either. That is the shape a
+ * composition stored before columns reads as, and the one that is written back
+ * the way it was stored — and rendered the way it always was.
+ *
+ * A row or column setting is a key beyond the bare ones, so any setting added
+ * later makes a composition that uses it more than a flat list.
+ *
+ * @param {Object} state
+ * @returns {boolean}
+ */
+function isFlatComposition(state) {
+  const rows = state && state.rows;
+  if (!Array.isArray(rows) || rows.length !== 1) return false;
+
+  const [row] = rows;
+  if (!isObject(row) || !hasOnlyKeys(row, BARE_ROW_KEYS)) return false;
+  if (!Array.isArray(row.columns) || row.columns.length !== 1) return false;
+
+  const [column] = row.columns;
+  return (
+    isObject(column) &&
+    hasOnlyKeys(column, BARE_COLUMN_KEYS) &&
+    column.width === FULL_WIDTH &&
+    Array.isArray(column.elements)
+  );
+}
+
+/**
+ * The element list of the first column of the first row, or null: the live
+ * array, so a splice into it changes the composition. For a flat composition,
+ * that is every element it holds.
+ *
+ * @param {Object} state
+ * @returns {Array<Object>|null}
+ */
+function singleColumnElements(state) {
+  const row = state && Array.isArray(state.rows) ? state.rows[0] : null;
+  const column = row && Array.isArray(row.columns) ? row.columns[0] : null;
+  return column && Array.isArray(column.elements) ? column.elements : null;
+}
+
 module.exports = {
   MAX_COLUMNS,
   MIN_COLUMN_WIDTH,
   FULL_WIDTH,
   newRowId,
   areUsableWidths,
+  singleColumnRows,
   readRows,
   elementsOf,
+  elementsOfState,
+  isFlatComposition,
+  singleColumnElements,
 };

@@ -14,10 +14,13 @@ const {
 const {
   elementFor,
 } = require('../../../packages/shared/block-builder/elements/index.js');
+const {
+  singleColumnRows,
+} = require('../../../packages/shared/block-builder/composition.js');
 
 /** A composed block holding `elements`. */
 function composedBlock(elements) {
-  const state = { ...emptyState(), elements };
+  const state = { ...emptyState(), rows: singleColumnRows(elements) };
   return {
     type: 'blockBuilderBlock',
     builderState: serialiseState(state),

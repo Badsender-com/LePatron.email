@@ -20,6 +20,9 @@ const {
 const {
   parseState,
 } = require('../../../packages/shared/block-builder/state.js');
+const {
+  elementsOfState,
+} = require('../../../packages/shared/block-builder/composition.js');
 
 const COMPOSED = composedBlock([
   element('el-1', 'text', { content: 'Bonjour' }),
@@ -73,8 +76,8 @@ describe('an answer holding keys that were not sent', () => {
     const state = parseState(block.builderState);
 
     expect(title).toEqual({ type: 'titleBlock', text: 'Welcome' });
-    expect(state.elements[1].label).toBe('Discover');
-    expect(state.elements[1].href).toBe('https://example.com');
+    expect(elementsOfState(state)[1].label).toBe('Discover');
+    expect(elementsOfState(state)[1].href).toBe('https://example.com');
   });
 
   it('stores the markup the translated state generates', async () => {

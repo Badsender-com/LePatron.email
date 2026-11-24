@@ -8,6 +8,13 @@
 // type comparison is short-circuited against the `null` every property is
 // generated with (see tests/editor/block-builder/builder-state-survives).
 //
+// Two stored shapes, one in memory. Version 1 stores a flat list of
+// `elements`; version 2 stores `rows` of columns. In memory a composition is
+// always rows (see composition.js), and it is written back in the oldest shape
+// that holds it: a flat composition as version 1, anything else as version 2.
+// A block that never used columns therefore stays readable by a version from
+// before them, and a rollback only loses what it could not have shown anyway.
+//
 // Everything here treats the stored value as HOSTILE. It has been in a database
 // for months, written by an older version, possibly hand-edited, possibly
 // truncated. Returning null on anything unexpected costs the user a composition
@@ -15,18 +22,42 @@
 
 const {
   newElementId,
-  newRowId,
   cleanAgainst,
   cleanElement,
   ensureUniqueIds,
 } = require('./stored-elements.js');
-const { readRows, elementsOf } = require('./composition.js');
+const {
+  readRows,
+  elementsOf,
+  isFlatComposition,
+  singleColumnElements,
+} = require('./composition.js');
 const {
   STATE_VERSION,
   GENERATOR_VERSION,
   DEFAULT_BLOCK,
-  emptyState,
 } = require('./generate.js');
+
+// The version that stores a flat `elements` list.
+const FLAT_VERSION = 1;
+
+/**
+ * The shape a composition is stored in: `{ v: 1, elements }` for a flat one,
+ * or for one without any row, and `{ v: 2, rows }` for anything else.
+ *
+ * @param {Object} state
+ * @returns {Object}
+ */
+function storedShapeOf(state) {
+  const rows = Array.isArray(state.rows) ? state.rows : [];
+  if (rows.length === 0 || isFlatComposition(state)) {
+    return {
+      v: FLAT_VERSION,
+      elements: rows.length === 0 ? [] : singleColumnElements(state),
+    };
+  }
+  return { v: STATE_VERSION, rows };
+}
 
 /**
  * @param {Object} state
@@ -34,34 +65,15 @@ const {
  */
 function serialiseState(state) {
   try {
-    // Stamped with the CURRENT generator: what is serialised is what is being
-    // applied, and applying regenerates the markup with this version.
-    // `elements` is dropped when there are rows: it is a derived view, and
-    // storing it beside the rows would be a second source of truth that drifts
-    // the first time one is edited and the other is not.
-    const { elements, ...rest } = state || {};
-    // Which shape gets written, while both exist.
-    //
-    // Rows are stored only when the caller hands rows and NOTHING ELSE. That is
-    // the transitional rule, and it is deliberately unambiguous: `parseState`
-    // returns a flat `elements` view beside the rows, and whoever holds that
-    // view may be editing it — the modal splices it today. Two shapes in one
-    // object, one of them edited, is a composition that disagrees with itself,
-    // and the half that loses is whichever the writer did not touch.
-    //
-    // So: a caller that still thinks in elements writes elements, a caller that
-    // thinks in rows writes rows. The rule goes away with the derived view,
-    // when the modal composes rows directly.
-    const hasRows = Array.isArray(rest.rows) && rest.rows.length > 0;
-    const stored =
-      hasRows && elements === undefined
-        ? rest
-        : { ...rest, rows: undefined, elements: elements || [] };
-
+    const source = state || {};
+    const { v, ...shape } = storedShapeOf(source);
     return JSON.stringify({
-      ...stored,
-      v: STATE_VERSION,
+      v,
+      // Stamped with the CURRENT generator: what is serialised is what is being
+      // applied, and applying regenerates the markup with this version.
       gen: GENERATOR_VERSION,
+      block: source.block,
+      ...shape,
     });
   } catch (error) {
     // A cycle, or something unserialisable. Storing nothing is better than
@@ -128,39 +140,18 @@ function parseState(serialised) {
   const rows = readRows(parsed);
   const elements = elementsOf(rows);
   if (elements.length === 0) return null;
-
-  // Ids are made unique across the WHOLE composition, not column by column:
-  // selection and drag address an element by id alone, so two elements sharing
-  // one in different columns would select and move as one.
+  // Unique across the WHOLE composition, not column by column: selection and
+  // drag address an element by id alone, so two elements sharing one in
+  // different columns would select and move as one.
   ensureUniqueIds(elements, newElementId);
-  ensureUniqueIds(rows, newRowId);
-
-  // `emptyState()` hands out a flat `elements` view of its own, and spreading
-  // it first would make the absence below unreachable: the conditional can add
-  // the view, never take it away. The generator chooses its shape by that very
-  // absence, so a row-shaped composition read through here would have rendered
-  // as a flat one — empty — and the server, which regenerates from what it
-  // reads, would have written that emptiness back over the composition.
-  const { elements: _flatView, ...base } = emptyState();
 
   return {
-    ...base,
+    v: STATE_VERSION,
     // The generator that wrote the stored markup, kept as read: it is how a
     // reopened block tells that applying would rebuild it differently.
     gen: typeof parsed.gen === 'string' ? parsed.gen : GENERATOR_VERSION,
     block: cleanAgainst(parsed.block, DEFAULT_BLOCK),
     rows,
-    // A flat view, in document order, present ONLY for a composition that was
-    // stored flat. Its absence is what tells the generator to render rows.
-    //
-    // That is the rule, and it is one rule: a composition renders the way it
-    // was stored. Deriving a flat view for every composition looked tidier and
-    // was wrong — a block stored before columns would have come back as a
-    // one-column row and re-rendered as a column cell, so translating a mailing
-    // without changing a word would have rewritten its markup.
-    //
-    // It goes away with the ticket that teaches the modal to compose rows.
-    ...(Array.isArray(parsed.rows) ? {} : { elements }),
   };
 }
 

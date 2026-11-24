@@ -35,11 +35,14 @@ const {
   dataWith,
   longerThan,
 } = require('./synthetic-blocks.fixtures.js');
+const {
+  singleColumnRows,
+} = require('../../../packages/shared/block-builder/composition.js');
 
 const stateWith = (content) => {
   const state = {
     ...emptyState(),
-    elements: [{ id: 'el-1', type: 'text', content }],
+    rows: singleColumnRows([{ id: 'el-1', type: 'text', content }]),
   };
   return { serialised: serialiseState(state), html: generate(state) };
 };

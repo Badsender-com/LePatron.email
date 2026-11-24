@@ -8,19 +8,27 @@
 // is what `v` and `gen` are for — a stored block records which schema and which
 // generator produced it, so a divergence can be surfaced rather than applied.
 //
-// Mono-column by design, for the MVP. Rows and columns are a schema change, and
-// `v` is what will carry that migration.
+// A composition is rows of columns (see composition.js). One that is a single
+// full-width column renders exactly as the flat list it was before columns.
 
 const { elementFor } = require('./elements/index.js');
 const { escapeForContext, COLOR, PX, ATTR } = require('./slot-contexts.js');
 const { defineTemplate } = require('./template.js');
 const { stackClassFor } = require('./generated-classes.js');
 const columnTemplates = require('./components/column.compiled.js');
+const {
+  isFlatComposition,
+  singleColumnElements,
+  singleColumnRows,
+} = require('./composition.js');
 
 const renderFilledColumn = defineTemplate(columnTemplates.filled);
 const renderEmptyColumn = defineTemplate(columnTemplates.empty);
 
 // Bumped when the shape of a state changes in a way a reader must know about.
+// The latest version this code reads and writes: 1 stores a flat `elements`
+// list, 2 stores `rows` of columns. Which one a composition is written in is
+// decided by its shape (see serialiseState in state.js).
 const STATE_VERSION = 2;
 
 // Bumped when a template changes in a way that alters rendered output. A block
@@ -257,16 +265,17 @@ function generate(state, options) {
   // them. Deciding that here rather than wrapping afterwards is what keeps a
   // single-column composition rendering exactly as it did.
   //
-  // Which shape renders: the one the composition was stored in. A flat view is
-  // present only on a composition that was stored flat (see state.js), so its
-  // absence is the signal — never a guess at what the rows "really" mean.
+  // Which shape renders follows the shape of the composition, the same rule
+  // that decides how it is stored: a flat one — one row of one full-width
+  // column, nothing set on either — renders as the flat list it always was,
+  // byte for byte; anything else renders its rows.
   let body;
-  if (!Array.isArray(state.elements) && Array.isArray(state.rows)) {
-    body = state.rows.map((row) => generateRow(row, options)).join('');
+  if (!isFlatComposition(state)) {
+    body = (Array.isArray(state.rows) ? state.rows : [])
+      .map((row) => generateRow(row, options))
+      .join('');
   } else {
-    // A composition still held as a flat list, which is what the modal hands
-    // over until it composes rows itself.
-    const cells = (Array.isArray(state.elements) ? state.elements : [])
+    const cells = singleColumnElements(state)
       .map((element) => generateElement(element, options))
       .join('');
     body =
@@ -313,10 +322,9 @@ function emptyState() {
     v: STATE_VERSION,
     gen: GENERATOR_VERSION,
     block: { ...DEFAULT_BLOCK },
-    rows: [],
-    // Derived from `rows`, and never stored. Temporary: it is what lets the
-    // generator keep reading a flat composition while the rows land.
-    elements: [],
+    // One row of one full-width column, so a new composition always has
+    // somewhere to put an element.
+    rows: singleColumnRows(),
   };
 }
 

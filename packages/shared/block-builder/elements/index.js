@@ -1,6 +1,6 @@
 'use strict';
 
-// The five content elements of the mono-column MVP.
+// The five content elements a column can hold.
 //
 // Each module exports `{ type, render, defaults, translatable }`. Adding a sixth means adding
 // a file and a line here — nothing else in the generator knows the list.

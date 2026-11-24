@@ -21,6 +21,9 @@ const {
   parseState,
   serialiseState,
 } = require('../../../../../../shared/block-builder/state.js');
+const {
+  singleColumnElements,
+} = require('../../../../../../shared/block-builder/composition.js');
 
 // The composing surface of the block builder.
 //
@@ -86,9 +89,15 @@ const BlockBuilderModalComponent = Vue.component('BlockBuilderModal', {
     mobileWidth: MOBILE_WIDTH,
   }),
   computed: {
+    // The list the modal edits. A composition is rows of columns, and this
+    // modal composes a single column: every list operation works on that
+    // column's own array, so what it changes is the composition.
+    columnElements() {
+      return singleColumnElements(this.state) || [];
+    },
     selected() {
       return (
-        this.state.elements.find((element) => element.id === this.selectedId) ||
+        this.columnElements.find((element) => element.id === this.selectedId) ||
         null
       );
     },
@@ -120,7 +129,7 @@ const BlockBuilderModalComponent = Vue.component('BlockBuilderModal', {
       );
     },
     isEmpty() {
-      return this.state.elements.length === 0;
+      return this.columnElements.length === 0;
     },
     tooLarge() {
       return (
@@ -172,8 +181,8 @@ const BlockBuilderModalComponent = Vue.component('BlockBuilderModal', {
         typeof existingMarkup === 'string' &&
         existingMarkup !== '';
       this.rebuildsMarkup = Boolean(restored) && existingMarkup !== this.html;
-      this.selectedId = this.state.elements.length
-        ? this.state.elements[0].id
+      this.selectedId = this.columnElements.length
+        ? this.columnElements[0].id
         : null;
       this.previewWidth = DESKTOP_WIDTH;
       this.rememberOpenedState();

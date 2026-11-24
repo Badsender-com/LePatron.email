@@ -44,7 +44,18 @@ function specimen(title, elements, block) {
         paddingBottom: 8,
         ...block,
       },
-      elements: elements.map((element) => ({ id: id(), ...element })),
+      // One full-width column: a flat composition, rendered as one.
+      rows: [
+        {
+          id: id(),
+          columns: [
+            {
+              width: 100,
+              elements: elements.map((element) => ({ id: id(), ...element })),
+            },
+          ],
+        },
+      ],
     },
   };
 }

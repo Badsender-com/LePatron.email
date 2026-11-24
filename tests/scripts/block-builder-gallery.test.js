@@ -11,12 +11,17 @@ const {
 const {
   ELEMENTS,
 } = require('../../packages/shared/block-builder/elements/index.js');
+const {
+  elementsOfState,
+} = require('../../packages/shared/block-builder/composition.js');
 
 describe('specimens', () => {
   it('exercises every element at least once', () => {
     const rendered = new Set();
     specimens().forEach((spec) =>
-      spec.state.elements.forEach((element) => rendered.add(element.type))
+      elementsOfState(spec.state).forEach((element) =>
+        rendered.add(element.type)
+      )
     );
 
     ELEMENTS.forEach((element) => {
@@ -26,7 +31,7 @@ describe('specimens', () => {
 
   it('gives every element a unique id', () => {
     const ids = specimens().flatMap((spec) =>
-      spec.state.elements.map((element) => element.id)
+      elementsOfState(spec.state).map((element) => element.id)
     );
 
     expect(new Set(ids).size).toBe(ids.length);

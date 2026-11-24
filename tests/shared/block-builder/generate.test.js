@@ -12,6 +12,9 @@ const {
   STATE_VERSION,
   ELEMENT_ATTRIBUTE,
 } = require('../../../packages/shared/block-builder/generate.js');
+const {
+  singleColumnRows,
+} = require('../../../packages/shared/block-builder/composition.js');
 
 const textElement = (overrides) => ({
   id: 'e1',
@@ -22,7 +25,7 @@ const textElement = (overrides) => ({
 
 const stateWith = (...elements) => ({
   ...emptyState(),
-  elements,
+  rows: singleColumnRows(elements),
 });
 
 describe('emptyState', () => {
@@ -31,8 +34,11 @@ describe('emptyState', () => {
     expect(typeof emptyState().gen).toBe('string');
   });
 
-  it('starts with no elements', () => {
-    expect(emptyState().elements).toEqual([]);
+  it('starts with one empty full-width column, and no flat view', () => {
+    expect(emptyState().rows).toEqual([
+      { id: expect.any(String), columns: [{ width: 100, elements: [] }] },
+    ]);
+    expect(emptyState().elements).toBeUndefined();
   });
 });
 

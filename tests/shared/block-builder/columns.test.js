@@ -32,20 +32,21 @@ const rowOf = (columns) => ({
 describe('a composition renders as rows of columns', () => {
   let generate;
   let emptyState;
+  let parseState;
 
   beforeAll(() => {
     ({
       generate,
       emptyState,
     } = require('../../../packages/shared/block-builder/generate.js'));
+    ({
+      parseState,
+    } = require('../../../packages/shared/block-builder/state.js'));
   });
 
-  // Built without the flat `elements` view on purpose: a composition carries
-  // one or the other, and its absence is what says "render rows". See state.js.
-  const composition = (rows) => {
-    const { elements: _elements, ...rest } = emptyState();
-    return { ...rest, rows };
-  };
+  // In memory a composition is always rows. One row of one full-width column
+  // renders flat, as it did before columns; anything else renders its rows.
+  const composition = (rows) => ({ ...emptyState(), rows });
   const render = (...rows) => generate(composition(rows));
 
   describe('the cells', () => {
@@ -170,10 +171,9 @@ describe('a composition renders as rows of columns', () => {
 
   describe('what must not change', () => {
     it('still renders a composition written before columns', () => {
-      const html = generate({
-        ...emptyState(),
-        elements: [textAt('a', 'hérité')],
-      });
+      const html = generate(
+        parseState(JSON.stringify({ v: 1, elements: [textAt('a', 'hérité')] }))
+      );
 
       expect(html).toContain('hérité');
     });
@@ -214,10 +214,7 @@ describe.skip('a composition derives its stylesheet', () => {
     } = require('../../../packages/shared/block-builder/generate.js'));
   });
 
-  const composition = (rows) => {
-    const { elements: _elements, ...rest } = emptyState();
-    return { ...rest, rows };
-  };
+  const composition = (rows) => ({ ...emptyState(), rows });
   const cssOf = (...rows) => collectCss(composition(rows));
 
   it('derives a stacking rule for a row of several columns', () => {

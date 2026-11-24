@@ -18,8 +18,8 @@ const {
 // `allow-same-origin`), so the parent can write into it and listen on it even
 // though scripts inside it cannot run.
 //
-// The component is expected to provide: `state`, `selectedId`, `isEmpty`,
-// `previewMarkup`, `vm`, and a `previewFrame` ref.
+// The component is expected to provide: `columnElements`, `selectedId`,
+// `isEmpty`, `previewMarkup`, `vm`, and a `previewFrame` ref.
 //
 // It knows nothing of the drag. What the drag needs from it is public and
 // generic: the events below, to listen on a freshly written document and to
@@ -261,7 +261,7 @@ const PreviewSurfaceMixin = {
           : null;
       if (!row) return null;
       const id = row.getAttribute(ELEMENT_ATTRIBUTE);
-      return this.state.elements.some((element) => element.id === id)
+      return this.columnElements.some((element) => element.id === id)
         ? row
         : null;
     },

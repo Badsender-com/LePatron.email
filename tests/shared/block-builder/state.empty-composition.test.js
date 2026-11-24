@@ -13,6 +13,9 @@ const {
   emptyState,
   STATE_VERSION,
 } = require('../../../packages/shared/block-builder/generate.js');
+const {
+  singleColumnRows,
+} = require('../../../packages/shared/block-builder/composition.js');
 
 describe('isEmptyComposition', () => {
   it('recognises what the editor stores for an emptied block', () => {
@@ -24,7 +27,7 @@ describe('isEmptyComposition', () => {
       'a composition with elements',
       serialiseState({
         ...emptyState(),
-        elements: [{ id: 'a', type: 'text' }],
+        rows: singleColumnRows([{ id: 'a', type: 'text' }]),
       }),
     ],
     ['nothing stored', ''],
