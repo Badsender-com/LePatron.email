@@ -5,6 +5,7 @@ const {
   MIN_COLUMN_WIDTH,
   FULL_WIDTH,
   newRowId,
+  areUsableWidths,
 } = require('../../../../../../shared/block-builder/composition.js');
 
 // Rows: selecting one, and setting its structure.
@@ -27,25 +28,6 @@ const PRESETS = [
   { key: 'thirds', widths: [33, 33, 34] },
   { key: 'quarters', widths: [25, 25, 25, 25] },
 ];
-
-/**
- * Whether a list of widths is one a row may have.
- *
- * Refused rather than repaired: the panel is the one place a user sets these,
- * so anything outside the limits is a bug in the caller, and silently moving
- * the numbers would hide it. A stored value is a different matter and is
- * normalised on read (composition.js).
- *
- * @param {Array<number>} widths
- * @returns {boolean}
- */
-function areUsableWidths(widths) {
-  if (!Array.isArray(widths) || widths.length === 0) return false;
-  if (widths.length > MAX_COLUMNS) return false;
-  if (!widths.every((width) => Number.isFinite(width))) return false;
-  if (widths.some((width) => width < MIN_COLUMN_WIDTH)) return false;
-  return widths.reduce((sum, width) => sum + width, 0) === FULL_WIDTH;
-}
 
 const RowSettingsMixin = {
   computed: {
@@ -117,6 +99,10 @@ const RowSettingsMixin = {
      */
     setRowWidths(rowId, widths) {
       const row = (this.state.rows || []).find((entry) => entry.id === rowId);
+      // Refused rather than repaired: the panel is the one place a user sets
+      // widths, so anything outside the limits is a bug in the caller, and
+      // silently moving the numbers would hide it. A stored value is a
+      // different matter and is normalised on read (composition.js).
       if (!row || !areUsableWidths(widths)) return false;
 
       const kept = row.columns.slice(0, widths.length);
@@ -177,7 +163,6 @@ const RowSettingsMixin = {
 module.exports = {
   RowSettingsMixin,
   PRESETS,
-  areUsableWidths,
   MAX_COLUMNS,
   MIN_COLUMN_WIDTH,
 };
