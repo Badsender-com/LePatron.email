@@ -137,13 +137,14 @@ export default {
     <bs-group-taxonomy-tab
       ref="values"
       :dimension-name="dimension.name"
-      :parent-name="parent ? parent.name : null"
       :parent-label="parent ? parent.label : ''"
       :role="dimension.role || null"
+      :writable="dimension.isActive !== false"
       @count="
         valueCount = $event;
         $emit('count', $event);
       "
+      @values="$emit('values', $event)"
       @missing-codes="missingCodes = $event"
     />
   </section>

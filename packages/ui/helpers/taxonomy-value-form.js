@@ -40,42 +40,23 @@ export function valueFormFor(item, suggestedOrder = 0) {
 }
 
 /**
+ * The panel edits what a value is (ADR-0026): its words, identifier, code,
+ * tokens and status. Where it is offered and where it is the default are set
+ * in one place each, the crossings matrix and the Defaults segment, and its
+ * order by drag and drop: none of them travels with the panel. A new value
+ * goes last, offered everywhere.
+ *
  * @param {Object} form
- * @param {Object} dimension what the dimension makes a value carry
- * @param {boolean} dimension.isEmailType the email type has no tokens
- * @param {boolean} dimension.hasParent its values carry an availability
- * @param {string|null} dimension.role its values carry a code
+ * @param {Object} options
+ * @param {string|null} options.role the dimension's role: its values carry a
+ *   code
+ * @param {boolean} options.isNew a creation, which gets its place in the list
  * @returns {Object} the body of the request
  */
-export function valuePayloadFrom(form, { isEmailType, hasParent, role }) {
-  const payload = buildTaxonomyPayload(form);
-  if (hasParent) payload.parentIds = form.parentIds;
+export function valuePayloadFrom(form, { role, isNew }) {
+  const { order, ...payload } = buildTaxonomyPayload(form);
+  if (isNew) payload.order = order;
   payload.tokens = form.tokens;
   if (role) payload.code = form.code;
-  // The company's default (ADR-0024), never on the email type, which keeps its
-  // own field on the email: ticked at the first level, under some parent
-  // values for a child dimension.
-  if (canBeDefault({ isEmailType })) {
-    if (hasParent) {
-      payload.defaultUnder = defaultUnderOffered(form);
-    } else {
-      payload.isDefault = form.isDefault === true;
-    }
-  }
   return payload;
-}
-
-export function canBeDefault({ isEmailType }) {
-  return !isEmailType;
-}
-
-/**
- * The parent values a child value is the default under, kept to those its
- * availability offers it under: narrowing the availability takes the others.
- */
-export function defaultUnderOffered({ defaultUnder, parentIds }) {
-  const offered = parentIds || [];
-  return (defaultUnder || []).filter(
-    (id) => offered.length === 0 || offered.includes(id)
-  );
 }

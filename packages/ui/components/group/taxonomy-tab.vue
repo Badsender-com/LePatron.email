@@ -17,7 +17,8 @@ import { STANDARD_DIMENSIONS } from '~/helpers/taxonomy-builder.js';
  * The values of one dimension: the email type's, or one the company declared.
  *
  * Emits `count` with the number of values once they are read, so the section
- * around it knows whether the dimension can be deleted.
+ * around it knows whether the dimension can be deleted, and `values` with the
+ * values themselves, so the workspace's tree and points follow every change.
  */
 export default {
   name: 'BsGroupTaxonomyTab',
@@ -31,10 +32,12 @@ export default {
   mixins: [mixinTaxonomyManage, mixinTaxonomyValueWrites],
   props: {
     dimensionName: { type: String, default: STANDARD_DIMENSIONS.EMAIL_TYPE },
-    // The dimension this one hangs under: its values make the availability.
-    parentName: { type: String, default: null },
+    // The dimension this one hangs under, named in the panel: the
+    // availability is set in the crossings matrix.
     parentLabel: { type: String, default: '' },
     role: { type: String, default: null },
+    // False for a deactivated dimension: the server takes no new value there.
+    writable: { type: Boolean, default: true },
   },
   data() {
     return {
@@ -47,8 +50,6 @@ export default {
       // managed to read.
       loadError: false,
       items: [],
-      // Null while the dimension hangs under nothing.
-      parentValues: null,
     };
   },
   computed: {
@@ -74,11 +75,9 @@ export default {
     // A super admin switching company keeps this component mounted, and would
     // otherwise keep reading the previous company's list.
     groupId: 'fetchItems',
-    parentName: 'fetchParentValues',
   },
   mounted() {
     this.fetchItems();
-    this.fetchParentValues();
   },
   methods: {
     ...mapMutations(PAGE, { showSnackbar: SHOW_SNACKBAR }),
@@ -95,6 +94,7 @@ export default {
         );
         this.items = response.items || [];
         this.$emit('count', this.items.length);
+        this.$emit('values', this.items);
         this.$emit('missing-codes', valuesWithoutCode(this.items));
       } catch (error) {
         this.loadError = true;
@@ -102,24 +102,6 @@ export default {
         this.reportError(error);
       } finally {
         this.loading = false;
-      }
-    },
-
-    // Read again before each form opens: values added to the parent since
-    // the screen loaded are offered.
-    async fetchParentValues() {
-      if (!this.parentName) {
-        this.parentValues = null;
-        return;
-      }
-      try {
-        const response = await this.$axios.$get(
-          apiRoutes.taxonomyItems(this.groupId, { type: this.parentName })
-        );
-        this.parentValues = response.items || [];
-      } catch (error) {
-        this.parentValues = null;
-        this.reportError(error);
       }
     },
 
@@ -138,13 +120,11 @@ export default {
       await this.fetchItems();
     },
 
-    async openCreateForm() {
-      await this.fetchParentValues();
+    openCreateForm() {
       this.$refs.formDialog.open(null, nextOrder(this.items));
     },
 
-    async openEditForm(item) {
-      await this.fetchParentValues();
+    openEditForm(item) {
       this.$refs.formDialog.open(item);
     },
 
@@ -170,6 +150,7 @@ export default {
       :loading="loading"
       :load-error="loadError"
       :is-email-type="isEmailType"
+      :can-create="writable"
       reorderable
       @retry="fetchItems"
       @create="openCreateForm"
@@ -179,7 +160,7 @@ export default {
       @reorder="reorder"
     />
     <bs-taxonomy-quick-add
-      v-if="canManageTaxonomy && !loadError"
+      v-if="canManageTaxonomy && writable && !loadError"
       :dimension-name="dimensionName"
       :is-email-type="isEmailType"
       :next-order="nextOrder(items)"
@@ -191,7 +172,6 @@ export default {
       ref="formDialog"
       :loading="saving"
       :is-email-type="isEmailType"
-      :parent-values="parentValues"
       :parent-label="parentLabel"
       :role="role"
       @save="saveItem"

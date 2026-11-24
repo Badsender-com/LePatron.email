@@ -11,6 +11,7 @@ const NO_CONTRACT = Object.freeze({
   read: [],
   adopt: {},
   compared: [],
+  comparedTogether: [],
 });
 
 module.exports = { contractOfTemplate, listContracts };

@@ -8,7 +8,9 @@ const STEPS = ['structure', 'values', 'crossings', 'tokens', 'templates'];
 /**
  * What a company with no dimension of its own sees first (ADR-0026): the
  * steps of the path, and the usual dimensions, each prefilling the creation
- * without creating anything. Emits `suggest` with a suggestion.
+ * without creating anything. Emits `suggest` with a suggestion. Once a
+ * dimension exists, the page keeps it while the admin goes on from it, and
+ * `dismiss` hides it.
  */
 export default {
   name: 'BsTaxonomyGettingStarted',
@@ -16,6 +18,8 @@ export default {
   mixins: [mixinTaxonomyManage],
   props: {
     dimensions: { type: Array, default: () => [] },
+    // The company has dimensions of its own: the panel can be hidden.
+    dismissible: { type: Boolean, default: false },
   },
   computed: {
     steps() {
@@ -71,6 +75,16 @@ export default {
         {{ $t('taxonomy.workspace.start.hint') }}
       </p>
     </template>
+    <v-btn
+      v-if="dismissible"
+      text
+      small
+      color="primary"
+      class="getting-started__dismiss"
+      @click="$emit('dismiss')"
+    >
+      {{ $t('taxonomy.workspace.start.dismiss') }}
+    </v-btn>
   </section>
 </template>
 

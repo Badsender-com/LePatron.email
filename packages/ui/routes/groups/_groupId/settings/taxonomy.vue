@@ -6,7 +6,10 @@ import mixinTaxonomyManage from '~/helpers/mixins/mixin-taxonomy-manage.js';
 import BsPageHeader from '~/components/layout/bs-page-header.vue';
 import BsTaxonomyWorkspace from '~/components/group/taxonomy-workspace.vue';
 import BsTaxonomyGettingStarted from '~/components/group/taxonomy-getting-started.vue';
-import { hasNoCompanyDimension } from '~/helpers/taxonomy-suggestions.js';
+import {
+  hasNoCompanyDimension,
+  suggestedDimensions,
+} from '~/helpers/taxonomy-suggestions.js';
 import { DIMENSIONS_PER_COMPANY } from '~/helpers/taxonomy-builder.js';
 import { Eye, Plus } from 'lucide-vue';
 import { CAPABILITIES } from '../../../../../shared/access/roles.js';
@@ -41,6 +44,10 @@ export default {
       group: {},
       pointsTotal: 0,
       dimensions: [],
+      // Started from a suggestion: the panel stays for the next ones (a
+      // language under the market just created) until it is hidden.
+      startedFromSuggestions: false,
+      startDismissed: false,
     };
   },
   head() {
@@ -53,6 +60,15 @@ export default {
     },
     isEmpty() {
       return hasNoCompanyDimension(this.dimensions);
+    },
+    showStart() {
+      if (!this.dimensions.length) return false;
+      if (this.isEmpty) return true;
+      return (
+        this.startedFromSuggestions &&
+        !this.startDismissed &&
+        suggestedDimensions(this.dimensions).length > 0
+      );
     },
     showGroupBadge() {
       return this.can(CAPABILITIES.PLATFORM_MANAGE) && this.group.name;
@@ -81,6 +97,7 @@ export default {
       event.returnValue = '';
     },
     suggest(suggestion) {
+      this.startedFromSuggestions = true;
       this.$refs.workspace.openDeclareForm(suggestion.parentName, {
         label: this.$t(suggestion.labelKey),
         name: suggestion.name,
@@ -111,7 +128,7 @@ export default {
           small
           outlined
           color="warning"
-          class="mr-2"
+          class="mr-2 d-none d-md-flex"
           role="status"
         >
           {{ $t('taxonomy.workspace.points.title', { n: pointsTotal }) }}
@@ -144,8 +161,10 @@ export default {
         </p>
 
         <bs-taxonomy-getting-started
-          v-if="dimensions.length && isEmpty"
+          v-if="showStart"
           :dimensions="dimensions"
+          :dismissible="!isEmpty"
+          @dismiss="startDismissed = true"
           @suggest="suggest"
         />
         <bs-taxonomy-workspace

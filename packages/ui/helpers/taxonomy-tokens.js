@@ -55,3 +55,40 @@ export function tokensOfDimension(name, values = []) {
         })),
     }));
 }
+
+/**
+ * What the precedence decides, on the company's own values (ADR-0026): for
+ * each token two dimensions carry, a value of the winning dimension and the
+ * one it wins over, with what each one gives the token.
+ *
+ * @param {Array<{name: string, label: string, tokens: string[]}>} rows
+ *   from `precedenceList`, the winner last
+ * @param {Object[]} values
+ * @returns {Array<{token: string, winner: Object, loser: Object}>} by token
+ *   name, each side `{dimension, label, value}`
+ */
+export function precedenceExamples(rows = [], values = []) {
+  const sample = (row, token) => {
+    const value = values.find(
+      (candidate) =>
+        candidate.type === row.name &&
+        candidate.isActive !== false &&
+        token in plainTokens(candidate.tokens)
+    );
+    return {
+      dimension: row.label,
+      label: value.label,
+      value: plainTokens(value.tokens)[token],
+    };
+  };
+  const tokens = [...new Set(rows.flatMap((row) => row.tokens))].sort();
+  return tokens
+    .map((token) => rows.filter((row) => row.tokens.includes(token)))
+    .map((carriers, index) => ({ token: tokens[index], carriers }))
+    .filter(({ carriers }) => carriers.length > 1)
+    .map(({ token, carriers }) => ({
+      token,
+      winner: sample(carriers[carriers.length - 1], token),
+      loser: sample(carriers[carriers.length - 2], token),
+    }));
+}

@@ -82,7 +82,7 @@ export default {
     <p class="taxonomy-dimension__hint">
       {{ $t('taxonomy.emailTypeHint') }}
     </p>
-    <bs-group-taxonomy-tab ref="values" @count="$emit('count', $event)" />
+    <bs-group-taxonomy-tab ref="values" @values="$emit('values', $event)" />
   </section>
 </template>
 

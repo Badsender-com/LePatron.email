@@ -1766,6 +1766,7 @@ export default {
         defaultUnder: '{label} by default under {parent}',
         changes: 'No change | One change | {n} changes',
         save: 'Save the crossings',
+        saved: 'Crossings saved',
         leave: 'The crossings you changed are not saved. Leave anyway?',
       },
       defaults: {
@@ -1812,7 +1813,9 @@ export default {
         dimensionUnread:
           'Offered on the emails whose template reads it, but no template reads it.',
         literalNotCarried:
-          '{identifier} is compared by {templates}, but no value carries it.',
+          '{templates} compares {identifier}, which no value carries.',
+        literalNotOffered:
+          '{templates} compares {identifier} with {parent}, but {identifier} is not offered under {parent}.',
       },
       precedence: {
         title: 'Token precedence',
@@ -1820,6 +1823,8 @@ export default {
           'When several values of one email carry the same token, the one of the dimension placed lowest wins. Unrelated to the order of the selects in the editor.',
         none: 'No value carries a token yet.',
         wins: 'Wins',
+        example:
+          '— {winner} gives {winnerValue} and wins over {loser}, which gives {loserValue}, when an email carries both.',
       },
       tokens: {
         intro: 'The tokens the values of {label} carry, set in each value’s panel.',
@@ -1846,6 +1851,7 @@ export default {
           },
         },
         suggestionsTitle: 'Start from a usual dimension',
+        dismiss: 'Hide the suggestions',
         suggestions: {
           market: 'Market',
           language: 'Language',
@@ -1965,6 +1971,7 @@ export default {
           'Its values will be offered by the value chosen for the parent dimension: the Language by the Market.',
         role: 'Role',
         roleNone: 'None',
+        presetRole: 'Role: {role}. It can be changed later in Settings.',
         roleHint:
           'What the dimension stands for, for the application: the email’s language, its country, or both. Each value then gets a normalised code.',
         precedence: 'Precedence',
@@ -2003,16 +2010,11 @@ export default {
         identifier: 'Identifier',
         identifierHint:
           'What templates compare against. Proposed from the label, unique within the dimension.',
-        isDefault: 'Default value',
         defaultChip: 'Default',
-        isDefaultHint:
-          'A new email takes it when its template gives none. Existing emails do not change.',
-        defaultUnder: 'Default value under',
-        defaultUnderHint:
-          'The values of “{parent}” under which a new email takes this one, or an email whose “{parent}” changes. One default under each.',
-        availability: 'Offered under',
-        availabilityHint:
-          'The values of “{parent}” this one is offered under. Empty: offered under all of them.',
+        crossingsElsewhere:
+          'Which values of “{parent}” it is offered under, and where it is the default: Crossings segment. A new value is offered everywhere.',
+        defaultElsewhere:
+          'The value a new email takes is chosen in the Defaults segment.',
         code: {
           language: 'Language code',
           country: 'Country code',

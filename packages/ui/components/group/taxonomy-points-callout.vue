@@ -13,6 +13,7 @@ const SEGMENT_OF = {
   tokenUnread: 'templates',
   dimensionUnread: 'settings',
   literalNotCarried: 'templates',
+  literalNotOffered: 'crossings',
 };
 
 export default {
@@ -43,7 +44,7 @@ export default {
         value: this.labels[point.valueId] || '',
         parent: this.labels[point.parentValueId] || '',
         token: point.token || '',
-        identifier: point.identifier || '',
+        identifier: point.identifier || (point.identifiers || []).join(', '),
         templates: names,
       });
     },
