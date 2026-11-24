@@ -127,6 +127,43 @@ describe('rebuildComposedMarkup', () => {
   });
 });
 
+// What the modal applies is the markup of the composition it holds, empty rows
+// included; what the server rebuilds from is the state the modal stored, which
+// leaves them out. Both must come to the same markup, or every save of such a
+// block would rewrite what the user just saw.
+describe('rebuildComposedMarkup — rows holding nothing', () => {
+  const text = (id) => ({ id, type: 'text', content: `Texte ${id}` });
+  const emptyRow = () => singleColumnRows()[0];
+  const applied = (rows) => {
+    const state = { ...emptyState(), rows };
+    return composed(serialiseState(state), generate(state));
+  };
+
+  it.each([
+    ['a flat block', () => [...singleColumnRows([text('a')]), emptyRow()]],
+    [
+      'a composition of rows',
+      () => [
+        emptyRow(),
+        {
+          id: emptyRow().id,
+          columns: [
+            { width: 50, elements: [text('a')] },
+            { width: 50, elements: [] },
+          ],
+        },
+        emptyRow(),
+      ],
+    ],
+  ])('%s rebuilds into the markup the modal applied', (_name, rows) => {
+    const block = applied(rows());
+    const html = block.builderHtml;
+
+    expect(rebuildComposedMarkup(modelOf(block))).toBe(0);
+    expect(block.builderHtml).toBe(html);
+  });
+});
+
 // Rebuilt into nothing, an unreadable block would be saved empty by the next
 // autosave and its composition lost for good: it is refused instead.
 describe('rebuildComposedMarkup — a state it cannot read', () => {

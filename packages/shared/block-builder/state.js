@@ -30,8 +30,8 @@ const {
   readRows,
   holdsNothing,
   elementsOf,
-  isFlatComposition,
   singleColumnElements,
+  withoutEmptyRows,
 } = require('./composition.js');
 const {
   STATE_VERSION,
@@ -44,18 +44,19 @@ const FLAT_VERSION = 1;
 
 /**
  * The shape a composition is stored in: `{ v: 1, elements }` for a flat one,
- * or for one without any row, and `{ v: 2, rows }` for anything else.
+ * or for one whose rows hold nothing, and `{ v: 2, rows }` for anything else.
+ *
+ * A row holding no element is not stored (withoutEmptyRows): it renders
+ * nothing, so storing it would only make the state disagree with the markup.
  *
  * @param {Object} state
  * @returns {Object}
  */
 function storedShapeOf(state) {
-  const rows = Array.isArray(state.rows) ? state.rows : [];
-  if (rows.length === 0 || isFlatComposition(state)) {
-    return {
-      v: FLAT_VERSION,
-      elements: rows.length === 0 ? [] : singleColumnElements(state),
-    };
+  const rows = withoutEmptyRows(state.rows);
+  const flat = singleColumnElements(state);
+  if (rows.length === 0 || flat) {
+    return { v: FLAT_VERSION, elements: rows.length === 0 ? [] : flat };
   }
   return { v: STATE_VERSION, rows };
 }

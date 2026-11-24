@@ -24,9 +24,9 @@ const {
 const { generateRow } = require('./row-markup.js');
 const { escapeForContext, COLOR, PX } = require('./slot-contexts.js');
 const {
-  isFlatComposition,
   singleColumnElements,
   singleColumnRows,
+  withoutEmptyRows,
 } = require('./composition.js');
 
 // Bumped when the shape of a state changes in a way a reader must know about.
@@ -71,14 +71,17 @@ function generate(state, options) {
   // Which shape renders follows the shape of the composition, the same rule
   // that decides how it is stored: a flat one — one row of one full-width
   // column, nothing set on either — renders as the flat list it always was,
-  // byte for byte; anything else renders its rows.
+  // byte for byte; anything else renders its rows. Both are judged on the
+  // rows that are written (withoutEmptyRows), as the stored shape is, so the
+  // preview, the applied markup and the server's rebuild agree.
+  const flatElements = singleColumnElements(state);
   let body;
-  if (!isFlatComposition(state)) {
-    body = (Array.isArray(state.rows) ? state.rows : [])
+  if (!flatElements) {
+    body = withoutEmptyRows(state.rows)
       .map((row) => generateRow(row, options))
       .join('');
   } else {
-    const cells = singleColumnElements(state)
+    const cells = flatElements
       .map((element) => generateElement(element, options))
       .join('');
     body =

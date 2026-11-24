@@ -17,6 +17,9 @@ const {
   ensureUniqueIds,
   newRowId,
 } = require('./stored-elements.js');
+const lookup = require('./composition-lookup.js');
+
+const { withoutEmptyRows } = lookup;
 
 // Four is where a 600px email stops working: below roughly 60px a cell no
 // longer holds a word, and Outlook's rounding of percentages starts to show.
@@ -206,78 +209,53 @@ function holdsNothing(parsed) {
   );
 }
 
+const listOf = (value) => (Array.isArray(value) ? value : []);
 /**
- * Every element of a list of rows, in document order: row by row, column by
- * column.
+ * The row a flat composition is written from, or null when it is not flat.
  *
- * @param {Array<Object>} rows
- * @returns {Array<Object>}
- */
-function elementsOf(rows) {
-  const listOf = (value) => (Array.isArray(value) ? value : []);
-  const all = [];
-  for (const row of listOf(rows)) {
-    for (const column of listOf(row && row.columns)) {
-      for (const element of listOf(column && column.elements)) {
-        all.push(element);
-      }
-    }
-  }
-  return all;
-}
-
-/**
- * Every element of a composition, in document order, whatever its shape.
- *
- * The elements are the composition's own objects: a value written into one is
- * written into the composition.
+ * Flat is what is WRITTEN being one row of one full-width column, nothing set
+ * on either (a setting is a key beyond the bare ones): the shape a composition
+ * stored before columns reads as, written back and rendered as it always was.
+ * Judged on the rows withoutEmptyRows keeps, so a flat block with an empty row
+ * added is still that block, byte for byte. A composition holding nothing is
+ * judged on its first row, the one a new element lands in.
  *
  * @param {Object} state
- * @returns {Array<Object>}
+ * @returns {Object|null}
  */
-const elementsOfState = (state) => elementsOf(state && state.rows);
-
-/**
- * Whether a composition is a flat list of elements: exactly one row of exactly
- * one full-width column, with nothing set on either. That is the shape a
- * composition stored before columns reads as, and the one that is written back
- * the way it was stored — and rendered the way it always was.
- *
- * A row or column setting is a key beyond the bare ones, so any setting added
- * later makes a composition that uses it more than a flat list.
- *
- * @param {Object} state
- * @returns {boolean}
- */
-function isFlatComposition(state) {
-  const rows = state && state.rows;
-  if (!Array.isArray(rows) || rows.length !== 1) return false;
+function flatRowOf(state) {
+  const all = listOf(state && state.rows);
+  const written = withoutEmptyRows(all);
+  const rows = written.length > 0 ? written : all.slice(0, 1);
+  if (rows.length !== 1) return null;
 
   const [row] = rows;
-  if (!isObject(row) || !hasOnlyKeys(row, BARE_ROW_KEYS)) return false;
-  if (!Array.isArray(row.columns) || row.columns.length !== 1) return false;
+  if (!isObject(row) || !hasOnlyKeys(row, BARE_ROW_KEYS)) return null;
+  if (!Array.isArray(row.columns) || row.columns.length !== 1) return null;
 
   const [column] = row.columns;
-  return (
+  const bare =
     isObject(column) &&
     hasOnlyKeys(column, BARE_COLUMN_KEYS) &&
     column.width === FULL_WIDTH &&
-    Array.isArray(column.elements)
-  );
+    Array.isArray(column.elements);
+  return bare ? row : null;
 }
 
+/** Whether a composition is a flat list of elements: see flatRowOf. */
+const isFlatComposition = (state) => flatRowOf(state) !== null;
+
 /**
- * The element list of the first column of the first row, or null: the live
- * array, so a splice into it changes the composition. For a flat composition,
- * that is every element it holds.
+ * The element list of a flat composition's only column, or null when the
+ * composition is not flat: the live array, so a splice into it changes the
+ * composition. That is every element a flat composition holds.
  *
  * @param {Object} state
  * @returns {Array<Object>|null}
  */
 function singleColumnElements(state) {
-  const row = state && Array.isArray(state.rows) ? state.rows[0] : null;
-  const column = row && Array.isArray(row.columns) ? row.columns[0] : null;
-  return column && Array.isArray(column.elements) ? column.elements : null;
+  const row = flatRowOf(state);
+  return row ? row.columns[0].elements : null;
 }
 
 module.exports = {
@@ -291,8 +269,10 @@ module.exports = {
   singleColumnRows,
   readRows,
   holdsNothing,
-  elementsOf,
-  elementsOfState,
+  // Finding things in a composition lives in a module of its own, and is
+  // reached through this one: composition.js stays the one door to the shape.
+  ...lookup,
+  flatRowOf,
   isFlatComposition,
   singleColumnElements,
 };
