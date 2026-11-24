@@ -85,10 +85,12 @@ const RowActionsMixin = {
      *
      * A deep copy with fresh ids throughout. A shared id would make the two
      * rows the same row as far as selection and drag are concerned, so
-     * editing one would appear to edit both; a shared element OBJECT would be
-     * worse still, since typing in one would change the other. Whatever else
-     * the row and its columns hold is copied with them, as a change of width
-     * keeps it (setRowWidths).
+     * editing one would appear to edit both; a shared OBJECT anywhere inside
+     * would be worse still, since typing in one would change the other.
+     * Copied through JSON, which a composition goes through anyway to be
+     * stored (serialiseState): whatever survives that survives this, at any
+     * depth, and whatever else the row and its columns hold comes with it,
+     * as a change of width keeps it (setRowWidths).
      *
      * Refused at the row limit, like "Add a row": a copy is a row too, and
      * past MAX_ROWS the composition could not be read back.
@@ -101,17 +103,13 @@ const RowActionsMixin = {
       const source = this.rowById(rowId);
       if (!source || !canAddRow(this.state)) return null;
 
-      const copy = {
-        ...source,
-        id: newRowId(),
-        columns: source.columns.map((column) => ({
-          ...column,
-          elements: column.elements.map((element) => ({
-            ...element,
-            id: newElementId(),
-          })),
-        })),
-      };
+      const copy = JSON.parse(JSON.stringify(source));
+      copy.id = newRowId();
+      copy.columns.forEach((column) => {
+        column.elements.forEach((element) => {
+          element.id = newElementId();
+        });
+      });
 
       const { rows } = this.state;
       rows.splice(rows.indexOf(source) + 1, 0, copy);

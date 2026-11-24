@@ -83,6 +83,28 @@ describe('duplicating a row', () => {
     expect(copy.columns[0].note).toBe('column');
     expect(copy.id).not.toBe(source.id);
   });
+
+  // The copy goes all the way down: a value nested in an element, a row or a
+  // column is the copy's own, so editing it in one row leaves the other alone.
+  it('shares no nested value with its source', async () => {
+    const { modal } = await withRows(1);
+    const [source] = modal.state.rows;
+    const [element] = source.columns[0].elements;
+    Vue.set(element, 'padding', { top: 10, sides: [1, 2] });
+    Vue.set(source, 'style', { background: '#fff' });
+
+    const copy = modal.duplicateRow(source.id);
+    element.padding.top = 20;
+    element.padding.sides.push(3);
+    source.style.background = '#000';
+
+    expect(copy.columns[0].elements[0].padding).toEqual({
+      top: 10,
+      sides: [1, 2],
+    });
+    expect(copy.style).toEqual({ background: '#fff' });
+    expect(copy.columns[0].elements[0].id).not.toBe(element.id);
+  });
 });
 
 describe('deleting a row', () => {
