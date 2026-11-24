@@ -180,7 +180,7 @@ describe('a rendered row can be picked up', () => {
   it('selects what is being moved', async () => {
     const { modal, doc } = await openModal(['text', 'button']);
     const [first] = modal.columnElements;
-    modal.selectedElementId = null;
+    modal.selectElement(null);
 
     fireIn(doc, 'dragstart', rowsOf(doc)[0]);
 

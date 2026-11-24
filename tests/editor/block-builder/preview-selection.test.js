@@ -64,7 +64,7 @@ describe('clicking an element in the preview', () => {
   it('selects the one that was clicked', async () => {
     const { modal, doc } = await openModal(['text', 'button']);
     const [, second] = modal.columnElements;
-    modal.selectedElementId = null;
+    modal.selectElement(null);
 
     clickIn(doc, rowOf(doc, second.id));
 
@@ -76,7 +76,7 @@ describe('clicking an element in the preview', () => {
   it('selects it from a click on something inside it', async () => {
     const { modal, doc } = await openModal(['button']);
     const [element] = modal.columnElements;
-    modal.selectedElementId = null;
+    modal.selectElement(null);
 
     const link = doc.body.querySelector('a');
     expect(link).not.toBeNull();
@@ -122,7 +122,7 @@ describe('the selected element is outlined in the preview', () => {
     const [first, second] = modal.columnElements;
     const row = rowOf(doc, first.id);
 
-    modal.selectedElementId = first.id;
+    modal.selectElement(first.id);
     await Vue.nextTick();
 
     expect(rowOf(doc, first.id)).toBe(row);
@@ -144,7 +144,7 @@ describe('the selected element is outlined in the preview', () => {
   it('outlines nothing when nothing is selected', async () => {
     const { modal, doc } = await openModal(['text']);
 
-    modal.selectedElementId = null;
+    modal.selectElement(null);
     await Vue.nextTick();
 
     expect(doc.body.querySelectorAll(`.${SELECTED_CLASS}`)).toHaveLength(0);

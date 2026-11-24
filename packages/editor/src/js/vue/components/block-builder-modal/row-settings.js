@@ -15,7 +15,7 @@ const {
 // `this` meaning the component.
 //
 // The component is expected to provide: `state`, `selectedRowId`,
-// `selectedElementId` and `vm`.
+// `selectRow` (selection.js) and `vm`.
 
 // The structures offered as one click each. They are nothing but widths — a
 // row reached through a preset and the same row typed by hand are the same
@@ -62,19 +62,6 @@ const RowSettingsMixin = {
 
     presetLabel(preset) {
       return this.vm.t(`block-builder-structure-${preset.key}`);
-    },
-
-    // The two selections are exclusive, and that is enforced here rather than
-    // left to each caller: a panel showing a row's structure while an element
-    // is also selected is how it starts showing the wrong thing.
-    selectRow(id) {
-      this.selectedRowId = id;
-      this.selectedElementId = null;
-    },
-
-    selectElement(id) {
-      this.selectedElementId = id;
-      this.selectedRowId = null;
     },
 
     addRow() {

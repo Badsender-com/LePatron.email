@@ -80,7 +80,7 @@ describe('a reorder ends', () => {
   it('gives the selection back when the drag ends without a drop', async () => {
     const { modal, doc } = await openModal(['text', 'button', 'divider']);
     const [first] = modal.columnElements;
-    modal.selectedElementId = first.id;
+    modal.selectElement(first.id);
 
     fireIn(doc, 'dragstart', rowsOf(doc)[2]);
     expect(modal.selected.type).toBe('divider');
@@ -91,7 +91,7 @@ describe('a reorder ends', () => {
 
   it('gives back no selection when there was none', async () => {
     const { modal, doc } = await openModal(['text', 'button']);
-    modal.selectedElementId = null;
+    modal.selectElement(null);
 
     fireIn(doc, 'dragstart', rowsOf(doc)[1]);
     fireIn(doc, 'dragend', rowsOf(doc)[1]);

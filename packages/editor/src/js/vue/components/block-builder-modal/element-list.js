@@ -11,11 +11,11 @@ const {
 // reordering and removing.
 //
 // A Vue 2 mixin for the same reason as the preview surface (preview-surface.js):
-// every one of these reads or writes the component's `state` and `selectedElementId`,
+// every one of these reads or writes the component's `state` and its selection,
 // and a mixin keeps `this` meaning the component.
 //
 // The component is expected to provide: `state`, `columnElements`,
-// `selectedElementId` and `vm`.
+// `selectedElementId`, `selectElement` (selection.js) and `vm`.
 
 const PALETTE = [
   { type: 'text', labelKey: 'block-builder-element-text' },
@@ -100,7 +100,7 @@ const ElementListMixin = {
       this.columnElements.splice(at, 0, element);
       // Selected on arrival, so the settings panel is already on it — dropping
       // and editing are one gesture, not two.
-      this.selectedElementId = element.id;
+      this.selectElement(element.id);
       return element;
     },
 
@@ -109,7 +109,7 @@ const ElementListMixin = {
       if (index === -1) return;
       this.columnElements.splice(index, 1);
       const next = this.columnElements[index] || this.columnElements[index - 1];
-      this.selectedElementId = next ? next.id : null;
+      this.selectElement(next ? next.id : null);
     },
 
     // The arrows, through the drag's own move so the splice exists once.
@@ -140,7 +140,7 @@ const ElementListMixin = {
       );
       if (from === -1) return;
 
-      this.selectedElementId = id;
+      this.selectElement(id);
       const to = index > from ? index - 1 : index;
       if (to === from) return;
 
@@ -183,8 +183,7 @@ const ElementListMixin = {
           : target.index;
       to.elements.splice(Math.max(0, Math.min(at, to.elements.length)), 0, element);
 
-      this.selectedElementId = id;
-      this.selectedRowId = null;
+      this.selectElement(id);
       this.scheduleRender();
       return true;
     },

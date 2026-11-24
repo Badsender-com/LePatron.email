@@ -10,6 +10,7 @@ const { ElementListMixin } = require('./element-list.js');
 const { DismissalMixin } = require('./dismissal.js');
 const { DragSurfaceMixin } = require('./drag-surface.js');
 const { RowSettingsMixin } = require('./row-settings.js');
+const { SelectionMixin } = require('./selection.js');
 const MODAL_TEMPLATE = require('./modal-template.js');
 const {
   validateBlockBuilderLength,
@@ -56,7 +57,9 @@ const BlockBuilderModalComponent = Vue.component('BlockBuilderModal', {
   // element-list.js. The drag adds the gesture on top of the preview — see
   // drag-surface.js. And Escape or a backdrop click ask before losing work —
   // see dismissal.js.
+  // What is selected is one state of its own — see selection.js.
   mixins: [
+    SelectionMixin,
     PreviewSurfaceMixin,
     ElementListMixin,
     DragSurfaceMixin,
@@ -85,10 +88,6 @@ const BlockBuilderModalComponent = Vue.component('BlockBuilderModal', {
     // than a boolean so the message goes as soon as the composition changes.
     refusedState: null,
     state: emptyState(),
-    selectedElementId: null,
-    // The other kind of selection. One of the two is active, never both:
-    // see selectRow and selectElement in row-settings.js.
-    selectedRowId: null,
     previewWidth: DESKTOP_WIDTH,
     desktopWidth: DESKTOP_WIDTH,
     mobileWidth: MOBILE_WIDTH,
@@ -188,9 +187,9 @@ const BlockBuilderModalComponent = Vue.component('BlockBuilderModal', {
         typeof existingMarkup === 'string' &&
         existingMarkup !== '';
       this.rebuildsMarkup = Boolean(restored) && existingMarkup !== this.html;
-      this.selectedElementId = this.columnElements.length
-        ? this.columnElements[0].id
-        : null;
+      this.selectElement(
+        this.columnElements.length ? this.columnElements[0].id : null
+      );
       this.previewWidth = DESKTOP_WIDTH;
       this.rememberOpenedState();
       this.$refs.modalRef?.openModal();
@@ -256,8 +255,7 @@ const BlockBuilderModalComponent = Vue.component('BlockBuilderModal', {
       this.rebuildsMarkup = false;
       this.refusedState = null;
       this.state = emptyState();
-      this.selectedElementId = null;
-      this.selectedRowId = null;
+      this.selectElement(null);
       this.openedState = '';
     },
   },

@@ -246,7 +246,7 @@ const PreviewSurfaceMixin = {
       event.preventDefault();
 
       const row = this.elementRowFromEvent(event);
-      if (row) this.selectedElementId = row.getAttribute(ELEMENT_ATTRIBUTE);
+      if (row) this.selectElement(row.getAttribute(ELEMENT_ATTRIBUTE));
     },
 
     // The row of the composed element an event happened in, or null: for the
