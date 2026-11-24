@@ -15,21 +15,28 @@ const {
 } = require('../../../../packages/shared/block-builder/slot-contexts.js');
 const {
   isGeneratedClass,
-  GENERATED_CLASS_PREFIX,
+  stackClassFor,
+  GENERATED_CLASSES,
 } = require('../../../../packages/shared/block-builder/generated-classes.js');
+
+const STACK_CLASS = 'lp-stack';
 const {
   defineLayout,
 } = require('../../../../packages/shared/block-builder/template.js');
 const { compileFixture } = require('./fixture.js');
 
 describe('a class the generator owns', () => {
-  it('is recognised by its prefix', () => {
-    expect(isGeneratedClass(`${GENERATED_CLASS_PREFIX}stack`)).toBe(true);
+  it('is one the closed list names', () => {
+    expect(GENERATED_CLASSES).toEqual([STACK_CLASS]);
+    expect(isGeneratedClass(STACK_CLASS)).toBe(true);
   });
 
+  // The prefix is shared with the editor's own markers, so it proves nothing.
   test.each([
     ['a Tailwind utility', 'text-center'],
-    ['something that only contains the prefix', 'not-lp-stack'],
+    ['something that only contains the name', 'not-lp-stack'],
+    ['a typo with the right prefix', 'lp-stak'],
+    ['a class of the editor', 'lp-bb-selected'],
     ['nothing at all', ''],
     ['a non-string', null],
   ])('does not recognise %s', (_label, value) => {
@@ -41,22 +48,22 @@ describe('a class the generator owns', () => {
   // stripping every class is what made a responsive rule unreachable.
   it('survives compilation', async () => {
     const compiled = await compileFixture({
-      template: `<table><tr><td class="${GENERATED_CLASS_PREFIX}stack">{{ label }}</td></tr></table>`,
+      template: `<table><tr><td class="${STACK_CLASS}">{{ label }}</td></tr></table>`,
       slots: { label: { context: 'TEXT' } },
     });
 
-    expect(compiled.default).toContain(`${GENERATED_CLASS_PREFIX}stack`);
+    expect(compiled.default).toContain(`${STACK_CLASS}`);
   });
 
   // The other half: a utility that was inlined has no business shipping its
   // name to every recipient.
   it('does not keep a Tailwind utility beside it', async () => {
     const compiled = await compileFixture({
-      template: `<table><tr><td class="text-center ${GENERATED_CLASS_PREFIX}stack">{{ label }}</td></tr></table>`,
+      template: `<table><tr><td class="text-center ${STACK_CLASS}">{{ label }}</td></tr></table>`,
       slots: { label: { context: 'TEXT' } },
     });
 
-    expect(compiled.default).toContain(`${GENERATED_CLASS_PREFIX}stack`);
+    expect(compiled.default).toContain(`${STACK_CLASS}`);
     expect(compiled.default).not.toContain('text-center');
     expect(compiled.default).toMatch(/text-align:\s*center/);
   });
@@ -77,10 +84,21 @@ describe('a class the generator owns', () => {
   it('is exempt from the check that a class must inline', async () => {
     await expect(
       compileFixture({
-        template: `<table><tr><td class="${GENERATED_CLASS_PREFIX}whatever-we-emit">{{ label }}</td></tr></table>`,
+        template: `<table><tr><td class="${STACK_CLASS}">{{ label }}</td></tr></table>`,
         slots: { label: { context: 'TEXT' } },
       })
     ).resolves.toBeDefined();
+  });
+
+  // Only the listed names are: a typo with the prefix is a typo.
+  it('does not exempt a name the list does not hold', async () => {
+    await expect(
+      compileFixture({
+        template:
+          '<table><tr><td class="lp-stak">{{ label }}</td></tr></table>',
+        slots: { label: { context: 'TEXT' } },
+      })
+    ).rejects.toThrow(/"lp-stak" inlines to nothing/);
   });
 
   it('still refuses a utility that inlines to nothing', async () => {
@@ -91,6 +109,23 @@ describe('a class the generator owns', () => {
         slots: { label: { context: 'TEXT' } },
       })
     ).rejects.toThrow(/inlines to nothing/);
+  });
+});
+
+describe('the class a column stacks with', () => {
+  it('is the listed class for a row of several columns', () => {
+    expect(stackClassFor(2)).toBe(STACK_CLASS);
+  });
+
+  it('is nothing for a row of one column', () => {
+    expect(stackClassFor(1)).toBe('');
+  });
+
+  // Whatever the column count, so a typo cannot hide behind a single column.
+  test.each([1, 2])('refuses a behaviour the list does not name (%i)', (n) => {
+    expect(() => stackClassFor(n, 'stak')).toThrow(
+      /no generated class for the behaviour "stak"/
+    );
   });
 });
 

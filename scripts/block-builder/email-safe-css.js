@@ -141,6 +141,8 @@ async function inlineStyles(html, label) {
   // A class the generator owns is not a utility that failed to inline: it is
   // one that MUST NOT be, because it only means anything inside a media query.
   // Checking it the same way would refuse exactly the thing it is there for.
+  // Only the names on GENERATED_CLASSES are exempt: `lp-stak` is a typo, and
+  // it is refused like any other class that inlines to nothing.
   classesOf(html)
     .filter((name) => !isOurs(name))
     .forEach((name) => checkClass(label, name, declarations.get(name)));
