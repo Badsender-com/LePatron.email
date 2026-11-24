@@ -13,6 +13,9 @@ const {
 const {
   ROW_LABEL_KEYS,
 } = require('../../../packages/editor/src/js/vue/components/block-builder-modal/row-settings.js');
+const {
+  ROW_SPACING_LABEL_KEYS,
+} = require('../../../packages/editor/src/js/vue/components/block-builder-modal/row-spacing-settings.js');
 const MODAL_TEMPLATE = require('../../../packages/editor/src/js/vue/components/block-builder-modal/modal-template.js');
 const fr = require('../../../public/lang/badsender-fr.js');
 const en = require('../../../public/lang/badsender-en.js');
@@ -27,7 +30,9 @@ const templateKeys = Array.from(
 // Strings written into the preview iframe, rather than through the template.
 // The starters are in LABEL_KEYS, which the modal resolves for both places.
 // The row panel's labels carry variables, so it builds them in script.
-const scriptKeys = ['block-builder-drop-here'].concat(ROW_LABEL_KEYS);
+const scriptKeys = ['block-builder-drop-here']
+  .concat(ROW_LABEL_KEYS)
+  .concat(ROW_SPACING_LABEL_KEYS);
 
 const keys = Array.from(
   new Set(

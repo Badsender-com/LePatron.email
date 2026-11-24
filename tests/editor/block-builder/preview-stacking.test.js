@@ -121,6 +121,53 @@ describe('the mobile toggle in the builder preview', () => {
   });
 });
 
+// The space between the columns (#1683): the gutter is the desktop view's,
+// inline on the cells; the stack spacing is the mobile view's, from the same
+// derived stylesheet that stacks the columns.
+describe('the spacing between columns in the builder preview', () => {
+  async function spaced() {
+    const opened = await twoColumns();
+    const [row] = opened.modal.state.rows;
+    opened.modal.setRowSpacing(row.id, 'gutter', 20);
+    opened.modal.setRowSpacing(row.id, 'stackSpacing', 12);
+    opened.modal.renderPreview();
+    return opened;
+  }
+  const cellsOf = (doc) => Array.from(doc.body.querySelectorAll('td.lp-stack'));
+
+  it('shows the gutter on desktop, between the columns only', async () => {
+    const { doc } = await spaced();
+    const [first, last] = cellsOf(doc);
+
+    expect(first.style.paddingLeft).toBe('0px');
+    expect(first.style.paddingRight).toBe('10px');
+    expect(last.style.paddingLeft).toBe('10px');
+    expect(last.style.paddingRight).toBe('0px');
+    expect(derivedSheet(doc)).toBe('');
+  });
+
+  it('shows the stack spacing on mobile, and drops the gutter', async () => {
+    const { modal, doc } = await spaced();
+
+    modal.previewWidth = modal.mobileWidth;
+    await modal.$nextTick();
+
+    // Reformatted by the canvas's rewrite, so read loosely.
+    expect(derivedSheet(doc)).toMatch(
+      /\.lp-stack-spacing-12\s*\{\s*padding-bottom:\s*12px !important;\s*\}/
+    );
+    expect(derivedSheet(doc)).toMatch(
+      /\.lp-gutter\s*\{\s*padding-left:\s*0 !important;\s*padding-right:\s*0 !important;\s*\}/
+    );
+    const [first, last] = cellsOf(doc);
+    expect(first.classList.contains('lp-stack-spacing-12')).toBe(true);
+    expect(last.classList.contains('lp-stack-spacing-12')).toBe(false);
+    cellsOf(doc).forEach((cell) =>
+      expect(cell.classList.contains('lp-gutter')).toBe(true)
+    );
+  });
+});
+
 // One rule for the two previews of a composed block: the modal's Mobile view
 // and the canvas's mobile mode start from the stylesheet the export carries
 // and force it the same way. Two derivations had drifted before — the modal

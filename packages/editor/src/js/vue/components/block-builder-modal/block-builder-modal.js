@@ -12,6 +12,7 @@ const { DragSurfaceMixin } = require('./drag-surface.js');
 const { ColumnTargetMixin } = require('./column-target.js');
 const { PageGuardMixin } = require('./page-guard.js');
 const { RowSettingsMixin } = require('./row-settings.js');
+const { RowSpacingMixin } = require('./row-spacing-settings.js');
 const { RowActionsMixin } = require('./row-actions.js');
 const { RowDragMixin } = require('./row-drag.js');
 const { SelectionMixin } = require('./selection.js');
@@ -64,8 +65,9 @@ const BlockBuilderModalComponent = Vue.component('BlockBuilderModal', {
   // page-guard.js for the editor page around it. And Escape or a backdrop
   // click ask before losing work — see dismissal.js.
   // What is selected is one state of its own — see selection.js. A row's
-  // structure is row-settings.js, moving one is row-actions.js, and dragging
-  // one in the list row-drag.js.
+  // structure is row-settings.js, the space between its columns
+  // row-spacing-settings.js, moving one is row-actions.js, and dragging one in
+  // the list row-drag.js.
   mixins: [
     SelectionMixin,
     PreviewSurfaceMixin,
@@ -74,6 +76,7 @@ const BlockBuilderModalComponent = Vue.component('BlockBuilderModal', {
     ColumnTargetMixin,
     PageGuardMixin,
     RowSettingsMixin,
+    RowSpacingMixin,
     RowActionsMixin,
     RowDragMixin,
     DismissalMixin,

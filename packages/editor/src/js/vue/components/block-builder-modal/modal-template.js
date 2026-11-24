@@ -153,6 +153,34 @@ module.exports = `<modal-component
               <span>%</span>
             </label>
           </div>
+          <div v-if="selectedRowSpaces" class="bb-modal__spacing">
+            <label class="bb-modal__spacing-field">
+              <span class="bb-modal__spacing-label">{{ vm.t('block-builder-gutter') }}</span>
+              <input
+                type="number"
+                min="0"
+                :max="maxGutter"
+                step="1"
+                :value="selectedRowSpacing(gutterKey)"
+                :aria-label="vm.t('block-builder-gutter-label')"
+                @change="onRowSpacingChange($event, gutterKey)" />
+              <span>px</span>
+            </label>
+            <label class="bb-modal__spacing-field">
+              <span class="bb-modal__spacing-label">{{ vm.t('block-builder-stack-spacing') }}</span>
+              <input
+                type="number"
+                min="0"
+                :max="maxStackSpacing"
+                :step="stackSpacingStep"
+                :value="selectedRowSpacing(stackSpacingKey)"
+                :aria-label="vm.t('block-builder-stack-spacing-label')"
+                :aria-describedby="stackSpacingHintId"
+                @change="onRowSpacingChange($event, stackSpacingKey)" />
+              <span>px</span>
+            </label>
+            <p :id="stackSpacingHintId" class="bb-modal__spacing-hint">{{ stackSpacingHint }}</p>
+          </div>
           <p class="bb-modal__folded" role="status">{{ foldedMessage }}</p>
         </div>
 

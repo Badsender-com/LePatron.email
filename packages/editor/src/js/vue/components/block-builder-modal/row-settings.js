@@ -23,7 +23,9 @@ const { ListboxMixin } = require('./listbox.js');
 //   - from element-list.js: `labelFor`, so a row is named by its first element
 //     in the words the element list uses;
 //   - from row-actions.js: `moveRowByKey`, which the row list's keyboard hands
-//     Alt+arrow to before walking the list.
+//     Alt+arrow to before walking the list;
+//   - from row-spacing-settings.js: `clearRowSpacing`, for a row that goes
+//     down to one column.
 // No other mixin calls into this one.
 
 // The structures offered as one click each. They are nothing but widths — a
@@ -210,6 +212,10 @@ const RowSettingsMixin = {
       row.columns = widths.map((width, index) =>
         kept[index] ? { ...kept[index], width } : { width, elements: [] }
       );
+      // The space between columns goes with the last of them: a row of one
+      // column keeps no setting, and stays flat (row-spacing-settings.js).
+      // Otherwise the row keeps its spacing, whatever its new widths.
+      if (widths.length < 2) this.clearRowSpacing(row);
 
       this.foldedNotice = folded.length
         ? { rowId, count: folded.length, column: widths.length }

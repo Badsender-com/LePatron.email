@@ -424,6 +424,14 @@ module.exports = {
   'block-builder-row-label-empty': 'Row __n__ · __count__ columns — empty',
   'block-builder-row-label-empty-one': 'Row __n__ · 1 column — empty',
   'block-builder-column-width': 'Column __n__ width',
+  'block-builder-gutter': 'Gutter (desktop)',
+  'block-builder-gutter-label':
+    'Space between the columns on a desktop, in pixels',
+  'block-builder-stack-spacing': 'Spacing when stacked (mobile)',
+  'block-builder-stack-spacing-label':
+    'Space between the stacked columns on a phone, in pixels',
+  'block-builder-stack-spacing-hint':
+    'On a phone, rounded to the nearest multiple of __step__ px.',
   'block-builder-elements-folded':
     '__count__ elements moved to column __column__.',
   'block-builder-elements-folded-one': '1 element moved to column __column__.',
