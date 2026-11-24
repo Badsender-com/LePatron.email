@@ -7,8 +7,12 @@ const {
 const {
   newElementId,
 } = require('../../../../../../shared/block-builder/state.js');
+const {
+  moveInList,
+} = require('../../../../../../shared/block-builder/move-in-list.js');
 
-// Rows: moving one, by drag or by keyboard; duplicating one, and deleting it.
+// Rows: moving one, duplicating one, and deleting it — the operations, and the
+// buttons of the selected row's bar that call them.
 //
 // Apart from the row settings (row-settings.js), which set what a row IS —
 // its structure and its widths — these act on the row as a whole.
@@ -41,12 +45,11 @@ const RowActionsMixin = {
 
   methods: {
     /**
-     * Moves a row to a position among the rows.
+     * Moves a row to a drop position among the rows.
      *
      * `index` counts rows as they sit NOW, with the moved one still among
-     * them — the same convention as an element's drop position, and the same
-     * off-by-one if it is forgotten: taking the row out first shifts
-     * everything after it up by one.
+     * them — the convention of every move in the builder (move-in-list.js):
+     * 0 is above the first row, `rows.length` below the last.
      *
      * @param {string} rowId
      * @param {number} index
@@ -58,12 +61,7 @@ const RowActionsMixin = {
       if (from === -1) return false;
 
       this.selectRow(rowId);
-      const to = index > from ? index - 1 : index;
-      if (to === from || to < 0 || to >= rows.length) return false;
-
-      const [row] = rows.splice(from, 1);
-      rows.splice(to, 0, row);
-      return true;
+      return moveInList(rows, from, index);
     },
 
     // The keyboard path, through the same move so the splice exists once.
