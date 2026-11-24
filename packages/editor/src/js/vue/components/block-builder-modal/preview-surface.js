@@ -1,8 +1,9 @@
 'use strict';
 
 const {
-  collectRules,
+  collectCss,
 } = require('../../../../../../shared/block-builder/stylesheet.js');
+const { forceMedia } = require('../../../ext/preview-media.js');
 const {
   COLUMN_CHROME_CLASS,
   ELEMENT_ATTRIBUTE,
@@ -23,8 +24,8 @@ const {
 // though scripts inside it cannot run.
 //
 // The component is expected to provide: `state`, `locateElement`,
-// `selectElement`, `selectedElementId`, `isEmpty`, `previewMarkup`, `vm`, and a
-// `previewFrame` ref.
+// `selectElement`, `selectedElementId`, `isEmpty`, `previewMarkup`, `vm`,
+// `previewWidth` and `mobileWidth`, and a `previewFrame` ref.
 //
 // It knows nothing of the drag. What the drag needs from it is public and
 // generic: the events below, to listen on a freshly written document and to
@@ -150,6 +151,15 @@ const PreviewSurfaceMixin = {
     renderFrozen: false,
     renderHeld: false,
   }),
+  watch: {
+    // The toggle decides whether the composition's own stylesheet applies, so
+    // it has to reach the preview. Only that sheet is rewritten: replacing the
+    // body here would refetch every image on each flip of the toggle.
+    previewWidth() {
+      const doc = this.previewDocument();
+      if (doc) this.renderDerivedCss(doc);
+    },
+  },
   beforeDestroy() {
     if (this.frameRequest) window.cancelAnimationFrame(this.frameRequest);
   },
@@ -237,18 +247,25 @@ const PreviewSurfaceMixin = {
     },
 
     /**
-     * Puts the composition's own rules in the preview, under the toggle.
+     * Puts the composition's own stylesheet in the preview, under the toggle.
      *
      * Without this the preview carried the stacking CLASS and nothing that
      * defines it, so switching to Mobile shrank the columns instead of
      * stacking them — in the one place a user is told to check that.
      *
-     * The rules are written WITHOUT their media query, and only in Mobile.
-     * The query cannot do the deciding here: the iframe is 600px wide on
-     * desktop, which is exactly the breakpoint, and `max-width` is inclusive,
-     * so the mobile rules would apply to the desktop preview too. The toggle
-     * decides instead — the same arrangement the canvas already uses
-     * (ext/preview-media.js).
+     * The stylesheet is the one the export carries for this block
+     * (collectCss), treated the way the canvas treats it
+     * (head-css/canvas-preview.js):
+     *
+     *   - Mobile: its media queries forced by the canvas's own rewrite
+     *     (forceMedia, preview-media.js), so the same rule stacks the columns
+     *     in both places;
+     *   - Desktop: left out. The canvas keeps the condition as written there,
+     *     but it evaluates it against the editor's window, wider than the
+     *     breakpoint, so the rule never applies. This iframe is 600px wide,
+     *     exactly the breakpoint, and `max-width` is inclusive: the condition
+     *     as written would stack the desktop preview. Leaving the sheet out is
+     *     what shows the canvas's desktop here.
      */
     renderDerivedCss(doc) {
       let sheet = doc.getElementById(DERIVED_STYLE_ID);
@@ -259,7 +276,9 @@ const PreviewSurfaceMixin = {
         doc.head.appendChild(sheet);
       }
       sheet.textContent =
-        this.previewWidth === this.mobileWidth ? collectRules([this.state]) : '';
+        this.previewWidth === this.mobileWidth
+          ? forceMedia(collectCss(this.state))
+          : '';
     },
 
     previewRows(doc) {

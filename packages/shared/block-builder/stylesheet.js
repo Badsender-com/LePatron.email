@@ -49,59 +49,21 @@ function classesOf(composition) {
 }
 
 /**
- * The rules for a set of generated classes, one per class, with no media
- * query around them.
- *
- * @param {Iterable<string>} names generated class names (GENERATED_CLASSES)
- * @returns {string}
- */
-function rulesForClasses(names) {
-  return [...new Set(names)]
-    .map((name) => `.${name}{${MOBILE_DECLARATIONS[name]}}`)
-    .join('');
-}
-
-/**
  * The stylesheet for a set of generated classes, as one block of rules.
  *
  * @param {Iterable<string>} names generated class names (GENERATED_CLASSES)
  * @returns {string} one media query holding a rule per class, or ''
  */
 function cssForClasses(names) {
-  const rules = rulesForClasses(names);
-  if (rules === '') return '';
-
-  return `@media only screen and (max-width:${BREAKPOINT}px){${rules}}`;
-}
-
-/**
- * Every class a set of compositions asks for.
- *
- * @param {Array<Object>} compositions
- * @returns {Array<string>}
- */
-const classesOfAll = (compositions) =>
-  (compositions || []).reduce(
-    (names, composition) => names.concat(classesOf(composition)),
-    []
+  const rules = [...new Set(names)].map(
+    (name) => `.${name}{${MOBILE_DECLARATIONS[name]}}`
   );
 
-/**
- * The rules several compositions need, WITHOUT the media query that makes
- * them apply.
- *
- * Split from `collectCssFor` because the builder's own preview needs the rules
- * without that wrapper: its iframe is 600px wide on desktop, which is exactly
- * the breakpoint, and `max-width` is inclusive — the mobile rules would apply
- * to the desktop preview. There the Desktop/Mobile toggle decides instead of
- * the iframe's width, which is also how the canvas already works
- * (ext/preview-media.js).
- *
- * @param {Array<Object>} compositions
- * @returns {string}
- */
-function collectRules(compositions) {
-  return rulesForClasses(classesOfAll(compositions));
+  if (rules.length === 0) return '';
+
+  return `@media only screen and (max-width:${BREAKPOINT}px){${rules.join(
+    ''
+  )}}`;
 }
 
 /**
@@ -116,7 +78,12 @@ function collectRules(compositions) {
  * @returns {string}
  */
 function collectCssFor(compositions) {
-  return cssForClasses(classesOfAll(compositions));
+  return cssForClasses(
+    (compositions || []).reduce(
+      (names, composition) => names.concat(classesOf(composition)),
+      []
+    )
+  );
 }
 
 /**
@@ -132,7 +99,6 @@ function collectCss(composition) {
 module.exports = {
   collectCss,
   collectCssFor,
-  collectRules,
   classesOf,
   cssForClasses,
   BREAKPOINT,

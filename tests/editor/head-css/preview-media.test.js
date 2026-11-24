@@ -1,12 +1,15 @@
 'use strict';
 
 // One definition of what each preview mode does to media queries, read by the
-// template's stylesheet (badsender-screen-preview.js) and the head CSS
-// (head-css/canvas-preview.js). Two copies had already drifted: the head CSS
-// forced its queries in `mobile` only, the template in `both` as well.
+// template's stylesheet (badsender-screen-preview.js), the head CSS
+// (head-css/canvas-preview.js) and the block builder's preview
+// (block-builder-modal/preview-surface.js). Two copies had already drifted:
+// the head CSS forced its queries in `mobile` only, the template in `both` as
+// well.
 
 const {
   previewMediaFor,
+  forceMedia,
   ALWAYS_TRUE_MEDIA,
   VISIBLE_ON_BOTH_SUFFIX,
 } = require('../../../packages/editor/src/js/ext/preview-media.js');
@@ -30,6 +33,31 @@ describe('previewMediaFor', () => {
   });
 });
 
+describe('forceMedia', () => {
+  it('forces every media query, nested ones included', () => {
+    const forced = forceMedia(
+      '@media (max-width:600px){.a{color:red}}' +
+        '@supports (display:grid){@media print{.b{color:blue}}}'
+    );
+
+    expect(forced).not.toContain('max-width:600px');
+    expect(forced).not.toContain('print');
+    expect(forced.split(ALWAYS_TRUE_MEDIA)).toHaveLength(3);
+    expect(forced).toContain('(display:grid)');
+  });
+
+  it('leaves the rules outside a media query as written', () => {
+    expect(forceMedia('.a{color:red}')).toMatch(/^\.a \{\s*color: red;\s*\}/);
+  });
+
+  it.each([[''], ['   '], [null], [undefined]])(
+    'gives nothing for %p',
+    (css) => {
+      expect(forceMedia(css)).toBe('');
+    }
+  );
+});
+
 // Reading the source is the only way to pin the template side without booting
 // the editor: what matters is that it no longer carries its own copy.
 describe('both sides read the shared module', () => {
@@ -40,6 +68,7 @@ describe('both sides read the shared module', () => {
     'packages/editor/src/js/ext/badsender-screen-preview.js',
     'packages/editor/src/js/ext/head-css/scope-css.js',
     'packages/editor/src/js/ext/head-css/canvas-preview.js',
+    'packages/editor/src/js/vue/components/block-builder-modal/preview-surface.js',
   ])('%s', (file) => {
     const source = fs.readFileSync(
       path.join(__dirname, '../../..', file),

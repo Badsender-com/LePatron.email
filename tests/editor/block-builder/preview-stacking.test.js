@@ -20,6 +20,22 @@ const { openModal, unmountAll } = require('./drag-helpers.js');
 const {
   DERIVED_STYLE_ID,
 } = require('../../../packages/editor/src/js/vue/components/block-builder-modal/preview-surface.js');
+const {
+  ALWAYS_TRUE_MEDIA,
+} = require('../../../packages/editor/src/js/ext/preview-media.js');
+const {
+  renderPreview: renderCanvas,
+  STYLE_ELEMENT_ID: CANVAS_STYLE_ID,
+} = require('../../../packages/editor/src/js/ext/head-css/canvas-preview.js');
+const {
+  scopeCss,
+} = require('../../../packages/editor/src/js/ext/head-css/scope-css.js');
+const {
+  exportedHeadCss,
+} = require('../../../packages/shared/head-css/exported-head-css.js');
+const {
+  serialiseState,
+} = require('../../../packages/shared/block-builder/state.js');
 
 afterEach(unmountAll);
 
@@ -73,16 +89,17 @@ describe('the mobile toggle in the builder preview', () => {
     });
   });
 
-  // Written WITHOUT the media query on purpose: the iframe is 600px wide on
-  // desktop, exactly the breakpoint, and `max-width` is inclusive — the query
-  // would make the mobile rules apply to the desktop preview. The toggle
-  // decides here, as it already does for the canvas.
+  // The breakpoint cannot decide here: the iframe is 600px wide on desktop,
+  // exactly the breakpoint, and `max-width` is inclusive — the condition as
+  // written would stack the desktop preview. The toggle decides, by forcing
+  // the condition on mobile, as the canvas does.
   it('decides by the toggle rather than by the iframe width', async () => {
     const { modal, doc } = await twoColumns();
     modal.previewWidth = modal.mobileWidth;
     await modal.$nextTick();
 
-    expect(derivedSheet(doc)).not.toContain('@media');
+    expect(derivedSheet(doc)).toContain(ALWAYS_TRUE_MEDIA);
+    expect(derivedSheet(doc)).not.toMatch(/max-width/);
   });
 
   it('takes the rule away again when the preview goes back to desktop', async () => {
@@ -101,5 +118,39 @@ describe('the mobile toggle in the builder preview', () => {
     await modal.$nextTick();
 
     expect(derivedSheet(doc)).toBe('');
+  });
+});
+
+// One rule for the two previews of a composed block: the modal's Mobile view
+// and the canvas's mobile mode start from the stylesheet the export carries
+// and force it the same way. Two derivations had drifted before — the modal
+// stripped the media query and assumed every class was a mobile one.
+describe('the modal and the canvas on mobile', () => {
+  afterEach(() => {
+    const canvasSheet = document.getElementById(CANVAS_STYLE_ID);
+    if (canvasSheet) canvasSheet.remove();
+  });
+
+  it('force the same rule for the same block', async () => {
+    const { modal, doc } = await twoColumns();
+    modal.previewWidth = modal.mobileWidth;
+    await modal.$nextTick();
+
+    renderCanvas(
+      document,
+      exportedHeadCss({
+        composedStates: [serialiseState(modal.state)],
+        hasHtmlCodeBlock: false,
+        authorCss: '',
+      }),
+      'mobile'
+    );
+    const canvas = document.getElementById(CANVAS_STYLE_ID).textContent;
+
+    expect(canvas).toContain(ALWAYS_TRUE_MEDIA);
+    // The canvas scopes its selectors to the editing area; the modal, an
+    // iframe of its own, has nothing to scope. Scoped the canvas's way, the
+    // modal's sheet is the canvas's, character for character.
+    expect(scopeCss(derivedSheet(doc), '#main-wysiwyg-area')).toBe(canvas);
   });
 });

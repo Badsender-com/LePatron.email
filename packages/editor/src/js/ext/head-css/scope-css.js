@@ -18,7 +18,7 @@
 
 const cssParse = require('mensch/lib/parser.js');
 const cssStringify = require('mensch/lib/stringify.js');
-const { ALWAYS_TRUE_MEDIA } = require('../preview-media.js');
+const { forceMediaRules } = require('../preview-media.js');
 
 // The document root of an email (`html`, `:root`) is the canvas itself here,
 // and its <body> is the `replacedbody` element inside it: template-loader.js
@@ -197,9 +197,9 @@ function scopeRules(rules, prefix, media, suffix) {
     }
 
     if (NESTING_AT_RULES.has(rule.type)) {
-      // A media query never follows the canvas width: see preview-media.js.
+      // Already forced by scopeCss (forceMediaRules): what is left is the
+      // suffix of the forced rules' selectors.
       const forced = rule.type === 'media' && media.forceMedia;
-      if (forced) rule.name = ALWAYS_TRUE_MEDIA;
       rule.rules = scopeRules(
         rule.rules,
         prefix,
@@ -246,6 +246,9 @@ function scopeCss(css, prefix, options) {
     forceMedia: Boolean(options && options.forceMedia),
     mediaSelectorSuffix: (options && options.mediaSelectorSuffix) || '',
   };
+  // A media query never follows the canvas width: see preview-media.js. The
+  // same rewrite as the block builder's preview, before any scoping.
+  if (media.forceMedia) forceMediaRules(sheet.stylesheet.rules);
   sheet.stylesheet.rules = scopeRules(
     sheet.stylesheet.rules,
     prefix.trim(),
