@@ -56,6 +56,19 @@ describe('specimens', () => {
     }
   );
 
+  // #1683: two images side by side, with a space between them on a desktop and
+  // once stacked on a phone.
+  it('lays out a row with a gutter and a stack spacing', () => {
+    const spec = specimens().find(
+      (candidate) =>
+        candidate.state.rows[0].gutter > 0 &&
+        candidate.state.rows[0].stackSpacing > 0
+    );
+
+    expect(spec).toBeDefined();
+    expect(spec.state.rows[0].columns.length).toBeGreaterThan(1);
+  });
+
   // Called twice by a watcher, or by a test and then a build.
   it('is stable across calls', () => {
     expect(JSON.stringify(specimens())).toBe(JSON.stringify(specimens()));
@@ -80,6 +93,17 @@ describe('renderGallery', () => {
   it('stacks the columns on a phone', () => {
     expect(html).toMatch(/@media[^{]*max-width:600px\)\{\.lp-stack\{/);
     expect(html).toContain('class="lp-stack"');
+  });
+
+  it('pads the columns of the row with a gutter, and spaces them on a phone', () => {
+    expect(html).toMatch(/padding-left:0px;\s*padding-right:12px;/);
+    expect(html).toContain('class="lp-stack lp-gutter lp-stack-spacing-16"');
+    expect(html).toContain(
+      '.lp-gutter{padding-left:0 !important;padding-right:0 !important;}'
+    );
+    expect(html).toContain(
+      '.lp-stack-spacing-16{padding-bottom:16px !important;}'
+    );
   });
 
   it('leaves no placeholder behind', () => {

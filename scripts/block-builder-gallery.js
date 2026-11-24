@@ -13,13 +13,7 @@
 // Dev tooling, so it lives in scripts/ rather than in packages/shared, which
 // ships with the product; build-block-builder-gallery.js is its command.
 
-const {
-  generate,
-  GENERATOR_VERSION,
-} = require('../packages/shared/block-builder/generate.js');
-const {
-  stackClassFor,
-} = require('../packages/shared/block-builder/generated-classes.js');
+const { renderDocument } = require('./block-builder/gallery-document.js');
 
 const LOREM =
   'Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod ' +
@@ -69,9 +63,10 @@ function specimen(title, elements, block) {
  *
  * @param {string} title
  * @param {Array<Array>} columns
+ * @param {Object} [settings] the row's own, such as its spacing
  * @returns {Object} a labelled specimen
  */
-function rowSpecimen(title, columns) {
+function rowSpecimen(title, columns, settings) {
   return {
     title,
     state: {
@@ -83,6 +78,7 @@ function rowSpecimen(title, columns) {
             width,
             elements: elements.map((element) => ({ id: id(), ...element })),
           })),
+          ...settings,
         },
       ],
     },
@@ -237,24 +233,19 @@ function specimens() {
       [66, [text({ content: '<strong>Un titre</strong><br />' + LOREM })]],
       [34, [picture]],
     ]),
-  ];
-}
 
-/**
- * @param {Object} spec
- * @returns {string}
- */
-function renderSpecimen(spec) {
-  return (
-    '<tr><td style="padding:24px 0 4px 0; font-family:Arial,sans-serif;' +
-    ' font-size:11px; color:#888888; text-transform:uppercase;' +
-    ' letter-spacing:.08em;">' +
-    spec.title +
-    '</td></tr>' +
-    '<tr><td style="border:1px dashed #dddddd;">' +
-    generate(spec.state) +
-    '</td></tr>'
-  );
+    // Two images side by side used to touch. On a desktop, 24px between the
+    // columns and none on the outer edges, each image 12px narrower than its
+    // column; on a phone, no gutter, and 16px between the stacked images.
+    rowSpecimen(
+      'Colonnes — 50 / 50, gouttière 24 px (bureau), espacement 16 px (mobile)',
+      [
+        [50, [picture]],
+        [50, [picture]],
+      ],
+      { gutter: 24, stackSpacing: 16 }
+    ),
+  ];
 }
 
 /**
@@ -262,59 +253,6 @@ function renderSpecimen(spec) {
  *
  * @returns {string}
  */
-function renderGallery() {
-  const body = specimens().map(renderSpecimen).join('');
-
-  return [
-    '<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"',
-    ' "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">',
-    '<html xmlns="http://www.w3.org/1999/xhtml"',
-    ' xmlns:v="urn:schemas-microsoft-com:vml"',
-    ' xmlns:o="urn:schemas-microsoft-com:office:office">',
-    '<head>',
-    '<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />',
-    '<meta name="viewport" content="width=device-width, initial-scale=1" />',
-    `<title>Block Builder — galerie de contrôle (générateur ${GENERATOR_VERSION})</title>`,
-    '<!--[if mso]><xml><o:OfficeDocumentSettings>',
-    '<o:AllowPNG/><o:PixelsPerInch>96</o:PixelsPerInch>',
-    '</o:OfficeDocumentSettings></xml><![endif]-->',
-    '<style type="text/css">',
-    'body{margin:0;padding:0;background-color:#eeeeee;}',
-    'table{border-collapse:collapse;mso-table-lspace:0;mso-table-rspace:0;}',
-    'img{border:0;outline:none;text-decoration:none;-ms-interpolation-mode:bicubic;}',
-    // The stacking rule a composed block relies on, so the column specimens
-    // stack on a phone as they will in a mailing.
-    '@media only screen and (max-width:600px){',
-    `.${stackClassFor(2)}{display:block !important;width:100% !important;}`,
-    '}',
-    '</style>',
-    '</head>',
-    '<body style="margin:0; padding:0; background-color:#eeeeee;">',
-    '<table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%">',
-    '<tr><td align="center" style="padding:24px 12px;">',
-    '<table role="presentation" cellpadding="0" cellspacing="0" border="0"',
-    ' width="600" style="width:600px; max-width:600px; background-color:#ffffff;">',
-    '<tr><td style="padding:24px 24px 0 24px; font-family:Arial,sans-serif;',
-    ' font-size:18px; font-weight:bold; color:#1b1d29;">',
-    'Block Builder — galerie de contrôle',
-    '</td></tr>',
-    '<tr><td style="padding:4px 24px 0 24px; font-family:Arial,sans-serif;',
-    ' font-size:12px; line-height:18px; color:#666666;">',
-    `Générateur ${GENERATOR_VERSION}. Chaque encadré est un bloc produit par le `,
-    "générateur, tel qu'il partirait à l'export. À ouvrir dans Litmus ou Email ",
-    'on Acid, et à lire dans Outlook, Gmail et Apple Mail.',
-    '</td></tr>',
-    '<tr><td style="padding:0 24px 24px 24px;">',
-    '<table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%">',
-    body,
-    '</table>',
-    '</td></tr>',
-    '</table>',
-    '</td></tr>',
-    '</table>',
-    '</body>',
-    '</html>',
-  ].join('');
-}
+const renderGallery = () => renderDocument(specimens());
 
 module.exports = { renderGallery, specimens };
