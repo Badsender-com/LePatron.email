@@ -10,7 +10,7 @@ import {
   buildDimensionPayload,
   buildNewDimensionPayload,
   isValidDimensionName,
-  parentCandidates,
+  proposeDimensionName,
 } from '~/helpers/taxonomy-builder.js';
 import { roleOptions } from '~/helpers/taxonomy-roles.js';
 import {
@@ -52,6 +52,8 @@ export default {
       isStandard: false,
       // A name another dimension already holds: the server alone knows.
       serverNameError: null,
+      // The name follows the label until the user writes one.
+      nameTouched: false,
     };
   },
   // A function, so the name is only checked on a creation: an existing name
@@ -83,16 +85,12 @@ export default {
         ),
       ];
     },
-    parentItems() {
-      const labels = Object.fromEntries(
-        this.dimensions.map((dimension) => [dimension.name, dimension.label])
+    // Given by where the dimension is created; moved later on purpose only.
+    parentLabel() {
+      const parent = this.dimensions.find(
+        (dimension) => dimension.name === this.form.parentName
       );
-      return [
-        { value: null, text: this.$t('taxonomy.dimensions.form.parentNone') },
-        ...parentCandidates(this.dimensions, {
-          name: this.form.name,
-        }).map((name) => ({ value: name, text: labels[name] })),
-      ];
+      return parent ? parent.label : '';
     },
     nameErrors() {
       const errors = [];
@@ -132,13 +130,16 @@ export default {
     /**
      * @param {Object|null} dimension the dimension whose wording to edit, or
      *   null to declare one
+     * @param {Object} [place] where a new dimension goes
+     * @param {string|null} [place.parentName] the dimension it hangs under
      */
-    open(dimension = null) {
+    open(dimension = null, { parentName = null } = {}) {
+      this.nameTouched = false;
       this.editingId = dimension ? dimension.id : null;
       this.serverNameError = null;
       this.isStandard = Boolean(dimension && dimension.standard);
       this.initial = {
-        parentName: (dimension && dimension.parentName) || null,
+        parentName: dimension ? dimension.parentName || null : null,
         precedence: (dimension && dimension.precedence) || 0,
         role: (dimension && dimension.role) || null,
         scope: (dimension && dimension.scope) || 'all',
@@ -148,6 +149,7 @@ export default {
         label: dimension ? dimension.label || '' : '',
         description: dimension ? dimension.description || '' : '',
         ...this.initial,
+        parentName: dimension ? this.initial.parentName : parentName,
       };
       this.$v.$reset();
       this.$refs.modal.open();
@@ -168,6 +170,11 @@ export default {
 
     close() {
       this.$refs.modal.close();
+    },
+
+    onLabelInput(label) {
+      if (this.isEditing || this.nameTouched) return;
+      this.form.name = proposeDimensionName(label);
     },
 
     onSubmit() {
@@ -205,6 +212,21 @@ export default {
     persistent
     @submit="onSubmit"
   >
+    <p v-if="!isEditing && form.parentName" class="text-body-2 mb-4">
+      {{ $t('taxonomy.dimensions.under', { parent: parentLabel }) }}
+    </p>
+
+    <bs-text-field
+      v-model="form.label"
+      :label="$t('taxonomy.form.label')"
+      :error-messages="labelErrors"
+      :disabled="loading"
+      required
+      autofocus
+      @input="onLabelInput"
+      @blur="$v.form.label.$touch()"
+    />
+
     <!-- Written once, then shown and never editable: templates read this
          name (ADR-0015). -->
     <bs-text-field
@@ -225,19 +247,11 @@ export default {
       :disabled="loading"
       persistent-hint
       required
-      autofocus
-      @input="serverNameError = null"
+      @input="
+        serverNameError = null;
+        nameTouched = true;
+      "
       @blur="$v.form.name.$touch()"
-    />
-
-    <bs-text-field
-      v-model="form.label"
-      :label="$t('taxonomy.form.label')"
-      :error-messages="labelErrors"
-      :disabled="loading"
-      required
-      :autofocus="isEditing"
-      @blur="$v.form.label.$touch()"
     />
 
     <bs-textarea
@@ -252,7 +266,7 @@ export default {
 
     <!-- The trigger carries no design token: nothing to win. -->
     <bs-text-field
-      v-if="form.name !== 'trigger'"
+      v-if="isEditing && form.name !== 'trigger'"
       v-model="form.precedence"
       :label="$t('taxonomy.dimensions.form.precedence')"
       :hint="$t('taxonomy.dimensions.form.precedenceHint')"
@@ -263,7 +277,7 @@ export default {
     />
 
     <bs-select
-      v-if="!isStandard"
+      v-if="isEditing && !isStandard"
       v-model="form.role"
       :label="$t('taxonomy.dimensions.form.role')"
       :items="roleItems"
@@ -273,18 +287,9 @@ export default {
     />
 
     <bs-taxonomy-scope-field
-      v-if="!isStandard"
+      v-if="isEditing && !isStandard"
       v-model="form.scope"
       :fixed="scopeFixed"
-      :disabled="loading"
-    />
-
-    <bs-select
-      v-if="!isStandard"
-      v-model="form.parentName"
-      :label="$t('taxonomy.dimensions.form.parent')"
-      :items="parentItems"
-      :hint="$t('taxonomy.dimensions.form.parentHint')"
       :disabled="loading"
     />
   </bs-modal-form>

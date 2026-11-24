@@ -1,6 +1,6 @@
 <script>
 import mixinTaxonomyManage from '~/helpers/mixins/mixin-taxonomy-manage.js';
-import { Pencil } from 'lucide-vue';
+import { Pencil, Move } from 'lucide-vue';
 
 /**
  * The Settings segment of a dimension: what it is, where it hangs and which
@@ -8,7 +8,7 @@ import { Pencil } from 'lucide-vue';
  */
 export default {
   name: 'BsTaxonomyDimensionSettings',
-  components: { LucidePencil: Pencil },
+  components: { LucidePencil: Pencil, LucideMove: Move },
   mixins: [mixinTaxonomyManage],
   props: {
     dimension: { type: Object, required: true },
@@ -60,15 +60,21 @@ export default {
     <p class="taxonomy-settings__hint">
       {{ $t('taxonomy.workspace.settings.nameFinal') }}
     </p>
-    <v-btn
-      v-if="canManageTaxonomy"
-      outlined
-      color="accent"
-      @click="$emit('edit', dimension)"
-    >
-      <lucide-pencil :size="16" class="mr-2" />
-      {{ $t('global.edit') }}
-    </v-btn>
+    <div v-if="canManageTaxonomy" class="taxonomy-settings__actions">
+      <v-btn outlined color="accent" @click="$emit('edit', dimension)">
+        <lucide-pencil :size="16" class="mr-2" />
+        {{ $t('global.edit') }}
+      </v-btn>
+      <v-btn
+        v-if="!dimension.standard"
+        text
+        color="accent"
+        @click="$emit('move', dimension)"
+      >
+        <lucide-move :size="16" class="mr-2" />
+        {{ $t('taxonomy.workspace.move.open') }}
+      </v-btn>
+    </div>
   </section>
 </template>
 
@@ -93,6 +99,12 @@ export default {
       color: var(--gray-900);
       overflow-wrap: anywhere;
     }
+  }
+
+  &__actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
   }
 
   &__hint {

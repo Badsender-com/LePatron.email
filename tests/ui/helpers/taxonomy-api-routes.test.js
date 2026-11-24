@@ -14,6 +14,8 @@ import {
   taxonomyItemsItem,
   taxonomyDimensions,
   taxonomyDimensionsItem,
+  taxonomyDimensionsOrder,
+  taxonomyItemsOrder,
   taxonomyDimensionsCreate,
 } from '../../../packages/ui/helpers/api-routes.js';
 
@@ -119,5 +121,15 @@ describe('taxonomy dimensions', () => {
     expect(taxonomyDimensionsItem(ITEM_ID)).toBe(
       `/taxonomy-dimensions/${ITEM_ID}`
     );
+  });
+});
+
+describe('the bulk order of the taxonomy (#1551)', () => {
+  it('orders the dimensions on a fixed path, the company in the body', () => {
+    expect(taxonomyDimensionsOrder()).toBe('/taxonomy-dimensions/order');
+  });
+
+  it('orders the values on a fixed path, the company in the body', () => {
+    expect(taxonomyItemsOrder()).toBe('/taxonomy-items/order');
   });
 });

@@ -27,12 +27,14 @@ const {
   assertValueType,
 } = require('./dimension-guards.js');
 const logger = require('../../utils/logger.js');
+const { reorderDimensions } = require('./order.service.js');
 
 module.exports = {
   listDimensions,
   createDimension,
   updateDimension,
   deleteDimension,
+  reorderDimensions,
   assertValueType,
 };
 

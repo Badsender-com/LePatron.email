@@ -1750,6 +1750,17 @@ export default {
   taxonomy: {
     workspace: {
       tree: 'Dimensions',
+      dragHint: 'Drag to reorder, or Alt + arrow keys',
+      reordered: 'Order saved',
+      addChild: 'Add a sub-dimension',
+      move: {
+        open: 'Move',
+        title: 'Move “{label}”',
+        action: 'Move',
+        warning:
+          'Its values lose their defaults: marked at the first level or under a parent value, they mean nothing elsewhere. You will mark them again.',
+        done: 'Dimension moved',
+      },
       segmentsLabel: 'Steps of the dimension',
       sections: {
         standard: 'Standard',

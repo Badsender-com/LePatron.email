@@ -77,6 +77,16 @@ export default {
         {{ $t('taxonomy.values.empty.action') }}
       </v-btn>
       <v-btn
+        v-if="canManageTaxonomy && dimension.isActive"
+        text
+        small
+        color="accent"
+        @click="$emit('add-child', dimension)"
+      >
+        <lucide-plus :size="16" class="mr-1" />
+        {{ $t('taxonomy.workspace.addChild') }}
+      </v-btn>
+      <v-btn
         v-if="canManageTaxonomy"
         text
         small

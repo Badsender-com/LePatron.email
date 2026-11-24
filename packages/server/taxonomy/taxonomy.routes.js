@@ -60,6 +60,14 @@ router.post(
   taxonomy.restoreDefaultEmailTypes
 );
 
+// Before '/:itemId', like every fixed path here.
+router.put(
+  '/order',
+  GUARD_TAXONOMY_MANAGE,
+  GUARD_CAN_ACCESS_GROUP_FROM_BODY,
+  taxonomy.reorderTaxonomyItems
+);
+
 // The service resolves the company itself and never trusts `groupId`, but the
 // guard states the boundary where the rest of the codebase states it too.
 router.post(

@@ -30,6 +30,12 @@ router.get(
   GUARD_CAN_ACCESS_GROUP_FROM_QUERY,
   dimension.listDimensions
 );
+router.put(
+  '/order',
+  GUARD_TAXONOMY_MANAGE,
+  GUARD_CAN_ACCESS_GROUP_FROM_BODY,
+  dimension.reorderDimensions
+);
 router.post(
   '',
   GUARD_TAXONOMY_MANAGE,
