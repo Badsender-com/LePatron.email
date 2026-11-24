@@ -11,7 +11,7 @@ const ERROR_CODES = require('../../constant/error-codes.js');
 const { StandardDimensions } = require('../../constant/taxonomy-type.js');
 
 /**
- * Nested dimensions and availability (ADR-0014). A dimension may hang under
+ * Nested dimensions and availability (ADR-0032). A dimension may hang under
  * another one, "Language" under "Market"; each value of the child dimension is
  * then offered under the parent values its availability lists, or under all of
  * them when it lists none.

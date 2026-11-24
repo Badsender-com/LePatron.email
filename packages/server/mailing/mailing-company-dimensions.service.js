@@ -127,7 +127,7 @@ async function assertChosenAreOffered(chosen, companyId) {
 
 /**
  * Check that each value of a nested dimension is offered under the parent value
- * the email has (ADR-0014): a child value needs a parent value, and one of those
+ * the email has (ADR-0032): a child value needs a parent value, and one of those
  * its availability lists, unless it lists none.
  *
  * Only for the values the request changes: newly chosen, or whose parent value

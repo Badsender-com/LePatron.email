@@ -1,7 +1,7 @@
 'use strict';
 
 // What nesting refuses beyond the acceptance tests: nothing that would leave a
-// dimension or a value pointing at nothing is done silently (ADR-0014).
+// dimension or a value pointing at nothing is done silently (ADR-0032).
 
 jest.mock('../../../packages/server/common/models.common.js', () =>
   require('../../helpers/taxonomy-world.js').fakeTaxonomyModels()

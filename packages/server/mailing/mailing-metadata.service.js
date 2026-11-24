@@ -142,7 +142,7 @@ async function validateMetadataPayload(
   }
 
   // A nested value depends on its parent value, the email type's included: a
-  // change on either side checks the combination (ADR-0014).
+  // change on either side checks the combination (ADR-0032).
   if ('_taxonomyItems' in validated || '_emailType' in validated) {
     await assertCombinationOffered({
       companyId,
