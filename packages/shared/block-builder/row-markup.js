@@ -25,6 +25,14 @@ const COLUMN_VARIANTS = {
   },
 };
 
+// The width a block is laid out for, in px. Email templates are built for
+// 600px, and the column limits in composition.js assume it too.
+//
+// A percentage is all a cell needs, but not all its content: Outlook on
+// Windows ignores `max-width` and lays an image out at its `width` attribute,
+// so an image in a half-width column has to be told it has 300px, not 600.
+const BLOCK_WIDTH = 600;
+
 /**
  * The elements of a column, resolved once each. A column is empty exactly when
  * this comes back empty: the same rule as for a flat block's rows (see
@@ -32,11 +40,12 @@ const COLUMN_VARIANTS = {
  *
  * @param {Array<Object>} elements
  * @param {Object} [options] see generate
+ * @param {number} containerWidth the column's room, in px
  * @returns {Array<{markup: string, attributes: string}>}
  */
-function resolveColumn(elements, options) {
+function resolveColumn(elements, options, containerWidth) {
   return (Array.isArray(elements) ? elements : [])
-    .map((element) => resolveElement(element, options))
+    .map((element) => resolveElement(element, options, containerWidth))
     .filter(Boolean);
 }
 
@@ -106,7 +115,11 @@ function generateRow(row, options) {
   if (columns.length === 0) return '';
 
   const resolved = columns.map((column) =>
-    resolveColumn(column.elements, options)
+    resolveColumn(
+      column.elements,
+      options,
+      Math.floor((BLOCK_WIDTH * column.width) / 100)
+    )
   );
 
   // A row where every column is empty renders nothing at all: it would
@@ -131,4 +144,4 @@ function generateRow(row, options) {
   return renderRow({ cells: cells.join('') });
 }
 
-module.exports = { generateRow };
+module.exports = { generateRow, BLOCK_WIDTH };

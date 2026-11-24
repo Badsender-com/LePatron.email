@@ -66,9 +66,11 @@ function starterValues(type, values, options) {
  *
  * @param {Object} element one entry of a column's `elements`
  * @param {Object} [options] see generate
+ * @param {number} [containerWidth] the room, in px, of the column it sits in.
+ *   Absent for a flat block, which keeps the markup it always had.
  * @returns {{markup: string, attributes: string}|null}
  */
-function resolveElement(element, options) {
+function resolveElement(element, options, containerWidth) {
   if (!element || typeof element !== 'object') return null;
 
   const definition = elementFor(element.type);
@@ -76,12 +78,19 @@ function resolveElement(element, options) {
 
   const values = { ...definition.defaults, ...element };
   const starter = starterValues(definition.type, values, options);
+  const shown = starter || values;
+  // What Outlook reads is a width attribute, not a style: an element that
+  // writes one in px is told how much room its column has. See image.js.
+  const fitted =
+    containerWidth !== undefined && definition.fitWidth
+      ? definition.fitWidth(shown, containerWidth)
+      : shown;
 
   const id =
     options && options.elementIds ? escapeForContext(element.id, ATTR) : '';
 
   return {
-    markup: definition.render(starter || values),
+    markup: definition.render(fitted),
     attributes:
       (id ? ` ${ELEMENT_ATTRIBUTE}="${id}"` : '') +
       (starter ? ` ${STARTER_ATTRIBUTE}="${definition.type}"` : ''),

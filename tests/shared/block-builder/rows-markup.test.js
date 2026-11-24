@@ -1,19 +1,30 @@
 'use strict';
 
-// The markup of one row of columns (row-markup.js): its cells, and what each
-// cell carries.
+// The markup of one row of columns (row-markup.js): its cells, what each cell
+// carries, and what an element inside one is told about the room it has.
 //
 // Tested at `generateRow` rather than through `generate`, so these hold
 // whatever `generate` decides to render as rows.
 
 const {
   generateRow,
+  BLOCK_WIDTH,
 } = require('../../../packages/shared/block-builder/row-markup.js');
+const {
+  generate,
+} = require('../../../packages/shared/block-builder/generate.js');
 const {
   elementFor,
 } = require('../../../packages/shared/block-builder/elements/index.js');
 
+const IMAGE = 'https://e.com/a.png';
 const text = (id, content = 'Bonjour') => ({ id, type: 'text', content });
+const image = (id, overrides) => ({
+  id,
+  type: 'image',
+  src: IMAGE,
+  ...overrides,
+});
 const row = (...columns) => ({
   id: 'r1',
   columns: columns.map(([width, elements]) => ({ width, elements })),
@@ -21,6 +32,11 @@ const row = (...columns) => ({
 
 /** The opening tag of every cell of a row, in order. */
 const cellsOf = (html) => html.match(/<td width="[^"]*"[^>]*>/g) || [];
+/** Every `width` attribute an image carries, in order. */
+const imageWidths = (html) =>
+  (html.match(/<img [^>]*width="(\d+)"/g) || []).map((tag) =>
+    Number(tag.match(/width="(\d+)"/)[1])
+  );
 
 describe('the row contract', () => {
   it('is one table of cells, written by the row component', () => {
@@ -109,6 +125,50 @@ describe('what generateRow accepts', () => {
   it('renders nothing for a row with no columns', () => {
     expect(generateRow({ columns: [] })).toBe('');
     expect(generateRow(null)).toBe('');
+  });
+});
+
+describe('an image in a column', () => {
+  // Outlook on Windows reads the width attribute and ignores max-width: an
+  // image wider than its column pushes the whole email wider.
+  it('is no wider than its half of the block', () => {
+    const html = generateRow(row([50, [image('a')]], [50, [text('b')]]));
+
+    expect(BLOCK_WIDTH).toBe(600);
+    expect(imageWidths(html)).toEqual([300]);
+    expect(html).toContain('max-width:300px;');
+  });
+
+  it('fits each column of 33/33/34, rounded down', () => {
+    const html = generateRow(
+      row([33, [image('a')]], [33, [image('b')]], [34, [image('c')]])
+    );
+
+    expect(imageWidths(html)).toEqual([198, 198, 204]);
+  });
+
+  it('leaves room for its own side padding', () => {
+    const html = generateRow(
+      row([50, [image('a', { paddingLeft: 10, paddingRight: 20 })]], [50, []])
+    );
+
+    expect(imageWidths(html)).toEqual([270]);
+  });
+
+  it('keeps a width that already fits', () => {
+    const html = generateRow(row([66, [image('a', { width: 120 })]], [34, []]));
+
+    expect(imageWidths(html)).toEqual([120]);
+  });
+
+  it('is fitted through generate too', () => {
+    const html = generate({
+      v: 2,
+      block: {},
+      rows: [row([50, [image('a')]], [50, [text('b')]])],
+    });
+
+    expect(imageWidths(html)).toEqual([300]);
   });
 });
 

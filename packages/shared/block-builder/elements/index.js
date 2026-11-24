@@ -1,9 +1,11 @@
 'use strict';
 
-// The five content elements of the mono-column MVP.
+// The five content elements a column can hold.
 //
-// Each module exports `{ type, render, defaults, translatable }`. Adding a sixth means adding
-// a file and a line here — nothing else in the generator knows the list.
+// Each module exports `{ type, render, defaults, translatable }`, and may add
+// `fitWidth(values, px)` when its markup writes a width in px that has to fit
+// the column it sits in (see image.js). Adding a sixth means adding a file and
+// a line here — nothing else in the generator knows the list.
 //
 // The markup is not written in these modules. It is compiled from
 // components/*.vue by `yarn block-builder:compile`, so the people who own the
