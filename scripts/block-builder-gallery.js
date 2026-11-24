@@ -17,6 +17,9 @@ const {
   generate,
   GENERATOR_VERSION,
 } = require('../packages/shared/block-builder/generate.js');
+const {
+  stackClassFor,
+} = require('../packages/shared/block-builder/generated-classes.js');
 
 const LOREM =
   'Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod ' +
@@ -49,7 +52,47 @@ function specimen(title, elements, block) {
   };
 }
 
+/**
+ * A specimen laid out in columns: one row, each column given as
+ * `[width, elements]`.
+ *
+ * @param {string} title
+ * @param {Array<Array>} columns
+ * @returns {Object} a labelled specimen
+ */
+function rowSpecimen(title, columns) {
+  return {
+    title,
+    state: {
+      block: { backgroundColor: '#ffffff', paddingTop: 8, paddingBottom: 8 },
+      rows: [
+        {
+          id: id(),
+          columns: columns.map(([width, elements]) => ({
+            width,
+            elements: elements.map((element) => ({ id: id(), ...element })),
+          })),
+        },
+      ],
+    },
+  };
+}
+
+/**
+ * Every element of a specimen, whichever shape it is laid out in.
+ *
+ * @param {Object} spec
+ * @returns {Array<Object>}
+ */
+function elementsOf(spec) {
+  if (Array.isArray(spec.state.elements)) return spec.state.elements;
+  return spec.state.rows.flatMap((row) =>
+    row.columns.flatMap((column) => column.elements)
+  );
+}
+
 const text = (overrides) => ({ type: 'text', content: LOREM, ...overrides });
+const picture = { type: 'image', src: IMAGE, alt: 'Visuel de démonstration' };
 
 /**
  * @returns {Array<Object>}
@@ -167,6 +210,35 @@ function specimens() {
       { type: 'spacer', height: 16 },
       { type: 'divider' },
     ]),
+
+    // Columns. Each image is 600px wide as stored: in Outlook on Windows, which
+    // ignores max-width, it must still come out no wider than its column. On a
+    // phone, below 600px, the columns stack.
+    rowSpecimen('Colonnes — 50 / 50, image et texte', [
+      [50, [picture]],
+      [
+        50,
+        [
+          text(),
+          {
+            type: 'button',
+            label: 'Je découvre',
+            href: 'https://www.badsender.com',
+          },
+        ],
+      ],
+    ]),
+
+    rowSpecimen('Colonnes — 33 / 33 / 34, une image et un texte chacune', [
+      [33, [picture, text({ content: 'Première colonne' })]],
+      [33, [picture, text({ content: 'Deuxième colonne' })]],
+      [34, [picture, text({ content: 'Troisième colonne' })]],
+    ]),
+
+    rowSpecimen('Colonnes — 66 / 34, texte et image', [
+      [66, [text({ content: '<strong>Un titre</strong><br />' + LOREM })]],
+      [34, [picture]],
+    ]),
   ];
 }
 
@@ -212,6 +284,11 @@ function renderGallery() {
     'body{margin:0;padding:0;background-color:#eeeeee;}',
     'table{border-collapse:collapse;mso-table-lspace:0;mso-table-rspace:0;}',
     'img{border:0;outline:none;text-decoration:none;-ms-interpolation-mode:bicubic;}',
+    // The stacking rule a composed block relies on, so the column specimens
+    // stack on a phone as they will in a mailing.
+    '@media only screen and (max-width:600px){',
+    `.${stackClassFor(2)}{display:block !important;width:100% !important;}`,
+    '}',
     '</style>',
     '</head>',
     '<body style="margin:0; padding:0; background-color:#eeeeee;">',
@@ -242,4 +319,4 @@ function renderGallery() {
   ].join('');
 }
 
-module.exports = { renderGallery, specimens };
+module.exports = { renderGallery, specimens, elementsOf };
