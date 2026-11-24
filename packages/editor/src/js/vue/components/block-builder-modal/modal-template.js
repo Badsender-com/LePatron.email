@@ -8,6 +8,8 @@
 //
 // It is read by the component and by nothing else; every binding it names lives
 // there or in one of its mixins.
+const STRUCTURE_TEMPLATE = require('./structure-template.js');
+
 module.exports = `<modal-component
   ref="modalRef"
   :is-full-width="true"
@@ -118,71 +120,7 @@ module.exports = `<modal-component
           :title="rowLimitReached ? vm.t('block-builder-row-limit', { max: maxRows }) : null"
           @click.prevent="addRow">+ {{ vm.t('block-builder-add-row') }}</button>
 
-        <div v-if="selectedRow" class="bb-modal__structure">
-          <p class="bb-modal__section">{{ vm.t('block-builder-structure') }}</p>
-          <div class="bb-modal__presets">
-            <button
-              v-for="preset in presets"
-              :key="preset.key"
-              type="button"
-              class="bb-modal__preset"
-              :class="{ 'bb-modal__preset--on': isPresetActive(preset) }"
-              :aria-pressed="String(isPresetActive(preset))"
-              :title="presetLabel(preset)"
-              :aria-label="presetLabel(preset)"
-              @click.prevent="applyPreset(preset)"><span
-                v-for="(width, index) in preset.widths"
-                :key="index"
-                class="bb-modal__preset-cell"
-                :style="{ width: width + '%' }"></span></button>
-          </div>
-          <div class="bb-modal__widths">
-            <label
-              v-for="(width, index) in selectedRowWidths"
-              :key="index"
-              class="bb-modal__width">
-              <span class="bb-modal__width-label">{{ index + 1 }}</span>
-              <input
-                type="number"
-                :min="minColumnWidth"
-                :max="fullWidth"
-                :value="width"
-                :aria-label="columnWidthLabel(index)"
-                :disabled="index === selectedRowWidths.length - 1"
-                @change="onColumnWidthChange($event, index)" />
-              <span>%</span>
-            </label>
-          </div>
-          <div v-if="selectedRowSpaces" class="bb-modal__spacing">
-            <label class="bb-modal__spacing-field">
-              <span class="bb-modal__spacing-label">{{ vm.t('block-builder-gutter') }}</span>
-              <input
-                type="number"
-                min="0"
-                :max="maxGutter"
-                step="1"
-                :value="selectedRowSpacing(gutterKey)"
-                :aria-label="vm.t('block-builder-gutter-label')"
-                @change="onRowSpacingChange($event, gutterKey)" />
-              <span>px</span>
-            </label>
-            <label class="bb-modal__spacing-field">
-              <span class="bb-modal__spacing-label">{{ vm.t('block-builder-stack-spacing') }}</span>
-              <input
-                type="number"
-                min="0"
-                :max="maxStackSpacing"
-                :step="stackSpacingStep"
-                :value="selectedRowSpacing(stackSpacingKey)"
-                :aria-label="vm.t('block-builder-stack-spacing-label')"
-                :aria-describedby="stackSpacingHintId"
-                @change="onRowSpacingChange($event, stackSpacingKey)" />
-              <span>px</span>
-            </label>
-            <p :id="stackSpacingHintId" class="bb-modal__spacing-hint">{{ stackSpacingHint }}</p>
-          </div>
-          <p class="bb-modal__folded" role="status">{{ foldedMessage }}</p>
-        </div>
+${STRUCTURE_TEMPLATE}
 
         <p :id="listLabelId" class="bb-modal__section">{{ vm.t('block-builder-elements') }}</p>
         <p v-if="columnElements.length === 0" class="bb-modal__empty">{{ vm.t('block-builder-empty') }}</p>

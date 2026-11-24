@@ -1,27 +1,27 @@
 'use strict';
 
 // The space between the columns of a row: two settings, independent of each
-// other, stored on the row (ADR 0025, "Row settings").
+// other, stored on the row (ADR 0025, "Row layout").
 //
-//   - the GUTTER is the horizontal space between the columns on a desktop,
-//     never on the outer edges of the row;
+//   - the GUTTERS are the horizontal spaces between the columns on a desktop,
+//     one per interval, never on the outer edges of the row;
 //   - the STACK SPACING is the vertical space between the columns once they
-//     stack on a phone, never after the last one.
+//     stack on a phone, only ever between two columns that hold something.
 //
 // Both only mean something for a row of several columns. A row of one column
 // carries neither, so it stays the flat composition it always was (see
 // flatRowOf in composition.js).
 //
-// Every reader of a stored or edited row goes through `rowSpacing`, so no value
-// reaches the markup or the stylesheet without being made an integer within
-// the bounds first.
+// The bounds and the normalisation live here and nowhere else: the stored
+// state is read through them (composition.js, row-layout.js), the generator
+// renders through them (row-markup.js), and the modal sets through them.
 
-const GUTTER_KEY = 'gutter';
+const GUTTERS_KEY = 'gutters';
 const STACK_SPACING_KEY = 'stackSpacing';
-const SPACING_KEYS = Object.freeze([GUTTER_KEY, STACK_SPACING_KEY]);
+const SPACING_KEYS = Object.freeze([GUTTERS_KEY, STACK_SPACING_KEY]);
 
-// Forty pixels between two columns of a 600px email is already a lot: four
-// columns leave a fifth of the width to gutters.
+// Forty pixels between two columns of a 600px email is already a lot: three
+// such gutters leave a fifth of the width to the gutters.
 const MAX_GUTTER = 40;
 const MAX_STACK_SPACING = 40;
 
@@ -46,10 +46,29 @@ function boundedSpacing(value, max) {
 }
 
 /**
- * @param {*} value a stored gutter
+ * @param {*} value one stored gutter
  * @returns {number} whole px, 0 to MAX_GUTTER
  */
 const normaliseGutter = (value) => boundedSpacing(value, MAX_GUTTER);
+
+/**
+ * The gutters of a row of `columnCount` columns: one per interval, each
+ * normalised, 0 where nothing usable is stored. Extra entries are dropped.
+ *
+ * @param {*} stored the row's `gutters`
+ * @param {number} columnCount
+ * @returns {Array<number>}
+ */
+function normaliseGutters(stored, columnCount) {
+  const list = Array.isArray(stored) ? stored : [];
+  return Array.from({ length: Math.max(0, columnCount - 1) }, (_, index) =>
+    normaliseGutter(list[index])
+  );
+}
+
+/** @param {Array<number>} gutters normalised */
+const gutterTotal = (gutters) =>
+  gutters.reduce((total, gutter) => total + gutter, 0);
 
 /**
  * @param {*} value a stored stack spacing
@@ -61,67 +80,47 @@ function normaliseStackSpacing(value) {
 }
 
 /**
- * The spacing a row renders with: both settings normalised, and both 0 for a
- * row of fewer than two columns, whatever it holds.
+ * The stack spacing a row renders with: 0 for a row of fewer than two
+ * columns, whatever it holds.
  *
  * @param {Object} row as stored or edited
  * @param {number} columnCount how many columns the row renders
- * @returns {{gutter: number, stackSpacing: number}}
+ * @returns {number}
  */
-function rowSpacing(row, columnCount) {
-  if (!row || typeof row !== 'object' || columnCount < 2) {
-    return { gutter: 0, stackSpacing: 0 };
-  }
-  return {
-    gutter: normaliseGutter(row[GUTTER_KEY]),
-    stackSpacing: normaliseStackSpacing(row[STACK_SPACING_KEY]),
-  };
+function rowStackSpacing(row, columnCount) {
+  if (!row || typeof row !== 'object' || columnCount < 2) return 0;
+  return normaliseStackSpacing(row[STACK_SPACING_KEY]);
 }
 
 /**
- * The spacing keys a row is stored with: only those that are not 0, so a row at
- * the defaults is stored exactly as it was before the settings existed.
+ * The spacing keys a row is stored with: only those that say something, so a
+ * row at the defaults is stored exactly as it was before the settings existed.
  *
- * @param {Object} row
+ * @param {Object} row as stored or edited
  * @param {number} columnCount
- * @returns {Object} `{ gutter?, stackSpacing? }`
+ * @returns {Object} `{ gutters?, stackSpacing? }`
  */
 function storedSpacing(row, columnCount) {
-  const { gutter, stackSpacing } = rowSpacing(row, columnCount);
+  const source = row && typeof row === 'object' ? row : {};
+  const gutters = normaliseGutters(source[GUTTERS_KEY], columnCount);
+  const stackSpacing = rowStackSpacing(source, columnCount);
   return {
-    ...(gutter > 0 ? { [GUTTER_KEY]: gutter } : {}),
+    ...(gutterTotal(gutters) > 0 ? { [GUTTERS_KEY]: gutters } : {}),
     ...(stackSpacing > 0 ? { [STACK_SPACING_KEY]: stackSpacing } : {}),
   };
 }
 
-/**
- * The padding a cell takes from the gutter: half of it on each side that faces
- * another column, none on the outer edges of the row. An odd gutter gives the
- * extra pixel to the right of the left column, so the two halves that meet
- * between two columns always add up to the gutter.
- *
- * @param {number} index the column's position in the row
- * @param {number} columnCount
- * @param {number} gutter normalised
- * @returns {{left: number, right: number}}
- */
-function gutterSides(index, columnCount, gutter) {
-  return {
-    left: index === 0 ? 0 : Math.floor(gutter / 2),
-    right: index === columnCount - 1 ? 0 : Math.ceil(gutter / 2),
-  };
-}
-
 module.exports = {
-  GUTTER_KEY,
+  GUTTERS_KEY,
   STACK_SPACING_KEY,
   SPACING_KEYS,
   MAX_GUTTER,
   MAX_STACK_SPACING,
   STACK_SPACING_STEP,
   normaliseGutter,
+  normaliseGutters,
+  gutterTotal,
   normaliseStackSpacing,
-  rowSpacing,
+  rowStackSpacing,
   storedSpacing,
-  gutterSides,
 };

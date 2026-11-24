@@ -162,6 +162,14 @@ describe('the class a column stacks with', () => {
     expect(stackClassFor(1)).toBe('');
   });
 
+  // A behaviour, not any class the generator owns: the gutter's class is not
+  // something a column does on a phone.
+  it('refuses a generated class that is not a behaviour', () => {
+    expect(() => stackClassFor(2, 'gutter')).toThrow(
+      /no generated class for the behaviour "gutter"/
+    );
+  });
+
   // Whatever the column count, so a typo cannot hide behind a single column.
   test.each([1, 2])('refuses a behaviour the list does not name (%i)', (n) => {
     expect(() => stackClassFor(n, 'stak')).toThrow(

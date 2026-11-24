@@ -27,7 +27,12 @@ const PREFIX = 'lp-';
 // where the setting that chooses between them will live.
 const STACK = 'stack';
 
-// A cell of a row with a desktop gutter. On a phone the columns take the full
+// The behaviours a column may have on a phone, and nothing else: what
+// stackClassFor accepts. Its own list rather than GENERATED_CLASSES, which
+// also names classes that are not a behaviour (`lp-gutter`).
+const BEHAVIOURS = Object.freeze([STACK]);
+
+// A cell that carries a desktop gutter. On a phone the columns take the full
 // width, so the padding that made the gutter goes.
 const GUTTER_CLASS = `${PREFIX}gutter`;
 
@@ -66,8 +71,9 @@ const GENERATED_CLASSES = Object.freeze([
 // there, the class is there, and nothing moves.
 //
 // The gutter and the stack spacing are padding, and the gutter's is inline on
-// the cell for the same reason as the width. The stack spacing goes under every
-// stacked column but the last, which does not carry its class.
+// the cell for the same reason as the width. The stack spacing goes under a
+// stacked column that has another one holding something after it, and only
+// there (row-markup.js).
 const MOBILE_DECLARATIONS = Object.freeze({
   [`${PREFIX}${STACK}`]: 'display:block !important;width:100% !important;',
   [GUTTER_CLASS]: 'padding-left:0 !important;padding-right:0 !important;',
@@ -94,26 +100,25 @@ function isGeneratedClass(name) {
  * head of every mailing that holds a composed block.
  *
  * @param {number} columnCount how many columns the row holds
- * @param {string} [behaviour] one of the behaviours GENERATED_CLASSES names
+ * @param {string} [behaviour] one of BEHAVIOURS
  * @returns {string}
  * @throws {Error} on a behaviour the list does not name — a code bug, checked
  *   whatever the column count so it cannot hide behind a one-column row. A
  *   behaviour read from stored state must be checked before it gets here.
  */
 function stackClassFor(columnCount, behaviour = STACK) {
-  const name = `${PREFIX}${behaviour}`;
-  if (!isGeneratedClass(name)) {
+  if (!BEHAVIOURS.includes(behaviour)) {
     throw new Error(
       `block-builder: no generated class for the behaviour "${behaviour}". ` +
-        `Expected one of ${GENERATED_CLASSES.join(', ')}.`
+        `Expected one of ${BEHAVIOURS.join(', ')}.`
     );
   }
   if (!Number.isFinite(columnCount) || columnCount < 2) return '';
-  return name;
+  return `${PREFIX}${behaviour}`;
 }
 
 /**
- * The class the cells of a row with this gutter carry, or '' for none.
+ * The class a cell carries for the gutter before it, or '' for none.
  *
  * @param {number} gutter normalised (row-spacing.js)
  * @returns {string}
@@ -142,6 +147,7 @@ function stackSpacingClassFor(spacing) {
 }
 
 module.exports = {
+  BEHAVIOURS,
   GENERATED_CLASSES,
   GUTTER_CLASS,
   STACK_SPACINGS,

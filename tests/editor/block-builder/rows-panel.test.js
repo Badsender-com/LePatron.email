@@ -5,7 +5,8 @@
 'use strict';
 
 // The rows panel: the list of rows, and the structure of the selected one —
-// its presets, its widths, and what it says when a column disappears (#1210).
+// its presets, and what it says when a column disappears (#1210). The bar that
+// sets its widths and gutters is row-layout-panel.test.js.
 //
 // Through the French dictionary, substituted as the editor does (`vm.tt`), so
 // a label is read as a user reads it.
@@ -14,10 +15,6 @@ const Vue = require('vue/dist/vue.common');
 
 const { open, unmountAll } = require('./modal-helpers.js');
 const fr = require('../../../public/lang/badsender-fr.js');
-const {
-  MIN_COLUMN_WIDTH,
-  FULL_WIDTH,
-} = require('../../../packages/shared/block-builder/composition.js');
 
 const t = (key, params) =>
   Object.keys(params || {}).reduce(
@@ -34,8 +31,6 @@ async function openWith(types) {
 
 const rowOptions = () =>
   Array.from(document.querySelectorAll('.bb-modal__rows [role="option"]'));
-const widthFields = () =>
-  Array.from(document.querySelectorAll('.bb-modal__width input'));
 const foldedText = () =>
   document.querySelector('.bb-modal__folded').textContent.trim();
 
@@ -48,11 +43,6 @@ function press(target, key, modifiers) {
   });
   target.dispatchEvent(event);
   return event;
-}
-
-function change(input, value) {
-  input.value = value;
-  input.dispatchEvent(new window.Event('change', { bubbles: true }));
 }
 
 /** Puts an element of the first column into another one of the same row. */
@@ -266,60 +256,6 @@ describe('moving a row from the keyboard', () => {
   });
 });
 
-describe('the widths', () => {
-  async function halves() {
-    const modal = await openWith(['text']);
-    const [row] = modal.state.rows;
-    modal.selectRow(row.id);
-    modal.setRowWidths(row.id, [50, 50]);
-    await Vue.nextTick();
-    return modal;
-  }
-
-  const widthsOf = (modal) =>
-    modal.state.rows[0].columns.map((column) => column.width);
-
-  it('are bounded by the limits a row has', async () => {
-    await halves();
-
-    widthFields().forEach((field) => {
-      expect(field.min).toBe(String(MIN_COLUMN_WIDTH));
-      expect(field.max).toBe(String(FULL_WIDTH));
-    });
-  });
-
-  it('name the column each one sets', async () => {
-    await halves();
-
-    expect(
-      widthFields().map((field) => field.getAttribute('aria-label'))
-    ).toEqual(['Largeur de la colonne 1', 'Largeur de la colonne 2']);
-  });
-
-  // The state does not change, so Vue has nothing to redraw: the field is put
-  // back by hand, or it shows a width the row does not have.
-  it('put a refused width back to what the row holds', async () => {
-    const modal = await halves();
-    const [field] = widthFields();
-
-    change(field, '5');
-
-    expect(widthsOf(modal)).toEqual([50, 50]);
-    expect(field.value).toBe('50');
-  });
-
-  it('show an accepted width as the row rounded it', async () => {
-    const modal = await halves();
-    const [field] = widthFields();
-
-    change(field, '33.6');
-    await Vue.nextTick();
-
-    expect(widthsOf(modal)).toEqual([34, 66]);
-    expect(widthFields().map((input) => input.value)).toEqual(['34', '66']);
-  });
-});
-
 describe('a change of structure', () => {
   it('keeps whatever else a column holds', async () => {
     const modal = await openWith(['text']);
@@ -330,7 +266,7 @@ describe('a change of structure', () => {
     modal.setRowWidths(row.id, [66, 34]);
 
     expect(modal.state.rows[0].columns[0]).toEqual(
-      expect.objectContaining({ width: 66, background: '#ffcc00' })
+      expect.objectContaining({ width: 396, background: '#ffcc00' })
     );
   });
 
@@ -391,7 +327,7 @@ describe('the elements of a column that disappears', () => {
     modal.setRowWidths(row.id, [50, 50]);
     placeIn(modal, 1);
 
-    modal.setRowWidths(row.id, [FULL_WIDTH]);
+    modal.setRowWidths(row.id, [100]);
     await Vue.nextTick();
 
     expect(foldedText()).toBe('1 élément déplacé dans la colonne 1.');
@@ -411,7 +347,7 @@ describe('the elements of a column that disappears', () => {
     modal.selectRow(row.id);
     modal.setRowWidths(row.id, [50, 50]);
 
-    modal.setRowWidths(row.id, [FULL_WIDTH]);
+    modal.setRowWidths(row.id, [100]);
     await Vue.nextTick();
 
     expect(foldedText()).toBe('');

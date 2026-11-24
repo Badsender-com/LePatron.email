@@ -44,10 +44,7 @@ function classesOf(composition) {
 
   const names = rows.reduce((found, row) => {
     rowClasses(row).forEach((classes) =>
-      classes
-        .split(' ')
-        .filter(Boolean)
-        .forEach((name) => found.add(name))
+      classes.forEach((name) => found.add(name))
     );
     return found;
   }, new Set());

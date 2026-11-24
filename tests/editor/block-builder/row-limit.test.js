@@ -69,7 +69,7 @@ describe('"Add a row"', () => {
     const row = modal.addRow();
 
     expect(modal.state.rows[1]).toBe(row);
-    expect(row.columns).toEqual([{ width: 100, elements: [] }]);
+    expect(row.columns).toEqual([{ width: 600, elements: [] }]);
     expect(modal.selectedRowId).toBe(row.id);
     // A row holding nothing changes no markup: there is nothing to render.
     expect(render).not.toHaveBeenCalled();

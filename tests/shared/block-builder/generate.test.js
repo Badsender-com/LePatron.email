@@ -36,7 +36,7 @@ describe('emptyState', () => {
 
   it('starts with one empty full-width column, and no flat view', () => {
     expect(emptyState().rows).toEqual([
-      { id: expect.any(String), columns: [{ width: 100, elements: [] }] },
+      { id: expect.any(String), columns: [{ width: 600, elements: [] }] },
     ]);
     expect(emptyState().elements).toBeUndefined();
   });

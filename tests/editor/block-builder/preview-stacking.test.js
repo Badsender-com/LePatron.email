@@ -121,28 +121,51 @@ describe('the mobile toggle in the builder preview', () => {
   });
 });
 
-// The space between the columns (#1683): the gutter is the desktop view's,
+// The space between the columns (#1683): the gutters are the desktop view's,
 // inline on the cells; the stack spacing is the mobile view's, from the same
-// derived stylesheet that stacks the columns.
+// derived stylesheet that stacks the columns. Set through the panel's fields,
+// and redrawn the way the modal redraws: its markup watcher, then a frame.
 describe('the spacing between columns in the builder preview', () => {
+  afterEach(() => jest.restoreAllMocks());
+
+  function change(input, value) {
+    input.value = value;
+    input.dispatchEvent(new window.Event('change', { bubbles: true }));
+  }
+
   async function spaced() {
+    const frames = [];
+    jest.spyOn(window, 'requestAnimationFrame').mockImplementation((run) => {
+      frames.push(run);
+      return frames.length;
+    });
     const opened = await twoColumns();
+    // The button into the second column: the spacing only goes between two
+    // columns that hold something.
     const [row] = opened.modal.state.rows;
-    opened.modal.setRowSpacing(row.id, 'gutter', 20);
-    opened.modal.setRowSpacing(row.id, 'stackSpacing', 12);
-    opened.modal.renderPreview();
+    row.columns[1].elements.push(row.columns[0].elements.pop());
+    opened.modal.selectRow(row.id);
+    await opened.modal.$nextTick();
+    frames.splice(0).forEach((run) => run());
+
+    const [, gutter] = document.querySelectorAll('.bb-modal__pieces input');
+    change(gutter, '20');
+    change(document.querySelector('.bb-modal__spacing input'), '12');
+    await opened.modal.$nextTick();
+    // The frame the markup watcher asked for.
+    expect(frames).toHaveLength(1);
+    frames.splice(0).forEach((run) => run());
     return opened;
   }
   const cellsOf = (doc) => Array.from(doc.body.querySelectorAll('td.lp-stack'));
 
-  it('shows the gutter on desktop, between the columns only', async () => {
+  it('redraws the desktop view with the gutter, before the second column only', async () => {
     const { doc } = await spaced();
     const [first, last] = cellsOf(doc);
 
-    expect(first.style.paddingLeft).toBe('0px');
-    expect(first.style.paddingRight).toBe('10px');
-    expect(last.style.paddingLeft).toBe('10px');
-    expect(last.style.paddingRight).toBe('0px');
+    expect(first.style.paddingLeft).toBe('');
+    expect(last.style.paddingLeft).toBe('20px');
+    expect(last.style.paddingRight).toBe('');
     expect(derivedSheet(doc)).toBe('');
   });
 
@@ -162,9 +185,8 @@ describe('the spacing between columns in the builder preview', () => {
     const [first, last] = cellsOf(doc);
     expect(first.classList.contains('lp-stack-spacing-12')).toBe(true);
     expect(last.classList.contains('lp-stack-spacing-12')).toBe(false);
-    cellsOf(doc).forEach((cell) =>
-      expect(cell.classList.contains('lp-gutter')).toBe(true)
-    );
+    expect(first.classList.contains('lp-gutter')).toBe(false);
+    expect(last.classList.contains('lp-gutter')).toBe(true);
   });
 });
 

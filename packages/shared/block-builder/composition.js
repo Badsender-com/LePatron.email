@@ -19,23 +19,21 @@ const {
 } = require('./stored-elements.js');
 const lookup = require('./composition-lookup.js');
 const { storedSpacing } = require('./row-spacing.js');
+const {
+  MAX_COLUMNS,
+  MIN_COLUMN_WIDTH,
+  FULL_WIDTH,
+  areUsableWidths,
+  rowLayout,
+  isFullWidth,
+} = require('./row-layout.js');
 
 const { withoutEmptyRows } = lookup;
-
-// Four is where a 600px email stops working: below roughly 60px a cell no
-// longer holds a word, and Outlook's rounding of percentages starts to show.
-const MAX_COLUMNS = 4;
 
 // Far more rows than a block needs: a block is a section of an email, and a
 // whole email is a column of blocks. A stored composition with more is not one
 // the editor wrote, and it is refused rather than read.
 const MAX_ROWS = 50;
-
-// Same reasoning as MAX_COLUMNS from the other end. A column narrower than
-// this is not a layout choice, it is a mistake or a corrupted value.
-const MIN_COLUMN_WIDTH = 10;
-
-const FULL_WIDTH = 100;
 
 // What newRowId writes. A stored row id is kept only in that shape: anything
 // else is replaced on read, so no free text rides along in a row id.
@@ -54,52 +52,10 @@ const hasOnlyKeys = (object, keys) =>
   Object.keys(object).every((key) => keys.includes(key));
 
 /**
- * Whether a list of widths is one a row may have: one to MAX_COLUMNS finite
- * numbers, none below MIN_COLUMN_WIDTH, adding up to FULL_WIDTH.
- *
- * @param {Array<number>} widths
- * @returns {boolean}
- */
-function areUsableWidths(widths) {
-  if (!Array.isArray(widths) || widths.length === 0) return false;
-  if (widths.length > MAX_COLUMNS) return false;
-  if (!widths.every((width) => Number.isFinite(width))) return false;
-  if (widths.some((width) => width < MIN_COLUMN_WIDTH)) return false;
-  return widths.reduce((sum, width) => sum + width, 0) === FULL_WIDTH;
-}
-
-/**
- * Widths that add up, or equal shares.
- *
- * Deliberately all-or-nothing rather than clever. Clamping a too-narrow column
- * up and then rescaling can push another one below the floor, which clamps it
- * back up, and so on — the obvious fixes here do not converge. Equal shares
- * always land inside the limits, and the only way to reach this code is a
- * stored value the editor would never have written: the panel constrains what
- * a user can set.
- *
- * @param {Array<number>} widths one per column, at most MAX_COLUMNS
- * @returns {Array<number>}
- */
-function usableWidths(widths) {
-  if (areUsableWidths(widths)) return widths;
-
-  const share = Math.floor(FULL_WIDTH / widths.length);
-  // The remainder goes to the last column rather than being dropped: three
-  // columns of 33 leave one percent, and a row that adds up to 99 renders a
-  // sliver of background down one side.
-  return widths.map((_, index) =>
-    index === widths.length - 1
-      ? FULL_WIDTH - share * (widths.length - 1)
-      : share
-  );
-}
-
-/**
  * A stored row brought back to something renderable.
  *
  * @param {Object} source a stored row, already known to be an object
- * @returns {Object} `{ id, columns, gutter?, stackSpacing? }`
+ * @returns {Object} `{ id, columns, gutters?, stackSpacing? }`
  */
 function cleanRow(source) {
   const stored = Array.isArray(source.columns) ? source.columns : [];
@@ -123,7 +79,12 @@ function cleanRow(source) {
     for (const element of columns[index].elements) last.push(element);
   }
 
-  const widths = usableWidths(kept.map((column) => column.width));
+  // Widths in px between the gutters (row-layout.js), percentages written
+  // before px converted, anything else equal shares.
+  const { widths, gutters } = rowLayout(
+    kept.map((column) => column.width),
+    source.gutters
+  );
 
   return {
     id:
@@ -133,9 +94,9 @@ function cleanRow(source) {
       elements: column.elements,
     })),
     // The spacing between columns, normalised (row-spacing.js): read only for
-    // a row of several columns, and only when it is not 0, so a row at the
-    // defaults reads exactly as it did before the settings existed.
-    ...storedSpacing(source, kept.length),
+    // a row of several columns, and only when it says something, so a row at
+    // the defaults reads exactly as it did before the settings existed.
+    ...storedSpacing({ ...source, gutters }, kept.length),
   };
 }
 
@@ -242,7 +203,7 @@ function flatRowOf(state) {
   const bare =
     isObject(column) &&
     hasOnlyKeys(column, BARE_COLUMN_KEYS) &&
-    column.width === FULL_WIDTH &&
+    isFullWidth(column.width) &&
     Array.isArray(column.elements);
   return bare ? row : null;
 }
@@ -284,7 +245,7 @@ module.exports = {
   FULL_WIDTH,
   newRowId,
   areUsableWidths,
-  usableWidths,
+  rowLayout,
   singleColumnRows,
   readRows,
   holdsNothing,

@@ -4,9 +4,11 @@
 
 'use strict';
 
-// The space between the columns of a row, in the structure panel (#1683): the
-// desktop gutter and the mobile stack spacing, set per row, only for a row of
-// several columns.
+// The stack spacing of a row, in the structure panel (#1683): the space
+// between its columns once they stack on a phone, set per row, only for a row
+// of several columns. And what a change of structure, or a duplication, does
+// to the row's spacing. The bar that sets the gutters is
+// row-layout-panel.test.js.
 //
 // Through the French dictionary, substituted as the editor does, so a label is
 // read as a user reads it.
@@ -22,7 +24,6 @@ const {
   isFlatComposition,
 } = require('../../../packages/shared/block-builder/composition.js');
 const {
-  MAX_GUTTER,
   MAX_STACK_SPACING,
   STACK_SPACING_STEP,
 } = require('../../../packages/shared/block-builder/row-spacing.js');
@@ -45,150 +46,128 @@ async function openWith(widths) {
   return { modal, row: modal.state.rows[0] };
 }
 
-const spacingFields = () =>
-  Array.from(document.querySelectorAll('.bb-modal__spacing input'));
-const gutterField = () => spacingFields()[0];
-const stackSpacingField = () => spacingFields()[1];
+const field = () => document.querySelector('.bb-modal__spacing input');
 
-function change(input, value) {
+function change(input, value, { badInput = false } = {}) {
   input.value = value;
+  // jsdom never reports a number field it could not read: told here, as a
+  // browser would for `20px`, which leaves the field empty.
+  if (badInput) {
+    Object.defineProperty(input, 'validity', { value: { badInput: true } });
+  }
   input.dispatchEvent(new window.Event('change', { bubbles: true }));
 }
 
-describe('the spacing fields', () => {
-  it('are not offered for a row of one column', async () => {
+describe('the stack spacing field', () => {
+  it('is not offered for a row of one column', async () => {
     await openWith();
 
     expect(document.querySelector('.bb-modal__structure')).not.toBeNull();
-    expect(spacingFields()).toEqual([]);
+    expect(field()).toBeNull();
   });
 
   test.each([[[50, 50]], [[33, 33, 34]]])(
-    'are offered for a row of %j',
+    'is offered for a row of %j',
     async (widths) => {
       await openWith(widths);
 
-      expect(spacingFields()).toHaveLength(2);
+      expect(field()).not.toBeNull();
     }
   );
 
-  it('say what each one sets, and for which device', async () => {
+  // WCAG 2.5.3: the name a voice command uses is the one on screen.
+  it('is named by its visible label, and explained by the note', async () => {
     await openWith([50, 50]);
-
-    expect(
-      Array.from(
-        document.querySelectorAll('.bb-modal__spacing-label'),
-        (label) => label.textContent.trim()
-      )
-    ).toEqual(['Gouttière (bureau)', 'Espacement empilé (mobile)']);
-    expect(gutterField().getAttribute('aria-label')).toBe(
-      fr['block-builder-gutter-label']
+    const label = document.getElementById(
+      field().getAttribute('aria-labelledby')
     );
-    expect(stackSpacingField().getAttribute('aria-label')).toBe(
-      fr['block-builder-stack-spacing-label']
-    );
-  });
-
-  it('are bounded by the limits a row has', async () => {
-    await openWith([50, 50]);
-
-    expect(gutterField().min).toBe('0');
-    expect(gutterField().max).toBe(String(MAX_GUTTER));
-    expect(stackSpacingField().min).toBe('0');
-    expect(stackSpacingField().max).toBe(String(MAX_STACK_SPACING));
-    expect(stackSpacingField().step).toBe(String(STACK_SPACING_STEP));
-  });
-
-  it('say the stack spacing is rounded to its step', async () => {
-    await openWith([50, 50]);
     const hint = document.getElementById(
-      stackSpacingField().getAttribute('aria-describedby')
+      field().getAttribute('aria-describedby')
     );
 
+    expect(field().hasAttribute('aria-label')).toBe(false);
+    expect(label.textContent.trim()).toBe('Espacement empilé (mobile)');
     expect(hint.textContent.trim()).toBe(
-      `Sur téléphone, arrondi au multiple de ${STACK_SPACING_STEP} px le plus proche.`
+      `Par pas de ${STACK_SPACING_STEP} px : une autre valeur est arrondie au plus proche.`
     );
   });
 
-  it('start at 0', async () => {
+  it('is bounded by the limits a row has', async () => {
     await openWith([50, 50]);
 
-    expect(spacingFields().map((field) => field.value)).toEqual(['0', '0']);
+    expect(field().min).toBe('0');
+    expect(field().max).toBe(String(MAX_STACK_SPACING));
+    expect(field().step).toBe(String(STACK_SPACING_STEP));
+  });
+
+  it('starts at 0', async () => {
+    await openWith([50, 50]);
+
+    expect(field().value).toBe('0');
   });
 });
 
-describe('setting a spacing', () => {
-  it('stores the gutter on the row', async () => {
+describe('setting the stack spacing', () => {
+  it('stores it on its step, and shows it', async () => {
     const { row } = await openWith([50, 50]);
 
-    change(gutterField(), '20');
-
-    expect(row.gutter).toBe(20);
-    expect(gutterField().value).toBe('20');
-  });
-
-  it('stores the stack spacing on its step, and shows it', async () => {
-    const { row } = await openWith([50, 50]);
-
-    change(stackSpacingField(), '13');
+    change(field(), '13');
 
     expect(row.stackSpacing).toBe(12);
-    expect(stackSpacingField().value).toBe('12');
-  });
-
-  it('keeps the two apart', async () => {
-    const { row } = await openWith([50, 50]);
-
-    change(stackSpacingField(), '24');
-
-    expect(row.stackSpacing).toBe(24);
-    expect(row).not.toHaveProperty('gutter');
+    expect(field().value).toBe('12');
   });
 
   // The state does not change, so Vue has nothing to redraw: the field is put
-  // back by hand, as a refused width is.
+  // back by hand.
   test.each([
-    ['past the maximum', String(MAX_GUTTER + 1)],
+    ['past the maximum', String(MAX_STACK_SPACING + 1)],
     ['negative', '-4'],
   ])(
     'puts a refused value %s back to what the row holds',
     async (_l, typed) => {
       const { row } = await openWith([50, 50]);
-      change(gutterField(), '8');
+      change(field(), '8');
 
-      change(gutterField(), typed);
+      change(field(), typed);
 
-      expect(row.gutter).toBe(8);
-      expect(gutterField().value).toBe('8');
+      expect(row.stackSpacing).toBe(8);
+      expect(field().value).toBe('8');
     }
   );
 
-  it('writes no key for a spacing set back to 0', async () => {
+  it('keeps what the row holds when the browser cannot read the field', async () => {
+    const { row } = await openWith([50, 50]);
+    change(field(), '8');
+
+    change(field(), '', { badInput: true });
+
+    expect(row.stackSpacing).toBe(8);
+    expect(field().value).toBe('8');
+  });
+
+  it('writes no key once emptied or set back to 0', async () => {
     const { modal, row } = await openWith([50, 50]);
-    change(gutterField(), '20');
-    change(stackSpacingField(), '8');
+    change(field(), '8');
 
-    change(gutterField(), '0');
-    change(stackSpacingField(), '');
+    change(field(), '');
 
-    expect(row).not.toHaveProperty('gutter');
     expect(row).not.toHaveProperty('stackSpacing');
-    expect(serialiseState(modal.state)).not.toMatch(/gutter|stackSpacing/);
+    expect(serialiseState(modal.state)).not.toMatch(/stackSpacing/);
   });
 
   it('is refused on a row of one column', async () => {
     const { modal, row } = await openWith();
 
-    expect(modal.setRowSpacing(row.id, 'gutter', 20)).toBe(false);
-    expect(row).not.toHaveProperty('gutter');
+    expect(modal.setRowStackSpacing(row.id, 12)).toBe(false);
+    expect(row).not.toHaveProperty('stackSpacing');
   });
 });
 
 describe('a change of structure', () => {
   async function spaced() {
     const opened = await openWith([50, 50]);
-    change(gutterField(), '20');
-    change(stackSpacingField(), '12');
+    opened.modal.setRowPiece(opened.row.id, 1, 20);
+    change(field(), '12');
     return opened;
   }
 
@@ -197,7 +176,17 @@ describe('a change of structure', () => {
 
     modal.setRowWidths(row.id, [33, 33, 34]);
 
-    expect(row).toMatchObject({ gutter: 20, stackSpacing: 12 });
+    expect(row).toMatchObject({ gutters: [20, 0], stackSpacing: 12 });
+  });
+
+  // Applying a preset keeps the gutters: the columns share what they leave.
+  it('gives the columns the proportions of what the gutters leave', async () => {
+    const { modal, row } = await spaced();
+
+    modal.setRowWidths(row.id, [50, 50]);
+    modal.setRowWidths(row.id, [66, 34]);
+
+    expect(row.columns.map((column) => column.width)).toEqual([383, 197]);
   });
 
   it('removes it from a row that goes down to one column, which stays flat', async () => {
@@ -206,10 +195,10 @@ describe('a change of structure', () => {
     modal.setRowWidths(row.id, [100]);
     await Vue.nextTick();
 
-    expect(row).not.toHaveProperty('gutter');
+    expect(row).not.toHaveProperty('gutters');
     expect(row).not.toHaveProperty('stackSpacing');
     expect(isFlatComposition(modal.state)).toBe(true);
-    expect(spacingFields()).toEqual([]);
+    expect(field()).toBeNull();
   });
 
   it('starts again at 0 when the row gets its columns back', async () => {
@@ -219,19 +208,21 @@ describe('a change of structure', () => {
     modal.setRowWidths(row.id, [50, 50]);
     await Vue.nextTick();
 
-    expect(spacingFields().map((field) => field.value)).toEqual(['0', '0']);
+    expect(field().value).toBe('0');
+    expect(row).not.toHaveProperty('gutters');
   });
 });
 
 describe('a duplicated row', () => {
   it('keeps the spacing of the row it copies', async () => {
     const { modal, row } = await openWith([50, 50]);
-    change(gutterField(), '16');
-    change(stackSpacingField(), '8');
+    modal.setRowPiece(row.id, 1, 16);
+    change(field(), '8');
 
     const copy = modal.duplicateRow(row.id);
 
-    expect(copy).toMatchObject({ gutter: 16, stackSpacing: 8 });
+    expect(copy).toMatchObject({ gutters: [16], stackSpacing: 8 });
+    expect(copy.columns.map((column) => column.width)).toEqual([300, 284]);
     expect(copy.id).not.toBe(row.id);
   });
 });

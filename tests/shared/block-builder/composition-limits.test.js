@@ -135,44 +135,67 @@ describe('columns past the limit', () => {
 });
 
 describe('widths read back', () => {
-  const widthsOf = (widths) =>
-    read([rowOf(widths)]).rows[0].columns.map((column) => column.width);
+  const widthsOf = (widths, gutters) =>
+    read([
+      { ...rowOf(widths), ...(gutters ? { gutters } : {}) },
+    ]).rows[0].columns.map((column) => column.width);
 
-  it('keeps widths that add up', () => {
-    expect(widthsOf([66, 34])).toEqual([66, 34]);
+  it('keeps widths in px that fill the block', () => {
+    expect(widthsOf([396, 204])).toEqual([396, 204]);
+  });
+
+  it('keeps widths in px that fill the block with the gutters', () => {
+    expect(widthsOf([280, 280], [40])).toEqual([280, 280]);
+  });
+
+  // Written before px: whole percentages adding up to 100.
+  it('reads widths in percent as px of the block', () => {
+    expect(widthsOf([66, 34])).toEqual([396, 204]);
+    expect(widthsOf([33, 33, 34])).toEqual([198, 198, 204]);
   });
 
   it.each([
-    ['a width below the floor', [2, 98], [50, 50]],
-    ['widths that do not add up', [33, 33, 33], [33, 33, 34]],
-    ['a width that is not a number', ['wide', 50], [50, 50]],
-    ['a missing width', [undefined, undefined, undefined], [33, 33, 34]],
-    ['four that overflow', [30, 30, 30, 30], [25, 25, 25, 25]],
+    ['a width below the floor', [50, 550], [300, 300]],
+    ['a percentage below the floor', [2, 98], [300, 300]],
+    ['widths that do not fill the block', [200, 200, 199], [200, 200, 200]],
+    ['percentages that do not add up', [33, 33, 33], [200, 200, 200]],
+    ['a width that is not a number', ['wide', 50], [300, 300]],
+    ['a width that is not whole', [300.5, 299.5], [300, 300]],
+    ['a missing width', [undefined, undefined, undefined], [200, 200, 200]],
+    ['four that overflow', [30, 30, 30, 30], [150, 150, 150, 150]],
   ])('falls back to equal shares for %s', (_label, widths, expected) => {
     expect(widthsOf(widths)).toEqual(expected);
+  });
+
+  it('shares what the gutters leave', () => {
+    expect(widthsOf([100, 100], [20])).toEqual([290, 290]);
   });
 });
 
 describe('areUsableWidths', () => {
   it.each([
-    [[100]],
-    [[50, 50]],
-    [[33, 33, 34]],
-    [[25, 25, 25, 25]],
-    [[10, 90]],
-  ])('accepts %j', (widths) => {
-    expect(areUsableWidths(widths)).toBe(true);
+    [[600], []],
+    [[300, 300], []],
+    [[198, 198, 204], []],
+    [[150, 150, 150, 150], []],
+    [[60, 540], []],
+    [[290, 290], [20]],
+  ])('accepts %j between the gutters %j', (widths, gutters) => {
+    expect(areUsableWidths(widths, gutters)).toBe(true);
   });
 
   it.each([
-    ['widths that do not add up', [33, 33, 33]],
-    ['NaN', [NaN, 100]],
-    ['infinity', [Infinity, 50]],
-    ['a width below the minimum', [5, 95]],
-    ['more than four columns', [20, 20, 20, 20, 20]],
-    ['no column', []],
-    ['not a list', '50,50'],
-  ])('refuses %s', (_label, widths) => {
-    expect(areUsableWidths(widths)).toBe(false);
+    ['widths that do not fill the block', [200, 200, 199], []],
+    ['widths that ignore the gutters', [300, 300], [20]],
+    ['percentages', [50, 50], []],
+    ['NaN', [NaN, 600], []],
+    ['infinity', [Infinity, 300], []],
+    ['a fraction', [300.5, 299.5], []],
+    ['a width below the minimum', [59, 541], []],
+    ['more than four columns', [120, 120, 120, 120, 120], []],
+    ['no column', [], []],
+    ['not a list', '300,300', []],
+  ])('refuses %s', (_label, widths, gutters) => {
+    expect(areUsableWidths(widths, gutters)).toBe(false);
   });
 });

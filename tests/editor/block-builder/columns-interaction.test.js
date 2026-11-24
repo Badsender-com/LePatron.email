@@ -110,7 +110,11 @@ describe('selecting a row', () => {
 
       modal.setRowWidths(row.id, [50, 50]);
 
-      expect(modal.state.rows[0].columns.map((c) => c.width)).toEqual([50, 50]);
+      // Proportions in, px of the 600px block out.
+      expect(modal.state.rows[0].columns.map((c) => c.width)).toEqual([
+        300,
+        300,
+      ]);
     });
 
     it('accepts widths no preset offers', async () => {
@@ -119,7 +123,10 @@ describe('selecting a row', () => {
 
       modal.setRowWidths(row.id, [37, 63]);
 
-      expect(modal.state.rows[0].columns.map((c) => c.width)).toEqual([37, 63]);
+      expect(modal.state.rows[0].columns.map((c) => c.width)).toEqual([
+        222,
+        378,
+      ]);
     });
 
     it('refuses widths that do not total 100', async () => {
@@ -128,7 +135,7 @@ describe('selecting a row', () => {
 
       modal.setRowWidths(row.id, [50, 40]);
 
-      expect(modal.state.rows[0].columns.map((c) => c.width)).toEqual([100]);
+      expect(modal.state.rows[0].columns.map((c) => c.width)).toEqual([600]);
     });
 
     it('refuses a fifth column', async () => {
@@ -137,7 +144,7 @@ describe('selecting a row', () => {
 
       modal.setRowWidths(row.id, [20, 20, 20, 20, 20]);
 
-      expect(modal.state.rows[0].columns.map((c) => c.width)).toEqual([100]);
+      expect(modal.state.rows[0].columns.map((c) => c.width)).toEqual([600]);
     });
 
     // Losing a paragraph to a structure change is the kind of thing a user

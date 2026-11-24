@@ -211,7 +211,8 @@ describe('a composition of rows', () => {
     expect(stored.v).toBe(2);
     expect(stored.elements).toBeUndefined();
     const { columns } = parseState(block.builderState).rows[0];
-    expect(columns.map((column) => column.width)).toEqual([66, 34]);
+    // 66 / 34 as stored, read in px of the 600px block.
+    expect(columns.map((column) => column.width)).toEqual([396, 204]);
     expect(columns[0].elements[0].content).toBe('Hello');
     expect(columns[1].elements[0].label).toBe('Click');
     expect(block.builderHtml).toBe(generate(parseState(block.builderState)));

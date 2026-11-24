@@ -56,9 +56,10 @@ describe('a composition of rows and columns', () => {
     const read = parseState(serialiseState(composition(twoColumns)));
 
     expect(read.rows).toHaveLength(1);
+    // Written in percent, read in px: half of the 600px block each.
     expect(read.rows[0].columns.map((column) => column.width)).toEqual([
-      50,
-      50,
+      300,
+      300,
     ]);
     expect(read.rows[0].columns[0].elements[0].content).toBe('gauche');
     expect(read.rows[0].columns[1].elements[0].content).toBe('droite');
@@ -255,7 +256,7 @@ describe('a composition written before columns', () => {
 
     expect(read.rows).toHaveLength(1);
     expect(read.rows[0].columns).toHaveLength(1);
-    expect(read.rows[0].columns[0].width).toBe(100);
+    expect(read.rows[0].columns[0].width).toBe(600);
   });
 
   it('keeps every element, in order, with its values', () => {

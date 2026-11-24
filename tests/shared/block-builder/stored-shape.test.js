@@ -149,7 +149,7 @@ describe('a version 1 composition', () => {
     expect(read.elements).toBeUndefined();
     expect(read.rows).toHaveLength(1);
     expect(read.rows[0].columns).toEqual([
-      { width: 100, elements: expect.any(Array) },
+      { width: 600, elements: expect.any(Array) },
     ]);
     expect(isFlatComposition(read)).toBe(true);
   });
@@ -178,9 +178,10 @@ describe('a version 2 composition', () => {
       serialiseState({ ...emptyState(), rows: twoColumns() })
     );
 
+    // Written in percent, read in px of the 600px block.
     expect(read.rows[0].columns.map((column) => column.width)).toEqual([
-      50,
-      50,
+      300,
+      300,
     ]);
     expect(generate(read)).toContain('width="50%"');
     expect(generate(read)).toContain('gauche');

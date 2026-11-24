@@ -1,14 +1,23 @@
 'use strict';
 
 const {
-  MIN_COLUMN_WIDTH,
   MAX_ROWS,
   elementsOf,
-  FULL_WIDTH,
   singleColumnRows,
   canAddRow,
-  areUsableWidths,
 } = require('../../../../../../shared/block-builder/composition.js');
+const {
+  FULL_WIDTH,
+  areUsableWidths,
+  areLegacyWidths,
+  widthsFromProportions,
+  rowLayout,
+} = require('../../../../../../shared/block-builder/row-layout.js');
+const {
+  GUTTERS_KEY,
+  normaliseGutters,
+  gutterTotal,
+} = require('../../../../../../shared/block-builder/row-spacing.js');
 const { ListboxMixin } = require('./listbox.js');
 
 // Rows: the list of them, and the structure of the selected one.
@@ -26,13 +35,15 @@ const { ListboxMixin } = require('./listbox.js');
 //     Alt+arrow to before walking the list;
 //   - from row-spacing-settings.js: `clearRowSpacing`, for a row that goes
 //     down to one column.
+// The widths of the selected row are set on the bar, row-layout-bar.js.
 // No other mixin calls into this one.
 
-// The structures offered as one click each. They are nothing but widths — a
-// row reached through a preset and the same row typed by hand are the same
+// The structures offered as one click each: how many columns, and in what
+// proportions of the room the gutters leave. Nothing but widths once applied —
+// a row reached through a preset and the same row set on the bar are the same
 // row, because a name beside the widths would be a second source of truth.
 const PRESETS = [
-  { key: 'full', widths: [FULL_WIDTH] },
+  { key: 'full', widths: [100] },
   { key: 'halves', widths: [50, 50] },
   { key: 'two-thirds-left', widths: [66, 34] },
   { key: 'two-thirds-right', widths: [34, 66] },
@@ -48,13 +59,39 @@ const ROW_LABEL_KEYS = [
   'block-builder-row-label-one',
   'block-builder-row-label-empty',
   'block-builder-row-label-empty-one',
-  'block-builder-column-width',
   'block-builder-elements-folded',
   'block-builder-elements-folded-one',
 ];
 
 const sameWidths = (a, b) =>
   a.length === b.length && a.every((width, index) => width === b[index]);
+
+/**
+ * A row's layout once given a structure: the proportions in px of what the
+ * gutters leave, the row keeping the gutters it had between the columns that
+ * remain, and 0 for a new one.
+ *
+ * @param {Object} row
+ * @param {Array<number>} proportions in percent, adding up to 100
+ * @returns {{widths: Array<number>, gutters: Array<number>}}
+ */
+function layoutFor(row, proportions) {
+  const gutters = normaliseGutters(row[GUTTERS_KEY], proportions.length);
+  return {
+    widths: widthsFromProportions(
+      proportions,
+      FULL_WIDTH - gutterTotal(gutters)
+    ),
+    gutters,
+  };
+}
+
+/** The layout a row renders with now. */
+const currentLayout = (row) =>
+  rowLayout(
+    row.columns.map((column) => column.width),
+    row[GUTTERS_KEY]
+  );
 
 const RowSettingsMixin = {
   mixins: [ListboxMixin],
@@ -64,8 +101,6 @@ const RowSettingsMixin = {
     // gone at the next change — a user who changes the structure again has
     // moved on from the last one.
     foldedNotice: null,
-    minColumnWidth: MIN_COLUMN_WIDTH,
-    fullWidth: FULL_WIDTH,
   }),
 
   computed: {
@@ -83,12 +118,6 @@ const RowSettingsMixin = {
       return MAX_ROWS;
     },
 
-    // What the panel shows: a row's structure, or an element's settings. One
-    // of the two, never both, so the panel never has to choose.
-    selectedRowWidths() {
-      const row = this.selectedRow;
-      return row ? row.columns.map((column) => column.width) : [];
-    },
 
     foldedMessage() {
       const notice = this.foldedNotice;
@@ -113,8 +142,14 @@ const RowSettingsMixin = {
   },
 
   methods: {
+    // Active when the row is what applying it would make of the row now.
     isPresetActive(preset) {
-      return sameWidths(this.selectedRowWidths, preset.widths);
+      const row = this.selectedRow;
+      if (!row || row.columns.length !== preset.widths.length) return false;
+      return sameWidths(
+        currentLayout(row).widths,
+        layoutFor(row, preset.widths).widths
+      );
     },
 
     presetLabel(preset) {
@@ -138,10 +173,6 @@ const RowSettingsMixin = {
       // kind in the replacement: doubled, the user's own `$` shows as typed.
       const label = first ? this.labelFor(first).replace(/\$/g, '$$$$') : '';
       return this.vm.t(key, { n: index + 1, count, first: label });
-    },
-
-    columnWidthLabel(index) {
-      return this.vm.t('block-builder-column-width', { n: index + 1 });
     },
 
     rowTabIndex(index) {
@@ -172,7 +203,8 @@ const RowSettingsMixin = {
     },
 
     /**
-     * Gives a row the structure these widths describe.
+     * Gives a row the structure these proportions describe, in px of what its
+     * gutters leave: the gutters between the columns that remain are kept.
      *
      * The elements already placed are kept, always. When a structure loses a
      * column, its elements move to the last column that survives rather than
@@ -185,18 +217,24 @@ const RowSettingsMixin = {
      * that did not change the markup has nothing to redraw.
      *
      * @param {string} rowId
-     * @param {Array<number>} widths
+     * @param {Array<number>} proportions in percent, adding up to 100, as a
+     *   preset gives them
      * @returns {boolean} whether the row changed
      */
-    setRowWidths(rowId, widths) {
+    setRowWidths(rowId, proportions) {
       const row = this.rowById(rowId);
-      // Refused rather than repaired: the panel is the one place a user sets
-      // widths, so anything outside the limits is a bug in the caller, and
-      // silently moving the numbers would hide it. A stored value is a
-      // different matter and is normalised on read (composition.js).
-      if (!row || !areUsableWidths(widths)) return false;
+      // Refused rather than repaired: the presets are the one place a
+      // structure comes from, so anything outside the limits is a bug in the
+      // caller, and silently moving the numbers would hide it. A stored value
+      // is a different matter and is normalised on read (composition.js).
+      if (!row || !areLegacyWidths(proportions)) return false;
+      const { widths, gutters } = layoutFor(row, proportions);
+      if (!areUsableWidths(widths, gutters)) return false;
       // The preset already active, clicked again.
-      if (sameWidths(row.columns.map((column) => column.width), widths)) {
+      if (
+        row.columns.length === widths.length &&
+        sameWidths(currentLayout(row).widths, widths)
+      ) {
         return false;
       }
 
@@ -214,8 +252,10 @@ const RowSettingsMixin = {
       );
       // The space between columns goes with the last of them: a row of one
       // column keeps no setting, and stays flat (row-spacing-settings.js).
-      // Otherwise the row keeps its spacing, whatever its new widths.
+      // Otherwise the row keeps its gutters, cut to its new intervals.
       if (widths.length < 2) this.clearRowSpacing(row);
+      else if (gutterTotal(gutters) > 0) this.$set(row, GUTTERS_KEY, gutters);
+      else if (GUTTERS_KEY in row) this.$delete(row, GUTTERS_KEY);
 
       this.foldedNotice = folded.length
         ? { rowId, count: folded.length, column: widths.length }
@@ -227,42 +267,6 @@ const RowSettingsMixin = {
       if (!this.selectedRowId) return;
       this.setRowWidths(this.selectedRowId, preset.widths);
     },
-
-    /**
-     * Sets one column's width, taking the difference from the next column.
-     *
-     * The next one rather than spreading it: a user dragging a boundary is
-     * moving THAT boundary, and redistributing across every column would move
-     * the ones they were not touching.
-     *
-     * @param {number} index the column whose width is being set
-     * @param {number} width
-     * @returns {boolean} whether the row changed
-     */
-    setColumnWidth(index, width) {
-      const widths = this.selectedRowWidths.slice();
-      if (index < 0 || index >= widths.length - 1) return false;
-
-      const rounded = Math.round(width);
-      const pair = widths[index] + widths[index + 1];
-      if (rounded < MIN_COLUMN_WIDTH || pair - rounded < MIN_COLUMN_WIDTH) {
-        return false;
-      }
-
-      widths[index] = rounded;
-      widths[index + 1] = pair - rounded;
-      return this.setRowWidths(this.selectedRowId, widths);
-    },
-
-    // The field, once its value has been offered to the row. Put back to what
-    // the row holds whatever happened: a refused width leaves the state as it
-    // was, so Vue sees nothing to redraw and the field would go on showing a
-    // number the row does not have. An accepted one may have been rounded.
-    onColumnWidthChange(event, index) {
-      this.setColumnWidth(index, Number(event.target.value));
-      event.target.value = this.selectedRowWidths[index];
-    },
-
   },
 };
 

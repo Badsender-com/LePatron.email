@@ -109,21 +109,21 @@ const emptyRow = (...columns) => ({
 describe('the classes a row carries', () => {
   it('is the stacking class on every cell of a row of several columns holding something', () => {
     expect(rowClasses(composition([50, 50]).rows[0])).toEqual([
-      'lp-stack',
-      'lp-stack',
+      ['lp-stack'],
+      ['lp-stack'],
     ]);
   });
 
   it('is nothing for a row of one column', () => {
-    expect(rowClasses(composition([100]).rows[0])).toEqual(['']);
+    expect(rowClasses(composition([100]).rows[0])).toEqual([[]]);
   });
 
   test.each([
-    ['empty columns', emptyRow([], []), ['', '']],
+    ['empty columns', emptyRow([], []), [[], []]],
     [
       'columns of unknown elements',
       emptyRow([{ type: 'nope' }], [null]),
-      ['', ''],
+      [[], []],
     ],
     ['no column', { id: 'r', columns: [] }, []],
     ['not a row', null, []],
@@ -133,8 +133,8 @@ describe('the classes a row carries', () => {
 
   it('is the stacking class as soon as one column holds something', () => {
     expect(rowClasses(emptyRow([], [text('a')]))).toEqual([
-      'lp-stack',
-      'lp-stack',
+      ['lp-stack'],
+      ['lp-stack'],
     ]);
   });
 });

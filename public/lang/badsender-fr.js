@@ -438,14 +438,13 @@ module.exports = {
   'block-builder-row-label-empty': 'Ligne __n__ · __count__ colonnes — vide',
   'block-builder-row-label-empty-one': 'Ligne __n__ · 1 colonne — vide',
   'block-builder-column-width': 'Largeur de la colonne __n__',
-  'block-builder-gutter': 'Gouttière (bureau)',
-  'block-builder-gutter-label':
-    'Espace entre les colonnes sur ordinateur, en pixels',
+  'block-builder-row-layout': 'Largeurs et gouttières (bureau), en px',
+  'block-builder-column-label': 'Colonne __n__',
+  'block-builder-gutter-label': 'Gouttière __n__',
+  'block-builder-gutter-width': 'Largeur de la gouttière __n__',
   'block-builder-stack-spacing': 'Espacement empilé (mobile)',
-  'block-builder-stack-spacing-label':
-    'Espace entre les colonnes empilées sur téléphone, en pixels',
   'block-builder-stack-spacing-hint':
-    'Sur téléphone, arrondi au multiple de __step__ px le plus proche.',
+    'Par pas de __step__ px : une autre valeur est arrondie au plus proche.',
   'block-builder-elements-folded':
     '__count__ éléments déplacés dans la colonne __column__.',
   'block-builder-elements-folded-one':
