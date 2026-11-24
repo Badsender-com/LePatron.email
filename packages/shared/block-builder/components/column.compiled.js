@@ -5,6 +5,6 @@
 // the component and fails on any difference.
 'use strict';
 module.exports = {
-  "filled": "<td width=\"[[width|CSS_VALUE|100%]]\" class=\"[[stackClass|ATTR|]]\" valign=\"top\" style=\"width:[[width|CSS_VALUE|100%]];\">[[content|MARKUP|]]</td>",
+  "filled": "<td width=\"[[width|CSS_VALUE|100%]]\" class=\"[[stackClass|ATTR|]]\" valign=\"top\" style=\"width:[[width|CSS_VALUE|100%]];\">[[content|MARKUP]]</td>",
   "empty": "<td width=\"[[width|CSS_VALUE|100%]]\" class=\"[[stackClass|ATTR|]]\" valign=\"top\" style=\"width:[[width|CSS_VALUE|100%]]; font-size:0; line-height:0;\">&nbsp;</td>"
 };

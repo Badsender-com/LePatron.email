@@ -23,6 +23,17 @@ const {
  * detail of the literal.
  */
 function checkDefault(where, slot) {
+  // The generator always fills a MARKUP slot, and a value it refuses renders
+  // as nothing rather than as a fallback: a default would never be read.
+  if (slot.context === MARKUP) {
+    if (slot.default !== undefined || slot.fallback !== undefined) {
+      throw new Error(
+        `${where} is MARKUP: it takes no default and no fallback. The ` +
+          'generator always fills it, and a refused value renders nothing.'
+      );
+    }
+    return;
+  }
   if (slot.context === 'PX') {
     if (!Number.isInteger(slot.default)) {
       throw new Error(`${where} is PX: its default must be an integer.`);

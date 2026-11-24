@@ -118,7 +118,7 @@ describe('the markup context', () => {
 
   describe('where it may be declared', () => {
     const template = '<table><tr><td>{{ inner }}</td></tr></table>';
-    const slots = { inner: { context: 'MARKUP', default: '' } };
+    const slots = { inner: { context: 'MARKUP' } };
 
     // The entire security argument. An element's slots are filled from stored
     // state — from what a user typed — so a MARKUP slot there would hand that
@@ -144,7 +144,7 @@ describe('the markup context', () => {
         kind: 'layout',
       });
 
-      expect(compiled.default).toContain('[[inner|MARKUP');
+      expect(compiled.default).toContain('[[inner|MARKUP]]');
       expect(defineLayout(compiled.default)({ inner: '<p>a</p>' })).toBe(
         '<table><tr><td><p>a</p></td></tr></table>'
       );
@@ -164,6 +164,17 @@ describe('the markup context', () => {
       await expect(
         compileFixture({ template: inAttribute, slots, kind: 'layout' })
       ).rejects.toThrow(/"inner" is MARKUP but lands in/);
+    });
+
+    // The engine never substitutes a fallback for MARKUP: a refused value
+    // renders nothing. So a default would be a promise nothing keeps.
+    test.each([
+      ['a default', { context: 'MARKUP', default: '' }],
+      ['a fallback', { context: 'MARKUP', fallback: '' }],
+    ])('takes no %s', async (_label, slot) => {
+      await expect(
+        compileFixture({ template, slots: { inner: slot }, kind: 'layout' })
+      ).rejects.toThrow(/MARKUP: it takes no default and no fallback/);
     });
 
     // Being a layout unlocks MARKUP, not an absence of checking.
