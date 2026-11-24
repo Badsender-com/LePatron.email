@@ -124,7 +124,7 @@ describe('default value at the first level', () => {
 });
 
 // Turned on by #1524 (the default value of a child dimension)
-describe.skip('default value of a child dimension', () => {
+describe('default value of a child dimension', () => {
   const both = [SILO, SILO_BRAND];
 
   it('lands a new email on the default brand of the default silo', () => {
