@@ -7,7 +7,7 @@ const { DimensionScopes } = require('../../constant/taxonomy-type.js');
  * email" always is. One of scope "the templates reading it" is when the email's
  * template contract names it, or reads a design token one of its values carries.
  *
- * Out of scope is treated like deactivated (ADR-0014): the values an email
+ * Out of scope is treated like deactivated (ADR-0032): the values an email
  * carries stay on it, and are neither offered, published, nor sent to the AI.
  */
 module.exports = { dimensionsInScope };
