@@ -80,15 +80,16 @@ async function prepare({ user, mailingId, scope, byEmailType = true }) {
 
   // Spelling does not depend on the email type: its expertise is never
   // filtered by it.
-  const emailType = byEmailType
-    ? await mailingMetadataService.findCanonicalEmailType(mailing)
-    : null;
+  const { emailType, untargetedOnly } = byEmailType
+    ? await mailingMetadataService.findDoctrineEmailType(mailing)
+    : {};
   const filter = expertiseFilter(scope);
   const applicable = await expertiseRepo.findApplicable(
     compact({
       scope,
       categories: filter.categories,
-      emailType: emailType || undefined,
+      emailType,
+      untargetedOnly: untargetedOnly || undefined,
       groupId,
     })
   );
@@ -98,7 +99,7 @@ async function prepare({ user, mailingId, scope, byEmailType = true }) {
 
   return {
     groupId,
-    emailType: emailType || undefined,
+    emailType,
     expertise,
     qualitySettings: await qualitySettingsOf(mailing),
   };

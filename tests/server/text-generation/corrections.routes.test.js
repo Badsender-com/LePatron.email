@@ -26,7 +26,7 @@ jest.mock('../../../packages/server/mailing/mailing.service', () => ({
   assertUserCanEditMailing: jest.fn(),
 }));
 jest.mock('../../../packages/server/mailing/mailing-metadata.service', () => ({
-  findCanonicalEmailType: jest.fn(),
+  findDoctrineEmailType: jest.fn(),
 }));
 // A query as the service chains it: `findById(id).select(…).lean()`.
 const mockFoundDocument = (document) => ({
@@ -175,9 +175,10 @@ function loadModules() {
     _company: 'g1',
   });
   mailingService.assertUserCanEditMailing.mockResolvedValue();
-  mailingMetadataService.findCanonicalEmailType.mockResolvedValue(
-    'promotional'
-  );
+  mailingMetadataService.findDoctrineEmailType.mockResolvedValue({
+    emailType: 'promotional',
+    untargetedOnly: false,
+  });
   // No expertise of scope `correction` today (ADR 0011).
   findApplicable.mockResolvedValue([]);
 }
