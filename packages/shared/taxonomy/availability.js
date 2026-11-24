@@ -1,7 +1,7 @@
 'use strict';
 
 /**
- * Availability (ADR-0014), and the parent a dimension has on an email
+ * Availability (ADR-0032), and the parent a dimension has on an email
  * (ADR-0024): the one rule the server, the editor, adoption and the
  * translation share, so that what one offers the other accepts.
  *

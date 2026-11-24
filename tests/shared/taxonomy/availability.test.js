@@ -1,7 +1,7 @@
 'use strict';
 
 // The parent a dimension has on an email, and what a value is offered under
-// (ADR-0014, ADR-0024): one rule for the server, the editor and adoption.
+// (ADR-0032, ADR-0024): one rule for the server, the editor and adoption.
 
 const {
   isOfferedUnder,
