@@ -91,7 +91,8 @@ async function compileVariant(name, component, variant) {
   const label = `${name} (${variant})`;
   const inlined = await inlineStyles(
     stripComments(checkRendered(label, rendered)),
-    label
+    label,
+    { isLayout: component.isLayout }
   );
   const markup = normaliseMarkup(inlined);
   checkSlotPlacement(label, markup, component.slots);

@@ -112,6 +112,41 @@ describe('a class the generator owns', () => {
   });
 });
 
+// An element's slots are filled from stored state: escaped, a value in `class`
+// could still name any class the template or the head CSS defines. A layout's
+// class slot is filled by the generator with a name of its own.
+describe('a slot in a class attribute', () => {
+  const template = '<table><tr><td :class="tone">a</td></tr></table>';
+  const slots = { tone: { context: 'ATTR' } };
+
+  it('is refused in an element, naming the slot', async () => {
+    await expect(compileFixture({ template, slots })).rejects.toThrow(
+      /the slot "tone" fills a class attribute, which only a layout may do/
+    );
+  });
+
+  it("says to declare `kind: 'layout'` only for the generator", async () => {
+    await expect(compileFixture({ template, slots })).rejects.toThrow(
+      /declare `kind: 'layout'` in the manifest only if the generator/
+    );
+  });
+
+  it('is refused beside a static class too', async () => {
+    await expect(
+      compileFixture({
+        template: `<table><tr><td class="${STACK_CLASS}" :class="tone">a</td></tr></table>`,
+        slots,
+      })
+    ).rejects.toThrow(/fills a class attribute/);
+  });
+
+  it('is kept in a layout', async () => {
+    const compiled = await compileFixture({ template, slots, kind: 'layout' });
+
+    expect(compiled.default).toContain('class="[[tone|ATTR|]]"');
+  });
+});
+
 describe('the class a column stacks with', () => {
   it('is the listed class for a row of several columns', () => {
     expect(stackClassFor(2)).toBe(STACK_CLASS);
