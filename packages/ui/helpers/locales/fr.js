@@ -1350,6 +1350,21 @@ export default {
         identifier: 'Identifiant proposé',
         action: 'Ajouter',
       },
+      crossings: {
+        intro:
+          'Sous quelles valeurs de {parent} chaque {child} est proposée, et laquelle est proposée par défaut (étoile).',
+        everywhere: 'Partout',
+        everywhereOf: '{label} proposée partout, valeurs futures comprises',
+        defaultUnder: '{label} par défaut sous {parent}',
+        changes: 'Aucun changement | Un changement | {n} changements',
+        save: 'Enregistrer les croisements',
+        leave: 'Les croisements modifiés ne sont pas enregistrés. Quitter quand même ?',
+      },
+      defaults: {
+        intro: 'La valeur que prend un nouvel email quand son template ne donne pas la sienne.',
+        none: 'Aucune',
+        hint: "Jamais appliquée à un email existant, ni à la place d'une valeur choisie.",
+      },
       addChild: 'Ajouter une sous-dimension',
       move: {
         open: 'Déplacer',

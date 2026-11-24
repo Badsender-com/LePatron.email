@@ -99,7 +99,7 @@ export default {
     flex: 1 1 220px;
     max-width: 360px;
     padding: 7px 12px;
-    background: var(--white);
+    background: #fff;
     border: 1px solid var(--gray-300);
     border-radius: 6px;
     font-size: 13px;

@@ -4,11 +4,14 @@ import BsTaxonomyEmailTypeDimension from '~/components/group/taxonomy-email-type
 import BsTaxonomyTriggerDimension from '~/components/group/taxonomy-trigger-dimension.vue';
 import BsTaxonomyCompanyDimension from '~/components/group/taxonomy-company-dimension.vue';
 import BsTaxonomyDimensionSettings from '~/components/group/taxonomy-dimension-settings.vue';
+import BsTaxonomyCrossingsMatrix from '~/components/group/taxonomy-crossings-matrix.vue';
+import BsTaxonomyDefaultValue from '~/components/group/taxonomy-default-value.vue';
 
 /**
  * The selected dimension of the taxonomy workspace, in segments (ADR-0026).
  * The requests are the workspace's: this emits `select-tab`, `toggle-tree`,
- * `edit`, `move`, `add-child`, `toggle-active`, `delete` and `count`.
+ * `edit`, `move`, `add-child`, `toggle-active`, `delete`, `count`, `saved` and
+ * `error`.
  */
 export default {
   name: 'BsTaxonomyWorkspaceDetail',
@@ -17,6 +20,8 @@ export default {
     BsTaxonomyTriggerDimension,
     BsTaxonomyCompanyDimension,
     BsTaxonomyDimensionSettings,
+    BsTaxonomyCrossingsMatrix,
+    BsTaxonomyDefaultValue,
     LucidePanelLeft: PanelLeft,
   },
   props: {
@@ -25,6 +30,22 @@ export default {
     segments: { type: Array, default: () => ['values'] },
     tab: { type: String, default: 'values' },
     treeOpen: { type: Boolean, default: false },
+    // Values per dimension name, for the crossings and the defaults.
+    valuesByType: { type: Object, default: () => ({}) },
+  },
+  data() {
+    return { dirty: false };
+  },
+  methods: {
+    // Asked before the workspace selects elsewhere: an unsaved matrix warns.
+    confirmLeave() {
+      if (!this.dirty) return true;
+      const leave = window.confirm(
+        this.$t('taxonomy.workspace.crossings.leave')
+      );
+      if (leave) this.dirty = false;
+      return leave;
+    },
   },
 };
 </script>
@@ -63,8 +84,25 @@ export default {
       </nav>
     </div>
 
+    <bs-taxonomy-crossings-matrix
+      v-if="tab === 'crossings' && parent"
+      :dimension="dimension"
+      :parent="parent"
+      :parent-values="valuesByType[parent.name] || []"
+      :child-values="valuesByType[dimension.name] || []"
+      @dirty="dirty = $event"
+      @saved="$emit('saved')"
+      @error="$emit('error', $event)"
+    />
+    <bs-taxonomy-default-value
+      v-else-if="tab === 'defaults'"
+      :dimension="dimension"
+      :values="valuesByType[dimension.name] || []"
+      @saved="$emit('saved')"
+      @error="$emit('error', $event)"
+    />
     <bs-taxonomy-dimension-settings
-      v-if="tab === 'settings'"
+      v-else-if="tab === 'settings'"
       :dimension="dimension"
       :parent="parent"
       @edit="$emit('edit', $event)"
@@ -134,7 +172,7 @@ export default {
     }
 
     &--on {
-      background: var(--white);
+      background: #fff;
       color: var(--v-primary-base);
       box-shadow: 0 1px 2px rgba(13, 43, 62, 0.08);
     }

@@ -22,7 +22,7 @@ import {
 
 // The segments the workspace shows so far; the others come with their
 // tickets of epic #1547 (crossings, defaults, tokens, templates).
-const IMPLEMENTED_SEGMENTS = ['values', 'settings'];
+const IMPLEMENTED_SEGMENTS = ['values', 'crossings', 'defaults', 'settings'];
 
 /**
  * The taxonomy workspace (ADR-0026): the tree of dimensions on the left, the
@@ -150,6 +150,7 @@ export default {
     },
 
     select(name, tab = 'values') {
+      if (this.$refs.detail && !this.$refs.detail.confirmLeave()) return;
       this.treeOpen = false;
       if (name === this.selection.dimension && tab === this.selection.tab) {
         return;
@@ -202,12 +203,16 @@ export default {
 
     <bs-taxonomy-workspace-detail
       v-if="selected"
+      ref="detail"
+      :values-by-type="valuesByType"
       class="taxonomy-workspace__detail"
       :dimension="selected"
       :parent="byName[selected.parentName] || null"
       :segments="segments"
       :tab="selection.tab"
       :tree-open="treeOpen"
+      @saved="fetchValues"
+      @error="reportError"
       @toggle-tree="treeOpen = !treeOpen"
       @select-tab="select(selected.name, $event)"
       @edit="openEditForm"
@@ -260,7 +265,7 @@ export default {
     position: sticky;
     top: 16px;
     padding: 8px;
-    background: var(--white);
+    background: #fff;
     border: 1px solid var(--gray-300);
     border-radius: 7px;
   }
