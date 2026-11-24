@@ -8,17 +8,19 @@
 // is what `v` and `gen` are for — a stored block records which schema and which
 // generator produced it, so a divergence can be surfaced rather than applied.
 //
-// Mono-column by design, for the MVP. Rows and columns are a schema change, and
-// `v` is what will carry that migration.
+// What one element renders is element-markup.js; what a row of columns renders
+// is row-markup.js. This module decides the block around them.
 
-const { elementFor } = require('./elements/index.js');
-const { escapeForContext, COLOR, PX, ATTR } = require('./slot-contexts.js');
-const { defineTemplate } = require('./template.js');
-const { stackClassFor } = require('./generated-classes.js');
-const columnTemplates = require('./components/column.compiled.js');
-
-const renderFilledColumn = defineTemplate(columnTemplates.filled);
-const renderEmptyColumn = defineTemplate(columnTemplates.empty);
+const {
+  generateElement,
+  renderElement,
+  elementAttributes,
+  isBlankRichText,
+  ELEMENT_ATTRIBUTE,
+  STARTER_ATTRIBUTE,
+} = require('./element-markup.js');
+const { generateRow } = require('./row-markup.js');
+const { escapeForContext, COLOR, PX } = require('./slot-contexts.js');
 
 // Bumped when the shape of a state changes in a way a reader must know about.
 const STATE_VERSION = 2;
@@ -28,212 +30,11 @@ const STATE_VERSION = 2;
 // on its own.
 const GENERATOR_VERSION = '1.0.0';
 
-// Identifies an element in the rendered markup, so a click can select the one it
-// landed on and a drag can pick it up.
-//
-// OFF BY DEFAULT, and that is the point: this is editing chrome, and what
-// `generate` returns is what gets stored and mailed. An internal id in a
-// recipient's inbox is noise at best — it survives the export untouched, since
-// the markup is substituted verbatim after every other pass has run, so nothing
-// downstream would ever strip it.
-//
-// The preview asks for it explicitly (`{ elementIds: true }`); the apply path
-// and the control gallery do not.
-const ELEMENT_ATTRIBUTE = 'data-lp-el';
-
-// Marks a row that shows its starter rather than anything the user wrote — see
-// the `starters` option. Editing chrome, off by default, for the same reason as
-// ELEMENT_ATTRIBUTE: only the preview asks for starters, so only the preview
-// ever carries it. Its value is the element type, for the preview's stylesheet.
-const STARTER_ATTRIBUTE = 'data-lp-starter';
-
 const DEFAULT_BLOCK = {
   backgroundColor: 'transparent',
   paddingTop: 0,
   paddingBottom: 0,
 };
-
-// Blank as a reader sees it: a rich text the editor emptied can still hold a
-// `<br>` or a non-breaking space, and renders nothing all the same. Shared with
-// the modal's rich-text field, whose placeholder shows exactly when the
-// generator would render the starter text instead.
-function isBlankRichText(value) {
-  if (typeof value !== 'string') return true;
-  return (
-    value
-      .replace(/<[^>]*>/g, '')
-      .replace(/&nbsp;|\u00a0/g, ' ')
-      .trim() === ''
-  );
-}
-
-// The values to render in place of a blank slot, or null when the element has
-// no starter or is not blank. A starter without `text` only marks the row: the
-// preview's stylesheet has something to draw, and nothing is substituted.
-function starterValues(type, values, options) {
-  const starters = options && options.starters;
-  if (!starters || !Object.prototype.hasOwnProperty.call(starters, type)) {
-    return null;
-  }
-  const starter = starters[type];
-  if (!starter || !isBlankRichText(values[starter.key])) return null;
-  return typeof starter.text === 'string'
-    ? { ...values, [starter.key]: starter.text }
-    : values;
-}
-
-/**
- * An element's own markup, with nothing around it.
- *
- * Separate from `generateElement` because the row an element used to carry is
- * not always the right wrapper. Inside a column's cell it is the wrong one:
- * a `<tr>` directly inside a `<td>` is invalid, and browsers drop it along
- * with everything in it — the element would simply vanish from the email.
- *
- * So what an element renders and what it is wrapped in are now two decisions,
- * and whoever places it makes the second one.
- *
- * @param {Object} element one entry of a column's `elements`
- * @param {Object} [options] see generate
- * @returns {string} the element's markup, unwrapped
- */
-function renderElement(element, options) {
-  if (!element || typeof element !== 'object') return '';
-
-  const definition = elementFor(element.type);
-  // An unknown type means a state written by a newer version, or a corrupted
-  // one. Skipping it keeps the rest of the block renderable.
-  if (!definition) return '';
-
-  const values = { ...definition.defaults, ...element };
-  return definition.render(
-    starterValues(definition.type, values, options) || values
-  );
-}
-
-/**
- * The editing chrome an element's wrapper carries, as an attribute string.
- *
- * Kept apart from the markup for the same reason: the wrapper varies, the
- * chrome does not. A column's cell needs exactly these attributes to make its
- * elements selectable and draggable, and it must not have to rebuild them —
- * two spellings of `data-lp-el` would drift, and the one that drifted would be
- * the one the preview stopped being able to find.
- *
- * Empty unless the preview asks: none of this belongs in a shipped email.
- *
- * @param {Object} element
- * @param {Object} [options] see generate
- * @returns {string} leading-space-prefixed attributes, or an empty string
- */
-function elementAttributes(element, options) {
-  if (!element || typeof element !== 'object') return '';
-
-  const definition = elementFor(element.type);
-  if (!definition) return '';
-
-  const values = { ...definition.defaults, ...element };
-  const starter = starterValues(definition.type, values, options);
-  const id =
-    options && options.elementIds ? escapeForContext(element.id, ATTR) : '';
-
-  return (
-    (id ? ` ${ELEMENT_ATTRIBUTE}="${id}"` : '') +
-    (starter ? ` ${STARTER_ATTRIBUTE}="${definition.type}"` : '')
-  );
-}
-
-/**
- * An element as one row of a single-column block.
- *
- * @param {Object} element one entry of `state.elements`
- * @param {Object} [options] see generate
- * @returns {string} the element's markup, in its own row
- */
-function generateElement(element, options) {
-  if (!element || typeof element !== 'object') return '';
-  // Asked before rendering, not inferred from an empty render: an element that
-  // renders nothing still occupied a row before this split, and the export has
-  // to come out identical.
-  if (!elementFor(element.type)) return '';
-
-  return (
-    `<tr><td${elementAttributes(element, options)}>` +
-    renderElement(element, options) +
-    '</td></tr>'
-  );
-}
-
-/**
- * The elements of a column, stacked.
- *
- * Each element already renders a complete table of its own, so concatenating
- * them stacks them — no wrapper needed, and none added: a `<div>` nobody asked
- * for would change the markup of every email. The one exception is the editing
- * chrome, which needs somewhere to live and is empty unless the preview asks,
- * so it brings its own wrapper and only then.
- *
- * @param {Array<Object>} elements
- * @param {Object} [options]
- * @returns {string}
- */
-function renderColumnContent(elements, options) {
-  return (elements || [])
-    .map((element) => {
-      const markup = renderElement(element, options);
-      if (markup === '') return '';
-      const attributes = elementAttributes(element, options);
-      return attributes ? `<div${attributes}>${markup}</div>` : markup;
-    })
-    .join('');
-}
-
-/**
- * One row, as a table of real percentage cells.
- *
- * Cells rather than `inline-block` divs: that is what lets Outlook lay the
- * columns out natively, with no ghost table. A column holding nothing keeps
- * its cell — two 50% columns become one full-width column the moment one of
- * them disappears — so emptiness picks a variant, it never drops the cell.
- *
- * @param {Object} row
- * @param {Object} [options]
- * @returns {string} the row's markup, or '' when it holds nothing anywhere
- */
-function generateRow(row, options) {
-  const columns = (row && Array.isArray(row.columns) ? row.columns : []).filter(
-    (column) => column && typeof column === 'object'
-  );
-  if (columns.length === 0) return '';
-
-  const stackClass = stackClassFor(columns.length);
-  const contents = columns.map((column) =>
-    renderColumnContent(column.elements, options)
-  );
-
-  // A row where every column is empty renders nothing at all: it would
-  // otherwise ship a band of blank cells nobody can see or click.
-  if (contents.every((content) => content === '')) return '';
-
-  const cells = columns.map((column, index) => {
-    const values = {
-      width: `${column.width}%`,
-      stackClass,
-      content: contents[index],
-    };
-    return contents[index] === ''
-      ? renderEmptyColumn(values)
-      : renderFilledColumn(values);
-  });
-
-  return (
-    '<table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%">' +
-    '<tr>' +
-    cells.join('') +
-    '</tr>' +
-    '</table>'
-  );
-}
 
 /**
  * @param {Object} state

@@ -1,0 +1,86 @@
+'use strict';
+
+// The markup of one row of columns (row-markup.js): its cells, and what each
+// cell carries.
+//
+// Tested at `generateRow` rather than through `generate`, so these hold
+// whatever `generate` decides to render as rows.
+
+const {
+  generateRow,
+} = require('../../../packages/shared/block-builder/row-markup.js');
+const {
+  elementFor,
+} = require('../../../packages/shared/block-builder/elements/index.js');
+
+const text = (id, content = 'Bonjour') => ({ id, type: 'text', content });
+const row = (...columns) => ({
+  id: 'r1',
+  columns: columns.map(([width, elements]) => ({ width, elements })),
+});
+
+/** The opening tag of every cell of a row, in order. */
+const cellsOf = (html) => html.match(/<td width="[^"]*"[^>]*>/g) || [];
+
+describe('the row contract', () => {
+  it('is one table of cells, written by the row component', () => {
+    const html = generateRow(row([50, [text('a')]], [50, [text('b')]]));
+
+    expect(html).toMatch(
+      /^<table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%"><tr><td /
+    );
+    expect(html).toMatch(/<\/td><\/tr><\/table>$/);
+  });
+
+  // Below a width, the columns of a row stack: that is the generated class.
+  it('marks every cell of a row of several columns to stack', () => {
+    const cells = cellsOf(generateRow(row([50, [text('a')]], [50, []])));
+
+    expect(cells).toHaveLength(2);
+    cells.forEach((cell) => expect(cell).toContain('class="lp-stack"'));
+  });
+
+  it('aligns every cell to the top, filled or empty', () => {
+    const cells = cellsOf(
+      generateRow(row([33, [text('a')]], [33, []], [34, [text('c')]]))
+    );
+
+    expect(cells).toHaveLength(3);
+    cells.forEach((cell) => expect(cell).toContain('valign="top"'));
+  });
+});
+
+describe('an empty column', () => {
+  // One rule for "nothing", shared with the flat block: an element is nothing
+  // when its type is unknown, never because nothing was typed in it.
+  it('is a column whose elements are all unknown', () => {
+    const [, cell] = cellsOf(
+      generateRow(row([50, [text('a')]], [50, [{ id: 'x', type: 'carousel' }]]))
+    );
+
+    expect(cell).toContain('font-size:0');
+  });
+
+  it('is not a column holding a text left blank', () => {
+    const [, cell] = cellsOf(
+      generateRow(row([50, [text('a')]], [50, [text('b', '')]]))
+    );
+
+    expect(cell).not.toContain('font-size:0');
+  });
+});
+
+describe('each element is resolved once', () => {
+  afterEach(() => jest.restoreAllMocks());
+
+  it('renders each element of a row once, preview chrome included', () => {
+    const render = jest.spyOn(elementFor('text'), 'render');
+
+    generateRow(row([50, [text('a'), text('b', '')]], [50, [text('c')]]), {
+      elementIds: true,
+      starters: { text: { key: 'content', text: 'Votre texte' } },
+    });
+
+    expect(render).toHaveBeenCalledTimes(3);
+  });
+});
