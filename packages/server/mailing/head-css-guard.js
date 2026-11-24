@@ -3,18 +3,12 @@
 const { Forbidden } = require('http-errors');
 
 const ERROR_CODES = require('../constant/error-codes.js');
-const { findSyntheticBlocks } = require('./synthetic-block-guard.js');
 const { HEAD_CSS_MAX_LENGTH } = require('../../shared/head-css/constants.js');
-const {
-  HTML_CODE_BLOCK,
-  BLOCK_BUILDER_BLOCK,
-} = require('../../shared/synthetic-blocks.js');
-const {
-  stylesheetForComposedBlocks,
-} = require('../../shared/block-builder/block-stylesheet.js');
+const { HTML_CODE_BLOCK } = require('../../shared/synthetic-blocks.js');
 
 // Server-side guards for the per-mailing head CSS: its size, and whether the
-// template allows it at all.
+// template allows it at all. What a copy the server writes carries in its
+// <head> is decided elsewhere (head-css-export.js).
 //
 // Same reasoning as synthetic-block-guard.js, for the same reasons: the editor
 // checks both, but the route accepts hand-written requests, and `previewHtml`
@@ -110,45 +104,7 @@ function hasHeadCss(css) {
   return asCss(css).trim() !== '';
 }
 
-/**
- * The CSS a stored copy of the mailing must carry in its <head>: the head CSS
- * while `data` holds at least one HTML code block, nothing otherwise.
- *
- * The CSS follows the HTML code blocks, not the template flag — the editor's
- * export applies the same rule (packages/editor/src/js/ext/head-css/
- * exported-css.js), and this is its counterpart for the documents the server
- * writes itself, such as a translated copy's previewHtml. Once the last block
- * is gone the CSS has nothing left to style, so it is left out; it stays
- * stored on the mailing for when a block comes back.
- *
- * @param {Object} params
- * @param {Object} params.data the content model the copy is rendered from
- * @param {*} params.headCss the stored head CSS
- * @returns {string}
- */
-function headCssToExport({ data, headCss }) {
-  const blocks = findSyntheticBlocks(data);
-
-  // Derived from the composed blocks, and gated by nothing: it cannot exist
-  // without one to derive it from. The editor's counterpart says more about
-  // why this file used to refuse it.
-  const derived = stylesheetForComposedBlocks(
-    blocks
-      .filter((block) => block.type === BLOCK_BUILDER_BLOCK.type)
-      .map((block) => block[BLOCK_BUILDER_BLOCK.stateProperty])
-  );
-
-  // The author's, which follows the HTML code blocks. Last, so a rule written
-  // by hand still wins at equal specificity.
-  const hasHtmlCodeBlock = blocks.some(
-    (block) => block.type === HTML_CODE_BLOCK.type
-  );
-
-  return derived + (hasHtmlCodeBlock ? asCss(headCss) : '');
-}
-
 module.exports = {
-  headCssToExport,
   isHeadCssEnabled,
   validateHeadCss,
   bringsDisallowedHeadCss,

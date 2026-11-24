@@ -170,7 +170,7 @@ describe('what the existing rule must keep doing', () => {
   // The server writes copies of its own — a translated duplicate, a preview —
   // and a rule applied on one side only would make them disagree.
   it('is the same rule on the server', () => {
-    const serverGuard = require('../../../packages/server/mailing/head-css-guard.js');
+    const serverExport = require('../../../packages/server/mailing/head-css-export.js');
     const model = {
       mainBlocks: { blocks: [composedBlock()] },
     };
@@ -180,7 +180,7 @@ describe('what the existing rule must keep doing', () => {
     // Two empty strings agree too: the comparison only means something once
     // there is a stylesheet to compare.
     expect(inTheEditor).not.toBe('');
-    expect(serverGuard.headCssToExport({ data: model, headCss: '' })).toBe(
+    expect(serverExport.headCssToExport({ data: model, headCss: '' })).toBe(
       inTheEditor
     );
   });
