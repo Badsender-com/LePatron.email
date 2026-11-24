@@ -180,9 +180,41 @@ describe('each element is resolved once', () => {
 
     generateRow(row([50, [text('a'), text('b', '')]], [50, [text('c')]]), {
       elementIds: true,
+      chrome: true,
       starters: { text: { key: 'content', text: 'Votre texte' } },
     });
 
     expect(render).toHaveBeenCalledTimes(3);
+  });
+});
+
+// The preview's chrome names each column, so a drag can tell which one it is
+// over. It is asked for by name: an id on each element is not a request for
+// it, and what is stored never carries it.
+describe('the preview chrome of a column', () => {
+  const halves = () => row([50, [text('a')]], [50, []]);
+  const CHROME = /data-lp-row|data-lp-col|lp-bb-col/;
+
+  it('marks every column with its row and its index when asked', () => {
+    const html = generateRow(halves(), { chrome: true });
+
+    expect(html).toContain(
+      '<div class="lp-bb-col" data-lp-row="r1" data-lp-col="0">'
+    );
+    expect(html).toContain(
+      '<div class="lp-bb-col" data-lp-row="r1" data-lp-col="1"></div>'
+    );
+  });
+
+  it('is absent when only the element ids are asked for', () => {
+    const html = generateRow(halves(), { elementIds: true });
+
+    expect(html).toContain('data-lp-el="a"');
+    expect(html).not.toMatch(CHROME);
+  });
+
+  it('is absent without options', () => {
+    expect(generateRow(halves())).not.toMatch(CHROME);
+    expect(generate({ rows: [halves()] })).not.toMatch(CHROME);
   });
 });

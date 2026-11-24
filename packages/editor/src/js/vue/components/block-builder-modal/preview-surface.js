@@ -133,12 +133,15 @@ const PREVIEW_DOCUMENT = [
   'text-align:center;color:#616161;font:14px Arial,Helvetica,sans-serif;}',
   `body.${DRAGGING_CLASS} #${EMPTY_DROP_ID}{`,
   'border-color:#265090;color:#265090;}',
-  // A column, while something is being dragged: visible as a place to aim at,
-  // with a floor so an empty one is still a target. `min-height` and not
-  // `height`, or a column with content would be cropped to it.
-  `.${COLUMN_CHROME_CLASS}{min-height:40px;}`,
+  // An empty column is a drop zone, at rest too, so a row just added shows:
+  // dashed, with a floor so there is something to aim at. Only the empty one
+  // — a column with content keeps the height of the email, or the preview
+  // stops showing what will be sent. While something is being dragged, every
+  // column shows its edges, and the one the drop would land in stands out.
+  `.${COLUMN_CHROME_CLASS}:empty{min-height:40px;}`,
+  `.${COLUMN_CHROME_CLASS}:empty,`,
   `body.${DRAGGING_CLASS} .${COLUMN_CHROME_CLASS}{`,
-  'outline:1px dashed #9e9e9e;outline-offset:-1px;}',
+  'outline:1px dashed #757575;outline-offset:-1px;}',
   '</style></head><body></body></html>',
 ].join('');
 
@@ -224,8 +227,9 @@ const PreviewSurfaceMixin = {
       doc.body.innerHTML = this.previewMarkup;
       // An empty block generates nothing at all, so there would be no surface
       // to drop onto — and no way to start. This target is preview chrome: it
-      // lives in the iframe only, never in what the generator produces.
-      if (this.isEmpty) {
+      // lives in the iframe only, never in what the generator produces. A
+      // block holding nothing but empty columns has them to drop into instead.
+      if (this.previewMarkup === '') {
         const zone = doc.createElement('div');
         zone.id = EMPTY_DROP_ID;
         zone.textContent = this.vm.t('block-builder-drop-here');

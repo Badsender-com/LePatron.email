@@ -107,3 +107,50 @@ describe('a composition whose rows all hold nothing', () => {
     expect(generate(state)).toBe('');
   });
 });
+
+// The preview is where an empty row is filled: it has to be there to drop
+// into. Only the preview renders it; what is written does not change.
+describe('the preview of a composition with an empty row', () => {
+  const PREVIEW = { elementIds: true, chrome: true };
+  const columnsOf = (html) =>
+    (html.match(/<div class="lp-bb-col"[^>]*>/g) || []).map(
+      (tag) => tag.match(/data-lp-col="(\d+)"/)[1]
+    );
+
+  it('renders the empty row, as columns to drop into', () => {
+    const empty = row([50, []], [50, []]);
+    const state = composition([row([50, [text('a', 'A')]], [50, []]), empty]);
+
+    const html = generate(state, PREVIEW);
+
+    expect(columnsOf(html)).toEqual(['0', '1', '0', '1']);
+    expect(html).toContain(`data-lp-row="${empty.id}" data-lp-col="1"></div>`);
+  });
+
+  it('renders the only row of a composition holding nothing in columns', () => {
+    const state = composition([row([50, []], [50, []])]);
+
+    expect(columnsOf(generate(state, PREVIEW))).toEqual(['0', '1']);
+    expect(generate(state)).toBe('');
+  });
+
+  // Accepted: the preview shows the empty row it is about to be filled. The
+  // markup written for it is the flat block's, unchanged.
+  it('renders a flat block with an empty row added as rows', () => {
+    const state = composition([row([100, [text('a', 'A')]]), emptyRow()]);
+
+    expect(columnsOf(generate(state, PREVIEW))).toEqual(['0', '0']);
+    expect(generate(state)).toBe(
+      generate(composition([row([100, [text('a', 'A')]])]))
+    );
+  });
+
+  it('still renders a flat block alone as the flat list it always was', () => {
+    fixtures
+      .filter((fixture) => fixture.mode === 'preview')
+      .forEach((fixture) => {
+        const options = { ...fixture.options, chrome: true };
+        expect(generate(parseState(fixture.state), options)).toBe(fixture.html);
+      });
+  });
+});

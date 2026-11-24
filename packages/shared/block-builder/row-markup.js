@@ -167,15 +167,14 @@ function rowClass(row) {
 function generateRow(row, options) {
   const columns = columnsOf(row);
 
-  // Emptiness is read from the elements, never from the rendered string: with
-  // chrome on, an empty column still renders its drop zone, and testing the
-  // string would make the preview pick a different variant than the export.
-  const chrome = Boolean(options && options.elementIds);
+  // The preview's own markup (see `chrome` in generate): each column wrapped
+  // in a box that names it, and the rows that hold nothing rendered too.
+  const chrome = Boolean(options && options.chrome);
 
   // A row where every column is empty renders nothing at all: it would
   // otherwise ship a band of blank cells nobody can see or click. A row of no
-  // column at all is one of them. With chrome on it stays, because an empty
-  // row is somewhere a user can still drop.
+  // column at all is one of them. With chrome on it stays, as empty columns:
+  // an empty row is somewhere a user can still drop.
   if (!chrome && columns.every(isEmptyColumn)) return '';
 
   const resolved = columns.map((column) =>
@@ -208,6 +207,11 @@ function generateRow(row, options) {
           '</div>'
         : content,
     };
+    // An empty column takes the empty variant, which holds its cell open with
+    // a zero-sized space — no room for the chrome's box. With chrome on, it
+    // takes the filled one, so the box is there to drop into. Emptiness is
+    // read from the elements, never from the rendered string, which the box
+    // makes non-empty.
     return elements.length === 0 && !chrome
       ? variants.empty(values)
       : variants.filled(values);

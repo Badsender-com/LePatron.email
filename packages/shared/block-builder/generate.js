@@ -29,7 +29,7 @@ const {
 } = require('./row-markup.js');
 const { escapeForContext, COLOR, PX } = require('./slot-contexts.js');
 const {
-  singleColumnElements,
+  flatRowOf,
   singleColumnRows,
   withoutEmptyRows,
 } = require('./composition.js');
@@ -52,10 +52,36 @@ const DEFAULT_BLOCK = {
 };
 
 /**
+ * The row a composition renders as a flat list from, or null when it renders
+ * rows.
+ *
+ * What is written is judged on the rows that hold something (flatRowOf), so a
+ * flat block with an empty row added keeps its markup to the byte. The
+ * preview's chrome renders every row instead, empty ones included, so there a
+ * second row — empty or not — is a composition of rows. Whoever reads the
+ * preview (the drag, which aims at its columns) asks here, so it and the
+ * markup can never disagree on whether there are columns to aim at.
+ *
+ * @param {Object} state
+ * @param {Object} [options] see generate
+ * @returns {Object|null}
+ */
+function renderedFlatRow(state, options) {
+  const rows = state && Array.isArray(state.rows) ? state.rows : [];
+  if (options && options.chrome && rows.length > 1) return null;
+  return flatRowOf(state);
+}
+
+/**
  * @param {Object} state
  * @param {Object} [options]
- * @param {boolean} [options.elementIds] mark each row with its element id.
+ * @param {boolean} [options.elementIds] mark each element with its id.
  *   Editing chrome — see ELEMENT_ATTRIBUTE. Off unless the preview asks.
+ * @param {boolean} [options.chrome] the preview's own markup around the
+ *   elements: every column marked with its row and its index (see
+ *   COLUMN_ROW_ATTRIBUTE), and the rows that hold nothing rendered too, as
+ *   empty columns to drop into. Off unless the preview asks; never in what is
+ *   stored, where a row holding nothing is not written.
  * @param {Object} [options.starters] by element type, `{ key, text }`: what an
  *   element shows while its `key` is blank, so a fresh one is visible in the
  *   preview at all. Editing chrome too — see STARTER_ATTRIBUTE. The words are
@@ -76,17 +102,20 @@ function generate(state, options) {
   // Which shape renders follows the shape of the composition, the same rule
   // that decides how it is stored: a flat one — one row of one full-width
   // column, nothing set on either — renders as the flat list it always was,
-  // byte for byte; anything else renders its rows. Both are judged on the
-  // rows that are written (withoutEmptyRows), as the stored shape is, so the
-  // preview, the applied markup and the server's rebuild agree.
-  const flatElements = singleColumnElements(state);
+  // byte for byte; anything else renders its rows. Without chrome, both are
+  // judged on the rows that are written (withoutEmptyRows), as the stored
+  // shape is, so the applied markup and the server's rebuild agree. With it,
+  // every row is rendered (see renderedFlatRow).
+  const flatRow = renderedFlatRow(state, options);
   let body;
-  if (!flatElements) {
-    body = withoutEmptyRows(state.rows)
-      .map((row) => generateRow(row, options))
-      .join('');
+  if (!flatRow) {
+    const rows =
+      options && options.chrome && Array.isArray(state.rows)
+        ? state.rows
+        : withoutEmptyRows(state.rows);
+    body = rows.map((row) => generateRow(row, options)).join('');
   } else {
-    const cells = flatElements
+    const cells = flatRow.columns[0].elements
       .map((element) => generateElement(element, options))
       .join('');
     body =
@@ -141,6 +170,7 @@ function emptyState() {
 
 module.exports = {
   generate,
+  renderedFlatRow,
   generateElement,
   renderElement,
   elementAttributes,

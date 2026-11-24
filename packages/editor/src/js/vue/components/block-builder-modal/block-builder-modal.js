@@ -107,11 +107,13 @@ const BlockBuilderModalComponent = Vue.component('BlockBuilderModal', {
     },
 
     // What the preview renders. Same markup plus the ids the selection and the
-    // drag need, and the greyed starter of each element still blank — none of
-    // which leaves this iframe.
+    // drag need, the columns the drag aims at — empty rows included, so a row
+    // just added can be seen and filled — and the greyed starter of each
+    // element still blank. None of which leaves this iframe.
     previewMarkup() {
       return generate(this.state, {
         elementIds: true,
+        chrome: true,
         starters: this.previewStarters,
       });
     },

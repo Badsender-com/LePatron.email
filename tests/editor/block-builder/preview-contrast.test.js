@@ -51,6 +51,7 @@ describe('the preview chrome is legible', () => {
     ['the insertion line', `#${DROP_LINE_ID}`, 'background'],
     ['the row outlines during a drag', 'lp-bb-selected)', 'outline'],
     ['the empty zone border', `#${EMPTY_DROP_ID}`, 'border'],
+    ['the column outlines', '.lp-bb-col', 'outline'],
   ])('%s reaches 3:1', (name, selector, property) => {
     expect(
       contrastOnWhite(colourOf(css, selector, property))
