@@ -419,8 +419,10 @@ module.exports = {
   'block-builder-starter-text': 'Type your text…',
   'block-builder-starter-button': 'Your button',
   'block-builder-rows': 'Rows',
-  'block-builder-row-label': 'Row __n__ · __count__ columns',
-  'block-builder-row-label-one': 'Row __n__ · 1 column',
+  'block-builder-row-label': 'Row __n__ · __count__ columns — __first__',
+  'block-builder-row-label-one': 'Row __n__ · 1 column — __first__',
+  'block-builder-row-label-empty': 'Row __n__ · __count__ columns — empty',
+  'block-builder-row-label-empty-one': 'Row __n__ · 1 column — empty',
   'block-builder-column-width': 'Column __n__ width',
   'block-builder-elements-folded':
     '__count__ elements moved to column __column__.',

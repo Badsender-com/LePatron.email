@@ -433,8 +433,10 @@ module.exports = {
   'block-builder-starter-text': 'Saisissez votre texte…',
   'block-builder-starter-button': 'Votre bouton',
   'block-builder-rows': 'Lignes',
-  'block-builder-row-label': 'Ligne __n__ · __count__ colonnes',
-  'block-builder-row-label-one': 'Ligne __n__ · 1 colonne',
+  'block-builder-row-label': 'Ligne __n__ · __count__ colonnes — __first__',
+  'block-builder-row-label-one': 'Ligne __n__ · 1 colonne — __first__',
+  'block-builder-row-label-empty': 'Ligne __n__ · __count__ colonnes — vide',
+  'block-builder-row-label-empty-one': 'Ligne __n__ · 1 colonne — vide',
   'block-builder-column-width': 'Largeur de la colonne __n__',
   'block-builder-elements-folded':
     '__count__ éléments déplacés dans la colonne __column__.',
