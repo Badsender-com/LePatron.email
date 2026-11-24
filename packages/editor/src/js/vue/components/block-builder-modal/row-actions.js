@@ -21,11 +21,18 @@ const {
 // the component's `state` and its selection, and a mixin keeps `this` meaning
 // the component.
 //
-// The component is expected to provide: `state`, `selectRow`,
-// `selectElement`, `rowById` (selection.js), `selectedRowId` and
-// `selectedRowIndex` (row-settings.js). Nothing here asks
-// for a render: the preview watches its markup, and a row that moved changed
-// it.
+// The component is expected to provide: `state`, and from selection.js
+// `selectRow`, `selectElement`, `rowById`, `selectedRowId`, `selectedRow` and
+// `selectedRowIndex`. Nothing here calls the other mixins.
+//
+// Called from outside:
+//   - `moveRowByKey` by the row list's keyboard (`onRowKeydown`,
+//     row-settings.js);
+//   - `moveRow` by the end of a row drag in the list, with a drop position;
+//   - the rest by the template's row bar.
+//
+// Nothing here asks for a render: the preview watches its markup, and a row
+// that moved changed it.
 
 // The keys that move a row, with Alt held. Alt because the arrows alone walk
 // the list (listbox.js), as they do in the element list: a keyboard user who
