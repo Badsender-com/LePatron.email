@@ -119,6 +119,14 @@ export function taxonomyErrorFor(error) {
         field: 'canonicalType',
       };
 
+    case ERROR_CODES.TAXONOMY_DEFAULT_TAKEN:
+      return {
+        key: 'taxonomy.errors.defaultTaken',
+        params: { holder: data.details?.holder || '' },
+        count: null,
+        field: 'isDefault',
+      };
+
     case ERROR_CODES.DIMENSION_NAME_ALREADY_EXISTS:
       return {
         key: 'taxonomy.errors.dimensionNameAlreadyExists',

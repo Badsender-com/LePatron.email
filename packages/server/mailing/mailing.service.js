@@ -74,6 +74,9 @@ const {
   assertSameGroup,
 } = require('../account/request-scope.js');
 const { testConnection } = require('../group/group-ftp.service.js');
+const {
+  defaultValuesForNewEmail,
+} = require('../taxonomy/services/default-values.service.js');
 
 const MULTIPLE_DOWNLOAD_ZIP_NAME = 'lepatron';
 module.exports = {
@@ -484,7 +487,14 @@ async function createMailing(mailing) {
     throw new NotFound(ERROR_CODES.FOLDER_NOT_FOUND);
   }
 
-  return Mailings.create(mailing);
+  // Whoever creates it, an email starts on the defaults of its template and of
+  // its company (ADR-0024), stored so a default changed later changes nothing.
+  const _taxonomyItems = await defaultValuesForNewEmail({
+    companyId: mailing.group,
+    templateId: mailing.templateId,
+  });
+
+  return Mailings.create({ ...mailing, _taxonomyItems });
 }
 
 // Process html to the final result state based on ftp.

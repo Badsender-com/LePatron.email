@@ -16,6 +16,7 @@ const {
   readValueFields,
   assertLabelIsFree,
   assertIdentifierIsFree,
+  assertDefaultIsFree,
 } = require('./value-fields.js');
 const logger = require('../../utils/logger.js');
 
@@ -75,6 +76,9 @@ async function createTaxonomyItem({ user, groupId, type, payload = {} }) {
     type: taxonomyType,
     identifier: fields.canonicalType,
   });
+  if (fields.isDefault) {
+    await assertDefaultIsFree({ companyId, type: taxonomyType });
+  }
 
   // Unlike the label, the cap has no index to fall back on, so concurrent
   // creations can land a handful of items past it. Accepted rather than solved
@@ -135,6 +139,13 @@ async function updateTaxonomyItem({ user, itemId, payload = {} }) {
       companyId: item._company,
       type: item.type,
       identifier: fields.canonicalType,
+      exceptId: item._id,
+    });
+  }
+  if (fields.isDefault) {
+    await assertDefaultIsFree({
+      companyId: item._company,
+      type: item.type,
       exceptId: item._id,
     });
   }
