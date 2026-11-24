@@ -5,6 +5,7 @@
 
 const {
   exportedHeadCss,
+  leadingStatementsOf,
 } = require('../../../packages/shared/head-css/exported-head-css.js');
 
 const AUTHOR = '.author-note{color:red}';
@@ -75,5 +76,71 @@ describe('exportedHeadCss', () => {
     expect(
       exportedHeadCss({ composedStates: [], hasHtmlCodeBlock: true, authorCss })
     ).toBe('');
+  });
+
+  // An `@import` after any other rule is ignored by the browser: put after the
+  // derived rules, a web font the author loads would vanish from the export.
+  describe('what CSS only reads at the top', () => {
+    const IMPORT = '@import url("https://fonts.example/a.css");';
+    const CHARSET = '@charset "utf-8";';
+
+    it('keeps the author @charset and @import above the derived rules', () => {
+      const css = exportedHeadCss({
+        composedStates: [TWO_COLUMNS],
+        hasHtmlCodeBlock: true,
+        authorCss: `${CHARSET}\n${IMPORT}\n${AUTHOR}`,
+      });
+
+      expect(css.startsWith(`${CHARSET}\n${IMPORT}@media`)).toBe(true);
+      expect(css.endsWith(`\n${AUTHOR}`)).toBe(true);
+    });
+
+    it('changes nothing when there is no derived rule to go above', () => {
+      const authorCss = `${IMPORT}\n${AUTHOR}`;
+
+      expect(
+        exportedHeadCss({
+          composedStates: [],
+          hasHtmlCodeBlock: true,
+          authorCss,
+        })
+      ).toBe(authorCss);
+    });
+  });
+});
+
+describe('leadingStatementsOf', () => {
+  test.each([
+    [
+      'imports and comments between them',
+      '/* fonts */ @import "a.css"; /* more */\n@IMPORT url(b.css);\n.a{}',
+      '/* fonts */ @import "a.css"; /* more */\n@IMPORT url(b.css);',
+    ],
+    [
+      'a semicolon inside a URL',
+      '@import url(a.css?x=1;y=2);.a{}',
+      '@import url(a.css?x=1;y=2);',
+    ],
+    [
+      'a semicolon inside a quoted URL',
+      '@import "a;b.css";.a{}',
+      '@import "a;b.css";',
+    ],
+    [
+      'a namespace and a layer statement',
+      '@layer base;@import "a.css" layer(base);@namespace svg url(x);.a{}',
+      '@layer base;@import "a.css" layer(base);@namespace svg url(x);',
+    ],
+    ['an import after a rule', '.a{}@import "a.css";', ''],
+    ['an import that never ends', '@import "a.css"', ''],
+    ['a layer block', '@layer base{.a{}}', ''],
+    ['an unterminated comment', '/* @import "a.css";', ''],
+    ['an at-rule that only starts the same', '@imports "a.css";.a{}', ''],
+    ['nothing', '', ''],
+  ])('splits %s', (_label, css, head) => {
+    const split = leadingStatementsOf(css);
+
+    expect(split.head).toBe(head);
+    expect(split.head + split.rest).toBe(css);
   });
 });
