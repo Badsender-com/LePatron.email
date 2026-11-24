@@ -88,11 +88,12 @@ module.exports = `<modal-component
               <span class="bb-modal__width-label">{{ index + 1 }}</span>
               <input
                 type="number"
-                min="10"
-                max="100"
+                :min="minColumnWidth"
+                :max="fullWidth"
                 :value="width"
+                :aria-label="columnWidthLabel(index)"
                 :disabled="index === selectedRowWidths.length - 1"
-                @change="setColumnWidth(index, Number($event.target.value))" />
+                @change="onColumnWidthChange($event, index)" />
               <span>%</span>
             </label>
           </div>

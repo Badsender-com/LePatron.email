@@ -1,7 +1,6 @@
 'use strict';
 
 const {
-  MAX_COLUMNS,
   MIN_COLUMN_WIDTH,
   FULL_WIDTH,
   newRowId,
@@ -33,10 +32,21 @@ const PRESETS = [
 // The strings the panel builds with variables, rather than through the
 // template: the translations test reads plain keys off the template, and these
 // it would miss.
-const ROW_LABEL_KEYS = ['block-builder-row-label', 'block-builder-row-label-one'];
+const ROW_LABEL_KEYS = [
+  'block-builder-row-label',
+  'block-builder-row-label-one',
+  'block-builder-column-width',
+];
+
+const sameWidths = (a, b) =>
+  a.length === b.length && a.every((width, index) => width === b[index]);
 
 const RowSettingsMixin = {
   mixins: [ListboxMixin],
+  data: () => ({
+    minColumnWidth: MIN_COLUMN_WIDTH,
+    fullWidth: FULL_WIDTH,
+  }),
 
   computed: {
     presets() {
@@ -67,11 +77,7 @@ const RowSettingsMixin = {
 
   methods: {
     isPresetActive(preset) {
-      const widths = this.selectedRowWidths;
-      return (
-        widths.length === preset.widths.length &&
-        widths.every((width, index) => width === preset.widths[index])
-      );
+      return sameWidths(this.selectedRowWidths, preset.widths);
     },
 
     presetLabel(preset) {
@@ -85,6 +91,10 @@ const RowSettingsMixin = {
       const key =
         count === 1 ? 'block-builder-row-label-one' : 'block-builder-row-label';
       return this.vm.t(key, { n: index + 1, count });
+    },
+
+    columnWidthLabel(index) {
+      return this.vm.t('block-builder-column-width', { n: index + 1 });
     },
 
     rowTabIndex(index) {
@@ -129,6 +139,9 @@ const RowSettingsMixin = {
      * being dropped: losing a paragraph to a layout change is the kind of thing
      * a user never forgives and never reports precisely enough to reproduce.
      *
+     * No render is asked for: the preview watches its markup, and a structure
+     * that did not change the markup has nothing to redraw.
+     *
      * @param {string} rowId
      * @param {Array<number>} widths
      * @returns {boolean} whether the row changed
@@ -140,20 +153,23 @@ const RowSettingsMixin = {
       // silently moving the numbers would hide it. A stored value is a
       // different matter and is normalised on read (composition.js).
       if (!row || !areUsableWidths(widths)) return false;
+      // The preset already active, clicked again.
+      if (sameWidths(row.columns.map((column) => column.width), widths)) {
+        return false;
+      }
 
       const kept = row.columns.slice(0, widths.length);
       // Fewer columns than before: everything past the new last one is folded
       // into it, in order.
-      row.columns.slice(widths.length).forEach((column) => {
-        kept[kept.length - 1].elements.push(...column.elements);
-      });
+      const folded = row.columns
+        .slice(widths.length)
+        .flatMap((column) => column.elements);
+      kept[kept.length - 1].elements.push(...folded);
 
-      row.columns = widths.map((width, index) => ({
-        width,
-        elements: kept[index] ? kept[index].elements : [],
-      }));
-
-      this.scheduleRender();
+      // Spread, so whatever else a column holds survives a change of width.
+      row.columns = widths.map((width, index) =>
+        kept[index] ? { ...kept[index], width } : { width, elements: [] }
+      );
       return true;
     },
 
@@ -171,27 +187,30 @@ const RowSettingsMixin = {
      *
      * @param {number} index the column whose width is being set
      * @param {number} width
+     * @returns {boolean} whether the row changed
      */
     setColumnWidth(index, width) {
       const widths = this.selectedRowWidths.slice();
-      if (index < 0 || index >= widths.length - 1) return;
+      if (index < 0 || index >= widths.length - 1) return false;
 
       const rounded = Math.round(width);
       const pair = widths[index] + widths[index + 1];
-      if (
-        rounded < MIN_COLUMN_WIDTH ||
-        pair - rounded < MIN_COLUMN_WIDTH
-      ) {
-        return;
+      if (rounded < MIN_COLUMN_WIDTH || pair - rounded < MIN_COLUMN_WIDTH) {
+        return false;
       }
 
       widths[index] = rounded;
       widths[index + 1] = pair - rounded;
-      this.setRowWidths(this.selectedRowId, widths);
+      return this.setRowWidths(this.selectedRowId, widths);
     },
 
-    canAddColumn() {
-      return this.selectedRowWidths.length < MAX_COLUMNS;
+    // The field, once its value has been offered to the row. Put back to what
+    // the row holds whatever happened: a refused width leaves the state as it
+    // was, so Vue sees nothing to redraw and the field would go on showing a
+    // number the row does not have. An accepted one may have been rounded.
+    onColumnWidthChange(event, index) {
+      this.setColumnWidth(index, Number(event.target.value));
+      event.target.value = this.selectedRowWidths[index];
     },
   },
 };
@@ -200,6 +219,4 @@ module.exports = {
   RowSettingsMixin,
   PRESETS,
   ROW_LABEL_KEYS,
-  MAX_COLUMNS,
-  MIN_COLUMN_WIDTH,
 };

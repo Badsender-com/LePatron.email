@@ -435,6 +435,7 @@ module.exports = {
   'block-builder-rows': 'Lignes',
   'block-builder-row-label': 'Ligne __n__ · __count__ colonnes',
   'block-builder-row-label-one': 'Ligne __n__ · 1 colonne',
+  'block-builder-column-width': 'Largeur de la colonne __n__',
   'block-builder-add-row': 'Ajouter une ligne',
   'block-builder-structure': 'Structure de la ligne',
   'block-builder-structure-full': 'Une colonne',
