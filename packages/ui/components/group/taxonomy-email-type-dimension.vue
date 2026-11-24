@@ -5,7 +5,9 @@ import BsGroupTaxonomyTab from '~/components/group/taxonomy-tab.vue';
 
 /**
  * The email type and its values. Its section stands even when the dimension
- * could not be read, under its default title. Emits `edit` with the dimension.
+ * could not be read, under its default title. Emits `edit` with the dimension,
+ * and `add-child` with it: a dimension may hang under the email type, offered
+ * by the type chosen (ADR-0024).
  */
 export default {
   name: 'BsTaxonomyEmailTypeDimension',
@@ -61,6 +63,16 @@ export default {
       >
         <lucide-plus :size="16" class="mr-1" />
         {{ $t('taxonomy.empty.action') }}
+      </v-btn>
+      <v-btn
+        v-if="dimension && canManageTaxonomy"
+        text
+        small
+        color="accent"
+        @click="$emit('add-child', dimension)"
+      >
+        <lucide-plus :size="16" class="mr-1" />
+        {{ $t('taxonomy.workspace.addChild') }}
       </v-btn>
       <v-btn
         v-if="dimension && canManageTaxonomy"

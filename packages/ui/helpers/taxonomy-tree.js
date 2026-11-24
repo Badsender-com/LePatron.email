@@ -76,8 +76,8 @@ export function dimensionTree({ dimensions = [], values = [] }) {
 const SEGMENTS_OF_A_DIMENSION = ['tokens', 'templates', 'settings'];
 
 /**
- * The segments of a dimension: its values, then its crossings for a child or
- * its default for a first-level one, its tokens, its templates and its
+ * The segments of a dimension: its values (where a first-level default is
+ * starred), then its crossings for a child, its tokens, its templates and its
  * settings. The trigger's values are the doctrine's: nothing else to set.
  *
  * @param {Object} dimension
@@ -86,13 +86,9 @@ const SEGMENTS_OF_A_DIMENSION = ['tokens', 'templates', 'settings'];
 export function segmentsOf(dimension) {
   if (!dimension) return ['values'];
   if (dimension.name === STANDARD_DIMENSIONS.TRIGGER) return ['values'];
-  // The email type has no default (ADR-0024).
-  if (dimension.name === STANDARD_DIMENSIONS.EMAIL_TYPE) {
-    return ['values', ...SEGMENTS_OF_A_DIMENSION];
-  }
   return [
     'values',
-    dimension.parentName ? 'crossings' : 'defaults',
+    ...(dimension.parentName ? ['crossings'] : []),
     ...SEGMENTS_OF_A_DIMENSION,
   ];
 }

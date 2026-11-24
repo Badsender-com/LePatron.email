@@ -110,7 +110,7 @@ describe('dimension tree', () => {
   it.each([
     ['trigger', ['values']],
     ['emailType', ['values', 'tokens', 'templates', 'settings']],
-    ['market', ['values', 'defaults', 'tokens', 'templates', 'settings']],
+    ['market', ['values', 'tokens', 'templates', 'settings']],
     ['language', ['values', 'crossings', 'tokens', 'templates', 'settings']],
   ])('gives %s the segments %j', (name, expected) => {
     expect(segmentsOf(DIMENSIONS.find((d) => d.name === name))).toEqual(

@@ -5,8 +5,6 @@
  *
  * - `missingCode`: a value of a dimension with a role, without its normalised
  *   code (ADR-0023);
- * - `nothingOffered`: a parent value under which no child value is offered,
- *   for a dimension that has values;
  * - `noValue`: an active dimension with no active value;
  * - `tokenUnread`: a design token a value carries that no template reads;
  * - `dimensionUnread`: a dimension offered on the templates reading it, which
@@ -19,7 +17,9 @@
  *   carrying the child literal is not offered under that parent value.
  *
  * Deactivated dimensions and values ask nothing; the trigger's values are the
- * doctrine's.
+ * doctrine's. A parent value under which a child offers nothing is no point: a
+ * child may mean something under some parent values only (sub-regions under
+ * one market), and the editor then shows no select.
  */
 import { STANDARD_DIMENSIONS } from './taxonomy-builder.js';
 import {
@@ -72,23 +72,6 @@ export function pointsToCheck({
         );
     }
     const parent = active.find((d) => d.name === dimension.parentName);
-    // A dimension with no value is one point already, not one per parent.
-    if (parent && own.length) {
-      of(parent.name).forEach((parentValue) => {
-        const parentId = String(parentValue.id);
-        const offered = own.some((value) => {
-          const parents = ids(value._parents);
-          return parents.length === 0 || parents.includes(parentId);
-        });
-        if (!offered) {
-          points.push({
-            kind: 'nothingOffered',
-            dimension: dimension.name,
-            parentValueId: parentId,
-          });
-        }
-      });
-    }
     const tokens = [
       ...new Set(
         own.flatMap((value) => Object.keys(plainTokens(value.tokens)))
