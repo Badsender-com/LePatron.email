@@ -54,11 +54,11 @@ module.exports = `<modal-component
             :key="row.id"
             role="option"
             :aria-selected="String(row.id === selectedRowId)"
-            tabindex="0"
+            :tabindex="rowTabIndex(index)"
             class="bb-modal__row"
             :class="{ 'bb-modal__row--on': row.id === selectedRowId }"
             @click="selectRow(row.id)"
-            @keydown.enter.prevent="selectRow(row.id)">{{ vm.t('block-builder-row') }} {{ index + 1 }} — {{ row.columns.length }}</li>
+            @keydown="onRowKeydown($event, index)">{{ rowLabel(row, index) }}</li>
         </ul>
         <button
           type="button"
@@ -93,14 +93,16 @@ module.exports = `<modal-component
               <span class="bb-modal__width-label">{{ index + 1 }}</span>
               <input
                 type="number"
-                min="10"
-                max="100"
+                :min="minColumnWidth"
+                :max="fullWidth"
                 :value="width"
+                :aria-label="columnWidthLabel(index)"
                 :disabled="index === selectedRowWidths.length - 1"
-                @change="setColumnWidth(index, Number($event.target.value))" />
+                @change="onColumnWidthChange($event, index)" />
               <span>%</span>
             </label>
           </div>
+          <p class="bb-modal__folded" role="status">{{ foldedMessage }}</p>
         </div>
 
         <p :id="listLabelId" class="bb-modal__section">{{ vm.t('block-builder-elements') }}</p>

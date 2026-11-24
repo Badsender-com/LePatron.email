@@ -9,6 +9,7 @@ const {
 const {
   singleColumnRows,
 } = require('../../../../../../shared/block-builder/composition.js');
+const { ListboxMixin } = require('./listbox.js');
 
 // The element list: what can be added, and what has been — adding, selecting,
 // reordering and removing.
@@ -50,6 +51,7 @@ function plainTextOf(html) {
 }
 
 const ElementListMixin = {
+  mixins: [ListboxMixin],
   data: () => ({ palette: PALETTE }),
   computed: {
     listLabelId() {
@@ -218,34 +220,17 @@ const ElementListMixin = {
     },
 
     // The list is a listbox with a roving tabindex: one Tab stop — the selected
-    // option, or the first — and the arrows to move within it.
+    // option, or the first — and the arrows to move within it. The motif is
+    // shared with the row list (listbox.js).
     optionTabIndex(index) {
-      const selected = this.indexOfSelected();
-      return index === (selected === -1 ? 0 : selected) ? 0 : -1;
+      return this.listboxTabIndex(index, this.indexOfSelected());
     },
 
     onOptionKeydown(event, index) {
-      const { key } = event;
-      if (key === 'Enter' || key === ' ') {
-        event.preventDefault();
-        this.selectElement(this.columnElements[index].id);
-        return;
-      }
-      if (key !== 'ArrowDown' && key !== 'ArrowUp') return;
-
-      event.preventDefault();
-      const next = index + (key === 'ArrowDown' ? 1 : -1);
-      if (next < 0 || next >= this.columnElements.length) return;
-      this.selectElement(this.columnElements[next].id);
-      // After the render, which moves the tabindex onto the new option.
-      this.$nextTick(() => {
-        // Scoped to the element list: the row list is a listbox of its own,
-        // and an unscoped query walks into it — which is exactly what happened
-        // the first time a second listbox appeared in this panel.
-        const options = this.$el.querySelectorAll(
-          '.bb-modal__list [role="option"]'
-        );
-        if (options[next]) options[next].focus();
+      this.onListboxKeydown(event, index, {
+        length: this.columnElements.length,
+        select: (at) => this.selectElement(this.columnElements[at].id),
+        options: '.bb-modal__list [role="option"]',
       });
     },
 
