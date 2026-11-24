@@ -13,7 +13,7 @@ const {
   idsFromSelections,
 } = require('../utils/dimension-selects');
 const {
-  initialSelections,
+  openingSelections,
   nextSelections,
   templateValuesFor,
 } = require('../utils/dimension-state');
@@ -106,10 +106,15 @@ module.exports = {
         templateProperties: rootPropertiesOf(vm.content && vm.content()),
       })
     );
-    const selections = initialSelections(
+    // Adopted from the content before anything is published to it (ADR-0024).
+    const opening = openingSelections({
       dimensions,
-      initialForm.taxonomyItemIds
-    );
+      taxonomyItemIds: initialForm.taxonomyItemIds,
+      contract: config.contract,
+      content: vm.content && vm.content(),
+      emailTypeId: initialForm.emailTypeId,
+    });
+    const selections = opening.selections;
 
     // One per section: it remembers what the template held before a token was
     // first written, to give it back when no chosen value carries it any more.
@@ -125,6 +130,9 @@ module.exports = {
         triggers: config.triggers || [],
         dimensions,
         selections,
+        // What the content held and could not be adopted, said under its select
+        // until the user chooses a value there.
+        adoptionGaps: opening.gaps,
         subjectHardLimit: SUBJECT_HARD_LIMIT,
       }),
 
@@ -180,6 +188,7 @@ module.exports = {
             selections: this.selections,
             emailTypeId: this.emailTypeId,
             trigger: this.trigger,
+            gaps: this.adoptionGaps,
           });
         },
         triggerHintId() {
@@ -239,8 +248,18 @@ module.exports = {
       },
 
       methods: {
+        gapMessage(name) {
+          const gap = this.adoptionGaps[name];
+          if (!gap) return null;
+          const key =
+            gap.reason === 'NOT_OFFERED'
+              ? 'email-metadata-adoption-not-offered'
+              : 'email-metadata-adoption-unknown';
+          return vm.t(key, { identifier: gap.identifier });
+        },
         choose(name, value) {
           this.selections[name] = value;
+          this.adoptionGaps = { ...this.adoptionGaps, [name]: null };
           this.reconcile([name]);
         },
         // Only the descendants of what the user changed are looked at: a

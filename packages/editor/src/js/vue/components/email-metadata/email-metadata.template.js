@@ -160,6 +160,10 @@ module.exports = `
            class="email-metadata__hint">
           {{ t('email-metadata-dimension-unavailable') }}
         </p>
+        <!-- What the content held and could not be adopted (ADR-0024). -->
+        <p v-if="gapMessage(select.name)" class="email-metadata__hint">
+          {{ gapMessage(select.name) }}
+        </p>
       </div>
     </div>
   </section>
