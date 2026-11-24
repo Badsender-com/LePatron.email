@@ -89,7 +89,9 @@ async function takeBackAudienceHistory({ write = false } = {}) {
   const found = [];
   const unresolved = [];
   let written = 0;
-  for (const [id, itemLogs] of [...byId.entries()].sort()) {
+  for (const [id, itemLogs] of [...byId.entries()].sort(([a], [b]) =>
+    a.localeCompare(b)
+  )) {
     // One item at a time: a handful of them, read once each.
     // eslint-disable-next-line no-await-in-loop
     const item = await itemNamed(id);
