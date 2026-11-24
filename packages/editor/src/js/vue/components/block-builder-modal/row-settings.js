@@ -150,8 +150,8 @@ const RowSettingsMixin = {
     },
 
     // Selected on arrival, so the palette fills it: the active column is the
-    // selected row's first one (selection.js). Nothing to render: a row holding
-    // nothing renders nothing, and the preview's watcher renders what changes.
+    // selected row's first one (selection.js). Nothing to render by hand: the
+    // preview's watcher shows the new row, as an empty column to drop into.
     addRow() {
       if (!canAddRow(this.state)) return null;
       const [row] = singleColumnRows();

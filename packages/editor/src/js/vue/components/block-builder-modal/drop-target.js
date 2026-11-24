@@ -17,7 +17,8 @@ const { dropIndexAt } = require('./drop-line.js');
 //
 // Plain functions rather than mixin methods, like drop-line.js beside it: none
 // of this reads the component, only the preview document the generator marked
-// up with its editing chrome.
+// up with its editing chrome. What the component keeps of the answer is
+// column-target.js.
 
 const inside = (box, x, y) =>
   x >= box.left && x <= box.right && y >= box.top && y <= box.bottom;
@@ -65,6 +66,40 @@ function columnElements(column) {
 }
 
 /**
+ * The cell a column's chrome sits in: what the user sees as the column.
+ *
+ * The chrome is a box inside the cell, as tall as what it holds. Measured
+ * instead of the cell, the blank under a short column belonged to no column,
+ * and the nearest one — its neighbour — took the drop.
+ *
+ * @param {Element} column
+ * @returns {Element}
+ */
+const cellOf = (column) => column.closest('td') || column;
+
+/**
+ * The target a column gives, with what the drop line needs to draw it.
+ *
+ * @param {Element} column the column's chrome, or the body of a flat preview
+ * @param {string} rowId
+ * @param {number} columnIndex
+ * @param {number} clientY
+ * @param {DOMRect|null} box the cell's box, or null for a flat preview, which
+ *   is one column as wide as the document
+ */
+function targetIn(column, rowId, columnIndex, clientY, box) {
+  const elements = columnElements(column);
+  return {
+    rowId,
+    columnIndex,
+    index: dropIndexAt(elements, clientY),
+    column,
+    elements,
+    box,
+  };
+}
+
+/**
  * Where a drag released at this point would land.
  *
  * A point outside every column still lands somewhere: the nearest one. A drag
@@ -76,48 +111,42 @@ function columnElements(column) {
  * chrome. Its whole document is then that one column, and `flatRowId` names
  * the row it belongs to.
  *
+ * The column and its elements come with the answer, so whoever draws the line
+ * does not look them up a second time.
+ *
  * @param {Document} doc the preview document
  * @param {number} clientX
  * @param {number} clientY
- * @param {string|null} [flatRowId] the id of the composition's only row, when
- *   the composition is flat
- * @returns {{rowId: string, columnIndex: number, index: number}|null} null
- *   when the preview holds no column at all
+ * @param {string|null} [flatRowId] the id of the row a flat preview renders,
+ *   when it renders one (renderedFlatRow)
+ * @returns {{rowId: string, columnIndex: number, index: number,
+ *   column: Element, elements: Element[], box: DOMRect|null}|null} null when
+ *   the preview holds no column at all
  */
 function dropTargetAt(doc, clientX, clientY, flatRowId) {
+  if (!doc || !doc.body) return null;
   const columns = previewColumns(doc);
   if (columns.length === 0) {
-    if (!flatRowId || !doc || !doc.body) return null;
-    return {
-      rowId: flatRowId,
-      columnIndex: 0,
-      index: dropIndexAt(columnElements(doc.body), clientY),
-    };
+    return flatRowId ? targetIn(doc.body, flatRowId, 0, clientY, null) : null;
   }
 
-  const boxes = columns.map((column) => column.getBoundingClientRect());
-  let best = 0;
-  let bestDistance = Infinity;
-  columns.forEach((column, index) => {
-    if (inside(boxes[index], clientX, clientY)) {
-      bestDistance = -1;
-      best = index;
-      return;
-    }
-    if (bestDistance === -1) return;
-    const distance = distanceTo(boxes[index], clientX, clientY);
-    if (distance < bestDistance) {
-      bestDistance = distance;
-      best = index;
-    }
-  });
+  const boxes = columns.map((column) =>
+    cellOf(column).getBoundingClientRect()
+  );
+  let best = boxes.findIndex((box) => inside(box, clientX, clientY));
+  if (best === -1) {
+    const distances = boxes.map((box) => distanceTo(box, clientX, clientY));
+    best = distances.indexOf(Math.min(...distances));
+  }
 
   const column = columns[best];
-  return {
-    rowId: column.getAttribute(COLUMN_ROW_ATTRIBUTE),
-    columnIndex: Number(column.getAttribute(COLUMN_INDEX_ATTRIBUTE)),
-    index: dropIndexAt(columnElements(column), clientY),
-  };
+  return targetIn(
+    column,
+    column.getAttribute(COLUMN_ROW_ATTRIBUTE),
+    Number(column.getAttribute(COLUMN_INDEX_ATTRIBUTE)),
+    clientY,
+    boxes[best]
+  );
 }
 
 module.exports = { dropTargetAt, previewColumns, columnElements };

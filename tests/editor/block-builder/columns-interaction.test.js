@@ -161,20 +161,8 @@ describe('selecting a row', () => {
 
 // Turned on by #1211 (dropping into a column, and moving a row)
 describe('dropping into a column', () => {
-  it('drops an element from the palette into the column under the cursor', async () => {
-    const { modal, doc } = await openModal(['text']);
-    modal.setRowWidths(modal.state.rows[0].id, [50, 50]);
-
-    startPaletteDrag('button');
-    modal.setDropTarget({
-      rowId: modal.state.rows[0].id,
-      columnIndex: 1,
-      index: 0,
-    });
-    fireIn(doc, 'drop', doc.body, 10);
-
-    expect(shapeOf(modal)).toEqual([[['text'], ['button']]]);
-  });
+  // The drop into the column under the cursor, through a real dragover, is
+  // column-drop.test.js.
 
   // "Drop here" is shown when the last row is gone, and it has to mean it:
   // with no column to aim at, the drop lands in a row made for it.

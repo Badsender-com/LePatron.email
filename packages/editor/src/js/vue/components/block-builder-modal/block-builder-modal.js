@@ -9,6 +9,7 @@ const { PreviewSurfaceMixin } = require('./preview-surface.js');
 const { ElementListMixin } = require('./element-list.js');
 const { DismissalMixin } = require('./dismissal.js');
 const { DragSurfaceMixin } = require('./drag-surface.js');
+const { ColumnTargetMixin } = require('./column-target.js');
 const { RowSettingsMixin } = require('./row-settings.js');
 const { RowActionsMixin } = require('./row-actions.js');
 const { SelectionMixin } = require('./selection.js');
@@ -57,7 +58,7 @@ const BlockBuilderModalComponent = Vue.component('BlockBuilderModal', {
   // rendering into it, and the selection it carries. See preview-surface.js.
   // The element list is another: adding, selecting, moving, removing. See
   // element-list.js. The drag adds the gesture on top of the preview — see
-  // drag-surface.js. And Escape or a backdrop click ask before losing work —
+  // drag-surface.js, and column-target.js for the column it aims at. And Escape or a backdrop click ask before losing work —
   // see dismissal.js.
   // What is selected is one state of its own — see selection.js. A row's
   // structure is row-settings.js, and moving one is row-actions.js.
@@ -66,6 +67,7 @@ const BlockBuilderModalComponent = Vue.component('BlockBuilderModal', {
     PreviewSurfaceMixin,
     ElementListMixin,
     DragSurfaceMixin,
+    ColumnTargetMixin,
     RowSettingsMixin,
     RowActionsMixin,
     DismissalMixin,

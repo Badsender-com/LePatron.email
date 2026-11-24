@@ -29,7 +29,8 @@ const {
 // It knows nothing of the drag. What the drag needs from it is public and
 // generic: the events below, to listen on a freshly written document and to
 // dress the rows of each render; freezeRender / thawRender, to keep the rows
-// still under the cursor; elementRowFromEvent, to name the row under it. The
+// still under the cursor; previewElementFromEvent, to name the element under
+// it. The
 // class names live here too, because this is what owns the stylesheet they
 // appear in; drag-surface.js imports them.
 
@@ -40,9 +41,12 @@ const SELECTED_CLASS = 'lp-bb-selected';
 // Set on the body while something is being dragged.
 const DRAGGING_CLASS = 'lp-bb-dragging';
 
-// The row being moved by a reorder drag, dimmed so the cursor is not carrying
-// an invisible thing.
+// The element being moved by a drag, dimmed so the cursor is not carrying an
+// invisible thing.
 const MOVING_CLASS = 'lp-bb-moving';
+
+// The column a drop would land in, while something is dragged over it.
+const COLUMN_TARGET_CLASS = `${COLUMN_CHROME_CLASS}--target`;
 
 // The insertion line: one element over the whole preview, placed at the edge
 // the drop would land on (drag-surface.js), in pixels.
@@ -142,6 +146,8 @@ const PREVIEW_DOCUMENT = [
   `.${COLUMN_CHROME_CLASS}:empty,`,
   `body.${DRAGGING_CLASS} .${COLUMN_CHROME_CLASS}{`,
   'outline:1px dashed #757575;outline-offset:-1px;}',
+  `body.${DRAGGING_CLASS} .${COLUMN_TARGET_CLASS}{`,
+  'outline:2px solid #265090;outline-offset:-2px;}',
   '</style></head><body></body></html>',
 ].join('');
 
@@ -266,7 +272,8 @@ const PreviewSurfaceMixin = {
         this.previewWidth === this.mobileWidth ? collectRules([this.state]) : '';
     },
 
-    previewRows(doc) {
+    /** The rendered elements of the preview, in document order. */
+    previewElements(doc) {
       if (!doc || !doc.body) return [];
       return Array.prototype.slice.call(
         doc.body.querySelectorAll(`[${ELEMENT_ATTRIBUTE}]`)
@@ -289,40 +296,41 @@ const PreviewSurfaceMixin = {
       // clicking one would navigate the iframe away from the composition.
       event.preventDefault();
 
-      const row = this.elementRowFromEvent(event);
-      if (row) this.selectElement(row.getAttribute(ELEMENT_ATTRIBUTE));
+      const node = this.previewElementFromEvent(event);
+      if (node) this.selectElement(node.getAttribute(ELEMENT_ATTRIBUTE));
     },
 
-    // The row of the composed element an event happened in, or null: for the
-    // click above and the drag (drag-surface.js) alike. `closest` walks up
-    // from whatever was hit — a word, a pixel of an image — to the row that
-    // carries the id; a target with no `closest` is a text node, a selection
-    // being dragged. A row whose id is nowhere in the composition — any row,
-    // any column — is not ours.
-    elementRowFromEvent(event) {
+    // The rendered element an event happened in, or null: for the click above
+    // and the drag (drag-surface.js) alike. `closest` walks up from whatever
+    // was hit — a word, a pixel of an image — to the node that carries the
+    // id; a target with no `closest` is a text node, a selection being
+    // dragged. An id that is nowhere in the composition — any row, any
+    // column — is not ours.
+    previewElementFromEvent(event) {
       const target = event.target;
-      const row =
+      const node =
         target && typeof target.closest === 'function'
           ? target.closest(`[${ELEMENT_ATTRIBUTE}]`)
           : null;
-      if (!row) return null;
-      return this.locateElement(row.getAttribute(ELEMENT_ATTRIBUTE))
-        ? row
+      if (!node) return null;
+      return this.locateElement(node.getAttribute(ELEMENT_ATTRIBUTE))
+        ? node
         : null;
     },
 
-    // Marks the selected row in the preview, so the selection reads the same on
+    // Marks the selected element in the preview, so the selection reads the same on
     // both sides. Re-applied after every render, since replacing the body drops
     // the class with everything else.
     //
     // Compared attribute by attribute rather than through a CSS selector: the
     // id comes from stored state, which is treated as hostile everywhere else
-    // (see state.js), and there are at most a handful of rows.
+    // (see state.js), and there are at most a handful of elements.
     applySelectionHighlight() {
       const frame = this.$refs.previewFrame;
-      this.previewRows(frame && frame.contentDocument).forEach((row) => {
-        const selected = row.getAttribute(ELEMENT_ATTRIBUTE) === this.selectedElementId;
-        row.classList.toggle(SELECTED_CLASS, selected);
+      this.previewElements(frame && frame.contentDocument).forEach((node) => {
+        const selected =
+          node.getAttribute(ELEMENT_ATTRIBUTE) === this.selectedElementId;
+        node.classList.toggle(SELECTED_CLASS, selected);
       });
     },
   },
@@ -336,6 +344,7 @@ module.exports = {
   DERIVED_STYLE_ID,
   DROP_LINE_HEIGHT,
   MOVING_CLASS,
+  COLUMN_TARGET_CLASS,
   EMPTY_DROP_ID,
   PREVIEW_READY_EVENT,
   PREVIEW_RENDERED_EVENT,
