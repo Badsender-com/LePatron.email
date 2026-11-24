@@ -7,9 +7,9 @@
 // a `<tr>` directly inside a `<td>` is invalid, and browsers drop it along
 // with its content, so the element would simply vanish from the email.
 //
-// Nothing changes for anyone yet. The whole point of this ticket is that it
-// cannot: the single-column path still asks for the wrapped form, and these
-// tests pin that the two spellings agree.
+// That a block stored flat still renders byte for byte as it did is pinned by
+// flat-render-reference.test.js, against markup produced before the split.
+// These tests pin the pieces.
 
 const {
   generateElement,
@@ -94,7 +94,9 @@ describe('elementAttributes', () => {
       elementIds: true,
     });
 
-    expect(attributes).not.toContain('<script');
+    expect(attributes).toBe(
+      ` ${ELEMENT_ATTRIBUTE}="a&quot;&gt;&lt;script&gt;"`
+    );
   });
 
   test.each([
@@ -105,47 +107,16 @@ describe('elementAttributes', () => {
   });
 });
 
-describe('the two agree', () => {
-  // The criterion of this ticket: whatever the split did, the wrapped form must
-  // still produce exactly what it produced before.
-  const cases = [
-    ['a text', text()],
-    ['an image', { id: 'e2', type: 'image', src: 'https://e.com/a.png' }],
-    [
-      'a button',
-      { id: 'e3', type: 'button', label: 'Go', href: 'https://e.com' },
-    ],
-    ['a divider', { id: 'e4', type: 'divider' }],
-    ['a spacer', { id: 'e5', type: 'spacer' }],
-  ];
+describe('generateElement', () => {
+  // The rule for "nothing" is the type, never what was typed: a text left
+  // empty is still an element, keeps its row, and is still there to select.
+  it('keeps the row of a known element with nothing typed in it', () => {
+    const html = generateElement(text({ content: '' }), { elementIds: true });
 
-  test.each(cases)('%s is its markup inside a row', (_label, element) => {
-    const options = { elementIds: true };
-
-    expect(generateElement(element, options)).toBe(
-      `<tr><td${elementAttributes(element, options)}>` +
-        renderElement(element, options) +
-        '</td></tr>'
+    expect(html).toMatch(
+      new RegExp(`^<tr><td ${ELEMENT_ATTRIBUTE}="e1"><table`)
     );
-  });
-
-  test.each(cases)(
-    '%s wraps a row with no options either',
-    (_label, element) => {
-      expect(generateElement(element)).toBe(
-        `<tr><td>${renderElement(element)}</td></tr>`
-      );
-    }
-  );
-
-  // An element that renders nothing still occupied a row before the split, and
-  // the export has to come out identical — so the row is decided by the type
-  // being known, never by the render coming back empty.
-  it('keeps the row of an element that renders nothing', () => {
-    const empty = { id: 'e1', type: 'text', content: '' };
-
-    expect(renderElement(empty)).not.toBe(undefined);
-    expect(generateElement(empty)).toMatch(/^<tr><td/);
+    expect(html).toMatch(/<\/table><\/td><\/tr>$/);
   });
 
   test.each([
