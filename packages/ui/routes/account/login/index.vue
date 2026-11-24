@@ -2,7 +2,7 @@
 import { required } from 'vuelidate/lib/validators';
 import * as apiRoutes from '~/helpers/api-routes.js';
 import { mapMutations } from 'vuex';
-import { ArrowLeft, Eye, EyeOff } from 'lucide-vue';
+import { ArrowRight, LogIn } from 'lucide-vue';
 
 import { PAGE, SHOW_SNACKBAR } from '~/store/page.js';
 import * as acls from '~/helpers/pages-acls.js';
@@ -11,11 +11,14 @@ import {
   signInStepOf,
   STEP_SIGNED_IN,
   STEP_VERIFY,
+  STEP_SETUP,
   STEP_RECOVERY_CODES,
 } from '~/helpers/two-factor.js';
 import { takeLogoutReason } from '~/helpers/logout-reason.js';
 import { isReturnPath } from '../../../../shared/access/return-path.js';
-import BsLoginLogo from '~/components/account/login-logo.vue';
+import BsAuthCard from '~/components/account/auth-card.vue';
+import BsTextField from '~/components/form/bs-text-field.vue';
+import BsLoginPassword from '~/components/account/login-password.vue';
 import BsTwoFactorCode from '~/components/account/two-factor-code.vue';
 import BsTwoFactorSetup from '~/components/account/two-factor-setup.vue';
 import BsRecoveryCodes from '~/components/account/recovery-codes.vue';
@@ -24,13 +27,14 @@ export default {
   name: 'BsPageLogin',
   meta: { acl: acls.ACL_NOT_CONNECTED },
   components: {
-    BsLoginLogo,
+    BsAuthCard,
+    BsTextField,
+    BsLoginPassword,
     BsTwoFactorCode,
     BsTwoFactorSetup,
     BsRecoveryCodes,
-    LucideArrowLeft: ArrowLeft,
-    LucideEye: Eye,
-    LucideEyeOff: EyeOff,
+    LucideArrowRight: ArrowRight,
+    LucideLogIn: LogIn,
   },
   layout: 'centered',
   data() {
@@ -41,7 +45,6 @@ export default {
       userIsFound: false,
       isBasicAuthentication: true,
       isLoading: false,
-      showPassword: false,
       // After the password, with two-factor authentication (ADR 0008): the
       // step the server asks, the member's method, and the account held
       // while its new recovery codes are shown.
@@ -49,6 +52,10 @@ export default {
       method: null,
       signedIn: null,
       recoveryCodes: [],
+      // The recovery codes end the setup, or follow the use of one.
+      recoveryAfterSetup: false,
+      // The identity provider's sign-in failed: the server sent back here.
+      ssoFailed: false,
     };
   },
   head() {
@@ -71,6 +78,7 @@ export default {
   mounted() {
     // Check for logout reason cookie
     this.checkLogoutReason();
+    this.checkSsoFailure();
   },
   methods: {
     ...mapMutations(PAGE, { showSnackbar: SHOW_SNACKBAR }),
@@ -85,7 +93,15 @@ export default {
         color: reason === 'session-replaced' ? 'warning' : 'info',
       });
     },
+    // Said once: the query leaves the address, so a reload starts afresh.
+    checkSsoFailure() {
+      if (this.$route.query.sso !== 'failed') return;
+      this.ssoFailed = true;
+      const { sso: _sso, ...query } = this.$route.query;
+      this.$router.replace({ query });
+    },
     checkEmailForm: async function () {
+      this.ssoFailed = false;
       this.submitted = true;
       this.$v.$touch();
       if (this.$v.$invalid) {
@@ -164,6 +180,7 @@ export default {
         const { recoveryCodes, ...user } = answer;
         this.recoveryCodes = recoveryCodes;
         this.signedIn = user;
+        this.recoveryAfterSetup = this.step === STEP_SETUP;
       }
       this.step = step;
     },
@@ -203,115 +220,79 @@ export default {
 </script>
 
 <template>
-  <div style="display: block; margin: 0 auto; text-align: center">
-    <bs-login-logo />
-    <p style="color: white; font-size: 0.875rem">Email Builder by Badsender</p>
-    <v-card class="elevation-24">
-      <v-toolbar flat>
+  <div class="bs-page-login">
+    <!-- Who signs in -->
+    <bs-auth-card
+      v-if="!userIsFound"
+      :title="$t('forms.user.login')"
+      :loading="isLoading"
+      :alert="ssoFailed ? $t('authCard.ssoFailed') : ''"
+    >
+      <template #icon><lucide-log-in :size="26" /></template>
+      <template #description>
+        <!-- Sent here by an assistant asking to connect (ADR 0012). -->
+        <template v-if="returnPath">{{
+          $t('oauthConsent.loginHint')
+        }}</template>
+        <template v-else>{{ $t('authCard.emailIntro') }}</template>
+      </template>
+      <v-form id="check-email-form" @submit.prevent="checkEmailForm">
+        <bs-text-field
+          v-model="username"
+          autofocus
+          dense
+          :label="$t('users.email')"
+          name="username"
+          type="email"
+          autocomplete="username"
+          required
+        />
+      </v-form>
+      <template #actions>
         <v-btn
-          v-if="userIsFound && isBasicAuthentication"
+          :loading="isLoading"
+          elevation="0"
           color="accent"
-          icon
-          @click="back"
+          form="check-email-form"
+          type="submit"
         >
-          <lucide-arrow-left :size="20" />
+          {{ $t('authCard.next') }}
+          <lucide-arrow-right :size="16" class="ml-2" />
         </v-btn>
-        <v-toolbar-title class="pl-0">
-          {{ $t('forms.user.login') }}
-        </v-toolbar-title>
-      </v-toolbar>
-      <v-divider />
-      <!-- Sent here by an assistant asking to connect (ADR 0012). -->
-      <v-card-text v-if="returnPath" class="pb-0 text-left">
-        {{ $t('oauthConsent.loginHint') }}
-      </v-card-text>
-      <div v-if="!userIsFound">
-        <v-card-text>
-          <v-form id="check-email-form" @submit.prevent="checkEmailForm">
-            <v-text-field
-              v-model="username"
-              autofocus
-              :label="$t('users.email')"
-              name="username"
-              prepend-icon="email"
-              type="text"
-              required
-            />
-          </v-form>
-        </v-card-text>
+      </template>
+    </bs-auth-card>
 
-        <v-card-actions>
-          <v-spacer />
-          <v-btn
-            :loading="isLoading"
-            elevation="0"
-            color="accent"
-            dark
-            form="check-email-form"
-            type="submit"
-          >
-            {{ $t('forms.user.login') }}
-          </v-btn>
-        </v-card-actions>
-      </div>
+    <!-- Password field -->
+    <bs-login-password
+      v-if="userIsFound && isBasicAuthentication && !step"
+      v-model="password"
+      :email="username"
+      :loading="isLoading"
+      @submit="handleSubmit"
+      @change-account="back"
+    />
 
-      <!-- Password field  -->
-      <div v-if="userIsFound && isBasicAuthentication && !step">
-        <v-card-text>
-          <v-form id="login-form" @submit.prevent="handleSubmit">
-            <v-text-field
-              id="password"
-              v-model="password"
-              autofocus
-              :label="$t('global.password')"
-              name="password"
-              prepend-icon="lock"
-              :type="showPassword ? 'text' : 'password'"
-              required
-            >
-              <template #append>
-                <v-btn icon small @click="showPassword = !showPassword">
-                  <lucide-eye v-if="showPassword" :size="18" />
-                  <lucide-eye-off v-else :size="18" />
-                </v-btn>
-              </template>
-            </v-text-field>
-          </v-form>
-        </v-card-text>
-        <v-card-actions>
-          <v-spacer />
-          <v-btn nuxt text color="primary" to="/account/reset-password">
-            {{ $t('forms.user.forgottenPassword') }}
-          </v-btn>
-          <v-btn
-            :loading="isLoading"
-            elevation="0"
-            color="accent"
-            form="login-form"
-            type="submit"
-          >
-            {{ $t('forms.user.login') }}
-          </v-btn>
-        </v-card-actions>
-      </div>
-
-      <!-- After the password (ADR 0008) -->
-      <bs-two-factor-code
-        v-if="step === 'verify'"
-        :method="method"
-        @answer="onAnswer"
-        @expired="backToPassword"
-      />
-      <bs-two-factor-setup
-        v-if="step === 'setup'"
-        @answer="onAnswer"
-        @expired="backToPassword"
-      />
-      <bs-recovery-codes
-        v-if="step === 'recovery-codes'"
-        :codes="recoveryCodes"
-        @continue="signIn(signedIn)"
-      />
-    </v-card>
+    <!-- After the password (ADR 0008) -->
+    <bs-two-factor-code
+      v-if="step === 'verify'"
+      :method="method"
+      :email="username"
+      @answer="onAnswer"
+      @expired="backToPassword"
+      @change-account="back"
+    />
+    <bs-two-factor-setup
+      v-if="step === 'setup'"
+      :email="username"
+      @answer="onAnswer"
+      @expired="backToPassword"
+      @change-account="back"
+    />
+    <bs-recovery-codes
+      v-if="step === 'recovery-codes'"
+      :codes="recoveryCodes"
+      :after-setup="recoveryAfterSetup"
+      @continue="signIn(signedIn)"
+    />
   </div>
 </template>

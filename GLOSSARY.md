@@ -213,6 +213,21 @@ _Avoid_: Pending version, unpublished version
 A connection's mode in which an assistant is served the draft version of every skill and expertise that has one, and those never published, so that whoever may manage the platform tries them before publishing. It ends after four hours and at every new connection.
 _Avoid_: Preview mode, test mode, sandbox
 
+**Release note**:
+What a person writes when publishing a version of a skill or an expertise, for every company that reads it: what changed for whoever uses it. Every published version has one.
+_UI_: Note de version
+_Avoid_: Changelog, release notes summary
+
+**Change log**:
+What a person writes when publishing a version, for the platform company alone: how and why the version was written. No other company reads it.
+_UI_: Journal des modifications
+_Avoid_: Release note, history
+
+**Catalog change**:
+A dated event in the life of a skill or an expertise, as a company sees it: created, updated by a new version, opened to every company, or withdrawn from them. For a company other than the platform company, the opening is when the item appears.
+_UI_: Nouveauté
+_Avoid_: News, update, event
+
 **CRM governance**:
 A company's own rules for its emails, such as its brand charter and its writing guidelines, kept by the company rather than written as skills or expertises. A module to come.
 _Avoid_: Client expertise, brand skill

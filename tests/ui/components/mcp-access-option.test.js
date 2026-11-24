@@ -35,7 +35,7 @@ const OPEN_GROUP = {
   enableMcp: true,
 };
 
-function mountOption(copied, { group = OPEN_GROUP, role } = {}) {
+function mountOption(copied, { group = OPEN_GROUP, role, $put } = {}) {
   const commit = jest.fn();
   const copy = jest.fn().mockResolvedValue(copied);
   const can = (capability) => Boolean(role) && roleCan(role, capability);
@@ -43,15 +43,21 @@ function mountOption(copied, { group = OPEN_GROUP, role } = {}) {
     props: { group },
     mocks: {
       $t: (key) => key,
+      $axios: { $put },
       $store: {
         commit,
         _modulesNamespaceMap: { 'page/': { context: { commit } } },
       },
     },
     imports: {
-      vuex: { mapGetters: () => ({ can: () => can }) },
+      vuex: {
+        mapGetters: () => ({ can: () => can }),
+        // The real one: the failed copy goes to the store's `page` module.
+        mapMutations: require('vuex').mapMutations,
+      },
       'lucide-vue': {},
       '~/store/user': { CAN: 'can', USER: 'user' },
+      '~/store/page': { PAGE: 'page', SHOW_SNACKBAR: 'SHOW_SNACKBAR' },
       '../../../shared/access/roles.js': { CAPABILITIES },
       '~/helpers/mixins/mixin-group-switch.js': mixinGroupSwitch,
       '~/helpers/copy-to-clipboard.js': { __esModule: true, default: copy },
@@ -62,6 +68,7 @@ function mountOption(copied, { group = OPEN_GROUP, role } = {}) {
       '~/components/modal-confirm.vue': {},
       '~/components/layout/bs-settings-row.vue': {},
       '~/components/group/feature-switch.vue': {},
+      '~/components/layout/bs-save-outcome.vue': {},
       '~/components/group/retex-option.vue': {},
       '~/components/group/connected-applications-option.vue': {},
       // Rendered, for the steps shown while the access is off.
@@ -196,5 +203,41 @@ describe('the MCP access of a company with the MCP module', () => {
         .getAttribute('role')
     ).toBe('list');
     expect(copyButton(vm)).toBeDefined();
+  });
+});
+
+// Its switch is saved on its own, and its outcome read beside it, never in a
+// toast (design system, "A setting was saved").
+describe('the MCP access switch', () => {
+  const off = { ...OPEN_GROUP, enableMcp: false };
+  const outcomeOf = (vm) => vm.$el.querySelector('bs-save-outcome');
+  const turnOn = (vm) =>
+    vm.$el
+      .querySelector('bs-group-feature-switch')
+      .dispatchEvent(new Event('change'));
+
+  it('says beside the switch that it is saved', async () => {
+    const $put = jest.fn().mockResolvedValue({ ...off, enableMcp: true });
+    const { vm, commit } = mountOption(true, { group: off, $put });
+    await settle(vm);
+
+    turnOn(vm);
+    await settle(vm);
+
+    expect($put).toHaveBeenCalledWith(expect.any(String), { enableMcp: true });
+    expect(outcomeOf(vm).getAttribute('outcome')).toBe('saved');
+    expect(commit).not.toHaveBeenCalled();
+  });
+
+  it('says beside the switch that the save failed, without a toast', async () => {
+    const $put = jest.fn().mockRejectedValue(new Error('500'));
+    const { vm, commit } = mountOption(true, { group: off, $put });
+    await settle(vm);
+
+    turnOn(vm);
+    await settle(vm);
+
+    expect(outcomeOf(vm).getAttribute('outcome')).toBe('failed');
+    expect(commit).not.toHaveBeenCalled();
   });
 });

@@ -13,6 +13,9 @@ import BsTextarea from '~/components/form/bs-textarea.vue';
 import BsSelect from '~/components/form/bs-select';
 import BsFormSection from '~/components/layout/bs-form-section.vue';
 import BsGroupMcpModuleOption from '~/components/group/mcp-module-option.vue';
+import BsGroupSettingCard from '~/components/group/setting-card.vue';
+import BsSaveOutcome from '~/components/layout/bs-save-outcome.vue';
+import BsGroupFeatureSwitch from '~/components/group/feature-switch.vue';
 import { escapeHtml } from '~/helpers/escape-html';
 import {
   Palette,
@@ -22,7 +25,8 @@ import {
   AlertTriangle,
   Building2,
   Boxes,
-  Shield,
+  ShieldCheck,
+  Users,
   KeyRound,
 } from 'lucide-vue';
 import { CAPABILITIES } from '../../../shared/access/roles.js';
@@ -37,6 +41,9 @@ export default {
     BsSelect,
     BsFormSection,
     BsGroupMcpModuleOption,
+    BsGroupSettingCard,
+    BsSaveOutcome,
+    BsGroupFeatureSwitch,
     LucidePalette: Palette,
     LucideLineChart: LineChart,
     LucideLink: Link,
@@ -44,7 +51,8 @@ export default {
     LucideAlertTriangle: AlertTriangle,
     LucideBuilding2: Building2,
     LucideBoxes: Boxes,
-    LucideShield: Shield,
+    LucideShieldCheck: ShieldCheck,
+    LucideUsers: Users,
     LucideKeyRound: KeyRound,
   },
   mixins: [validationMixin],
@@ -55,6 +63,9 @@ export default {
     flat: { type: Boolean, default: false },
     disabled: { type: Boolean, default: false },
     loading: { type: Boolean, default: false },
+    // The outcome of the last save, read at the foot of the form.
+    outcome: { type: String, default: null },
+    outcomeDetail: { type: String, default: '' },
   },
   data() {
     return {
@@ -107,10 +118,13 @@ export default {
       immediate: true,
       handler(newVal) {
         if (newVal === null) {
-          this.useSamlAuthentication =
+          // A real boolean: the empty string of an empty issuer would read as
+          // "on" to a Boolean prop.
+          this.useSamlAuthentication = Boolean(
             this.group &&
-            ((this.group.issuer && this.group.issuer.length > 0) ||
-              (this.group.entryPoint && this.group.entryPoint.length > 0));
+              ((this.group.issuer && this.group.issuer.length > 0) ||
+                (this.group.entryPoint && this.group.entryPoint.length > 0))
+          );
         }
       },
     },
@@ -260,83 +274,66 @@ export default {
             {{ $t('groups.modules.description') }}
           </template>
 
-          <!-- Email Builder Module -->
-          <div class="module-card">
-            <div class="module-card__content">
-              <div class="module-card__icon">
-                <lucide-palette :size="28" color="#00acdc" />
-              </div>
-              <div class="module-card__info">
-                <div class="module-card__name">
-                  {{ $t('groups.modules.emailBuilder.name') }}
-                </div>
-                <div class="module-card__description">
-                  {{ $t('groups.modules.emailBuilder.description') }}
-                </div>
-              </div>
-            </div>
-            <v-switch
-              v-model="localModel.enableEmailBuilder"
-              hide-details
-              :disabled="disabled"
-              class="module-card__switch"
-            />
-          </div>
+          <bs-group-setting-card>
+            <template #icon><lucide-palette :size="28" /></template>
+            <template #name>
+              {{ $t('groups.modules.emailBuilder.name') }}
+            </template>
+            <template #description>
+              {{ $t('groups.modules.emailBuilder.description') }}
+            </template>
+            <template #control>
+              <bs-group-feature-switch
+                v-model="localModel.enableEmailBuilder"
+                :label="$t('groups.modules.emailBuilder.name')"
+                :on-text="$t('global.states.on')"
+                :off-text="$t('global.states.off')"
+                :disabled="disabled"
+              />
+            </template>
+          </bs-group-setting-card>
 
-          <!-- Share Links Module (public preview links of the emails) -->
-          <div class="module-card">
-            <div class="module-card__content">
-              <div class="module-card__icon">
-                <lucide-link :size="28" color="#00acdc" />
-              </div>
-              <div class="module-card__info">
-                <div class="module-card__name">
-                  {{ $t('groups.modules.shareLinks.name') }}
-                </div>
-                <div class="module-card__description">
-                  {{ $t('groups.modules.shareLinks.description') }}
-                </div>
-              </div>
-            </div>
-            <v-switch
-              :key="shareLinksSwitchKey"
-              :input-value="localModel.enableShareLinks !== false"
-              hide-details
-              :disabled="disabled"
-              class="module-card__switch"
-              @change="onShareLinksChange"
-            />
-          </div>
+          <bs-group-setting-card>
+            <template #icon><lucide-link :size="28" /></template>
+            <template #name>
+              {{ $t('groups.modules.shareLinks.name') }}
+            </template>
+            <template #description>
+              {{ $t('groups.modules.shareLinks.description') }}
+            </template>
+            <template #control>
+              <v-switch
+                :key="shareLinksSwitchKey"
+                :input-value="localModel.enableShareLinks !== false"
+                hide-details
+                :disabled="disabled"
+                @change="onShareLinksChange"
+              />
+            </template>
+          </bs-group-setting-card>
 
-          <!-- CRM Intelligence Module -->
-          <div class="module-card">
-            <div class="module-card__content">
-              <div class="module-card__icon">
-                <lucide-line-chart :size="28" color="#00acdc" />
-              </div>
-              <div class="module-card__info">
-                <div class="module-card__name">
-                  {{ $t('groups.modules.crmIntelligence.name') }}
-                </div>
-                <div class="module-card__description">
-                  {{ $t('groups.modules.crmIntelligence.description') }}
-                </div>
-                <div
-                  v-if="localModel.enableCrmIntelligence"
-                  class="module-card__hint"
-                >
-                  <lucide-arrow-right :size="14" color="#9e9e9e" />
-                  {{ $t('groups.modules.crmIntelligence.configHint') }}
-                </div>
-              </div>
-            </div>
-            <v-switch
-              v-model="localModel.enableCrmIntelligence"
-              hide-details
-              :disabled="disabled"
-              class="module-card__switch"
-            />
-          </div>
+          <bs-group-setting-card>
+            <template #icon><lucide-line-chart :size="28" /></template>
+            <template #name>
+              {{ $t('groups.modules.crmIntelligence.name') }}
+            </template>
+            <template #description>
+              {{ $t('groups.modules.crmIntelligence.description') }}
+            </template>
+            <template v-if="localModel.enableCrmIntelligence" #hint>
+              <lucide-arrow-right :size="14" color="#9e9e9e" />
+              {{ $t('groups.modules.crmIntelligence.configHint') }}
+            </template>
+            <template #control>
+              <bs-group-feature-switch
+                v-model="localModel.enableCrmIntelligence"
+                :label="$t('groups.modules.crmIntelligence.name')"
+                :on-text="$t('global.states.on')"
+                :off-text="$t('global.states.off')"
+                :disabled="disabled"
+              />
+            </template>
+          </bs-group-setting-card>
 
           <bs-group-mcp-module-option
             ref="mcpModule"
@@ -347,80 +344,97 @@ export default {
           />
         </bs-form-section>
 
-        <!-- ==================== SECTION 3: PERMISSIONS ==================== -->
-        <bs-form-section v-if="canManagePlatform">
+        <!-- ==================== SECTION 3: SECURITY ====================
+             Permissions, SAML and two-factor authentication read alike, as
+             the modules do. The first two are saved with the form; the
+             two-factor one saves on its own (the slot). -->
+        <bs-form-section
+          v-if="canManagePlatform || $slots['security-rows']"
+          last
+          class="group-form__security"
+        >
           <template #icon>
-            <lucide-shield :size="20" />
+            <lucide-shield-check :size="20" />
           </template>
           <template #title>
-            {{ $t('forms.group.sections.permissions') }}
+            {{ $t('forms.group.sections.security') }}
           </template>
           <template #description>
-            {{ $t('forms.group.sections.permissionsDescription') }}
-          </template>
-          <v-switch
-            v-model="localModel.userHasAccessToAllWorkspaces"
-            :label="$t('forms.group.userHasAccessToAllWorkspaces')"
-            hide-details
-            :disabled="disabled"
-          />
-        </bs-form-section>
-
-        <!-- ==================== SECTION 4: SAML AUTHENTICATION ==================== -->
-        <bs-form-section v-if="canManagePlatform" last>
-          <template #icon>
-            <lucide-key-round :size="20" />
-          </template>
-          <template #title>
-            {{ $t('forms.group.sections.authentication') }}
-          </template>
-          <template #description>
-            {{ $t('forms.group.sections.authenticationDescription') }}
+            {{ $t('forms.group.sections.securityDescription') }}
           </template>
 
-          <v-switch
-            v-model="useSamlAuthentication"
-            :label="$t('forms.group.enableSaml')"
-            hide-details
-            :disabled="disabled"
-            class="mb-4"
-          />
+          <bs-group-setting-card v-if="canManagePlatform">
+            <template #icon><lucide-users :size="28" /></template>
+            <template #name>
+              {{ $t('forms.group.sections.permissions') }}
+            </template>
+            <template #description>
+              {{ $t('forms.group.userHasAccessToAllWorkspaces') }}
+            </template>
+            <template #control>
+              <bs-group-feature-switch
+                v-model="localModel.userHasAccessToAllWorkspaces"
+                :label="$t('forms.group.sections.permissions')"
+                :on-text="$t('global.states.on')"
+                :off-text="$t('global.states.off')"
+                :disabled="disabled"
+              />
+            </template>
+          </bs-group-setting-card>
 
-          <v-expand-transition>
-            <div v-if="useSamlAuthentication">
-              <v-row>
-                <v-col cols="12" md="6">
-                  <bs-text-field
-                    v-model="localModel.entryPoint"
-                    :label="$t('forms.group.entryPoint')"
-                    :hint="$t('forms.group.entryPointHint')"
-                    :disabled="disabled"
-                  />
-                </v-col>
-                <v-col cols="12" md="6">
-                  <bs-text-field
-                    v-model="localModel.issuer"
-                    :label="$t('forms.group.issuer')"
-                    :hint="$t('forms.group.issuerHint')"
-                    :disabled="disabled"
-                  />
-                </v-col>
-                <!-- Required for SSO to be offered at all: without the identity
+          <bs-group-setting-card v-if="canManagePlatform">
+            <template #icon><lucide-key-round :size="28" /></template>
+            <template #name>{{ $t('forms.group.saml.name') }}</template>
+            <template #description>
+              {{ $t('forms.group.sections.authenticationDescription') }}
+            </template>
+            <template #control>
+              <bs-group-feature-switch
+                v-model="useSamlAuthentication"
+                :label="$t('forms.group.enableSaml')"
+                :on-text="$t('forms.group.saml.on')"
+                :off-text="$t('forms.group.saml.off')"
+                :disabled="disabled"
+              />
+            </template>
+            <template v-if="useSamlAuthentication" #body>
+              <div>
+                <v-row>
+                  <v-col cols="12" md="6">
+                    <bs-text-field
+                      v-model="localModel.entryPoint"
+                      :label="$t('forms.group.entryPoint')"
+                      :hint="$t('forms.group.entryPointHint')"
+                      :disabled="disabled"
+                    />
+                  </v-col>
+                  <v-col cols="12" md="6">
+                    <bs-text-field
+                      v-model="localModel.issuer"
+                      :label="$t('forms.group.issuer')"
+                      :hint="$t('forms.group.issuerHint')"
+                      :disabled="disabled"
+                    />
+                  </v-col>
+                  <!-- Required for SSO to be offered at all: without the identity
                      provider's certificate, no response signature can be
                      checked, so the login page falls back to the password. -->
-                <v-col cols="12">
-                  <bs-textarea
-                    v-model="localModel.idpCert"
-                    :label="$t('forms.group.idpCert')"
-                    :hint="$t('forms.group.idpCertHint')"
-                    :disabled="disabled"
-                    rows="6"
-                    class="group-form__idp-cert"
-                  />
-                </v-col>
-              </v-row>
-            </div>
-          </v-expand-transition>
+                  <v-col cols="12">
+                    <bs-textarea
+                      v-model="localModel.idpCert"
+                      :label="$t('forms.group.idpCert')"
+                      :hint="$t('forms.group.idpCertHint')"
+                      :disabled="disabled"
+                      rows="6"
+                      class="group-form__idp-cert"
+                    />
+                  </v-col>
+                </v-row>
+              </div>
+            </template>
+          </bs-group-setting-card>
+
+          <slot name="security-rows" />
         </bs-form-section>
       </v-card-text>
 
@@ -428,6 +442,12 @@ export default {
         <v-divider />
         <v-card-actions>
           <v-spacer />
+          <bs-save-outcome
+            :outcome="outcome"
+            :detail="outcomeDetail"
+            class="mr-4"
+            @retry="onSubmit"
+          />
           <v-btn
             elevation="0"
             color="accent"
@@ -505,77 +525,16 @@ export default {
 </template>
 
 <style lang="scss" scoped>
+// The last section of the card keeps a gap above the divider of the save bar
+// (the layout zeroes the padding of `.v-card__text`, and `last` the margin).
+.group-form__security.bs-form-section--last {
+  margin-bottom: 1.5rem;
+}
+
 // A PEM certificate is read line by line: monospace keeps it recognisable.
 .group-form__idp-cert ::v-deep textarea {
   font-family: monospace;
   font-size: 0.75rem;
-}
-
-.module-card {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 1rem;
-  margin-bottom: 0.75rem;
-  background-color: #fff;
-  border: 1px solid rgba(0, 0, 0, 0.12);
-  border-radius: 8px;
-  transition: border-color 0.2s ease;
-
-  &:last-child {
-    margin-bottom: 0;
-  }
-
-  &:hover {
-    border-color: rgba(0, 172, 220, 0.4);
-  }
-
-  &__content {
-    display: flex;
-    align-items: flex-start;
-    gap: 1rem;
-  }
-
-  &__icon {
-    width: 48px;
-    height: 48px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    background-color: rgba(0, 172, 220, 0.1);
-    border-radius: 8px;
-    flex-shrink: 0;
-  }
-
-  &__info {
-    display: flex;
-    flex-direction: column;
-  }
-
-  &__name {
-    font-weight: 500;
-    font-size: 1rem;
-    color: rgba(0, 0, 0, 0.87);
-  }
-
-  &__description {
-    font-size: 0.875rem;
-    color: rgba(0, 0, 0, 0.6);
-    margin-top: 0.25rem;
-  }
-
-  &__hint {
-    font-size: 0.75rem;
-    color: rgba(0, 0, 0, 0.5);
-    margin-top: 0.5rem;
-    display: flex;
-    align-items: center;
-    gap: 0.25rem;
-  }
-
-  &__switch {
-    flex-shrink: 0;
-  }
 }
 
 .danger-zone {

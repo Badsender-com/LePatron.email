@@ -1,14 +1,16 @@
 <script>
-import { mapGetters } from 'vuex';
+import { mapGetters, mapMutations } from 'vuex';
 import { Plug, Copy, Check, ChevronRight } from 'lucide-vue';
 import mixinGroupSwitch from '~/helpers/mixins/mixin-group-switch.js';
 import copyToClipboard from '~/helpers/copy-to-clipboard.js';
 import { CAN, USER } from '~/store/user';
+import { PAGE, SHOW_SNACKBAR } from '~/store/page';
 import { CAPABILITIES } from '../../../shared/access/roles.js';
 import BsFormSection from '~/components/layout/bs-form-section.vue';
 import BsModalConfirm from '~/components/modal-confirm.vue';
 import BsSettingsRow from '~/components/layout/bs-settings-row.vue';
 import BsGroupFeatureSwitch from '~/components/group/feature-switch.vue';
+import BsSaveOutcome from '~/components/layout/bs-save-outcome.vue';
 import BsGroupRetexOption from '~/components/group/retex-option.vue';
 import BsGroupConnectedApplicationsOption from '~/components/group/connected-applications-option.vue';
 import BsGroupMcpAccessSteps from '~/components/group/mcp-access-steps.vue';
@@ -24,6 +26,7 @@ export default {
     BsModalConfirm,
     BsSettingsRow,
     BsGroupFeatureSwitch,
+    BsSaveOutcome,
     BsGroupRetexOption,
     BsGroupConnectedApplicationsOption,
     BsGroupMcpAccessSteps,
@@ -32,9 +35,7 @@ export default {
     LucideCheck: Check,
     LucideChevronRight: ChevronRight,
   },
-  mixins: [
-    mixinGroupSwitch({ field: 'enableMcp', updatedKey: 'mcpAccess.updated' }),
-  ],
+  mixins: [mixinGroupSwitch({ field: 'enableMcp' })],
   data() {
     // A new key redraws the switch from `switchValue`: a confirmation
     // cancelled leaves it as saved.
@@ -64,6 +65,8 @@ export default {
     clearTimeout(this.copiedTimer);
   },
   methods: {
+    // A failed copy is an action, not a setting: a toast.
+    ...mapMutations(PAGE, { showSnackbar: SHOW_SNACKBAR }),
     // Turning it off ends every assistant of the company at once: asked first.
     change(value) {
       if (value) return this.save(true);
@@ -108,6 +111,12 @@ export default {
       {{ $t('mcpAccess.description') }}
     </template>
     <template #header-actions>
+      <!-- The outcome of the switch, read beside it. -->
+      <bs-save-outcome
+        :outcome="outcome"
+        :detail="outcomeDetail"
+        @retry="change(!switchValue)"
+      />
       <bs-group-feature-switch
         :key="switchKey"
         :value="hasModule && switchValue"

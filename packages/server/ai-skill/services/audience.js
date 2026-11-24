@@ -44,6 +44,7 @@ function newItemAudience() {
 }
 
 module.exports = {
+  readsEveryAudience,
   audienceFilter,
   isAvailableTo,
   newItemAudience,

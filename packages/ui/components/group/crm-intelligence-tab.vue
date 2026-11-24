@@ -761,14 +761,6 @@ export default {
   padding-top: 0.5rem;
 }
 
-.modal-actions {
-  display: flex;
-  align-items: center;
-  justify-content: flex-end;
-  gap: 0.5rem;
-  padding: 1rem 0;
-}
-
 .bs-textarea {
   margin-bottom: 1rem;
 

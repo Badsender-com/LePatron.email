@@ -1,54 +1,126 @@
 export default {
+  authCard: {
+    changeAccount: 'Change account',
+    emailIntro: 'Enter the email address of your account.',
+    passwordIntro: 'Enter your password.',
+    next: 'Continue',
+    showPassword: 'Show password',
+    hidePassword: 'Hide password',
+    ssoFailed:
+      'Signing in through your company’s single sign-on (SSO) failed. Try again, or contact its administrator if it keeps failing.',
+    forgotTitle: 'Forgot your password',
+    forgotIntro:
+      'Enter the address of your account: we will send you a link to choose a new password.',
+    sendLink: 'Send the link',
+    linkSentTitle: 'Check your inbox',
+    linkSent:
+      'If an account exists for {email}, a link was just sent to it. It works once.',
+    sendAgain: 'Send the link again',
+    backToLogin: 'Back to sign-in',
+    setTitle: 'Choose your password',
+    setIntro: 'You will use it at each sign-in.',
+    setSubmit: 'Save the password',
+    linkExpiredTitle: 'This link no longer works',
+    askNewLink: 'Ask for a new link',
+  },
   twoFactor: {
     code: {
-      label: 'Code',
+      title: 'Two-step verification',
+      label: 'Verification code',
       submit: 'Verify',
       hints: {
         totp: 'Enter the 6-digit code shown by your authenticator app.',
-        email: 'Enter the 6-digit code sent to you by email.',
+        email: 'Enter the 6-digit code sent to {email}.',
+        recovery: 'Enter one of the recovery codes you saved.',
       },
+      recoveryLabel: 'Recovery code',
       recoveryHint:
-        'Without your verification method? Enter one of your recovery codes.',
+        'Each code works once. You will get new codes after signing in.',
+      useRecovery: 'Use a recovery code',
+      useMethod: {
+        totp: 'Use my app',
+        email: 'Use the code sent by email',
+      },
       incorrect: 'Incorrect code',
       expired: 'This step expired: enter your password again.',
       trustDevice: 'Trust this device for 30 days',
+      trustDeviceHint: 'You will not enter a code again in this browser.',
       resend: 'Send a new code',
+      resendIn: 'Send again in {seconds} s',
       sent: 'A new code was sent to you',
     },
     setup: {
-      intro:
-        'Your company requires two-factor authentication: after your password, you will enter a code.',
-      choose: 'How do you want to get your codes?',
-      methods: {
-        totp: 'An authenticator app on my phone',
-        email: 'A code by email',
+      step: 'Setup · step {step} of 3',
+      title: 'Protect your account',
+      titles: {
+        totp: 'Link your app',
+        email: 'Check your address',
       },
+      intro:
+        'Your company requires two-step verification: after your password, you will enter a code.',
+      choose: 'Verification method',
+      methods: {
+        totp: 'Authenticator app',
+        email: 'Code by email',
+      },
+      methodHints: {
+        totp: 'Google Authenticator, Microsoft Authenticator, 1Password…',
+        email: 'A code at each sign-in, sent to {email}',
+      },
+      recommended: 'Recommended',
       start: 'Continue',
       emailSent:
-        'A code was just sent to you by email: enter it to turn on two-factor authentication.',
-      scan: 'Scan this QR code with your authenticator app (Google Authenticator, Microsoft Authenticator, 1Password…), then enter the code it shows.',
+        'A code was just sent to {email}. Enter it to turn on two-step verification.',
+      emailHint: 'Nothing received? Check your spam folder.',
+      scanIntro: 'Scan the QR code with your app, then enter the code it shows.',
+      scanSteps: {
+        1: 'Open your authenticator app.',
+        2: 'Add an account and scan the QR code.',
+        3: 'Enter the 6-digit code it shows below.',
+      },
       qrCodeAlt: 'Setup QR code',
-      manual: 'Or enter this key in the app:',
+      manual: 'Can’t scan? Enter this key',
+      copyKey: 'Copy',
+      keyCopied: 'Copied',
+      changeMethod: 'Change method',
       confirm: 'Turn on',
     },
     recoveryCodes: {
-      intro:
-        'Each recovery code signs you in once, without your verification method. Keep them somewhere safe: they will not be shown again.',
+      title: 'Keep your recovery codes',
+      intro: 'Without your verification method, each code signs you in once.',
+      introAfterUse:
+        'You used a recovery code: here is a new set, the old ones no longer work.',
+      notShownAgain: 'They will not be shown again.',
+      keepThem: 'Store them in your password manager or download them.',
       copy: 'Copy',
-      copied: 'Codes copied',
-      download: 'Download',
-      noted: 'I have saved my recovery codes',
-      continue: 'Continue',
+      copied: 'Copied',
+      download: 'Download (.txt)',
+      noted: 'I have saved my codes somewhere safe',
+      continue: 'Continue to LePatron',
     },
     group: {
       title: 'Two-factor authentication',
       description:
         'Every member of the company enters a code after their password. Those who have not set it up yet will do so at their next sign-in.',
       switch: 'Require two-factor authentication',
+      on: 'Required',
+      off: 'Not required',
+      progress:
+        'Set up by {n} member out of {total} | Set up by {n} members out of {total}',
       saml: 'This company signs in with SSO: two-factor authentication belongs to its identity provider.',
-      updated: 'Setting saved',
-      required: 'Required of every member.',
-      notRequired: 'Not required.',
+      confirmOn: {
+        title: 'Require two-factor authentication?',
+        pending:
+          '{n} member out of {total} has not set it up yet. | {n} members out of {total} have not set it up yet.',
+        everyone:
+          'Each member will set it up at their next sign-in. Sessions already open are not interrupted.',
+        action: 'Require two-factor authentication',
+      },
+      confirmOff: {
+        title: 'Stop requiring two-factor authentication?',
+        body: 'Members will be able to sign in with their password alone.',
+        action: 'Stop requiring',
+      },
       managedByTech: 'Only a technical administrator can change this setting.',
     },
     users: {
@@ -73,6 +145,12 @@ export default {
     emailSent: 'An email was sent',
   },
   global: {
+    saveOutcome: {
+      saved: 'Saved',
+      failed: 'Change not saved.',
+      retry: 'Try again',
+    },
+    states: { on: 'On', off: 'Off' },
     errors: {
       typeCampagneRequired: 'Campaign type is required.',
       errorOccured: 'Oops! An error has occurred :(',
@@ -156,6 +234,7 @@ export default {
     newTemplate: 'Add a template',
     newFolder: 'New folder',
     parentLocation: 'Location',
+    company: 'Company | Companies',
     template: 'Template | Templates',
     mailing: 'Email | Emails',
     newMailing: 'New email',
@@ -236,15 +315,17 @@ export default {
   forms: {
     group: {
       sections: {
+        security: 'Security',
+        securityDescription: 'Members’ access to the workspaces and how they sign in.',
         generalInfo: 'General information',
         imageHosting: 'Image hosting',
         authentication: 'Authentication',
         authenticationDescription: 'Configure SAML authentication to allow your users to login with their enterprise account.',
         permissions: 'Permissions',
-        permissionsDescription: 'Manage user access rights to different workspaces.',
         companyInfo: 'Company information',
         companyInfoDescription: 'Enter the main information about the company.',
       },
+      saml: { name: 'SAML authentication', on: 'On', off: 'Off' },
       enableSaml: 'Enable SAML authentication',
       entryPointHint: 'Login URL provided by your identity provider',
       issuerHint: 'Unique identifier for your application at the provider',
@@ -459,14 +540,21 @@ export default {
     filters: {
       title: 'Filters',
       createdBetween: 'Created between',
+      resetSearch: 'Reset the search',
+      datePlaceholder: 'MM/DD/YYYY',
+      to: 'to',
+      allTemplates: 'All templates',
+      allTags: 'All tags',
       updatedBetween: 'Updated between',
       and: 'and',
-      searchPlaceholder: 'Search by name...',
+      searchPlaceholder: 'Search an email by name',
       startDate: 'Start date',
       endDate: 'End date',
     },
     search: {
-      scope: 'Search in',
+      scope: 'In',
+      allWorkspacesHint:
+        'Results from your {n} workspaces. The Location column shows where each email is.',
       currentFolder: 'Current folder',
       allWorkspaces: 'All my workspaces',
       location: 'Location',
@@ -754,10 +842,6 @@ export default {
       emptyKey: 'Key is required',
       duplicateKey: 'This key is duplicated',
     },
-    snackbars: {
-      updated: 'Tracking configuration saved.',
-      error: 'An error occurred while saving.',
-    },
     builder: {
       requiredMissing: 'Required tracking parameters are missing',
       requiredMissingDescription:
@@ -823,7 +907,6 @@ export default {
       'The rating and the comment of a feedback are always shared with the platform company, whether the retex is allowed or not.',
     offForgets:
       'Turning it off erases the retex the company\'s users already sent, open or closed, and the session summaries kept with older feedback. Those a consultant of the platform company writes while working for it stay: they belong to the platform company.',
-    updated: 'Retex updated',
   },
   oauthConsent: {
     claimedName: '"{client}"',
@@ -1029,7 +1112,6 @@ export default {
     offTitle: 'Turn MCP access off?',
     offConfirm:
       'Every assistant connected to the accounts of {group} will be disconnected at once. Turning it back on reconnects none: each user will connect theirs again.',
-    updated: 'MCP access updated',
   },
   crmIntelligence: {
     title: 'CRM Intelligence',
@@ -1614,6 +1696,8 @@ export default {
       sectionDescription:
         'Lets your team set a subject, a planned send date and an email type on each email, instead of retyping them on every send.',
       enabled: 'Enable email metadata',
+      on: 'On',
+      off: 'Off',
       enabledHint:
         'While the option is off, these fields appear nowhere and the API refuses them; data already entered is kept.',
       taxonomyAction: 'Manage email types',
@@ -1622,7 +1706,6 @@ export default {
     },
     snackbars: {
       invalid: 'The settings sent were not accepted.',
-      updated: 'Email Builder settings updated',
       error: 'Could not update the settings',
     },
   },
@@ -2622,11 +2705,14 @@ export default {
       openToAll: 'Open it to all companies',
       openToAllNotice:
         'This item opens to all companies as soon as it is published.',
-      activateBodyMinor: 'Activating this minor version makes it immutable and immediately changes the doctrine features consume. Changelog and notes are pre-filled from the draft (optional for a minor).',
+      activateBodyMinor: 'Activating this minor version makes it immutable and immediately changes the doctrine features consume. Changelog and release notes are required.',
       changelog: 'Changelog',
       changelogPlaceholder:
         'What changes vs the previous version — e.g. "Added the urgency rule, reworded the length criterion"',
       releaseNotes: 'Release notes',
+      releaseNotesHint:
+        'What changes for whoever uses this item, in {max} characters at most: every company that reads it will see it.',
+      releaseNotesTooLong: 'No more than {max} characters.',
       releaseNotesPlaceholder:
         'What to know about this version — e.g. "Tested on FR promo emails only; exceptions section to validate in the field"',
       outputFormatNote:

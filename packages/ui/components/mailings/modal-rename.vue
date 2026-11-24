@@ -22,7 +22,7 @@ export default {
 
 <template>
   <v-dialog v-model="show" class="bs-mailings-modal-rename" width="500">
-    <v-card flat tile>
+    <v-card>
       <v-card-title>
         {{ $t(`mailings.rename`) }}
       </v-card-title>
@@ -41,7 +41,7 @@ export default {
           class="form-input"
         />
       </v-card-text>
-      <v-divider class="mt-4" />
+      <v-divider />
       <v-card-actions>
         <v-spacer />
         <v-btn text color="primary" @click="close">

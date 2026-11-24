@@ -91,7 +91,7 @@ export default {
         this.users = groupUsers.items;
       } catch (error) {
         this.showSnackbar({
-          text: this.$t('snackbars.userFetchError'),
+          text: this.$t('snackbars.usersFetchError'),
           color: 'error',
         });
         this.closeDialog();
@@ -109,7 +109,7 @@ export default {
     class="bs-mailings-modal-rename"
     width="500"
   >
-    <v-card flat tile>
+    <v-card>
       <v-card-title>
         {{ $t('mailings.transfer.label') }}
       </v-card-title>

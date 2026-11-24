@@ -6,6 +6,7 @@ const {
 } = require('../ai-skill/repositories/expertise.repository.js');
 const { normalizeScopes } = require('../ai-skill/services/expertise-scope.js');
 const { versionLabel } = require('../ai-skill/services/version-helpers.js');
+const { publishedAtOf } = require('./mcp-catalog-dates.js');
 const {
   SkillCategoryValues,
 } = require('../ai-skill/constant/skill-constants.js');
@@ -56,6 +57,12 @@ const FIND_OUTPUT = z.object({
       expertiseId: z.string(),
       title: z.string(),
       version: z.string(),
+      publishedAt: z
+        .string()
+        .nullable()
+        .describe(
+          'When this version was published, in UTC; null for a draft, or when it was never recorded.'
+        ),
       draft: z.boolean().optional(),
       uri: z.string(),
       openRetex: z
@@ -123,6 +130,7 @@ async function findExpertises({ user, group, drafts }, args) {
       expertiseId: expertise.expertiseId,
       title: expertise.title,
       version: versionLabel(expertise),
+      publishedAt: publishedAtOf(expertise, expertise.draft),
       ...(expertise.draft && { draft: true }),
       uri: uriOf(expertise.expertiseId),
     })),

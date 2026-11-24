@@ -1,54 +1,129 @@
 export default {
+  authCard: {
+    changeAccount: 'Changer de compte',
+    emailIntro: 'Saisissez l’adresse email de votre compte.',
+    passwordIntro: 'Saisissez votre mot de passe.',
+    next: 'Continuer',
+    showPassword: 'Afficher le mot de passe',
+    hidePassword: 'Masquer le mot de passe',
+    ssoFailed:
+      'La connexion par l’authentification unique (SSO) de votre entreprise a échoué. Réessayez, ou contactez son administrateur si cela persiste.',
+    forgotTitle: 'Mot de passe oublié',
+    forgotIntro:
+      'Saisissez l’adresse de votre compte : nous vous enverrons un lien pour choisir un nouveau mot de passe.',
+    sendLink: 'Envoyer le lien',
+    linkSentTitle: 'Vérifiez votre boîte mail',
+    linkSent:
+      'Si un compte existe pour {email}, un lien vient d’y être envoyé. Il sert une seule fois.',
+    sendAgain: 'Renvoyer le lien',
+    backToLogin: 'Retour à la connexion',
+    setTitle: 'Choisissez votre mot de passe',
+    setIntro: 'Vous l’utiliserez à chaque connexion.',
+    setSubmit: 'Enregistrer le mot de passe',
+    linkExpiredTitle: 'Ce lien n’est plus valable',
+    askNewLink: 'Demander un nouveau lien',
+  },
   twoFactor: {
     code: {
-      label: 'Code',
+      title: 'Vérification en deux étapes',
+      label: 'Code de vérification',
       submit: 'Valider',
       hints: {
         totp: 'Saisissez le code à 6 chiffres affiché par votre application d’authentification.',
-        email: 'Saisissez le code à 6 chiffres reçu par email.',
+        email: 'Saisissez le code à 6 chiffres envoyé à {email}.',
+        recovery: 'Saisissez l’un des codes de secours que vous avez notés.',
       },
+      recoveryLabel: 'Code de secours',
       recoveryHint:
-        'Sans votre méthode de vérification ? Saisissez l’un de vos codes de secours.',
+        'Chaque code ne sert qu’une fois. De nouveaux codes vous seront donnés après la connexion.',
+      useRecovery: 'Utiliser un code de secours',
+      useMethod: {
+        totp: 'Utiliser mon application',
+        email: 'Utiliser le code reçu par email',
+      },
       incorrect: 'Code incorrect',
       expired: 'Étape expirée : saisissez de nouveau votre mot de passe.',
       trustDevice: 'Faire confiance à cet appareil pendant 30 jours',
+      trustDeviceHint: 'Vous ne saisirez plus de code sur ce navigateur.',
       resend: 'Renvoyer un code',
+      resendIn: 'Renvoyer dans {seconds} s',
       sent: 'Un nouveau code vous a été envoyé',
     },
     setup: {
-      intro:
-        'Votre entreprise demande une double authentification : après votre mot de passe, vous saisirez un code.',
-      choose: 'Comment recevoir vos codes ?',
-      methods: {
-        totp: 'Une application d’authentification sur mon téléphone',
-        email: 'Un code par email',
+      step: 'Configuration · étape {step} sur 3',
+      title: 'Protégez votre compte',
+      titles: {
+        totp: 'Associez votre application',
+        email: 'Vérifiez votre adresse',
       },
+      intro:
+        'Votre entreprise exige une vérification en deux étapes : après votre mot de passe, vous saisirez un code.',
+      choose: 'Méthode de vérification',
+      methods: {
+        totp: 'Application d’authentification',
+        email: 'Code par email',
+      },
+      methodHints: {
+        totp: 'Google Authenticator, Microsoft Authenticator, 1Password…',
+        email: 'Un code à chaque connexion, envoyé à {email}',
+      },
+      recommended: 'Recommandé',
       start: 'Continuer',
       emailSent:
-        'Un code vient de vous être envoyé par email : saisissez-le pour activer la double authentification.',
-      scan: 'Scannez ce QR code avec votre application d’authentification (Google Authenticator, Microsoft Authenticator, 1Password…), puis saisissez le code qu’elle affiche.',
+        'Un code vient d’être envoyé à {email}. Saisissez-le pour activer la vérification en deux étapes.',
+      emailHint: 'Rien reçu ? Regardez dans vos courriers indésirables.',
+      scanIntro:
+        'Scannez le QR code avec votre application, puis saisissez le code qu’elle affiche.',
+      scanSteps: {
+        1: 'Ouvrez votre application d’authentification.',
+        2: 'Ajoutez un compte et scannez le QR code.',
+        3: 'Saisissez ci-dessous le code à 6 chiffres affiché.',
+      },
       qrCodeAlt: 'QR code de configuration',
-      manual: 'Ou saisissez cette clé dans l’application :',
+      manual: 'Impossible de scanner ? Saisissez cette clé',
+      copyKey: 'Copier',
+      keyCopied: 'Copié',
+      changeMethod: 'Changer de méthode',
       confirm: 'Activer',
     },
     recoveryCodes: {
+      title: 'Gardez vos codes de secours',
       intro:
-        'Chaque code de secours vous connecte une fois, sans votre méthode de vérification. Gardez-les en lieu sûr : ils ne seront plus affichés.',
+        'Sans votre méthode de vérification, chaque code vous connecte une fois.',
+      introAfterUse:
+        'Vous avez utilisé un code de secours : voici une nouvelle série, les anciens ne marchent plus.',
+      notShownAgain: 'Ils ne seront plus affichés.',
+      keepThem:
+        'Rangez-les dans votre gestionnaire de mots de passe ou téléchargez-les.',
       copy: 'Copier',
-      copied: 'Codes copiés',
-      download: 'Télécharger',
-      noted: 'J’ai noté mes codes de secours',
-      continue: 'Continuer',
+      copied: 'Copié',
+      download: 'Télécharger (.txt)',
+      noted: 'J’ai noté mes codes en lieu sûr',
+      continue: 'Continuer vers LePatron',
     },
     group: {
       title: 'Double authentification',
       description:
         'Chaque membre de l’entreprise saisit un code après son mot de passe. Ceux qui ne l’ont pas encore configurée le feront à leur prochaine connexion.',
       switch: 'Exiger la double authentification',
+      on: 'Exigée',
+      off: 'Non exigée',
+      progress:
+        'Configurée par {n} membre sur {total} | Configurée par {n} membres sur {total}',
       saml: 'Cette entreprise se connecte en SSO : la double authentification relève de son fournisseur d’identité.',
-      updated: 'Paramètre enregistré',
-      required: 'Exigée pour tous les membres.',
-      notRequired: 'Non exigée.',
+      confirmOn: {
+        title: 'Exiger la double authentification ?',
+        pending:
+          '{n} membre sur {total} ne l’a pas encore configurée. | {n} membres sur {total} ne l’ont pas encore configurée.',
+        everyone:
+          'Chaque membre la configurera à sa prochaine connexion. Les sessions déjà ouvertes ne sont pas interrompues.',
+        action: 'Exiger la double authentification',
+      },
+      confirmOff: {
+        title: 'Ne plus exiger la double authentification ?',
+        body: 'Les membres pourront se connecter avec leur seul mot de passe.',
+        action: 'Ne plus exiger',
+      },
       managedByTech: 'Seul un administrateur technique peut modifier ce paramètre.',
     },
     users: {
@@ -73,6 +148,12 @@ export default {
     emailSent: 'L\'email a bien été envoyé',
   },
   global: {
+    saveOutcome: {
+      saved: 'Enregistré',
+      failed: 'Modification non enregistrée.',
+      retry: 'Réessayer',
+    },
+    states: { on: 'Activé', off: 'Désactivé' },
     errors: {
       typeCampagneRequired: 'Le type de campagne est requis.',
       errorOccured: 'Oups ! Une erreur est survenue :(',
@@ -157,6 +238,7 @@ export default {
     newTemplate: 'Ajouter un template',
     newFolder: 'Nouveau dossier',
     parentLocation: 'Destination',
+    company: 'Entreprise | Entreprises',
     template: 'Template | Templates',
     mailing: 'Email | Emails',
     newMailing: 'Nouvel email',
@@ -237,15 +319,17 @@ export default {
   forms: {
     group: {
       sections: {
+        security: 'Sécurité',
+        securityDescription: 'L’accès des membres aux workspaces et la façon dont ils se connectent.',
         generalInfo: 'Informations générales',
         imageHosting: 'Hébergement des images',
         authentication: 'Authentification',
         authenticationDescription: 'Configurez l\'authentification SAML pour permettre à vos utilisateurs de se connecter avec leur compte d\'entreprise.',
         permissions: 'Permissions',
-        permissionsDescription: 'Gérez les droits d\'accès des utilisateurs aux différents workspaces.',
         companyInfo: 'Informations de l\'entreprise',
         companyInfoDescription: 'Renseignez les informations principales de l\'entreprise.',
       },
+      saml: { name: 'Authentification SAML', on: 'Activée', off: 'Désactivée' },
       enableSaml: 'Activer l\'authentification SAML',
       entryPointHint: 'URL de connexion fournie par votre fournisseur d\'identité',
       issuerHint: 'Identifiant unique de votre application chez le fournisseur',
@@ -465,15 +549,22 @@ export default {
     list: 'Rechercher dans la liste d\'emails',
     filters: {
       title: 'Filtres',
-      createdBetween: 'Créé entre le',
-      updatedBetween: 'Mis à jour entre le',
+      createdBetween: 'Créé entre',
+      resetSearch: 'Réinitialiser la recherche',
+      datePlaceholder: 'JJ/MM/AAAA',
+      to: 'au',
+      allTemplates: 'Tous les templates',
+      allTags: 'Tous les tags',
+      updatedBetween: 'Mis à jour entre',
       and: 'et le',
-      searchPlaceholder: 'Rechercher par nom...',
+      searchPlaceholder: 'Rechercher un email par nom',
       startDate: 'Date début',
       endDate: 'Date fin',
     },
     search: {
-      scope: 'Rechercher dans',
+      scope: 'Dans',
+      allWorkspacesHint:
+        'Résultats dans vos {n} espaces de travail. La colonne Emplacement indique où se trouve chaque email.',
       currentFolder: 'Dossier courant',
       allWorkspaces: 'Tous mes espaces de travail',
       location: 'Emplacement',
@@ -765,10 +856,6 @@ export default {
     validation: {
       emptyKey: 'La clé est requise',
       duplicateKey: 'Cette clé est dupliquée',
-    },
-    snackbars: {
-      updated: 'Configuration de tracking enregistrée.',
-      error: 'Erreur lors de l\'enregistrement.',
     },
     builder: {
       requiredMissing: 'Paramètres de tracking obligatoires manquants',
@@ -1201,6 +1288,8 @@ export default {
       sectionDescription:
         'Permet de renseigner un objet, une date d\'envoi prévue et une typologie sur chaque email, au lieu de les ressaisir à chaque envoi.',
       enabled: 'Activer les métadonnées des emails',
+      on: 'Activées',
+      off: 'Désactivées',
       enabledHint:
         'Lorsque l\'option est désactivée, ces champs n\'apparaissent nulle part et l\'API les refuse ; les données déjà saisies sont conservées.',
       taxonomyAction: 'Gérer les typologies',
@@ -1209,7 +1298,6 @@ export default {
     },
     snackbars: {
       invalid: 'Les réglages envoyés n\'ont pas été acceptés.',
-      updated: 'Réglages Email Builder mis à jour',
       error: 'La mise à jour des réglages a échoué',
     },
   },
@@ -1359,7 +1447,6 @@ export default {
       'La note et le commentaire des avis sont toujours partagés avec l\'entreprise plateforme, que le retour d\'expérience soit autorisé ou non.',
     offForgets:
       'Le désactiver efface les retours d\'expérience déjà envoyés par les utilisateurs de l\'entreprise, ouverts ou clos, et les résumés de session gardés avec les anciens avis. Ceux qu\'un consultant de l\'entreprise plateforme écrit en travaillant pour elle restent : ils appartiennent à l\'entreprise plateforme.',
-    updated: 'Retours d\'expérience mis à jour',
   },
   oauthConsent: {
     claimedName: '« {client} »',
@@ -1569,7 +1656,6 @@ export default {
     offTitle: 'Couper l\'accès MCP ?',
     offConfirm:
       'Tous les assistants connectés aux comptes de l\'entreprise {group} seront déconnectés tout de suite. Le réactiver ne les reconnectera pas : chaque utilisateur devra connecter le sien à nouveau.',
-    updated: 'Accès MCP mis à jour',
   },
   crmIntelligence: {
     title: 'CRM Intelligence',
@@ -2653,11 +2739,14 @@ export default {
       openToAll: 'L\'ouvrir à toutes les entreprises',
       openToAllNotice:
         'Cette fiche sera ouverte à toutes les entreprises dès sa publication.',
-      activateBodyMinor: 'Activer cette version mineure la rend immuable et change immédiatement la doctrine consommée par les fonctionnalités. Changelog et notes pré-remplis depuis le brouillon (facultatifs pour une mineure).',
+      activateBodyMinor: 'Activer cette version mineure la rend immuable et change immédiatement la doctrine consommée par les fonctionnalités. Le changelog et les notes de version sont obligatoires.',
       changelog: 'Changelog',
       changelogPlaceholder:
         'Ce qui change par rapport à la version précédente — ex. « Ajout de la règle d\'urgence, reformulation du critère de longueur »',
       releaseNotes: 'Notes de version',
+      releaseNotesHint:
+        'Ce qui change pour qui utilise cet élément, en {max} caractères au plus : chaque société qui le lit la verra.',
+      releaseNotesTooLong: 'Pas plus de {max} caractères.',
       releaseNotesPlaceholder:
         'À savoir sur cette version — ex. « Testée uniquement sur les emails promo FR ; section exceptions à valider terrain »',
       outputFormatNote:

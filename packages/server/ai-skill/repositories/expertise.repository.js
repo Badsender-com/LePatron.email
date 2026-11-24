@@ -289,6 +289,7 @@ function projectVersion(doc, version) {
     isTransversal: !!doc.isTransversal,
     versionMajor: version.versionMajor,
     versionMinor: version.versionMinor,
+    activatedAt: version.activatedAt || null,
     body: version.body,
     examplesGood: version.examplesGood || [],
     examplesBad: version.examplesBad || [],

@@ -63,6 +63,15 @@ const withMocks = (options, mocks) => ({
   },
 });
 
+// The card and the switch of the design system, rendered: the switch is
+// what the user clicks.
+const settingCard = componentOf(
+  'packages/ui/components/group/setting-card.vue'
+);
+const featureSwitch = componentOf(
+  'packages/ui/components/group/feature-switch.vue'
+);
+
 const cardOf = (mocks) =>
   withMocks(
     componentOf(FILE, {
@@ -72,6 +81,8 @@ const cardOf = (mocks) =>
           `/groups/${groupId}/connected-applications`,
       },
       '~/components/modal-confirm.vue': BsModalConfirm,
+      '~/components/group/setting-card.vue': settingCard,
+      '~/components/group/feature-switch.vue': featureSwitch,
     }),
     mocks
   );
@@ -247,6 +258,9 @@ describe('the MCP module in the company form', () => {
         '~/components/form/bs-select': {},
         '~/components/layout/bs-form-section.vue': {},
         '~/components/group/mcp-module-option.vue': cardOf(mocks),
+        '~/components/group/setting-card.vue': settingCard,
+        '~/components/group/feature-switch.vue': featureSwitch,
+        '~/components/layout/bs-save-outcome.vue': {},
         '~/helpers/escape-html': { escapeHtml: (text) => text },
         'lucide-vue': {},
         '../../../shared/access/roles.js': {

@@ -26,7 +26,7 @@ const isTask = (version) => natureOf(version) === SkillNatures.TASK;
 // a skill and its arguments, a read runs it.
 const LISTED = {
   doc: ['skillId', 'title', 'description', 'servedToAssistants'],
-  version: ['nature', 'inputSchemaId', 'inputTemplate'],
+  version: ['nature', 'inputSchemaId', 'inputTemplate', 'updatedAt'],
 };
 const READ = {
   doc: LISTED.doc,

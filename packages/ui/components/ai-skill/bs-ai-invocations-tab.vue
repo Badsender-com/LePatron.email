@@ -318,6 +318,7 @@ export default {
       </v-menu>
       <v-switch
         v-model="filters.includeNonProductive"
+        color="accent"
         :label="$t('aiSkills.filters.includeNonProductive')"
         dense
         hide-details
@@ -377,7 +378,9 @@ export default {
       <template #item.provider="{ item }">
         <span class="text-caption">
           {{ item.provider || '—' }}
-          <span v-if="item.model" class="text--secondary">· {{ item.model }}</span>
+          <span v-if="item.model" class="text--secondary"
+            >· {{ item.model }}</span
+          >
         </span>
       </template>
       <template #no-data>
@@ -469,13 +472,6 @@ export default {
 }
 .filter-field {
   max-width: 220px;
-}
-.modal-actions {
-  display: flex;
-  align-items: center;
-  justify-content: flex-end;
-  gap: 0.5rem;
-  padding: 1rem 0 0;
 }
 .code-block {
   background: #f5f5f5;

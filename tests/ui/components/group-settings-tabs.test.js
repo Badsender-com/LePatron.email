@@ -10,6 +10,7 @@
 
 const { mountSfc, settle } = require('../../helpers/mount-sfc.js');
 const groupChanges = require('../../../packages/ui/helpers/group-changes.js');
+const mixinInlineOutcome = require('../../../packages/ui/helpers/mixins/mixin-inline-outcome.js');
 
 // The company as the tab loaded it: every switch and module on, so that one
 // sent back would show.
@@ -46,12 +47,14 @@ function mountTab(file, extraImports) {
     props: { group: loaded() },
     mocks: { $t: (key) => key, $axios: { $put } },
     imports: {
-      vuex: { mapMutations: () => ({ showSnackbar: jest.fn() }) },
       'lucide-vue': {},
       '~/helpers/api-routes.js': {
         groupsItem: ({ groupId }) => `/groups/${groupId}`,
       },
       '~/helpers/group-changes.js': groupChanges,
+      '~/helpers/mixins/mixin-inline-outcome.js': mixinInlineOutcome,
+      '~/components/group/feature-switch.vue': {},
+      '~/components/layout/bs-save-outcome.vue': {},
       ...extraImports,
     },
   });
@@ -62,7 +65,6 @@ const exportTab = () =>
   mountTab('packages/ui/components/group/export-options-tab.vue', {
     vuelidate: require('vuelidate'),
     'vuelidate/lib/validators': require('vuelidate/lib/validators'),
-    '~/store/page': { PAGE: 'page', SHOW_SNACKBAR: 'SHOW_SNACKBAR' },
     '~/components/group/ftp-settings': {},
     '~/components/form/bs-text-field': {},
     '~/components/form/bs-select': {},
@@ -71,8 +73,8 @@ const exportTab = () =>
 
 const trackingTab = () =>
   mountTab('packages/ui/components/group/tracking-params-tab.vue', {
-    '~/store/page.js': { PAGE: 'page', SHOW_SNACKBAR: 'SHOW_SNACKBAR' },
     '~/components/form/bs-text-field.vue': {},
+    '~/components/layout/bs-settings-row.vue': {},
   });
 
 describe('the export options tab', () => {
@@ -98,6 +100,7 @@ describe('the export options tab', () => {
     await vm.onSubmit();
 
     expect($put).not.toHaveBeenCalled();
+    expect(vm.outcome).toBe('saved');
   });
 });
 

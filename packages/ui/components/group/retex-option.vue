@@ -1,16 +1,15 @@
 <script>
 import mixinGroupSwitch from '~/helpers/mixins/mixin-group-switch.js';
 import BsSettingsRow from '~/components/layout/bs-settings-row.vue';
+import BsSaveOutcome from '~/components/layout/bs-save-outcome.vue';
 
 // Retex (ADR 0012, ADR 0021): whether the company's users may report a
 // retex, a divergence or a complement, to the platform company. Each user
 // still approves each one. Saved on its own, like the two-factor option.
 export default {
   name: 'BsGroupRetexOption',
-  components: { BsSettingsRow },
-  mixins: [
-    mixinGroupSwitch({ field: 'allowRetex', updatedKey: 'retex.updated' }),
-  ],
+  components: { BsSettingsRow, BsSaveOutcome },
+  mixins: [mixinGroupSwitch({ field: 'allowRetex' })],
 };
 </script>
 
@@ -22,6 +21,13 @@ export default {
       <span class="d-block mt-1">{{ $t('retex.alwaysShared') }}</span>
       <span class="d-block">{{ $t('retex.offForgets') }}</span>
     </template>
+    <!-- The outcome of the switch, read beside it. -->
+    <bs-save-outcome
+      class="mr-3"
+      :outcome="outcome"
+      :detail="outcomeDetail"
+      @retry="save(!switchValue)"
+    />
     <v-switch
       :input-value="switchValue"
       aria-labelledby="retex-option-title"
