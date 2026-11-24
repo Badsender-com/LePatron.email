@@ -5,7 +5,7 @@
  * without touching the one given, count what changed and give the request.
  * Covered by tests/ui/helpers/taxonomy-crossings.test.js.
  *
- * "Everywhere, future values included" is an empty availability (ADR-0014):
+ * "Everywhere, future values included" is an empty availability (ADR-0032):
  * a value offered nowhere cannot be said, it is deactivated instead.
  */
 
