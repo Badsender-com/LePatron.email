@@ -11,7 +11,7 @@ const ERROR_CODES = require('../constant/error-codes.js');
 const { StandardDimensionNames } = require('../constant/taxonomy-type.js');
 
 /**
- * The company dimensions an email carries (ADR-0014): one list of values, at most
+ * The company dimensions an email carries (ADR-0032): one list of values, at most
  * one per dimension, every one optional. The email type and the trigger keep
  * their own fields, so their values never travel in this list.
  *
