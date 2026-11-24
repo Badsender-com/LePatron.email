@@ -7,6 +7,7 @@ const {
   newRowId,
   areUsableWidths,
 } = require('../../../../../../shared/block-builder/composition.js');
+const { ListboxMixin } = require('./listbox.js');
 
 // Rows: selecting one, and setting its structure.
 //
@@ -29,7 +30,14 @@ const PRESETS = [
   { key: 'quarters', widths: [25, 25, 25, 25] },
 ];
 
+// The strings the panel builds with variables, rather than through the
+// template: the translations test reads plain keys off the template, and these
+// it would miss.
+const ROW_LABEL_KEYS = ['block-builder-row-label', 'block-builder-row-label-one'];
+
 const RowSettingsMixin = {
+  mixins: [ListboxMixin],
+
   computed: {
     presets() {
       return PRESETS;
@@ -49,6 +57,12 @@ const RowSettingsMixin = {
       const row = this.selectedRow;
       return row ? row.columns.map((column) => column.width) : [];
     },
+
+    selectedRowIndex() {
+      return (this.state.rows || []).findIndex(
+        (row) => row.id === this.selectedRowId
+      );
+    },
   },
 
   methods: {
@@ -62,6 +76,28 @@ const RowSettingsMixin = {
 
     presetLabel(preset) {
       return this.vm.t(`block-builder-structure-${preset.key}`);
+    },
+
+    // "Row 2 · 3 columns": the position, and the structure in words a screen
+    // reader can say.
+    rowLabel(row, index) {
+      const count = row.columns.length;
+      const key =
+        count === 1 ? 'block-builder-row-label-one' : 'block-builder-row-label';
+      return this.vm.t(key, { n: index + 1, count });
+    },
+
+    rowTabIndex(index) {
+      return this.listboxTabIndex(index, this.selectedRowIndex);
+    },
+
+    onRowKeydown(event, index) {
+      const rows = this.state.rows || [];
+      this.onListboxKeydown(event, index, {
+        length: rows.length,
+        select: (at) => this.selectRow(rows[at].id),
+        options: '.bb-modal__rows [role="option"]',
+      });
     },
 
     // The two selections are exclusive, and that is enforced here rather than
@@ -163,6 +199,7 @@ const RowSettingsMixin = {
 module.exports = {
   RowSettingsMixin,
   PRESETS,
+  ROW_LABEL_KEYS,
   MAX_COLUMNS,
   MIN_COLUMN_WIDTH,
 };
