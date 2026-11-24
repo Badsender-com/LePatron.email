@@ -176,13 +176,6 @@ const BlockBuilderModalComponent = Vue.component('BlockBuilderModal', {
     selectedElementId() {
       this.applySelectionHighlight();
     },
-    // The toggle decides whether the composition's own rules apply, so it has
-    // to reach the preview. Only the derived sheet is rewritten: replacing the
-    // body here would refetch every image on each flip of the toggle.
-    previewWidth() {
-      const doc = this.previewDocument();
-      if (doc) this.renderDerivedCss(doc);
-    },
   },
   mounted() {
     this.vm.toggleBlockBuilderModal = this.handleToggle;
