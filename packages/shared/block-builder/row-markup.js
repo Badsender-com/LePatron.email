@@ -13,8 +13,16 @@ const columnTemplates = require('./components/column.compiled.js');
 const rowTemplates = require('./components/row.compiled.js');
 
 const renderRow = defineTemplate(rowTemplates.default);
-const renderFilledColumn = defineTemplate(columnTemplates.filled);
-const renderEmptyColumn = defineTemplate(columnTemplates.empty);
+const COLUMN_VARIANTS = {
+  stacked: {
+    filled: defineTemplate(columnTemplates.filled),
+    empty: defineTemplate(columnTemplates.empty),
+  },
+  alone: {
+    filled: defineTemplate(columnTemplates.filledAlone),
+    empty: defineTemplate(columnTemplates.emptyAlone),
+  },
+};
 
 /**
  * The elements of a column, resolved once each. A column is empty exactly when
@@ -78,6 +86,7 @@ function generateRow(row, options) {
   if (resolved.every((elements) => elements.length === 0)) return '';
 
   const stackClass = stackClassFor(columns.length);
+  const variants = stackClass ? COLUMN_VARIANTS.stacked : COLUMN_VARIANTS.alone;
 
   const cells = columns.map((column, index) => {
     const elements = resolved[index];
@@ -87,8 +96,8 @@ function generateRow(row, options) {
       content: renderColumnContent(elements),
     };
     return elements.length === 0
-      ? renderEmptyColumn(values)
-      : renderFilledColumn(values);
+      ? variants.empty(values)
+      : variants.filled(values);
   });
 
   return renderRow({ cells: cells.join('') });

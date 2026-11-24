@@ -40,6 +40,13 @@ describe('the row contract', () => {
     cells.forEach((cell) => expect(cell).toContain('class="lp-stack"'));
   });
 
+  // Nothing to stack, and nothing to ship: not even an empty attribute.
+  it('gives the cell of a row of one column no class attribute', () => {
+    const [cell] = cellsOf(generateRow(row([100, [text('a')]])));
+
+    expect(cell).not.toContain('class=');
+  });
+
   it('aligns every cell to the top, filled or empty', () => {
     const cells = cellsOf(
       generateRow(row([33, [text('a')]], [33, []], [34, [text('c')]]))

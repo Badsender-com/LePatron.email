@@ -15,6 +15,10 @@
 // several clients, taking the width with it. A zero-sized non-breaking space
 // holds it open without drawing a line.
 //
+// `stacks` picks between a cell that carries the stacking class and one with
+// no `class` attribute at all: a row of one column has nothing to stack, and an
+// empty `class=""` would ship in every email for nothing.
+//
 // `content` is the one slot in this package that is not escaped: it holds
 // markup the GENERATOR built. See slot-contexts.js, and note the `kind` in the
 // manifest beside this file — an element may not declare that context.
@@ -23,17 +27,18 @@
 defineProps({
   width: String,
   content: String,
-  // The class that makes this cell stack on a phone. Empty for a row of one
-  // column, which has nothing to stack.
+  // The class that makes this cell stack on a phone. Only rendered by the
+  // variants that stack.
   stackClass: String,
   // Fixed at compile time by the variant, never a stored value.
   filled: Boolean,
+  stacks: Boolean,
 });
 </script>
 
 <template>
   <td
-    v-if="filled"
+    v-if="filled && stacks"
     :width="width"
     :class="stackClass"
     valign="top"
@@ -41,11 +46,21 @@ defineProps({
   >
     {{ content }}
   </td>
+  <td v-else-if="filled" :width="width" valign="top" :style="`width:${width};`">
+    {{ content }}
+  </td>
+  <!-- prettier-ignore -->
+  <td
+    v-else-if="stacks"
+    :width="width"
+    :class="stackClass"
+    valign="top"
+    :style="`width:${width}; font-size:0; line-height:0;`"
+  >&nbsp;</td>
   <!-- prettier-ignore -->
   <td
     v-else
     :width="width"
-    :class="stackClass"
     valign="top"
     :style="`width:${width}; font-size:0; line-height:0;`"
   >&nbsp;</td>
