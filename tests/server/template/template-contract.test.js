@@ -104,3 +104,49 @@ describe('template contract', () => {
     });
   });
 });
+
+// Review of the stack: the contract is read on user requests, so a malformed
+// template must not hold the server. Each read goes through the markup once.
+describe('template contract of a malformed template', () => {
+  let readTemplateContract;
+
+  beforeAll(() => {
+    ({
+      readTemplateContract,
+    } = require('../../../packages/server/template/template-contract.js'));
+  });
+
+  const quickly = (markup) => {
+    const started = Date.now();
+    readTemplateContract(markup);
+    return Date.now() - started;
+  };
+  const LARGE = 400000;
+
+  it('reads an unclosed definition in linear time', () => {
+    expect(quickly(`<style>${'a'.repeat(LARGE)}{</style>`)).toBeLessThan(1000);
+  });
+
+  it('reads unclosed style blocks and comments in linear time', () => {
+    expect(quickly('<style>'.repeat(LARGE / 7))).toBeLessThan(1000);
+    expect(quickly('<!--'.repeat(LARGE / 4))).toBeLessThan(1000);
+  });
+
+  it('still reads a definition after an unclosed brace', () => {
+    const markup = `<style>
+      broken {
+      siloBrand { label: Marque; adopt: brand_[silo]; }
+    </style>`;
+
+    expect(readTemplateContract(markup).adopt).toEqual({
+      siloBrand: 'brand_[silo]',
+    });
+  });
+
+  it('reads past a comment left unclosed', () => {
+    expect(
+      readTemplateContract('<p data-ko-display="_root_.market">x</p><!-- end')
+        .read
+    ).toEqual(['market']);
+  });
+});

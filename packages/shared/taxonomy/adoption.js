@@ -15,6 +15,8 @@
  * One rule, two readers: the editor when an email opens, the server when a
  * template's emails are adopted in bulk.
  */
+const { isOfferedUnder, inTreeOrder } = require('./availability.js');
+
 const UNKNOWN_IDENTIFIER = 'UNKNOWN_IDENTIFIER';
 const NOT_OFFERED = 'NOT_OFFERED';
 
@@ -56,15 +58,13 @@ function adoptValues({ dimensions, contract, content, selections }) {
     const identifier = source && (content || {})[source];
     if (typeof identifier !== 'string' || identifier.trim() === '') return;
 
-    // The email type is a parent sent apart, its value in the selections.
-    const parentName =
-      byName.has(dimension.parentName) ||
-      (dimension.parentName && result.selections[dimension.parentName])
-        ? dimension.parentName
-        : null;
+    // The parent the server sent is the one that counts on this email (a
+    // parent out of scope is sent as none); the email type's value is in the
+    // selections. A child waits for its parent: offered under nothing, it
+    // cannot be told whether the content's value is a combination the company
+    // allows, and the email type's children wait for a typology too.
+    const parentName = dimension.parentName || null;
     const parentValue = parentName && result.selections[parentName];
-    // A child waits for its parent: offered under nothing, it cannot be told
-    // whether the content's value is a combination the company allows.
     if (parentName && !parentValue) return;
 
     const value = (dimension.values || []).find(
@@ -74,7 +74,10 @@ function adoptValues({ dimensions, contract, content, selections }) {
       result.gaps.push(gap(dimension, identifier, UNKNOWN_IDENTIFIER));
       return;
     }
-    if (!value.isActive || (parentName && !offeredUnder(value, parentValue))) {
+    if (
+      !value.isActive ||
+      (parentName && !isOfferedUnder(value, parentValue))
+    ) {
       result.gaps.push(gap(dimension, identifier, NOT_OFFERED));
       return;
     }
@@ -110,25 +113,4 @@ function sourceOf(template, byName, selections) {
     return value.canonicalType;
   });
   return missing ? null : source;
-}
-
-function offeredUnder(value, parentValue) {
-  const parentIds = (value.parentIds || []).map(String);
-  return parentIds.length === 0 || parentIds.includes(String(parentValue));
-}
-
-// Parents before their children; a dimension under one not sent comes last.
-function inTreeOrder(dimensions) {
-  const ordered = [];
-  const place = (parentName) =>
-    dimensions
-      .filter((dimension) => (dimension.parentName || null) === parentName)
-      .forEach((dimension) => {
-        ordered.push(dimension);
-        place(dimension.name);
-      });
-  place(null);
-  return ordered.concat(
-    dimensions.filter((dimension) => !ordered.includes(dimension))
-  );
 }

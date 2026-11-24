@@ -19,6 +19,8 @@
  * Never retroactive: a value already chosen is kept, and only an email being
  * created, or the descendants of what the user just changed, are looked at.
  */
+const { isOfferedUnder, inTreeOrder } = require('./availability.js');
+
 module.exports = { resolveDefaults };
 
 /**
@@ -68,23 +70,6 @@ function resolveDefaults({
   return resolved;
 }
 
-// Parents before their children, so a child reads the value its parent just took.
-function inTreeOrder(dimensions) {
-  const ordered = [];
-  const place = (parentName) =>
-    dimensions
-      .filter((dimension) => (dimension.parentName || null) === parentName)
-      .forEach((dimension) => {
-        ordered.push(dimension);
-        place(dimension.name);
-      });
-  place(null);
-  // A dimension under one not sent (the email type, or out of scope) comes last.
-  return ordered.concat(
-    dimensions.filter((dimension) => !ordered.includes(dimension))
-  );
-}
-
 function firstLevelDefault(dimension, templateDefaults) {
   const offered = (dimension.values || []).filter((value) => value.isActive);
   const identifier = templateDefaults[dimension.name];
@@ -105,10 +90,7 @@ const includesId = (ids, id) => (ids || []).map(String).includes(String(id));
 function childValue(dimension, parentValue, chosenId, templateDefaults) {
   if (!parentValue) return null;
   const offered = (dimension.values || []).filter(
-    (value) =>
-      value.isActive &&
-      ((value.parentIds || []).length === 0 ||
-        includesId(value.parentIds, parentValue))
+    (value) => value.isActive && isOfferedUnder(value, parentValue)
   );
   const chosen = offered.find((value) => String(value.id) === String(chosenId));
   if (chosenId && chosen) return chosen;

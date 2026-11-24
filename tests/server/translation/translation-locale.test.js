@@ -237,6 +237,48 @@ describe('translated copy: the language value follows', () => {
     expect(warning).toBeNull();
   });
 
+  it('finds the target language under a parent out of the email scope (review of the stack)', async () => {
+    await declare({
+      name: 'edition',
+      label: 'Édition',
+      scope: 'readingTemplates',
+    });
+    await declare({
+      name: 'language',
+      label: 'Langue',
+      role: 'language',
+      parentName: 'edition',
+    });
+    const print = await addValue('edition', { label: 'Papier' });
+    const fr = await addValue('language', {
+      label: 'Français',
+      code: 'fr',
+      parentIds: [idOf(print)],
+    });
+    const nl = await addValue('language', {
+      label: 'Néerlandais',
+      code: 'nl',
+      parentIds: [idOf(print)],
+    });
+    const LANGUAGE_ONLY = '507f1f77bcf86cd799439f05';
+    models.Templates.reset();
+    models.Templates.seed([
+      {
+        _id: LANGUAGE_ONLY,
+        _company: COMPANY_A,
+        markup: '<p data-ko-display="_root_.language eq \'fr\'">Bonjour</p>',
+      },
+    ]);
+
+    const { taxonomyItemIds, warning } = await copyLanguageValues({
+      mailing: email([fr], { _wireframe: LANGUAGE_ONLY }),
+      targetLanguage: 'nl',
+    });
+
+    expect(idsOf(taxonomyItemIds)).toEqual([idOf(nl)]);
+    expect(warning).toBeNull();
+  });
+
   it('leaves the values alone for a company with no language role', async () => {
     await declare({ name: 'brand', label: 'Marque' });
     const brand = await addValue('brand', { label: 'Marque A' });

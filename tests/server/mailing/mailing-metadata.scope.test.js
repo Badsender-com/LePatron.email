@@ -33,6 +33,9 @@ const {
   buildEditorMetadata,
 } = require('../../../packages/server/mailing/mailing-editor-metadata.service.js');
 const {
+  applyMetadataToMailing,
+} = require('../../../packages/server/mailing/mailing-metadata.service.js');
+const {
   buildGovernanceContext,
 } = require('../../../packages/server/taxonomy/services/governance-context.service.js');
 const {
@@ -171,6 +174,24 @@ describe('the editor offers the dimensions in scope', () => {
     ]);
   });
 
+  it('saves the value of a child whose parent is out of scope (review of the stack)', async () => {
+    const mailing = emailOn(BRAND_ONLY_TEMPLATE);
+
+    await applyMetadataToMailing(mailing, {
+      taxonomyItemIds: [idOf(blueNotebooks)],
+    });
+
+    expect(idsOf(mailing._taxonomyItems)).toEqual([idOf(blueNotebooks)]);
+  });
+
+  it('still refuses a child without its parent when the parent is in scope', async () => {
+    await expect(
+      applyMetadataToMailing(emailOn(SILO_TEMPLATE), {
+        taxonomyItemIds: [idOf(blueNotebooks)],
+      })
+    ).rejects.toMatchObject({ status: 422 });
+  });
+
   it('keeps a dimension nested under the email type under it', async () => {
     await declare({
       name: 'season',
@@ -244,5 +265,27 @@ describe('governance context: dimensions out of scope', () => {
     expect(context.text).toContain('### Silo : Jeunesse');
     expect(context.text).toContain('### Marque : Petit Lecteur');
     expect(context.missing).not.toContain('market');
+  });
+});
+
+// Review of the stack: the editor and the AI context read scope the same way.
+describe('scope read alike by the editor and the AI context', () => {
+  it('brings no dimension into scope by the token of a deactivated value', async () => {
+    const [collector] = await models.TaxonomyItems.find({
+      type: 'edition',
+    }).lean();
+    await taxonomyService.updateTaxonomyItem({
+      user: adminA,
+      itemId: idOf(collector),
+      payload: { isActive: false },
+    });
+    const mailing = emailOn(SILO_TEMPLATE);
+
+    expect(await offered(mailing)).not.toContain('edition');
+    const context = await buildGovernanceContext({ mailing, lang: 'fr' });
+    expect(context.dimensions.map((dimension) => dimension.name)).not.toContain(
+      'edition'
+    );
+    expect(context.missing).not.toContain('edition');
   });
 });

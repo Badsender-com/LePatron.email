@@ -198,12 +198,21 @@ function readTokens(value) {
   }
   entries.forEach(([name, token]) => {
     if (!DIMENSION_NAME_PATTERN.test(name)) throw invalid();
+    if (name.length > TaxonomyLimits.CANONICAL_TYPE) throw invalid();
     if (typeof token !== 'string' || token.trim() === '') throw invalid();
     if (token.length > TaxonomyLimits.TOKEN_VALUE) throw invalid();
+    if (!isTokenValue(token)) throw invalid();
   });
   return Object.fromEntries(
     entries.map(([name, token]) => [name, token.trim()])
   );
+}
+
+// A colour, a font stack, a size, a link: a value a template prints inside a
+// style or an attribute, never a block of CSS or markup that would close it.
+const TOKEN_VALUE_FORBIDDEN = /[<>{};\\]|javascript:|vbscript:|expression\(|@import|url\(/i;
+function isTokenValue(token) {
+  return !TOKEN_VALUE_FORBIDDEN.test(token);
 }
 
 // The list it belongs to depends on the dimension's role: the service checks it.

@@ -122,11 +122,12 @@ async function buildEditorMetadata({ mailing, group }) {
         templateId,
       })
     : [];
-  // Where the editor adopts an empty dimension's value from (ADR-0024).
-  const { adopt } =
+  // Where the editor adopts an empty dimension's value from, and the value the
+  // template itself gives a dimension, its first default (ADR-0024).
+  const { adopt, declared } =
     dimensions.length > 0
       ? await contractOfTemplate(templateId)
-      : { adopt: {} };
+      : { adopt: {}, declared: {} };
 
   const emailTypeDimension = mailingCompanyId
     ? await TaxonomyDimensions.findOne({
@@ -170,7 +171,10 @@ async function buildEditorMetadata({ mailing, group }) {
       // The company dimensions, each a select after the trigger. A deactivated
       // one is absent, but the values the email carries under it stay in
       // `taxonomyItemIds`, and the editor sends them back untouched.
-      dimensions,
+      dimensions: dimensions.map((dimension) => ({
+        ...dimension,
+        templateDefault: (declared || {})[dimension.name] || null,
+      })),
       contract: { adopt },
       url: { update: `/api/mailings/${mailingId}/metadata` },
     },

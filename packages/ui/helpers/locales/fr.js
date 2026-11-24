@@ -2214,6 +2214,7 @@ export default {
       confirmTitle: 'Appliquer la reprise ?',
       confirm: '{attached} email(s) recevront les valeurs reprises de leur contenu, ainsi que ce qui a pu être repris pour les {withGaps} email(s) avec un écart. Seules les dimensions vides sont remplies ; le contenu et le HTML des emails ne changent pas.',
       appliedCounts: 'Reprise appliquée : {attached} email(s) rattaché(s), {withGaps} avec un écart, {complete} déjà complet(s).',
+      skipped: '{skipped} email(s) enregistré(s) pendant l\'opération n\'ont pas été touchés : relancez la reprise pour les rattacher.',
       email: 'Email',
       adopted: 'Valeurs reprises',
       gaps: 'Écarts',
