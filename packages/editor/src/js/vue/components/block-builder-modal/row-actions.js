@@ -2,6 +2,7 @@
 
 const {
   newRowId,
+  canAddRow,
 } = require('../../../../../../shared/block-builder/composition.js');
 const {
   newElementId,
@@ -10,14 +11,15 @@ const {
 // Rows: moving one, by drag or by keyboard; duplicating one, and deleting it.
 //
 // Apart from the row settings (row-settings.js), which set what a row IS —
-// its structure and its widths — these change where it sits among the others.
+// its structure and its widths — these act on the row as a whole.
 //
 // A Vue 2 mixin, like the row settings: every one of these reads or writes
 // the component's `state` and its selection, and a mixin keeps `this` meaning
 // the component.
 //
-// The component is expected to provide: `state`, `selectRow` (selection.js),
-// `selectedRowId` and `selectedRowIndex` (row-settings.js). Nothing here asks
+// The component is expected to provide: `state`, `selectRow`,
+// `selectElement`, `rowById` (selection.js), `selectedRowId` and
+// `selectedRowIndex` (row-settings.js). Nothing here asks
 // for a render: the preview watches its markup, and a row that moved changed
 // it.
 
@@ -86,21 +88,26 @@ const RowActionsMixin = {
      * A deep copy with fresh ids throughout. A shared id would make the two
      * rows the same row as far as selection and drag are concerned, so
      * editing one would appear to edit both; a shared element OBJECT would be
-     * worse still, since typing in one would change the other.
+     * worse still, since typing in one would change the other. Whatever else
+     * the row and its columns hold is copied with them, as a change of width
+     * keeps it (setRowWidths).
+     *
+     * Refused at the row limit, like "Add a row": a copy is a row too, and
+     * past MAX_ROWS the composition could not be read back.
      *
      * @param {string} rowId
-     * @returns {Object|null} the copy, or null when the row is gone
+     * @returns {Object|null} the copy, or null when the row is gone or the
+     *   block is full
      */
     duplicateRow(rowId) {
-      const rows = this.state.rows || [];
-      const at = rows.findIndex((row) => row.id === rowId);
-      if (at === -1) return null;
+      const source = this.rowById(rowId);
+      if (!source || !canAddRow(this.state)) return null;
 
-      const source = rows[at];
       const copy = {
+        ...source,
         id: newRowId(),
         columns: source.columns.map((column) => ({
-          width: column.width,
+          ...column,
           elements: column.elements.map((element) => ({
             ...element,
             id: newElementId(),
@@ -108,9 +115,9 @@ const RowActionsMixin = {
         })),
       };
 
-      rows.splice(at + 1, 0, copy);
+      const { rows } = this.state;
+      rows.splice(rows.indexOf(source) + 1, 0, copy);
       this.selectRow(copy.id);
-      this.scheduleRender();
       return copy;
     },
 
@@ -125,20 +132,19 @@ const RowActionsMixin = {
      * @returns {boolean} whether a row was removed
      */
     deleteRow(rowId) {
-      const rows = this.state.rows || [];
-      const at = rows.findIndex((row) => row.id === rowId);
-      if (at === -1) return false;
+      const row = this.rowById(rowId);
+      if (!row) return false;
 
+      const { rows } = this.state;
+      const at = rows.indexOf(row);
       rows.splice(at, 1);
       // Selection goes to the next row, or the previous one at the end, so the
-      // panel is never left pointing at something that is gone.
+      // panel is never left pointing at something that is gone. With no row
+      // left, nothing is selected, and the palette makes a row again for the
+      // next element (insertElement).
       const next = rows[at] || rows[at - 1];
       if (next) this.selectRow(next.id);
-      else {
-        this.selectedRowId = null;
-        this.selectedElementId = null;
-      }
-      this.scheduleRender();
+      else this.selectElement(null);
       return true;
     },
 

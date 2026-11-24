@@ -32,6 +32,14 @@
         border-color: @bs-accent-color;
         color: @bs-accent-color;
       }
+
+      // Duplicating at the row limit. After :hover, as for "Add a row".
+      &:disabled {
+        cursor: default;
+        opacity: 0.4;
+        border-color: #d5d5d5;
+        color: inherit;
+      }
     }
   }
 

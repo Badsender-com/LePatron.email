@@ -76,7 +76,8 @@ module.exports = `<modal-component
           <button
             v-if="selectedRow"
             type="button"
-            :title="vm.t('block-builder-duplicate-row')"
+            :disabled="rowLimitReached"
+            :title="rowLimitReached ? vm.t('block-builder-row-limit', { max: maxRows }) : vm.t('block-builder-duplicate-row')"
             :aria-label="vm.t('block-builder-duplicate-row')"
             @click.prevent="duplicateSelectedRow">⧉</button>
           <button
