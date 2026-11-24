@@ -25,9 +25,34 @@ const {
   addHeadCssToViewModel,
 } = require('../../../packages/editor/src/js/ext/head-css/view-model.js');
 
+const {
+  generate,
+} = require('../../../packages/shared/block-builder/generate.js');
+
 const htmlCodeBlock = () =>
   ko.observable({ type: ko.observable('htmlCodeBlock') });
 const textBlock = () => ko.observable({ type: ko.observable('textBlock') });
+
+// A composition of one row of two columns, which stacks on a phone.
+const TWO_COLUMNS = {
+  v: 2,
+  gen: '1.0.0',
+  rows: [
+    {
+      id: 'r1',
+      columns: [
+        { width: 50, elements: [{ id: 'e1', type: 'text', content: 'a' }] },
+        { width: 50, elements: [{ id: 'e2', type: 'text', content: 'b' }] },
+      ],
+    },
+  ],
+};
+const composedBlock = () =>
+  ko.observable({
+    type: ko.observable('blockBuilderBlock'),
+    builderHtml: ko.observable(generate(TWO_COLUMNS)),
+    builderState: ko.observable(JSON.stringify(TWO_COLUMNS)),
+  });
 
 // A view model carrying the head CSS members, over a content model holding an
 // HTML code block unless told otherwise: the canvas shows the CSS only when
@@ -234,6 +259,100 @@ describe('attachHeadCssPreview', () => {
 
       expect(sheet.textContent).toBe('untouched');
     });
+  });
+
+  // The stacking rule only means anything inside its media query, so the
+  // canvas has to follow the preview toggle for it as it does for the
+  // template's own rules: stacked on mobile, side by side on desktop.
+  describe('a composed block in two columns', () => {
+    // The canvas, holding the block's markup as the editor shows it.
+    function canvasWithComposedBlock(previewMode) {
+      document.body.innerHTML = `<div id="main-wysiwyg-area">${generate(
+        TWO_COLUMNS
+      )}</div>`;
+      const { viewModel } = makeViewModel('', {
+        previewMode,
+        blocks: [composedBlock()],
+      });
+      attachHeadCssPreview(viewModel, document);
+      const sheet = document.getElementById(STYLE_ELEMENT_ID);
+      const cells = [
+        ...document.querySelectorAll('#main-wysiwyg-area td.lp-stack'),
+      ];
+      return { viewModel, sheet, cells };
+    }
+
+    // The selector of the one stacking rule, as scoped for the canvas.
+    const stackingSelector = (sheet) => {
+      const match = sheet.textContent.match(/([^{}]*\.lp-stack[^{}]*)\{/);
+      return match ? match[1].trim() : null;
+    };
+
+    afterEach(() => {
+      document.body.innerHTML = '';
+    });
+
+    it('keeps the rule behind its width condition on desktop', () => {
+      const { sheet } = canvasWithComposedBlock('desktop');
+
+      expect(sheet.textContent).toMatch(/max-width:\s*600px/);
+      expect(sheet.textContent).not.toContain(ALWAYS_TRUE_MEDIA);
+    });
+
+    it('forces the rule on mobile, onto the cells the canvas shows', () => {
+      const { sheet, cells } = canvasWithComposedBlock('mobile');
+
+      expect(sheet.textContent).toContain(ALWAYS_TRUE_MEDIA);
+      expect(sheet.textContent).not.toMatch(/max-width:\s*600px/);
+      expect(sheet.textContent).toMatch(/display:\s*block\s*!important/);
+      expect(cells).toHaveLength(2);
+      cells.forEach((cell) =>
+        expect(cell.matches(stackingSelector(sheet))).toBe(true)
+      );
+    });
+
+    it('follows the toggle back and forth', () => {
+      const { viewModel, sheet } = canvasWithComposedBlock('desktop');
+
+      viewModel.previewMode('mobile');
+      expect(sheet.textContent).toContain(ALWAYS_TRUE_MEDIA);
+
+      viewModel.previewMode('desktop');
+      expect(sheet.textContent).toMatch(/max-width:\s*600px/);
+    });
+
+    // The editor's default mode treats the template's own media queries the
+    // same way: forced, onto selectors no element carries. So the columns do
+    // not stack there; only the mobile preview shows them stacked.
+    it('does not stack in the default `both` mode', () => {
+      const { sheet, cells } = canvasWithComposedBlock('both');
+
+      expect(sheet.textContent).toContain(ALWAYS_TRUE_MEDIA);
+      expect(stackingSelector(sheet)).toContain(VISIBLE_ON_BOTH_SUFFIX);
+      cells.forEach((cell) =>
+        expect(cell.matches(stackingSelector(sheet))).toBe(false)
+      );
+    });
+  });
+
+  // The author's `@charset` and `@import` are kept above the derived rules in
+  // the export; the canvas leaves them out altogether, and keeps the rest
+  // scoped.
+  it('scopes the author rules after an @import, next to the derived ones', () => {
+    const {
+      viewModel,
+    } = makeViewModel(
+      '@charset "utf-8";\n@import url(a.css);\n.classred{color:red}',
+      { previewMode: 'desktop', blocks: [composedBlock(), htmlCodeBlock()] }
+    );
+    attachHeadCssPreview(viewModel, document);
+    const text = document.getElementById(STYLE_ELEMENT_ID).textContent;
+
+    expect(text).not.toContain('@import');
+    expect(text).not.toContain('@charset');
+    expect(text).toContain('#main-wysiwyg-area .lp-stack');
+    expect(text).toContain('#main-wysiwyg-area .classred');
+    expect(text.indexOf('.lp-stack')).toBeLessThan(text.indexOf('.classred'));
   });
 
   it('does nothing without the head CSS members', () => {
