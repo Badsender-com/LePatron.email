@@ -42,7 +42,7 @@ async function readEmailLocale({ mailing }) {
   if (!companyId) return { ...composeLocale({}), hasRole: false };
 
   // Active dimensions only: a deactivated one says nothing to the template or
-  // the AI any more (ADR-0014), its language included.
+  // the AI any more (ADR-0032), its language included.
   const dimensions = await TaxonomyDimensions.find({
     _company: companyId,
     isActive: true,
