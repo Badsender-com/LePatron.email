@@ -183,7 +183,7 @@ const MailingSchema = Schema(
       ],
       default: undefined,
     },
-    // The values of the company dimensions (ADR-0014): at most one per dimension,
+    // The values of the company dimensions (ADR-0032): at most one per dimension,
     // every one optional. The email type above keeps its own field. Validated on
     // write by mailing-company-dimensions.service.js.
     _taxonomyItems: [

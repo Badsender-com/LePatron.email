@@ -5,7 +5,7 @@
  * dimension the server sends, after the email type and the trigger.
  *
  * What the email carries travels as one list of value ids (`taxonomyItemIds`,
- * ADR-0014); the selects read it as `selections`, a dimension name mapped to the
+ * ADR-0032); the selects read it as `selections`, a dimension name mapped to the
  * id of its value. A value whose dimension is not on screen (deactivated since)
  * has no select, and is sent back untouched.
  *

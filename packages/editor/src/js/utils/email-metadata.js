@@ -94,7 +94,7 @@ const METADATA_FIELDS = [
     key: 'trigger',
     toPayload: (form) => (form.trigger ? form.trigger : null),
   },
-  // The values of the company dimensions, as one list (ADR-0014). Sent whole:
+  // The values of the company dimensions, as one list (ADR-0032). Sent whole:
   // the server replaces the list, it does not merge it.
   {
     key: 'taxonomyItemIds',
