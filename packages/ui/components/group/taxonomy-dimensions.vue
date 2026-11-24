@@ -1,4 +1,5 @@
 <script>
+import mixinTaxonomyManage from '~/helpers/mixins/mixin-taxonomy-manage.js';
 import { mapMutations } from 'vuex';
 import { Plus } from 'lucide-vue';
 import { PAGE, SHOW_SNACKBAR } from '~/store/page.js';
@@ -26,6 +27,7 @@ export default {
     BsModalConfirm,
     LucidePlus: Plus,
   },
+  mixins: [mixinTaxonomyManage],
   data() {
     return {
       dimensions: [],
@@ -218,7 +220,7 @@ export default {
       @delete="confirmDelete"
     />
 
-    <div class="taxonomy-dimension__declare">
+    <div v-if="canManageTaxonomy" class="taxonomy-dimension__declare">
       <v-btn
         color="accent"
         outlined

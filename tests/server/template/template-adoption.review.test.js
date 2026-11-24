@@ -17,6 +17,7 @@ const models = require('../../../packages/server/common/models.common.js');
 const {
   COMPANY_A,
   adminA,
+  techAdminA,
   idOf,
   idsOf,
   resetTaxonomyModels,
@@ -103,6 +104,7 @@ describe('bulk adoption, after the review of the stack', () => {
     await deactivate(redNotebooks);
 
     const report = await adoptForTemplate({
+      user: techAdminA,
       templateId: TEMPLATE,
       apply: true,
     });
@@ -121,6 +123,7 @@ describe('bulk adoption, after the review of the stack', () => {
 
     try {
       const report = await adoptForTemplate({
+        user: techAdminA,
         templateId: TEMPLATE,
         apply: true,
       });
@@ -140,6 +143,7 @@ describe('bulk adoption, after the review of the stack', () => {
     seedEmail({});
 
     const report = await adoptForTemplate({
+      user: techAdminA,
       templateId: TEMPLATE,
       apply: false,
     });
@@ -149,14 +153,22 @@ describe('bulk adoption, after the review of the stack', () => {
 
   it('answers not found for a template id that is not one', async () => {
     await expect(
-      adoptForTemplate({ templateId: 'undefined', apply: false })
+      adoptForTemplate({
+        user: techAdminA,
+        templateId: 'undefined',
+        apply: false,
+      })
     ).rejects.toMatchObject({ status: 404 });
   });
 
   it('still attaches the value the content holds when nothing is carried', async () => {
     seedEmail({ silo: 'school', brand_school: 'blue_notebooks' });
 
-    await adoptForTemplate({ templateId: TEMPLATE, apply: true });
+    await adoptForTemplate({
+      user: techAdminA,
+      templateId: TEMPLATE,
+      apply: true,
+    });
 
     expect((await carriedBy()).sort()).toEqual(
       [idOf(school), idOf(blueNotebooks)].sort()

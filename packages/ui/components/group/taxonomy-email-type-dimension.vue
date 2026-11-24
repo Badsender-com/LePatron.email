@@ -1,4 +1,5 @@
 <script>
+import mixinTaxonomyManage from '~/helpers/mixins/mixin-taxonomy-manage.js';
 import { Pencil } from 'lucide-vue';
 import BsGroupTaxonomyTab from '~/components/group/taxonomy-tab.vue';
 
@@ -12,6 +13,7 @@ export default {
     BsGroupTaxonomyTab,
     LucidePencil: Pencil,
   },
+  mixins: [mixinTaxonomyManage],
   props: {
     dimension: { type: Object, default: null },
   },
@@ -39,7 +41,7 @@ export default {
       </v-chip>
       <v-spacer />
       <v-btn
-        v-if="dimension"
+        v-if="dimension && canManageTaxonomy"
         text
         small
         color="accent"

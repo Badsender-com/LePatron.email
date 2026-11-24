@@ -3,7 +3,7 @@
 // Two properties are pinned here, both invisible anywhere else.
 //
 // The read/write split: reads are open to any user (filling in an email's metadata
-// needs the list), writes are company-admin only. That is a one-word difference per
+// needs the list), writes need `taxonomy.manage` (ADR-0026). That is a one-word difference per
 // line in the routes file, and nothing in the codebase would notice a write route
 // losing its guard.
 //
@@ -17,7 +17,9 @@
 const {
   GUARD_USER,
   GUARD_GROUP_ADMIN,
+  GUARD_CAN,
 } = require('../../../packages/server/account/auth.guard.js');
+const { CAPABILITIES } = require('../../../packages/shared/access/roles.js');
 const {
   GUARD_CAN_ACCESS_GROUP,
   GUARD_CAN_ACCESS_GROUP_FROM_BODY,
@@ -80,9 +82,10 @@ describe('taxonomy routes — guards', () => {
     ]);
   });
 
-  it('reserves the create to a company admin, and checks the target company', () => {
+  // The company admin reads the taxonomy; the tech admin builds it (ADR-0026).
+  it('reserves the create to taxonomy.manage, and checks the target company', () => {
     expect(guardsOf('post', '')).toEqual([
-      GUARD_GROUP_ADMIN,
+      GUARD_CAN(CAPABILITIES.TAXONOMY_MANAGE),
       GUARD_CAN_ACCESS_GROUP_FROM_BODY,
     ]);
   });
@@ -90,8 +93,10 @@ describe('taxonomy routes — guards', () => {
   it.each([
     ['patch', '/:itemId'],
     ['delete', '/:itemId'],
-  ])('reserves %s %s to a company admin', (method, path) => {
-    expect(guardsOf(method, path)).toEqual([GUARD_GROUP_ADMIN]);
+  ])('reserves %s %s to taxonomy.manage', (method, path) => {
+    expect(guardsOf(method, path)).toEqual([
+      GUARD_CAN(CAPABILITIES.TAXONOMY_MANAGE),
+    ]);
   });
 
   // Company admin on the READ too, unlike the listing above. This one answers what
@@ -104,9 +109,9 @@ describe('taxonomy routes — guards', () => {
     ]);
   });
 
-  it('reserves the defaults restore to a company admin, and checks the body company', () => {
+  it('reserves the defaults restore to taxonomy.manage, and checks the body company', () => {
     expect(guardsOf('post', '/default-email-types')).toEqual([
-      GUARD_GROUP_ADMIN,
+      GUARD_CAN(CAPABILITIES.TAXONOMY_MANAGE),
       GUARD_CAN_ACCESS_GROUP_FROM_BODY,
     ]);
   });

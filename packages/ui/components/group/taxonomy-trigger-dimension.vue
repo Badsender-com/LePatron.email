@@ -1,4 +1,5 @@
 <script>
+import mixinTaxonomyManage from '~/helpers/mixins/mixin-taxonomy-manage.js';
 import { Pencil } from 'lucide-vue';
 import { TRIGGER_VALUES } from '~/helpers/taxonomy-builder.js';
 
@@ -9,6 +10,7 @@ import { TRIGGER_VALUES } from '~/helpers/taxonomy-builder.js';
 export default {
   name: 'BsTaxonomyTriggerDimension',
   components: { LucidePencil: Pencil },
+  mixins: [mixinTaxonomyManage],
   props: {
     dimension: { type: Object, required: true },
   },
@@ -30,7 +32,13 @@ export default {
         {{ $t('taxonomy.dimensions.standard') }}
       </v-chip>
       <v-spacer />
-      <v-btn text small color="accent" @click="$emit('edit', dimension)">
+      <v-btn
+        v-if="canManageTaxonomy"
+        text
+        small
+        color="accent"
+        @click="$emit('edit', dimension)"
+      >
         <lucide-pencil :size="16" class="mr-1" />
         {{ $t('global.edit') }}
       </v-btn>

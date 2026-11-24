@@ -10,7 +10,9 @@ const {
   GUARD_ADMIN,
   GUARD_GROUP_ADMIN,
   GUARD_GROUP_ADMIN_TECH,
+  GUARD_CAN,
 } = require('../account/auth.guard.js');
+const { CAPABILITIES } = require('../../shared/access/roles.js');
 const { GUARD_EMAIL_BUILDER } = require('../mailing/email-builder.guard.js');
 const ERROR_CODES = require('../constant/error-codes.js');
 const { isObjectIdString } = require('../utils/model.js');
@@ -48,9 +50,18 @@ router.get(
 router.get('/:templateId/preview', GUARD_ADMIN, templates.previewMarkup);
 router.post('/:templateId/preview', GUARD_ADMIN, templates.generatePreviews);
 router.get('/:templateId/events', GUARD_ADMIN, templates.previewEvents);
-// The adoption of the template's emails in bulk (ADR-0024).
-router.get('/:templateId/adoption', GUARD_ADMIN, adoption.previewAdoption);
-router.post('/:templateId/adoption', GUARD_ADMIN, adoption.applyAdoption);
+// The adoption of the template's emails in bulk (ADR-0024), by whoever builds
+// the taxonomy (ADR-0026); the service keeps it to the user's own company.
+router.get(
+  '/:templateId/adoption',
+  GUARD_CAN(CAPABILITIES.TAXONOMY_MANAGE),
+  adoption.previewAdoption
+);
+router.post(
+  '/:templateId/adoption',
+  GUARD_CAN(CAPABILITIES.TAXONOMY_MANAGE),
+  adoption.applyAdoption
+);
 router.delete('/:templateId/images', GUARD_ADMIN, templates.destroyImages);
 router.delete('/:templateId', GUARD_ADMIN, templates.destroy);
 // Tracking config is editable by company_admin_tech of the template's company

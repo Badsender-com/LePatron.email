@@ -21,7 +21,7 @@ const reportOf = ({ emails, counts }) => ({
 
 /**
  * @api {get} /templates/:templateId/adoption preview the adoption of its emails
- * @apiPermission super_admin
+ * @apiPermission taxonomy.manage
  * @apiName PreviewTemplateAdoption
  * @apiGroup Templates
  *
@@ -35,6 +35,7 @@ async function previewAdoption(req, res) {
   res.json(
     reportOf(
       await adoptForTemplate({
+        user: req.user,
         templateId: req.params.templateId,
         apply: false,
       })
@@ -44,7 +45,7 @@ async function previewAdoption(req, res) {
 
 /**
  * @api {post} /templates/:templateId/adoption apply the adoption of its emails
- * @apiPermission super_admin
+ * @apiPermission taxonomy.manage
  * @apiName ApplyTemplateAdoption
  * @apiGroup Templates
  * @apiDescription Writes the taxonomy values of the empty dimensions only,
@@ -59,6 +60,7 @@ async function applyAdoption(req, res) {
   res.json(
     reportOf(
       await adoptForTemplate({
+        user: req.user,
         templateId: req.params.templateId,
         apply: true,
       })

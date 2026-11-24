@@ -3,6 +3,7 @@
 const { NotFound } = require('http-errors');
 
 const { Templates, Mailings } = require('../common/models.common.js');
+const permissions = require('../account/permissions.js');
 const ERROR_CODES = require('../constant/error-codes.js');
 const { StandardDimensions } = require('../constant/taxonomy-type.js');
 const {
@@ -26,6 +27,8 @@ const OBJECT_ID = /^[0-9a-fA-F]{24}$/;
 
 /**
  * @param {Object} params
+ * @param {Object} params.user the tech admin or super admin asking: a template
+ *   of another company is not found, as if it did not exist
  * @param {string} params.templateId
  * @param {boolean} params.apply false previews, and writes nothing; true
  *   attaches each email to the values adopted, its content untouched
@@ -34,13 +37,15 @@ const OBJECT_ID = /^[0-9a-fA-F]{24}$/;
  *   and its `gaps`. Counted as `attached` when it takes values and has no gap,
  *   `withGaps` when it has one, `complete` when nothing is left to adopt.
  */
-async function adoptForTemplate({ templateId, apply }) {
+async function adoptForTemplate({ user, templateId, apply }) {
   const template = OBJECT_ID.test(String(templateId))
     ? await Templates.findOne({ _id: templateId })
         .select({ _company: 1 })
         .lean()
     : null;
-  if (!template) throw new NotFound(ERROR_CODES.TEMPLATE_NOT_FOUND);
+  if (!template || !permissions.canAccessGroup(user, template._company)) {
+    throw new NotFound(ERROR_CODES.TEMPLATE_NOT_FOUND);
+  }
 
   const companyId = template._company;
   const mailings = await Mailings.find({
