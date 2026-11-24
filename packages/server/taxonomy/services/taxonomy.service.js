@@ -118,7 +118,7 @@ async function updateTaxonomyItem({ user, itemId, payload = {} }) {
   const item = await findScopedItem({ user, itemId });
   const { parentIds, ...fields } = validatePayload(payload, { partial: true });
   // Narrowing an availability leaves the emails using the combination as they
-  // are: the server checks it again only when a request changes it (ADR-0014).
+  // are: the server checks it again only when a request changes it (ADR-0032).
   if (parentIds !== undefined) {
     fields._parents = await readAvailability({
       companyId: item._company,

@@ -82,7 +82,7 @@ const TaxonomyDimensionSchema = Schema(
       type: Number,
       default: 0,
     },
-    // The dimension this one hangs under (ADR-0014): its values are offered
+    // The dimension this one hangs under (ADR-0032): its values are offered
     // under values of that one, by their availability. Absent at the first level.
     parentName: {
       type: String,

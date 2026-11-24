@@ -2,7 +2,7 @@
 import BsSelect from '~/components/form/bs-select.vue';
 
 /**
- * The availability of a value (ADR-0014): the values of the parent dimension it
+ * The availability of a value (ADR-0032): the values of the parent dimension it
  * is offered under. Left empty, it is offered under all of them.
  *
  * A deactivated parent value is offered only when the value already lists it:

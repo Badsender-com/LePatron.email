@@ -142,7 +142,7 @@ export function buildNewDimensionPayload(form) {
 }
 
 /**
- * The dimensions `dimension` may hang under (ADR-0014): the active ones, the
+ * The dimensions `dimension` may hang under (ADR-0032): the active ones, the
  * email type included, never the trigger (its values are not stored), the
  * dimension itself or one of its descendants, which would make a cycle.
  *
