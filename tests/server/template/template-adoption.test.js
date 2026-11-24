@@ -134,7 +134,7 @@ const entryNamed = (report, name) =>
   report.emails.find((entry) => entry.name === name);
 
 // Turned on by #1526 (preview the adoption of a template's emails)
-describe.skip('bulk adoption: preview', () => {
+describe('bulk adoption: preview', () => {
   it('lists what adoption would set on every email of the template, and only those', async () => {
     const report = await adoptForTemplate({ apply: false });
 
