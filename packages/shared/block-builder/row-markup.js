@@ -6,7 +6,7 @@
 // components/column.vue), compiled like every element: what this module does
 // is decide which variant each cell takes and what goes in it.
 
-const { resolveElement } = require('./element-markup.js');
+const { resolveElement, definitionOf } = require('./element-markup.js');
 const { stackClassFor } = require('./generated-classes.js');
 const { usableWidths } = require('./composition.js');
 const { defineLayout } = require('./template.js');
@@ -99,6 +99,49 @@ function columnsOf(row) {
 }
 
 /**
+ * Whether a column holds nothing to render. The same rule resolveColumn
+ * applies (an element is nothing exactly when definitionOf says so), asked
+ * without rendering anything.
+ *
+ * @param {{elements: *}} column one entry of columnsOf
+ * @returns {boolean}
+ */
+function isEmptyColumn(column) {
+  return !(
+    Array.isArray(column.elements) &&
+    column.elements.some((element) => definitionOf(element) !== null)
+  );
+}
+
+/**
+ * The class the cells of these columns carry, or '' for none.
+ *
+ * @param {Array<{elements: *}>} columns what columnsOf returned
+ * @returns {string}
+ */
+function classOfColumns(columns) {
+  // A row with nothing in any column renders nothing (see generateRow), so it
+  // carries no class either — and must not ask the stylesheet for a rule.
+  if (columns.every(isEmptyColumn)) return '';
+  return stackClassFor(columns.length);
+}
+
+/**
+ * The class a row's cells carry, or '' when they carry none: a row of one
+ * column has nothing to stack, and a row holding nothing renders nothing.
+ *
+ * The one place that decides it. The markup (generateRow) and the stylesheet
+ * (stylesheet.js) both ask here, so the stylesheet never holds a rule for a
+ * class no cell carries, nor the reverse.
+ *
+ * @param {Object} row one entry of a composition's `rows`, as stored
+ * @returns {string}
+ */
+function rowClass(row) {
+  return classOfColumns(columnsOf(row));
+}
+
+/**
  * One row, as a table of real percentage cells.
  *
  * Cells rather than `inline-block` divs: that is what lets Outlook lay the
@@ -112,7 +155,11 @@ function columnsOf(row) {
  */
 function generateRow(row, options) {
   const columns = columnsOf(row);
-  if (columns.length === 0) return '';
+
+  // A row where every column is empty renders nothing at all: it would
+  // otherwise ship a band of blank cells nobody can see or click. A row of no
+  // column at all is one of them.
+  if (columns.every(isEmptyColumn)) return '';
 
   const resolved = columns.map((column) =>
     resolveColumn(
@@ -122,11 +169,7 @@ function generateRow(row, options) {
     )
   );
 
-  // A row where every column is empty renders nothing at all: it would
-  // otherwise ship a band of blank cells nobody can see or click.
-  if (resolved.every((elements) => elements.length === 0)) return '';
-
-  const stackClass = stackClassFor(columns.length);
+  const stackClass = classOfColumns(columns);
   const variants = stackClass ? COLUMN_VARIANTS.stacked : COLUMN_VARIANTS.alone;
 
   const cells = columns.map((column, index) => {
@@ -144,4 +187,4 @@ function generateRow(row, options) {
   return renderRow({ cells: cells.join('') });
 }
 
-module.exports = { generateRow, BLOCK_WIDTH };
+module.exports = { generateRow, rowClass, BLOCK_WIDTH };

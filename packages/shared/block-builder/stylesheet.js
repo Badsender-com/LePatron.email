@@ -1,6 +1,7 @@
 'use strict';
 
-const { stackClassFor } = require('./generated-classes.js');
+const { MOBILE_DECLARATIONS } = require('./generated-classes.js');
+const { rowClass, BLOCK_WIDTH } = require('./row-markup.js');
 
 // The stylesheet a composition derives.
 //
@@ -13,27 +14,17 @@ const { stackClassFor } = require('./generated-classes.js');
 // the generator. Two of the generator's callers compare its result against the
 // stored markup to detect an altered block, and those comparisons have to stay
 // markup-to-markup. Keeping the two apart also keeps the frozen artifact and
-// the recomputed value from sharing one shape.
+// the recomputed value from sharing one shape. What keeps them in step is that
+// both ask rowClass (row-markup.js) which class a row carries.
 //
 // Never stored. It is recomputed wherever the composition is rendered, which
 // is also why a block saved to the library needs nothing extra to keep
 // stacking in another mailing: there is nothing to carry.
 
-// Where a phone stops being a desktop, for this stylesheet. 600px because that
-// is the width the composition is laid out at: below it, a two-column row has
-// less than 300px a side, and nothing worth reading fits.
-const BREAKPOINT = 600;
-
-// What each behaviour does once the viewport is narrow enough.
-//
-// `!important` is not decoration. The cell carries its width as an inline
-// style — Outlook reads the attribute, everything else reads the style — and
-// a class on the same element still loses to an inline declaration without it.
-// That is the mistake the spike made first, and it is invisible: the rule is
-// there, the class is there, and nothing moves.
-const BEHAVIOURS = {
-  stack: 'display:block !important;width:100% !important;',
-};
+// Where a phone stops being a desktop, for this stylesheet: the width the
+// composition is laid out at. Below it, a two-column row has less than half of
+// it a side, and nothing worth reading fits.
+const BREAKPOINT = BLOCK_WIDTH;
 
 /**
  * Every class a composition's rows ask for, in the order they first appear.
@@ -49,15 +40,30 @@ function classesOf(composition) {
     composition && Array.isArray(composition.rows) ? composition.rows : [];
 
   const names = rows.reduce((found, row) => {
-    const columns = row && Array.isArray(row.columns) ? row.columns : [];
-    // A row of one column has nothing to stack, and must not drag a media
-    // query into the head of every mailing that holds a composed block.
-    const name = stackClassFor(columns.length);
+    const name = rowClass(row);
     if (name !== '') found.add(name);
     return found;
   }, new Set());
 
   return [...names];
+}
+
+/**
+ * The stylesheet for a set of generated classes, as one block of rules.
+ *
+ * @param {Iterable<string>} names generated class names (GENERATED_CLASSES)
+ * @returns {string} one media query holding a rule per class, or ''
+ */
+function cssForClasses(names) {
+  const rules = [...new Set(names)].map(
+    (name) => `.${name}{${MOBILE_DECLARATIONS[name]}}`
+  );
+
+  if (rules.length === 0) return '';
+
+  return `@media only screen and (max-width:${BREAKPOINT}px){${rules.join(
+    ''
+  )}}`;
 }
 
 /**
@@ -72,27 +78,12 @@ function classesOf(composition) {
  * @returns {string}
  */
 function collectCssFor(compositions) {
-  const names = (compositions || []).reduce((found, composition) => {
-    classesOf(composition).forEach((name) => found.add(name));
-    return found;
-  }, new Set());
-
-  const rules = [...names]
-    .map((name) => {
-      // The behaviour is the part of the name after the prefix, which is how
-      // the name stays a value rather than a label: a second behaviour is a
-      // second entry here and a second name there, with nothing to migrate.
-      const behaviour = name.replace(/^lp-/, '');
-      const declarations = BEHAVIOURS[behaviour];
-      return declarations ? `.${name}{${declarations}}` : '';
-    })
-    .filter(Boolean);
-
-  if (rules.length === 0) return '';
-
-  return `@media only screen and (max-width:${BREAKPOINT}px){${rules.join(
-    ''
-  )}}`;
+  return cssForClasses(
+    (compositions || []).reduce(
+      (names, composition) => names.concat(classesOf(composition)),
+      []
+    )
+  );
 }
 
 /**
@@ -109,6 +100,6 @@ module.exports = {
   collectCss,
   collectCssFor,
   classesOf,
+  cssForClasses,
   BREAKPOINT,
-  BEHAVIOURS,
 };

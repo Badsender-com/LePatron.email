@@ -31,6 +31,20 @@ const STACK = 'stack';
 // with no rule behind it. A new behaviour adds its name here.
 const GENERATED_CLASSES = Object.freeze([`${PREFIX}${STACK}`]);
 
+// What each generated class does once the viewport is narrow enough: the body
+// of its rule inside the stylesheet's media query (stylesheet.js). Kept next to
+// the list so a new behaviour is one name there and one entry here, and a test
+// refuses a name without its declarations.
+//
+// `!important` is not decoration. The cell carries its width as an inline
+// style — Outlook reads the attribute, everything else reads the style — and
+// a class on the same element still loses to an inline declaration without it.
+// That is the mistake the spike made first, and it is invisible: the rule is
+// there, the class is there, and nothing moves.
+const MOBILE_DECLARATIONS = Object.freeze({
+  [`${PREFIX}${STACK}`]: 'display:block !important;width:100% !important;',
+});
+
 /**
  * @param {string} name a class name
  * @returns {boolean} whether the generator owns it
@@ -66,6 +80,7 @@ function stackClassFor(columnCount, behaviour = STACK) {
 
 module.exports = {
   GENERATED_CLASSES,
+  MOBILE_DECLARATIONS,
   isGeneratedClass,
   stackClassFor,
   STACK,
