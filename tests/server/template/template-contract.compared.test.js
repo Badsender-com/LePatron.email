@@ -6,8 +6,7 @@
 // reads them ("Newsletter compares `be` three times"), and so does the point to
 // check "a template compares a literal no value carries".
 
-// Turned on by #1554 (the template contract records the literals it compares)
-describe.skip('contract reader v3: compared literals', () => {
+describe('contract reader v3: compared literals', () => {
   let readTemplateContract;
   let CONTRACT_READER_VERSION;
 

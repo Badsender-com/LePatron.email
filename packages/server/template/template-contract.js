@@ -12,6 +12,9 @@
  *   condition, a style or an attribute binding. A design token is read this way.
  * - `adopt`: for a property, the source its value is adopted from when the
  *   template renamed it (`siloBrand { adopt: brand_[silo]; }`).
+ * - `compared`: for a root property, the literals the template compares it
+ *   against and how many times (`_root_.market eq 'be'` → `{ market: { be: 1 } }`),
+ *   read to show the impact of changing a value's identifier (ADR-0026).
  *
  * Read by scanning the markup rather than by running Mosaico, which needs a
  * browser: the definitions live in the template's `<style>` blocks, in a syntax
@@ -21,13 +24,17 @@
  */
 
 const ROOT_READ = /_root_\.([A-Za-z_][A-Za-z0-9_]*)/g;
+// `_root_.x eq 'literal'`, `neq`, `==` or `!=`, single or double quotes. Each
+// part is a run of one class of characters: nothing to backtrack on.
+const ROOT_COMPARED = /_root_\.([A-Za-z_][A-Za-z0-9_]*)\s*(?:neq|eq|!==?|===?)\s*(['"])([^'"]*)\2/g;
 const IDENTIFIER_CHAR = /[A-Za-z0-9_]/;
 const WHITESPACE = /\s/;
 
 // Raised each time the reader reads differently: a contract stored by an older
 // reader is read again on its next need (template-contract.service.js).
 // 2: comments other than Outlook's conditional ones are not read.
-const CONTRACT_READER_VERSION = 2;
+// 3: the literals a root property is compared against are recorded.
+const CONTRACT_READER_VERSION = 3;
 
 module.exports = {
   readTemplateContract,
@@ -50,19 +57,30 @@ function refreshContract(template) {
 
 /**
  * @param {string} [markup] a template's HTML
- * @returns {{declared: Object<string, string>, read: string[], adopt: Object<string, string>}}
+ * @returns {{declared: Object<string, string>, read: string[], adopt: Object<string, string>, compared: Object<string, Object<string, number>>}}
  */
 function readTemplateContract(markup) {
   if (typeof markup !== 'string' || markup === '') {
-    return { declared: {}, read: [], adopt: {} };
+    return { declared: {}, read: [], adopt: {}, compared: {} };
   }
 
   const definitions = definitionsOf(markup);
+  const bindings = withoutPlainComments(markup);
   return {
     declared: declaredProperties(definitions.get('template')),
-    read: rootReads(withoutPlainComments(markup)),
+    read: rootReads(bindings),
     adopt: adoptionSources(definitions),
+    compared: rootComparisons(bindings),
   };
+}
+
+function rootComparisons(markup) {
+  const compared = {};
+  [...markup.matchAll(ROOT_COMPARED)].forEach(([, property, , literal]) => {
+    compared[property] = compared[property] || {};
+    compared[property][literal] = (compared[property][literal] || 0) + 1;
+  });
+  return compared;
 }
 
 function rootReads(markup) {

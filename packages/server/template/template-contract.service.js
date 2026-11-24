@@ -6,7 +6,12 @@ const {
   CONTRACT_READER_VERSION,
 } = require('./template-contract.js');
 
-const NO_CONTRACT = Object.freeze({ declared: {}, read: [], adopt: {} });
+const NO_CONTRACT = Object.freeze({
+  declared: {},
+  read: [],
+  adopt: {},
+  compared: {},
+});
 
 module.exports = { contractOfTemplate };
 
