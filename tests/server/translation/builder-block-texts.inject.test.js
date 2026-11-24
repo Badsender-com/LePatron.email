@@ -17,6 +17,7 @@ const {
 } = require('../../../packages/shared/block-builder/state.js');
 const {
   composedBlock,
+  rowsBlock,
   text,
   button,
   modelWith,
@@ -215,5 +216,74 @@ describe('a composition of rows', () => {
     expect(columns[1].elements[0].label).toBe('Click');
     expect(block.builderHtml).toBe(generate(parseState(block.builderState)));
     expect(block.builderHtml).toContain('width="66%"');
+  });
+
+  // Two rows, the first in two columns: elements are numbered across rows as
+  // well, row by row, then column by column.
+  const twoRows = () =>
+    rowsBlock([
+      [[text('Gauche')], [button('Cliquez')]],
+      [[text('Dessous', { id: 'e4' })]],
+    ]);
+
+  it('is keyed across several rows, row by row', () => {
+    expect(extractBuilderTexts(modelWith(twoRows()))).toEqual({
+      'builderBlock.mainBlocks.0.0.content': 'Gauche',
+      'builderBlock.mainBlocks.0.1.label': 'Cliquez',
+      'builderBlock.mainBlocks.0.2.content': 'Dessous',
+    });
+  });
+
+  it('writes each translation back into its own row and column', () => {
+    const data = modelWith(twoRows());
+
+    const result = injectBuilderTexts(data, {
+      'builderBlock.mainBlocks.0.0.content': 'Left',
+      'builderBlock.mainBlocks.0.1.label': 'Click',
+      'builderBlock.mainBlocks.0.2.content': 'Below',
+    });
+
+    const { rows } = parseState(data.mainBlocks.blocks[0].builderState);
+    expect(result).toMatchObject({ applied: 3, blocksUpdated: 1 });
+    expect(rows.map((row) => row.id)).toEqual([
+      'row-fixture-1',
+      'row-fixture-2',
+    ]);
+    expect(rows[0].columns[0].elements[0].content).toBe('Left');
+    expect(rows[0].columns[1].elements[0].label).toBe('Click');
+    expect(rows[1].columns[0].elements[0].content).toBe('Below');
+  });
+
+  it('drops a key past the last element of the last row', () => {
+    const data = modelWith(twoRows());
+    const before = data.mainBlocks.blocks[0].builderHtml;
+
+    const result = injectBuilderTexts(data, {
+      'builderBlock.mainBlocks.0.3.content': 'Nowhere',
+    });
+
+    expect(result).toMatchObject({
+      applied: 0,
+      skipped: ['builderBlock.mainBlocks.0.3.content'],
+    });
+    expect(data.mainBlocks.blocks[0].builderHtml).toBe(before);
+  });
+
+  // A block stored flat, before columns existed, keeps the keys it always
+  // had, and the block in rows after it is numbered on its own.
+  it('leaves the keys of a flat block before it as they were', () => {
+    const data = modelWith(
+      composedBlock([text('Bonjour'), button('Cliquez')]),
+      twoRows()
+    );
+
+    expect(Object.keys(extractBuilderTexts(data))).toEqual([
+      'builderBlock.mainBlocks.0.0.content',
+      'builderBlock.mainBlocks.0.1.label',
+      'builderBlock.mainBlocks.1.0.content',
+      'builderBlock.mainBlocks.1.1.label',
+      'builderBlock.mainBlocks.1.2.content',
+    ]);
+    expect(JSON.parse(data.mainBlocks.blocks[0].builderState).v).toBe(1);
   });
 });
