@@ -4,7 +4,7 @@
 - Date: 2026-11-13
 - Epic: #1514, #1515
 
-Today the editor offers every active company dimension on every email, whatever its template (ADR-0014), and a template only ignores the properties it does not declare. A company with several templates sees, on an email, dimensions its template never reads. A new email starts with no value, where a template written before the taxonomy opened on its own defaults. And moving an existing template onto the taxonomy loses what its emails had chosen: replacing a template whose emails held their brand in one property per parent (`brand_<silo>`) by one reading a `siloBrand` dimension kept the silo, lost the brand, and with it every design token. Three decisions answer this, and they share one notion, the **template contract**: the root properties a template declares or reads, and the design tokens it reads.
+Today the editor offers every active company dimension on every email, whatever its template (ADR-0032), and a template only ignores the properties it does not declare. A company with several templates sees, on an email, dimensions its template never reads. A new email starts with no value, where a template written before the taxonomy opened on its own defaults. And moving an existing template onto the taxonomy loses what its emails had chosen: replacing a template whose emails held their brand in one property per parent (`brand_<silo>`) by one reading a `siloBrand` dimension kept the silo, lost the brand, and with it every design token. Three decisions answer this, and they share one notion, the **template contract**: the root properties a template declares or reads, and the design tokens it reads.
 
 ## Decisions
 

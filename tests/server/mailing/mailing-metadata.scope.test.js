@@ -4,7 +4,7 @@
 // #1514, ADR-0024). A dimension restricted to "the templates reading it" is
 // offered on an email when the email's template contract names it, or reads a
 // design token one of its values carries. Out of scope is treated like
-// deactivated (ADR-0014): kept on the email, not offered, not sent to the AI.
+// deactivated (ADR-0032): kept on the email, not offered, not sent to the AI.
 
 jest.mock('../../../packages/server/common/models.common.js', () =>
   require('../../helpers/taxonomy-world.js').fakeTaxonomyModels()
