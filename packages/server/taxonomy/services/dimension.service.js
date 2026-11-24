@@ -7,11 +7,7 @@ const {
   TaxonomyItems,
 } = require('../../common/models.common.js');
 const ERROR_CODES = require('../../constant/error-codes.js');
-const {
-  StandardDimensions,
-  DIMENSION_NAME_PATTERN,
-  TaxonomyLimits,
-} = require('../../constant/taxonomy-type.js');
+const { TaxonomyLimits } = require('../../constant/taxonomy-type.js');
 const { buildStandardDimensions } = require('./default-dimensions.js');
 const { resolveCompanyId, scopedById } = require('./company-scope.js');
 const {
@@ -22,17 +18,14 @@ const {
 const {
   assertParentName,
   assertNoChildDimension,
-  assertNoAvailabilityToMove,
 } = require('./availability.js');
+const { assertRoleIsFree } = require('./dimension-role.js');
 const {
-  assertRoleIsFree,
-  assertCodesKeepTheirMeaning,
-} = require('./dimension-role.js');
+  assertDimensionName,
+  assertDimensionUpdate,
+  assertValueType,
+} = require('./dimension-guards.js');
 const logger = require('../../utils/logger.js');
-
-// Published by the application to every template (ADR-0023): a dimension of
-// that name would shadow it.
-const RESERVED_NAMES = Object.freeze(['locale']);
 
 module.exports = {
   listDimensions,
@@ -76,13 +69,7 @@ async function createDimension({ user, groupId, payload = {} }) {
 
   const companyId = resolveCompanyId(user, groupId);
   const { name, ...rest } = payload;
-  if (
-    typeof name !== 'string' ||
-    !DIMENSION_NAME_PATTERN.test(name) ||
-    RESERVED_NAMES.includes(name)
-  ) {
-    throw new BadRequest(ERROR_CODES.INVALID_DIMENSION);
-  }
+  assertDimensionName(name);
   const fields = validateDimensionPayload(rest, { partial: false });
 
   // Seeded first, so a company declaring `trigger` before ever listing its
@@ -133,35 +120,7 @@ async function updateDimension({ user, dimensionId, payload = {} }) {
   const fields = validateDimensionPayload(payload, { partial: true });
   const dimension = await findScopedDimension({ user, dimensionId });
 
-  if (dimension.standard && fields.isActive === false) {
-    throw new Conflict(ERROR_CODES.STANDARD_DIMENSION_LOCKED);
-  }
-  if (fields.parentName !== undefined) {
-    // The standard dimensions open the list of selects; neither hangs under
-    // anything.
-    if (dimension.standard && fields.parentName !== null) {
-      throw new BadRequest(ERROR_CODES.INVALID_DIMENSION);
-    }
-    await assertParentName({
-      companyId: dimension._company,
-      name: dimension.name,
-      parentName: fields.parentName,
-    });
-    await assertNoAvailabilityToMove(dimension, fields.parentName);
-  }
-
-  if (fields.role !== undefined) {
-    // The doctrine's dimensions mean what the doctrine says, nothing more.
-    if (dimension.standard && fields.role !== null) {
-      throw new BadRequest(ERROR_CODES.INVALID_DIMENSION);
-    }
-    await assertRoleIsFree({
-      companyId: dimension._company,
-      role: fields.role,
-      exceptName: dimension.name,
-    });
-    await assertCodesKeepTheirMeaning(dimension, fields.role);
-  }
+  await assertDimensionUpdate(dimension, fields);
 
   Object.assign(dimension, withParentName(fields));
   await dimension.save();
@@ -197,39 +156,6 @@ async function deleteDimension({ user, dimensionId }) {
     _id: dimension._id,
     _company: dimension._company,
   });
-}
-
-/**
- * Check that a value may belong to the dimension `type` in this company.
- *
- * The email type is always there, so it is accepted without a read. The
- * trigger never takes a value: its two are the doctrine's. Any other name must
- * be a dimension the company declared, and an active one to receive a new value.
- *
- * @param {Object} params
- * @param {ObjectId} params.companyId
- * @param {*} params.type
- * @param {boolean} [params.toWrite] a value is about to be created under it
- * @returns {Promise<string>} the type
- */
-async function assertValueType({ companyId, type, toWrite = false }) {
-  const invalid = () => new BadRequest(ERROR_CODES.INVALID_TAXONOMY_TYPE);
-
-  if (typeof type !== 'string' || !DIMENSION_NAME_PATTERN.test(type)) {
-    throw invalid();
-  }
-  if (type === StandardDimensions.EMAIL_TYPE) return type;
-  if (type === StandardDimensions.TRIGGER) throw invalid();
-
-  const dimension = await TaxonomyDimensions.findOne({
-    _company: companyId,
-    name: type,
-  }).lean();
-  if (!dimension || (toWrite && !dimension.isActive)) {
-    throw invalid();
-  }
-
-  return type;
 }
 
 // A dimension taken back to the first level loses the field rather than storing
