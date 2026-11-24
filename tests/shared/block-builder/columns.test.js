@@ -40,8 +40,8 @@ describe('a composition renders as rows of columns', () => {
     } = require('../../../packages/shared/block-builder/generate.js'));
   });
 
-  // Built without the flat `elements` view on purpose: a composition carries
-  // one or the other, and its absence is what says "render rows". See state.js.
+  // Rows and nothing else, with no flat `elements` list beside them: in memory
+  // a composition is always made of rows. See ADR 0025, "Stored shape".
   const composition = (rows) => {
     const { elements: _elements, ...rest } = emptyState();
     return { ...rest, rows };
@@ -143,8 +143,12 @@ describe('a composition renders as rows of columns', () => {
         ])
       );
 
-      expect(html).toContain('&nbsp;');
-      expect(html).toMatch(/font-size:\s*0/);
+      // On the empty cell itself: a spacer element renders a non-breaking
+      // space at a zero font size too, so a match anywhere would prove nothing.
+      const emptyCell = html.match(/<td\b[^>]*>\s*&nbsp;\s*<\/td>/i);
+      expect(emptyCell).not.toBeNull();
+      expect(emptyCell[0]).toContain('width="50%"');
+      expect(emptyCell[0]).toMatch(/font-size:\s*0/);
     });
 
     it('drops a row where every column is empty', () => {
