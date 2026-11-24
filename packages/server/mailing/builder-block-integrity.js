@@ -11,10 +11,7 @@ const {
   htmlOf,
   stateOf,
 } = require('./synthetic-block-guard.js');
-const {
-  parseState,
-  isEmptyComposition,
-} = require('../../shared/block-builder/state.js');
+const { readState } = require('../../shared/block-builder/state.js');
 const { generate } = require('../../shared/block-builder/generate.js');
 
 // A composed block stores two things: its state, and the markup the editor
@@ -55,13 +52,13 @@ const composedBlocksOf = (data) =>
  *   something its state cannot account for
  */
 function markupFromState(block) {
-  const state = parseState(block[stateProperty]);
+  const { state, empty } = readState(block[stateProperty]);
   if (state) return generate(state);
 
   // Nothing to rebuild from, and nothing that would be lost: an empty block,
   // or every element removed in the editor.
   const isEmpty = htmlOf(block) === '' && stateOf(block) === '';
-  if (isEmpty || isEmptyComposition(block[stateProperty])) return '';
+  if (isEmpty || empty) return '';
 
   logger.warn('Refused a composed block whose state cannot be read', {
     stateLength: stateOf(block).length,

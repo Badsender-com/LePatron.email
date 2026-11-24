@@ -114,49 +114,66 @@ function readEnvelope(serialised) {
   return parsed;
 }
 
+const UNREADABLE = Object.freeze({ state: null, empty: false });
+const EMPTY = Object.freeze({ state: null, empty: true });
+
 /**
- * Whether the stored string is a composition without any element — what the
- * editor stores when everything was removed and applied. parseState returns
- * null for it as for a state it cannot read, but this one means something: an
- * empty block, which generates no markup.
+ * The stored string, read once: the state it holds, or why there is none.
+ *
+ * `empty` tells the two reasons apart. An empty composition is what the editor
+ * stores when everything was removed and applied: an empty block, which
+ * generates no markup. Anything else without a state is unreadable — corrupt,
+ * from a later version, or over the limits — and must not be rebuilt into
+ * nothing.
  *
  * @param {*} serialised the stored string
- * @returns {boolean}
+ * @returns {{ state: Object|null, empty: boolean }}
  */
-function isEmptyComposition(serialised) {
+function readState(serialised) {
   const parsed = readEnvelope(serialised);
-  if (parsed === null) return false;
-  return elementsOf(readRows(parsed)).length === 0;
-}
-
-/**
- * @param {*} serialised the stored string
- * @returns {Object|null} a usable state, or null when there is nothing to reopen
- */
-function parseState(serialised) {
-  const parsed = readEnvelope(serialised);
-  if (!parsed) return null;
+  if (!parsed) return UNREADABLE;
 
   const rows = readRows(parsed);
+  if (rows === null) return UNREADABLE;
+
   const elements = elementsOf(rows);
-  if (elements.length === 0) return null;
+  if (elements.length === 0) return EMPTY;
   // Unique across the WHOLE composition, not column by column: selection and
   // drag address an element by id alone, so two elements sharing one in
   // different columns would select and move as one.
   ensureUniqueIds(elements, newElementId);
 
   return {
-    v: STATE_VERSION,
-    // The generator that wrote the stored markup, kept as read: it is how a
-    // reopened block tells that applying would rebuild it differently.
-    gen: typeof parsed.gen === 'string' ? parsed.gen : GENERATOR_VERSION,
-    block: cleanAgainst(parsed.block, DEFAULT_BLOCK),
-    rows,
+    state: {
+      v: STATE_VERSION,
+      // The generator that wrote the stored markup, kept as read: it is how a
+      // reopened block tells that applying would rebuild it differently.
+      gen: typeof parsed.gen === 'string' ? parsed.gen : GENERATOR_VERSION,
+      block: cleanAgainst(parsed.block, DEFAULT_BLOCK),
+      rows,
+    },
+    empty: false,
   };
 }
 
+/**
+ * @param {*} serialised the stored string
+ * @returns {Object|null} a usable state, or null when there is nothing to reopen
+ */
+const parseState = (serialised) => readState(serialised).state;
+
+/**
+ * Whether the stored string is a composition without any element. parseState
+ * returns null for it as for a state it cannot read; see readState.
+ *
+ * @param {*} serialised the stored string
+ * @returns {boolean}
+ */
+const isEmptyComposition = (serialised) => readState(serialised).empty;
+
 module.exports = {
   serialiseState,
+  readState,
   parseState,
   isEmptyComposition,
   cleanElement,

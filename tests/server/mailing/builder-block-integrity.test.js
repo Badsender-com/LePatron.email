@@ -27,6 +27,7 @@ const {
 } = require('../../../packages/shared/block-builder/state.js');
 const {
   singleColumnRows,
+  MAX_ROWS,
 } = require('../../../packages/shared/block-builder/composition.js');
 
 const stateWith = (content) =>
@@ -149,6 +150,16 @@ describe('rebuildComposedMarkup — a state it cannot read', () => {
     ],
     ['a state of another shape', JSON.stringify({ v: 1 }), ''],
     ['markup without any state', '', '<p>markup</p>'],
+    [
+      'more rows than a composition may hold',
+      JSON.stringify({
+        v: 2,
+        rows: Array.from({ length: MAX_ROWS + 1 }, () => ({
+          columns: [{ width: 100, elements: [{ type: 'divider' }] }],
+        })),
+      }),
+      '',
+    ],
   ])('refuses %s, and leaves the block as it was', (_label, state, html) => {
     const block = composed(state, html);
 

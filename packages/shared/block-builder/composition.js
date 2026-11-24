@@ -22,11 +22,20 @@ const {
 // longer holds a word, and Outlook's rounding of percentages starts to show.
 const MAX_COLUMNS = 4;
 
+// Far more rows than a block needs: a block is a section of an email, and a
+// whole email is a column of blocks. A stored composition with more is not one
+// the editor wrote, and it is refused rather than read.
+const MAX_ROWS = 50;
+
 // Same reasoning as MAX_COLUMNS from the other end. A column narrower than
 // this is not a layout choice, it is a mistake or a corrupted value.
 const MIN_COLUMN_WIDTH = 10;
 
 const FULL_WIDTH = 100;
+
+// What newRowId writes. A stored row id is kept only in that shape: anything
+// else is replaced on read, so no free text rides along in a row id.
+const ROW_ID = /^row-[0-9a-z]{1,16}-[0-9]{1,16}$/;
 
 // The keys a row and a column hold when nothing about them was set. A key
 // beyond these is a setting, and a setting makes the composition more than a
@@ -85,11 +94,10 @@ function usableWidths(widths) {
 /**
  * A stored row brought back to something renderable.
  *
- * @param {*} row
+ * @param {Object} source a stored row, already known to be an object
  * @returns {Object} `{ id, columns }`
  */
-function cleanRow(row) {
-  const source = isObject(row) ? row : {};
+function cleanRow(source) {
   const stored = Array.isArray(source.columns) ? source.columns : [];
 
   const columns = (stored.length === 0 ? [{}] : stored).map((column) => {
@@ -114,7 +122,8 @@ function cleanRow(row) {
   const widths = usableWidths(kept.map((column) => column.width));
 
   return {
-    id: typeof source.id === 'string' && source.id !== '' ? source.id : '',
+    id:
+      typeof source.id === 'string' && ROW_ID.test(source.id) ? source.id : '',
     columns: kept.map((column, index) => ({
       width: widths[index],
       elements: column.elements,
@@ -139,7 +148,8 @@ function singleColumnRows(elements) {
 }
 
 /**
- * The rows of a stored composition, whichever version wrote it.
+ * The rows of a stored composition, whichever version wrote it, or null when
+ * there are more than MAX_ROWS.
  *
  * A composition written before columns is a flat list of elements. It reads as
  * one row of one full-width column — in memory, with nothing rewritten in the
@@ -147,12 +157,16 @@ function singleColumnRows(elements) {
  * before this change reopens exactly as its author left it.
  *
  * @param {Object} parsed what came out of JSON.parse
- * @returns {Array<Object>}
+ * @returns {Array<Object>|null}
  */
 function readRows(parsed) {
   let rows;
   if (Array.isArray(parsed.rows)) {
-    rows = parsed.rows.map(cleanRow);
+    // Counted on what is stored, before anything is read: an entry that turns
+    // out not to be a row still counts, so a state cannot pad itself with
+    // thousands of them and have each one looked at.
+    if (parsed.rows.length > MAX_ROWS) return null;
+    rows = parsed.rows.filter(isObject).map(cleanRow);
   } else {
     rows = singleColumnRows(
       cleanElements(Array.isArray(parsed.elements) ? parsed.elements : [])
@@ -239,6 +253,7 @@ function singleColumnElements(state) {
 
 module.exports = {
   MAX_COLUMNS,
+  MAX_ROWS,
   MIN_COLUMN_WIDTH,
   FULL_WIDTH,
   newRowId,
