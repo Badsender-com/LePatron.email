@@ -29,11 +29,11 @@ It is reserved to **layout components** (`kind: 'layout'` in the manifest), whos
 
 ## The author's stylesheet and the derived one
 
-An export carries two stylesheets, gated differently because they are different things. The rule lives in one place per side, applied to the same data: `headCssToExport` in `packages/editor/src/js/ext/head-css/exported-css.js` (export and canvas preview) and in `packages/server/mailing/head-css-guard.js` (the copies the server writes, such as a translated duplicate), both on `stylesheetForComposedBlocks` from `packages/shared/block-builder/block-stylesheet.js`.
+An export carries two stylesheets, gated differently because they are different things. The rule lives in one place, `exportedHeadCss` in `packages/shared/head-css/exported-head-css.js`. Each side only collects its inputs from its own content model: `headCssToExport` in `packages/editor/src/js/ext/head-css/exported-css.js` (export and canvas preview) and in `packages/server/mailing/head-css-export.js` (the copies the server writes, such as a translated duplicate).
 
 - **The derived stylesheet is always kept.** It is computed from the composed blocks of the email, so it exists only while one of them has a row of several columns. No gate, no flag.
 - **The author's stylesheet (head CSS) is kept while the email holds an HTML code block**, and only then. A composed block does not keep it: an email whose only synthetic block is composed exports the derived stylesheet and nothing else. This is the rule of the head-CSS channel, which this slice does not reopen ([head-css-channel plan, §4](../plans/head-css-channel.md#4-décisions)). Left out of the export, the author's CSS is not deleted: it stays stored, and comes back with an HTML code block.
-- **Derived first, author last.** At equal specificity the last rule wins, so a hand-written rule can still override a generated one.
+- **Derived first, author last.** At equal specificity the last rule wins, so a hand-written rule can still override a generated one. The exception is what CSS only reads at the top of a stylesheet: the author's leading `@charset`, `@import`, `@namespace` and `@layer` statements go above the derived rules, since a browser ignores an `@import` that follows a rule.
 - **The `lp-` prefix belongs to the generator.** Nothing refuses an author's rule on an `lp-` class, but it is not a supported hook: the generator may rename or drop its classes.
 
 ## Rights

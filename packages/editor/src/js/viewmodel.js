@@ -828,10 +828,10 @@ function initializeEditor(content, blockDefs, thumbPathConverter, galleryUrl) {
 
     // After the substitution, so the stylesheet cannot be mistaken for a marker,
     // and after every regex above, so it reaches the export exactly as written.
-    // A mailing without head CSS gets the very same string as before — and so
-    // does one without any HTML code block left: the CSS follows the blocks it
-    // exists to style, and stays stored for when one comes back
-    // (ext/head-css/exported-css.js).
+    // What is injected is the exported head stylesheet: the rules the composed
+    // blocks derive, and the author's CSS while an HTML code block is there to
+    // style (ext/head-css/exported-css.js). A mailing that needs neither gets
+    // the very same string as before; the author's CSS stays stored either way.
     return injectHeadCss(content, viewModel.exportedHeadCss());
   };
 

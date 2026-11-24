@@ -15,6 +15,14 @@ const {
 const {
   generate,
 } = require('../../../packages/shared/block-builder/generate.js');
+const {
+  rowClass,
+  BLOCK_WIDTH,
+} = require('../../../packages/shared/block-builder/row-markup.js');
+const {
+  GENERATED_CLASSES,
+  MOBILE_DECLARATIONS,
+} = require('../../../packages/shared/block-builder/generated-classes.js');
 
 const text = (id) => ({ id, type: 'text', content: id });
 
@@ -53,10 +61,10 @@ describe('beating the inline width', () => {
 
 describe('the media query', () => {
   it('is a max-width at the width the composition is laid out for', () => {
+    expect(BREAKPOINT).toBe(BLOCK_WIDTH);
     expect(collectCss(composition([50, 50]))).toContain(
       `max-width:${BREAKPOINT}px`
     );
-    expect(BREAKPOINT).toBe(600);
   });
 
   it('wraps every rule in one query rather than one each', () => {
@@ -91,9 +99,54 @@ describe('what asks for a class', () => {
   });
 });
 
+// A row whose columns hold nothing renders nothing (row-markup.js), whether
+// its columns are empty or hold only elements this version does not know.
+const emptyRow = (...columns) => ({
+  id: 'empty',
+  columns: columns.map((elements) => ({ width: 50, elements })),
+});
+
+describe('the class a row carries', () => {
+  it('is the stacking class for a row of several columns holding something', () => {
+    expect(rowClass(composition([50, 50]).rows[0])).toBe('lp-stack');
+  });
+
+  it('is nothing for a row of one column', () => {
+    expect(rowClass(composition([100]).rows[0])).toBe('');
+  });
+
+  test.each([
+    ['empty columns', emptyRow([], [])],
+    ['columns of unknown elements', emptyRow([{ type: 'nope' }], [null])],
+    ['no column', { id: 'r', columns: [] }],
+    ['not a row', null],
+  ])('is nothing for %s', (_label, row) => {
+    expect(rowClass(row)).toBe('');
+  });
+
+  it('is the stacking class as soon as one column holds something', () => {
+    expect(rowClass(emptyRow([], [text('a')]))).toBe('lp-stack');
+  });
+});
+
+describe('every generated class', () => {
+  // A class with no declarations would be carried by the cells and do nothing
+  // on a phone, silently.
+  test.each(GENERATED_CLASSES)('%s has its mobile declarations', (name) => {
+    expect(typeof MOBILE_DECLARATIONS[name]).toBe('string');
+    expect(MOBILE_DECLARATIONS[name].trim()).not.toBe('');
+  });
+
+  it('and nothing else has any', () => {
+    expect(Object.keys(MOBILE_DECLARATIONS).sort()).toEqual(
+      [...GENERATED_CLASSES].sort()
+    );
+  });
+});
+
 describe('the markup and the stylesheet agree', () => {
   // The two are separate derivations of one composition, which is the point —
-  // and also the risk. Nothing but a test keeps them in step.
+  // and also the risk. Both ask rowClass, and this test keeps it that way.
   it('emits no class the markup does not carry', () => {
     const subject = composition([50, 50], [100], [33, 33, 34]);
     const html = generate(subject);
@@ -101,6 +154,19 @@ describe('the markup and the stylesheet agree', () => {
     classesOf(subject).forEach((name) => {
       expect(html).toContain(`class="${name}"`);
     });
+  });
+
+  // generateRow renders nothing for a row with nothing in it, so a rule for
+  // its class would be a media query with nothing to apply to.
+  it('emits no class for a row of several empty columns', () => {
+    const subject = {
+      ...composition([100]),
+      rows: [emptyRow([], []), ...composition([100]).rows],
+    };
+
+    expect(generate(subject)).not.toContain('lp-stack');
+    expect(classesOf(subject)).toEqual([]);
+    expect(collectCss(subject)).toBe('');
   });
 
   it('leaves no class in the markup the stylesheet does not define', () => {

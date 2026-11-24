@@ -56,13 +56,29 @@ function starterValues(type, values, options) {
 }
 
 /**
- * Everything about one element, worked out once: its type, its values merged
- * with the defaults, its starter, and from those its markup and its chrome.
+ * The definition an element renders with, or null when it is nothing.
  *
  * The one rule for "this element is nothing": it is not an object, or its type
  * is unknown — a state written by a newer version, or a corrupted one. Skipping
  * it keeps the rest of the block renderable. Every known type renders a
  * complete table, so a known element always occupies its place.
+ *
+ * Exported so a caller that only needs to know whether a column holds
+ * anything (row-markup.js, for the class a row carries) asks the same question
+ * without rendering the answer.
+ *
+ * @param {*} element one entry of a column's `elements`
+ * @returns {Object|null}
+ */
+function definitionOf(element) {
+  if (!element || typeof element !== 'object') return null;
+  return elementFor(element.type) || null;
+}
+
+/**
+ * Everything about one element, worked out once: its type, its values merged
+ * with the defaults, its starter, and from those its markup and its chrome.
+ * Null when the element is nothing (see definitionOf).
  *
  * @param {Object} element one entry of a column's `elements`
  * @param {Object} [options] see generate
@@ -71,9 +87,7 @@ function starterValues(type, values, options) {
  * @returns {{markup: string, attributes: string}|null}
  */
 function resolveElement(element, options, containerWidth) {
-  if (!element || typeof element !== 'object') return null;
-
-  const definition = elementFor(element.type);
+  const definition = definitionOf(element);
   if (!definition) return null;
 
   const values = { ...definition.defaults, ...element };
@@ -145,6 +159,7 @@ function generateElement(element, options) {
 }
 
 module.exports = {
+  definitionOf,
   resolveElement,
   renderElement,
   elementAttributes,

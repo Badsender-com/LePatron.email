@@ -1,7 +1,9 @@
 'use strict';
 
-// Applies the author's head CSS to the canvas, so writing a rule shows its
-// effect where the email is being composed rather than only in the export.
+// Applies the exported head stylesheet to the canvas — the author's CSS and
+// the rules the composed blocks derive — so writing a rule, or laying out
+// columns, shows its effect where the email is being composed rather than
+// only in the export.
 //
 // The canvas is a plain div of the editor's document (`#main-wysiwyg-area`),
 // not an iframe, so the stylesheet is added to that document and every selector
@@ -13,10 +15,15 @@
 // scoping ever gets a selector wrong, the canvas is wrong and the delivered
 // email is still right.
 //
-// It does follow the export's rule, though: the canvas shows the CSS only when
-// the export would carry it, that is while the mailing holds an HTML code block
-// (exported-css.js). A stylesheet still styling the canvas after the last block
-// is gone would show the author an email they will not send.
+// It does follow the export's rule, though: the canvas shows exactly what the
+// export would carry (exported-css.js) — the derived rules whenever a composed
+// block asks for one, the author's CSS only while the mailing holds an HTML
+// code block. A stylesheet still styling the canvas after the last block is
+// gone would show the author an email they will not send.
+//
+// Media queries follow the preview mode (preview-media.js): kept as written on
+// desktop, forced on mobile — which is what stacks a composed block's columns
+// there — and forced onto selectors nothing matches in the default `both`.
 
 const ko = require('knockout');
 const { scopeCss } = require('./scope-css.js');
@@ -88,9 +95,12 @@ function attachHeadCssPreview(viewModel, doc) {
   }
 
   // One computed over what the export would inject: it depends on the stored
-  // CSS and on the presence of an HTML code block, so adding, removing or
-  // undoing the last block re-renders the canvas — and, pure, it notifies only
-  // when that CSS actually changes, not on every edit of the content.
+  // CSS, on the presence of an HTML code block and on the composed blocks'
+  // states, so adding, removing or undoing a block re-renders the canvas —
+  // and, pure, it notifies only when that CSS actually changes, not on every
+  // edit of the content. It is still re-evaluated on every such edit; each
+  // composed block's state is read once, then remembered
+  // (block-stylesheet.js).
   const exported = ko.pureComputed(() => viewModel.exportedHeadCss());
 
   const currentMode = () =>
