@@ -7,7 +7,10 @@ const {
   TaxonomyItems,
 } = require('../../common/models.common.js');
 const ERROR_CODES = require('../../constant/error-codes.js');
-const { TaxonomyLimits } = require('../../constant/taxonomy-type.js');
+const {
+  DimensionScopes,
+  TaxonomyLimits,
+} = require('../../constant/taxonomy-type.js');
 const { buildStandardDimensions } = require('./default-dimensions.js');
 const { resolveCompanyId, scopedById } = require('./company-scope.js');
 const {
@@ -23,6 +26,7 @@ const { assertRoleIsFree } = require('./dimension-role.js');
 const {
   assertDimensionName,
   assertDimensionUpdate,
+  assertScopeFits,
   assertValueType,
 } = require('./dimension-guards.js');
 const logger = require('../../utils/logger.js');
@@ -90,9 +94,11 @@ async function createDimension({ user, groupId, payload = {} }) {
     await assertParentName({ companyId, name, parentName: fields.parentName });
   }
   await assertRoleIsFree({ companyId, role: fields.role });
+  assertScopeFits(fields);
 
   try {
     return await TaxonomyDimensions.create({
+      scope: DimensionScopes.ALL,
       ...withParentName(fields),
       name,
       _company: companyId,
