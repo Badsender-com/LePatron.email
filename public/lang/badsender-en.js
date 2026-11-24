@@ -421,6 +421,9 @@ module.exports = {
   'block-builder-rows': 'Rows',
   'block-builder-row': 'Row',
   'block-builder-add-row': 'Add a row',
+  'block-builder-row-limit': 'A block holds at most __max__ rows.',
+  'block-builder-too-many-rows':
+    'This composition has more than __max__ rows and could not be read back. Remove rows before applying.',
   'block-builder-structure': 'Row structure',
   'block-builder-structure-full': 'One column',
   'block-builder-structure-halves': 'Two equal columns',

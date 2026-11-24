@@ -25,6 +25,9 @@ module.exports = `<modal-component
     <p v-if="tooLarge" class="bb-modal__error" role="alert">
       {{ vm.t('block-builder-too-large') }}
     </p>
+    <p v-if="tooManyRows" class="bb-modal__error" role="alert">
+      {{ vm.t('block-builder-too-many-rows', { max: maxRows }) }}
+    </p>
 
     <div class="bb-modal__layout">
       <div class="bb-modal__column bb-modal__column--left">
@@ -60,6 +63,8 @@ module.exports = `<modal-component
         <button
           type="button"
           class="bb-modal__add-row"
+          :disabled="rowLimitReached"
+          :title="rowLimitReached ? vm.t('block-builder-row-limit', { max: maxRows }) : null"
           @click.prevent="addRow">+ {{ vm.t('block-builder-add-row') }}</button>
 
         <div v-if="selectedRow" class="bb-modal__structure">

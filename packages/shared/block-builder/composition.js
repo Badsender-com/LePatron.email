@@ -258,6 +258,20 @@ function singleColumnElements(state) {
   return row ? row.columns[0].elements : null;
 }
 
+/** Whether one more row fits within MAX_ROWS, the bound readRows reads in. */
+const canAddRow = (state) => listOf(state && state.rows).length < MAX_ROWS;
+
+/**
+ * Whether a composition, once written, is one readRows would read back: judged
+ * on the rows withoutEmptyRows keeps, which is what is stored. The read
+ * normalises everything else; the number of rows is the one bound it refuses.
+ *
+ * @param {Object} state
+ * @returns {boolean}
+ */
+const isWritableComposition = (state) =>
+  withoutEmptyRows(state && state.rows).length <= MAX_ROWS;
+
 module.exports = {
   MAX_COLUMNS,
   MAX_ROWS,
@@ -275,4 +289,6 @@ module.exports = {
   flatRowOf,
   isFlatComposition,
   singleColumnElements,
+  canAddRow,
+  isWritableComposition,
 };

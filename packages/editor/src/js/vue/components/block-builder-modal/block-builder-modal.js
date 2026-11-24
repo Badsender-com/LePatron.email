@@ -25,6 +25,7 @@ const {
 } = require('../../../../../../shared/block-builder/state.js');
 const {
   elementsOfState,
+  isWritableComposition,
 } = require('../../../../../../shared/block-builder/composition.js');
 
 // The composing surface of the block builder.
@@ -84,8 +85,9 @@ const BlockBuilderModalComponent = Vue.component('BlockBuilderModal', {
     // on the way in. The stored markup is frozen until the user applies, and
     // applying rebuilds it, so they are told before rather than surprised after.
     rebuildsMarkup: false,
-    // The serialised state an apply was refused for, for its size. Kept rather
-    // than a boolean so the message goes as soon as the composition changes.
+    // The serialised state an apply was refused for: too large, or more rows
+    // than a stored composition is read with. Kept rather than a boolean so
+    // the message goes as soon as the composition changes.
     refusedState: null,
     state: emptyState(),
     previewWidth: DESKTOP_WIDTH,
@@ -127,11 +129,19 @@ const BlockBuilderModalComponent = Vue.component('BlockBuilderModal', {
     isEmpty() {
       return elementsOfState(this.state).length === 0;
     },
-    tooLarge() {
+    refused() {
       return (
         this.refusedState !== null &&
         this.refusedState === serialiseState(this.state)
       );
+    },
+    // One reason shown at a time: the rows first, since cutting rows down is
+    // also what makes the composition smaller.
+    tooManyRows() {
+      return this.refused && !isWritableComposition(this.state);
+    },
+    tooLarge() {
+      return this.refused && !this.tooManyRows;
     },
     // Translated here, where the view-model is, and handed to the settings
     // panel as plain strings keyed by i18n key.
@@ -212,8 +222,13 @@ const BlockBuilderModalComponent = Vue.component('BlockBuilderModal', {
       const html = this.html;
       const state = serialiseState(this.state);
       // Refused here, in the modal, where the composition can still be cut
-      // down: applied, it would make every autosave fail on the server.
-      if (!validateBlockBuilderLength(html, state).valid) {
+      // down: applied, it would make every autosave fail on the server — too
+      // large, or with more rows than the read accepts, which the server
+      // reports as unreadable and a reopening would lose.
+      if (
+        !isWritableComposition(this.state) ||
+        !validateBlockBuilderLength(html, state).valid
+      ) {
         this.refusedState = state;
         return;
       }

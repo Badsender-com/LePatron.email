@@ -3,8 +3,10 @@
 const {
   MAX_COLUMNS,
   MIN_COLUMN_WIDTH,
+  MAX_ROWS,
   FULL_WIDTH,
-  newRowId,
+  singleColumnRows,
+  canAddRow,
   areUsableWidths,
 } = require('../../../../../../shared/block-builder/composition.js');
 
@@ -35,6 +37,16 @@ const RowSettingsMixin = {
       return PRESETS;
     },
 
+    // The bound a stored composition is read within (composition.js): a row
+    // past it would be accepted here and refused on every save after.
+    rowLimitReached() {
+      return !canAddRow(this.state);
+    },
+
+    maxRows() {
+      return MAX_ROWS;
+    },
+
     selectedRow() {
       return this.rowById(this.selectedRowId);
     },
@@ -60,11 +72,14 @@ const RowSettingsMixin = {
       return this.vm.t(`block-builder-structure-${preset.key}`);
     },
 
+    // Selected on arrival, so the palette fills it: the active column is the
+    // selected row's first one (selection.js). Nothing to render: a row holding
+    // nothing renders nothing, and the preview's watcher renders what changes.
     addRow() {
-      const row = { id: newRowId(), columns: [{ width: FULL_WIDTH, elements: [] }] };
+      if (!canAddRow(this.state)) return null;
+      const [row] = singleColumnRows();
       this.state.rows.push(row);
       this.selectRow(row.id);
-      this.scheduleRender();
       return row;
     },
 

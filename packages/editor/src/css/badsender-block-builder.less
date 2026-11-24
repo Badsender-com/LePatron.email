@@ -171,6 +171,15 @@
       border-color: #00acdc;
       color: #00acdc;
     }
+
+    // At the row limit (MAX_ROWS). After :hover, so the button does not
+    // light up as if it still worked.
+    &:disabled {
+      cursor: default;
+      opacity: 0.4;
+      border-color: #c8c8c8;
+      color: inherit;
+    }
   }
 
   &__presets {

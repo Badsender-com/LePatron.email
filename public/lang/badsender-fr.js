@@ -435,6 +435,9 @@ module.exports = {
   'block-builder-rows': 'Lignes',
   'block-builder-row': 'Ligne',
   'block-builder-add-row': 'Ajouter une ligne',
+  'block-builder-row-limit': 'Un bloc compte au plus __max__ lignes.',
+  'block-builder-too-many-rows':
+    "Cette composition dépasse __max__ lignes et ne pourrait pas être relue. Supprimez des lignes avant d'appliquer.",
   'block-builder-structure': 'Structure de la ligne',
   'block-builder-structure-full': 'Une colonne',
   'block-builder-structure-halves': 'Deux colonnes égales',
