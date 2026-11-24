@@ -24,7 +24,7 @@ const {
   serialiseState,
 } = require('../../../../../../shared/block-builder/state.js');
 const {
-  singleColumnElements,
+  elementsOfState,
 } = require('../../../../../../shared/block-builder/composition.js');
 
 // The composing surface of the block builder.
@@ -92,21 +92,9 @@ const BlockBuilderModalComponent = Vue.component('BlockBuilderModal', {
     desktopWidth: DESKTOP_WIDTH,
     mobileWidth: MOBILE_WIDTH,
   }),
+  // The column the list works on, and the selected element, come with the
+  // selection: see selection.js.
   computed: {
-    // The list the modal edits. A composition is rows of columns, and this
-    // modal composes a single column: every list operation works on that
-    // column's own array, so what it changes is the composition.
-    columnElements() {
-      return singleColumnElements(this.state) || [];
-    },
-    selected() {
-      return (
-        this.columnElements.find(
-          (element) => element.id === this.selectedElementId
-        ) ||
-        null
-      );
-    },
     // What the block will actually store and mail: no element ids, which are
     // editing chrome and have no business in a recipient's inbox.
     html() {
@@ -134,8 +122,10 @@ const BlockBuilderModalComponent = Vue.component('BlockBuilderModal', {
         { image: { key: 'src' } }
       );
     },
+    // The whole composition, not the active column: an empty column beside
+    // content is not an empty block.
     isEmpty() {
-      return this.columnElements.length === 0;
+      return elementsOfState(this.state).length === 0;
     },
     tooLarge() {
       return (
@@ -187,9 +177,8 @@ const BlockBuilderModalComponent = Vue.component('BlockBuilderModal', {
         typeof existingMarkup === 'string' &&
         existingMarkup !== '';
       this.rebuildsMarkup = Boolean(restored) && existingMarkup !== this.html;
-      this.selectElement(
-        this.columnElements.length ? this.columnElements[0].id : null
-      );
+      const [first] = elementsOfState(this.state);
+      this.selectElement(first ? first.id : null);
       this.previewWidth = DESKTOP_WIDTH;
       this.rememberOpenedState();
       this.$refs.modalRef?.openModal();

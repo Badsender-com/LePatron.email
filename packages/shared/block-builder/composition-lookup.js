@@ -1,7 +1,7 @@
 'use strict';
 
-// Finding things in a composition: every element in document order, and the
-// rows that hold anything.
+// Finding things in a composition: every element in document order, the place
+// of one element, a row by its id, and the rows that hold anything.
 //
 // Plain readers over the in-memory shape (see composition.js), shared by the
 // modal and the server so that "every element" and "where an element is" mean
@@ -67,6 +67,39 @@ function elementsOf(rows) {
 const elementsOfState = (state) => elementsOf(state && state.rows);
 
 /**
+ * Where an element sits in a composition: its row, its column, and its index
+ * in that column — the live objects, so a splice into `column.elements` moves
+ * it. Searched across the whole composition, since an id is unique across it
+ * (see readState in state.js).
+ *
+ * @param {Object} state
+ * @param {string} id
+ * @returns {{row: Object, column: Object, index: number}|null}
+ */
+function locateElement(state, id) {
+  if (typeof id !== 'string' || id === '') return null;
+  return walkElements(
+    state && state.rows,
+    (element) => isObject(element) && element.id === id
+  );
+}
+
+/**
+ * The row of a composition with this id, or null.
+ *
+ * @param {Object} state
+ * @param {string} id
+ * @returns {Object|null}
+ */
+function rowById(state, id) {
+  if (typeof id !== 'string' || id === '') return null;
+  return (
+    listOf(state && state.rows).find((row) => isObject(row) && row.id === id) ||
+    null
+  );
+}
+
+/**
  * Whether a row holds at least one element, in any of its columns.
  *
  * @param {Object} row
@@ -97,5 +130,7 @@ const withoutEmptyRows = (rows) => listOf(rows).filter(holdsElements);
 module.exports = {
   elementsOf,
   elementsOfState,
+  locateElement,
+  rowById,
   withoutEmptyRows,
 };

@@ -36,11 +36,7 @@ const RowSettingsMixin = {
     },
 
     selectedRow() {
-      if (!this.selectedRowId) return null;
-      return (
-        (this.state.rows || []).find((row) => row.id === this.selectedRowId) ||
-        null
-      );
+      return this.rowById(this.selectedRowId);
     },
 
     // What the panel shows: a row's structure, or an element's settings. One

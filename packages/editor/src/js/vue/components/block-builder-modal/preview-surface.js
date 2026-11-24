@@ -18,9 +18,9 @@ const {
 // `allow-same-origin`), so the parent can write into it and listen on it even
 // though scripts inside it cannot run.
 //
-// The component is expected to provide: `state`, `columnElements`,
-// `selectedElementId`, `isEmpty`, `previewMarkup`, `vm`, and a `previewFrame`
-// ref.
+// The component is expected to provide: `state`, `locateElement`,
+// `selectElement`, `selectedElementId`, `isEmpty`, `previewMarkup`, `vm`, and a
+// `previewFrame` ref.
 //
 // It knows nothing of the drag. What the drag needs from it is public and
 // generic: the events below, to listen on a freshly written document and to
@@ -253,7 +253,8 @@ const PreviewSurfaceMixin = {
     // click above and the drag (drag-surface.js) alike. `closest` walks up
     // from whatever was hit — a word, a pixel of an image — to the row that
     // carries the id; a target with no `closest` is a text node, a selection
-    // being dragged. A row whose id is not in the state is not ours.
+    // being dragged. A row whose id is nowhere in the composition — any row,
+    // any column — is not ours.
     elementRowFromEvent(event) {
       const target = event.target;
       const row =
@@ -261,8 +262,7 @@ const PreviewSurfaceMixin = {
           ? target.closest(`[${ELEMENT_ATTRIBUTE}]`)
           : null;
       if (!row) return null;
-      const id = row.getAttribute(ELEMENT_ATTRIBUTE);
-      return this.columnElements.some((element) => element.id === id)
+      return this.locateElement(row.getAttribute(ELEMENT_ATTRIBUTE))
         ? row
         : null;
     },

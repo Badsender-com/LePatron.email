@@ -6,6 +6,9 @@ const {
 const {
   newElementId,
 } = require('../../../../../../shared/block-builder/state.js');
+const {
+  singleColumnRows,
+} = require('../../../../../../shared/block-builder/composition.js');
 
 // The element list: what can be added, and what has been — adding, selecting,
 // reordering and removing.
@@ -14,8 +17,13 @@ const {
 // every one of these reads or writes the component's `state` and its selection,
 // and a mixin keeps `this` meaning the component.
 //
+// It works on the ACTIVE column, the one the selection designates (see
+// selection.js): what the list shows, what the arrows move within, what the
+// palette adds to.
+//
 // The component is expected to provide: `state`, `columnElements`,
-// `selectedElementId`, `selectElement` (selection.js) and `vm`.
+// `selectedElementId`, `selectElement`, `locateElement`, `rowById`
+// (selection.js) and `vm`.
 
 const PALETTE = [
   { type: 'text', labelKey: 'block-builder-element-text' },
@@ -63,11 +71,18 @@ const ElementListMixin = {
       return name;
     },
 
-    // Clicking a palette entry appends. It stays alongside the drag: it is the
-    // quick path, it is what a keyboard reaches, and it is the fallback when a
-    // drag is dropped somewhere that refuses it.
+    // Clicking a palette entry adds right after the selected element, in its
+    // column; with a row or nothing selected, at the end of the active column
+    // — a row's first column, or the first one of the block. It stays
+    // alongside the drag: it is the quick path, it is what a keyboard
+    // reaches, and it is the fallback when a drag is dropped somewhere that
+    // refuses it.
     addElement(type) {
-      this.insertElement(type, this.columnElements.length);
+      const place = this.locateElement(this.selectedElementId);
+      return this.insertElement(
+        type,
+        place ? place.index + 1 : this.columnElements.length
+      );
     },
 
     // A palette entry is a `div role="button"`, not a <button>: Firefox does
@@ -96,8 +111,13 @@ const ElementListMixin = {
       // element is a starter drawn there and nowhere else (see STARTERS in
       // element-settings.js): nothing the user did not type reaches the state.
       const element = { id: newElementId(), type, ...defaultsFor(type) };
-      const at = Math.max(0, Math.min(index, this.columnElements.length));
-      this.columnElements.splice(at, 0, element);
+      // A composition left without any row still takes an element: it gets
+      // the row a new block starts with, rather than an element spliced into
+      // a list that belongs to nothing.
+      if (!this.activeColumn) this.state.rows.push(...singleColumnRows());
+      const elements = this.columnElements;
+      const at = Math.max(0, Math.min(index, elements.length));
+      elements.splice(at, 0, element);
       // Selected on arrival, so the settings panel is already on it — dropping
       // and editing are one gesture, not two.
       this.selectElement(element.id);
@@ -107,8 +127,12 @@ const ElementListMixin = {
     removeSelected() {
       const index = this.indexOfSelected();
       if (index === -1) return;
-      this.columnElements.splice(index, 1);
-      const next = this.columnElements[index] || this.columnElements[index - 1];
+      // Held before the splice: the active column is derived from the
+      // selection, and the selected element is the one going — read again
+      // after, it would be another column.
+      const elements = this.columnElements;
+      elements.splice(index, 1);
+      const next = elements[index] || elements[index - 1];
       this.selectElement(next ? next.id : null);
     },
 
@@ -135,27 +159,26 @@ const ElementListMixin = {
      * The moved element ends up selected, so the settings panel stays on it.
      */
     moveElementTo(id, index) {
-      const from = this.columnElements.findIndex(
-        (element) => element.id === id
-      );
+      // Held for the whole move: the active column is derived from where the
+      // selected element is, and between the two splices it is nowhere.
+      const elements = this.columnElements;
+      const from = elements.findIndex((element) => element.id === id);
       if (from === -1) return;
 
       this.selectElement(id);
       const to = index > from ? index - 1 : index;
       if (to === from) return;
 
-      const [element] = this.columnElements.splice(from, 1);
-      this.columnElements.splice(to, 0, element);
+      const [element] = elements.splice(from, 1);
+      elements.splice(to, 0, element);
     },
 
     /**
      * Moves an element to a column, at a position inside it.
      *
-     * The operation, not the gesture: the drag that will call it arrives with
-     * its own ticket. It lives here because a structure change needs it too —
-     * a column that disappears hands its elements to the one that survives,
-     * and losing a paragraph to a layout change is the kind of thing a user
-     * never forgives and never reports precisely enough to reproduce.
+     * The operation, not the gesture: the drag into a column calls it, with
+     * the target its drop line shows. A structure change does not need it —
+     * setRowWidths folds the elements of a column that disappears itself.
      *
      * The element keeps its identity and its settings: it is moved, never
      * recreated.
@@ -166,9 +189,7 @@ const ElementListMixin = {
      */
     moveElement(id, target) {
       const from = this.locateElement(id);
-      const row = (this.state.rows || []).find(
-        (entry) => entry.id === (target && target.rowId)
-      );
+      const row = this.rowById(target && target.rowId);
       const to = row && row.columns[target.columnIndex];
       if (!from || !to) return false;
 
@@ -183,26 +204,9 @@ const ElementListMixin = {
           : target.index;
       to.elements.splice(Math.max(0, Math.min(at, to.elements.length)), 0, element);
 
+      // Rendered by the preview's watcher, like every other change.
       this.selectElement(id);
-      this.scheduleRender();
       return true;
-    },
-
-    /** Where an element sits: its row, its column and its index, or null. */
-    locateElement(id) {
-      const rows = this.state.rows || [];
-      for (let r = 0; r < rows.length; r += 1) {
-        const columns = rows[r].columns || [];
-        for (let c = 0; c < columns.length; c += 1) {
-          const index = columns[c].elements.findIndex(
-            (element) => element.id === id
-          );
-          if (index !== -1) {
-            return { row: rows[r], column: columns[c], index };
-          }
-        }
-      }
-      return null;
     },
 
     // Whether the selected element can move by `offset`, so the buttons are
