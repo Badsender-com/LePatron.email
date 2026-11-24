@@ -10,8 +10,10 @@ const { ElementListMixin } = require('./element-list.js');
 const { DismissalMixin } = require('./dismissal.js');
 const { DragSurfaceMixin } = require('./drag-surface.js');
 const { ColumnTargetMixin } = require('./column-target.js');
+const { PageGuardMixin } = require('./page-guard.js');
 const { RowSettingsMixin } = require('./row-settings.js');
 const { RowActionsMixin } = require('./row-actions.js');
+const { RowDragMixin } = require('./row-drag.js');
 const { SelectionMixin } = require('./selection.js');
 const MODAL_TEMPLATE = require('./modal-template.js');
 const {
@@ -58,18 +60,22 @@ const BlockBuilderModalComponent = Vue.component('BlockBuilderModal', {
   // rendering into it, and the selection it carries. See preview-surface.js.
   // The element list is another: adding, selecting, moving, removing. See
   // element-list.js. The drag adds the gesture on top of the preview — see
-  // drag-surface.js, and column-target.js for the column it aims at. And Escape or a backdrop click ask before losing work —
-  // see dismissal.js.
+  // drag-surface.js, column-target.js for the column it aims at, and
+  // page-guard.js for the editor page around it. And Escape or a backdrop
+  // click ask before losing work — see dismissal.js.
   // What is selected is one state of its own — see selection.js. A row's
-  // structure is row-settings.js, and moving one is row-actions.js.
+  // structure is row-settings.js, moving one is row-actions.js, and dragging
+  // one in the list row-drag.js.
   mixins: [
     SelectionMixin,
     PreviewSurfaceMixin,
     ElementListMixin,
     DragSurfaceMixin,
     ColumnTargetMixin,
+    PageGuardMixin,
     RowSettingsMixin,
     RowActionsMixin,
+    RowDragMixin,
     DismissalMixin,
   ],
   props: {

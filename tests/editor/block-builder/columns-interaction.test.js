@@ -283,14 +283,8 @@ describe('moving a row', () => {
     expect(rowIds(modal)).toEqual(before);
   });
 
-  it('holds renders for the duration of a row drag', async () => {
-    const { modal } = await openModal(['text']);
-    modal.startRowDrag(modal.state.rows[0].id);
-
-    modal.scheduleRender();
-
-    expect(modal.renderHeld).toBe(true);
-  });
+  // Dragging a row in the list, through the events a browser sends, is
+  // row-drag.test.js.
 });
 
 // Turned on by #1212 (duplicating and deleting a row)

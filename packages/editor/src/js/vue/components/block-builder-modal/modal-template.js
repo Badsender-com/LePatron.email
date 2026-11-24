@@ -48,24 +48,37 @@ module.exports = `<modal-component
           @keyup="onPaletteKeyup($event, item.type)">+ {{ vm.t(item.labelKey) }}</div>
 
         <p class="bb-modal__section">{{ vm.t('block-builder-rows') }}</p>
-        <ul class="bb-modal__rows" role="listbox" :aria-label="vm.t('block-builder-rows')">
-          <li
-            v-for="(row, index) in state.rows"
-            :key="row.id"
-            role="option"
-            :aria-selected="String(row.id === selectedRowId)"
-            :tabindex="rowTabIndex(index)"
-            class="bb-modal__row"
-            :class="{ 'bb-modal__row--on': row.id === selectedRowId }"
-            draggable="true"
-            :aria-keyshortcuts="rowMoveShortcuts"
-            @click="selectRow(row.id)"
-            @keydown="onRowKeydown($event, index)"
-            @dragstart="startRowDrag(row.id)"
-            @dragover.prevent
-            @drop.prevent="dropRowAt(index)"
-            @dragend="dropRowAt(index)">{{ rowLabel(row, index) }}</li>
-        </ul>
+        <div
+          class="bb-modal__rows-drop"
+          :class="{
+            'bb-modal__rows-drop--active': draggingRowId !== null,
+            'bb-modal__rows-drop--end': rowDropIndex === state.rows.length
+          }"
+          @dragenter="handleRowDragOver"
+          @dragover="handleRowDragOver"
+          @dragleave="handleRowDragLeave"
+          @drop="handleRowDrop">
+          <ul class="bb-modal__rows" role="listbox" :aria-label="vm.t('block-builder-rows')">
+            <li
+              v-for="(row, index) in state.rows"
+              :key="row.id"
+              role="option"
+              :aria-selected="String(row.id === selectedRowId)"
+              :tabindex="rowTabIndex(index)"
+              class="bb-modal__row"
+              :class="{
+                'bb-modal__row--on': row.id === selectedRowId,
+                'bb-modal__row--drop-before': index === rowDropIndex
+              }"
+              draggable="true"
+              :aria-keyshortcuts="rowMoveShortcuts"
+              @click="selectRow(row.id)"
+              @keydown="onRowKeydown($event, index)"
+              @dragstart="startRowDrag(row.id, $event)"
+              @drag="handleDrag"
+              @dragend="handleDragEnd">{{ rowLabel(row, index) }}</li>
+          </ul>
+        </div>
         <div class="bb-modal__row-actions">
           <button
             type="button"
