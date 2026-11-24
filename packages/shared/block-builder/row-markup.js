@@ -8,6 +8,7 @@
 
 const { resolveElement } = require('./element-markup.js');
 const { stackClassFor } = require('./generated-classes.js');
+const { usableWidths } = require('./composition.js');
 const { defineTemplate } = require('./template.js');
 const columnTemplates = require('./components/column.compiled.js');
 const rowTemplates = require('./components/row.compiled.js');
@@ -60,6 +61,35 @@ function renderColumnContent(resolved) {
 }
 
 /**
+ * The columns of a row, normalised.
+ *
+ * `generate` is handed `parseState`'s output by the server, but the modal
+ * hands it the state it is editing, and nothing types that. So a column that
+ * is not an object counts as an empty one — it keeps its cell, the way an
+ * empty column does, instead of vanishing and widening its neighbours — and
+ * widths go through the same rule `parseState` applies, so a width that is
+ * missing or not a number gives equal shares here as it would once stored.
+ *
+ * @param {Object} row
+ * @returns {Array<{width: number, elements: Array<Object>}>}
+ */
+function columnsOf(row) {
+  const stored = row && Array.isArray(row.columns) ? row.columns : [];
+  const columns = stored.map((column) =>
+    column && typeof column === 'object' ? column : {}
+  );
+  const widths = usableWidths(
+    columns.map((column) =>
+      typeof column.width === 'number' ? column.width : Number(column.width)
+    )
+  );
+  return columns.map((column, index) => ({
+    width: widths[index],
+    elements: column.elements,
+  }));
+}
+
+/**
  * One row, as a table of real percentage cells.
  *
  * Cells rather than `inline-block` divs: that is what lets Outlook lay the
@@ -72,9 +102,7 @@ function renderColumnContent(resolved) {
  * @returns {string} the row's markup, or '' when it holds nothing anywhere
  */
 function generateRow(row, options) {
-  const columns = (row && Array.isArray(row.columns) ? row.columns : []).filter(
-    (column) => column && typeof column === 'object'
-  );
+  const columns = columnsOf(row);
   if (columns.length === 0) return '';
 
   const resolved = columns.map((column) =>

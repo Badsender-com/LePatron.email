@@ -77,6 +77,41 @@ describe('an empty column', () => {
   });
 });
 
+describe('what generateRow accepts', () => {
+  // The modal hands `generate` the state it is editing, not what parseState
+  // returns: the row is normalised the way parseState would store it.
+  it('keeps the cell of a column that is not an object', () => {
+    const html = generateRow({
+      columns: [null, { width: 50, elements: [text('a')] }],
+    });
+    const cells = cellsOf(html);
+
+    expect(cells).toHaveLength(2);
+    cells.forEach((cell) => expect(cell).toContain('class="lp-stack"'));
+  });
+
+  test.each([
+    ['missing', undefined],
+    ['not a number', 'large'],
+    ['NaN', Number.NaN],
+  ])('shares the row equally when a width is %s', (_label, width) => {
+    const html = generateRow({
+      columns: [
+        { width, elements: [text('a')] },
+        { width: 50, elements: [text('b')] },
+      ],
+    });
+
+    expect(html).not.toMatch(/undefined|NaN/);
+    expect(html.match(/width="50%"/g)).toHaveLength(2);
+  });
+
+  it('renders nothing for a row with no columns', () => {
+    expect(generateRow({ columns: [] })).toBe('');
+    expect(generateRow(null)).toBe('');
+  });
+});
+
 describe('each element is resolved once', () => {
   afterEach(() => jest.restoreAllMocks());
 
