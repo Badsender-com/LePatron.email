@@ -13,32 +13,20 @@
 // truncated. Returning null on anything unexpected costs the user a composition
 // they have to redo; throwing costs them the editor.
 
-const { elementFor } = require('./elements/index.js');
 const {
-  readRows,
-  elementsOf,
-  ensureUniqueRowIds,
+  newElementId,
   newRowId,
-} = require('./composition.js');
+  cleanAgainst,
+  cleanElement,
+  ensureUniqueIds,
+} = require('./stored-elements.js');
+const { readRows, elementsOf } = require('./composition.js');
 const {
   STATE_VERSION,
   GENERATOR_VERSION,
   DEFAULT_BLOCK,
   emptyState,
 } = require('./generate.js');
-
-let sequence = 0;
-
-/**
- * A fresh element id: unique within a session, and unlike any stored one
- * written in an earlier session.
- *
- * @returns {string}
- */
-function newElementId() {
-  sequence += 1;
-  return `el-${Date.now().toString(36)}-${sequence}`;
-}
 
 /**
  * @param {Object} state
@@ -80,93 +68,6 @@ function serialiseState(state) {
     // storing half a state that would reopen as nonsense.
     return '';
   }
-}
-
-/**
- * A stored value brought back to the type of its default, or the default.
- *
- * The templates format what they are given — a number `label` breaks the
- * modal's `slice`, a string `fontSize` lands in arithmetic. Every default is a
- * string or a number, so those are the only two conversions.
- *
- * @param {*} value
- * @param {string|number} fallback
- * @returns {string|number}
- */
-function coerce(value, fallback) {
-  if (typeof fallback === 'number') {
-    const number = typeof value === 'string' ? Number(value) : value;
-    const usable =
-      typeof number === 'number' &&
-      Number.isFinite(number) &&
-      !(typeof value === 'string' && value.trim() === '');
-    return usable ? number : fallback;
-  }
-  if (typeof value === 'string') return value;
-  if (typeof value === 'number' && Number.isFinite(value)) return String(value);
-  return fallback;
-}
-
-/**
- * Keeps the keys `defaults` declares, each coerced to the type of its default,
- * and drops the rest.
- *
- * @param {Object} stored
- * @param {Object} defaults
- * @returns {Object}
- */
-function cleanAgainst(stored, defaults) {
-  const source = stored && typeof stored === 'object' ? stored : {};
-  return Object.keys(defaults).reduce((clean, key) => {
-    clean[key] = Object.prototype.hasOwnProperty.call(source, key)
-      ? coerce(source[key], defaults[key])
-      : defaults[key];
-    return clean;
-  }, {});
-}
-
-/**
- * Keeps the keys an element's template actually declares, dropping the rest.
- *
- * A stored element may carry settings from a newer version, or leftovers from a
- * type it no longer is. Those would ride along invisibly and be written back on
- * the next save.
- *
- * @param {Object} element
- * @returns {Object|null}
- */
-function cleanElement(element) {
-  if (!element || typeof element !== 'object') return null;
-
-  const definition = elementFor(element.type);
-  if (!definition) return null;
-
-  return {
-    id: typeof element.id === 'string' ? element.id : '',
-    type: element.type,
-    ...cleanAgainst(element, definition.defaults),
-  };
-}
-
-/** Cleans a list of stored elements, dropping the ones no template declares. */
-const cleanElements = (elements) => elements.map(cleanElement).filter(Boolean);
-
-/**
- * Gives a fresh id to every element whose id is missing or already taken.
- *
- * The id is what the list, the selection and the preview all key on: two
- * elements sharing one select, move and render as one.
- *
- * @param {Array<Object>} elements cleaned elements, modified in place
- * @returns {Array<Object>}
- */
-function ensureUniqueIds(elements) {
-  const seen = new Set();
-  elements.forEach((element) => {
-    if (element.id === '' || seen.has(element.id)) element.id = newElementId();
-    seen.add(element.id);
-  });
-  return elements;
 }
 
 /**
@@ -213,7 +114,7 @@ function readEnvelope(serialised) {
 function isEmptyComposition(serialised) {
   const parsed = readEnvelope(serialised);
   if (parsed === null) return false;
-  return elementsOf(readRows(parsed, cleanElements)).length === 0;
+  return elementsOf(readRows(parsed)).length === 0;
 }
 
 /**
@@ -224,14 +125,15 @@ function parseState(serialised) {
   const parsed = readEnvelope(serialised);
   if (!parsed) return null;
 
-  const rows = readRows(parsed, cleanElements);
-  if (elementsOf(rows).length === 0) return null;
+  const rows = readRows(parsed);
+  const elements = elementsOf(rows);
+  if (elements.length === 0) return null;
 
   // Ids are made unique across the WHOLE composition, not column by column:
   // selection and drag address an element by id alone, so two elements sharing
   // one in different columns would select and move as one.
-  ensureUniqueIds(elementsOf(rows));
-  ensureUniqueRowIds(rows, newRowId);
+  ensureUniqueIds(elements, newElementId);
+  ensureUniqueIds(rows, newRowId);
 
   // `emptyState()` hands out a flat `elements` view of its own, and spreading
   // it first would make the absence below unreachable: the conditional can add
@@ -258,7 +160,7 @@ function parseState(serialised) {
     // without changing a word would have rewritten its markup.
     //
     // It goes away with the ticket that teaches the modal to compose rows.
-    ...(Array.isArray(parsed.rows) ? {} : { elements: elementsOf(rows) }),
+    ...(Array.isArray(parsed.rows) ? {} : { elements }),
   };
 }
 

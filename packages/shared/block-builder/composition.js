@@ -10,6 +10,8 @@
 // has been in a database for months, written by an older version, possibly
 // hand-edited, possibly truncated.
 
+const { cleanElements, newRowId } = require('./stored-elements.js');
+
 // Four is where a 600px email stops working: below roughly 60px a cell no
 // longer holds a word, and Outlook's rounding of percentages starts to show.
 const MAX_COLUMNS = 4;
@@ -20,16 +22,19 @@ const MIN_COLUMN_WIDTH = 10;
 
 const FULL_WIDTH = 100;
 
-let sequence = 0;
-
 /**
- * A fresh row id: unique within a session, and unlike any stored one.
+ * Whether a list of widths is one a row may have: one to MAX_COLUMNS finite
+ * numbers, none below MIN_COLUMN_WIDTH, adding up to FULL_WIDTH.
  *
- * @returns {string}
+ * @param {Array<number>} widths
+ * @returns {boolean}
  */
-function newRowId() {
-  sequence += 1;
-  return `row-${Date.now().toString(36)}-${sequence}`;
+function areUsableWidths(widths) {
+  if (!Array.isArray(widths) || widths.length === 0) return false;
+  if (widths.length > MAX_COLUMNS) return false;
+  if (!widths.every((width) => Number.isFinite(width))) return false;
+  if (widths.some((width) => width < MIN_COLUMN_WIDTH)) return false;
+  return widths.reduce((sum, width) => sum + width, 0) === FULL_WIDTH;
 }
 
 /**
@@ -42,17 +47,11 @@ function newRowId() {
  * stored value the editor would never have written: the panel constrains what
  * a user can set.
  *
- * @param {Array<number>} widths one per column, already numbers
+ * @param {Array<number>} widths one per column, at most MAX_COLUMNS
  * @returns {Array<number>}
  */
 function usableWidths(widths) {
-  const total = widths.reduce((sum, width) => sum + width, 0);
-  const sane =
-    widths.every(
-      (width) => Number.isFinite(width) && width >= MIN_COLUMN_WIDTH
-    ) && total === FULL_WIDTH;
-
-  if (sane) return widths;
+  if (areUsableWidths(widths)) return widths;
 
   const share = Math.floor(FULL_WIDTH / widths.length);
   // The remainder goes to the last column rather than being dropped: three
@@ -69,10 +68,9 @@ function usableWidths(widths) {
  * A stored row brought back to something renderable.
  *
  * @param {*} row
- * @param {Function} cleanElements (elements) => cleaned elements
  * @returns {Object} `{ id, columns }`
  */
-function cleanRow(row, cleanElements) {
+function cleanRow(row) {
   const source = row && typeof row === 'object' ? row : {};
   const stored = Array.isArray(source.columns) ? source.columns : [];
 
@@ -90,9 +88,10 @@ function cleanRow(row, cleanElements) {
   // we keep rather than dropped. A layout nobody can see any more is a visible,
   // fixable problem; a paragraph that silently disappeared is not.
   const kept = columns.slice(0, MAX_COLUMNS);
-  columns.slice(MAX_COLUMNS).forEach((column) => {
-    kept[kept.length - 1].elements.push(...column.elements);
-  });
+  const last = kept[kept.length - 1].elements;
+  for (let index = MAX_COLUMNS; index < columns.length; index += 1) {
+    for (const element of columns[index].elements) last.push(element);
+  }
 
   const widths = usableWidths(kept.map((column) => column.width));
 
@@ -114,12 +113,11 @@ function cleanRow(row, cleanElements) {
  * before this change reopens exactly as its author left it.
  *
  * @param {Object} parsed what came out of JSON.parse
- * @param {Function} cleanElements (elements) => cleaned elements
  * @returns {Array<Object>}
  */
-function readRows(parsed, cleanElements) {
+function readRows(parsed) {
   if (Array.isArray(parsed.rows)) {
-    return parsed.rows.map((row) => cleanRow(row, cleanElements));
+    return parsed.rows.map(cleanRow);
   }
 
   const elements = cleanElements(
@@ -137,33 +135,16 @@ function readRows(parsed, cleanElements) {
  * @returns {Array<Object>}
  */
 function elementsOf(rows) {
-  return (rows || []).reduce(
-    (all, row) =>
-      (row.columns || []).reduce(
-        (inner, column) => inner.concat(column.elements || []),
-        all
-      ),
-    []
-  );
-}
-
-/**
- * Gives a fresh id to every row whose id is missing or already taken.
- *
- * Same reason as for elements: the id is what selection, duplication and drag
- * all key on, and two rows sharing one would move and render as one.
- *
- * @param {Array<Object>} rows modified in place
- * @param {Function} freshId
- * @returns {Array<Object>}
- */
-function ensureUniqueRowIds(rows, freshId) {
-  const seen = new Set();
-  rows.forEach((row) => {
-    if (row.id === '' || seen.has(row.id)) row.id = freshId();
-    seen.add(row.id);
-  });
-  return rows;
+  const listOf = (value) => (Array.isArray(value) ? value : []);
+  const all = [];
+  for (const row of listOf(rows)) {
+    for (const column of listOf(row && row.columns)) {
+      for (const element of listOf(column && column.elements)) {
+        all.push(element);
+      }
+    }
+  }
+  return all;
 }
 
 module.exports = {
@@ -171,8 +152,7 @@ module.exports = {
   MIN_COLUMN_WIDTH,
   FULL_WIDTH,
   newRowId,
-  usableWidths,
+  areUsableWidths,
   readRows,
   elementsOf,
-  ensureUniqueRowIds,
 };
