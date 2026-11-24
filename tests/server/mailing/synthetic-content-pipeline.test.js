@@ -2,14 +2,17 @@
 
 // The one sequence every write of synthetic content goes through — the mailing
 // save and the personalized blocks. What is pinned here is the order: sizes
-// before the rebuild, sizes again after it, the flags last and only when there
-// is something to judge.
+// before the rebuild, the builder flag before it too, sizes again after it, and
+// the flags loaded only when there is something to judge.
 
 jest.mock('../../../packages/server/mailing/builder-block-integrity.js', () => {
   const actual = jest.requireActual(
     '../../../packages/server/mailing/builder-block-integrity.js'
   );
-  return { rebuildComposedMarkup: jest.fn(actual.rebuildComposedMarkup) };
+  return {
+    rebuildComposedMarkup: jest.fn(actual.rebuildComposedMarkup),
+    assertComposedBlocksAllowed: jest.fn(actual.assertComposedBlocksAllowed),
+  };
 });
 
 const {
@@ -108,7 +111,7 @@ describe('normalizeAndGuardSyntheticContent', () => {
       message: 'BLOCK_BUILDER_TOO_LARGE',
     });
     expect(rebuildComposedMarkup).toHaveBeenCalledTimes(1);
-    expect(loadFlags).not.toHaveBeenCalled();
+    expect(loadFlags).toHaveBeenCalledTimes(1);
   });
 
   it('rebuilds a composed block, then lets it through its flag', async () => {
@@ -120,6 +123,55 @@ describe('normalizeAndGuardSyntheticContent', () => {
 
     expect(block.builderHtml).toBe(html);
     expect(loadFlags).toHaveBeenCalledTimes(1);
+  });
+
+  describe('on a template without the builder', () => {
+    const disabled = { blockBuilderEnabled: false };
+
+    it('refuses a new composed block before rebuilding anything', async () => {
+      const { serialised } = stateWith('Bonjour');
+      const { done } = run(
+        dataWith(builderBlock('', serialised)),
+        undefined,
+        disabled
+      );
+
+      await expect(done).rejects.toMatchObject({
+        status: 403,
+        message: 'BLOCK_BUILDER_DISABLED',
+      });
+      expect(rebuildComposedMarkup).not.toHaveBeenCalled();
+    });
+
+    it('refuses an unreadable state as disabled, before reading it', async () => {
+      const { done } = run(
+        dataWith(builderBlock('<p>x</p>', '{"v":1,"elements":[')),
+        undefined,
+        disabled
+      );
+
+      await expect(done).rejects.toMatchObject({
+        status: 403,
+        message: 'BLOCK_BUILDER_DISABLED',
+      });
+      expect(rebuildComposedMarkup).not.toHaveBeenCalled();
+    });
+
+    it('keeps accepting a composed block already stored', async () => {
+      const { serialised, html } = stateWith('Bonjour');
+      const block = () => builderBlock(html, serialised);
+      const { done } = run(dataWith(block()), dataWith(block()), disabled);
+
+      await expect(done).resolves.toBeUndefined();
+    });
+
+    it('keeps accepting a block emptied in the editor', async () => {
+      const block = builderBlock('<p>stale</p>', serialiseState(emptyState()));
+      const { done } = run(dataWith(block), undefined, disabled);
+
+      await expect(done).resolves.toBeUndefined();
+      expect(block.builderHtml).toBe('');
+    });
   });
 
   it('refuses a block its template does not allow', async () => {

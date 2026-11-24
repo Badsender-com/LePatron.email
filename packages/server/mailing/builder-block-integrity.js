@@ -1,6 +1,6 @@
 'use strict';
 
-const { BadRequest } = require('http-errors');
+const { BadRequest, Forbidden } = require('http-errors');
 
 const ERROR_CODES = require('../constant/error-codes.js');
 const logger = require('../utils/logger.js');
@@ -11,7 +11,10 @@ const {
   htmlOf,
   stateOf,
 } = require('./synthetic-block-guard.js');
-const { readState } = require('../../shared/block-builder/state.js');
+const {
+  readState,
+  isEmptyComposition,
+} = require('../../shared/block-builder/state.js');
 const { generate } = require('../../shared/block-builder/generate.js');
 
 // A composed block stores two things: its state, and the markup the editor
@@ -31,7 +34,7 @@ const { generate } = require('../../shared/block-builder/generate.js');
 // refused rather than rebuilt into nothing: emptied, the block would be saved
 // empty by the next autosave, and the composition lost for good.
 
-const { type, htmlProperty, stateProperty } = BLOCK_BUILDER_BLOCK;
+const { type, flag, htmlProperty, stateProperty } = BLOCK_BUILDER_BLOCK;
 
 /**
  * The composed blocks of a content model, walked as the guard walks them.
@@ -68,6 +71,43 @@ function markupFromState(block) {
 }
 
 /**
+ * Whether a composed block holds nothing to rebuild: an empty pair, or a state
+ * that is an empty composition. Rebuilt, such a block is empty markup; any
+ * other block rebuilds into markup, or is refused as unreadable.
+ *
+ * @param {Object} block
+ * @returns {boolean}
+ */
+const rebuildsIntoNothing = (block) =>
+  (htmlOf(block) === '' && stateOf(block) === '') ||
+  isEmptyComposition(block[stateProperty]);
+
+/**
+ * Throws when the template does not allow composed blocks and `data` brings one
+ * that would be rebuilt into markup.
+ *
+ * Judged BEFORE anything is rebuilt, so a template without the builder never
+ * runs it. It refuses what the flag check on the rebuilt content refuses
+ * (synthetic-block-guard.js), no more: a block whose pair is already stored is
+ * left alone, and a block that rebuilds into nothing is accepted.
+ *
+ * @param {Object} params
+ * @param {Object} params.data the content model about to be written
+ * @param {Object} [params.previousData] the content model currently stored
+ * @param {Object} params.flags the template flags, by name
+ * @throws {Forbidden} BLOCK_BUILDER_DISABLED
+ */
+function assertComposedBlocksAllowed({ data, previousData, flags }) {
+  if (flags && flags[flag]) return;
+
+  const stored = new Set(composedBlocksOf(previousData).map(pairKeyOf));
+  const refused = composedBlocksOf(data).some(
+    (block) => !stored.has(pairKeyOf(block)) && !rebuildsIntoNothing(block)
+  );
+  if (refused) throw new Forbidden(ERROR_CODES.BLOCK_BUILDER_DISABLED);
+}
+
+/**
  * Rewrites, in place, the markup of every composed block of `data` whose
  * markup-and-state pair is not already stored in `previousData`.
  *
@@ -90,4 +130,4 @@ function rebuildComposedMarkup(data, previousData) {
   }, 0);
 }
 
-module.exports = { rebuildComposedMarkup };
+module.exports = { rebuildComposedMarkup, assertComposedBlocksAllowed };
