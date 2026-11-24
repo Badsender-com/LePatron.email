@@ -23,4 +23,4 @@ A company names its email types, and maps each onto one of the six types of the 
 
 ## Consequences
 
-Email types have been in production since before ADR-0014, which drops the experimental taxonomy data rather than migrating it. That rule does not hold for them: a script, rerunnable and with a dry run, copies the old field into the doctrine type, keeps it as identifier when it is unique in the company, and otherwise proposes one from the label, suffixed on collision. No template compares an email type yet, so nothing it renders changes. Until the script has run, the email types show as mapped onto nothing.
+Email types have been in production since before ADR-0032, which drops the experimental taxonomy data rather than migrating it. That rule does not hold for them: a script, rerunnable and with a dry run, copies the old field into the doctrine type, keeps it as identifier when it is unique in the company, and otherwise proposes one from the label, suffixed on collision. No template compares an email type yet, so nothing it renders changes. Until the script has run, the email types show as mapped onto nothing.
