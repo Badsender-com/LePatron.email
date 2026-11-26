@@ -3,15 +3,19 @@
 // the stack spacing (row-spacing-settings.js). Split from
 // badsender-block-builder-rows.less, which holds the rest of the structure
 // panel.
+//
+// Named row-layout, never bare layout: `.bb-modal__layout` is the modal's own
+// three-column grid (badsender-block-builder.less), and the section, holding
+// that class too, came out a flex row a few pixels wide.
 
 @bb-bar-gutter-min: 6px;
 
 .bb-modal {
-  &__layout {
+  &__row-layout {
     margin-top: 0.625rem;
   }
 
-  &__layout-title {
+  &__row-layout-title {
     margin: 0 0 0.25rem;
     font-size: 0.75rem;
     color: rgba(0, 0, 0, 0.72);
@@ -21,13 +25,13 @@
   // the handles take no room of their own, so each piece is drawn as wide as
   // it is in the email — except a gutter, which keeps a few pixels even at 0,
   // so the handles on both its sides stay apart and can each be grabbed.
-  &__bar,
+  &__row-layout-bar,
   &__bar-sizes {
     display: flex;
     width: 100%;
   }
 
-  &__bar {
+  &__row-layout-bar {
     height: 1.75rem;
     border: 1px solid #c8c8c8;
     border-radius: 2px;

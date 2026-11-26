@@ -22,9 +22,9 @@ module.exports = `        <div v-if="selectedRow" class="bb-modal__structure">
                 class="bb-modal__preset-cell"
                 :style="{ width: width + '%' }"></span></button>
           </div>
-          <div v-if="selectedRowSpaces" class="bb-modal__layout">
-            <p class="bb-modal__layout-title">{{ vm.t('block-builder-row-layout') }}</p>
-            <div ref="layoutBar" class="bb-modal__bar">
+          <div v-if="selectedRowSpaces" class="bb-modal__row-layout">
+            <p class="bb-modal__row-layout-title">{{ vm.t('block-builder-row-layout') }}</p>
+            <div ref="layoutBar" class="bb-modal__row-layout-bar">
               <template v-for="(piece, index) in layoutPieces">
                 <div
                   :key="'piece-' + index"

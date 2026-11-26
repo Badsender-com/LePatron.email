@@ -39,7 +39,9 @@ async function openWith(widths) {
 }
 
 const handles = () =>
-  Array.from(document.querySelectorAll('.bb-modal__bar [role="slider"]'));
+  Array.from(
+    document.querySelectorAll('.bb-modal__row-layout-bar [role="slider"]')
+  );
 const fields = () =>
   Array.from(document.querySelectorAll('.bb-modal__pieces input'));
 const widthsOf = (row) => row.columns.map((column) => column.width);
@@ -66,7 +68,7 @@ function key(target, name, modifiers) {
 // jsdom lays nothing out: the bar is given the width it would have, 300px for
 // the 600px of the block, so one pixel on screen is two in the email.
 function layOutBar(width = 300) {
-  const bar = document.querySelector('.bb-modal__bar');
+  const bar = document.querySelector('.bb-modal__row-layout-bar');
   bar.getBoundingClientRect = () => ({ left: 0, width });
 }
 
@@ -84,7 +86,17 @@ describe('the bar', () => {
   it('is not offered for a row of one column', async () => {
     await openWith();
 
-    expect(document.querySelector('.bb-modal__bar')).toBeNull();
+    expect(document.querySelector('.bb-modal__row-layout-bar')).toBeNull();
+  });
+
+  // `.bb-modal__layout` is the modal's three-column grid: the section, given
+  // that class too, was laid out as one, a flex row a few pixels wide.
+  it('sits in a section of its own, not in the modal grid', async () => {
+    await openWith([50, 50]);
+    const bar = document.querySelector('.bb-modal__row-layout-bar');
+
+    expect(bar.closest('.bb-modal__row-layout')).not.toBeNull();
+    expect(document.querySelectorAll('.bb-modal__layout')).toHaveLength(1);
   });
 
   it('cuts a row into columns and gutters, a handle between two', async () => {
