@@ -17,6 +17,9 @@
  * - A draft the copy received, which production no longer has, is removed.
  * - An item kept on the copy is not touched; the follow says whether
  *   production changed since the copy last followed it.
+ * - A change of audience, an archiving and a republication a follow brings
+ *   are kept in the item's audience history, dated with the follow and by
+ *   no one (ADR 0031), as any write of an audience keeps them.
  */
 
 const crypto = require('crypto');
@@ -29,6 +32,36 @@ const {
 } = require('./version-helpers.js');
 const { ENTITIES, contentOf } = require('./skills-export.service.js');
 const { SkillStatuses } = require('../constant/skill-constants.js');
+
+const isArchived = (status) => status === SkillStatuses.ARCHIVED;
+
+/**
+ * What a follow adds to the audience history of an item the copy holds:
+ * its change of audience, and its archiving or its republication, dated
+ * with the follow. An item archived is archived before its audience moves,
+ * and one published again after, so each reads as one change.
+ *
+ * @returns {{ history: Object[], archivedAt?: Date|null }}
+ */
+function historyOf(doc, fields, now) {
+  if (!doc) return { history: [] };
+  const audience =
+    doc.audience !== fields.audience
+      ? [{ audience: fields.audience, at: now, _by: null }]
+      : [];
+  const archived = isArchived(fields.status);
+  if (isArchived(doc.status) === archived) return { history: audience };
+  const archiving = {
+    audience: fields.audience,
+    archived,
+    at: now,
+    _by: null,
+  };
+  return {
+    history: archived ? [archiving, ...audience] : [...audience, archiving],
+    archivedAt: archived ? now : null,
+  };
+}
 
 const IDENTITY_FIELDS = {
   expertise: [
@@ -212,7 +245,8 @@ function signatureOf(kind, fields) {
  * @param {Date} now
  * @returns {Object} `outcome`: `kept` (with `reason` and
  *   `productionChanged`), `upToDate`, or `created` / `updated` with the
- *   `fields` to write, the fields production no longer has (`unset`), the
+ *   `fields` to write, the entries to add to its audience history
+ *   (`history`), the fields production no longer has (`unset`), the
  *   versions of the copy's own work that leave it (`moved`) and the numbers
  *   of the drafts removed (`removed`)
  */
@@ -282,9 +316,15 @@ function followedItem(kind, item, doc, now) {
   ) {
     return { outcome: 'upToDate' };
   }
+  const { history, archivedAt } = historyOf(doc, fields, now);
   return {
     outcome: doc ? 'updated' : 'created',
-    fields: { ...fields, followedAt: now },
+    fields: {
+      ...fields,
+      ...(archivedAt !== undefined && { archivedAt }),
+      followedAt: now,
+    },
+    history,
     unset,
     moved,
     removed,

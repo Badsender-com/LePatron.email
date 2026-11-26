@@ -22,7 +22,8 @@
  * - A query's `cursor()` yields its documents to a `for await`.
  * - `bulkWrite` takes `updateOne` operations of a `$set` only.
  * - `updateMany` takes a `$set`, and a `$push` of one value; `findOneAndUpdate`
- *   a `$set`, a `$push` and an `$addToSet` (of `$each`), and answers the
+ *   a `$set`, a `$push` (of one value, or of `$each`) and an `$addToSet` (of
+ *   `$each`), and answers the
  *   document before
  *   the update, or after it with `{ new: true }`, or null when nothing
  *   matches. A path through `array.$` reaches the first element the filter's
@@ -230,7 +231,8 @@ function applyUpdate(record, update, filter) {
     addToSetPositional(record, path, value, filter)
   );
   Object.entries($push).forEach(([key, value]) => {
-    record[key] = [...(record[key] || []), copy(value)];
+    const added = value && Array.isArray(value.$each) ? value.$each : [value];
+    record[key] = [...(record[key] || []), ...added.map(copy)];
   });
 }
 

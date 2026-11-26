@@ -167,6 +167,61 @@ describe('a copy following production', () => {
       });
     });
 
+    // Every write of an audience is kept (ADR 0031): the follow's too,
+    // dated with it and by no one.
+    describe('the audience history', () => {
+      const historyOf = (id) => expertiseOf(id).audienceHistory || [];
+      const withStatus = (status) =>
+        answerWith(SUBJECT_LINES, (item) => {
+          item.status = status;
+        });
+
+      it('records nothing for an item the follow creates, nor for one it leaves as it is', async () => {
+        await follow(EMPTY_COPY);
+        await followAgain();
+
+        expect(historyOf(SUBJECT_LINES)).toEqual([]);
+      });
+
+      it('records the audience production closes', async () => {
+        await follow(EMPTY_COPY);
+        await followAgain(
+          answerWith(SUBJECT_LINES, (item) => {
+            item.audience = 'platform';
+          })
+        );
+
+        const history = historyOf(SUBJECT_LINES);
+        expect(history).toHaveLength(1);
+        expect(history[0]).toMatchObject({ audience: 'platform', _by: null });
+        expect(isDate(history[0].at)).toBe(true);
+      });
+
+      it('records the archiving, dates it, and clears it once production publishes it again', async () => {
+        await follow(EMPTY_COPY);
+        await followAgain(withStatus('archived'));
+
+        const archived = expertiseOf(SUBJECT_LINES);
+        expect(archived.status).toBe('ARCHIVED');
+        expect(isDate(archived.archivedAt)).toBe(true);
+        expect(historyOf(SUBJECT_LINES)).toEqual([
+          expect.objectContaining({
+            audience: 'all',
+            archived: true,
+            _by: null,
+          }),
+        ]);
+
+        await followAgain(withStatus('active'));
+
+        expect(expertiseOf(SUBJECT_LINES).archivedAt).toBeNull();
+        expect(historyOf(SUBJECT_LINES).map((e) => e.archived)).toEqual([
+          true,
+          false,
+        ]);
+      });
+    });
+
     it('brings what production archived archived', async () => {
       await follow(EMPTY_COPY);
 
