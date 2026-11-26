@@ -1363,6 +1363,14 @@ export default {
       deleteConfirmTitle: 'Supprimer cette dimension ?',
       deleteConfirmMessage:
         'La dimension « {label} » sera supprimée, et son nom pourra être repris.',
+      caseVariant: {
+        title: 'Un nom presque identique existe déjà',
+        message:
+          'La dimension « {existingName} » existe déjà, et « {name} » ne s\'en distingue que par les majuscules.',
+        consequence:
+          'Vos équipes verront deux listes dans l\'éditeur, et un template ne lit que le nom exact qu\'il attend. Le nom ne pourra plus être corrigé ensuite.',
+        confirm: 'Créer quand même',
+      },
       trigger: {
         readOnly:
           'Ses deux valeurs sont celles de la doctrine Badsender : elles ne se renomment pas et ne se complètent pas.',

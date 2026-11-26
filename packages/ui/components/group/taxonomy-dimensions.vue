@@ -8,7 +8,7 @@ import BsTaxonomyDimensionFormDialog from '~/components/group/taxonomy-dimension
 import BsTaxonomyTriggerDimension from '~/components/group/taxonomy-trigger-dimension.vue';
 import BsTaxonomyCompanyDimension from '~/components/group/taxonomy-company-dimension.vue';
 import BsModalConfirm from '~/components/modal-confirm';
-import { taxonomyErrorFor } from '~/helpers/taxonomy.js';
+import { taxonomyErrorFor, caseVariantOf } from '~/helpers/taxonomy.js';
 import {
   STANDARD_DIMENSIONS,
   DIMENSIONS_PER_COMPANY,
@@ -30,6 +30,9 @@ export default {
       dimensions: [],
       saving: false,
       deletingDimension: null,
+      // A declaration the server held back: its name differs from an existing
+      // one only by its case, and waits for the admin to confirm it.
+      caseVariant: null,
     };
   },
   computed: {
@@ -109,17 +112,44 @@ export default {
     },
 
     async saveDimension({ id, payload }) {
+      if (!id) {
+        await this.declareDimension(payload);
+        return;
+      }
       const saved = await this.request(
-        () =>
-          id
-            ? this.$axios.$patch(apiRoutes.taxonomyDimensionsItem(id), payload)
-            : this.$axios.$post(apiRoutes.taxonomyDimensionsCreate(), {
-                ...payload,
-                groupId: this.groupId,
-              }),
-        id ? 'taxonomy.dimensions.updated' : 'taxonomy.dimensions.created'
+        () => this.$axios.$patch(apiRoutes.taxonomyDimensionsItem(id), payload),
+        'taxonomy.dimensions.updated'
       );
       if (saved) this.$refs.formDialog.close();
+    },
+
+    async declareDimension(payload) {
+      const saved = await this.request(
+        () =>
+          this.$axios.$post(apiRoutes.taxonomyDimensionsCreate(), {
+            ...payload,
+            groupId: this.groupId,
+          }),
+        'taxonomy.dimensions.created',
+        (error) => this.askToConfirmCaseVariant(error, payload)
+      );
+      if (saved) this.$refs.formDialog.close();
+    },
+
+    // The form stays open behind the question: cancelling leaves the admin
+    // where they were, free to correct the name.
+    askToConfirmCaseVariant(error, payload) {
+      const existingName = caseVariantOf(error);
+      if (!existingName) return false;
+      this.caseVariant = { name: payload.name, existingName, payload };
+      this.$refs.caseVariantModal.open();
+      return true;
+    },
+
+    confirmCaseVariant() {
+      const { payload } = this.caseVariant;
+      this.caseVariant = null;
+      return this.declareDimension({ ...payload, confirmCaseVariant: true });
     },
 
     toggleActive(dimension) {
@@ -153,9 +183,13 @@ export default {
     /**
      * Send a write on a dimension, then read the list again.
      *
+     * @param {Function} send
+     * @param {string} successKey
+     * @param {Function} [handleError] takes the error, and returns true when
+     *   it dealt with it
      * @returns {Promise<boolean>} whether it went through
      */
-    async request(send, successKey) {
+    async request(send, successKey, handleError = () => false) {
       try {
         this.saving = true;
         await send();
@@ -163,7 +197,7 @@ export default {
         await this.fetchDimensions();
         return true;
       } catch (error) {
-        this.reportError(error);
+        if (!handleError(error)) this.reportError(error);
         return false;
       } finally {
         this.saving = false;
@@ -237,6 +271,27 @@ export default {
           })
         }}
       </p>
+    </bs-modal-confirm>
+
+    <bs-modal-confirm
+      ref="caseVariantModal"
+      :title="$t('taxonomy.dimensions.caseVariant.title')"
+      :action-label="$t('taxonomy.dimensions.caseVariant.confirm')"
+      action-button-color="accent"
+      @cancel="caseVariant = null"
+      @confirm="confirmCaseVariant"
+    >
+      <template v-if="caseVariant">
+        <p>
+          {{
+            $t('taxonomy.dimensions.caseVariant.message', {
+              name: caseVariant.name,
+              existingName: caseVariant.existingName,
+            })
+          }}
+        </p>
+        <p>{{ $t('taxonomy.dimensions.caseVariant.consequence') }}</p>
+      </template>
     </bs-modal-confirm>
 
     <bs-taxonomy-dimension-form-dialog

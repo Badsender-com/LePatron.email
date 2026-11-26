@@ -7,6 +7,7 @@
 
 import {
   taxonomyErrorFor,
+  caseVariantOf,
   emailMetadataErrorKeyFor,
   canonicalTypeLabelKey,
   nextOrder,
@@ -144,6 +145,29 @@ describe('taxonomyErrorFor', () => {
       axiosError('emailMetadata.requiredFields[0] is not a known field')
     );
     expect(result.key).toBe('global.errors.errorOccured');
+  });
+});
+
+// The screen asks the admin to confirm a name differing from an existing one
+// only by its case, rather than showing an error.
+describe('caseVariantOf', () => {
+  it('names the existing dimension the server compared against', () => {
+    expect(
+      caseVariantOf(
+        axiosError('DIMENSION_NAME_DIFFERS_ONLY_BY_CASE', {
+          existingName: 'market',
+        })
+      )
+    ).toBe('market');
+  });
+
+  it.each([
+    [axiosError('DIMENSION_NAME_ALREADY_EXISTS', { existingName: 'market' })],
+    [axiosError('DIMENSION_NAME_DIFFERS_ONLY_BY_CASE')],
+    [{}],
+    [undefined],
+  ])('answers null for any other refusal: %p', (error) => {
+    expect(caseVariantOf(error)).toBeNull();
   });
 });
 

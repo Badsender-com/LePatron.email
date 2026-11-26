@@ -47,6 +47,10 @@ async function listDimensions(req, res) {
  * @apiParam (Body) {String} [description]
  * @apiParam (Body) {Number} [order]
  * @apiParam (Body) {Number} [precedence]
+ * @apiParam (Body) {Boolean} [confirmCaseVariant] the admin confirmed a name
+ *   that differs from an existing one only by its case; without it, such a
+ *   name is refused with a 409 `DIMENSION_NAME_DIFFERS_ONLY_BY_CASE` carrying
+ *   `details.existingName`
  *
  * @apiUse taxonomyDimension
  */

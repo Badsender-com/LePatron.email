@@ -1771,6 +1771,14 @@ export default {
       deleteConfirmTitle: 'Delete this dimension?',
       deleteConfirmMessage:
         'The dimension “{label}” will be deleted, and its name can be used again.',
+      caseVariant: {
+        title: 'An almost identical name already exists',
+        message:
+          'The dimension “{existingName}” already exists, and “{name}” differs from it only by its capitals.',
+        consequence:
+          'Your teams will see two lists in the editor, and a template reads only the exact name it expects. The name cannot be corrected later.',
+        confirm: 'Create anyway',
+      },
       trigger: {
         readOnly:
           'Its two values are the Badsender doctrine\'s: they are neither renamed nor added to.',

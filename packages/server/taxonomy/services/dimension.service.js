@@ -58,28 +58,52 @@ async function listDimensions({ user, groupId, lang }) {
 /**
  * Declare a dimension of the company. Its name is what templates read, and it
  * is write-once (ADR-0015).
+ *
+ * A name that differs from one the company already has only by its case
+ * (`Market` next to `market`) is almost always a typo, and a lasting one: the
+ * editor would show two lists, and a template reads one exact name. It is
+ * refused until the request confirms it with `confirmCaseVariant: true`.
  */
 async function createDimension({ user, groupId, payload = {} }) {
   logger.log('dimensionService:createDimension');
 
   const companyId = resolveCompanyId(user, groupId);
-  const { name: rawName, ...rest } = payload;
+  const { name: rawName, confirmCaseVariant = false, ...rest } = payload;
   const name = readDimensionName(rawName);
+  if (typeof confirmCaseVariant !== 'boolean') {
+    throw new BadRequest(ERROR_CODES.INVALID_DIMENSION);
+  }
   const fields = validateDimensionPayload(rest, { partial: false });
 
   // Seeded first, so a company declaring `trigger` before ever listing its
   // dimensions meets the standard one rather than shadowing it.
   await seedStandardDimensions({ companyId, lang: user?.lang });
 
-  // The standard dimensions count, deactivated ones too: both still hold a
-  // name and a place on the screen. Not atomic with the insert, like the cap
+  // Deactivated dimensions included: they still hold a name and a place on
+  // the screen.
+  const existingNames = (
+    await TaxonomyDimensions.find({ _company: companyId })
+      .select({ name: 1 })
+      .lean()
+  ).map((dimension) => dimension.name);
+
+  if (existingNames.includes(name)) {
+    throw new Conflict(ERROR_CODES.DIMENSION_NAME_ALREADY_EXISTS);
+  }
+  // The standard dimensions count. Not atomic with the insert, like the cap
   // on values: a race lands one dimension past it, which bounds the screen
   // just as well.
-  const dimensionCount = await TaxonomyDimensions.countDocuments({
-    _company: companyId,
-  });
-  if (dimensionCount >= TaxonomyLimits.DIMENSIONS_PER_COMPANY) {
+  if (existingNames.length >= TaxonomyLimits.DIMENSIONS_PER_COMPANY) {
     throw limitReached(TaxonomyLimits.DIMENSIONS_PER_COMPANY);
+  }
+  const caseVariant = existingNames.find(
+    (existing) => existing.toLowerCase() === name.toLowerCase()
+  );
+  if (caseVariant && !confirmCaseVariant) {
+    const error = new Conflict(ERROR_CODES.DIMENSION_NAME_DIFFERS_ONLY_BY_CASE);
+    // Named, so the admin compares the two before confirming.
+    error.details = { existingName: caseVariant };
+    throw error;
   }
 
   try {

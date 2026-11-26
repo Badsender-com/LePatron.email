@@ -166,6 +166,22 @@ export function taxonomyErrorFor(error) {
 }
 
 /**
+ * The existing name a declared dimension's name differs from only by its case,
+ * when that is why the server refused it. The screen then asks the admin to
+ * confirm, and sends the declaration again with `confirmCaseVariant: true`.
+ *
+ * @param {Error} error an axios error
+ * @returns {string|null}
+ */
+export function caseVariantOf(error) {
+  const data = error?.response?.data || {};
+  if (data.message !== ERROR_CODES.DIMENSION_NAME_DIFFERS_ONLY_BY_CASE) {
+    return null;
+  }
+  return data.details?.existingName || null;
+}
+
+/**
  * Maps a failed company-settings save onto a translated message.
  *
  * @param {Error} error an axios error
