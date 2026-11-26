@@ -555,12 +555,30 @@ describe('list_changes', () => {
       });
 
       expect(changes.map((c) => c.id)).toEqual(['deliverability.snds']);
+
+      await audience({
+        kind: 'expertise',
+        id: 'deliverability.snds',
+        audience: 'platform',
+      });
+      const both = await call(client, {
+        since: before,
+        change: ['opened', 'withdrawn'],
+      });
+
+      expect(both.changes.map((c) => `${c.change} ${c.id}`)).toEqual([
+        'opened deliverability.snds',
+        'withdrawn deliverability.snds',
+      ]);
       const stored = harness
         .stored('expertises')
         .find((e) => e.expertiseId === 'deliverability.snds');
-      expect(stored.audienceHistory).toHaveLength(1);
-      expect(stored.audienceHistory[0].audience).toBe('all');
-      expect(String(stored.audienceHistory[0]._by)).toBe(f.ALICE);
+      expect(
+        stored.audienceHistory.map((e) => [e.audience, String(e._by)])
+      ).toEqual([
+        ['all', f.ALICE],
+        ['platform', f.ALICE],
+      ]);
     });
   });
 });
