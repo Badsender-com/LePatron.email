@@ -78,6 +78,14 @@ const RESERVED_DIMENSION_NAMES = Object.freeze(
   OBJECT_PROTOTYPE_NAMES.concat(EDITOR_CONTENT_NAMES)
 );
 
+// A design token is published to the root property of its own name, like a
+// dimension, so it takes none of the names above. Nor `locale`, the email's
+// language, which the editor publishes itself under that name: a token would
+// shadow it (ADR-0015).
+const RESERVED_TOKEN_NAMES = Object.freeze(
+  RESERVED_DIMENSION_NAMES.concat(['locale'])
+);
+
 // Bounds of the editable fields, read by the Mongoose schemas, the services and
 // the forms.
 const TAXONOMY_LIMITS = Object.freeze({
@@ -123,6 +131,7 @@ module.exports = {
   EMAIL_TRIGGER_VALUES,
   DIMENSION_NAME_PATTERN,
   RESERVED_DIMENSION_NAMES,
+  RESERVED_TOKEN_NAMES,
   TAXONOMY_LIMITS,
   isTokenValue,
 };

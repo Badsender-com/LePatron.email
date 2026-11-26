@@ -8,7 +8,10 @@ const {
   DIMENSION_NAME_PATTERN,
   RESERVED_DIMENSION_NAMES,
 } = require('../../constant/taxonomy-type.js');
-const { isTokenValue } = require('../../../shared/taxonomy/constants.js');
+const {
+  isTokenValue,
+  RESERVED_TOKEN_NAMES,
+} = require('../../../shared/taxonomy/constants.js');
 
 // `ObjectId.isValid` returns true for ANY 12-character string, reinterpreting its
 // bytes as an id: 'companyAdmin' becomes a perfectly valid ObjectId pointing at a
@@ -193,10 +196,13 @@ function readTokens(value) {
   }
   entries.forEach(([name, token]) => {
     if (!DIMENSION_NAME_PATTERN.test(name)) throw invalid();
+    // Read by a template like a dimension's name, and bounded like it.
+    if (name.length > TaxonomyLimits.DIMENSION_NAME) throw invalid();
     // Published to the root property of the same name, like a dimension: never
-    // a piece of the content the editor builds, nor a name every object
-    // answers to (packages/shared/taxonomy/constants.js).
-    if (RESERVED_DIMENSION_NAMES.includes(name)) throw invalid();
+    // a piece of the content the editor builds, a name every object answers
+    // to, nor what the editor publishes itself (`locale`):
+    // packages/shared/taxonomy/constants.js.
+    if (RESERVED_TOKEN_NAMES.includes(name)) throw invalid();
     if (typeof token !== 'string' || token.trim() === '') throw invalid();
     if (token.length > TaxonomyLimits.TOKEN_VALUE) throw invalid();
     // A value a template prints inside a style or an attribute, never markup

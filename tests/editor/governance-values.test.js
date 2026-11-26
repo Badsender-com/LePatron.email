@@ -367,6 +367,30 @@ describe('publishing design tokens', () => {
     expect(values.mainColorVar).toBe('#123456');
   });
 
+  // The email's language, published by the editor under `locale`: a token
+  // never shadows it (ADR-0015).
+  it('never publishes a token named `locale`', () => {
+    const { values, sources } = governanceValues({
+      dimensions: [
+        {
+          ...BRAND,
+          values: [
+            {
+              id: '64a0000000000000000000b3',
+              canonicalType: 'brand-c',
+              tokens: { locale: 'xx', mainColorVar: '#123456' },
+            },
+          ],
+        },
+      ],
+      selections: { brand: '64a0000000000000000000b3' },
+    });
+
+    expect(values).not.toHaveProperty('locale');
+    expect(sources).not.toHaveProperty('locale');
+    expect(values.mainColorVar).toBe('#123456');
+  });
+
   it('gives the email type the precedence the server sent', () => {
     const { values } = governanceValues({
       dimensions: [BRAND],

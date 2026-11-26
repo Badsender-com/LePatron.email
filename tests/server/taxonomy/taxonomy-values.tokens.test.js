@@ -112,6 +112,37 @@ describe('design tokens', () => {
     }
   );
 
+  it('refuses a token named `locale`, which the editor publishes itself', async () => {
+    await expect(
+      addValue('brand', { label: 'Marque A', tokens: { locale: 'fr' } })
+    ).rejects.toMatchObject({
+      status: 400,
+      message: ERROR_CODES.INVALID_TAXONOMY_ITEM,
+    });
+  });
+
+  it('accepts a token name as long as a dimension name may be', async () => {
+    const name = `a${'b'.repeat(59)}`;
+    const brand = await addValue('brand', {
+      label: 'Marque A',
+      tokens: { [name]: '#000' },
+    });
+
+    expect(plainTokens(brand.tokens)).toEqual({ [name]: '#000' });
+  });
+
+  it('refuses a token name longer than a dimension name may be', async () => {
+    await expect(
+      addValue('brand', {
+        label: 'Marque A',
+        tokens: { [`a${'b'.repeat(60)}`]: '#000' },
+      })
+    ).rejects.toMatchObject({
+      status: 400,
+      message: ERROR_CODES.INVALID_TAXONOMY_ITEM,
+    });
+  });
+
   it.each(['main-color', '1color', 'main color'])(
     'refuses a token named %p, which no template could read',
     async (name) => {
