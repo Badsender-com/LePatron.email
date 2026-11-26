@@ -21,6 +21,8 @@ export default {
     // The email type maps a value onto the doctrine's six types; any other
     // dimension shows the value's own identifier.
     isEmailType: { type: Boolean, default: true },
+    // False on a deactivated dimension: the server refuses it a new value.
+    canCreate: { type: Boolean, default: true },
   },
   computed: {
     wording() {
@@ -176,7 +178,12 @@ export default {
           {{ $t(`${wording}.empty.description`) }}
         </p>
         <div class="d-flex justify-center flex-wrap" style="gap: 0.5rem">
-          <v-btn color="accent" elevation="0" @click="$emit('create')">
+          <v-btn
+            color="accent"
+            elevation="0"
+            :disabled="!canCreate"
+            @click="$emit('create')"
+          >
             {{ $t(`${wording}.empty.action`) }}
           </v-btn>
           <!-- The likeliest reason this screen is empty: a company created

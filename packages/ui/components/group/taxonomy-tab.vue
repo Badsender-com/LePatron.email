@@ -25,6 +25,8 @@ export default {
   },
   props: {
     dimensionName: { type: String, default: STANDARD_DIMENSIONS.EMAIL_TYPE },
+    // False on a deactivated dimension: the server refuses it a new value.
+    canCreate: { type: Boolean, default: true },
   },
   data() {
     return {
@@ -107,6 +109,7 @@ export default {
     },
 
     openCreateForm() {
+      if (!this.canCreate) return;
       this.$refs.formDialog.open(null, nextOrder(this.items));
     },
 
@@ -194,6 +197,7 @@ export default {
       :loading="loading"
       :load-error="loadError"
       :is-email-type="isEmailType"
+      :can-create="canCreate"
       @retry="fetchItems"
       @create="openCreateForm"
       @restore-defaults="openRestoreDefaults"

@@ -100,6 +100,7 @@ export default {
     <bs-group-taxonomy-tab
       ref="values"
       :dimension-name="dimension.name"
+      :can-create="dimension.isActive"
       @count="valueCount = $event"
     />
   </section>
