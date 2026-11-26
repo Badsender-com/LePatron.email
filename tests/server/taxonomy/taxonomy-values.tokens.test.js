@@ -156,6 +156,34 @@ describe('design tokens', () => {
     });
   });
 
+  // The reverse: a dimension declared under a token's name would turn the
+  // token off without a word.
+  it('refuses a dimension named like a token a value carries, naming it', async () => {
+    await addValue('brand', {
+      label: 'Marque A',
+      tokens: { mainColorVar: '#ffd845' },
+    });
+
+    await expect(
+      declare({ name: 'mainColorVar', label: 'Couleur' })
+    ).rejects.toMatchObject({
+      status: 409,
+      message: ERROR_CODES.DIMENSION_NAME_IS_TOKEN,
+      details: { name: 'mainColorVar' },
+    });
+  });
+
+  it("declares a dimension named like a token of another company's value", async () => {
+    await addValue('brand', {
+      label: 'Marque A',
+      tokens: { mainColorVar: '#ffd845' },
+    });
+
+    await expect(
+      declare({ name: 'mainColorVar', label: 'Couleur' }, adminB)
+    ).resolves.toMatchObject({ name: 'mainColorVar' });
+  });
+
   it('refuses it on edit too', async () => {
     const brand = await addValue('brand', {
       label: 'Marque A',

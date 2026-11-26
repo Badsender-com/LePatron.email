@@ -102,6 +102,7 @@ async function createDimension({ user, groupId, payload = {} }) {
   if (fields.parentName !== undefined) {
     await assertParentName({ companyId, name, parentName: fields.parentName });
   }
+  await assertNoTokenNamed({ companyId, name });
 
   try {
     return await TaxonomyDimensions.create({
@@ -153,6 +154,32 @@ async function assertNameIsFree({ companyId, name, confirmCaseVariant }) {
   }
 
   return existing;
+}
+
+/**
+ * A dimension takes the property of its name from any design token (the
+ * editor never lets a token shadow a dimension, ADR-0015): declared under the
+ * name of a token a value of the company carries, it would silently turn that
+ * token off. Refused, naming it, as a token named like a dimension is
+ * (TAXONOMY_TOKEN_NAME_IS_DIMENSION).
+ *
+ * Mongoose stores a Map as an embedded document, so `tokens.<name>` reads one
+ * key; the name passed readDimensionName, so it holds no `.` nor `$`.
+ *
+ * @param {Object} params
+ * @param {ObjectId} params.companyId
+ * @param {string} params.name
+ */
+async function assertNoTokenNamed({ companyId, name }) {
+  const carried = await TaxonomyItems.exists({
+    _company: companyId,
+    [`tokens.${name}`]: { $exists: true },
+  });
+  if (carried) {
+    const error = new Conflict(ERROR_CODES.DIMENSION_NAME_IS_TOKEN);
+    error.details = { name };
+    throw error;
+  }
 }
 
 // After the last one, within the company.

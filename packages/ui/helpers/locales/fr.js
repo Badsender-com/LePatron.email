@@ -1530,6 +1530,8 @@ export default {
         '« {name} » est déjà le nom d\'une dimension de l\'entreprise : choisissez un autre nom pour ce token.',
       identifierAlreadyExists:
         'Cet identifiant est déjà pris dans cette dimension.',
+      dimensionNameIsToken:
+        '« {name} » est déjà le nom d\'un token de design d\'une valeur : la dimension le désactiverait. Choisissez un autre nom, ou renommez d\'abord le token.',
       dimensionNameReserved:
         'Ce nom est réservé par JavaScript (comme constructor ou toString) ou par l’éditeur (comme theme ou type) : une valeur choisie sous ce nom serait perdue, mal relue ou abîmerait l’email.',
       dimensionNameTooLong: 'Le nom ne peut pas dépasser {limit} caractères.',

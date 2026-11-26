@@ -382,6 +382,9 @@ module.exports = {
   // A design token named like one of the company's dimensions, which the
   // editor would never publish.
   TAXONOMY_TOKEN_NAME_IS_DIMENSION: 'TAXONOMY_TOKEN_NAME_IS_DIMENSION',
+  // The reverse: a dimension declared under a token's name, which would turn
+  // the token off.
+  DIMENSION_NAME_IS_TOKEN: 'DIMENSION_NAME_IS_TOKEN',
   TAXONOMY_LIMIT_REACHED: 'TAXONOMY_LIMIT_REACHED',
   FAILED_TAXONOMY_ITEM_DELETE: 'FAILED_TAXONOMY_ITEM_DELETE',
   INVALID_TAXONOMY_TYPE: 'INVALID_TAXONOMY_TYPE',

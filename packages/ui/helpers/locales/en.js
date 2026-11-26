@@ -1938,6 +1938,8 @@ export default {
         '“{name}” is already the name of one of the company’s dimensions: choose another name for this token.',
       identifierAlreadyExists:
         'This identifier is already taken in this dimension.',
+      dimensionNameIsToken:
+        '“{name}” is already the name of a design token of a value: the dimension would turn it off. Choose another name, or rename the token first.',
       dimensionNameReserved:
         'This name is reserved by JavaScript (like constructor or toString) or by the editor (like theme or type): a value chosen under it would be lost, misread or would damage the email.',
       dimensionNameTooLong: 'The name cannot exceed {limit} characters.',

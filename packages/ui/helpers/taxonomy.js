@@ -101,6 +101,15 @@ export function taxonomyErrorFor(error) {
         field: 'tokens',
       };
 
+    // Next to the name of the dimension being declared, naming the token.
+    case ERROR_CODES.DIMENSION_NAME_IS_TOKEN:
+      return {
+        key: 'taxonomy.errors.dimensionNameIsToken',
+        params: { name: data.details?.name },
+        count: null,
+        field: 'name',
+      };
+
     case ERROR_CODES.DIMENSION_NAME_ALREADY_EXISTS:
       return {
         key: 'taxonomy.errors.dimensionNameAlreadyExists',

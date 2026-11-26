@@ -83,6 +83,16 @@ describe('taxonomyErrorFor', () => {
     expect(result.field).toBe('tokens');
   });
 
+  it('sends a dimension named like a token to the name field, naming it', () => {
+    const result = taxonomyErrorFor(
+      axiosError('DIMENSION_NAME_IS_TOKEN', { name: 'mainColorVar' })
+    );
+
+    expect(result.key).toBe('taxonomy.errors.dimensionNameIsToken');
+    expect(result.params).toEqual({ name: 'mainColorVar' });
+    expect(result.field).toBe('name');
+  });
+
   it('sends a taken dimension name to the name field', () => {
     const result = taxonomyErrorFor(
       axiosError('DIMENSION_NAME_ALREADY_EXISTS')
