@@ -22,6 +22,9 @@ jest.mock('../../../packages/server/utils/logger.js', () => ({
 const models = require('../../../packages/server/common/models.common.js');
 const ERROR_CODES = require('../../../packages/server/constant/error-codes.js');
 const {
+  TaxonomyLimits,
+} = require('../../../packages/server/constant/taxonomy-type.js');
+const {
   COMPANY_B,
   adminA,
   adminB,
@@ -96,6 +99,23 @@ describe('availability', () => {
     });
 
     expect(idsOf(narrowed._parents)).toEqual([idOf(belgium)]);
+  });
+
+  it('refuses more parent values than a dimension can hold, before reading any', async () => {
+    const tooMany = Array.from(
+      { length: TaxonomyLimits.VALUES_PER_DIMENSION + 1 },
+      (_, index) => index.toString(16).padStart(24, '0')
+    );
+    const find = jest.spyOn(models.TaxonomyItems, 'find');
+
+    await expect(
+      addValue('language', { label: 'Français', parentIds: tooMany })
+    ).rejects.toMatchObject({
+      status: 400,
+      message: ERROR_CODES.INVALID_TAXONOMY_ITEM,
+    });
+    expect(find).not.toHaveBeenCalled();
+    find.mockRestore();
   });
 
   it('refuses a parent value of another dimension', async () => {
