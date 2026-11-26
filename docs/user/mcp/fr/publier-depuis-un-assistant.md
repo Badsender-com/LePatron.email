@@ -56,7 +56,7 @@ La première réponse et la publication disent aussi ce dont la publication aver
 
 **Un élément qui a plusieurs brouillons.** Quand une skill ou une expertise a plus d'un brouillon, l'outil ne choisit pas : il les liste, et l'assistant donne la version à publier (`version`, par exemple `2.1`) à chaque appel. Avec un seul brouillon, il n'y a rien à donner.
 
-**Changelog et notes de version.** Une version majeure se publie avec son changelog et ses notes de version, comme dans le back-office : ceux du brouillon, ou ceux que vous donnez à l'assistant. Sans eux, l'outil refuse avant la vérification, et l'assistant doit les écrire. La clé leur est liée : donnez les mêmes aux deux temps.
+**Changelog et notes de version.** Chaque version, mineure comme majeure, se publie avec son changelog et sa note de version, comme dans le back-office : ceux du brouillon, ou ceux que vous donnez à l'assistant. La note de version dit, en 500 caractères au plus, ce qui change pour qui utilise l'élément : toutes les entreprises qui le lisent la verront ([Suivre les nouveautés](./nouveautes.md)). Le changelog dit comment et pourquoi la version a été écrite, pour l'entreprise plateforme seule. Sans eux, l'outil refuse avant la vérification, et l'assistant doit les écrire. La clé leur est liée : donnez les mêmes aux deux temps.
 
 **Sur une copie** (staging, développement), l'élément publié est gardé sur la copie, comme la publication du back-office le propose par défaut : le suivi suivant de la production ne la défait pas. La réponse le dit (`keptOnCopy`).
 
