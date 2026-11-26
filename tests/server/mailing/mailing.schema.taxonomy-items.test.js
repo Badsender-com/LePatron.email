@@ -32,6 +32,21 @@ describe('the company dimension values of a mailing', () => {
     expect(mailing.toObject()).not.toHaveProperty('_taxonomyItems');
   });
 
+  it('unsets the list once the values are cleared', () => {
+    const id = mongoose.Types.ObjectId('507f1f77bcf86cd799439101');
+    const mailing = Mailing.hydrate({
+      _id: mongoose.Types.ObjectId('507f1f77bcf86cd799439001'),
+      name: 'Soldes',
+      _taxonomyItems: [id],
+    });
+
+    // What applyMetadataToMailing assigns when the request clears them.
+    mailing._taxonomyItems = undefined;
+
+    expect(mailing.isModified('_taxonomyItems')).toBe(true);
+    expect(mailing.toObject()).not.toHaveProperty('_taxonomyItems');
+  });
+
   it('stores the values an email has', () => {
     const id = mongoose.Types.ObjectId('507f1f77bcf86cd799439101');
     const mailing = new Mailing({ name: 'Soldes', _taxonomyItems: [id] });

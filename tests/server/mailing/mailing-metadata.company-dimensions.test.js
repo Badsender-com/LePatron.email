@@ -107,6 +107,8 @@ describe('an email carries company dimensions', () => {
     expect(idsOf(mailing._taxonomyItems)).toEqual([idOf(prospects)]);
   });
 
+  // Unset, not an empty list: an email without values stores none
+  // (mailing.schema.js).
   it.each([[[]], [null]])('clears them all with %p', async (cleared) => {
     const mailing = newMailing({ _taxonomyItems: [vip._id] });
 
@@ -114,7 +116,7 @@ describe('an email carries company dimensions', () => {
       taxonomyItemIds: cleared,
     });
 
-    expect(mailing._taxonomyItems || []).toEqual([]);
+    expect(mailing).toHaveProperty('_taxonomyItems', undefined);
   });
 
   it('leaves them alone when the request does not mention them', async () => {

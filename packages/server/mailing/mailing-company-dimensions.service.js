@@ -51,12 +51,14 @@ const deactivated = () =>
  * @param {Object} options
  * @param {string|null} options.companyId the mailing's company
  * @param {Array} [options.currentIds] the values the email carries
- * @returns {Promise<ObjectId[]>} the values to store
+ * @returns {Promise<ObjectId[]|undefined>} the values to store; `undefined`
+ *   when cleared, which unsets the field rather than storing an empty list
+ *   (mailing.schema.js)
  */
 async function validateTaxonomyItemIds(rawIds, { companyId, currentIds = [] }) {
-  if (rawIds === null) return [];
+  if (rawIds === null) return undefined;
   if (!Array.isArray(rawIds)) throw invalid();
-  if (rawIds.length === 0) return [];
+  if (rawIds.length === 0) return undefined;
   // At most one value per dimension: a longer list is refused before any id is
   // read, rather than checked one by one and sent to the database as one
   // oversized `$in`.
