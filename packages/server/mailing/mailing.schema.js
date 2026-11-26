@@ -185,13 +185,18 @@ const MailingSchema = Schema(
     },
     // The values of the company dimensions (ADR-0032): at most one per dimension,
     // every one optional. The email type above keeps its own field. Validated on
-    // write by mailing-company-dimensions.service.js.
-    _taxonomyItems: [
-      {
-        type: ObjectId,
-        ref: TaxonomyItemModel,
-      },
-    ],
+    // write by mailing-company-dimensions.service.js. No default, like
+    // `qualityIgnores`: Mongoose would otherwise store an empty list on every
+    // email saved, in a company without dimensions too. Read as `|| []`.
+    _taxonomyItems: {
+      type: [
+        {
+          type: ObjectId,
+          ref: TaxonomyItemModel,
+        },
+      ],
+      default: undefined,
+    },
     // http://mongoosejs.com/docs/schematypes.html#mixed
     data: {},
     espIds: {
