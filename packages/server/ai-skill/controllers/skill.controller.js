@@ -119,7 +119,8 @@ module.exports = {
   updateSkill: asyncHandler(async (req, res) => {
     const { skill, warnings } = await skillService.updateSkill(
       req.params.skillId,
-      req.body
+      req.body,
+      { userId: userIdOf(req) }
     );
     res.json({
       ...(typeof skill.toJSON === 'function' ? skill.toJSON() : skill),

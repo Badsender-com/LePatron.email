@@ -46,6 +46,7 @@ const {
   saveIfUnchanged,
 } = require('./versioned-draft.js');
 const { assertReleaseTexts } = require('./release-texts.js');
+const { setAudience } = require('./audience-history.js');
 
 /**
  * @param {Object} options
@@ -416,7 +417,9 @@ function createVersionedEntityService({
       minor: version.versionMinor,
     };
     doc.status = SkillStatuses.ACTIVE;
-    if (payload.openToAll === true) doc.audience = Audiences.ALL;
+    // Opened in the same write, its opening dated with the publication.
+    if (payload.openToAll === true)
+      setAudience(doc, Audiences.ALL, userId, now);
     if (payload.keepOnCopy === true) {
       doc.keptOnCopy = true;
       doc.keptOnCopyAt = now;
@@ -432,6 +435,8 @@ function createVersionedEntityService({
     const doc = await getDoc(id);
     if (before) before(doc);
     doc.status = SkillStatuses.ARCHIVED;
+    // Withdrawn from every company that read it (ADR 0031).
+    doc.archivedAt = new Date();
     await doc.save();
     return doc;
   }
