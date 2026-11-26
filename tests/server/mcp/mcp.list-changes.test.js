@@ -194,6 +194,18 @@ describe('list_changes', () => {
       expect(summary(answer)).toEqual(['2026-11-19 updated design.gmail']);
     });
 
+    it('includes the end of a day without a time, in UTC', async () => {
+      const answer = await call(await asConsultant(), {
+        since: '2026-11-16',
+        until: '2026-11-16',
+        change: ['updated'],
+      });
+
+      expect(summary(answer)).toEqual([
+        '2026-11-16 updated redaction.subject-ideas',
+      ]);
+    });
+
     it('lists no draft, in the drafts mode either', async () => {
       const GRANT = 'grant-of-the-drafts';
       harness.seed({
