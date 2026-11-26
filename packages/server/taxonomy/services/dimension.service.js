@@ -231,10 +231,14 @@ async function updateDimension({ user, dimensionId, payload = {} }) {
  * values, and the emails carrying them, under a name nothing declares.
  *
  * Deactivated first, then checked, then deleted. An inactive dimension takes no
- * new value (assertValueType) and no new child (assertParentName), so a value
- * created or a child hung under it while this runs is either seen by the checks
- * or refused. Checking first would let one land between the check and the
- * delete, and leave it under a name nothing declares.
+ * new value (assertValueType) and no new child (assertParentName), and checking
+ * first would let one land between the check and the delete. The order
+ * narrows that window, it does not close it: a request whose own check ran
+ * before the deactivation can still write after the checks below. A value
+ * created so is taken back by its creation, which reads the dimension again
+ * once written (createTaxonomyItem). A child hung by a PATCH whose
+ * assertParentName ran before the deactivation, and whose save lands after
+ * assertNoChildDimension, keeps a parentName nothing declares.
  */
 async function deleteDimension({ user, dimensionId }) {
   logger.log('dimensionService:deleteDimension');
