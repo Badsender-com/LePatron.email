@@ -13,6 +13,8 @@ const {
   extractFullContext,
 } = require('./translation-feature.js');
 const { translateMailing } = require('./mailing-translation.js');
+// Moved beside the email's own language, which it now falls back from.
+const { detectSourceLanguage } = require('./translation-locale.js');
 
 module.exports = {
   translateMailing,
@@ -149,24 +151,4 @@ async function getAvailableLanguages({ groupId }) {
     languages: feature.config?.availableLanguages || [],
     defaultSourceLanguage: feature.config?.defaultSourceLanguage || 'auto',
   };
-}
-
-/**
- * Detect source language from mailing HTML preview
- * @param {Object} mailing - Mailing document
- * @returns {string} Detected language code or 'auto'
- */
-function detectSourceLanguage(mailing) {
-  // Try to extract lang attribute from previewHtml
-  if (mailing.previewHtml) {
-    const langMatch = mailing.previewHtml.match(
-      /<html[^>]*\slang=["']([a-z]{2})["']/i
-    );
-    if (langMatch) {
-      return langMatch[1].toLowerCase();
-    }
-  }
-
-  // Fallback to auto-detect
-  return 'auto';
 }
