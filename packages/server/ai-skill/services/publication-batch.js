@@ -22,6 +22,14 @@ const summaryOf = ({ kind, id, version }) => ({
   version: { major: version.major, minor: version.minor },
 });
 
+// The texts a publication refuses (ADR 0031), each with its own word: a
+// minor draft of before holds the generic sentence, which says nothing.
+const TEXTS_REFUSED = new Map([
+  [ERROR_CODES.RELEASE_NOTE_REQUIRED, 'release_notes_required'],
+  [ERROR_CODES.CHANGELOG_REQUIRED, 'changelog_required'],
+  [ERROR_CODES.RELEASE_NOTE_TOO_LONG, 'release_note_too_long'],
+]);
+
 // Why one publication failed, as a word the back office translates.
 function failureReason(err) {
   const status = err && (err.status || err.statusCode);
@@ -37,8 +45,8 @@ function failureReason(err) {
   }
   if (status === 404) return 'not_found';
   if (status === 409) return 'not_draft';
-  if (err && err.message === ERROR_CODES.RELEASE_NOTE_REQUIRED) {
-    return 'release_notes_required';
+  if (err && TEXTS_REFUSED.has(err.message)) {
+    return TEXTS_REFUSED.get(err.message);
   }
   return 'failed';
 }

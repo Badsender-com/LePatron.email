@@ -124,6 +124,12 @@ describe('publishing several drafts at once', () => {
     expect(skipReasonKey('release_notes_required')).toBe(
       'aiSkills.publishDrafts.failures.release_notes_required'
     );
+    expect(skipReasonKey('changelog_required')).toBe(
+      'aiSkills.publishDrafts.failures.changelog_required'
+    );
+    expect(skipReasonKey('release_note_too_long')).toBe(
+      'aiSkills.publishDrafts.failures.release_note_too_long'
+    );
     expect(skipReasonKey('not_found')).toBe(
       'aiSkills.publishDrafts.skipped.not_found'
     );

@@ -1286,6 +1286,65 @@ describe('publishing what a feature uses', () => {
       ]);
     });
 
+    // Every version needs both texts (ADR 0031): each refusal says which.
+    const skippedFor = async (draft) => {
+      store.seed({
+        ...SEED,
+        expertises: [
+          {
+            ...subjectLines,
+            versions: [
+              subjectLines.versions[0],
+              { ...subjectLines.versions[1], ...draft },
+            ],
+          },
+          f.EXPERTISES[1],
+        ],
+      });
+      const { skipped } = await batch.draftsToPublish([
+        { kind: 'expertise', id: SUBJECT_LINES },
+      ]);
+      return skipped;
+    };
+
+    it('leaves out a minor draft that holds the generic texts of before, for its release note', async () => {
+      expect(
+        await skippedFor({
+          changelog: 'Correction mineure',
+          releaseNotes: 'Correction mineure sans changement de doctrine.',
+        })
+      ).toEqual([
+        {
+          kind: 'expertise',
+          id: SUBJECT_LINES,
+          reason: 'release_notes_required',
+          message: 'RELEASE_NOTE_REQUIRED',
+        },
+      ]);
+    });
+
+    it('leaves out a draft without a change log, saying so', async () => {
+      expect(await skippedFor({ changelog: '' })).toEqual([
+        {
+          kind: 'expertise',
+          id: SUBJECT_LINES,
+          reason: 'changelog_required',
+          message: 'CHANGELOG_REQUIRED',
+        },
+      ]);
+    });
+
+    it('leaves out a draft whose release note is too long, saying so', async () => {
+      expect(await skippedFor({ releaseNotes: 'x'.repeat(501) })).toEqual([
+        {
+          kind: 'expertise',
+          id: SUBJECT_LINES,
+          reason: 'release_note_too_long',
+          message: 'RELEASE_NOTE_TOO_LONG',
+        },
+      ]);
+    });
+
     it('says what the one guard would replay, without calling the AI', async () => {
       const plan = await batch.planMany(BOTH);
 
