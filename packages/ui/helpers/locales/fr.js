@@ -1516,6 +1516,8 @@ export default {
       limitReached:
         'Limite atteinte : {limit} au maximum. Supprimez-en avant d\'en ajouter d\'autres.',
       labelAlreadyExists: 'Ce libellé est déjà pris dans cette dimension.',
+      tokenNameIsDimension:
+        '« {name} » est déjà le nom d\'une dimension de l\'entreprise : choisissez un autre nom pour ce token.',
       identifierAlreadyExists:
         'Cet identifiant est déjà pris dans cette dimension.',
       dimensionNameReserved:

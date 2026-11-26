@@ -2,18 +2,26 @@
 
 const { Conflict } = require('http-errors');
 
-const { TaxonomyItems } = require('../../common/models.common.js');
+const {
+  TaxonomyItems,
+  TaxonomyDimensions,
+} = require('../../common/models.common.js');
 const ERROR_CODES = require('../../constant/error-codes.js');
-const { StandardDimensions } = require('../../constant/taxonomy-type.js');
+const {
+  StandardDimensions,
+  StandardDimensionNames,
+} = require('../../constant/taxonomy-type.js');
 
 /**
  * What a value must not share with another value of its dimension, in its
- * company: its label, and its identifier. Checked before each write by
+ * company: its label, and its identifier; and the names its design tokens must
+ * not take from the company's dimensions. Checked before each write by
  * taxonomy.service.js, which owns the values.
  */
 module.exports = {
   assertLabelIsFree,
   assertIdentifierIsFree,
+  assertNoTokenNamedLikeDimension,
 };
 
 /**
@@ -64,5 +72,37 @@ async function assertIdentifierIsFree({
 
   if (await TaxonomyItems.exists(query)) {
     throw new Conflict(ERROR_CODES.TAXONOMY_ITEM_IDENTIFIER_ALREADY_EXISTS);
+  }
+}
+
+/**
+ * A design token is never published under a dimension's name: the dimension
+ * decides that property (ADR-0015). Refused when saved, rather than accepted
+ * and then ignored by the editor without a word. Every declared dimension
+ * counts, a deactivated one included, which may come back, and the two
+ * standard ones, declared for every company even before they are seeded.
+ *
+ * @param {Object} params
+ * @param {ObjectId|string} params.companyId
+ * @param {Object} [params.tokens] the tokens a request sets, name → value
+ */
+async function assertNoTokenNamedLikeDimension({ companyId, tokens }) {
+  const names = Object.keys(tokens || {});
+  if (names.length === 0) return;
+
+  const declared = await TaxonomyDimensions.find({
+    _company: companyId,
+    name: { $in: names },
+  })
+    .select({ name: 1 })
+    .lean();
+  const dimensionNames = new Set(
+    StandardDimensionNames.concat(declared.map((dimension) => dimension.name))
+  );
+  const taken = names.find((name) => dimensionNames.has(name));
+  if (taken) {
+    const error = new Conflict(ERROR_CODES.TAXONOMY_TOKEN_NAME_IS_DIMENSION);
+    error.details = { name: taken };
+    throw error;
   }
 }

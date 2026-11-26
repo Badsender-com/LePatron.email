@@ -1924,6 +1924,8 @@ export default {
       limitReached:
         'Limit reached: {limit} at most. Delete some before adding more.',
       labelAlreadyExists: 'This label is already taken in this dimension.',
+      tokenNameIsDimension:
+        '“{name}” is already the name of one of the company’s dimensions: choose another name for this token.',
       identifierAlreadyExists:
         'This identifier is already taken in this dimension.',
       dimensionNameReserved:

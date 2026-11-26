@@ -73,6 +73,16 @@ describe('taxonomyErrorFor', () => {
     expect(result.field).toBe('canonicalType');
   });
 
+  it('sends a token named like a dimension to the tokens, naming it', () => {
+    const result = taxonomyErrorFor(
+      axiosError('TAXONOMY_TOKEN_NAME_IS_DIMENSION', { name: 'brand' })
+    );
+
+    expect(result.key).toBe('taxonomy.errors.tokenNameIsDimension');
+    expect(result.params).toEqual({ name: 'brand' });
+    expect(result.field).toBe('tokens');
+  });
+
   it('sends a taken dimension name to the name field', () => {
     const result = taxonomyErrorFor(
       axiosError('DIMENSION_NAME_ALREADY_EXISTS')

@@ -23,6 +23,7 @@ const models = require('../../../packages/server/common/models.common.js');
 const ERROR_CODES = require('../../../packages/server/constant/error-codes.js');
 const {
   adminA,
+  adminB,
   idOf,
   plainTokens,
   resetTaxonomyModels,
@@ -111,6 +112,67 @@ describe('design tokens', () => {
       });
     }
   );
+
+  // The editor never lets a token shadow a dimension: accepted, it would be
+  // ignored without a word.
+  it.each([
+    ['a dimension the company declared', 'brand'],
+    ['the email type', 'emailType'],
+    ['the trigger', 'trigger'],
+  ])('refuses a token named like %s, naming it', async (kind, name) => {
+    await expect(
+      addValue('brand', { label: 'Marque A', tokens: { [name]: '#000' } })
+    ).rejects.toMatchObject({
+      status: 409,
+      message: ERROR_CODES.TAXONOMY_TOKEN_NAME_IS_DIMENSION,
+      details: { name },
+    });
+  });
+
+  it('refuses a token named like a deactivated dimension, which may come back', async () => {
+    const audience = await declare({ name: 'audience', label: 'Audience' });
+    await dimensionService.updateDimension({
+      user: adminA,
+      dimensionId: idOf(audience),
+      payload: { isActive: false },
+    });
+
+    await expect(
+      addValue('brand', { label: 'Marque A', tokens: { audience: '#000' } })
+    ).rejects.toMatchObject({
+      status: 409,
+      message: ERROR_CODES.TAXONOMY_TOKEN_NAME_IS_DIMENSION,
+    });
+  });
+
+  it('refuses it on edit too', async () => {
+    const brand = await addValue('brand', {
+      label: 'Marque A',
+      tokens: { mainColorVar: '#ffd845' },
+    });
+
+    await expect(
+      taxonomyService.updateTaxonomyItem({
+        user: adminA,
+        itemId: idOf(brand),
+        payload: { tokens: { brand: '#000' } },
+      })
+    ).rejects.toMatchObject({
+      status: 409,
+      message: ERROR_CODES.TAXONOMY_TOKEN_NAME_IS_DIMENSION,
+    });
+  });
+
+  it('accepts a token named like a dimension of another company', async () => {
+    await declare({ name: 'market', label: 'Marché' }, adminB);
+
+    const brand = await addValue('brand', {
+      label: 'Marque A',
+      tokens: { market: '#000' },
+    });
+
+    expect(plainTokens(brand.tokens)).toEqual({ market: '#000' });
+  });
 
   it('refuses a token named `locale`, which the editor publishes itself', async () => {
     await expect(

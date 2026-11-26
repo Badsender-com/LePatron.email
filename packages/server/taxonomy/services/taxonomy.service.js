@@ -22,6 +22,7 @@ const { assertValueType } = require('./dimension.service.js');
 const {
   assertLabelIsFree,
   assertIdentifierIsFree,
+  assertNoTokenNamedLikeDimension,
 } = require('./value-uniqueness.js');
 const {
   readAvailability,
@@ -89,6 +90,7 @@ async function createTaxonomyItem({ user, groupId, type, payload = {} }) {
     type: taxonomyType,
     identifier: fields.canonicalType,
   });
+  await assertNoTokenNamedLikeDimension({ companyId, tokens: fields.tokens });
 
   // Unlike the label, the cap has no index to fall back on, so concurrent
   // creations can land a handful of items past it. Accepted rather than solved
@@ -170,6 +172,11 @@ async function updateTaxonomyItem({ user, itemId, payload = {} }) {
       exceptId: item._id,
     });
   }
+
+  await assertNoTokenNamedLikeDimension({
+    companyId: item._company,
+    tokens: fields.tokens,
+  });
 
   Object.assign(item, fields);
 

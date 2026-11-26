@@ -54,6 +54,7 @@ export default {
       // to the field rather than in a snackbar at the other end of the screen.
       serverLabelError: null,
       serverIdentifierError: null,
+      serverTokensError: null,
       // The identifier follows the label until the admin writes their own.
       identifierTouched: false,
     };
@@ -144,6 +145,7 @@ export default {
       this.editingId = item ? item.id : null;
       this.serverLabelError = null;
       this.serverIdentifierError = null;
+      this.serverTokensError = null;
       this.identifierTouched = false;
       this.form = item
         ? {
@@ -164,7 +166,7 @@ export default {
      * Attach a server-side refusal to its field. Called by the parent, which is
      * the one that talks to the API.
      *
-     * @param {string} field `label` or `canonicalType`
+     * @param {string} field `label`, `canonicalType` or `tokens`
      * @param {string} message already translated
      * @returns {boolean} whether this form has that field
      */
@@ -176,6 +178,10 @@ export default {
       }
       if (field === 'canonicalType' && !this.isEmailType) {
         this.serverIdentifierError = message;
+        return true;
+      }
+      if (field === 'tokens') {
+        this.serverTokensError = message;
         return true;
       }
       return false;
@@ -195,6 +201,7 @@ export default {
       // A previous refusal must not survive a corrected field.
       this.serverLabelError = null;
       this.serverIdentifierError = null;
+      this.serverTokensError = null;
       this.$v.$touch();
       if (this.$v.$invalid) return;
 
@@ -277,7 +284,12 @@ export default {
       :disabled="loading"
     />
 
-    <bs-taxonomy-tokens-field v-model="form.tokens" :disabled="loading" />
+    <bs-taxonomy-tokens-field
+      v-model="form.tokens"
+      :server-error="serverTokensError"
+      :disabled="loading"
+      @input="serverTokensError = null"
+    />
 
     <bs-taxonomy-form-order-status
       :order.sync="form.order"

@@ -18,6 +18,9 @@ export default {
   props: {
     value: { type: Object, default: () => ({}) },
     disabled: { type: Boolean, default: false },
+    // A refusal only the server can decide, already translated: a token named
+    // like one of the company's dimensions.
+    serverError: { type: String, default: null },
   },
   data() {
     return { rows: tokenRows(this.value) };
@@ -99,6 +102,13 @@ export default {
         <lucide-x :size="16" />
       </v-btn>
     </div>
+    <p
+      v-if="serverError"
+      class="taxonomy-tokens__error error--text"
+      role="alert"
+    >
+      {{ serverError }}
+    </p>
     <v-btn
       text
       small
@@ -136,6 +146,11 @@ export default {
     grid-template-columns: 1fr 1fr auto;
     gap: 0.5rem;
     align-items: start;
+  }
+
+  &__error {
+    font-size: 0.75rem;
+    margin-bottom: 0.5rem;
   }
 
   // Centred on the input rather than on the field: an error message under the

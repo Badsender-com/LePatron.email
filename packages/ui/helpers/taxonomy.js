@@ -92,6 +92,15 @@ export function taxonomyErrorFor(error) {
         field: 'canonicalType',
       };
 
+    // Next to the tokens of the value form, naming the token to rename.
+    case ERROR_CODES.TAXONOMY_TOKEN_NAME_IS_DIMENSION:
+      return {
+        key: 'taxonomy.errors.tokenNameIsDimension',
+        params: { name: data.details?.name },
+        count: null,
+        field: 'tokens',
+      };
+
     case ERROR_CODES.DIMENSION_NAME_ALREADY_EXISTS:
       return {
         key: 'taxonomy.errors.dimensionNameAlreadyExists',
