@@ -6,7 +6,7 @@ const {
 } = require('../ai-skill/repositories/expertise.repository.js');
 const { normalizeScopes } = require('../ai-skill/services/expertise-scope.js');
 const { versionLabel } = require('../ai-skill/services/version-helpers.js');
-const { publishedAtOf } = require('./mcp-catalog-dates.js');
+const { publishedAtOf, seenBy } = require('./mcp-catalog-dates.js');
 const {
   SkillCategoryValues,
 } = require('../ai-skill/constant/skill-constants.js');
@@ -124,13 +124,19 @@ async function findExpertises({ user, group, drafts }, args) {
     drafts,
   });
   const unmatchedScopes = scopes.filter((scope) => !inUse.includes(scope));
+  // Each dated as the company sees it (ADR 0031): the version it was
+  // opened at, by the opening.
+  const dated = seenBy(group);
   const expertises = await withOpenRetex(
     'expertise',
-    found.map((expertise) => ({
+    found.map(({ doc, expertise }) => ({
       expertiseId: expertise.expertiseId,
       title: expertise.title,
       version: versionLabel(expertise),
-      publishedAt: publishedAtOf(expertise, expertise.draft),
+      publishedAt: publishedAtOf(
+        dated({ doc, version: expertise, draft: expertise.draft }).version,
+        expertise.draft
+      ),
       ...(expertise.draft && { draft: true }),
       uri: uriOf(expertise.expertiseId),
     })),

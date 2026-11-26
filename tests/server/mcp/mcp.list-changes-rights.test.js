@@ -206,8 +206,7 @@ describe('list_changes, as each reader sees it', () => {
     });
   });
 
-  // Turned on by the block 3 review fixes (#1677, #1678)
-  describe.skip('an item published before it was opened', () => {
+  describe('an item published before it was opened', () => {
     // b2b.prospection: published on the 10th, opened on the 18th. Its
     // category is one an assistant may ask for.
     beforeEach(() =>
@@ -241,6 +240,68 @@ describe('list_changes, as each reader sees it', () => {
 
       expect(text).toContain('Version 1.0, published on 2026-11-18 (UTC).');
       expect(text).not.toContain('2026-11-10');
+    });
+
+    it('is last modified, for a client, when it was opened', async () => {
+      const { resources } = await (
+        await harness.connectAs(f.FRANK)
+      ).listResources();
+
+      expect(
+        resources.find((r) => r.name === 'b2b.prospection').annotations
+      ).toEqual({ lastModified: B2B_OPENED });
+    });
+
+    it('keeps its publication date for the platform company', async () => {
+      const client = await harness.connectAs(f.ALICE, {
+        group: f.PLATFORM_GROUP,
+      });
+      const { resources } = await client.listResources();
+
+      expect(
+        resources.find((r) => r.name === 'b2b.prospection').annotations
+      ).toEqual({ lastModified: '2026-11-10T08:00:00.000Z' });
+      expect(
+        await read(client, 'lepatron://expertises/b2b.prospection')
+      ).toContain('Version 1.0, published on 2026-11-10 (UTC).');
+    });
+  });
+
+  // redaction.late-ideas: published on the 10th, opened on the 18th.
+  describe('a skill published before it was opened', () => {
+    beforeEach(() =>
+      harness.seed({
+        ...s.SEED,
+        skills: [
+          ...s.SKILLS,
+          s.skill(
+            'redaction.late-ideas',
+            'Late ideas',
+            [
+              s.version('1.0', 'ACTIVE', {
+                activatedAt: new Date('2026-11-10T08:00:00Z'),
+              }),
+            ],
+            { audienceHistory: [s.opened(B2B_OPENED)] }
+          ),
+        ],
+      })
+    );
+
+    it('is dated for a client by its opening, in find_skills, its resource and its annotation', async () => {
+      const client = await harness.connectAs(f.FRANK);
+      const { skills } = await call(client, 'find_skills', {});
+      const { resources } = await client.listResources();
+
+      expect(
+        skills.find((found) => found.skillId === 'redaction.late-ideas')
+      ).toMatchObject({ version: '1.0', publishedAt: B2B_OPENED });
+      expect(
+        await read(client, 'lepatron://skills/redaction.late-ideas')
+      ).toContain('Version 1.0, published on 2026-11-18 (UTC).');
+      expect(
+        resources.find((r) => r.name === 'redaction.late-ideas').annotations
+      ).toEqual({ lastModified: B2B_OPENED });
     });
   });
 });

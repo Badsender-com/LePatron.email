@@ -10,6 +10,7 @@ const {
   PLACEHOLDER_REGEX,
 } = require('../ai-skill/services/prompt-builder.service.js');
 const { audienceFilter } = require('../ai-skill/services/audience.js');
+const { seenBy, DATING_FIELDS } = require('./mcp-catalog-dates.js');
 
 // The expertise a feature skill applies is composed by the feature that calls
 // it in the app (findApplicable, with that feature's own scope). An assistant
@@ -23,9 +24,16 @@ const natureOf = (version) => version.nature || SkillNatures.FEATURE;
 const isTask = (version) => natureOf(version) === SkillNatures.TASK;
 
 // What each read keeps of a skill and of its active version: a listing names
-// a skill and its arguments, a read runs it.
+// a skill and its arguments, a read runs it; both date it for the company
+// (ADR 0031).
 const LISTED = {
-  doc: ['skillId', 'title', 'description', 'servedToAssistants'],
+  doc: [
+    'skillId',
+    'title',
+    'description',
+    'servedToAssistants',
+    ...DATING_FIELDS,
+  ],
   version: ['nature', 'inputSchemaId', 'inputTemplate', 'updatedAt'],
 };
 const READ = {
@@ -62,6 +70,7 @@ async function servedSkills(group, drafts = false) {
   );
   return found
     .filter(isServed)
+    .map(seenBy(group))
     .sort((a, b) => a.doc.skillId.localeCompare(b.doc.skillId));
 }
 
@@ -87,7 +96,7 @@ async function servedSkill(skillId, group, drafts = false) {
     READ,
     { drafts }
   );
-  return found && isServed(found) ? found : null;
+  return found && isServed(found) ? seenBy(group)(found) : null;
 }
 
 // The paths a template places: `{{input.brand.name}}` gives `brand.name`.
@@ -193,6 +202,7 @@ module.exports = {
   uriOf,
   natureOf,
   isTask,
+  isServed,
   servedSkills,
   servedSkill,
   namedSkills,

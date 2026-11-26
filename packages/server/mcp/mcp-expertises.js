@@ -13,7 +13,12 @@ const { withIdentity } = require('./mcp-identity.js');
 const { audienceFilter } = require('../ai-skill/services/audience.js');
 const { draftNotice } = require('./mcp-drafts.js');
 
-const { lastModifiedOf, versionLine } = require('./mcp-catalog-dates.js');
+const {
+  lastModifiedOf,
+  versionLine,
+  seenBy,
+  DATING_FIELDS,
+} = require('./mcp-catalog-dates.js');
 
 const URI_TEMPLATE = 'lepatron://expertises/{expertiseId}';
 const uriOf = (expertiseId) => `lepatron://expertises/${expertiseId}`;
@@ -31,20 +36,20 @@ const bareExpertiseId = (id) =>
 
 // What each read keeps of an expertise and of the version it is served at:
 // its active version, or in a super admin's drafts mode its open draft
-// (#1385).
+// (#1385), and what dates it for the company (ADR 0031).
 const LISTED = {
-  doc: ['expertiseId', 'title', 'description'],
+  doc: ['expertiseId', 'title', 'description', ...DATING_FIELDS],
   version: ['updatedAt'],
 };
 const READ = {
-  doc: ['expertiseId', 'title'],
+  doc: ['expertiseId', 'title', ...DATING_FIELDS],
   version: ['updatedAt', 'body', 'examplesGood', 'examplesBad'],
 };
 const NAMED = { doc: ['expertiseId'], version: [] };
 // What `search` reads of each: what describes it, its sections' headings in
 // its body.
 const SEARCHED = {
-  doc: ['expertiseId', 'title', 'description'],
+  doc: ['expertiseId', 'title', 'description', ...DATING_FIELDS],
   version: ['body'],
 };
 
@@ -55,7 +60,7 @@ async function servedExpertises(group, drafts = false) {
   const found = await findServed(Expertises, audienceFilter(group), LISTED, {
     drafts,
   });
-  return found.sort(byExpertiseId);
+  return found.map(seenBy(group)).sort(byExpertiseId);
 }
 
 /**
@@ -70,7 +75,7 @@ async function searchableExpertises(group, drafts = false) {
   const found = await findServed(Expertises, audienceFilter(group), SEARCHED, {
     drafts,
   });
-  return found.sort(byExpertiseId);
+  return found.map(seenBy(group)).sort(byExpertiseId);
 }
 
 // A version with no date says none, rather than an empty annotation.
@@ -129,7 +134,7 @@ async function readableExpertise(expertiseId, group, drafts = false) {
     READ,
     { drafts }
   );
-  return found || null;
+  return found ? seenBy(group)(found) : null;
 }
 
 /**
@@ -157,7 +162,9 @@ async function consumedExpertises(
     content ? READ : NAMED,
     { drafts }
   );
-  const byId = new Map(found.map((item) => [item.doc.expertiseId, item]));
+  const byId = new Map(
+    found.map((item) => [item.doc.expertiseId, seenBy(group)(item)])
+  );
   return wanted.map((id) => byId.get(id)).filter(Boolean);
 }
 
