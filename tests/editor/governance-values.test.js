@@ -94,6 +94,41 @@ describe('publishing dimensions to the template', () => {
     expect(values.audience).toBe('64a0000000000000000000a2');
   });
 
+  // A template may render a root property as HTML: only letters, digits, `-`
+  // and `_` reach it as they are.
+  it.each([['<b>vip</b>'], ['vip clients'], ['"vip"'], ['clients-fidèles']])(
+    'publishes the id of a value whose identifier is %p',
+    (canonicalType) => {
+      const { values } = governanceValues({
+        dimensions: [
+          {
+            ...AUDIENCE,
+            values: [{ id: '64a0000000000000000000a3', canonicalType }],
+          },
+        ],
+        selections: { audience: '64a0000000000000000000a3' },
+      });
+
+      expect(values.audience).toBe('64a0000000000000000000a3');
+    }
+  );
+
+  it('publishes an identifier of letters, digits, hyphens and underscores as is', () => {
+    const { values } = governanceValues({
+      dimensions: [
+        {
+          ...AUDIENCE,
+          values: [
+            { id: '64a0000000000000000000a3', canonicalType: 'Vip_2-b' },
+          ],
+        },
+      ],
+      selections: { audience: '64a0000000000000000000a3' },
+    });
+
+    expect(values.audience).toBe('Vip_2-b');
+  });
+
   it('does not publish a deactivated dimension', () => {
     const { values } = governanceValues({
       dimensions: [{ ...AUDIENCE, isActive: false }],

@@ -13,6 +13,12 @@ const {
  * harness. Covered by tests/editor/governance-values.test.js.
  */
 
+// What an identifier may hold to be published as is. A template may render a
+// root property as HTML (in a `data-ko-editable`), and the email type's
+// identifier has no format of its own: anything else is published as the
+// value's id.
+const PUBLISHABLE_IDENTIFIER = /^[A-Za-z0-9_-]+$/;
+
 /**
  * @param {Object} params
  * @param {Array} params.dimensions `{name, isActive, values: [{id, canonicalType}]}`
@@ -58,10 +64,13 @@ function governanceValues({
   return { values, sources: {} };
 }
 
-// A value with no identifier is published under its id: stable, and never
-// mistaken for no value at all.
+// A value with no identifier, or one a template should not receive, is
+// published under its id: stable, and never mistaken for no value at all.
 function publishedIdentifier(value) {
-  return value.canonicalType || String(value.id);
+  const identifier = value.canonicalType;
+  return identifier && PUBLISHABLE_IDENTIFIER.test(identifier)
+    ? identifier
+    : String(value.id);
 }
 
 function withEmailTypeDimension(dimensions, emailTypes) {
