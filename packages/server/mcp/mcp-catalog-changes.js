@@ -6,7 +6,7 @@
  * opening to every company and each withdrawal, by its audience history and
  * its archiving. A company other than the platform company sees an item only
  * while it was open to every company: its opening is when the item appears,
- * created, or opened again after a withdrawal; a version published while the
+ * created, after a withdrawal too; a version published while the
  * item was kept to the platform company is never one of its changes.
  *
  * Pure: it reads the item as stored, its versions, its audience and its
@@ -93,7 +93,8 @@ function publicationChanges(item, { everyAudience }) {
 /**
  * The openings and withdrawals a reader sees: the platform company each
  * change of audience and the archiving; another company the start of each
- * span it was open to it, its first as a creation, and each end.
+ * span it was open to it, as a creation, and each end: it never learns that
+ * an item existed before it was opened, nor that it was opened again.
  */
 function audienceChanges(item, { everyAudience }) {
   if (everyAudience) {
@@ -109,11 +110,11 @@ function audienceChanges(item, { everyAudience }) {
       version: versionAt(item, found.at),
     }));
   }
-  return openSpans(item).flatMap((span, index) => [
+  return openSpans(item).flatMap((span) => [
     ...(span.from > -Infinity && versionAt(item, span.from)
       ? [
           {
-            change: index === 0 ? 'created' : 'opened',
+            change: 'created',
             at: span.from,
             version: versionAt(item, span.from),
           },

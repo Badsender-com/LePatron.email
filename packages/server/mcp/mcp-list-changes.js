@@ -70,7 +70,7 @@ const INPUT = z.object({
     .max(CHANGES.length)
     .optional()
     .describe(
-      'Only these changes: created, updated (a new version), opened (to every company), withdrawn (from them). Default: all.'
+      'Only these changes: created, updated (a new version), opened (to every company, told to the platform company only: another company sees an opening as created), withdrawn (from them). Default: all.'
     ),
   audience: z
     .enum(AudienceValues)
@@ -230,7 +230,7 @@ function registerListChanges(server) {
     'list_changes',
     {
       title: 'List the catalog changes',
-      description: `Lists what changed in the skills and expertises this company may use, in a period: created, updated by a new version, opened to every company, withdrawn from them, the oldest first, ${MAX_CHANGES} at most. Each change gives its release note, what changes for whoever uses it, written in French. Use it to answer "what is new?": never guess a date or a reason. Only what was published is listed, never a draft.`,
+      description: `Lists what changed in the skills and expertises this company may use, in a period: created, updated by a new version, opened to every company (to the platform company; any other company sees what is opened to it as created), withdrawn from them, the oldest first, ${MAX_CHANGES} at most. Each change gives its release note, what changes for whoever uses it, written in French. Use it to answer "what is new?": never guess a date or a reason. Only what was published is listed, never a draft.`,
       inputSchema: INPUT,
       outputSchema: OUTPUT,
       annotations: READ_ONLY,

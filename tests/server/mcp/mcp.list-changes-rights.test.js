@@ -104,8 +104,7 @@ describe('list_changes, as each reader sees it', () => {
     });
   });
 
-  // Turned on by the block 3 review fixes (#1677, #1678)
-  describe.skip('an item withdrawn, then opened again', () => {
+  describe('an item withdrawn, then opened again', () => {
     it('appears to a client as created again, never opened', async () => {
       withExpertises(
         s.expertise(
