@@ -21,6 +21,10 @@ const {
   rememberValued,
 } = require('../utils/governance-values');
 const { publishToTemplate } = require('../utils/publish-to-template');
+const {
+  hiddenTemplateOptions,
+  rootPropertiesOf,
+} = require('../utils/template-options');
 const template = require('./components/email-metadata/email-metadata.template');
 
 // The mounted Vue instance, kept so `dispose` can tear it down when the editor
@@ -71,6 +75,14 @@ module.exports = {
     // is the same path it took before this feature existed, without having to test
     // for the store's existence.
     vm.emailMetadataStore = createEmailMetadataStore();
+
+    // Read by the template's own option editors (converter/editor.js): the
+    // option of a root property a company dimension feeds is hidden, the
+    // dimension decides (utils/template-options.js). Empty for an opted-out
+    // company: every option stays.
+    vm.hiddenTemplateOptions = ko.observableArray([]);
+    vm.isHiddenTemplateOption = (name) =>
+      vm.hiddenTemplateOptions().indexOf(name) !== -1;
   },
 
   init(vm) {
@@ -89,6 +101,12 @@ module.exports = {
     store.reset(initialForm);
 
     const dimensions = config.dimensions || [];
+    vm.hiddenTemplateOptions(
+      hiddenTemplateOptions({
+        dimensions,
+        templateProperties: rootPropertiesOf(vm.content && vm.content()),
+      })
+    );
     // Every dimension gets its key up front: Vue 2 does not see a key added
     // later, and the select of a dimension the email has no value for would not
     // react.

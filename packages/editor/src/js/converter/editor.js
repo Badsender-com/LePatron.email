@@ -623,6 +623,14 @@ var _propEditor = function (
         bindings.length > 0
           ? 'data-bind="' + utils.addSlashes(bindings.join()) + '"'
           : '';
+      // A root property of the template a dimension feeds: its option is
+      // hidden, the dimension decides (ADR-0015, utils/template-options.js).
+      var hideable = withBindingProvider._isRoot && path === prop;
+      if (hideable)
+        html +=
+          '<div data-bind="visible: !($root.isHiddenTemplateOption && $root.isHiddenTemplateOption(\'' +
+          prop +
+          '\'))">';
       html +=
         '<div class="propEditor ' +
         (checkboxes ? 'checkboxes' : '') +
@@ -676,6 +684,7 @@ var _propEditor = function (
         }
       }
       html += '</div>';
+      if (hideable) html += '</div>';
     } else if (model === null || typeof model != 'object') {
       // TODO remove debug output
       html +=
@@ -773,6 +782,7 @@ var createBlockEditor = function (
     templateName
   );
   withBindingProvider._templateName = templateName;
+  withBindingProvider._isRoot = rootModelName === templateName;
 
   var html = '<div class="editor">';
   html +=
