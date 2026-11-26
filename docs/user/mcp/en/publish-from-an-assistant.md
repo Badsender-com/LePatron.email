@@ -56,7 +56,7 @@ The first answer and the publication also say what the publication warns of, wit
 
 **An item with several drafts.** When a skill or an expertise has more than one draft, the tool does not choose: it lists them, and the assistant gives the version to publish (`version`, for instance `2.1`) at every call. With one draft, nothing is to give.
 
-**Changelog and release notes.** A major version is published with its changelog and its release notes, as in the back office: the draft's, or those you give the assistant. Without them, the tool refuses before the check, and the assistant has to write them. The key is bound to them: give the same at both steps.
+**Changelog and release notes.** Every version, minor as major, is published with its changelog and its release note, as in the back office: the draft's, or those you give the assistant. The release note says, in 500 characters at most, what changes for whoever uses the item: every company that reads it will see it ([Following what is new](./catalog-changes.md)). The changelog says how and why the version was written, for the platform company alone. Without them, the tool refuses before the check, and the assistant has to write them. The key is bound to them: give the same at both steps.
 
 **On a copy** (staging, development), the item published is kept on the copy, as the back office's publication offers by default: the next follow of production does not undo it. The answer says so (`keptOnCopy`).
 
