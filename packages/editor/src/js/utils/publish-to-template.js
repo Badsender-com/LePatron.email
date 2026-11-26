@@ -44,18 +44,18 @@ function publishToTemplate(content, values) {
  * paused anyway for its own write; kept out, they are simply never undone.
  *
  * @param {Object} vm the editor's viewModel, `content` and the undo stack's
- *   `setUndoModeIgnore` / `restoreUndoMode` (undomanager/undomain.js), absent
+ *   `suspendUndo` / `resumeUndo` (undomanager/undomain.js), absent
  *   before the stack starts, when nothing is recorded anyway
  * @param {Object} values template property → value
  * @returns {{applied: string[], skipped: string[]}}
  */
 function publishOutsideUndo(vm, values) {
-  const pausable = typeof vm.setUndoModeIgnore === 'function';
-  if (pausable) vm.setUndoModeIgnore();
+  const pausable = typeof vm.suspendUndo === 'function';
+  if (pausable) vm.suspendUndo();
   try {
     return publishToTemplate(vm.content && vm.content(), values);
   } finally {
-    if (pausable) vm.restoreUndoMode();
+    if (pausable) vm.resumeUndo();
   }
 }
 
