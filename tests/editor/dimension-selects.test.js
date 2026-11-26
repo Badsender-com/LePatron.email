@@ -221,6 +221,15 @@ describe('nested selects', () => {
     ],
   };
 
+  const SCRIPT = {
+    name: 'script',
+    label: 'Écriture',
+    parentName: 'language',
+    values: [
+      { id: 'latin', label: 'Latin', isActive: true, parentIds: ['nl'] },
+    ],
+  };
+
   it('puts a child right after its parent, whatever the declared order', () => {
     const selects = dimensionSelects({
       dimensions: [LANGUAGE, AUDIENCE, MARKET],
@@ -241,6 +250,37 @@ describe('nested selects', () => {
     });
 
     expect(selects.map((select) => select.name)).toEqual(['market']);
+  });
+
+  it('shows a child carrying a value under a parent with no value, and says so', () => {
+    // Language was moved under Market after this email chose French with no
+    // market: French still reaches the template, so the writer must see it.
+    const language = dimensionSelects({
+      dimensions: [MARKET, LANGUAGE],
+      selections: { language: 'fr' },
+    }).find((select) => select.name === 'language');
+
+    expect(language).toMatchObject({ value: 'fr', unavailable: true });
+    // Nothing else is offered under no parent value: only clearing it.
+    expect(labels(language)).toEqual(['Français']);
+  });
+
+  it('shows a value chosen while the parent was deactivated, once it is reactivated', () => {
+    const selections = { language: 'nl' };
+    const whileDeactivated = dimensionSelects({
+      dimensions: [LANGUAGE],
+      selections,
+    });
+    const reactivated = dimensionSelects({
+      dimensions: [MARKET, LANGUAGE],
+      selections,
+    }).find((select) => select.name === 'language');
+
+    expect(whileDeactivated[0]).toMatchObject({
+      value: 'nl',
+      unavailable: false,
+    });
+    expect(reactivated).toMatchObject({ value: 'nl', unavailable: true });
   });
 
   it('offers only the values available under the parent value, and those offered everywhere', () => {
@@ -311,15 +351,6 @@ describe('nested selects', () => {
     });
 
     it('clears the child of a child it cleared', () => {
-      const SCRIPT = {
-        name: 'script',
-        label: 'Écriture',
-        parentName: 'language',
-        values: [
-          { id: 'latin', label: 'Latin', isActive: true, parentIds: ['nl'] },
-        ],
-      };
-
       expect(
         reconcileSelections({
           dimensions: [MARKET, LANGUAGE, SCRIPT],

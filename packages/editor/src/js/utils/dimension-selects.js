@@ -64,7 +64,8 @@ const offeredUnder = (option, parentValue) => {
 
 /**
  * One select per dimension: each child right after its parent, hidden while the
- * parent has no value, offering the values available under the parent value.
+ * parent has no value and the child none either, offering the values available
+ * under the parent value.
  *
  * A deactivated value is offered only to the email that carries it: dropping it
  * would rewrite the email's value on the next save, the same reasoning as the
@@ -74,8 +75,9 @@ const offeredUnder = (option, parentValue) => {
  * once a save has dropped it. Its label says it is deactivated, as the
  * typology's does.
  *
- * A value no longer offered under the parent value is kept while it is the
- * select's value, and flagged `unavailable`.
+ * A value no longer offered under the parent value, or carried under a parent
+ * with no value, is kept while it is the select's value, and flagged
+ * `unavailable`.
  *
  * @param {Object} params
  * @param {Array} params.dimensions emailMetadataConfig.dimensions
@@ -104,9 +106,14 @@ function dimensionSelects({
       selections,
       emailTypeId
     );
-    if (nested && !parentValue) return selects;
-
     const value = (selections && selections[dimension.name]) || null;
+    // A parent with no value hides its children, unless one carries a value
+    // (chosen before the dimension was nested, or while its parent was
+    // deactivated): it still drives the template, so it is shown, to be seen
+    // and cleared, and nothing else is offered under no parent value.
+    const orphan = nested && !parentValue;
+    if (orphan && !value) return selects;
+
     const isValue = (option) => String(option.id) === value;
     const values = dimension.values || [];
     const options = values
@@ -115,7 +122,8 @@ function dimensionSelects({
           // Never a select whose value is not among its options: it would show
           // blank while the email still carries the value.
           isValue(option) ||
-          ((option.isActive || carried.has(String(option.id))) &&
+          (!orphan &&
+            (option.isActive || carried.has(String(option.id))) &&
             (!nested || offeredUnder(option, parentValue)))
       )
       .map((option) =>
@@ -134,7 +142,7 @@ function dimensionSelects({
       label: dimension.label,
       value,
       unavailable: Boolean(
-        nested && chosen && !offeredUnder(chosen, parentValue)
+        orphan || (nested && chosen && !offeredUnder(chosen, parentValue))
       ),
       options,
     });
