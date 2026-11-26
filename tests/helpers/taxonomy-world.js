@@ -7,10 +7,14 @@
 
 const COMPANY_A = '507f1f77bcf86cd799439a01';
 const COMPANY_B = '507f1f77bcf86cd799439b01';
+const PLATFORM = '507f1f77bcf86cd799439f01';
 
 const adminA = { role: 'company_admin', group: { id: COMPANY_A } };
 const techAdminA = { role: 'company_admin_tech', group: { id: COMPANY_A } };
 const adminB = { role: 'company_admin', group: { id: COMPANY_B } };
+// A super admin belongs to the platform company and acts for the one it names,
+// or else the one it selected; never for its own.
+const superAdmin = { role: 'super_admin', group: { id: PLATFORM } };
 
 const idOf = (doc) => String(doc.id || doc._id);
 
@@ -68,6 +72,7 @@ module.exports = {
   adminA,
   techAdminA,
   adminB,
+  superAdmin,
   idOf,
   idsOf,
   plainTokens,

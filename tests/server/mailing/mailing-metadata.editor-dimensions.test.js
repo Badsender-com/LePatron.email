@@ -26,6 +26,7 @@ const models = require('../../../packages/server/common/models.common.js');
 const {
   COMPANY_A,
   adminA,
+  adminB,
   idOf,
   idsOf,
   resetTaxonomyModels,
@@ -107,6 +108,25 @@ describe.skip('what the editor receives of the company dimensions, and what foll
       const names = emailMetadataConfig.dimensions.map((d) => d.name);
       expect(names).not.toContain('emailType');
       expect(names).not.toContain('trigger');
+    });
+
+    it("never offers another company's dimensions or values", async () => {
+      await declare({ name: 'market', label: 'Marché' }, adminB);
+      await declare({ name: 'audience', label: 'Audience' }, adminB);
+      await addValue('market', { label: 'Canada' }, adminB);
+      await addValue('audience', { label: 'Abonnés' }, adminB);
+
+      const { emailMetadataConfig } = await build(newMailing());
+
+      expect(emailMetadataConfig.dimensions.map((d) => d.name)).toEqual([
+        'brand',
+        'audience',
+      ]);
+      const audience = emailMetadataConfig.dimensions[1];
+      expect(audience.values.map((value) => value.label).sort()).toEqual([
+        'Clients VIP',
+        'Prospects',
+      ]);
     });
 
     it('gives the values the email carries', async () => {

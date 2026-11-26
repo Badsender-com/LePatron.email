@@ -22,7 +22,9 @@ jest.mock('../../../packages/server/utils/logger.js', () => ({
 const models = require('../../../packages/server/common/models.common.js');
 const ERROR_CODES = require('../../../packages/server/constant/error-codes.js');
 const {
+  COMPANY_B,
   adminA,
+  adminB,
   idOf,
   idsOf,
   resetTaxonomyModels,
@@ -107,6 +109,18 @@ describe.skip('availability', () => {
     });
   });
 
+  it('refuses a parent value of another company, as one that does not exist', async () => {
+    await declare({ name: 'market', label: 'Marché' }, adminB);
+    const canadaOfB = await addValue('market', { label: 'Canada' }, adminB);
+
+    await expect(
+      addValue('language', { label: 'Français', parentIds: [idOf(canadaOfB)] })
+    ).rejects.toMatchObject({
+      status: 400,
+      message: ERROR_CODES.INVALID_TAXONOMY_ITEM,
+    });
+  });
+
   it('refuses an availability on a value whose dimension has no parent', async () => {
     await expect(
       addValue('brand', { label: 'Marque A', parentIds: [idOf(canada)] })
@@ -135,5 +149,26 @@ describe.skip('availability', () => {
       message: ERROR_CODES.TAXONOMY_ITEM_IS_PARENT,
       details: { childCount: 2 },
     });
+  });
+
+  it("counts only the company's own values offered under a value", async () => {
+    await addValue('language', {
+      label: 'Français',
+      parentIds: [idOf(canada)],
+    });
+    // Another company's record pointing at this value, which no request of
+    // its own could create: the count must still ignore it.
+    models.TaxonomyItems.seed([
+      {
+        _company: COMPANY_B,
+        type: 'language',
+        label: 'English',
+        _parents: [canada._id],
+      },
+    ]);
+
+    await expect(
+      taxonomyService.deleteTaxonomyItem({ user: adminA, itemId: idOf(canada) })
+    ).rejects.toMatchObject({ details: { childCount: 1 } });
   });
 });
