@@ -45,7 +45,7 @@ On the draft, **Publish** first opens the usual confirmation (**Activate this ve
 - **60 calls at most:** the cases past that cap are not replayed, and the dialog says how many. Read them again;
 - **No test case, so not checked:** the feature skills concerned that have no case. They will not be checked: read them again.
 
-Before this dialog opens, LePatron checks what costs nothing: a draft changed since the page read it, a major version without a changelog and release notes, a schema missing from the code. A publication refused anyway is refused at once, without any AI call.
+Before this dialog opens, LePatron checks what costs nothing: a draft changed since the page read it, a version without a change log or without a release note, a release note over 500 characters, a schema missing from the code. A publication refused anyway is refused at once, without any AI call.
 
 Click **Run the check**. The check runs on the server, three calls at a time at most, and the window shows it once it is done: count a minute or more. Closing the window stops nothing on the server, but the check is then to run again.
 
@@ -85,11 +85,11 @@ Some changes make a feature stop, or start, using an item without any version be
    - **several drafts** (say a 1.3 and a 2.0): publish the one you choose from its page;
    - **archived**: reactivate it from its page;
    - **not found**;
-   - what would refuse its publication anyway, such as a **major version** without a changelog and release notes, or a draft **changed since it was read**. It is left out before the check, which makes no call for it.
+   - what would refuse its publication anyway, such as a draft without a **change log** or without a **release note**, or a draft **changed since it was read**. It is left out before the check, which makes no call for it.
 4. If a feature uses one of the drafts, **one check** covers the whole batch: each case is replayed once, with the active versions, then with every draft of the batch in place. It reads as for one version. Otherwise, the dialog says so: the drafts publish without a check.
 5. **On a copy**, the dialog offers **Keep on this copy**, ticked at first, for the whole batch, as the publication of one version does.
-6. The drafts are published **one by one**, each with the changelog and release notes of its draft. The **Publication report** says what was published, what was not and why, and everything that was left out. One failure does not stop the others.
+6. The drafts are published **one by one**, each with the change log and release note of its draft. The **Publication report** says what was published, what was not and why, and everything that was left out. One failure does not stop the others.
 
-A major version needs a changelog and release notes: without them, it is not published. Fill them in on its page, then try again.
+Every version, minor or major, needs a change log and a release note of at most 500 characters: without them, it is not published. The release note says what changes for whoever uses the item, and every company that reads it sees it; the change log says how and why the version was written, and only the platform company reads it. Fill them in on its page, then try again.
 
 A batch holds only skills, or only expertises: it starts from the tab of one or the other. When a skill and the expertise it reads change together, publish **the expertise first**, then the skill: the skill's check then replays its cases with the expertise already published.

@@ -45,7 +45,7 @@ Sur le brouillon, **Publier** ouvre d'abord la confirmation habituelle (**Active
 - **60 appels au plus :** les cas au-delà de ce plafond ne sont pas rejoués, et la fenêtre dit combien. Relisez-les ;
 - **Sans cas de test, donc non vérifiée(s) :** les skills de fonctionnalité concernées qui n'ont aucun cas. Elles ne seront pas vérifiées : relisez-les.
 
-Avant d'ouvrir cette fenêtre, LePatron vérifie ce qui ne coûte rien : un brouillon modifié depuis que la page l'a lu, une version majeure sans changelog ni notes de version, un schéma absent du code. Une publication refusée de toute façon l'est tout de suite, sans appel à l'IA.
+Avant d'ouvrir cette fenêtre, LePatron vérifie ce qui ne coûte rien : un brouillon modifié depuis que la page l'a lu, une version sans journal des modifications ou sans note de version, une note de version de plus de 500 caractères, un schéma absent du code. Une publication refusée de toute façon l'est tout de suite, sans appel à l'IA.
 
 Cliquer sur **Lancer la vérification**. La vérification tourne sur le serveur, trois appels à la fois au plus, et la fenêtre l'affiche une fois terminée : comptez une minute ou plus. Fermer la fenêtre n'arrête rien sur le serveur, mais la vérification est alors à relancer.
 
@@ -85,11 +85,11 @@ Certains changements font qu'une fonctionnalité cesse, ou commence, d'utiliser 
    - **plusieurs brouillons** (par exemple une 1.3 et une 2.0) : publiez celui de votre choix depuis sa page ;
    - **archivé** : réactivez-le depuis sa page ;
    - **introuvable** ;
-   - ce qui refuserait sa publication de toute façon, par exemple une **version majeure** sans changelog ni notes de version, ou un brouillon **modifié depuis sa lecture**. Il est laissé de côté avant la vérification, qui ne paie donc aucun appel pour lui.
+   - ce qui refuserait sa publication de toute façon, par exemple un brouillon sans **journal des modifications** ou sans **note de version**, ou un brouillon **modifié depuis sa lecture**. Il est laissé de côté avant la vérification, qui ne paie donc aucun appel pour lui.
 4. Si une fonctionnalité utilise l'un des brouillons, **une seule vérification** couvre tout le lot : chaque cas est rejoué une fois, avec les versions actives, puis avec tous les brouillons du lot en place. Elle se lit comme pour une version. Sinon, la fenêtre l'annonce : les brouillons se publient sans vérification.
 5. **Sur une copie**, la fenêtre propose **Garder sur cette copie**, cochée par défaut, pour tout le lot, comme la publication d'une version.
-6. Les brouillons sont publiés **un par un**, chacun avec le changelog et les notes de version de son brouillon. Le **Résultat de la publication** dit ce qui a été publié, ce qui ne l'a pas été et pourquoi, et tout ce qui a été laissé de côté. Un échec n'empêche pas les autres.
+6. Les brouillons sont publiés **un par un**, chacun avec le journal des modifications et la note de version de son brouillon. Le **Résultat de la publication** dit ce qui a été publié, ce qui ne l'a pas été et pourquoi, et tout ce qui a été laissé de côté. Un échec n'empêche pas les autres.
 
-Une version majeure a besoin d'un changelog et de notes de version : sans eux, elle n'est pas publiée. Renseignez-les sur sa page, puis recommencez.
+Toute version, mineure ou majeure, a besoin d'un journal des modifications et d'une note de version de 500 caractères au plus : sans eux, elle n'est pas publiée. La note de version dit ce qui change pour qui utilise l'élément, et chaque entreprise qui le lit la voit ; le journal des modifications dit comment et pourquoi la version a été écrite, et seule l'entreprise plateforme le lit. Renseignez-les sur sa page, puis recommencez.
 
 Un lot ne contient que des skills, ou que des expertises : il se lance depuis l'onglet de l'une ou de l'autre. Quand une skill et l'expertise qu'elle lit changent ensemble, publiez **d'abord l'expertise**, puis la skill : la vérification de la skill rejoue alors ses cas avec l'expertise déjà publiée.
