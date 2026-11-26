@@ -23,6 +23,11 @@ const {
 } = require('../ai-skill/constant/skill-constants.js');
 const { draftNotice } = require('./mcp-drafts.js');
 const { READ_ONLY } = require('./mcp-tool-grammar.js');
+const {
+  publishedAtOf,
+  versionLine,
+  lastModifiedOf,
+} = require('./mcp-catalog-dates.js');
 
 // What an assistant reads of a skill: a task skill's procedure and the
 // expertises it consumes, a feature skill's instructions. An MCP prompt is only
@@ -44,7 +49,7 @@ function asMarkdown(found, readableIds = []) {
   return [
     `# ${doc.title}`,
     '',
-    `Version ${versionLabel(version)}.`,
+    versionLine(version, found.draft),
     '',
     ...(notice ? [notice, ''] : []),
     body,
@@ -61,6 +66,9 @@ function asResource({ doc, version, draft }) {
     title: draft ? `${doc.title} (draft ${versionLabel(version)})` : doc.title,
     description: doc.description || undefined,
     mimeType: 'text/markdown',
+    ...(lastModifiedOf(version) && {
+      annotations: { lastModified: lastModifiedOf(version) },
+    }),
   };
 }
 
@@ -125,6 +133,13 @@ const FIND_OUTPUT = z.object({
       title: z.string(),
       description: z.string(),
       nature: z.enum(SkillNatureValues),
+      version: z.string(),
+      publishedAt: z
+        .string()
+        .nullable()
+        .describe(
+          'When this version was published, in UTC; null for a draft, or when it was never recorded.'
+        ),
       draft: z.boolean().optional(),
       uri: z.string(),
       openRetex: z
@@ -175,6 +190,8 @@ function registerFindSkills(server) {
             title: doc.title,
             description: doc.description || '',
             nature: natureOf(version),
+            version: versionLabel(version),
+            publishedAt: publishedAtOf(version, draft),
             ...(draft && { draft: true }),
             uri: uriOf(doc.skillId),
           })
