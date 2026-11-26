@@ -27,6 +27,8 @@ const PUBLISHABLE_IDENTIFIER = /^[A-Za-z0-9_-]+$/;
  *   `{id, canonicalType}`, published as the `emailType` dimension
  * @param {string} [params.emailTypeId] the chosen email type
  * @param {string} [params.trigger] the email's trigger
+ * @param {string[]} [params.valued] the dimensions the email has had a value
+ *   for, when it opened or since (see `rememberValued`)
  * @returns {{values: Object, sources: Object}} `values` maps a template property
  *   to what it receives; `sources` says where a design token came from (#1359)
  */
@@ -36,6 +38,7 @@ function governanceValues({
   emailTypes,
   emailTypeId,
   trigger,
+  valued,
 }) {
   const values = { trigger: trigger || '' };
   const chosenBy = withEmailType(selections, emailTypes, emailTypeId);
@@ -46,10 +49,14 @@ function governanceValues({
     .filter((dimension) => dimension.isActive !== false)
     .forEach((dimension) => {
       const chosen = chosenBy[dimension.name];
-      // Defined even when empty, so `_root_.audience eq 'vip'` evaluates to
-      // false instead of failing.
       if (!chosen) {
-        values[dimension.name] = '';
+        // An email that never had a value for the dimension writes nothing: the
+        // content keeps what it holds, a template option set before the
+        // dimension existed included. Emptied after it had one, it is
+        // published empty: the writer cleared it.
+        if ((valued || []).includes(dimension.name)) {
+          values[dimension.name] = '';
+        }
         return;
       }
       const value = (dimension.values || []).find(
@@ -62,6 +69,27 @@ function governanceValues({
     });
 
   return { values, sources: {} };
+}
+
+/**
+ * The dimensions the email has had a value for: those it had, plus those that
+ * have one now. Kept by the section from the moment the email opens, so a
+ * dimension the writer empties is published empty, and one that never had a
+ * value is not published at all.
+ *
+ * @param {string[]} valued the dimensions remembered so far
+ * @param {Object} params
+ * @param {Object} params.selections dimension name → chosen value id
+ * @param {string} [params.emailTypeId] the chosen email type
+ * @returns {string[]} `valued` itself when nothing is new
+ */
+function rememberValued(valued, { selections, emailTypeId }) {
+  const known = valued || [];
+  const chosenBy = withEmailType(selections, [], emailTypeId);
+  const added = Object.keys(chosenBy).filter(
+    (name) => chosenBy[name] && !known.includes(name)
+  );
+  return added.length > 0 ? known.concat(added) : known;
 }
 
 // A value with no identifier, or one a template should not receive, is
@@ -87,4 +115,4 @@ function withEmailType(selections, emailTypes, emailTypeId) {
   return chosenBy;
 }
 
-module.exports = { governanceValues };
+module.exports = { governanceValues, rememberValued };

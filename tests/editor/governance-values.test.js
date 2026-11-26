@@ -75,13 +75,25 @@ describe('publishing dimensions to the template', () => {
     expect(values).toMatchObject({ audience: 'vip', brand: 'brand-b' });
   });
 
-  it('publishes an empty string for a dimension the email has no value for', () => {
+  // The content keeps what it holds, a template option set before the
+  // dimension existed included (`country=be` in an old email): nothing decided
+  // it away.
+  it('publishes nothing for a dimension the email never had a value for', () => {
     const { values } = governanceValues({
       dimensions: [AUDIENCE],
-      selections: {},
+      selections: { audience: '' },
     });
 
-    // Defined, so `_root_.audience eq 'vip'` evaluates to false instead of failing.
+    expect(values).not.toHaveProperty('audience');
+  });
+
+  it('publishes an empty string for a dimension the writer emptied', () => {
+    const { values } = governanceValues({
+      dimensions: [AUDIENCE],
+      selections: { audience: '' },
+      valued: ['audience'],
+    });
+
     expect(values.audience).toBe('');
   });
 
@@ -171,6 +183,17 @@ describe('publishing dimensions to the template', () => {
     });
   });
 
+  it('publishes nothing for an email type the email never had', () => {
+    const { values } = governanceValues({
+      dimensions: [],
+      selections: {},
+      emailTypes: [{ id: '64a0000000000000000000c1' }],
+      emailTypeId: '',
+    });
+
+    expect(values).not.toHaveProperty('emailType');
+  });
+
   it('publishes the trigger under its name', () => {
     expect(
       governanceValues({ dimensions: [], selections: {}, trigger: 'automated' })
@@ -179,6 +202,47 @@ describe('publishing dimensions to the template', () => {
     expect(
       governanceValues({ dimensions: [], selections: {} }).values.trigger
     ).toBe('');
+  });
+});
+
+// The dimensions an email has had a value for, when it opened or since: only
+// those are published empty once emptied.
+describe('the dimensions an email has had a value for', () => {
+  const {
+    rememberValued,
+  } = require('../../packages/editor/src/js/utils/governance-values.js');
+
+  it('are those it opens with a value for, the email type included', () => {
+    expect(
+      rememberValued([], {
+        selections: { audience: '64a0000000000000000000a1', brand: '' },
+        emailTypeId: '64a0000000000000000000c1',
+      }).sort()
+    ).toEqual(['audience', 'emailType']);
+  });
+
+  it('keep a dimension the writer empties', () => {
+    expect(
+      rememberValued(['audience'], { selections: { audience: '' } })
+    ).toEqual(['audience']);
+  });
+
+  it('grow with a dimension the writer gives a value to', () => {
+    expect(
+      rememberValued(['audience'], {
+        selections: { audience: '', brand: '64a0000000000000000000b1' },
+      })
+    ).toEqual(['audience', 'brand']);
+  });
+
+  it('stay the same list when nothing is new, so nothing recomputes', () => {
+    const valued = ['audience'];
+
+    expect(
+      rememberValued(valued, {
+        selections: { audience: '64a0000000000000000000a1' },
+      })
+    ).toBe(valued);
   });
 });
 

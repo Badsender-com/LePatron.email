@@ -16,7 +16,10 @@ const {
 const {
   createEmailMetadataStore,
 } = require('../utils/email-metadata-store');
-const { governanceValues } = require('../utils/governance-values');
+const {
+  governanceValues,
+  rememberValued,
+} = require('../utils/governance-values');
 const { publishToTemplate } = require('../utils/publish-to-template');
 const template = require('./components/email-metadata/email-metadata.template');
 
@@ -108,6 +111,12 @@ module.exports = {
         triggers: config.triggers || [],
         dimensions,
         selections: initialSelections,
+        // The dimensions the email has had a value for: only those are
+        // published empty once emptied (utils/governance-values.js).
+        valued: rememberValued([], {
+          selections: initialSelections,
+          emailTypeId: initialForm.emailTypeId,
+        }),
         subjectHardLimit: SUBJECT_HARD_LIMIT,
       }),
 
@@ -173,6 +182,7 @@ module.exports = {
             emailTypes: this.emailTypes,
             emailTypeId: this.emailTypeId,
             trigger: this.trigger,
+            valued: this.valued,
           }).values;
         },
         triggerHintId() {
@@ -212,6 +222,15 @@ module.exports = {
           },
           deep: true,
         },
+        selections: {
+          handler() {
+            this.trackValued();
+          },
+          deep: true,
+        },
+        emailTypeId() {
+          this.trackValued();
+        },
       },
 
       // A field written from outside the section (an AI action, through
@@ -230,6 +249,12 @@ module.exports = {
         // The second argument matters: vm.t(key, params) interpolates __token__
         // placeholders, and dropping it would lose them without an error.
         t: (key, params) => vm.t(key, params),
+        trackValued() {
+          this.valued = rememberValued(this.valued, {
+            selections: this.selections,
+            emailTypeId: this.emailTypeId,
+          });
+        },
       },
 
       template,
