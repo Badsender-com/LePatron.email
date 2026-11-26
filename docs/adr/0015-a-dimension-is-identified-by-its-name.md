@@ -22,9 +22,10 @@ The root properties of an email's content that the editor builds itself are refu
 
 Every other name stays allowed, the names of template options included, because a dimension is meant to be able to fill a template option.
 
-What the editor publishes under that name follows three rules:
+What the editor publishes under that name follows four rules:
 
 - A template option fed by an active company dimension that has values to offer, or by the email type or the trigger of the email settings, is hidden from the template options: the dimension decides, and two selects for one property could only disagree. A deactivated dimension gives the option back, and so does one declared before its values or whose values are all deactivated, since hiding the option would leave nothing in its place.
+- A template option fed by a design token is hidden while a chosen value carries that token, and comes back as soon as no chosen value carries it: the editor gives the property back the value it held before the token was first written, and the writer sets it as on any template (on a brand with no `mainColorVar`, the writer chooses the colour). The writer's value then stands until a chosen value carries the token again. An email saved under brand A and switched to brand B keeps A's value, the one it held when it opened, but the option is back and the writer can change it. The option and the content follow the same resolution of the tokens, so they never disagree on who decides the property.
 - An empty value is written only once the email has had a value for the dimension, when it opened or since: the writer emptied it. An email that never had one leaves the property as its content holds it, a template option set before the dimension existed included.
 - Only an identifier matching `^[A-Za-z0-9_-]+$` reaches the template; any other is published as the value's id, because a template may render a root property as HTML. The server's own format check on identifiers comes with #1359 (commit a471fdc93); the email type's mapping onto the doctrine stays free, so the editor's check stays.
 

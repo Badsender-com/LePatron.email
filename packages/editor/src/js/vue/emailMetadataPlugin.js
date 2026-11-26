@@ -101,6 +101,9 @@ module.exports = {
     store.reset(initialForm);
 
     const dimensions = config.dimensions || [];
+    // Before the section mounts: the options its dimensions feed are hidden
+    // even if it never does. Those a design token feeds follow the chosen
+    // values, below.
     hideTemplateOptionsFedBy(vm, config);
     // Every dimension gets its key up front: Vue 2 does not see a key added
     // later, and the select of a dimension the email has no value for would not
@@ -196,8 +199,10 @@ module.exports = {
           });
         },
         // What the template reads of the email's settings (ADR-0015), recomputed
-        // as the user picks: the preview follows without a save.
-        templateValues() {
+        // as the user picks: the preview follows without a save. `values` is
+        // what is published, `sources` the design tokens the chosen values
+        // carry.
+        governance() {
           return governanceValues({
             dimensions: this.dimensions,
             selections: this.selections,
@@ -206,7 +211,7 @@ module.exports = {
             emailTypePrecedence: config.emailTypePrecedence,
             trigger: this.trigger,
             valued: this.valued,
-          }).values;
+          });
         },
         triggerHintId() {
           return this.triggerDescription ? 'email-metadata-trigger-hint' : null;
@@ -234,9 +239,13 @@ module.exports = {
         // Immediate: the content must hold what the email carries from the
         // moment it opens, not from the first change. Outside the undo
         // history: an undo must not take the content away from the settings.
-        templateValues: {
-          handler(values) {
+        // The option of a token is hidden from the same result that writes
+        // it: hidden while a chosen value carries it, given back with the
+        // template's own value once none does (utils/template-options.js).
+        governance: {
+          handler({ values, sources }) {
             publishOutsideUndo(vm, values, templatePublisher.publish);
+            hideTemplateOptionsFedBy(vm, config, Object.keys(sources));
           },
           immediate: true,
         },

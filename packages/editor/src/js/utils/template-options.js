@@ -17,7 +17,13 @@ const { isPublishable } = require('./publish-to-template');
  * to offer, declared before its values or with all of them deactivated: hiding
  * the option would leave nothing in its place. The email type and the trigger
  * follow the same rule: their selects in the email settings feed the
- * `emailType` and `trigger` properties. Covered by
+ * `emailType` and `trigger` properties.
+ *
+ * A design token feeds the property of its name only while a chosen value
+ * carries it: its option is hidden then, and comes back as soon as no chosen
+ * value carries it, the template's own value given back by the publisher
+ * (createTemplatePublisher) and the writer's to set again. On a brand with no
+ * `mainColorVar`, the writer sets the colour. Covered by
  * tests/editor/template-options.test.js.
  *
  * @param {Object} params
@@ -25,6 +31,8 @@ const { isPublishable } = require('./publish-to-template');
  *   editor
  * @param {Array} [params.emailTypes] the email types the editor offers
  * @param {string[]} [params.triggers] the triggers the editor offers
+ * @param {string[]} [params.tokens] the design tokens the chosen values carry,
+ *   as governanceValues resolves them (the names of its `sources`)
  * @param {string[]} params.templateProperties the root properties of the template
  * @returns {string[]} the properties whose option is hidden
  */
@@ -32,6 +40,7 @@ function hiddenTemplateOptions({
   dimensions,
   emailTypes,
   triggers,
+  tokens,
   templateProperties,
 }) {
   const standard = [
@@ -46,7 +55,8 @@ function hiddenTemplateOptions({
     .filter(
       (dimension) => dimension.isActive !== false && offersValues(dimension)
     )
-    .map((dimension) => dimension.name);
+    .map((dimension) => dimension.name)
+    .concat(tokens || []);
   return (templateProperties || []).filter((property) =>
     fed.includes(property)
   );
@@ -87,22 +97,33 @@ function exposeHiddenTemplateOptions(vm) {
 
 /**
  * Hide the template options the email settings feed, read from the email's
- * content as the editor opened it.
+ * content. Called again each time the chosen values change, with the design
+ * tokens they now carry: the options those feed follow.
  *
  * @param {Object} vm the editor's viewModel, `content` and the
  *   `hiddenTemplateOptions` exposeHiddenTemplateOptions hung on it
  * @param {Object} config the email settings the server sent,
  *   `{dimensions, emailTypes, triggers}`
+ * @param {string[]} [tokens] the design tokens the chosen values carry
  */
-function hideTemplateOptionsFedBy(vm, config) {
-  vm.hiddenTemplateOptions(
-    hiddenTemplateOptions({
-      dimensions: config.dimensions,
-      emailTypes: config.emailTypes,
-      triggers: config.triggers,
-      templateProperties: rootPropertiesOf(vm.content && vm.content()),
-    })
-  );
+function hideTemplateOptionsFedBy(vm, config, tokens = []) {
+  const hidden = hiddenTemplateOptions({
+    dimensions: config.dimensions,
+    emailTypes: config.emailTypes,
+    triggers: config.triggers,
+    tokens,
+    templateProperties: rootPropertiesOf(vm.content && vm.content()),
+  });
+  // Written only on a change: each write re-renders every option editor
+  // reading the list.
+  const current = vm.hiddenTemplateOptions();
+  if (
+    hidden.length === current.length &&
+    hidden.every((name, index) => name === current[index])
+  ) {
+    return;
+  }
+  vm.hiddenTemplateOptions(hidden);
 }
 
 module.exports = {

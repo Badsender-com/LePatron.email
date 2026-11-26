@@ -191,3 +191,142 @@ describe('the hidden template options on the viewModel', () => {
     expect(vm.isHiddenTemplateOption('audience')).toBe(false);
   });
 });
+
+// A design token feeds the property of its name while a chosen value carries
+// it (ADR-0015): its option is hidden then, and given back once no chosen
+// value carries it, the writer then setting the property themselves.
+describe('template options fed by a design token', () => {
+  const PROPERTIES = ['mainColorVar', 'textColorVar', 'country'];
+
+  it('hides the option of a token a chosen value carries', () => {
+    expect(
+      hiddenTemplateOptions({
+        dimensions: [],
+        tokens: ['mainColorVar'],
+        templateProperties: PROPERTIES,
+      })
+    ).toEqual(['mainColorVar']);
+  });
+
+  it('keeps the options of the tokens no chosen value carries', () => {
+    expect(
+      hiddenTemplateOptions({
+        dimensions: [COUNTRY],
+        tokens: [],
+        templateProperties: PROPERTIES,
+      })
+    ).toEqual(['country']);
+  });
+
+  it('ignores a token the template has no option for', () => {
+    expect(
+      hiddenTemplateOptions({
+        dimensions: [],
+        tokens: ['accentColorVar'],
+        templateProperties: PROPERTIES,
+      })
+    ).toEqual([]);
+  });
+});
+
+// The editor publishes and hides from one result of governanceValues: the
+// option and the content never disagree on who decides a token's property.
+describe('a design token, its option and the content', () => {
+  const {
+    governanceValues,
+  } = require('../../packages/editor/src/js/utils/governance-values.js');
+  const {
+    createTemplatePublisher,
+  } = require('../../packages/editor/src/js/utils/publish-to-template.js');
+
+  const BRAND = {
+    name: 'brand',
+    precedence: 0,
+    values: [
+      {
+        id: '64a0000000000000000000b1',
+        canonicalType: 'brand_a',
+        tokens: { mainColorVar: '#ffd845' },
+      },
+      // No `mainColorVar`: the writer sets the colour.
+      { id: '64a0000000000000000000b2', canonicalType: 'brand_b', tokens: {} },
+    ],
+  };
+  const config = { dimensions: [BRAND], emailTypes: [], triggers: [] };
+
+  function openEmail(mainColor) {
+    const vm = {
+      content: ko.observable({
+        brand: ko.observable(''),
+        mainColorVar: ko.observable(mainColor),
+      }),
+    };
+    exposeHiddenTemplateOptions(vm);
+    const publisher = createTemplatePublisher();
+    const choose = (brandId) => {
+      const { values, sources } = governanceValues({
+        dimensions: config.dimensions,
+        selections: { brand: brandId },
+      });
+      publisher.publish(vm.content(), values);
+      hideTemplateOptionsFedBy(vm, config, Object.keys(sources));
+    };
+    return { vm, choose, mainColorVar: vm.content().mainColorVar };
+  }
+
+  it('hides the option and writes the token while the brand carries it', () => {
+    const { vm, choose, mainColorVar } = openEmail('#cc0000');
+
+    choose('64a0000000000000000000b1');
+
+    expect(mainColorVar()).toBe('#ffd845');
+    expect(vm.isHiddenTemplateOption('mainColorVar')).toBe(true);
+  });
+
+  it("gives the option and the writer's value back on a brand without the token", () => {
+    const { vm, choose, mainColorVar } = openEmail('#cc0000');
+
+    choose('64a0000000000000000000b1');
+    choose('64a0000000000000000000b2');
+
+    expect(vm.isHiddenTemplateOption('mainColorVar')).toBe(false);
+    expect(mainColorVar()).toBe('#cc0000');
+  });
+
+  it('lets the value the writer sets on that brand stand, and come back after', () => {
+    const { vm, choose, mainColorVar } = openEmail('#cc0000');
+
+    choose('64a0000000000000000000b2');
+    mainColorVar('#00aa00');
+    choose('64a0000000000000000000b2');
+
+    expect(mainColorVar()).toBe('#00aa00');
+
+    choose('64a0000000000000000000b1');
+    expect(mainColorVar()).toBe('#ffd845');
+    expect(vm.isHiddenTemplateOption('mainColorVar')).toBe(true);
+
+    choose('64a0000000000000000000b2');
+    expect(mainColorVar()).toBe('#00aa00');
+    expect(vm.isHiddenTemplateOption('mainColorVar')).toBe(false);
+  });
+
+  it('keeps the dimension option hidden whatever the tokens', () => {
+    const { vm, choose } = openEmail('#cc0000');
+
+    choose('64a0000000000000000000b2');
+
+    expect(vm.isHiddenTemplateOption('brand')).toBe(true);
+  });
+
+  it('writes the hidden list only when it changes', () => {
+    const { vm, choose } = openEmail('#cc0000');
+    choose('64a0000000000000000000b1');
+    const writes = jest.fn();
+    vm.hiddenTemplateOptions.subscribe(writes);
+
+    choose('64a0000000000000000000b1');
+
+    expect(writes).not.toHaveBeenCalled();
+  });
+});
