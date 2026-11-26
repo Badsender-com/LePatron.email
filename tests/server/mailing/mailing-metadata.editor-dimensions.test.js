@@ -164,6 +164,39 @@ describe('what the editor receives of the company dimensions, and what follows a
       ).toEqual({ mainColorVar: '#0050ff' });
     });
 
+    // A tie of precedence goes to the dimension listed later, the email type
+    // placed by its own order, as the taxonomy screen shows it.
+    it("sends the email type's precedence and its place among the dimensions", async () => {
+      const emailType = await dimensionNamed('emailType');
+      await dimensionService.updateDimension({
+        user: adminA,
+        dimensionId: idOf(emailType),
+        payload: { order: 15, precedence: 30 },
+      });
+
+      const { emailMetadataConfig } = await build(newMailing());
+
+      expect(emailMetadataConfig.dimensions.map((d) => d.name)).toEqual([
+        'brand',
+        'audience',
+      ]);
+      expect(emailMetadataConfig.emailTypePrecedence).toBe(30);
+      expect(emailMetadataConfig.emailTypePosition).toBe(1);
+    });
+
+    it('places the email type after every dimension listed before it', async () => {
+      const emailType = await dimensionNamed('emailType');
+      await dimensionService.updateDimension({
+        user: adminA,
+        dimensionId: idOf(emailType),
+        payload: { order: 50 },
+      });
+
+      const { emailMetadataConfig } = await build(newMailing());
+
+      expect(emailMetadataConfig.emailTypePosition).toBe(2);
+    });
+
     it('leaves the standard dimensions to their own fields', async () => {
       const { emailMetadataConfig } = await build(newMailing());
 

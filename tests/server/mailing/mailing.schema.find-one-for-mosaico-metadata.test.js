@@ -28,14 +28,13 @@ jest.mock('../../../packages/server/mailing/mailing.service.js', () => ({
 // service, so that is what these tests stub.
 jest.mock('../../../packages/server/common/models.common.js', () => ({
   TaxonomyItems: { find: jest.fn(), findOne: jest.fn() },
-  // No company dimension: what the editor receives of them is covered by
-  // mailing-metadata.editor-dimensions.test.js.
+  // No company dimension, nor the email type's: what the editor receives of
+  // them is covered by mailing-metadata.editor-dimensions.test.js. Unseeded,
+  // the email type's precedence is the standard default.
   TaxonomyDimensions: {
     find: () => ({
       select: () => ({ lean: async () => [] }),
     }),
-    // The email type's precedence: unseeded, the standard default applies.
-    findOne: () => ({ select: () => ({ lean: async () => null }) }),
   },
   Mailings: {},
   // Whether the company shares previews (share-link.service.js): it does.
@@ -329,6 +328,7 @@ describe('findOneForMosaico — company opted in', () => {
     ]);
     // The standard default, the email type's dimension never having been read.
     expect(emailMetadataConfig.emailTypePrecedence).toBe(100);
+    expect(emailMetadataConfig.emailTypePosition).toBe(0);
     expect(emailMetadataConfig.url.update).toBe(
       `/api/mailings/${MAILING}/metadata`
     );

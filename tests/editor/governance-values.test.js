@@ -458,6 +458,40 @@ describe('publishing design tokens', () => {
     expect(values.mainColorVar).toBe('#e60000');
   });
 
+  // The taxonomy screen breaks a tie by the declared order, the email type
+  // placed by its own: the editor receives that place from the server.
+  it.each([
+    [0, 'brand', '#ffd845'],
+    [1, 'emailType', '#e60000'],
+  ])(
+    'breaks a tie with the email type at the place the server sent (%p)',
+    (emailTypePosition, winner, colour) => {
+      const { values, sources } = governanceValues({
+        dimensions: [{ ...BRAND, precedence: 40 }],
+        selections: { brand: '64a0000000000000000000b1' },
+        emailTypes: EMAIL_TYPE.values,
+        emailTypeId: '64a0000000000000000000c1',
+        emailTypePrecedence: 40,
+        emailTypePosition,
+      });
+
+      expect(values.mainColorVar).toBe(colour);
+      expect(sources.mainColorVar.dimension).toBe(winner);
+    }
+  );
+
+  it('places the email type first when the server sent no place', () => {
+    const { values } = governanceValues({
+      dimensions: [{ ...BRAND, precedence: 40 }],
+      selections: { brand: '64a0000000000000000000b1' },
+      emailTypes: EMAIL_TYPE.values,
+      emailTypeId: '64a0000000000000000000c1',
+      emailTypePrecedence: 40,
+    });
+
+    expect(values.mainColorVar).toBe('#ffd845');
+  });
+
   it('publishes no token for a dimension the email has no value for', () => {
     const { values } = governanceValues({
       dimensions: [BRAND],

@@ -209,6 +209,7 @@ module.exports = {
             emailTypes: this.emailTypes,
             emailTypeId: this.emailTypeId,
             emailTypePrecedence: config.emailTypePrecedence,
+            emailTypePosition: config.emailTypePosition,
             trigger: this.trigger,
             valued: this.valued,
           });

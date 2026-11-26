@@ -227,16 +227,23 @@ async function assertChangedCombinationOffered(
  * the email carries, so the select still shows what the email has. Each value
  * carries its identifier, which the editor publishes to the template.
  *
+ * Read with the email type's dimension, whose values the editor receives
+ * apart: where it sits in that order and its precedence decide, with the
+ * others', which design token wins a tie, as the screen shows it.
+ *
  * @param {Object} options
  * @param {ObjectId|string} options.companyId the mailing's company
  * @param {Array} [options.currentIds] the values the email carries
- * @returns {Promise<Object[]>}
+ * @returns {Promise<{dimensions: Object[], emailType: Object|null}>}
+ *   `emailType` is `{precedence, position}`, `position` the index in
+ *   `dimensions` it sits at; null when the company's is not seeded yet
  */
 async function buildEditorDimensions({ companyId, currentIds = [] }) {
-  const dimensions = await TaxonomyDimensions.find({
+  const declared = await TaxonomyDimensions.find({
     _company: companyId,
     isActive: true,
-    name: { $nin: StandardDimensionNames },
+    // The trigger carries no value, hence no design token.
+    name: { $nin: [StandardDimensions.TRIGGER] },
   })
     .select({
       name: 1,
@@ -247,8 +254,18 @@ async function buildEditorDimensions({ companyId, currentIds = [] }) {
       precedence: 1,
     })
     .lean();
-  if (dimensions.length === 0) return [];
-  dimensions.sort(compareDimensions);
+  declared.sort(compareDimensions);
+  const position = declared.findIndex(
+    (dimension) => dimension.name === StandardDimensions.EMAIL_TYPE
+  );
+  const emailType =
+    position === -1
+      ? null
+      : { precedence: declared[position].precedence || 0, position };
+  const dimensions = declared.filter(
+    (dimension) => !StandardDimensionNames.includes(dimension.name)
+  );
+  if (dimensions.length === 0) return { dimensions: [], emailType };
 
   const carried = (currentIds || []).map(asObjectId);
   const values = await TaxonomyItems.find({
@@ -268,23 +285,26 @@ async function buildEditorDimensions({ companyId, currentIds = [] }) {
     .sort({ order: 1, label: 1 })
     .lean();
 
-  return dimensions.map((dimension) => ({
-    name: dimension.name,
-    label: dimension.label,
-    parentName: dimension.parentName || null,
-    // Who wins a design token two chosen values carry: the highest.
-    precedence: dimension.precedence || 0,
-    values: values
-      .filter((value) => value.type === dimension.name)
-      .map((value) => ({
-        id: value._id,
-        label: value.label,
-        // The identifier the template reads (ADR-0015), published by the editor.
-        canonicalType: value.canonicalType,
-        isActive: value.isActive,
-        // The availability: offered under these parent values, or all of them.
-        parentIds: value._parents || [],
-        tokens: value.tokens || {},
-      })),
-  }));
+  return {
+    emailType,
+    dimensions: dimensions.map((dimension) => ({
+      name: dimension.name,
+      label: dimension.label,
+      parentName: dimension.parentName || null,
+      // Who wins a design token two chosen values carry: the highest.
+      precedence: dimension.precedence || 0,
+      values: values
+        .filter((value) => value.type === dimension.name)
+        .map((value) => ({
+          id: value._id,
+          label: value.label,
+          // The identifier the template reads (ADR-0015), published by the editor.
+          canonicalType: value.canonicalType,
+          isActive: value.isActive,
+          // The availability: offered under these parent values, or all of them.
+          parentIds: value._parents || [],
+          tokens: value.tokens || {},
+        })),
+    })),
+  };
 }

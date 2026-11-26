@@ -1,9 +1,6 @@
 'use strict';
 
-const {
-  TaxonomyItems,
-  TaxonomyDimensions,
-} = require('../common/models.common.js');
+const { TaxonomyItems } = require('../common/models.common.js');
 const {
   STANDARD_DIMENSIONS,
 } = require('../taxonomy/services/default-dimensions.js');
@@ -111,25 +108,19 @@ async function buildEditorMetadata({ mailing, group }) {
         .lean()
     : [];
   // Same reason as the typologies: no company, no value the save could accept.
-  const dimensions = mailingCompanyId
+  const { dimensions, emailType } = mailingCompanyId
     ? await buildEditorDimensions({
         companyId: mailingCompanyId,
         currentIds: mailing._taxonomyItems,
       })
-    : [];
-
-  const emailTypeDimension = mailingCompanyId
-    ? await TaxonomyDimensions.findOne({
-        _company: mailingCompanyId,
-        name: TaxonomyTypes.EMAIL_TYPE,
-      })
-        .select({ precedence: 1 })
-        .lean()
-    : null;
-  // Unseeded, it has the default of the standard dimension (default-dimensions.js).
-  const emailTypePrecedence = emailTypeDimension
-    ? emailTypeDimension.precedence || 0
+    : { dimensions: [], emailType: null };
+  // Unseeded, the email type has the defaults of the standard dimension
+  // (default-dimensions.js): its precedence, and the first place, its default
+  // order being the lowest.
+  const emailTypePrecedence = emailType
+    ? emailType.precedence
     : DEFAULT_EMAIL_TYPE_PRECEDENCE;
+  const emailTypePosition = emailType ? emailType.position : 0;
 
   return {
     emailMetadata: {
@@ -151,8 +142,11 @@ async function buildEditorMetadata({ mailing, group }) {
         description: item.description,
         tokens: item.tokens || {},
       })),
-      // The email type's precedence, for the design tokens its values carry.
+      // The email type's precedence, for the design tokens its values carry,
+      // and where it sits among the dimensions, which breaks a tie of
+      // precedence as the taxonomy screen does.
       emailTypePrecedence,
+      emailTypePosition,
       // The two values the trigger select offers. Sent rather than hard-coded in
       // the editor so the doctrine's vocabulary has one source; the editor
       // translates them from its own locale files.

@@ -12,7 +12,8 @@ const {
  * template reads (`_root_.audience`), valued by the identifier of the chosen
  * value; and the design tokens of the chosen values under their own names.
  * When two chosen values carry the same token, the dimension with the highest
- * precedence wins, and on a tie the later one in the declared order.
+ * precedence wins, and on a tie the later one in the declared order, the email
+ * type in its own place in it.
  *
  * Pure, like the rest of the section's helpers: the editor has no component test
  * harness. Covered by tests/editor/governance-values.test.js.
@@ -34,6 +35,9 @@ const PUBLISHABLE_IDENTIFIER = /^[A-Za-z0-9_-]+$/;
  * @param {string} [params.emailTypeId] the chosen email type
  * @param {number} [params.emailTypePrecedence] the email type's precedence,
  *   for the design tokens its values carry
+ * @param {number} [params.emailTypePosition] where the email type sits among
+ *   `dimensions` in the declared order, which breaks a tie of precedence as
+ *   the taxonomy screen does; first by default
  * @param {string} [params.trigger] the email's trigger
  * @param {string[]} [params.valued] the dimensions the email has had a value
  *   for, when it opened or since (see `rememberValued`)
@@ -47,6 +51,7 @@ function governanceValues({
   emailTypes,
   emailTypeId,
   emailTypePrecedence,
+  emailTypePosition,
   trigger,
   valued,
 }) {
@@ -62,11 +67,10 @@ function governanceValues({
     values[STANDARD_DIMENSIONS.TRIGGER] = '';
   }
 
-  const all = withEmailTypeDimension(
-    dimensions,
-    emailTypes,
-    emailTypePrecedence
-  );
+  const all = withEmailTypeDimension(dimensions, emailTypes, {
+    precedence: emailTypePrecedence,
+    position: emailTypePosition,
+  });
   all
     // The server sends active dimensions only; the flag is read for the
     // dimensions it may still send deactivated.
@@ -175,16 +179,20 @@ function publishedIdentifier(value) {
     : String(value.id);
 }
 
-function withEmailTypeDimension(dimensions, emailTypes, precedence) {
+// The email type in its place in the declared order, the server's.
+function withEmailTypeDimension(dimensions, emailTypes, { precedence, position }) {
   const list = dimensions || [];
   if (!emailTypes) return list;
-  return [
-    {
-      name: STANDARD_DIMENSIONS.EMAIL_TYPE,
-      precedence: precedence || 0,
-      values: emailTypes,
-    },
-  ].concat(list);
+  const at = Math.min(
+    Math.max(Number.isInteger(position) ? position : 0, 0),
+    list.length
+  );
+  const emailType = {
+    name: STANDARD_DIMENSIONS.EMAIL_TYPE,
+    precedence: precedence || 0,
+    values: emailTypes,
+  };
+  return list.slice(0, at).concat(emailType, list.slice(at));
 }
 
 function withEmailType(selections, emailTypes, emailTypeId) {
