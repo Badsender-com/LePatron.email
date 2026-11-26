@@ -16,6 +16,7 @@ const {
 const {
   writtenReleaseNote,
   writtenChangeLog,
+  isReleaseNoteTooLong,
 } = require('../../../shared/ai-skill/release-texts.js');
 
 /** What a version's release note says, or null when it says nothing. */
@@ -35,12 +36,13 @@ const changeLogOf = (version) =>
  *   `RELEASE_NOTE_TOO_LONG` with the `max` it holds
  */
 function assertReleaseTexts(texts) {
-  const releaseNote = releaseNoteOf(texts);
-  if (!releaseNote) throw createError(400, ERROR_CODES.RELEASE_NOTE_REQUIRED);
+  if (!releaseNoteOf(texts)) {
+    throw createError(400, ERROR_CODES.RELEASE_NOTE_REQUIRED);
+  }
   if (!changeLogOf(texts)) {
     throw createError(400, ERROR_CODES.CHANGELOG_REQUIRED);
   }
-  if (releaseNote.length > MAX_RELEASE_NOTE_LENGTH) {
+  if (isReleaseNoteTooLong(texts.releaseNotes)) {
     throw createError(400, ERROR_CODES.RELEASE_NOTE_TOO_LONG, {
       max: MAX_RELEASE_NOTE_LENGTH,
     });

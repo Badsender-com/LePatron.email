@@ -6,6 +6,7 @@
 const {
   writtenReleaseNote,
   writtenChangeLog,
+  isReleaseNoteTooLong,
 } = require('../../../packages/shared/ai-skill/release-texts.js');
 const {
   LEGACY_MINOR_VERSION_TEXTS,
@@ -38,5 +39,12 @@ describe('release texts', () => {
     expect(writtenChangeLog(LEGACY_MINOR_VERSION_TEXTS.releaseNotes)).toBe(
       LEGACY_MINOR_VERSION_TEXTS.releaseNotes
     );
+  });
+
+  it('finds a release note too long past 500 characters, spaces around aside', () => {
+    expect(isReleaseNoteTooLong('x'.repeat(500))).toBe(false);
+    expect(isReleaseNoteTooLong(` ${'x'.repeat(500)} `)).toBe(false);
+    expect(isReleaseNoteTooLong('x'.repeat(501))).toBe(true);
+    expect(isReleaseNoteTooLong(undefined)).toBe(false);
   });
 });

@@ -73,7 +73,7 @@ describe('activation modal requires both texts', () => {
     expect(confirm).not.toHaveBeenCalled();
   });
 
-  it('publishes no release note over 500 characters', async () => {
+  it('publishes no release note over 500 characters, and says why', async () => {
     const { vm, confirm } = await mountModal({
       seed: { changelog: 'Typo', releaseNotes: 'x'.repeat(501) },
     });
@@ -81,6 +81,18 @@ describe('activation modal requires both texts', () => {
     vm.onSubmit();
 
     expect(confirm).not.toHaveBeenCalled();
+    expect(vm.releaseNoteTooLong).toBe(true);
+    expect(vm.releaseNoteErrors).toEqual(['Pas plus de 500 caractères.']);
+  });
+
+  it('says nothing of the limit for a release note of 500 characters', async () => {
+    const { vm } = await mountModal({
+      seed: { changelog: 'Typo', releaseNotes: 'x'.repeat(500) },
+    });
+
+    expect(vm.releaseNoteTooLong).toBe(false);
+    expect(vm.releaseNoteErrors).toEqual([]);
+    expect(vm.canSubmit).toBe(true);
   });
 
   it('publishes a minor version with both texts', async () => {

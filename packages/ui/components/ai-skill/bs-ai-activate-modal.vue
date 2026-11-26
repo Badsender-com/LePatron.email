@@ -7,6 +7,7 @@ import { MAX_RELEASE_NOTE_LENGTH } from '../../../shared/ai-skill/constants.js';
 import {
   writtenChangeLog,
   writtenReleaseNote,
+  isReleaseNoteTooLong,
 } from '../../../shared/ai-skill/release-texts.js';
 import { CheckCircle2 } from 'lucide-vue';
 
@@ -60,7 +61,16 @@ export default {
       return MAX_RELEASE_NOTE_LENGTH;
     },
     releaseNoteTooLong() {
-      return this.payload.releaseNotes.trim().length > MAX_RELEASE_NOTE_LENGTH;
+      return isReleaseNoteTooLong(this.payload.releaseNotes);
+    },
+    releaseNoteErrors() {
+      return this.releaseNoteTooLong
+        ? [
+            this.$t('aiSkills.version.releaseNotesTooLong', {
+              max: MAX_RELEASE_NOTE_LENGTH,
+            }),
+          ]
+        : [];
     },
     canSubmit() {
       return (
@@ -138,20 +148,17 @@ export default {
         :hint="$t('aiSkills.version.changelogHint')"
         :rows="2"
         :disabled="loading"
+        required
       />
       <bs-textarea
         v-model="payload.releaseNotes"
         :label="$t('aiSkills.version.releaseNotes')"
         :hint="$t('aiSkills.version.releaseNotesHint', { max: maxReleaseNote })"
-        :error-messages="
-          releaseNoteTooLong
-            ? $t('aiSkills.version.releaseNotesTooLong', {
-                max: maxReleaseNote,
-              })
-            : []
-        "
+        :error-messages="releaseNoteErrors"
+        :counter="maxReleaseNote"
         :rows="2"
         :disabled="loading"
+        required
       />
 
       <v-alert
