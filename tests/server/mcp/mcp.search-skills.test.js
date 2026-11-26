@@ -107,7 +107,9 @@ describe('search covers the skills', () => {
         url: 'lepatron://skills/redaction.subject-ideas',
         metadata: { version: '1.2', publishedAt: PUBLISHED },
       });
-      expect(document.text).toContain('Version 1.2, published on 2026-11-17.');
+      expect(document.text).toContain(
+        'Version 1.2, published on 2026-11-17 (UTC).'
+      );
     });
   });
 });

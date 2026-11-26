@@ -44,6 +44,33 @@ const call = async (client, name, args) =>
 const read = async (client, uri) =>
   (await client.readResource({ uri })).contents[0].text;
 
+// A super admin of the platform company, in the drafts mode.
+async function inDraftsMode(records) {
+  const GRANT = 'grant-of-the-drafts';
+  harness.seed({
+    ...records,
+    connections: [
+      {
+        _id: '507f1f77bcf86cd799439f03',
+        grantId: GRANT,
+        clientId: 'test-client',
+        _user: f.ALICE,
+        _company: f.PLATFORM_GROUP,
+        connectedAt: new Date(),
+        draftsUntil: null,
+        expiresAt: f.daysFrom(1),
+      },
+    ],
+  });
+  const client = await harness.connectAs(f.ALICE, {
+    group: f.PLATFORM_GROUP,
+    scopes: ['mcp:read', 'skills:write'],
+    grantId: GRANT,
+  });
+  await call(client, 'use_drafts', { on: true });
+  return client;
+}
+
 describe('catalog dates and versions', () => {
   beforeEach(() => harness.seed(SEED));
   afterEach(() => harness.disconnect());
@@ -88,10 +115,10 @@ describe('catalog dates and versions', () => {
 
       expect(
         await read(client, 'lepatron://skills/redaction.subject-ideas')
-      ).toContain('Version 1.2, published on 2026-11-17.');
+      ).toContain('Version 1.2, published on 2026-11-17 (UTC).');
       expect(
         await read(client, 'lepatron://expertises/redaction.subject-line')
-      ).toContain('Version 2.1, published on 2026-11-16.');
+      ).toContain('Version 2.1, published on 2026-11-16 (UTC).');
       expect(
         await read(client, 'lepatron://expertises/deliverability.spam-words')
       ).toContain('Version 1.0.');
@@ -108,29 +135,45 @@ describe('catalog dates and versions', () => {
       expect(skill.annotations).toEqual({ lastModified: SKILL_UPDATED });
     });
 
-    it('answers a draft tried in the drafts mode with no publication date', async () => {
-      const GRANT = 'grant-of-the-drafts';
+    it('dates no skill whose publication was never recorded', async () => {
+      harness.seed(f.SEED);
+      const client = await harness.connectAs(f.FRANK);
+
+      const { skills } = await call(client, 'find_skills', {});
+
+      expect(skills[0]).toMatchObject({ version: '1.2', publishedAt: null });
+      expect(
+        await read(client, 'lepatron://skills/redaction.subject-ideas')
+      ).toContain('Version 1.2.');
+    });
+
+    it('gives no lastModified to an expertise whose version has no date', async () => {
       harness.seed({
         ...SEED,
-        connections: [
-          {
-            _id: '507f1f77bcf86cd799439f03',
-            grantId: GRANT,
-            clientId: 'test-client',
-            _user: f.ALICE,
-            _company: f.PLATFORM_GROUP,
-            connectedAt: new Date(),
-            draftsUntil: null,
-            expiresAt: f.daysFrom(1),
-          },
-        ],
+        expertises: SEED.expertises.map((expertise) =>
+          expertise.expertiseId === 'deliverability.spam-words'
+            ? {
+                ...expertise,
+                versions: expertise.versions.map((v) => ({
+                  ...v,
+                  updatedAt: undefined,
+                })),
+              }
+            : expertise
+        ),
       });
-      const client = await harness.connectAs(f.ALICE, {
-        group: f.PLATFORM_GROUP,
-        scopes: ['mcp:read', 'skills:write'],
-        grantId: GRANT,
-      });
-      await call(client, 'use_drafts', { on: true });
+      const { resources } = await (
+        await harness.connectAs(f.FRANK)
+      ).listResources();
+      const expertise = resources.find(
+        (r) => r.uri === 'lepatron://expertises/deliverability.spam-words'
+      );
+
+      expect(expertise).not.toHaveProperty('annotations');
+    });
+
+    it('answers a draft tried in the drafts mode with no publication date', async () => {
+      const client = await inDraftsMode(SEED);
 
       const { expertises } = await call(client, 'find_applicable_expertises', {
         scope: ['subject'],
@@ -140,6 +183,37 @@ describe('catalog dates and versions', () => {
       expect(
         expertises.find((e) => e.expertiseId === 'redaction.subject-line')
       ).toMatchObject({ version: '3.0', draft: true, publishedAt: null });
+    });
+
+    it('answers a draft skill tried in the drafts mode with no publication date', async () => {
+      const client = await inDraftsMode({
+        ...SEED,
+        skills: SEED.skills.map((skill) =>
+          skill.skillId === 'redaction.subject-ideas'
+            ? {
+                ...skill,
+                versions: [
+                  ...skill.versions,
+                  {
+                    ...skill.versions[0],
+                    versionMinor: 3,
+                    status: 'DRAFT',
+                    activatedAt: null,
+                  },
+                ],
+              }
+            : skill
+        ),
+      });
+
+      const { skills } = await call(client, 'find_skills', {});
+
+      expect(
+        skills.find((found) => found.skillId === 'redaction.subject-ideas')
+      ).toMatchObject({ version: '1.3', draft: true, publishedAt: null });
+      expect(
+        await read(client, 'lepatron://skills/redaction.subject-ideas')
+      ).toContain('Version 1.3.');
     });
   });
 });

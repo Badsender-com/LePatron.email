@@ -20,11 +20,15 @@ function publishedAtOf(version, draft = false) {
   return isoOf(version.activatedAt);
 }
 
-/** The version line of a resource: its number, and its publication day. */
+/**
+ * The version line of a resource: its number, and its publication day, which
+ * says it is in UTC: a version published late in the evening in Paris is
+ * dated the day before.
+ */
 function versionLine(version, draft = false) {
   const at = publishedAtOf(version, draft);
   const label = `Version ${versionLabel(version)}`;
-  return at ? `${label}, published on ${at.slice(0, 10)}.` : `${label}.`;
+  return at ? `${label}, published on ${at.slice(0, 10)} (UTC).` : `${label}.`;
 }
 
 /** When a version last changed, for a resource's `lastModified`. */

@@ -73,14 +73,16 @@ async function searchableExpertises(group, drafts = false) {
   return found.sort(byExpertiseId);
 }
 
+// A version with no date says none, rather than an empty annotation.
 function asResource({ doc, version, draft }) {
+  const lastModified = lastModifiedOf(version);
   return {
     uri: uriOf(doc.expertiseId),
     name: doc.expertiseId,
     title: draft ? `${doc.title} (draft ${versionLabel(version)})` : doc.title,
     description: doc.description || undefined,
     mimeType: 'text/markdown',
-    annotations: { lastModified: lastModifiedOf(version) },
+    ...(lastModified && { annotations: { lastModified } }),
   };
 }
 

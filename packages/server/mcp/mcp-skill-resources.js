@@ -60,15 +60,14 @@ function asMarkdown(found, readableIds = []) {
 }
 
 function asResource({ doc, version, draft }) {
+  const lastModified = lastModifiedOf(version);
   return {
     uri: uriOf(doc.skillId),
     name: doc.skillId,
     title: draft ? `${doc.title} (draft ${versionLabel(version)})` : doc.title,
     description: doc.description || undefined,
     mimeType: 'text/markdown',
-    ...(lastModifiedOf(version) && {
-      annotations: { lastModified: lastModifiedOf(version) },
-    }),
+    ...(lastModified && { annotations: { lastModified } }),
   };
 }
 
