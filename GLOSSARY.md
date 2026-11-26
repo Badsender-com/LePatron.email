@@ -480,7 +480,7 @@ _Avoid_: Send mode, scenario
 **Identifier**:
 The name of a value that a template compares against, apart from its label. It is proposed from the label and stays editable. Two values of one dimension never share one, except under the email type, where it names one of the doctrine's types. Only an identifier made of letters, digits, `-` and `_` reaches a template; the editor publishes the value's id in place of any other (ADR-0015).
 _UI_: Identifiant
-_Avoid_: Slug, code, key, canonical type (the code keeps `canonicalType`)
+_Avoid_: Slug, code, key, canonical type, normalised code (the code keeps `canonicalType`)
 
 **Availability**:
 The values of the parent dimension under which a value is offered: French is offered under Canada, Switzerland and Belgium, and nowhere else. A value with no availability is offered under all of them.
@@ -491,6 +491,21 @@ _Avoid_: Parent, hierarchy, dependency (the code keeps `parentIds`, the name the
 A named value that a value carries and a template reads under that name: a brand's main colour as a role, not as `#ffd845`.
 _UI_: Token
 _Avoid_: Variable, theme colour, palette entry
+
+**Dimension role**:
+What a company dimension stands for beyond its own words, so the application can read it: the language of the email, its country, or both at once as a locale. At most one dimension of a company carries each role.
+_UI_: Rôle
+_Avoid_: Type, kind, category
+
+**Normalised code**:
+The code a value of a dimension with a role carries in a shared standard, whatever the company calls it: `fr` for "Français", `BE` for "Belgique", `fr-BE` for "Belgique — français". Unlike the identifier, it is not the company's to invent.
+_UI_: Code normalisé
+_Avoid_: Identifier, ISO code, language key
+
+**Email locale**:
+The language of an email, with its country when known (`fr-BE`, or `fr`), as the values it carries say. Unknown when they say nothing.
+_UI_: Langue de l'email
+_Avoid_: Email language setting, lang
 
 **Precedence**:
 Which dimension wins when the values chosen for one email carry the same design token: the highest. Unrelated to the order dimensions are listed in, except to break a tie, which the dimension listed later wins.
