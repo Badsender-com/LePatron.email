@@ -20,12 +20,12 @@ function publishToTemplate(content, values) {
 
   Object.keys(values || {}).forEach((name) => {
     const target = content[name];
-    if (typeof target !== 'function') {
+    if (!isPublishable(target)) {
       skipped.push(name);
       return;
     }
     const next = values[name] == null ? '' : String(values[name]);
-    // Written only on a change: each write is a step in the undo history.
+    // Written only on a change: an unchanged value is no write at all.
     if (target() !== next) {
       target(next);
       applied.push(name);
@@ -35,4 +35,21 @@ function publishToTemplate(content, values) {
   return { applied, skipped };
 }
 
-module.exports = { publishToTemplate };
+/**
+ * Whether a root property of the content is one a published value may replace:
+ * an observable holding a plain value (a text, a number, a boolean, or nothing
+ * yet), what a template option holds. Never one holding an object or a list,
+ * an observable array among them: those are the editor's own structure (the
+ * theme's styles, the list of blocks), which a text would destroy.
+ *
+ * @param {*} target a root property of the content
+ * @returns {boolean}
+ */
+function isPublishable(target) {
+  if (typeof target !== 'function') return false;
+  const current = target();
+  if (current === null || current === undefined) return true;
+  return ['string', 'number', 'boolean'].includes(typeof current);
+}
+
+module.exports = { publishToTemplate, isPublishable };
