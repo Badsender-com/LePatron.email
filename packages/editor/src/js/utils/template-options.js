@@ -9,7 +9,9 @@ const { isPublishable } = require('./publish-to-template');
  * overwrite the template option's choice at its next change.
  *
  * A deactivated dimension is not sent to the editor, or is sent flagged, and
- * no longer decides: its option comes back. Covered by
+ * no longer decides: its option comes back. So does a dimension with no value
+ * to offer, declared before its values or with all of them deactivated: hiding
+ * the option would leave nothing in its place. Covered by
  * tests/editor/template-options.test.js.
  *
  * @param {Object} params
@@ -20,11 +22,17 @@ const { isPublishable } = require('./publish-to-template');
  */
 function hiddenTemplateOptions({ dimensions, templateProperties }) {
   const fed = (dimensions || [])
-    .filter((dimension) => dimension.isActive !== false)
+    .filter((dimension) => dimension.isActive !== false && offersValues(dimension))
     .map((dimension) => dimension.name);
   return (templateProperties || []).filter((property) =>
     fed.includes(property)
   );
+}
+
+// The server also sends the deactivated values an email carries, flagged:
+// those are shown, not offered.
+function offersValues(dimension) {
+  return (dimension.values || []).some((value) => value.isActive !== false);
 }
 
 /**

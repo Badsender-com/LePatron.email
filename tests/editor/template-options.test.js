@@ -15,8 +15,14 @@ const {
   rootPropertiesOf,
 } = require('../../packages/editor/src/js/utils/template-options.js');
 
-const COUNTRY = { name: 'country', values: [] };
-const AUDIENCE = { name: 'audience', values: [] };
+const COUNTRY = {
+  name: 'country',
+  values: [{ id: '64a0000000000000000000d1', canonicalType: 'be' }],
+};
+const AUDIENCE = {
+  name: 'audience',
+  values: [{ id: '64a0000000000000000000a1', canonicalType: 'vip' }],
+};
 
 const TEMPLATE_PROPERTIES = [
   'headerVisible',
@@ -48,6 +54,32 @@ describe('template options fed by a dimension', () => {
     expect(
       hiddenTemplateOptions({
         dimensions: [{ ...COUNTRY, isActive: false }],
+        templateProperties: TEMPLATE_PROPERTIES,
+      })
+    ).toEqual([]);
+  });
+
+  // Hidden, the option would leave the writer nothing to set the property
+  // with.
+  it('keeps the option of a dimension declared before its values', () => {
+    expect(
+      hiddenTemplateOptions({
+        dimensions: [{ ...COUNTRY, values: [] }],
+        templateProperties: TEMPLATE_PROPERTIES,
+      })
+    ).toEqual([]);
+  });
+
+  it('keeps the option of a dimension whose values are all deactivated', () => {
+    expect(
+      hiddenTemplateOptions({
+        dimensions: [
+          {
+            ...COUNTRY,
+            // Sent because the email carries it, not offered.
+            values: [{ ...COUNTRY.values[0], isActive: false }],
+          },
+        ],
         templateProperties: TEMPLATE_PROPERTIES,
       })
     ).toEqual([]);
