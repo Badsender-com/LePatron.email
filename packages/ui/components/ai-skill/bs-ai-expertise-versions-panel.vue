@@ -167,6 +167,7 @@ export default {
               v-if="isMajorDraft(v)"
               v-model="draftFor(v).changelog"
               :label="$t('aiSkills.version.changelog')"
+              :hint="$t('aiSkills.version.changelogHint')"
               :rows="2"
             />
             <bs-textarea

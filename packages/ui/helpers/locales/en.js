@@ -2437,17 +2437,19 @@ export default {
       unsavedChanges: 'Unsaved changes',
       activate: 'Activate',
       activateTitle: 'Activate this version',
-      activateBody: 'Activating a version makes it immutable. Changelog and release notes are required.',
+      activateBody: 'Activating a version makes it immutable. The change log and the release note are required.',
       platformOnlyReminder:
         'This item stays visible to the platform company only.',
       openToAll: 'Open it to all companies',
       openToAllNotice:
         'This item opens to all companies as soon as it is published.',
-      activateBodyMinor: 'Activating this minor version makes it immutable and immediately changes the doctrine features consume. Changelog and release notes are required.',
-      changelog: 'Changelog',
+      activateBodyMinor: 'Activating this minor version makes it immutable and immediately changes the doctrine features consume. The change log and the release note are required.',
+      changelog: 'Change log',
+      changelogHint:
+        'How and why this version was written: only the platform company reads it.',
       changelogPlaceholder:
         'What changes vs the previous version — e.g. "Added the urgency rule, reworded the length criterion"',
-      releaseNotes: 'Release notes',
+      releaseNotes: 'Release note',
       releaseNotesHint:
         'What changes for whoever uses this item, in {max} characters at most: every company that reads it will see it.',
       releaseNotesTooLong: 'No more than {max} characters.',

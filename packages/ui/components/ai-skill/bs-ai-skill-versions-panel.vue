@@ -260,6 +260,7 @@ export default {
               v-if="v.status === 'DRAFT'"
               v-model="draftFor(v).changelog"
               :label="$t('aiSkills.version.changelog')"
+              :hint="$t('aiSkills.version.changelogHint')"
               :placeholder="$t('aiSkills.version.changelogPlaceholder')"
               :rows="2"
             />

@@ -135,6 +135,7 @@ export default {
       <bs-textarea
         v-model="payload.changelog"
         :label="$t('aiSkills.version.changelog')"
+        :hint="$t('aiSkills.version.changelogHint')"
         :rows="2"
         :disabled="loading"
       />

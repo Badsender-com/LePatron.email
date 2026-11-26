@@ -2471,19 +2471,21 @@ export default {
       unsavedChanges: 'Modifications non enregistrées',
       activate: 'Activer',
       activateTitle: 'Activer cette version',
-      activateBody: 'Activer une version la rend immuable. Le changelog et les notes de version sont obligatoires.',
+      activateBody: 'Activer une version la rend immuable. Le journal des modifications et la note de version sont obligatoires.',
       platformOnlyReminder:
         'Cette fiche reste visible par l\'entreprise plateforme uniquement.',
       openToAll: 'L\'ouvrir à toutes les entreprises',
       openToAllNotice:
         'Cette fiche sera ouverte à toutes les entreprises dès sa publication.',
-      activateBodyMinor: 'Activer cette version mineure la rend immuable et change immédiatement la doctrine consommée par les fonctionnalités. Le changelog et les notes de version sont obligatoires.',
-      changelog: 'Changelog',
+      activateBodyMinor: 'Activer cette version mineure la rend immuable et change immédiatement la doctrine consommée par les fonctionnalités. Le journal des modifications et la note de version sont obligatoires.',
+      changelog: 'Journal des modifications',
+      changelogHint:
+        'Comment et pourquoi cette version a été écrite : seule l\'entreprise plateforme le lit.',
       changelogPlaceholder:
         'Ce qui change par rapport à la version précédente — ex. « Ajout de la règle d\'urgence, reformulation du critère de longueur »',
-      releaseNotes: 'Notes de version',
+      releaseNotes: 'Note de version',
       releaseNotesHint:
-        'Ce qui change pour qui utilise cet élément, en {max} caractères au plus : chaque société qui le lit la verra.',
+        'Ce qui change pour qui utilise cet élément, en {max} caractères au plus : chaque entreprise qui le lit la verra.',
       releaseNotesTooLong: 'Pas plus de {max} caractères.',
       releaseNotesPlaceholder:
         'À savoir sur cette version — ex. « Testée uniquement sur les emails promo FR ; section exceptions à valider terrain »',
