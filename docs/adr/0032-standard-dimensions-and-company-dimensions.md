@@ -34,7 +34,7 @@ Dimensions are listed in one order, on the taxonomy screen as in the editor: by 
 
 A value's identifier is unique within its dimension, except under the email type, where several values map onto the same doctrine type. That exception is why no unique index holds it: the identifier shares its field with the email type's mapping, so uniqueness is a check before the write, and two creations at the same instant can still store the same identifier twice. The label has a unique index, but an exact one, while the service compares labels regardless of case: `Newsletter` and `newsletter` created at the same instant can both land. The identifier stays editable, so an admin who meets the duplicate fixes it on the screen.
 
-A company dimension may hang under the email type, whose values are real values, but not under the trigger, whose values are not stored. Dimensions are optional on an email: making one mandatory is a quality-control rule, not a taxonomy one.
+A company dimension may hang under the email type, whose values are real values, but not under the trigger, whose values are not stored. Dimensions are optional on an email: making one mandatory is a quality-control rule, not a taxonomy one. An email's company values are saved as one list, replaced whole, so two people changing different dimensions of the same email at the same time overwrite each other, the last save winning.
 
 What a governance rule attaches to, one value or a combination of values, is deliberately left to the governance module. The taxonomy exposes dimensions, values and their resolution, and has no notion of a rule.
 
