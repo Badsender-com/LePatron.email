@@ -33,48 +33,96 @@ const call = async (client, name, args) =>
 const asConsultant = () =>
   harness.connectAs(f.ALICE, { group: f.PLATFORM_GROUP, scopes: WRITE });
 
+const report = async (client, section) =>
+  (
+    await call(client, 'report_retex', {
+      kind: 'divergence',
+      about: { kind: 'expertise', id: SUBJECT_LINES },
+      section,
+      recommended: 'A subject under 50 characters',
+      decided: 'A 62-character subject',
+      why: 'In B2B, the longer subject named the product',
+    })
+  ).retexId;
+
+// Publishes a new version of the subject lines addressing these retex.
+async function publishAddressing(client, retexIds) {
+  await call(client, 'propose_expertise_change', {
+    expertiseId: SUBJECT_LINES,
+    body: '## [length] Length\n\nUnder 50 characters, unless B2B.',
+    changelog: 'B2B subjects may name the product',
+    addressesRetex: retexIds,
+  });
+  const draft = {
+    kind: 'expertise',
+    id: SUBJECT_LINES,
+    changelog: 'B2B subjects may name the product',
+    releaseNotes: 'A B2B subject may name the product.',
+  };
+  const { confirmation } = await call(client, 'publish_draft', draft);
+  await call(client, 'publish_draft', { ...draft, confirmation });
+}
+
 describe('addressed retex date', () => {
   beforeEach(() => harness.seed(SEED));
   afterEach(() => harness.disconnect());
 
   // Turned on by #1670 (an addressed retex says when)
   describe('when a publication addresses a retex', () => {
-    it('gives the date it was addressed, in UTC, and none to an open one', async () => {
+    it('gives the date the version was published, in UTC, and none to an open one', async () => {
       const client = await asConsultant();
-      const { retexId } = await call(client, 'report_retex', {
-        kind: 'divergence',
-        about: { kind: 'expertise', id: SUBJECT_LINES },
-        section: 'length',
-        recommended: 'A subject under 50 characters',
-        decided: 'A 62-character subject',
-        why: 'In B2B, the longer subject named the product',
-      });
+      const retexId = await report(client, 'length');
       const open = await call(client, 'list_retex', {});
       expect(open.items[0]).not.toHaveProperty('addressedAt');
 
-      await call(client, 'propose_expertise_change', {
-        expertiseId: SUBJECT_LINES,
-        body: '## [length] Length\n\nUnder 50 characters, unless B2B.',
-        changelog: 'B2B subjects may name the product',
-        addressesRetex: [retexId],
-      });
-      const draft = {
-        kind: 'expertise',
-        id: SUBJECT_LINES,
-        changelog: 'B2B subjects may name the product',
-        releaseNotes: 'A B2B subject may name the product.',
-      };
-      const { confirmation } = await call(client, 'publish_draft', draft);
-      const before = Date.now();
-      await call(client, 'publish_draft', { ...draft, confirmation });
+      await publishAddressing(client, [retexId]);
 
       const { items } = await call(client, 'list_retex', {
         status: 'addressed',
       });
       expect(items[0].addressedAt).toMatch(/^\d{4}-\d{2}-\d{2}T.*Z$/);
-      expect(Date.parse(items[0].addressedAt)).toBeGreaterThanOrEqual(
-        before - 1000
+      // The change it brought, of the last seven days: a task ties them by
+      // their date.
+      const { changes } = await call(client, 'list_changes', {});
+      const published = changes.find(
+        (c) =>
+          c.id === items[0].addressedIn.id &&
+          c.toVersion === items[0].addressedIn.version
       );
+      expect(items[0].addressedAt).toBe(published.at);
+    });
+
+    it('gives the same date to every retex one version addressed', async () => {
+      const client = await asConsultant();
+      const ids = [
+        await report(client, 'length'),
+        await report(client, 'tone'),
+      ];
+
+      await publishAddressing(client, ids);
+
+      const { items } = await call(client, 'list_retex', {
+        status: 'addressed',
+      });
+      expect(items).toHaveLength(2);
+      expect(items[0].addressedAt).toBeTruthy();
+      expect(items[1].addressedAt).toBe(items[0].addressedAt);
+    });
+
+    it('gives none to a dismissed retex', async () => {
+      const client = await asConsultant();
+      const retexId = await report(client, 'length');
+
+      await call(client, 'dismiss_retex', {
+        retexId,
+        reason: 'The client asked for it once.',
+      });
+
+      const { items } = await call(client, 'list_retex', {
+        status: 'dismissed',
+      });
+      expect(items).toHaveLength(1);
+      expect(items[0]).not.toHaveProperty('addressedAt');
     });
   });
 });

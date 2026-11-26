@@ -28,16 +28,19 @@ async function retentionsOf(companyIds) {
  * @param {string[]} ids
  * @param {Object} changes what the closing sets: `status`, and `addressedIn`
  *   or `dismissal`
+ * @param {Date} [closedAt] when it was closed: for an addressed retex, when
+ *   the version that addressed it was published, so the retex and the
+ *   change it brought share their date (ADR 0031); now otherwise
  * @returns {Promise<string[]>} the ids closed
  */
-async function closeRetex(ids, changes) {
+async function closeRetex(ids, changes, closedAt) {
   const open = await McpRetexes.find(
     { _id: { $in: asIds(ids) }, status: 'open' },
     { _company: 1 }
   ).lean();
   if (!open.length) return [];
   const retentions = await retentionsOf(open.map((r) => r._company));
-  const closedAt = new Date();
+  const now = new Date();
   const results = await Promise.all(
     open.map((retex) =>
       McpRetexes.updateOne(
@@ -45,9 +48,10 @@ async function closeRetex(ids, changes) {
         {
           $set: {
             ...changes,
-            closedAt,
+            closedAt: closedAt || now,
+            // Its retention runs from the day it is closed here.
             expiresAt: computeExpiresAt(
-              closedAt,
+              now,
               retentions.get(String(retex._company))
             ),
           },

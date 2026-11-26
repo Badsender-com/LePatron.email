@@ -123,14 +123,19 @@ async function closeAddressedRetex(kind, doc, { major, minor }) {
   const ids = (published && published.retexIds) || [];
   if (!ids.length) return;
   try {
-    await closeRetex(ids, {
-      status: 'addressed',
-      addressedIn: {
-        kind,
-        id: kind === 'skill' ? doc.skillId : doc.expertiseId,
-        version: versionLabel(published),
+    await closeRetex(
+      ids,
+      {
+        status: 'addressed',
+        addressedIn: {
+          kind,
+          id: kind === 'skill' ? doc.skillId : doc.expertiseId,
+          version: versionLabel(published),
+        },
       },
-    });
+      // Dated by the publication, as the change it brought (ADR 0031).
+      published.activatedAt
+    );
   } catch (err) {
     logger.error(
       `[skills] retex addressed by ${
