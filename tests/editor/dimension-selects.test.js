@@ -112,6 +112,19 @@ describe('selects of company dimensions', () => {
     ]);
   });
 
+  it('no longer offers a deactivated value once a save dropped it', () => {
+    // The email opened on the deactivated value, the writer switched to an
+    // active one and saved: the email no longer carries it, and the server
+    // would refuse it if chosen again.
+    const [audience] = dimensionSelects({
+      dimensions: [AUDIENCE],
+      selections: { audience: 'vip' },
+      carriedIds: ['vip'],
+    });
+
+    expect(labels(audience)).toEqual(['Clients VIP']);
+  });
+
   // The section builds the label from this string; a missing entry would print
   // the key itself in the select.
   it.each([

@@ -129,6 +129,9 @@ module.exports = {
         triggers: config.triggers || [],
         dimensions,
         selections: initialSelections,
+        // The values the email holds on the server, refreshed by each save:
+        // they decide which deactivated values are still offered.
+        carriedIds: initialForm.taxonomyItemIds,
         // The dimensions the email has had a value for: only those are
         // published empty once emptied (utils/governance-values.js).
         valued: rememberValued([], {
@@ -186,7 +189,7 @@ module.exports = {
           return dimensionSelects({
             dimensions: this.dimensions,
             selections: this.selections,
-            carriedIds: initialForm.taxonomyItemIds,
+            carriedIds: this.carriedIds,
             deactivatedLabel: (label) =>
               vm.t('email-metadata-dimension-value-deactivated', { label }),
           });
@@ -258,10 +261,16 @@ module.exports = {
         this.stopListening = store.onWrite((name, value) => {
           this[name] = value;
         });
+        // What the email carries moves with each save: a deactivated value the
+        // save dropped is no longer offered.
+        this.stopSaved = store.onSaved((saved) => {
+          this.carriedIds = saved.taxonomyItemIds || [];
+        });
       },
 
       beforeDestroy() {
         this.stopListening();
+        this.stopSaved();
       },
 
       methods: {

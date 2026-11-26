@@ -18,14 +18,17 @@
  *
  * A deactivated value is offered only to the email that carries it: dropping it
  * would rewrite the email's value on the next save, the same reasoning as the
- * typology's. "Carries" means the values the email opened with, not the current
- * selection: a user who picks another value can still come back to it until
- * they save. Its label says it is deactivated, as the typology's does.
+ * typology's. "Carries" means the values the email holds on the server (opened
+ * with, or written by the last save), not the current selection: a user who
+ * picks another value can still come back to it until they save, and no longer
+ * once a save has dropped it. Its label says it is deactivated, as the
+ * typology's does.
  *
  * @param {Object} params
  * @param {Array} params.dimensions emailMetadataConfig.dimensions
  * @param {Object} params.selections dimension name → value id
- * @param {Array} [params.carriedIds] the value ids the email opened with
+ * @param {Array} [params.carriedIds] the value ids the email holds on the
+ *   server: opened with, then those of the last save
  * @param {function(string): string} [params.deactivatedLabel] the label of a
  *   deactivated value, from its own label
  * @returns {Array<{name: string, label: string, value: string|null, options: Array<{id: string, label: string, deactivated?: boolean}>}>}
