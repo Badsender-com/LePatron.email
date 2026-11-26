@@ -1,3 +1,5 @@
+import { EMAIL_TRIGGER_DEFINITIONS } from '../../../shared/taxonomy/trigger-definitions.js';
+
 export default {
   authCard: {
     changeAccount: 'Changer de compte',
@@ -1374,16 +1376,10 @@ export default {
       trigger: {
         readOnly:
           'Ses deux valeurs sont celles de la doctrine Badsender : elles ne se renomment pas et ne se complètent pas.',
-        adhoc: {
-          label: 'Ad hoc',
-          description:
-            'Quelqu\'un a décidé de cet envoi-là, cette fois-ci. Une infolettre écrite et programmée chaque semaine reste ad hoc.',
-        },
-        automated: {
-          label: 'Automatisé',
-          description:
-            'Une règle décide de l\'envoi, à chaque fois. Si personne ne touche à rien, l\'email partira encore dans six mois.',
-        },
+        // The doctrine's words, shared with the editor and the AI
+        // (packages/shared/taxonomy/trigger-definitions.js).
+        adhoc: EMAIL_TRIGGER_DEFINITIONS.fr.adhoc,
+        automated: EMAIL_TRIGGER_DEFINITIONS.fr.automated,
       },
       form: {
         createTitle: 'Nouvelle dimension',

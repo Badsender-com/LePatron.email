@@ -1,5 +1,13 @@
 'use strict';
 
+// Read by the server only (mailing.schema.js hands the strings to the editor),
+// so it may require the shared definitions.
+const {
+  EMAIL_TRIGGER_DEFINITIONS,
+} = require('../../packages/shared/taxonomy/trigger-definitions.js');
+
+const TRIGGERS = EMAIL_TRIGGER_DEFINITIONS.fr;
+
 module.exports = {
   // edit title
   'edit-title-double-click': 'Double-cliquer pour modifier',
@@ -391,14 +399,15 @@ module.exports = {
   'email-metadata-trigger-none': 'Aucun',
   // The empty choice of a company dimension select, whatever its name.
   'email-metadata-dimension-none': 'Aucune valeur',
-  'email-metadata-trigger-adhoc': 'Ad hoc',
-  'email-metadata-trigger-automated': 'Automatisé',
+  // Les mots de la doctrine, les mêmes que l'écran de taxonomie et l'IA
+  // (packages/shared/taxonomy/trigger-definitions.js).
+  'email-metadata-trigger-adhoc': TRIGGERS.adhoc.label,
+  'email-metadata-trigger-automated': TRIGGERS.automated.label,
   // Affichées sous le champ pour la valeur sélectionnée, et en infobulle sur les
   // options. Des phrases complètes : elles ne suivent plus un libellé.
-  'email-metadata-trigger-adhoc-description':
-    "Un envoi décidé par l'équipe, pour cette fois.",
+  'email-metadata-trigger-adhoc-description': TRIGGERS.adhoc.description,
   'email-metadata-trigger-automated-description':
-    'Un envoi décidé par une règle, à chaque fois.',
+    TRIGGERS.automated.description,
   'email-metadata-error-no-company':
     "Cet email n'est rattaché à aucune entreprise : la typologie ne peut pas être enregistrée",
   'email-metadata-error-invalid': 'Une des valeurs saisies a été refusée',

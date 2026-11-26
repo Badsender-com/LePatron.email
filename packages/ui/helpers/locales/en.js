@@ -1,3 +1,5 @@
+import { EMAIL_TRIGGER_DEFINITIONS } from '../../../shared/taxonomy/trigger-definitions.js';
+
 export default {
   authCard: {
     changeAccount: 'Change account',
@@ -1782,16 +1784,10 @@ export default {
       trigger: {
         readOnly:
           'Its two values are the Badsender doctrine\'s: they are neither renamed nor added to.',
-        adhoc: {
-          label: 'One Shot',
-          description:
-            'Someone decided this particular send, this once. A newsletter written and scheduled every week is still one shot.',
-        },
-        automated: {
-          label: 'Automated',
-          description:
-            'A rule decides the send, every time. If nobody touches anything, the email will still go out in six months.',
-        },
+        // The doctrine's words, shared with the editor and the AI
+        // (packages/shared/taxonomy/trigger-definitions.js).
+        adhoc: EMAIL_TRIGGER_DEFINITIONS.en.adhoc,
+        automated: EMAIL_TRIGGER_DEFINITIONS.en.automated,
       },
       form: {
         createTitle: 'New dimension',

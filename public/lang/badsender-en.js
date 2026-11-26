@@ -1,5 +1,13 @@
 'use strict';
 
+// Read by the server only (mailing.schema.js hands the strings to the editor),
+// so it may require the shared definitions.
+const {
+  EMAIL_TRIGGER_DEFINITIONS,
+} = require('../../packages/shared/taxonomy/trigger-definitions.js');
+
+const TRIGGERS = EMAIL_TRIGGER_DEFINITIONS.en;
+
 module.exports = {
   // edit title
   'edit-title-double-click': 'Double click to edit',
@@ -378,14 +386,15 @@ module.exports = {
   'email-metadata-trigger-none': 'None',
   // The empty choice of a company dimension select, whatever its name.
   'email-metadata-dimension-none': 'No value',
-  'email-metadata-trigger-adhoc': 'One Shot',
-  'email-metadata-trigger-automated': 'Automated',
+  // The doctrine's words, the same as the taxonomy screen's and the AI's
+  // (packages/shared/taxonomy/trigger-definitions.js).
+  'email-metadata-trigger-adhoc': TRIGGERS.adhoc.label,
+  'email-metadata-trigger-automated': TRIGGERS.automated.label,
   // Shown under the field for the selected value, and as a tooltip on the options.
   // Full sentences: they stand on their own rather than trailing a label.
-  'email-metadata-trigger-adhoc-description':
-    'A send the team decided on, this once.',
+  'email-metadata-trigger-adhoc-description': TRIGGERS.adhoc.description,
   'email-metadata-trigger-automated-description':
-    'A send a rule decides, every time.',
+    TRIGGERS.automated.description,
   'email-metadata-error-no-company':
     'This email belongs to no company: the email type cannot be saved',
   'email-metadata-error-invalid': 'One of the values was refused',

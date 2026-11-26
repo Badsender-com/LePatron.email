@@ -4,6 +4,9 @@ const {
   EMAIL_TRIGGERS,
   EMAIL_TRIGGER_VALUES,
 } = require('../../shared/taxonomy/constants.js');
+const {
+  EMAIL_TRIGGER_DEFINITIONS,
+} = require('../../shared/taxonomy/trigger-definitions.js');
 
 /**
  * How an email's send is decided — the second dimension of the Badsender
@@ -34,30 +37,10 @@ const EmailTrigger = EMAIL_TRIGGERS;
 
 const EmailTriggerValues = EMAIL_TRIGGER_VALUES;
 
-// The doctrine's words for each value, for the server's readers: the AI features
-// read them through the governance context. The editor keeps its own copy in its
-// locales (`email-metadata-trigger-*`); the two say the same thing.
-const EmailTriggerDefinitions = Object.freeze({
-  fr: Object.freeze({
-    [EmailTrigger.AD_HOC]: {
-      label: 'Ad hoc',
-      description: "Un envoi décidé par l'équipe, pour cette fois.",
-    },
-    [EmailTrigger.AUTOMATED]: {
-      label: 'Automatisé',
-      description: 'Un envoi décidé par une règle, à chaque fois.',
-    },
-  }),
-  en: Object.freeze({
-    [EmailTrigger.AD_HOC]: {
-      label: 'One Shot',
-      description: 'A send the team decided on, this once.',
-    },
-    [EmailTrigger.AUTOMATED]: {
-      label: 'Automated',
-      description: 'A send a rule decides, every time.',
-    },
-  }),
-});
+// The doctrine's words for each value, by language: the AI features read them
+// through the governance context. Defined in
+// packages/shared/taxonomy/trigger-definitions.js, which the taxonomy screen
+// and the editor read too, so the model reads what the admin reads.
+const EmailTriggerDefinitions = EMAIL_TRIGGER_DEFINITIONS;
 
 module.exports = { EmailTrigger, EmailTriggerValues, EmailTriggerDefinitions };
