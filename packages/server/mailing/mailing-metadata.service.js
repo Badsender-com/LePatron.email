@@ -9,7 +9,7 @@ const { TaxonomyTypes } = require('../constant/taxonomy-type.js');
 const { EmailTriggerValues } = require('../constant/email-trigger.js');
 const {
   validateTaxonomyItemIds,
-  assertCombinationOffered,
+  assertChangedCombinationOffered,
 } = require('./mailing-company-dimensions.service.js');
 // Read path of the same feature, in its own file for length; exported from
 // here so the endpoint and what the editor receives keep one entry point.
@@ -74,6 +74,7 @@ const invalid = () =>
  * @param {string|ObjectId|null} options.companyId company the mailing belongs to
  * @param {Array} [options.currentItemIds] the company dimension values the
  *   mailing carries, kept even once deactivated
+ * @param {ObjectId} [options.currentEmailTypeId] the email type it has
  * @returns {Promise<Object>} the validated subset, ready to assign
  */
 async function validateMetadataPayload(
@@ -141,21 +142,11 @@ async function validateMetadataPayload(
     );
   }
 
-  // A nested value depends on its parent value, the email type's included: a
-  // change on either side checks the combination (ADR-0032).
-  if ('_taxonomyItems' in validated || '_emailType' in validated) {
-    await assertCombinationOffered({
-      companyId,
-      ids:
-        '_taxonomyItems' in validated
-          ? validated._taxonomyItems
-          : currentItemIds,
-      currentIds: currentItemIds,
-      emailTypeId:
-        '_emailType' in validated ? validated._emailType : currentEmailTypeId,
-      currentEmailTypeId,
-    });
-  }
+  await assertChangedCombinationOffered(validated, {
+    companyId,
+    currentIds: currentItemIds,
+    currentEmailTypeId,
+  });
 
   return validated;
 }

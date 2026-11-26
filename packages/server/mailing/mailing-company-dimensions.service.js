@@ -26,7 +26,7 @@ const { compareDimensions } = require('../../shared/taxonomy/sort.js');
  */
 module.exports = {
   validateTaxonomyItemIds,
-  assertCombinationOffered,
+  assertChangedCombinationOffered,
   buildEditorDimensions,
 };
 
@@ -189,6 +189,34 @@ async function assertCombinationOffered({
     if (offeredUnder.length > 0 && !offeredUnder.includes(parentValue)) {
       throw invalid();
     }
+  });
+}
+
+/**
+ * Check the combination when a request changes either side of it: a nested
+ * value depends on its parent value, the email type's included (ADR-0032).
+ *
+ * @param {Object} changes the validated fields of the request, holding
+ *   `_taxonomyItems` and `_emailType` only when it sends them
+ * @param {Object} options
+ * @param {string} options.companyId
+ * @param {Array} [options.currentIds] the values the email carries
+ * @param {*} [options.currentEmailTypeId] the email type it has
+ */
+async function assertChangedCombinationOffered(
+  changes,
+  { companyId, currentIds, currentEmailTypeId }
+) {
+  const changesValues = '_taxonomyItems' in changes;
+  const changesEmailType = '_emailType' in changes;
+  if (!changesValues && !changesEmailType) return;
+
+  await assertCombinationOffered({
+    companyId,
+    ids: changesValues ? changes._taxonomyItems : currentIds,
+    currentIds,
+    emailTypeId: changesEmailType ? changes._emailType : currentEmailTypeId,
+    currentEmailTypeId,
   });
 }
 
