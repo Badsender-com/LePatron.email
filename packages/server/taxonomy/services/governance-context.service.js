@@ -5,6 +5,7 @@ const {
   TaxonomyItems,
 } = require('../../common/models.common.js');
 const { StandardDimensions } = require('../../constant/taxonomy-type.js');
+const { compareDimensions } = require('../../../shared/taxonomy/sort.js');
 const { EmailTriggerDefinitions } = require('../../constant/email-trigger.js');
 const { buildStandardDimensions } = require('./default-dimensions.js');
 const { pickSeedLang } = require('./default-email-types.js');
@@ -84,11 +85,21 @@ function renderGovernanceContext({ dimensions }) {
     .join('\n\n');
 }
 
-// The company's active dimensions. A standard one the company never had seeded
-// (its taxonomy screen never opened) still counts, in the doctrine's words.
+// The company's active dimensions, in the order the taxonomy screen and the
+// editor list them (packages/shared/taxonomy/sort.js), the standard ones first
+// whatever order the company gave them: what the email is and how it is sent
+// frame everything else. A standard one the company never had seeded (its
+// taxonomy screen never opened) still counts, in the doctrine's words.
 async function activeDimensions(companyId, lang) {
   const stored = await TaxonomyDimensions.find({ _company: companyId })
-    .select({ name: 1, label: 1, description: 1, order: 1, isActive: 1 })
+    .select({
+      name: 1,
+      label: 1,
+      description: 1,
+      order: 1,
+      isActive: 1,
+      createdAt: 1,
+    })
     .lean();
   const storedNames = new Set(stored.map((dimension) => dimension.name));
   const unseeded = buildStandardDimensions(lang).filter(
@@ -100,9 +111,7 @@ async function activeDimensions(companyId, lang) {
     ...stored.filter((dimension) => dimension.isActive),
   ].sort(
     (a, b) =>
-      Number(isStandard(b)) - Number(isStandard(a)) ||
-      (a.order || 0) - (b.order || 0) ||
-      a.name.localeCompare(b.name)
+      Number(isStandard(b)) - Number(isStandard(a)) || compareDimensions(a, b)
   );
 }
 
