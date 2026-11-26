@@ -7,12 +7,9 @@ import BsTaxonomyEmailTypeDimension from '~/components/group/taxonomy-email-type
 import BsTaxonomyDimensionFormDialog from '~/components/group/taxonomy-dimension-form-dialog.vue';
 import BsTaxonomyTriggerDimension from '~/components/group/taxonomy-trigger-dimension.vue';
 import BsTaxonomyCompanyDimension from '~/components/group/taxonomy-company-dimension.vue';
+import BsTaxonomyCaseVariantDialog from '~/components/group/taxonomy-case-variant-dialog.vue';
 import BsModalConfirm from '~/components/modal-confirm';
-import {
-  taxonomyErrorFor,
-  caseVariantOf,
-  nextOrder,
-} from '~/helpers/taxonomy.js';
+import { taxonomyErrorFor, nextOrder } from '~/helpers/taxonomy.js';
 import {
   STANDARD_DIMENSIONS,
   DIMENSIONS_PER_COMPANY,
@@ -26,6 +23,7 @@ export default {
     BsTaxonomyDimensionFormDialog,
     BsTaxonomyCompanyDimension,
     BsTaxonomyTriggerDimension,
+    BsTaxonomyCaseVariantDialog,
     BsModalConfirm,
     LucidePlus: Plus,
   },
@@ -34,9 +32,6 @@ export default {
       dimensions: [],
       saving: false,
       deletingDimension: null,
-      // A declaration the server held back: its name differs from an existing
-      // one only by its case, and waits for the admin to confirm it.
-      caseVariant: null,
     };
   },
   computed: {
@@ -138,25 +133,11 @@ export default {
             groupId: this.groupId,
           }),
         'taxonomy.dimensions.created',
-        (error) => this.askToConfirmCaseVariant(error, payload)
+        // A name differing from an existing one only by its case: the
+        // dialog asks, and declares again if the admin confirms.
+        (error) => this.$refs.caseVariantDialog.ask(error, payload)
       );
       if (saved) this.$refs.formDialog.close();
-    },
-
-    // The form stays open behind the question: cancelling leaves the admin
-    // where they were, free to correct the name.
-    askToConfirmCaseVariant(error, payload) {
-      const existingName = caseVariantOf(error);
-      if (!existingName) return false;
-      this.caseVariant = { name: payload.name, existingName, payload };
-      this.$refs.caseVariantModal.open();
-      return true;
-    },
-
-    confirmCaseVariant() {
-      const { payload } = this.caseVariant;
-      this.caseVariant = null;
-      return this.declareDimension({ ...payload, confirmCaseVariant: true });
     },
 
     toggleActive(dimension) {
@@ -286,26 +267,10 @@ export default {
       </p>
     </bs-modal-confirm>
 
-    <bs-modal-confirm
-      ref="caseVariantModal"
-      :title="$t('taxonomy.dimensions.caseVariant.title')"
-      :action-label="$t('taxonomy.dimensions.caseVariant.confirm')"
-      action-button-color="accent"
-      @cancel="caseVariant = null"
-      @confirm="confirmCaseVariant"
-    >
-      <template v-if="caseVariant">
-        <p>
-          {{
-            $t('taxonomy.dimensions.caseVariant.message', {
-              name: caseVariant.name,
-              existingName: caseVariant.existingName,
-            })
-          }}
-        </p>
-        <p>{{ $t('taxonomy.dimensions.caseVariant.consequence') }}</p>
-      </template>
-    </bs-modal-confirm>
+    <bs-taxonomy-case-variant-dialog
+      ref="caseVariantDialog"
+      @confirm="declareDimension"
+    />
 
     <bs-taxonomy-dimension-form-dialog
       ref="formDialog"
