@@ -2197,6 +2197,12 @@ export default {
         'La vérification n\'a pas pu aboutir : relancez-la.',
       SKILL_PUBLICATION_GUARD_INTERRUPTED:
         'La vérification a été interrompue sur le serveur : relancez-la.',
+      RELEASE_NOTE_REQUIRED:
+        'Écrivez la note de version : ce qui change pour qui utilise cet élément.',
+      CHANGELOG_REQUIRED:
+        'Écrivez le journal des modifications : comment et pourquoi cette version a été écrite.',
+      RELEASE_NOTE_TOO_LONG:
+        'La note de version ne doit pas dépasser {max} caractères.',
       SKILLS_PUBLICATION_SELECTION_EMPTY:
         'Sélectionnez au moins une skill ou une expertise.',
       SKILLS_PUBLICATION_SELECTION_TOO_BIG:

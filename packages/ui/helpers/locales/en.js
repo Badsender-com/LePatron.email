@@ -2166,6 +2166,12 @@ export default {
         'The check could not end: run it again.',
       SKILL_PUBLICATION_GUARD_INTERRUPTED:
         'The check was interrupted on the server: run it again.',
+      RELEASE_NOTE_REQUIRED:
+        'Write the release note: what changes for whoever uses this item.',
+      CHANGELOG_REQUIRED:
+        'Write the change log: how and why this version was written.',
+      RELEASE_NOTE_TOO_LONG:
+        'The release note may not exceed {max} characters.',
       SKILLS_PUBLICATION_SELECTION_EMPTY:
         'Select at least one skill or expertise.',
       SKILLS_PUBLICATION_SELECTION_TOO_BIG:

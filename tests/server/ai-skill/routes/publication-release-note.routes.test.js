@@ -64,7 +64,7 @@ describe('publication route requires both texts', () => {
     const res = await publish({ changelog: 'Typo' });
 
     expect(res.status).toBe(400);
-    expect(res.body.message).toMatch(/release note/i);
+    expect(res.body.message).toBe('RELEASE_NOTE_REQUIRED');
     expect(await activeVersion()).toEqual({ major: 1, minor: 0 });
   });
 
@@ -75,7 +75,7 @@ describe('publication route requires both texts', () => {
     });
 
     expect(res.status).toBe(400);
-    expect(res.body.message).toMatch(/release note/i);
+    expect(res.body.message).toBe('RELEASE_NOTE_REQUIRED');
     expect(await activeVersion()).toEqual({ major: 1, minor: 0 });
   });
 
@@ -83,7 +83,7 @@ describe('publication route requires both texts', () => {
     const res = await publish({ releaseNotes: 'Subjects get shorter.' });
 
     expect(res.status).toBe(400);
-    expect(res.body.message).toMatch(/change ?log/i);
+    expect(res.body.message).toBe('CHANGELOG_REQUIRED');
   });
 
   it('refuses a release note over 500 characters', async () => {
@@ -93,7 +93,10 @@ describe('publication route requires both texts', () => {
     });
 
     expect(res.status).toBe(400);
-    expect(res.body.message).toMatch(/500/);
+    expect(res.body).toMatchObject({
+      message: 'RELEASE_NOTE_TOO_LONG',
+      max: 500,
+    });
   });
 
   it('publishes a minor version with both texts', async () => {

@@ -9,6 +9,7 @@
 
 const crypto = require('crypto');
 const createError = require('http-errors');
+const ERROR_CODES = require('../constant/error-codes.js');
 const expertiseService = require('../ai-skill/services/expertise.service.js');
 const skillService = require('../ai-skill/services/skill.service.js');
 const publication = require('../ai-skill/services/skills-publication.service.js');
@@ -46,6 +47,32 @@ const TEXTS_CHANGED =
   'The changelog or release notes differ from the ones checked: give the same ones, or call publish_draft without a confirmation to check again.';
 const CHECK_NOT_FOUND =
   'No check of yours has this guardId any more: call publish_draft without a confirmation to start one.';
+
+// What the publication refuses of its texts, as sentences: the back office
+// translates the codes, an assistant reads the refusal as it is.
+const TEXTS_REFUSED = new Map([
+  [
+    ERROR_CODES.RELEASE_NOTE_REQUIRED,
+    () =>
+      'A release note (releaseNotes) is required to publish a version: what changes for whoever uses it.',
+  ],
+  [
+    ERROR_CODES.CHANGELOG_REQUIRED,
+    () =>
+      'A changelog is required to publish a version: how and why it was written.',
+  ],
+  [
+    ERROR_CODES.RELEASE_NOTE_TOO_LONG,
+    ({ max }) =>
+      `The release note (releaseNotes) is limited to ${max} characters: give a shorter one.`,
+  ],
+]);
+
+function toldOfTexts(err) {
+  if (!TEXTS_REFUSED.has(err.message)) return err;
+  const sentence = TEXTS_REFUSED.get(err.message)(err);
+  return createError(err.status, sentence, err.max ? { max: err.max } : {});
+}
 
 /**
  * The draft to publish: the version asked for, or the item's only draft. With
@@ -86,7 +113,7 @@ async function draftFor({ kind, id, version }) {
 }
 
 // The changelog and release notes the publication takes: the assistant's, or
-// the draft's. A major without them is refused, as in the back office.
+// the draft's. Every version needs both, as in the back office (ADR 0031).
 function textsOf(args, draft) {
   return {
     changelog: args.changelog || draft.changelog || undefined,
@@ -222,7 +249,7 @@ function asPublisher(step) {
     try {
       return success(await step(args, user, authInfo?.clientId));
     } catch (err) {
-      if (isRefusal(err)) return refused(err);
+      if (isRefusal(err)) return refused(toldOfTexts(err));
       throw err;
     }
   });

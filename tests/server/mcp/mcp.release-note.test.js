@@ -63,6 +63,7 @@ describe('release note required at publication', () => {
       const answer = await publish(await asAuthor(), { changelog: 'Typo' });
 
       expect(answer.error).toMatch(/release note/i);
+      expect(answer.error).not.toMatch(/RELEASE_NOTE_REQUIRED/);
       expect(stored().activeVersion).toEqual({ major: 2, minor: 1 });
     });
 
@@ -81,6 +82,30 @@ describe('release note required at publication', () => {
       });
 
       expect(answer.error).toMatch(/500/);
+    });
+
+    it('refuses a draft that already holds a release note over 500 characters', async () => {
+      harness.seed({
+        ...SEED,
+        expertises: SEED.expertises.map((e) =>
+          e.expertiseId === SUBJECT_LINES
+            ? {
+                ...e,
+                versions: e.versions.map((v) =>
+                  v.status === 'DRAFT'
+                    ? { ...v, changelog: 'Typo', releaseNotes: 'x'.repeat(501) }
+                    : v
+                ),
+              }
+            : e
+        ),
+      });
+
+      const answer = await publish(await asAuthor(), {});
+
+      expect(answer.error).toMatch(/release note.*500 characters/i);
+      expect(harness.stored('guardRuns')).toEqual([]);
+      expect(stored().activeVersion).toEqual({ major: 2, minor: 1 });
     });
 
     it('refuses the generic sentence as a release note', async () => {

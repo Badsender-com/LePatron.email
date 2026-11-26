@@ -37,7 +37,7 @@ function failureReason(err) {
   }
   if (status === 404) return 'not_found';
   if (status === 409) return 'not_draft';
-  if (status === 400 && /releaseNotes/.test(err.message)) {
+  if (err && err.message === ERROR_CODES.RELEASE_NOTE_REQUIRED) {
     return 'release_notes_required';
   }
   return 'failed';

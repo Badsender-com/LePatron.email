@@ -16,8 +16,8 @@
  * logic. What genuinely differs per entity is passed in:
  *
  *   - `contentFields`: which fields a new version inherits from its source.
- *     Everything else (numbering, status, changelog defaults, timestamps) is
- *     lifecycle and lives here.
+ *     Everything else (numbering, status, the blank changelog and release
+ *     notes, timestamps) is lifecycle and lives here.
  *   - `activationGate`: extra publication checks. Skills validate their
  *     input/output schemas and template coherence; expertises have none.
  *
@@ -347,9 +347,9 @@ function createVersionedEntityService({
   /**
    * What a publication checks before it writes, at no cost: the version is
    * a draft, as the screen read it (readAtOf), passes the entity's own gate,
-   * and a major has its changelog and release notes. Read before the
-   * publication guard replays anything (ADR 0019), on a document already
-   * read, stored or plain.
+   * and has its changelog and release note, minor or major (ADR 0031). Read
+   * before the publication guard replays anything (ADR 0019), on a document
+   * already read, stored or plain.
    *
    * @returns {Promise<{ version: Object, readAt: Date|null }>}
    */
@@ -373,9 +373,9 @@ function createVersionedEntityService({
   }
 
   /**
-   * Publish a DRAFT: run the entity's own gate, require release notes on a
-   * major, archive the version it replaces, and move the `activeVersion`
-   * pointer. `payload.openToAll` opens the item to every company in the same
+   * Publish a DRAFT: run the entity's own gate, require its changelog and
+   * release note, archive the version it replaces, and move the
+   * `activeVersion` pointer. `payload.openToAll` opens the item to every company in the same
    * write (ADR 0013), so a publication never stands half done.
    * `payload.updatedAt`, when given, is the update date of the draft the
    * screen read: a draft written since is not published unread (readAtOf).

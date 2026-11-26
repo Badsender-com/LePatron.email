@@ -9,6 +9,7 @@
  */
 
 const createError = require('http-errors');
+const ERROR_CODES = require('../../constant/error-codes.js');
 const {
   MAX_RELEASE_NOTE_LENGTH,
 } = require('../../../shared/ai-skill/constants.js');
@@ -30,26 +31,19 @@ const changeLogOf = (version) =>
  * too long to read in an announcement.
  *
  * @param {{ changelog?: string, releaseNotes?: string }} texts as published
- * @throws {HttpError} 400
+ * @throws {HttpError} 400 `RELEASE_NOTE_REQUIRED`, `CHANGELOG_REQUIRED`, or
+ *   `RELEASE_NOTE_TOO_LONG` with the `max` it holds
  */
 function assertReleaseTexts(texts) {
-  if (!releaseNoteOf(texts)) {
-    throw createError(
-      400,
-      'A release note (releaseNotes) is required to publish a version: what changes for whoever uses it.'
-    );
-  }
+  const releaseNote = releaseNoteOf(texts);
+  if (!releaseNote) throw createError(400, ERROR_CODES.RELEASE_NOTE_REQUIRED);
   if (!changeLogOf(texts)) {
-    throw createError(
-      400,
-      'A changelog is required to publish a version: how and why it was written.'
-    );
+    throw createError(400, ERROR_CODES.CHANGELOG_REQUIRED);
   }
-  if (releaseNoteOf(texts).length > MAX_RELEASE_NOTE_LENGTH) {
-    throw createError(
-      400,
-      `The release note is limited to ${MAX_RELEASE_NOTE_LENGTH} characters.`
-    );
+  if (releaseNote.length > MAX_RELEASE_NOTE_LENGTH) {
+    throw createError(400, ERROR_CODES.RELEASE_NOTE_TOO_LONG, {
+      max: MAX_RELEASE_NOTE_LENGTH,
+    });
   }
 }
 

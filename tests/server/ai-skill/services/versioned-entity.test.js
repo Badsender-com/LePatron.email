@@ -561,7 +561,10 @@ describe.each(ENTITIES)('versioned lifecycle — $label', (entity) => {
       });
       await expect(
         service.activateVersion('an-id', { major: 1, minor: 0 }, {}, USER_ID)
-      ).rejects.toThrow(/release note/);
+      ).rejects.toMatchObject({
+        status: 400,
+        message: 'RELEASE_NOTE_REQUIRED',
+      });
     });
 
     it('takes them from a minor draft that carries them', async () => {
