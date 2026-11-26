@@ -70,19 +70,37 @@ async function buildGovernanceContext({ mailing, lang }) {
  * The same facts as plain text: one section per dimension, a heading an LLM
  * reads as structure, then the two descriptions. Empty when the email carries
  * nothing: a block saying "nothing is defined" would be a statement.
+ *
+ * The heading reads `### Label: value` whatever the language: a marker for the
+ * model, not prose for a reader.
  */
 function renderGovernanceContext({ dimensions }) {
   return (dimensions || [])
     .map((dimension) =>
       [
-        `### ${dimension.label} : ${dimension.value.label}`,
-        dimension.description,
-        dimension.value.description,
+        `### ${oneLine(dimension.label)}: ${oneLine(dimension.value.label)}`,
+        ownLine(dimension.description),
+        ownLine(dimension.value.description),
       ]
         .filter(Boolean)
         .join('\n')
     )
     .join('\n\n');
+}
+
+// The labels and descriptions are the admin's, typed in a form: a line break
+// in one would let it open a section of its own in the text. Each becomes one
+// line, its whitespace collapsed.
+function oneLine(text) {
+  return String(text || '')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+// A description stands on its own line, so a leading `#` would still make it
+// a heading.
+function ownLine(text) {
+  return oneLine(text).replace(/^#+\s*/, '');
 }
 
 // The company's active dimensions, in the order the taxonomy screen and the
