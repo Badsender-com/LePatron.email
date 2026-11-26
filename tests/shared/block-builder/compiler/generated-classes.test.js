@@ -30,8 +30,9 @@ describe('a class the generator owns', () => {
     expect(GENERATED_CLASSES).toEqual([
       STACK_CLASS,
       'lp-gutter',
-      ...[4, 8, 12, 16, 20, 24, 28, 32, 36, 40].map(
-        (spacing) => `lp-stack-spacing-${spacing}`
+      ...Array.from(
+        { length: 40 },
+        (_, index) => `lp-stack-spacing-${index + 1}`
       ),
     ]);
     expect(isGeneratedClass(STACK_CLASS)).toBe(true);

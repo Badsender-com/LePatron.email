@@ -15,9 +15,6 @@ const {
   ROW_LABEL_KEYS,
 } = require('../../../packages/editor/src/js/vue/components/block-builder-modal/row-settings.js');
 const {
-  ROW_SPACING_LABEL_KEYS,
-} = require('../../../packages/editor/src/js/vue/components/block-builder-modal/row-spacing-settings.js');
-const {
   ROW_LAYOUT_LABEL_KEYS,
 } = require('../../../packages/editor/src/js/vue/components/block-builder-modal/row-layout-bar.js');
 const MODAL_TEMPLATE = require('../../../packages/editor/src/js/vue/components/block-builder-modal/modal-template.js');
@@ -36,7 +33,6 @@ const templateKeys = Array.from(
 // The row panel's labels carry variables, so it builds them in script.
 const scriptKeys = ['block-builder-drop-here']
   .concat(ROW_LABEL_KEYS)
-  .concat(ROW_SPACING_LABEL_KEYS)
   .concat(ROW_LAYOUT_LABEL_KEYS)
   .concat(ELEMENT_LIST_LABEL_KEYS);
 

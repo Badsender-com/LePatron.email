@@ -443,8 +443,6 @@ module.exports = {
   'block-builder-gutter-label': 'Gouttière __n__',
   'block-builder-gutter-width': 'Largeur de la gouttière __n__',
   'block-builder-stack-spacing': 'Espacement empilé (mobile)',
-  'block-builder-stack-spacing-hint':
-    'Par pas de __step__ px : une autre valeur est arrondie au plus proche.',
   'block-builder-elements-folded':
     '__count__ éléments déplacés dans la colonne __column__.',
   'block-builder-elements-folded-one':

@@ -429,8 +429,6 @@ module.exports = {
   'block-builder-gutter-label': 'Gutter __n__',
   'block-builder-gutter-width': 'Gutter __n__ width',
   'block-builder-stack-spacing': 'Spacing when stacked (mobile)',
-  'block-builder-stack-spacing-hint':
-    'In steps of __step__ px: any other value is rounded to the nearest one.',
   'block-builder-elements-folded':
     '__count__ elements moved to column __column__.',
   'block-builder-elements-folded-one': '1 element moved to column __column__.',

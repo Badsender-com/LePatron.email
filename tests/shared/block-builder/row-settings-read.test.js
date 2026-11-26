@@ -92,9 +92,9 @@ describe('the gutters of a stored row', () => {
 
 describe('the stack spacing of a stored row', () => {
   test.each([
-    ['on a step', 12, 12],
-    ['between two steps', 13, 12],
-    ['half a step up', 14, 16],
+    ['to the px', 13, 13],
+    ['as a whole px', 12.6, 13],
+    ['at 1 px', 1, 1],
     ['past the maximum', 99, MAX_STACK_SPACING],
   ])('is read %s', (_label, stored, expected) => {
     expect(readRow(halves({ stackSpacing: stored })).stackSpacing).toBe(
@@ -103,7 +103,7 @@ describe('the stack spacing of a stored row', () => {
   });
 
   test.each([
-    ['below half a step', 1],
+    ['below half a px', 0.4],
     ['negative', -12],
     ['text', 'large'],
   ])('is dropped %s', (_label, stored) => {

@@ -82,13 +82,11 @@ module.exports = `        <div v-if="selectedRow" class="bb-modal__structure">
               type="number"
               min="0"
               :max="maxStackSpacing"
-              :step="stackSpacingStep"
+              step="1"
               :value="selectedRowStackSpacing"
               :aria-labelledby="stackSpacingLabelId"
-              :aria-describedby="stackSpacingHintId"
               @change="onStackSpacingChange($event)" />
             <span aria-hidden="true">px</span>
-            <p :id="stackSpacingHintId" class="bb-modal__spacing-hint">{{ stackSpacingHint }}</p>
           </div>
           <p class="bb-modal__folded" role="status">{{ foldedMessage }}</p>
         </div>`;

@@ -20,7 +20,7 @@ const {
 } = require('../../../packages/shared/block-builder/generated-classes.js');
 const {
   MAX_STACK_SPACING,
-  STACK_SPACING_STEP,
+  normaliseStackSpacing,
 } = require('../../../packages/shared/block-builder/row-spacing.js');
 const {
   row,
@@ -64,14 +64,18 @@ describe('the mobile classes of a row', () => {
     );
   });
 
-  it('have a class for every step of the stack spacing', () => {
-    for (
-      let spacing = STACK_SPACING_STEP;
-      spacing <= MAX_STACK_SPACING;
-      spacing += STACK_SPACING_STEP
-    ) {
+  it('have a class for every px of the stack spacing', () => {
+    for (let spacing = 1; spacing <= MAX_STACK_SPACING; spacing += 1) {
       expect(GENERATED_CLASSES).toContain(`lp-stack-spacing-${spacing}`);
     }
+  });
+
+  it('keep a stack spacing of 13 as 13', () => {
+    expect(normaliseStackSpacing(13)).toBe(13);
+    expect(rowClasses(halves({ stackSpacing: 13 }))).toEqual([
+      ['lp-stack', 'lp-stack-spacing-13'],
+      ['lp-stack'],
+    ]);
   });
 });
 
@@ -137,7 +141,7 @@ describe('the derived stylesheet of a row with spacing', () => {
   it('holds only rules from the closed list, whatever is stored', () => {
     const css = collectCss(
       composition(
-        halves({ gutters: [13], stackSpacing: 13 }),
+        halves({ gutters: [17], stackSpacing: 12.6 }),
         thirds({ gutters: ['9;}body{', 7], stackSpacing: '}*{color:red' })
       )
     );
@@ -147,8 +151,28 @@ describe('the derived stylesheet of a row with spacing', () => {
       expect(GENERATED_CLASSES).toContain(name);
       expect(declarations).toBe(MOBILE_DECLARATIONS[name]);
     });
-    expect(css).not.toContain('13');
+    expect(css).toContain('.lp-stack-spacing-13{padding-bottom:13px');
+    expect(css).not.toContain('12.6');
+    expect(css).not.toContain('17');
     expect(css).not.toContain('color');
+  });
+
+  // Forty classes in the list, but a stylesheet only holds the ones its
+  // composition uses.
+  it('holds only the spacing rules the rows use', () => {
+    const css = collectCss(
+      composition(
+        halves({ stackSpacing: 13 }),
+        thirds({ stackSpacing: 13 }),
+        halves({ stackSpacing: 4 })
+      )
+    );
+
+    expect(
+      rulesOf(css)
+        .map(([, name]) => name)
+        .filter((name) => name.startsWith('lp-stack-spacing-'))
+    ).toEqual(['lp-stack-spacing-13', 'lp-stack-spacing-4']);
   });
 
   it('defines every class the markup carries', () => {

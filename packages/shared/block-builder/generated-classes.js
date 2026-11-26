@@ -1,6 +1,6 @@
 'use strict';
 
-const { MAX_STACK_SPACING, STACK_SPACING_STEP } = require('./row-spacing.js');
+const { MAX_STACK_SPACING } = require('./row-spacing.js');
 
 // The classes the generator owns.
 //
@@ -37,16 +37,14 @@ const BEHAVIOURS = Object.freeze([STACK]);
 const GUTTER_CLASS = `${PREFIX}gutter`;
 
 // The space under a stacked column, one class per value the stack spacing may
-// take (row-spacing.js): every multiple of the step, up to the maximum. Named
-// by value, like the stacking class, so ten columns spaced alike are one rule.
-// A value is never written into the stylesheet: it picks a name from this
-// list, and the list is what the stylesheet is made of.
+// take (row-spacing.js): every whole px from 1 to the maximum. Named by value,
+// like the stacking class, so ten columns spaced alike are one rule. A value
+// is never written into the stylesheet: it picks a name from this list, and
+// the list is what the stylesheet is made of. Forty names, but a stylesheet
+// only holds the rules its composition uses (stylesheet.js).
 const STACK_SPACING_PREFIX = `${PREFIX}${STACK}-spacing-`;
 const STACK_SPACINGS = Object.freeze(
-  Array.from(
-    { length: MAX_STACK_SPACING / STACK_SPACING_STEP },
-    (_, index) => (index + 1) * STACK_SPACING_STEP
-  )
+  Array.from({ length: MAX_STACK_SPACING }, (_, index) => index + 1)
 );
 
 // Every class the generator emits, and nothing else. A closed list rather than

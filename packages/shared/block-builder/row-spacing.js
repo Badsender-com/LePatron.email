@@ -25,11 +25,6 @@ const SPACING_KEYS = Object.freeze([GUTTERS_KEY, STACK_SPACING_KEY]);
 const MAX_GUTTER = 40;
 const MAX_STACK_SPACING = 40;
 
-// The stack spacing is applied by a generated class, one per value, and the
-// stylesheet may only hold rules from a closed list (generated-classes.js). A
-// step keeps that list short: ten classes rather than forty.
-const STACK_SPACING_STEP = 4;
-
 /**
  * A spacing as stored, made a whole number of px between 0 and `max`, or 0.
  *
@@ -71,13 +66,15 @@ const gutterTotal = (gutters) =>
   gutters.reduce((total, gutter) => total + gutter, 0);
 
 /**
+ * The stack spacing is applied by a generated class, one per whole px up to
+ * the maximum (generated-classes.js): a value has a class only once it is
+ * normalised.
+ *
  * @param {*} value a stored stack spacing
- * @returns {number} whole px, 0 to MAX_STACK_SPACING, on a STACK_SPACING_STEP
+ * @returns {number} whole px, 0 to MAX_STACK_SPACING
  */
-function normaliseStackSpacing(value) {
-  const bounded = boundedSpacing(value, MAX_STACK_SPACING);
-  return Math.round(bounded / STACK_SPACING_STEP) * STACK_SPACING_STEP;
-}
+const normaliseStackSpacing = (value) =>
+  boundedSpacing(value, MAX_STACK_SPACING);
 
 /**
  * The stack spacing a row renders with: 0 for a row of fewer than two
@@ -116,7 +113,6 @@ module.exports = {
   SPACING_KEYS,
   MAX_GUTTER,
   MAX_STACK_SPACING,
-  STACK_SPACING_STEP,
   normaliseGutter,
   normaliseGutters,
   gutterTotal,

@@ -208,7 +208,7 @@ _UI_: Gouttière
 _Avoid_: Margin, column gap (alone: it does not say which device)
 
 **Stack spacing**:
-A row setting: the vertical space between its columns once they stack on a phone, from 0 to 40 px in steps of 4, only between two columns that hold something. Independent of the gutters. Only a row of several columns has one.
+A row setting: the vertical space between its columns once they stack on a phone, from 0 to 40 px to the pixel, only between two columns that hold something. Independent of the gutters. Only a row of several columns has one.
 _UI_: Espacement empilé (mobile)
 _Avoid_: Mobile gutter, row gap
 

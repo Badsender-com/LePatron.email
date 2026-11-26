@@ -25,7 +25,6 @@ const {
 } = require('../../../packages/shared/block-builder/composition.js');
 const {
   MAX_STACK_SPACING,
-  STACK_SPACING_STEP,
 } = require('../../../packages/shared/block-builder/row-spacing.js');
 
 const t = (key, params) =>
@@ -76,20 +75,22 @@ describe('the stack spacing field', () => {
   );
 
   // WCAG 2.5.3: the name a voice command uses is the one on screen.
-  it('is named by its visible label, and explained by the note', async () => {
+  it('is named by its visible label', async () => {
     await openWith([50, 50]);
     const label = document.getElementById(
       field().getAttribute('aria-labelledby')
     );
-    const hint = document.getElementById(
-      field().getAttribute('aria-describedby')
-    );
 
     expect(field().hasAttribute('aria-label')).toBe(false);
     expect(label.textContent.trim()).toBe('Espacement empilé (mobile)');
-    expect(hint.textContent.trim()).toBe(
-      `Par pas de ${STACK_SPACING_STEP} px : une autre valeur est arrondie au plus proche.`
-    );
+  });
+
+  // Every px is a value: there is no step to explain.
+  it('carries no note', async () => {
+    await openWith([50, 50]);
+
+    expect(field().hasAttribute('aria-describedby')).toBe(false);
+    expect(document.querySelector('.bb-modal__spacing p')).toBeNull();
   });
 
   it('is bounded by the limits a row has', async () => {
@@ -97,7 +98,7 @@ describe('the stack spacing field', () => {
 
     expect(field().min).toBe('0');
     expect(field().max).toBe(String(MAX_STACK_SPACING));
-    expect(field().step).toBe(String(STACK_SPACING_STEP));
+    expect(field().step).toBe('1');
   });
 
   it('starts at 0', async () => {
@@ -108,13 +109,22 @@ describe('the stack spacing field', () => {
 });
 
 describe('setting the stack spacing', () => {
-  it('stores it on its step, and shows it', async () => {
+  it('stores it to the px, and shows it', async () => {
     const { row } = await openWith([50, 50]);
 
     change(field(), '13');
 
-    expect(row.stackSpacing).toBe(12);
-    expect(field().value).toBe('12');
+    expect(row.stackSpacing).toBe(13);
+    expect(field().value).toBe('13');
+  });
+
+  it('makes a fraction a whole px', async () => {
+    const { row } = await openWith([50, 50]);
+
+    change(field(), '12.6');
+
+    expect(row.stackSpacing).toBe(13);
+    expect(field().value).toBe('13');
   });
 
   // The state does not change, so Vue has nothing to redraw: the field is put

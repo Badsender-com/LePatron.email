@@ -4,7 +4,6 @@ const {
   STACK_SPACING_KEY,
   SPACING_KEYS,
   MAX_STACK_SPACING,
-  STACK_SPACING_STEP,
   normaliseStackSpacing,
 } = require('../../../../../../shared/block-builder/row-spacing.js');
 
@@ -21,10 +20,6 @@ const {
 // Called from outside: `clearRowSpacing`, by row-settings.js when a row goes
 // down to one column.
 
-// Built with a variable, so the translations test cannot read it off the
-// template.
-const ROW_SPACING_LABEL_KEYS = ['block-builder-stack-spacing-hint'];
-
 /**
  * What a number field holds, as a number, or null when the browser could not
  * read what was typed (`20px` in a number field): then the field holds an
@@ -40,10 +35,7 @@ function typedNumber(input) {
 }
 
 const RowSpacingMixin = {
-  data: () => ({
-    maxStackSpacing: MAX_STACK_SPACING,
-    stackSpacingStep: STACK_SPACING_STEP,
-  }),
+  data: () => ({ maxStackSpacing: MAX_STACK_SPACING }),
 
   computed: {
     // Only a row of several columns has a space between them to set.
@@ -61,16 +53,6 @@ const RowSpacingMixin = {
     stackSpacingLabelId() {
       return `bb-stack-spacing-label-${this._uid}`;
     },
-
-    stackSpacingHintId() {
-      return `bb-stack-spacing-hint-${this._uid}`;
-    },
-
-    stackSpacingHint() {
-      return this.vm.t('block-builder-stack-spacing-hint', {
-        step: STACK_SPACING_STEP,
-      });
-    },
   },
 
   methods: {
@@ -80,7 +62,7 @@ const RowSpacingMixin = {
      *
      * Refused rather than clamped: a number past the bounds is a typing
      * mistake, and silently storing the maximum would hide it. An accepted
-     * value is rounded to its step, as a stored one is read.
+     * value is made a whole px, as a stored one is read.
      *
      * @param {string} rowId
      * @param {number} value in px
@@ -128,4 +110,4 @@ const RowSpacingMixin = {
   },
 };
 
-module.exports = { RowSpacingMixin, ROW_SPACING_LABEL_KEYS, typedNumber };
+module.exports = { RowSpacingMixin, typedNumber };
