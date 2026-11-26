@@ -11,6 +11,9 @@ export default {
   components: { LucidePencil: Pencil },
   props: {
     dimension: { type: Object, required: true },
+    // A request on the dimension runs: its buttons wait, so a double click
+    // cannot send it twice.
+    busy: { type: Boolean, default: false },
   },
   computed: {
     triggerValues() {
@@ -30,7 +33,13 @@ export default {
         {{ $t('taxonomy.dimensions.standard') }}
       </v-chip>
       <v-spacer />
-      <v-btn text small color="accent" @click="$emit('edit', dimension)">
+      <v-btn
+        text
+        small
+        color="accent"
+        :disabled="busy"
+        @click="$emit('edit', dimension)"
+      >
         <lucide-pencil :size="16" class="mr-1" />
         {{ $t('global.edit') }}
       </v-btn>

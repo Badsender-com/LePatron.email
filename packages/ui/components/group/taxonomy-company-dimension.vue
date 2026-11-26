@@ -20,6 +20,9 @@ export default {
   },
   props: {
     dimension: { type: Object, required: true },
+    // A request on the dimension runs: its buttons wait, so a double click
+    // cannot send it twice.
+    busy: { type: Boolean, default: false },
   },
   data() {
     return {
@@ -55,13 +58,19 @@ export default {
         text
         small
         color="accent"
-        :disabled="!dimension.isActive"
+        :disabled="!dimension.isActive || busy"
         @click="$refs.values.openCreateForm()"
       >
         <lucide-plus :size="16" class="mr-1" />
         {{ $t('taxonomy.values.empty.action') }}
       </v-btn>
-      <v-btn text small color="accent" @click="$emit('edit', dimension)">
+      <v-btn
+        text
+        small
+        color="accent"
+        :disabled="busy"
+        @click="$emit('edit', dimension)"
+      >
         <lucide-pencil :size="16" class="mr-1" />
         {{ $t('global.edit') }}
       </v-btn>
@@ -70,6 +79,7 @@ export default {
         text
         small
         color="accent"
+        :disabled="busy"
         @click="$emit('toggle-active', dimension)"
       >
         <lucide-eye-off v-if="dimension.isActive" :size="16" class="mr-1" />
@@ -85,6 +95,7 @@ export default {
         text
         small
         color="error"
+        :disabled="busy"
         @click="$emit('delete', dimension)"
       >
         <lucide-trash2 :size="16" class="mr-1" />

@@ -197,6 +197,9 @@ export default {
      * @returns {Promise<boolean>} whether it went through
      */
     async request(send, successKey, handleError = () => false) {
+      // One request at a time: a second click before the first answers would
+      // send the same write twice.
+      if (this.saving) return false;
       try {
         this.saving = true;
         await send();
@@ -232,12 +235,14 @@ export default {
     <bs-taxonomy-email-type-dimension
       ref="emailType"
       :dimension="emailType"
+      :busy="saving"
       @edit="openEditForm"
     />
 
     <bs-taxonomy-trigger-dimension
       v-if="trigger"
       :dimension="trigger"
+      :busy="saving"
       @edit="openEditForm"
     />
 
@@ -245,6 +250,7 @@ export default {
       v-for="dimension in companyDimensions"
       :key="dimension.id"
       :dimension="dimension"
+      :busy="saving"
       @edit="openEditForm"
       @toggle-active="toggleActive"
       @delete="confirmDelete"

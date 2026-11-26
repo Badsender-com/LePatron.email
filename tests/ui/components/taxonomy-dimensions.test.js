@@ -1,7 +1,7 @@
 'use strict';
 
-// The writes on a dimension, from the taxonomy screen: a declared dimension is
-// placed after the last one (ADR-0032).
+// The writes on a dimension, from the taxonomy screen: one at a time, and a
+// declared dimension placed after the last one (ADR-0032).
 
 const { loadVueComponent } = require('../load-vue-component.js');
 
@@ -27,6 +27,26 @@ const screen = (dimensions = []) => {
 };
 
 describe('taxonomy dimensions: writes', () => {
+  it('sends one write at a time, whatever the clicks', async () => {
+    const vm = screen();
+    let answer;
+    const send = jest.fn(
+      () =>
+        new Promise((resolve) => {
+          answer = resolve;
+        })
+    );
+
+    const first = vm.request(send, 'saved');
+    const second = await vm.request(send, 'saved');
+    answer();
+
+    expect(second).toBe(false);
+    await expect(first).resolves.toBe(true);
+    expect(send).toHaveBeenCalledTimes(1);
+    expect(vm.saving).toBe(false);
+  });
+
   it('declares a dimension after the last one', async () => {
     const vm = screen([
       { name: 'emailType', order: 10 },

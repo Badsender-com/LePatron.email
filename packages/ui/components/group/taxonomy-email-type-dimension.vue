@@ -14,6 +14,9 @@ export default {
   },
   props: {
     dimension: { type: Object, default: null },
+    // A request on the dimension runs: its buttons wait, so a double click
+    // cannot send it twice.
+    busy: { type: Boolean, default: false },
   },
   methods: {
     // The page header's actions act on the email type's values.
@@ -43,6 +46,7 @@ export default {
         text
         small
         color="accent"
+        :disabled="busy"
         @click="$emit('edit', dimension)"
       >
         <lucide-pencil :size="16" class="mr-1" />
