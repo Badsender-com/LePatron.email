@@ -1,12 +1,13 @@
 <script>
 import { validationMixin } from 'vuelidate';
-import { required, maxLength } from 'vuelidate/lib/validators';
+import { required, maxLength, integer } from 'vuelidate/lib/validators';
 import BsModalForm from '~/components/modal/bs-modal-form.vue';
 import BsTextField from '~/components/form/bs-text-field.vue';
 import BsTextarea from '~/components/form/bs-textarea.vue';
 import BsSelect from '~/components/form/bs-select.vue';
 import { TAXONOMY_LIMITS } from '~/helpers/taxonomy.js';
 import {
+  STANDARD_DIMENSIONS,
   buildDimensionPayload,
   buildNewDimensionPayload,
   isValidDimensionName,
@@ -62,12 +63,23 @@ export default {
             },
         label: { required, maxLength: maxLength(TAXONOMY_LIMITS.LABEL) },
         description: { maxLength: maxLength(TAXONOMY_LIMITS.DESCRIPTION) },
+        // Emptied, the field is refused rather than sent as 0.
+        precedence: this.carriesTokens ? { required, integer } : {},
       },
     };
   },
   computed: {
     isEditing() {
       return this.editingId !== null;
+    },
+    // The trigger carries no design token: no precedence to set.
+    carriesTokens() {
+      return this.form.name !== STANDARD_DIMENSIONS.TRIGGER;
+    },
+    precedenceErrors() {
+      const field = this.$v.form.precedence;
+      if (!field.$dirty || !field.$invalid) return [];
+      return [this.$t('taxonomy.dimensions.form.precedenceInvalid')];
     },
     parentItems() {
       const byName = new Map(
@@ -189,12 +201,8 @@ export default {
       if (!this.isStandard && this.form.parentName !== this.initialParentName) {
         payload.parentName = this.form.parentName || null;
       }
-      const precedence = Math.trunc(Number(this.form.precedence));
-      if (
-        this.form.name !== 'trigger' &&
-        Number.isFinite(precedence) &&
-        precedence !== this.initialPrecedence
-      ) {
+      const precedence = Number(this.form.precedence);
+      if (this.carriesTokens && precedence !== this.initialPrecedence) {
         payload.precedence = precedence;
       }
       this.$emit('save', { id: this.editingId, payload });
@@ -264,14 +272,16 @@ export default {
 
     <!-- The trigger carries no design token: nothing to win. -->
     <bs-text-field
-      v-if="form.name !== 'trigger'"
+      v-if="carriesTokens"
       v-model="form.precedence"
       :label="$t('taxonomy.dimensions.form.precedence')"
       :hint="$t('taxonomy.dimensions.form.precedenceHint')"
+      :error-messages="precedenceErrors"
       :disabled="loading"
       type="number"
       step="1"
       persistent-hint
+      @blur="$v.form.precedence.$touch()"
     />
 
     <bs-select

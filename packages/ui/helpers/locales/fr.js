@@ -1402,9 +1402,10 @@ export default {
         parentDeactivated: '{label} (désactivée)',
         parentHint:
           'Ses valeurs seront proposées selon la valeur choisie pour la dimension parente : la Langue selon le Marché.',
-        precedence: 'Précédence',
+        precedence: 'Priorité',
         precedenceHint:
-          'Quand deux valeurs choisies sur un email portent le même token, celle de la dimension à la plus haute précédence l\'emporte.',
+          'Quand deux valeurs choisies sur un email portent le même token, celle de la dimension à la plus haute priorité l\'emporte.',
+        precedenceInvalid: 'Indiquez la priorité : un nombre entier, 0 par défaut.',
       },
     },
     values: {

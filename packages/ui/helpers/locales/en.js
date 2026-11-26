@@ -1813,6 +1813,7 @@ export default {
         precedence: 'Precedence',
         precedenceHint:
           'When two values chosen on an email carry the same token, the one of the dimension with the highest precedence wins.',
+        precedenceInvalid: 'Enter the precedence: a whole number, 0 by default.',
       },
     },
     values: {
