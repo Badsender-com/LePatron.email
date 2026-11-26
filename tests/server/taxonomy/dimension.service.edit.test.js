@@ -220,6 +220,31 @@ describe('editing, deactivating and deleting a dimension', () => {
       expect(await reload()).toMatchObject({ isActive: true });
     });
 
+    it('leaves standing a PATCH that deactivated it while the refused deletion ran', async () => {
+      // Loaded before the deletion, like an admin's PATCH already under way.
+      const patch = await models.TaxonomyDimensions.findOne({
+        _id: audience._id,
+      });
+      duringDeletion(async () => {
+        models.TaxonomyItems.seed([
+          { _company: COMPANY_A, type: 'audience', label: 'Clients VIP' },
+        ]);
+        // The PATCH lands a millisecond later at least, as it would.
+        const now = Date.now();
+        while (Date.now() === now);
+        patch.isActive = false;
+        await patch.save();
+      });
+
+      await expect(
+        dimensionService.deleteDimension({
+          user: adminA,
+          dimensionId: idOf(audience),
+        })
+      ).rejects.toMatchObject({ status: 409 });
+      expect(await reload()).toMatchObject({ isActive: false });
+    });
+
     it('leaves a dimension the admin had deactivated deactivated, when refused', async () => {
       await dimensionService.updateDimension({
         user: adminA,

@@ -196,17 +196,30 @@ async function deleteDimension({ user, dimensionId }) {
     throw new Conflict(ERROR_CODES.STANDARD_DIMENSION_LOCKED);
   }
 
+  // Stamped by hand, so the refused path below can tell its own deactivation
+  // from an edit made meanwhile.
   const scope = { _id: dimension._id, _company: dimension._company };
-  await TaxonomyDimensions.updateOne(scope, { $set: { isActive: false } });
+  const deactivatedAt = new Date();
+  await TaxonomyDimensions.updateOne(
+    scope,
+    { $set: { isActive: false, updatedAt: deactivatedAt } },
+    { timestamps: false }
+  );
 
   const valueCount = await TaxonomyItems.countDocuments({
     _company: dimension._company,
     type: dimension.name,
   });
   if (valueCount > 0) {
-    // Refused: the dimension goes back to the state the admin left it in.
+    // Refused: the dimension goes back to active if it was, and only if
+    // nothing touched it since this deactivation. A PATCH deactivating it
+    // meanwhile stands. A value created during this brief window got a 400,
+    // by design: the dimension was inactive then.
     if (dimension.isActive) {
-      await TaxonomyDimensions.updateOne(scope, { $set: { isActive: true } });
+      await TaxonomyDimensions.updateOne(
+        { ...scope, isActive: false, updatedAt: deactivatedAt },
+        { $set: { isActive: true } }
+      );
     }
     const error = new Conflict(ERROR_CODES.DIMENSION_HAS_VALUES);
     error.details = { valueCount };
