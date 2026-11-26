@@ -134,7 +134,7 @@ describe('taxonomy screen: company dimensions', () => {
     }
   );
 
-  it.each(['__proto__', 'constructor', 'prototype'])(
+  it.each([...Object.getOwnPropertyNames(Object.prototype), 'prototype'])(
     'flags %p as reserved, though a template could read it',
     (name) => {
       const { isReservedDimensionName } = require(HELPERS);

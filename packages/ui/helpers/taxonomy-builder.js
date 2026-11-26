@@ -122,8 +122,10 @@ const SPELLED_OUT_PATTERN = new RegExp(
 );
 
 /**
- * Whether the name is one an email's values could not be stored under
- * (`__proto__`, `constructor`, `prototype`), though a template could read it.
+ * Whether the name is one every JavaScript object already answers to
+ * (`__proto__`, `constructor`, `toString`…, see RESERVED_DIMENSION_NAMES),
+ * though a template could read it: an email's value under it would be lost,
+ * or read back as an inherited function.
  *
  * @param {*} name
  * @returns {boolean}

@@ -93,8 +93,10 @@ describe('declaring a company dimension', () => {
     }
   );
 
-  it.each(['__proto__', 'constructor', 'prototype'])(
-    'refuses %p, which the values of an email could not be stored under',
+  // Every name an object already answers to: a value under it would be lost
+  // or read back as an inherited function.
+  it.each([...Object.getOwnPropertyNames(Object.prototype), 'prototype'])(
+    'refuses %p, a name every object already answers to',
     async (name) => {
       await expect(
         dimensionService.createDimension({

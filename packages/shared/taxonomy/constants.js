@@ -38,13 +38,31 @@ const EMAIL_TRIGGER_VALUES = Object.freeze([
 // one of the two standard dimensions.
 const DIMENSION_NAME_PATTERN = /^[A-Za-z_][A-Za-z0-9_]*$/;
 
-// Names a JavaScript object does not keep as data: `{ __proto__: 'ca' }` sets
-// the prototype instead of a key, so the value an email carries under such a
-// dimension would be lost without a word. A template option's name (`country`,
+// The names every JavaScript object already answers to, through
+// Object.prototype, plus `prototype`. The editor keys an email's values by
+// dimension name. Under `__proto__` a chosen value is not stored but sets the
+// object's prototype, lost without a word. Under the others it is stored, but
+// an email that has no value for that dimension reads back the inherited
+// function instead of nothing: `{}.toString` is a function, and once a value
+// sits there, `{ hasOwnProperty: 'ca' }.hasOwnProperty(x)` throws.
+//
+// Listed rather than read from Object.prototype at run time, so the server and
+// the browser refuse the same names whatever their engine adds; a test checks
+// the list still covers Object.prototype. A template option's name (`country`,
 // `bodyWidth`) stays allowed: a dimension may fill one in.
 const RESERVED_DIMENSION_NAMES = Object.freeze([
   '__proto__',
+  '__defineGetter__',
+  '__defineSetter__',
+  '__lookupGetter__',
+  '__lookupSetter__',
   'constructor',
+  'hasOwnProperty',
+  'isPrototypeOf',
+  'propertyIsEnumerable',
+  'toLocaleString',
+  'toString',
+  'valueOf',
   'prototype',
 ]);
 

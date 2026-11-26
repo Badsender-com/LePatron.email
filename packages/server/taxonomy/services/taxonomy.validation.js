@@ -228,8 +228,9 @@ function readDimensionName(value) {
     error.details = { limit: TaxonomyLimits.DIMENSION_NAME };
     throw error;
   }
-  // Valid as a template property, but not kept as data by the object an email
-  // stores its values in.
+  // Valid as a template property, but a name every object already answers to:
+  // a value under it would be lost (`__proto__`) or read back as an inherited
+  // function (packages/shared/taxonomy/constants.js).
   if (RESERVED_DIMENSION_NAMES.includes(value)) {
     throw new BadRequest(ERROR_CODES.DIMENSION_NAME_RESERVED);
   }
