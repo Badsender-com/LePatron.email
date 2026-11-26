@@ -28,6 +28,7 @@ In a conversation, turn LePatron on with the **+** button, then **Connectors**. 
 
 - read the platform company's expertises and find the ones that apply to your request;
 - use the platform company's skills, which also show among the suggested commands;
+- tell what changed in the skills and expertises over a period ([Following what is new](./catalog-changes.md));
 - send feedback to the platform company when you ask it to;
 - report a retex on a skill or an expertise, with your approval ([Retex](./retex.md)).
 

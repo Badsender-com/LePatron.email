@@ -52,7 +52,7 @@ claude mcp add --transport http lepatron-platform https://app.lepatron.email/mcp
 claude mcp add --transport http lepatron-client https://app.lepatron.email/mcp
 ```
 
-Each answer then comes from the company of the connector called, with no risk of one conversation changing another's company. A scheduled task, such as the weekly follow-up of what is new, uses the platform company's connector.
+Each answer then comes from the company of the connector called, with no risk of one conversation changing another's company. Through a client's connector, the assistant reads that client's catalog, dated as it sees it; the change log and the retex follow the super admin and stay readable ([Following what is new](./catalog-changes.md)). A scheduled task, such as the weekly follow-up of what is new, uses the platform company's connector.
 
 ## See and revoke your connected applications
 

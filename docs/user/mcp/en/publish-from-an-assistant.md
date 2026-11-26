@@ -56,17 +56,17 @@ The first answer and the publication also say what the publication warns of, wit
 
 **An item with several drafts.** When a skill or an expertise has more than one draft, the tool does not choose: it lists them, and the assistant gives the version to publish (`version`, for instance `2.1`) at every call. With one draft, nothing is to give.
 
-**Changelog and release notes.** Every version, minor as major, is published with its changelog and its release note, as in the back office: the draft's, or those you give the assistant. The release note says, in 500 characters at most, what changes for whoever uses the item: every company that reads it will see it ([Following what is new](./catalog-changes.md)). The changelog says how and why the version was written, for the platform company alone. Without them, the tool refuses before the check, and the assistant has to write them. The key is bound to them: give the same at both steps.
+**Change log and release note.** Every version, minor as major, is published with its change log (`changelog`) and its release note (`releaseNotes`), as in the back office: the draft's, or those you give the assistant. The release note says, in 500 characters at most, what changes for whoever uses the item: every company that reads it will see it ([Following what is new](./catalog-changes.md)). The change log says how and why the version was written: only the platform company, and a super admin through any connector, read it. Without them, the tool refuses before the check, and the assistant has to write them. The key is bound to them: give the same at both steps.
 
 **On a copy** (staging, development), the item published is kept on the copy, as the back office's publication offers by default: the next follow of production does not undo it. The answer says so (`keptOnCopy`).
 
-The key is bound to that exact draft, to you, to the changelog and release notes checked, and to an hour. The tool refuses it in these cases:
+The key is bound to that exact draft, to you, to the change log and release note checked, and to an hour. The tool refuses it in these cases:
 
 | Case                                                                           | The tool's answer                                                                                                                               |
 | ------------------------------------------------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------- |
 | the draft changed since the check                                              | "The draft changed after it was checked: call publish_draft without a confirmation to check it again."                                          |
 | the key is more than an hour old, made up, or given for another item or person | "This confirmation key is not valid for this draft, or has expired: call publish_draft without one to check the draft again."                   |
-| the changelog or release notes are not the ones checked                        | "The changelog or release notes differ from the ones checked: give the same ones, or call publish_draft without a confirmation to check again." |
+| the change log or release note are not the ones checked                        | "The changelog or release notes differ from the ones checked: give the same ones, or call publish_draft without a confirmation to check again." |
 | the item has several drafts and no version is given                            | ""…" has several drafts: give the version to publish.", with the drafts                                                                         |
 | the item has no draft                                                          | ""…" has no draft to publish: write one first, or it is already published."                                                                     |
 
@@ -90,7 +90,7 @@ It does so in two calls, as a publication does:
 
 When the audience is already the one asked, the tool says so (`changed: false`) and changes nothing, at either call. On a copy (staging, development), the item is kept on the copy, so the next follow of production does not undo the change; the answer says so (`keptOnCopy`).
 
-Companies always read the active version, never a draft. A skill or expertise never published is not opened: ""…" was never published: publish a version before opening it." Nor is an archived one.
+Companies always read the active version, never a draft. A skill or expertise never published is not opened: ""…" was never published: publish a version before opening it." Nor is an archived one, until a version of it is published again: ""…" is archived: publish a version of it again before opening it." The back office refuses the same, with "This item was never published…" or "This item is archived: publish a version again before opening it to all companies."
 
 Closing an audience is immediate: the companies' assistants no longer read it at their next call.
 

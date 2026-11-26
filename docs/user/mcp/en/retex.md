@@ -43,7 +43,7 @@ The connection screen offers a super admin every company that has the MCP module
 2. LePatron answers the open retex on the same passage (or, for a complement about no expertise, on the same category, and the same part of the email when both name one), whatever the company.
 3. **Two retex pointing the same way are enough**: the assistant proposes the change at once, as a draft citing them. For a complement no expertise covers, it proposes a new expertise.
 4. You adjust, the guard replays the test cases if there are any, then you publish.
-5. The retex cited become **addressed** with the published version, named by its skill or expertise (a retex on a skill may be addressed by an expertise), whether you publish from the assistant or from the back office. If the draft is deleted before, they stay open.
+5. The retex cited become **addressed** with the published version, named by its skill or expertise (a retex on a skill may be addressed by an expertise), whether you publish from the assistant or from the back office. They keep the date they were addressed (`addressedAt`): the publication date of the version, the same for every retex it addressed, and the date `list_changes` gives that change ([Following what is new](./catalog-changes.md)). If the draft is deleted before, they stay open.
 
 ### The tools
 

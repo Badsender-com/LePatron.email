@@ -52,7 +52,7 @@ claude mcp add --transport http lepatron-plateforme https://app.lepatron.email/m
 claude mcp add --transport http lepatron-client https://app.lepatron.email/mcp
 ```
 
-Chaque réponse vient ainsi de l'entreprise du connecteur appelé, sans risque qu'une conversation change l'entreprise d'une autre. Une tâche planifiée, comme le suivi hebdomadaire des nouveautés, utilise le connecteur de l'entreprise plateforme.
+Chaque réponse vient ainsi de l'entreprise du connecteur appelé, sans risque qu'une conversation change l'entreprise d'une autre. Par le connecteur d'un client, l'assistant lit le catalogue de ce client, daté comme il le voit ; le journal des modifications et les retours d'expérience, eux, suivent le super admin et restent lisibles ([Suivre les nouveautés](./nouveautes.md)). Une tâche planifiée, comme le suivi hebdomadaire des nouveautés, utilise le connecteur de l'entreprise plateforme.
 
 ## Voir et révoquer vos applications connectées
 

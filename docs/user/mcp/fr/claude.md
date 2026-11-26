@@ -30,6 +30,7 @@ Dans une conversation, activez LePatron avec le bouton **+**, puis **Connectors*
 
 - lire les expertises de l'entreprise plateforme et retrouver celles qui s'appliquent à votre demande ;
 - utiliser les skills de l'entreprise plateforme, que vous retrouvez aussi parmi les commandes proposées ;
+- dire ce qui a changé dans les skills et les expertises sur une période ([Suivre les nouveautés](./nouveautes.md)) ;
 - envoyer un avis à l'entreprise plateforme quand vous le lui demandez ;
 - signaler un retour d'expérience sur une skill ou une expertise, avec votre accord ([Retours d'expérience](./retours-d-experience.md)).
 
