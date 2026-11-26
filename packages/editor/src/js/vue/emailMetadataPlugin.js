@@ -168,11 +168,10 @@ module.exports = {
         // as the user picks: the preview follows without a save.
         templateValues() {
           return governanceValues({
-            dimensions: [
-              { name: 'emailType', values: this.emailTypes },
-              ...this.dimensions,
-            ],
-            selections: { ...this.selections, emailType: this.emailTypeId },
+            dimensions: this.dimensions,
+            selections: this.selections,
+            emailTypes: this.emailTypes,
+            emailTypeId: this.emailTypeId,
             trigger: this.trigger,
           }).values;
         },

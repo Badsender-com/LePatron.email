@@ -103,6 +103,39 @@ describe('publishing dimensions to the template', () => {
     expect(values).not.toHaveProperty('audience');
   });
 
+  // The email type is a standard dimension the section holds apart from the
+  // company dimensions: its types and its chosen one come as their own fields.
+  describe('the email type', () => {
+    const PROMOTIONAL = {
+      id: '64a0000000000000000000c1',
+      canonicalType: 'promotional',
+    };
+
+    it('is published under its name, valued by the chosen identifier', () => {
+      const { values } = governanceValues({
+        dimensions: [AUDIENCE],
+        selections: { audience: '64a0000000000000000000a1' },
+        emailTypes: [PROMOTIONAL],
+        emailTypeId: PROMOTIONAL.id,
+      });
+
+      expect(values).toMatchObject({
+        emailType: 'promotional',
+        audience: 'vip',
+      });
+    });
+
+    it('is not published when the editor was sent no email type list', () => {
+      const { values } = governanceValues({
+        dimensions: [AUDIENCE],
+        selections: { audience: '64a0000000000000000000a1' },
+        emailTypeId: PROMOTIONAL.id,
+      });
+
+      expect(values).not.toHaveProperty('emailType');
+    });
+  });
+
   it('publishes the trigger under its name', () => {
     expect(
       governanceValues({ dimensions: [], selections: {}, trigger: 'automated' })
