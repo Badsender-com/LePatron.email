@@ -485,7 +485,7 @@ _Avoid_: Slug, code, key, canonical type (the code keeps `canonicalType`)
 **Availability**:
 The values of the parent dimension under which a value is offered: French is offered under Canada, Switzerland and Belgium, and nowhere else. A value with no availability is offered under all of them.
 _UI_: Disponibilité
-_Avoid_: Parent, hierarchy, dependency (the code will keep `parentIds` and `_parents`, which arrive with #1358)
+_Avoid_: Parent, hierarchy, dependency (the code keeps `parentIds`, the name the API and the editor use, stored as `_parents`)
 
 **Design token**:
 A named value that a value carries and a template reads under that name: a brand's main colour as a role, not as `#ffd845`.

@@ -86,6 +86,18 @@ describe('availability', () => {
     );
   });
 
+  it('answers the availability as parentIds, the name the request takes', async () => {
+    const french = await addValue('language', {
+      label: 'Français',
+      parentIds: [idOf(canada)],
+    });
+
+    const answered = JSON.parse(JSON.stringify(french));
+
+    expect(answered.parentIds).toEqual([idOf(canada)]);
+    expect(answered).not.toHaveProperty('_parents');
+  });
+
   it('narrows the availability of a value', async () => {
     const french = await addValue('language', {
       label: 'Français',

@@ -47,6 +47,28 @@ describe('fakeCollection — with a schema', () => {
     expect(created.toJSON()).toMatchObject({ group: stored._company });
   });
 
+  it("applies the schema's JSON transform", async () => {
+    const hidden = fakeCollection({
+      schema: new Schema(
+        { label: String, secret: String },
+        {
+          toJSON: {
+            transform: (doc, json) => {
+              delete json.secret;
+              return json;
+            },
+          },
+        }
+      ),
+    });
+
+    const created = await hidden.create({ label: 'Canada', secret: 'x' });
+
+    expect(created.toJSON()).toMatchObject({ label: 'Canada' });
+    expect(created.toJSON()).not.toHaveProperty('secret');
+    expect(created.secret).toBe('x');
+  });
+
   it('refuses what the schema refuses, with its ValidationError', async () => {
     await expect(
       values.create({ _company: A, kind: 'audience', label: 'VIP' })

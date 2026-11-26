@@ -152,7 +152,7 @@ export default {
             canonicalType: item.canonicalType || null,
             isActive: item.isActive !== false,
             order: typeof item.order === 'number' ? item.order : 0,
-            parentIds: (item._parents || []).map(String),
+            parentIds: (item.parentIds || []).map(String),
             tokens: { ...(item.tokens || {}) },
           }
         : { ...emptyItem(), order: suggestedOrder, parentIds: [], tokens: {} };

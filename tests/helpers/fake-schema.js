@@ -96,6 +96,10 @@ function fakeSchema(schema) {
       toJSON: !!schema.options.toJSON?.virtuals,
       toObject: !!schema.options.toObject?.virtuals,
     },
+    jsonTransform:
+      typeof schema.options.toJSON?.transform === 'function'
+        ? schema.options.toJSON.transform
+        : null,
     defaultsOf,
     validated,
     castUpdate,

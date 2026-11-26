@@ -2,8 +2,9 @@
 
 /**
  * A Mongoose document of an in-memory fake model (fake-collection.js): the
- * fields it was read with, and `id`, `save()`, `toObject()`, `toJSON()` and
- * the schema's aliases (`group` for `_company`), non-enumerable so a test
+ * fields it was read with, and `id`, `save()`, `toObject()`, `toJSON()` (with
+ * the schema's transform) and the schema's aliases (`group` for `_company`),
+ * non-enumerable so a test
  * comparing it with `toEqual` sees data.
  *
  * Never the stored record itself: changing a document without saving it
@@ -86,10 +87,15 @@ function fakeDocument(record, { schema, save }) {
         schema?.virtualsIn.toObject ? withVirtuals(data()) : data(),
     },
     // Without a schema to say otherwise, every model of this codebase asks
-    // for its virtuals in JSON.
+    // for its virtuals in JSON. The schema's transform runs last, and what it
+    // returns replaces the JSON unless it returns nothing, as in Mongoose.
     toJSON: {
-      value: () =>
-        !schema || schema.virtualsIn.toJSON ? withVirtuals(data()) : data(),
+      value: () => {
+        const json =
+          !schema || schema.virtualsIn.toJSON ? withVirtuals(data()) : data();
+        const transform = schema?.jsonTransform;
+        return (transform && transform(document, json)) ?? json;
+      },
     },
     markModified: { value: () => {} },
   });

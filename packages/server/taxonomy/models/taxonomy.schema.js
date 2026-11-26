@@ -31,6 +31,8 @@ const {
  * @apiSuccess {String} canonicalType optional mapping onto the AI skills vocabulary
  * @apiSuccess {Boolean} isActive
  * @apiSuccess {Number} order
+ * @apiSuccess {String[]} parentIds the availability: the values of the parent
+ *   dimension it is offered under, all of them when empty
  * @apiSuccess {Object} group the company it belongs to
  */
 
@@ -88,8 +90,12 @@ const TaxonomyItemSchema = Schema(
       default: 0,
     },
     // The availability: the values of the parent dimension this value is
-    // offered under. Empty: offered under all of them.
-    _parents: [{ type: ObjectId, ref: TaxonomyItemModel }],
+    // offered under. Empty: offered under all of them. Answered as `parentIds`,
+    // the name the request and the editor use.
+    _parents: {
+      type: [{ type: ObjectId, ref: TaxonomyItemModel }],
+      alias: 'parentIds',
+    },
     // Design tokens a template reads under their name (`_root_.mainColorVar`):
     // a brand's colour as a role, not as `#ffd845`. The service checks the
     // names and the count.
@@ -98,7 +104,19 @@ const TaxonomyItemSchema = Schema(
       of: { type: String, maxlength: TaxonomyLimits.TOKEN_VALUE },
     },
   },
-  { timestamps: true, toJSON: { virtuals: true }, toObject: { virtuals: true } }
+  {
+    timestamps: true,
+    toJSON: {
+      virtuals: true,
+      // The availability is answered under its alias only, the name the
+      // request takes: one name per field in the API.
+      transform: (doc, json) => {
+        delete json._parents;
+        return json;
+      },
+    },
+    toObject: { virtuals: true },
+  }
 );
 
 // Two companies may use the same label; one company may not use it twice for the
