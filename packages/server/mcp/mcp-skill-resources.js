@@ -59,6 +59,23 @@ function asMarkdown(found, readableIds = []) {
   ].join('\n');
 }
 
+/**
+ * A skill the company is served, as Markdown, with the expertises to read
+ * first among those it may read; null when it is not served to it. Read
+ * through its resource, and through `fetch` (mcp-search.js).
+ */
+async function readableSkill(skillId, group, drafts = false) {
+  const found = await servedSkill(skillId, group, drafts);
+  if (!found) return null;
+  const readable = await expertises.consumedExpertises(
+    found.version.consumedExpertiseIds,
+    group,
+    { drafts }
+  );
+  const readableIds = readable.map(({ doc }) => doc.expertiseId);
+  return { found, text: asMarkdown(found, readableIds) };
+}
+
 function asResource({ doc, version, draft }) {
   const lastModified = lastModifiedOf(version);
   return {
@@ -86,21 +103,11 @@ function registerSkillResources(server) {
       mimeType: 'text/markdown',
     },
     withIdentity(async ({ group, drafts }, uri, { skillId }) => {
-      const found = await servedSkill(skillId, group, drafts);
-      if (!found) throw new ResourceNotFoundError(uri.href);
-      const readable = await expertises.consumedExpertises(
-        found.version.consumedExpertiseIds,
-        group,
-        { drafts }
-      );
-      const readableIds = readable.map(({ doc }) => doc.expertiseId);
+      const read = await readableSkill(skillId, group, drafts);
+      if (!read) throw new ResourceNotFoundError(uri.href);
       return {
         contents: [
-          {
-            uri: uri.href,
-            mimeType: 'text/markdown',
-            text: asMarkdown(found, readableIds),
-          },
+          { uri: uri.href, mimeType: 'text/markdown', text: read.text },
         ],
       };
     })
@@ -207,4 +214,4 @@ function registerFindSkills(server) {
   );
 }
 
-module.exports = { registerSkillResources, registerFindSkills };
+module.exports = { registerSkillResources, registerFindSkills, readableSkill };

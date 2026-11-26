@@ -38,7 +38,7 @@ describe('addressed retex date', () => {
   afterEach(() => harness.disconnect());
 
   // Turned on by #1670 (an addressed retex says when)
-  describe.skip('when a publication addresses a retex', () => {
+  describe('when a publication addresses a retex', () => {
     it('gives the date it was addressed, in UTC, and none to an open one', async () => {
       const client = await asConsultant();
       const { retexId } = await call(client, 'report_retex', {

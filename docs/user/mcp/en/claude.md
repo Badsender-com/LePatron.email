@@ -33,7 +33,7 @@ In a conversation, turn LePatron on with the **+** button, then **Connectors**. 
 
 ### Stop confirming each read
 
-Claude, not LePatron, asks you to allow each call of a tool. LePatron only tells it which tools merely read. In Claude's settings of the LePatron connector, allow the reading tools (`find_skills`, `find_applicable_expertises`, `search`, `fetch`, `list_mailings`, `get_mailing`…) once and for all, and keep the confirmation for those that write (`report_retex`, `submit_feedback`, the drafts and the publication).
+Claude, not LePatron, asks you to allow each call of a tool. LePatron only tells it which tools merely read. In Claude's settings of the LePatron connector, allow the reading tools (`find_skills`, `find_applicable_expertises`, `list_changes`, `search`, `fetch`, `list_mailings`, `get_mailing`…) once and for all, and keep the confirmation for those that write (`report_retex`, `submit_feedback`, the drafts and the publication).
 
 ## Claude Code
 
