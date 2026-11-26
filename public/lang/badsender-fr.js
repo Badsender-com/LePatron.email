@@ -453,6 +453,7 @@ module.exports = {
   'block-builder-delete-row': 'Supprimer la ligne',
   'block-builder-add-row': 'Ajouter une ligne',
   'block-builder-row-limit': 'Un bloc compte au plus __max__ lignes.',
+  'block-builder-row-limit-reached': '__max__ lignes au maximum',
   'block-builder-too-many-rows':
     "Cette composition dépasse __max__ lignes et ne pourrait pas être relue. Supprimez des lignes avant d'appliquer.",
   'block-builder-structure': 'Structure de la ligne',

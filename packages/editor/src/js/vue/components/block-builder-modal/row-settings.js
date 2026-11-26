@@ -61,6 +61,8 @@ const ROW_LABEL_KEYS = [
   'block-builder-row-label-empty-one',
   'block-builder-elements-folded',
   'block-builder-elements-folded-one',
+  'block-builder-row-limit',
+  'block-builder-row-limit-reached',
 ];
 
 const sameWidths = (a, b) =>
@@ -118,10 +120,13 @@ const RowSettingsMixin = {
       return MAX_ROWS;
     },
 
-    rowLimitHintId() {
-      return `bb-row-limit-${this._uid}`;
+    // At the limit, the greyed-out button says why itself: a tooltip is all a
+    // pointer gets, and a keyboard or a touch screen never shows it.
+    addRowLabel() {
+      return this.rowLimitReached
+        ? this.vm.t('block-builder-row-limit-reached', { max: MAX_ROWS })
+        : `+ ${this.vm.t('block-builder-add-row')}`;
     },
-
 
     foldedMessage() {
       const notice = this.foldedNotice;

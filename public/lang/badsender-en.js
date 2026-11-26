@@ -438,6 +438,7 @@ module.exports = {
   'block-builder-delete-row': 'Delete the row',
   'block-builder-add-row': 'Add a row',
   'block-builder-row-limit': 'A block holds at most __max__ rows.',
+  'block-builder-row-limit-reached': '__max__ rows at most',
   'block-builder-too-many-rows':
     'This composition has more than __max__ rows and could not be read back. Remove rows before applying.',
   'block-builder-structure': 'Row structure',

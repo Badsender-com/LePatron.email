@@ -83,26 +83,47 @@ describe('"Add a row"', () => {
     expect(button.getAttribute('title')).toBe('block-builder-row-limit');
   });
 
+  it('is named "Add a row" below the limit', async () => {
+    await withRows(MAX_ROWS - 1);
+
+    const button = document.querySelector('.bb-modal__add-row');
+    expect(button.textContent.trim()).toBe('+ block-builder-add-row');
+  });
+
   it('is enabled below the limit', async () => {
     await withRows(MAX_ROWS - 1);
 
     const button = document.querySelector('.bb-modal__add-row');
     expect(button.disabled).toBe(false);
     expect(button.hasAttribute('title')).toBe(false);
+  });
+
+  // A tooltip is all a pointer gets: a keyboard or a touch screen never shows
+  // it. The greyed-out button says the limit itself, with nothing beside it.
+  it(`says the limit as its label at ${MAX_ROWS} rows`, async () => {
+    await withRows(MAX_ROWS);
+
+    const button = document.querySelector('.bb-modal__add-row');
+    expect(button.textContent.trim()).toBe('block-builder-row-limit-reached');
     expect(button.hasAttribute('aria-describedby')).toBe(false);
     expect(document.querySelector('.bb-modal__row-limit')).toBeNull();
   });
 
-  // A tooltip is all a pointer gets: a keyboard or a touch screen never shows
-  // it. The reason is written under the button, which it describes.
-  it(`says why it is disabled, under it, at ${MAX_ROWS} rows`, async () => {
-    await withRows(MAX_ROWS);
+  it(`reads "${MAX_ROWS} lignes au maximum" in French`, async () => {
+    const t = (key, params) =>
+      Object.keys(params || {}).reduce(
+        (text, name) => text.replace(`__${name}__`, params[name]),
+        fr[key] || key
+      );
+    const context = open(null, { t });
+    context.modal.state.rows.splice(0, 1, ...rows(MAX_ROWS));
+    await Vue.nextTick();
 
     const button = document.querySelector('.bb-modal__add-row');
-    const hint = document.querySelector('.bb-modal__row-limit');
-    expect(hint.textContent.trim()).toBe('block-builder-row-limit');
-    expect(button.nextElementSibling).toBe(hint);
-    expect(button.getAttribute('aria-describedby')).toBe(hint.id);
+    expect(button.textContent.trim()).toBe(`${MAX_ROWS} lignes au maximum`);
+    expect(button.getAttribute('title')).toBe(
+      `Un bloc compte au plus ${MAX_ROWS} lignes.`
+    );
   });
 
   it(`adds nothing past ${MAX_ROWS} rows`, async () => {
@@ -151,11 +172,12 @@ describe('Apply', () => {
 });
 
 describe('the limit is said in both languages', () => {
-  it.each([['block-builder-row-limit'], ['block-builder-too-many-rows']])(
-    '%s names the limit in French and English',
-    (key) => {
-      expect(fr[key]).toContain('__max__');
-      expect(en[key]).toContain('__max__');
-    }
-  );
+  it.each([
+    ['block-builder-row-limit'],
+    ['block-builder-row-limit-reached'],
+    ['block-builder-too-many-rows'],
+  ])('%s names the limit in French and English', (key) => {
+    expect(fr[key]).toContain('__max__');
+    expect(en[key]).toContain('__max__');
+  });
 });
