@@ -14,7 +14,6 @@ import {
   TAXONOMY_LIMITS,
 } from '../../shared/taxonomy/constants.js';
 import { compareDimensions } from '../../shared/taxonomy/sort.js';
-import { TAXONOMY_LIMITS } from './taxonomy.js';
 
 /**
  * The two standard dimensions, in the order the screen lists them, and the

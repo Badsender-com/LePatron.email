@@ -8,7 +8,7 @@ const { loadVueComponent } = require('../load-vue-component.js');
 const component = loadVueComponent('components/group/taxonomy-dimensions.vue', {
   vuex: { mapMutations: () => ({}) },
 });
-const { request, saveDimension } = component.methods;
+const { request, saveDimension, declareDimension } = component.methods;
 
 const screen = (dimensions = []) => {
   const vm = {
@@ -23,6 +23,7 @@ const screen = (dimensions = []) => {
     reportError: jest.fn(),
   };
   vm.request = request.bind(vm);
+  vm.declareDimension = declareDimension.bind(vm);
   return vm;
 };
 
