@@ -174,12 +174,12 @@ async function deleteTaxonomyItem({ user, itemId }) {
   const item = await findScopedItem({ user, itemId });
 
   // Scoped by company as well as by item: an email can only ever reference a
-  // typology of its own company — `transferToUser` clears `_emailType` when a
-  // transfer moves the mailing (mailing.controller.js). The email type has its
-  // own field on the email, and the count serves the `{_company, _emailType}`
-  // index; every other dimension's value sits in the one list (ADR-0032),
-  // whose `{_company, _taxonomyItems}` index arrives with #1369. Until then
-  // that count scans the company's emails.
+  // value of its own company — `transferToUser` clears `_emailType` and
+  // `_taxonomyItems` when a transfer moves the mailing to another company
+  // (mailing.controller.js). The email type has its own field on the email, and
+  // the count serves the `{_company, _emailType}` index; every other
+  // dimension's value sits in the one list (ADR-0032), counted through the
+  // `{_company, _taxonomyItems}` index.
   const usageCount = await Mailings.countDocuments({
     _company: item._company,
     ...(item.type === StandardDimensions.EMAIL_TYPE
