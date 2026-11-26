@@ -108,6 +108,18 @@ function skill(skillId, title, versions, fields = {}) {
 
 const opened = (iso) => ({ audience: 'all', at: at(iso), _by: f.ALICE });
 const closed = (iso) => ({ audience: 'platform', at: at(iso), _by: f.ALICE });
+const archived = (iso, audience = 'all') => ({
+  audience,
+  archived: true,
+  at: at(iso),
+  _by: f.ALICE,
+});
+const republished = (iso, audience = 'all') => ({
+  audience,
+  archived: false,
+  at: at(iso),
+  _by: f.ALICE,
+});
 
 const EXPERTISES = [
   expertise(
@@ -180,7 +192,11 @@ const EXPERTISES = [
     'redaction.retired',
     'Retired rules',
     [version('1.0', 'ARCHIVED', { activatedAt: at('2026-09-01T08:00:00Z') })],
-    { status: 'ARCHIVED', archivedAt: at('2026-11-21T08:00:00Z') }
+    {
+      status: 'ARCHIVED',
+      archivedAt: at('2026-11-21T08:00:00Z'),
+      audienceHistory: [archived('2026-11-21T08:00:00Z')],
+    }
   ),
   expertise('deliverability.spam-words', 'Spam words', [
     version('1.0', 'ACTIVE', { activatedAt: at('2026-10-10T08:00:00Z') }),
@@ -242,4 +258,9 @@ module.exports = {
   GENERIC_NOTE,
   version,
   expertise,
+  skill,
+  opened,
+  closed,
+  archived,
+  republished,
 };

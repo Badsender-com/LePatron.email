@@ -432,9 +432,13 @@ async function writeDraftIfUnchanged(doc, version, patch, userId) {
  */
 async function archiveSkill(skillId, options = {}) {
   let warnings = [];
-  const skill = await versioned.archive(skillId, (doc) => {
-    warnings = archiveUsage('skill', doc, options);
-  });
+  const skill = await versioned.archive(
+    skillId,
+    (doc) => {
+      warnings = archiveUsage('skill', doc, options);
+    },
+    options.userId
+  );
   return { skill, warnings };
 }
 

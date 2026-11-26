@@ -3,8 +3,8 @@
 /**
  * The catalog changes of an item, as a company sees them (ADR 0031): each
  * version published, created or updated, dated by its publication; each
- * opening to every company and each withdrawal, by its audience history and
- * its archiving. A company other than the platform company sees an item only
+ * opening to every company and each withdrawal, by its audience history,
+ * archivings and republications included (`audience-spans.js`). A company other than the platform company sees an item only
  * while it was open to every company: its opening is when the item appears,
  * created, after a withdrawal too; a version published while the
  * item was kept to the platform company is never one of its changes.
@@ -20,6 +20,10 @@ const {
   changeLogOf,
 } = require('../ai-skill/services/release-texts.js');
 const { Audiences } = require('../ai-skill/constant/skill-constants.js');
+const {
+  audienceSteps,
+  openSpans,
+} = require('../ai-skill/services/audience-spans.js');
 const { isoOf } = require('./mcp-catalog-dates.js');
 
 const time = (date) => new Date(date).getTime();
@@ -29,35 +33,6 @@ function publications(item) {
   return (item.versions || [])
     .filter((version) => version.activatedAt)
     .sort((a, b) => time(a.activatedAt) - time(b.activatedAt));
-}
-
-/**
- * When an item was open to every company: spans from an opening to a
- * withdrawal, `-Infinity` when it was open before anything recorded, and
- * `Infinity` while it still is. Before its first recorded change, an item
- * stood at the other audience; with none recorded, at its own all along.
- * Its archiving ends what is open.
- */
-function openSpans(item) {
-  const history = [...(item.audienceHistory || [])].sort(
-    (a, b) => time(a.at) - time(b.at)
-  );
-  let open = history.length
-    ? history[0].audience !== Audiences.ALL
-    : item.audience === Audiences.ALL;
-  let from = -Infinity;
-  const spans = [];
-  history.forEach((change) => {
-    const opens = change.audience === Audiences.ALL;
-    if (opens && !open) from = time(change.at);
-    if (!opens && open) spans.push({ from, to: time(change.at) });
-    open = opens;
-  });
-  if (open) spans.push({ from, to: Infinity });
-  const end = item.archivedAt ? time(item.archivedAt) : Infinity;
-  return spans
-    .map((span) => ({ ...span, to: Math.min(span.to, end) }))
-    .filter((span) => span.from < span.to);
 }
 
 // A version published as the item opened is told by the opening.
@@ -91,24 +66,31 @@ function publicationChanges(item, { everyAudience }) {
 }
 
 /**
+ * What the platform company is told of a step of the history: a change of
+ * audience while the item is not archived, an archiving, and a
+ * republication of an item open to every company.
+ */
+function platformChangeOf({ archiving, before, after }) {
+  if (archiving) {
+    if (after.archived) return 'withdrawn';
+    return after.audience === Audiences.ALL ? 'opened' : null;
+  }
+  if (before.archived) return null;
+  return after.audience === Audiences.ALL ? 'opened' : 'withdrawn';
+}
+
+/**
  * The openings and withdrawals a reader sees: the platform company each
- * change of audience and the archiving; another company the start of each
+ * change of audience and each archiving; another company the start of each
  * span it was open to it, as a creation, and each end: it never learns that
  * an item existed before it was opened, nor that it was opened again.
  */
 function audienceChanges(item, { everyAudience }) {
   if (everyAudience) {
-    const changes = (item.audienceHistory || []).map((change) => ({
-      change: change.audience === Audiences.ALL ? 'opened' : 'withdrawn',
-      at: time(change.at),
-    }));
-    if (item.archivedAt) {
-      changes.push({ change: 'withdrawn', at: time(item.archivedAt) });
-    }
-    return changes.map((found) => ({
-      ...found,
-      version: versionAt(item, found.at),
-    }));
+    return audienceSteps(item)
+      .steps.map((step) => ({ change: platformChangeOf(step), at: step.at }))
+      .filter(({ change }) => change)
+      .map((found) => ({ ...found, version: versionAt(item, found.at) }));
   }
   return openSpans(item).flatMap((span) => [
     ...(span.from > -Infinity && versionAt(item, span.from)
@@ -204,4 +186,4 @@ function changesOf(kind, item, reader, { since, until }) {
   ];
 }
 
-module.exports = { changesOf, openSpans, publications };
+module.exports = { changesOf, publications };

@@ -629,5 +629,67 @@ describe.each(ENTITIES)('versioned lifecycle — $label', (entity) => {
       expect(doc.versions[0].status).toBe('ACTIVE');
       expect(doc.save).toHaveBeenCalled();
     });
+
+    // Withdrawn from every company that read it, and kept (ADR 0031).
+    it('dates the archiving and keeps it in the history, with who did it', async () => {
+      build({ versions: [makeVersion({ status: 'ACTIVE' })] });
+      doc.status = 'ACTIVE';
+      doc.audience = 'all';
+
+      await service.archive('an-id', null, USER_ID);
+
+      expect(doc.archivedAt).toBeInstanceOf(Date);
+      expect(doc.audienceHistory).toEqual([
+        { audience: 'all', archived: true, at: doc.archivedAt, _by: USER_ID },
+      ]);
+    });
+
+    it('keeps the date of the first archiving when archived again', async () => {
+      build({ versions: [makeVersion({ status: 'ACTIVE' })] });
+      const first = new Date('2026-11-10T08:00:00Z');
+      Object.assign(doc, {
+        status: 'ARCHIVED',
+        archivedAt: first,
+        audienceHistory: [],
+      });
+
+      await service.archive('an-id', null, USER_ID);
+
+      expect(doc.archivedAt).toBe(first);
+      expect(doc.audienceHistory).toEqual([]);
+    });
+
+    it('clears the archiving of an item published again, and keeps its return', async () => {
+      build({
+        versions: [
+          makeVersion({ status: 'ACTIVE' }),
+          makeVersion({ versionMinor: 1, status: 'DRAFT' }),
+        ],
+      });
+      Object.assign(doc, {
+        status: 'ARCHIVED',
+        audience: 'all',
+        archivedAt: new Date('2026-11-10T08:00:00Z'),
+        audienceHistory: [],
+      });
+
+      await service.activateVersion(
+        'an-id',
+        { major: 1, minor: 1 },
+        { changelog: 'c', releaseNotes: 'r' },
+        USER_ID
+      );
+
+      expect(doc.status).toBe('ACTIVE');
+      expect(doc.archivedAt).toBeNull();
+      expect(doc.audienceHistory).toEqual([
+        {
+          audience: 'all',
+          archived: false,
+          at: doc.versions[1].activatedAt,
+          _by: USER_ID,
+        },
+      ]);
+    });
   });
 });

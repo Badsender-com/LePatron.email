@@ -329,6 +329,90 @@ describe('list_changes', () => {
       ).toEqual(['created']);
     });
 
+    // Archived on the 17th, published again in 1.1 on the 20th: it comes
+    // back for whoever reads it, as find_applicable_expertises serves it.
+    describe('an item archived, then published again', () => {
+      beforeEach(() =>
+        harness.seed({
+          ...s.SEED,
+          expertises: [
+            s.expertise(
+              'redaction.come-back',
+              'Come back',
+              [
+                s.version('1.0', 'ARCHIVED', {
+                  activatedAt: new Date('2026-10-01T08:00:00Z'),
+                }),
+                s.version('1.1', 'ACTIVE', {
+                  activatedAt: new Date('2026-11-20T08:00:00Z'),
+                  releaseNotes: 'Back, shorter.',
+                  changelog: 'Rewritten',
+                }),
+              ],
+              {
+                audienceHistory: [
+                  s.archived('2026-11-17T08:00:00Z'),
+                  s.republished('2026-11-20T08:00:00Z'),
+                ],
+              }
+            ),
+          ],
+          skills: [],
+        })
+      );
+
+      it('shows a client its withdrawal, then its return as a creation', async () => {
+        const answer = await call(await asClient(), WEEK);
+
+        expect(summary(answer)).toEqual([
+          '2026-11-17 withdrawn redaction.come-back',
+          '2026-11-20 created redaction.come-back',
+        ]);
+        expect(answer.changes[1]).toMatchObject({
+          toVersion: '1.1',
+          uri: 'lepatron://expertises/redaction.come-back',
+        });
+      });
+
+      it('shows the platform company its withdrawal, its reopening and its new version', async () => {
+        const answer = await call(await asConsultant(), WEEK);
+
+        expect(summary(answer)).toEqual([
+          '2026-11-17 withdrawn redaction.come-back',
+          '2026-11-20 updated redaction.come-back',
+          '2026-11-20 opened redaction.come-back',
+        ]);
+      });
+    });
+
+    it('tells the platform company one opening when the history says it twice', async () => {
+      harness.seed({
+        ...s.SEED,
+        expertises: [
+          s.expertise(
+            'redaction.twice',
+            'Twice',
+            [
+              s.version('1.0', 'ACTIVE', {
+                activatedAt: new Date('2026-10-01T08:00:00Z'),
+              }),
+            ],
+            {
+              audienceHistory: [
+                s.opened('2026-11-17T08:00:00Z'),
+                s.opened('2026-11-18T08:00:00Z'),
+              ],
+            }
+          ),
+        ],
+        skills: [],
+      });
+
+      const answer = await call(await asConsultant(), WEEK);
+
+      expect(summary(answer)).toEqual(['2026-11-17 opened redaction.twice']);
+    });
+
     it('records the opening and the withdrawal set from an assistant', async () => {
       const client = await harness.connectAs(f.ALICE, {
         group: f.PLATFORM_GROUP,

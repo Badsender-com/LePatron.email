@@ -254,9 +254,13 @@ const {
  */
 async function archiveExpertise(expertiseId, { userId } = {}) {
   let warnings = [];
-  const expertise = await versioned.archive(expertiseId, (doc) => {
-    warnings = archiveUsage('expertise', doc, { userId });
-  });
+  const expertise = await versioned.archive(
+    expertiseId,
+    (doc) => {
+      warnings = archiveUsage('expertise', doc, { userId });
+    },
+    userId
+  );
   return { expertise, warnings };
 }
 

@@ -46,7 +46,7 @@ const {
   saveIfUnchanged,
 } = require('./versioned-draft.js');
 const { assertReleaseTexts } = require('./release-texts.js');
-const { setAudience } = require('./audience-history.js');
+const { setAudience, setArchived } = require('./audience-history.js');
 
 /**
  * @param {Object} options
@@ -416,7 +416,9 @@ function createVersionedEntityService({
       major: version.versionMajor,
       minor: version.versionMinor,
     };
-    doc.status = SkillStatuses.ACTIVE;
+    // An archived item published again is back for whoever reads it, its
+    // return kept in its history (ADR 0031).
+    setArchived(doc, false, userId, now);
     // Opened in the same write, its opening dated with the publication.
     if (payload.openToAll === true)
       setAudience(doc, Audiences.ALL, userId, now);
@@ -431,12 +433,12 @@ function createVersionedEntityService({
 
   // `before`, given the item as read, may refuse or record on it what the
   // archive does, saved with it.
-  async function archive(id, before) {
+  async function archive(id, before, userId) {
     const doc = await getDoc(id);
     if (before) before(doc);
-    doc.status = SkillStatuses.ARCHIVED;
-    // Withdrawn from every company that read it (ADR 0031).
-    doc.archivedAt = new Date();
+    // Withdrawn from every company that read it, and kept in its history
+    // (ADR 0031); archived again, it stays dated by its first archiving.
+    setArchived(doc, true, userId);
     await doc.save();
     return doc;
   }
