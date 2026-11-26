@@ -6,12 +6,14 @@
 // listed in, what each one allows, what a dimension may hang under) lives in pure
 // helpers, tested here, the way the rest of packages/ui is tested.
 
+// Orders as a company gets them: the standard dimensions seeded at 10 and 20,
+// then each declared dimension at the next order (brand, market, language).
 const EMAIL_TYPE = {
   name: 'emailType',
   label: 'Typologie',
   standard: true,
   isActive: true,
-  order: 50,
+  order: 10,
   precedence: 40,
 };
 const TRIGGER = {
@@ -19,7 +21,7 @@ const TRIGGER = {
   label: 'Déclenchement',
   standard: true,
   isActive: true,
-  order: 60,
+  order: 20,
   precedence: 0,
 };
 const MARKET = {
@@ -27,7 +29,7 @@ const MARKET = {
   label: 'Marché',
   standard: false,
   isActive: true,
-  order: 10,
+  order: 22,
   precedence: 20,
 };
 const LANGUAGE = {
@@ -35,7 +37,7 @@ const LANGUAGE = {
   label: 'Langue',
   standard: false,
   isActive: true,
-  order: 20,
+  order: 23,
   precedence: 30,
   parentName: 'market',
 };
@@ -44,7 +46,7 @@ const BRAND = {
   label: 'Marque',
   standard: false,
   isActive: true,
-  order: 5,
+  order: 21,
   precedence: 10,
 };
 
@@ -68,7 +70,12 @@ describe('taxonomy screen: standard dimensions', () => {
   it('lists the standard dimensions by their order, like any other', () => {
     expect(
       sortDimensions([MARKET, TRIGGER, BRAND, EMAIL_TYPE]).map((d) => d.name)
-    ).toEqual(['brand', 'market', 'emailType', 'trigger']);
+    ).toEqual(['emailType', 'trigger', 'brand', 'market']);
+    expect(
+      sortDimensions([MARKET, TRIGGER, { ...BRAND, order: 5 }, EMAIL_TYPE]).map(
+        (d) => d.name
+      )
+    ).toEqual(['brand', 'emailType', 'trigger', 'market']);
   });
 
   it('locks a standard dimension: no rename, no deactivation, no deletion', () => {

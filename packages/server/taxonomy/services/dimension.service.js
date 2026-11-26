@@ -64,10 +64,9 @@ async function listDimensions({ user, groupId, lang }) {
  * Declare a dimension of the company. Its name is what templates read, and it
  * is write-once (ADR-0015).
  *
- * A name that differs from one the company already has only by its case
- * (`Market` next to `market`) is almost always a typo, and a lasting one: the
- * editor would show two lists, and a template reads one exact name. It is
- * refused until the request confirms it with `confirmCaseVariant: true`.
+ * Without an order, it takes the next one in the company: a dimension declared
+ * through the API lands after the others, as one declared on the screen does,
+ * rather than at 0, before the standard ones.
  */
 async function createDimension({ user, groupId, payload = {} }) {
   logger.log('dimensionService:createDimension');
@@ -84,35 +83,21 @@ async function createDimension({ user, groupId, payload = {} }) {
   // dimensions meets the standard one rather than shadowing it.
   await seedStandardDimensions({ companyId, lang: user?.lang });
 
-  // Deactivated dimensions included: they still hold a name and a place on
-  // the screen.
-  const existingNames = (
-    await TaxonomyDimensions.find({ _company: companyId })
-      .select({ name: 1 })
-      .lean()
-  ).map((dimension) => dimension.name);
-
-  if (existingNames.includes(name)) {
-    throw new Conflict(ERROR_CODES.DIMENSION_NAME_ALREADY_EXISTS);
-  }
+  const existing = await assertNameIsFree({
+    companyId,
+    name,
+    confirmCaseVariant,
+  });
   // The standard dimensions count. Not atomic with the insert, like the cap
   // on values: a race lands one dimension past it, which bounds the screen
   // just as well.
-  if (existingNames.length >= TaxonomyLimits.DIMENSIONS_PER_COMPANY) {
+  if (existing.length >= TaxonomyLimits.DIMENSIONS_PER_COMPANY) {
     throw limitReached(TaxonomyLimits.DIMENSIONS_PER_COMPANY);
-  }
-  const caseVariant = existingNames.find(
-    (existing) => existing.toLowerCase() === name.toLowerCase()
-  );
-  if (caseVariant && !confirmCaseVariant) {
-    const error = new Conflict(ERROR_CODES.DIMENSION_NAME_DIFFERS_ONLY_BY_CASE);
-    // Named, so the admin compares the two before confirming.
-    error.details = { existingName: caseVariant };
-    throw error;
   }
 
   try {
     return await TaxonomyDimensions.create({
+      order: nextOrder(existing),
       ...fields,
       name,
       _company: companyId,
@@ -125,6 +110,49 @@ async function createDimension({ user, groupId, payload = {} }) {
     }
     throw error;
   }
+}
+
+/**
+ * Refuse a name the company already has, and one that differs from an
+ * existing name only by its case unless the admin confirmed it. Deactivated
+ * dimensions count: they still hold a name and a place on the screen.
+ *
+ * `Market` next to `market` is almost always a typo, and a lasting one: the
+ * editor would show two lists, and a template reads one exact name.
+ *
+ * @param {Object} params
+ * @param {ObjectId} params.companyId
+ * @param {string} params.name
+ * @param {boolean} params.confirmCaseVariant
+ * @returns {Promise<Object[]>} the company's dimensions, name and order
+ */
+async function assertNameIsFree({ companyId, name, confirmCaseVariant }) {
+  const existing = await TaxonomyDimensions.find({ _company: companyId })
+    .select({ name: 1, order: 1 })
+    .lean();
+
+  if (existing.some((dimension) => dimension.name === name)) {
+    throw new Conflict(ERROR_CODES.DIMENSION_NAME_ALREADY_EXISTS);
+  }
+  const caseVariant = existing.find(
+    (dimension) => dimension.name.toLowerCase() === name.toLowerCase()
+  );
+  if (caseVariant && !confirmCaseVariant) {
+    const error = new Conflict(ERROR_CODES.DIMENSION_NAME_DIFFERS_ONLY_BY_CASE);
+    // Named, so the admin compares the two before confirming.
+    error.details = { existingName: caseVariant.name };
+    throw error;
+  }
+
+  return existing;
+}
+
+// After the last one, within the company.
+function nextOrder(dimensions) {
+  const orders = dimensions
+    .map((dimension) => dimension.order)
+    .filter((order) => typeof order === 'number' && Number.isFinite(order));
+  return orders.length === 0 ? 0 : Math.max(...orders) + 1;
 }
 
 /**

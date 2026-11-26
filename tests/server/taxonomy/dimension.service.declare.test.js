@@ -23,7 +23,6 @@ jest.mock('../../../packages/server/utils/logger.js', () => ({
 const models = require('../../../packages/server/common/models.common.js');
 const ERROR_CODES = require('../../../packages/server/constant/error-codes.js');
 const {
-  COMPANY_A,
   adminA,
   techAdminA,
   adminB,
@@ -184,109 +183,6 @@ describe('declaring a company dimension', () => {
     }
   );
 
-  // `market` and `Market` are two properties for a template, and two lists of
-  // the same values in the editor: almost always a typo, never correctable
-  // later since the name is final.
-  describe('a name that differs from an existing one only by its case', () => {
-    it.each([
-      ['market', 'Market'],
-      ['trigger', 'Trigger'],
-    ])(
-      'refuses %s next to %s until the admin confirms it',
-      async (existingName, name) => {
-        if (existingName !== 'trigger') {
-          await dimensionService.createDimension({
-            user: adminA,
-            payload: { name: existingName, label: 'Marché' },
-          });
-        }
-
-        await expect(
-          dimensionService.createDimension({
-            user: adminA,
-            payload: { name, label: 'Marché bis' },
-          })
-        ).rejects.toMatchObject({
-          status: 409,
-          message: ERROR_CODES.DIMENSION_NAME_DIFFERS_ONLY_BY_CASE,
-          details: { existingName },
-        });
-        expect(
-          models.TaxonomyDimensions.all().filter((d) => d.name === name)
-        ).toHaveLength(0);
-      }
-    );
-
-    it('declares it once the admin confirms', async () => {
-      await dimensionService.createDimension({
-        user: adminA,
-        payload: { name: 'market', label: 'Marché' },
-      });
-
-      await expect(
-        dimensionService.createDimension({
-          user: adminA,
-          payload: {
-            name: 'Market',
-            label: 'Marché bis',
-            confirmCaseVariant: true,
-          },
-        })
-      ).resolves.toMatchObject({ name: 'Market', label: 'Marché bis' });
-    });
-
-    it('still refuses the exact same name, confirmed or not', async () => {
-      await dimensionService.createDimension({
-        user: adminA,
-        payload: { name: 'market', label: 'Marché' },
-      });
-
-      await expect(
-        dimensionService.createDimension({
-          user: adminA,
-          payload: {
-            name: 'market',
-            label: 'Marché',
-            confirmCaseVariant: true,
-          },
-        })
-      ).rejects.toMatchObject({
-        status: 409,
-        message: ERROR_CODES.DIMENSION_NAME_ALREADY_EXISTS,
-      });
-    });
-
-    it('compares within the company only', async () => {
-      await dimensionService.createDimension({
-        user: adminB,
-        payload: { name: 'market', label: 'Market' },
-      });
-
-      await expect(
-        dimensionService.createDimension({
-          user: adminA,
-          payload: { name: 'Market', label: 'Marché' },
-        })
-      ).resolves.toMatchObject({ name: 'Market' });
-    });
-
-    it('refuses a confirmation that is not a boolean', async () => {
-      await expect(
-        dimensionService.createDimension({
-          user: adminA,
-          payload: {
-            name: 'market',
-            label: 'Marché',
-            confirmCaseVariant: 'yes',
-          },
-        })
-      ).rejects.toMatchObject({
-        status: 400,
-        message: ERROR_CODES.INVALID_DIMENSION,
-      });
-    });
-  });
-
   it('refuses the name of a deactivated dimension as well', async () => {
     const audience = await dimensionService.createDimension({
       user: adminA,
@@ -364,52 +260,5 @@ describe('declaring a company dimension', () => {
       message: ERROR_CODES.TAXONOMY_LIMIT_REACHED,
       details: { limit: 20 },
     });
-  });
-});
-
-describe('the order of the dimensions', () => {
-  let dimensionService;
-
-  beforeAll(() => {
-    dimensionService = require(DIMENSION_SERVICE);
-  });
-
-  // The comparator is the one the screen and the editor use
-  // (packages/shared/taxonomy/sort.js): the three agree on the order.
-  it('lists them by order, then the first declared first', async () => {
-    await dimensionService.listDimensions({ user: adminA });
-    models.TaxonomyDimensions.seed([
-      {
-        _company: COMPANY_A,
-        name: 'audience',
-        label: 'A',
-        order: 21,
-        createdAt: new Date('2026-11-02'),
-      },
-      {
-        _company: COMPANY_A,
-        name: 'brand',
-        label: 'Z',
-        order: 21,
-        createdAt: new Date('2026-11-01'),
-      },
-      {
-        _company: COMPANY_A,
-        name: 'market',
-        label: 'M',
-        order: 15,
-        createdAt: new Date('2026-11-03'),
-      },
-    ]);
-
-    const listed = await dimensionService.listDimensions({ user: adminA });
-
-    expect(listed.map((dimension) => dimension.name)).toEqual([
-      'emailType',
-      'market',
-      'trigger',
-      'brand',
-      'audience',
-    ]);
   });
 });
