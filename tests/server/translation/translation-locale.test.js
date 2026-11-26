@@ -108,6 +108,27 @@ describe('translation source language from the email', () => {
     ).toBe('auto');
   });
 
+  it('falls back to detection when the provider takes no such source language', async () => {
+    await givenLanguageUnderMarket();
+
+    expect(
+      await sourceLanguageFor({
+        mailing: email([belgium, french], {
+          previewHtml: '<html lang="de"><body></body></html>',
+        }),
+        requested: 'auto',
+        sourceLanguages: ['en-gb', 'de', 'nl'],
+      })
+    ).toBe('de');
+    expect(
+      await sourceLanguageFor({
+        mailing: email([belgium, french]),
+        requested: 'auto',
+        sourceLanguages: ['en-gb', 'fr'],
+      })
+    ).toBe('fr');
+  });
+
   it('lets a source language the user chose win', async () => {
     await givenLanguageUnderMarket();
 
@@ -121,7 +142,7 @@ describe('translation source language from the email', () => {
 });
 
 // Turned on by #1507 (the translated copy carries the target language value)
-describe.skip('translated copy: the language value follows', () => {
+describe('translated copy: the language value follows', () => {
   let copyLanguageValues;
 
   beforeAll(() => {

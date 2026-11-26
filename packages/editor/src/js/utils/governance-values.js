@@ -108,8 +108,13 @@ function governanceValues({
     }
   });
 
-  const locale = localeOf(active, chosenBy, wasValued);
-  if (locale !== undefined) values[LOCALE] = locale;
+  // A company dimension named `locale`, declared before the name was reserved
+  // (ADR-0023), keeps it: its templates compare against its identifiers.
+  const ownsLocale = active.some((dimension) => dimension.name === LOCALE);
+  if (!ownsLocale) {
+    const locale = localeOf(active, chosenBy, wasValued);
+    if (locale !== undefined) values[LOCALE] = locale;
+  }
 
   return { values, sources: resolveTokens(carriers, values, all) };
 }
