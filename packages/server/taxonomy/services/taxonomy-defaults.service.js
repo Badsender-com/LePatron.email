@@ -143,8 +143,8 @@ async function addMissingDefaultEmailTypes({ user, groupId, lang }) {
 
   // Same cap as createTaxonomyItem, checked before the write rather than letting
   // six inserts take a company past it one at a time.
-  if (existing.length + toCreate.length > TaxonomyLimits.ITEMS_PER_COMPANY) {
-    throw limitReached(TaxonomyLimits.ITEMS_PER_COMPANY);
+  if (existing.length + toCreate.length > TaxonomyLimits.VALUES_PER_DIMENSION) {
+    throw limitReached(TaxonomyLimits.VALUES_PER_DIMENSION);
   }
 
   const items = toCreate.map((item) => ({

@@ -1,5 +1,13 @@
 'use strict';
 
+const {
+  STANDARD_DIMENSIONS,
+  STANDARD_DIMENSION_NAMES,
+  DIMENSION_NAME_PATTERN,
+  RESERVED_DIMENSION_NAMES,
+  TAXONOMY_LIMITS,
+} = require('../../shared/taxonomy/constants.js');
+
 /**
  * The two standard dimensions (ADR-0032): the doctrine defines them, so every
  * company has them and none can deactivate or delete them. Every other dimension
@@ -9,13 +17,13 @@
  * Only the email type takes values in the taxonomy. The trigger's two values
  * are the doctrine's (constant/email-trigger.js) and a company cannot add a
  * third, so no taxonomy item is ever stored under it.
+ *
+ * Defined in packages/shared/taxonomy/constants.js, which the taxonomy screen
+ * reads too; named here as the server code has always named them.
  */
-const StandardDimensions = Object.freeze({
-  EMAIL_TYPE: 'emailType',
-  TRIGGER: 'trigger',
-});
+const StandardDimensions = STANDARD_DIMENSIONS;
 
-const StandardDimensionNames = Object.freeze(Object.values(StandardDimensions));
+const StandardDimensionNames = STANDARD_DIMENSION_NAMES;
 
 // Kept for the code that only knows the email type: the restore defaults action,
 // the email type select of the metadata.
@@ -24,34 +32,16 @@ const TaxonomyTypes = Object.freeze({
 });
 
 /**
- * A dimension's name is what a template reads (ADR-0015), so it accepts exactly
- * what a template property name accepts, and nothing more. Capitals are allowed:
- * `emailType` is one of the two standard dimensions.
+ * Bounds of the editable fields, read by the Mongoose schemas, the service
+ * validation and the forms alike.
  */
-const DIMENSION_NAME_PATTERN = /^[A-Za-z_][A-Za-z0-9_]*$/;
-
-/**
- * Bounds of the editable fields. Declared here so the Mongoose schema, the service
- * validation and the form all read the same numbers — they were written three
- * times, and three copies of a limit is two chances to disagree.
- */
-const TaxonomyLimits = Object.freeze({
-  LABEL: 120,
-  DESCRIPTION: 2000,
-  CANONICAL_TYPE: 60,
-  // A company describing its own editorial vocabulary needs tens of entries, not
-  // thousands. Bounds both the unpaginated read and the storage. Counted per
-  // dimension: a full dimension leaves the others open.
-  ITEMS_PER_COMPANY: 200,
-  // Same reasoning for the dimensions: a company declines its emails by a
-  // handful of axes, not a hundred.
-  DIMENSIONS_PER_COMPANY: 20,
-});
+const TaxonomyLimits = TAXONOMY_LIMITS;
 
 module.exports = {
   StandardDimensions,
   StandardDimensionNames,
   TaxonomyTypes,
   DIMENSION_NAME_PATTERN,
+  RESERVED_DIMENSION_NAMES,
   TaxonomyLimits,
 };

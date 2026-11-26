@@ -79,8 +79,8 @@ async function createTaxonomyItem({ user, groupId, type, payload = {} }) {
     type: taxonomyType,
   });
 
-  if (existingCount >= TaxonomyLimits.ITEMS_PER_COMPANY) {
-    throw limitReached(TaxonomyLimits.ITEMS_PER_COMPANY);
+  if (existingCount >= TaxonomyLimits.VALUES_PER_DIMENSION) {
+    throw limitReached(TaxonomyLimits.VALUES_PER_DIMENSION);
   }
 
   try {

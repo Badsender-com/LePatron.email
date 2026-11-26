@@ -1,5 +1,6 @@
 import { ERROR_CODES } from '~/helpers/constants/error-codes.js';
 import { EMAIL_TYPES } from '~/helpers/email-types.js';
+import { TAXONOMY_LIMITS } from '../../shared/taxonomy/constants.js';
 
 /**
  * Pure helpers for the taxonomy screens.
@@ -10,15 +11,11 @@ import { EMAIL_TYPES } from '~/helpers/email-types.js';
  */
 
 /**
- * Bounds of the editable fields, mirroring `TaxonomyLimits` in
- * packages/server/constant/taxonomy-type.js. The form tells the user before the
+ * Bounds of the editable fields, the server's own
+ * (packages/shared/taxonomy/constants.js). The form tells the user before the
  * request rather than letting a 400 do it.
  */
-export const TAXONOMY_LIMITS = Object.freeze({
-  LABEL: 120,
-  DESCRIPTION: 2000,
-  CANONICAL_TYPE: 60,
-});
+export { TAXONOMY_LIMITS };
 
 /**
  * The vocabulary a company may map its own typology onto — the six Badsender

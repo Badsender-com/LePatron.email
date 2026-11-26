@@ -245,32 +245,23 @@ describe('buildTaxonomyPayload', () => {
 });
 
 describe('TAXONOMY_LIMITS', () => {
-  // Compared to the server constant rather than to a copy of its numbers: the
-  // form must refuse exactly what the API refuses, and pinning both sides by hand
-  // means a server-side change leaves this green while the two have drifted.
-  it('matches the server-side bounds', () => {
-    expect(TAXONOMY_LIMITS).toEqual({
-      LABEL: TaxonomyLimits.LABEL,
-      DESCRIPTION: TaxonomyLimits.DESCRIPTION,
-      CANONICAL_TYPE: TaxonomyLimits.CANONICAL_TYPE,
-    });
+  // The same object, not a copy of its numbers: the form must refuse exactly
+  // what the API refuses, and both read packages/shared/taxonomy/constants.js.
+  it('is the server-side bounds', () => {
+    expect(TAXONOMY_LIMITS).toBe(TaxonomyLimits);
   });
 
-  // Pinned as well as compared: the assertion above stays green if both sides are
-  // changed together by accident, and these three bounds are a product decision.
+  // Pinned as well: the assertion above stays green if the shared file is
+  // changed by accident, and these bounds are a product decision.
   it('holds the bounds the product defines', () => {
     expect(TAXONOMY_LIMITS).toEqual({
       LABEL: 120,
       DESCRIPTION: 2000,
       CANONICAL_TYPE: 60,
+      DIMENSION_NAME: 60,
+      VALUES_PER_DIMENSION: 200,
+      DIMENSIONS_PER_COMPANY: 20,
     });
-  });
-
-  // The cap has no UI counterpart to compare against — it only ever surfaces as
-  // a 409 — so it is pinned here to keep it in sight of the other three.
-  it('leaves the per-company cap to the server alone', () => {
-    expect(TAXONOMY_LIMITS.ITEMS_PER_COMPANY).toBeUndefined();
-    expect(TaxonomyLimits.ITEMS_PER_COMPANY).toBe(200);
   });
 });
 

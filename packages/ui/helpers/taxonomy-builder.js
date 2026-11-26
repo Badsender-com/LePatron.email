@@ -6,14 +6,21 @@
  * `@vue/test-utils`.
  */
 
+import {
+  STANDARD_DIMENSIONS,
+  EMAIL_TRIGGER_VALUES,
+  DIMENSION_NAME_PATTERN,
+  TAXONOMY_LIMITS,
+} from '../../shared/taxonomy/constants.js';
+
 /**
- * The two standard dimensions, in the order the screen lists them, mirroring
- * `StandardDimensions` in packages/server/constant/taxonomy-type.js.
+ * The two standard dimensions, in the order the screen lists them, and the
+ * bounds of a company's taxonomy: the server's own
+ * (packages/shared/taxonomy/constants.js).
  */
-export const STANDARD_DIMENSIONS = Object.freeze({
-  EMAIL_TYPE: 'emailType',
-  TRIGGER: 'trigger',
-});
+export { STANDARD_DIMENSIONS };
+
+export const DIMENSIONS_PER_COMPANY = TAXONOMY_LIMITS.DIMENSIONS_PER_COMPANY;
 
 const STANDARD_ORDER = Object.freeze([
   STANDARD_DIMENSIONS.EMAIL_TYPE,
@@ -21,14 +28,14 @@ const STANDARD_ORDER = Object.freeze([
 ]);
 
 /**
- * The trigger's two values, which are the doctrine's and not taxonomy items
- * (packages/server/constant/email-trigger.js). Shown read-only, with the i18n
- * key of their label and definition.
+ * The trigger's two values, which are the doctrine's and not taxonomy items.
+ * Shown read-only, with the i18n key of their label and definition.
  */
-export const TRIGGER_VALUES = Object.freeze([
-  { value: 'adhoc', key: 'taxonomy.dimensions.trigger.adhoc' },
-  { value: 'automated', key: 'taxonomy.dimensions.trigger.automated' },
-]);
+export const TRIGGER_VALUES = Object.freeze(
+  EMAIL_TRIGGER_VALUES.map((value) =>
+    Object.freeze({ value, key: `taxonomy.dimensions.trigger.${value}` })
+  )
+);
 
 const rankOf = (dimension) => {
   const standardRank = STANDARD_ORDER.indexOf(dimension.name);
@@ -89,16 +96,6 @@ export function buildDimensionPayload(form) {
     description: form.description ? form.description : null,
   };
 }
-
-/**
- * The bounds of a company's taxonomy, mirroring `TaxonomyLimits` in
- * packages/server/constant/taxonomy-type.js. Shown before the server refuses.
- */
-export const DIMENSIONS_PER_COMPANY = 20;
-
-// Mirrors `DIMENSION_NAME_PATTERN` server-side: a name a template reads as a
-// property, `_root_.audience`.
-const DIMENSION_NAME_PATTERN = /^[A-Za-z_][A-Za-z0-9_]*$/;
 
 /**
  * Whether a template could read this name as a property. Checked in the form

@@ -372,7 +372,7 @@ describe('addMissingDefaultEmailTypes', () => {
 
   it('refuses to push the company past its item cap', async () => {
     mockExisting(
-      Array.from({ length: TaxonomyLimits.ITEMS_PER_COMPANY }, (_, i) => ({
+      Array.from({ length: TaxonomyLimits.VALUES_PER_DIMENSION }, (_, i) => ({
         label: `Typologie ${i}`,
         canonicalType: null,
       }))
