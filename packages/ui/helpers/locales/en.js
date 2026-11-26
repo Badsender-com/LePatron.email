@@ -1809,7 +1809,7 @@ export default {
         parentNone: 'None: first level',
         parentDeactivated: '{label} (deactivated)',
         parentHint:
-          'Its values will be offered by the value chosen for the parent dimension: the Language by the Market.',
+          'Its values will be offered according to the value chosen for the parent dimension: the Language according to the Market.',
         precedence: 'Precedence',
         precedenceHint:
           'When two values chosen on an email carry the same token, the one of the dimension with the highest precedence wins.',
