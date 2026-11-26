@@ -250,6 +250,51 @@ describe('list_changes', () => {
 
       expect(answer.changes).toHaveLength(200);
       expect(answer.truncated).toBe(true);
+      // The most recent kept, the oldest first still.
+      expect(answer.changes[0].id).toBe('bulk.item-001');
+      expect(answer.changes[199].id).toBe('bulk.item-200');
+    });
+
+    it('says in its description that it keeps the most recent when it cuts', async () => {
+      const { tools } = await (await asClient()).listTools();
+
+      expect(tools.find((t) => t.name === LIST).description).toMatch(
+        /200 most recent/
+      );
+    });
+
+    // What find_skills serves a client: a task skill, or a feature skill
+    // marked for assistants (mcp-skill-catalog.js).
+    it('lists to a client only the skills find_skills serves it', async () => {
+      harness.seed({
+        ...s.SEED,
+        skills: [
+          ...s.SKILLS,
+          s.skill(
+            'redaction.feature-only',
+            'Feature only',
+            [
+              s.version('1.0', 'ACTIVE', {
+                activatedAt: new Date('2026-11-18T09:00:00Z'),
+                nature: 'feature',
+                releaseNotes: 'Only for the editor.',
+              }),
+            ],
+            { servedToAssistants: false }
+          ),
+        ],
+      });
+
+      const toClient = await call(await asClient(), WEEK);
+      const toPlatform = await call(await asConsultant(), WEEK);
+
+      expect(toClient.changes.map((c) => c.id)).not.toContain(
+        'redaction.feature-only'
+      );
+      expect(JSON.stringify(toClient)).not.toContain('Feature only');
+      expect(toPlatform.changes.map((c) => c.id)).toContain(
+        'redaction.feature-only'
+      );
     });
 
     it('refuses a period that ends before it starts, or a date it cannot read', async () => {

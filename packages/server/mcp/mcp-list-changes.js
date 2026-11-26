@@ -12,6 +12,7 @@ const { z } = require('zod');
 const { LePatronSkills, Expertises } = require('../common/models.common.js');
 const {
   SkillStatuses,
+  Audiences,
   AudienceValues,
 } = require('../ai-skill/constant/skill-constants.js');
 const { readsEveryAudience } = require('../ai-skill/services/audience.js');
@@ -22,7 +23,10 @@ const {
   isConsultant,
 } = require('./mcp-identity.js');
 const { changesOf, publications } = require('./mcp-catalog-changes.js');
-const { uriOf: skillUriOf } = require('./mcp-skill-catalog.js');
+const {
+  uriOf: skillUriOf,
+  isServed: isServedSkill,
+} = require('./mcp-skill-catalog.js');
 const { uriOf: expertiseUriOf } = require('./mcp-expertises.js');
 const { READ_ONLY } = require('./mcp-tool-grammar.js');
 
@@ -116,7 +120,7 @@ const OUTPUT = z.object({
   truncated: z
     .boolean()
     .describe(
-      `true when more than ${MAX_CHANGES} changes were found: narrow the period.`
+      `true when more than ${MAX_CHANGES} changes were found: the ${MAX_CHANGES} most recent are listed, narrow the period to read the others.`
     ),
 });
 
@@ -151,15 +155,23 @@ function periodOf({ since, until }) {
   return { since: start, until: end };
 }
 
+// Whether a skill reaches assistants, at the last version it published, as
+// find_skills decides (mcp-skill-catalog.js).
+function servedToAssistants(doc) {
+  const [last] = publications(doc).slice(-1);
+  return Boolean(last) && isServedSkill({ doc, version: last });
+}
+
+// Whether a company other than the platform company is told of the item at
+// all: a skill only if find_skills serves it, an expertise always.
+const listedTo = (kind, doc, everyAudience) =>
+  everyAudience || kind !== 'skill' || servedToAssistants(doc);
+
 // Whether a reader may read the item now, through its resource.
 function readable(kind, doc, everyAudience) {
   if (doc.status !== SkillStatuses.ACTIVE) return false;
-  if (!everyAudience && doc.audience !== 'all') return false;
-  if (kind === 'expertise') return true;
-  const [active] = publications(doc).slice(-1);
-  return (
-    (active && active.nature === 'task') || doc.servedToAssistants === true
-  );
+  if (!everyAudience && doc.audience !== Audiences.ALL) return false;
+  return kind === 'expertise' || servedToAssistants(doc);
 }
 
 const SOURCES = [
@@ -208,9 +220,10 @@ async function listChanges({ user, group }, args) {
       found[index]
         .filter(
           (doc) =>
-            !reader.everyAudience ||
-            !args.audience ||
-            doc.audience === args.audience
+            listedTo(source.kind, doc, reader.everyAudience) &&
+            (!reader.everyAudience ||
+              !args.audience ||
+              doc.audience === args.audience)
         )
         .flatMap((doc) => {
           const id = doc[source.idField];
@@ -229,7 +242,8 @@ async function listChanges({ user, group }, args) {
   return success({
     since: new Date(period.since).toISOString(),
     until: new Date(period.until).toISOString(),
-    changes: changes.slice(0, MAX_CHANGES),
+    // The most recent, still the oldest first.
+    changes: changes.slice(-MAX_CHANGES),
     truncated: changes.length > MAX_CHANGES,
   });
 }
@@ -239,7 +253,7 @@ function registerListChanges(server) {
     'list_changes',
     {
       title: 'List the catalog changes',
-      description: `Lists what changed in the skills and expertises this company may use, in a period: created, updated by a new version, opened to every company (to the platform company; any other company sees what is opened to it as created), withdrawn from them, the oldest first, ${MAX_CHANGES} at most. Each change, an opening included, gives the release note of its version (releaseNotes), what changes for whoever uses it, written in French. Use it to answer "what is new?": never guess a date or a reason. Only what was published is listed, never a draft.`,
+      description: `Lists what changed in the skills and expertises this company may use, in a period: created, updated by a new version, opened to every company (to the platform company; any other company sees what is opened to it as created), withdrawn from them, the oldest first. When more than ${MAX_CHANGES} changes are found, only the ${MAX_CHANGES} most recent are listed, still the oldest first, and truncated says so. Each change, an opening included, gives the release note of its version (releaseNotes), what changes for whoever uses it, written in French. Use it to answer "what is new?": never guess a date or a reason. Only what was published is listed, never a draft.`,
       inputSchema: INPUT,
       outputSchema: OUTPUT,
       annotations: READ_ONLY,
