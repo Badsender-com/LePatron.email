@@ -14,10 +14,10 @@ const {
  * harness. Covered by tests/editor/governance-values.test.js.
  */
 
-// What an identifier may hold to be published as is. A template may render a
-// root property as HTML (in a `data-ko-editable`), and the email type's
-// identifier has no format of its own: anything else is published as the
-// value's id.
+// What an identifier may hold to be published as is (ADR-0015, Consequences).
+// A template may render a root property as HTML (in a `data-ko-editable`), and
+// the email type's identifier has no format of its own: anything else is
+// published as the value's id.
 const PUBLISHABLE_IDENTIFIER = /^[A-Za-z0-9_-]+$/;
 
 /**

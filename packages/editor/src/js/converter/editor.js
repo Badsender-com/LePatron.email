@@ -623,8 +623,10 @@ var _propEditor = function (
         bindings.length > 0
           ? 'data-bind="' + utils.addSlashes(bindings.join()) + '"'
           : '';
-      // A root property of the template a dimension feeds: its option is
-      // hidden, the dimension decides (ADR-0015, utils/template-options.js).
+      // A root property of the template the email settings feed (an active
+      // company dimension with values, the email type, the trigger): its
+      // option is hidden, the settings decide (ADR-0015, Consequences;
+      // utils/template-options.js).
       var hideable = withBindingProvider._isRoot && path === prop;
       if (hideable)
         html +=

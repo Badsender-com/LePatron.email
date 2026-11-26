@@ -478,7 +478,7 @@ _UI_: Déclenchement
 _Avoid_: Send mode, scenario
 
 **Identifier**:
-The name of a value that a template compares against, apart from its label. It is proposed from the label and stays editable. Two values of one dimension never share one, except under the email type, where it names one of the doctrine's types.
+The name of a value that a template compares against, apart from its label. It is proposed from the label and stays editable. Two values of one dimension never share one, except under the email type, where it names one of the doctrine's types. Only an identifier made of letters, digits, `-` and `_` reaches a template; the editor publishes the value's id in place of any other (ADR-0015).
 _UI_: Identifiant
 _Avoid_: Slug, code, key, canonical type (the code keeps `canonicalType`)
 

@@ -7,10 +7,10 @@ const {
 const { isPublishable } = require('./publish-to-template');
 
 /**
- * The template options the editor hides: the root property of the template a
- * company dimension sent to the editor feeds (ADR-0015). The dimension decides,
- * and two selects for one property can only disagree: the dimension would
- * overwrite the template option's choice at its next change.
+ * The template options the editor hides (ADR-0015, Consequences): the root
+ * property of the template a company dimension sent to the editor feeds. The
+ * dimension decides, and two selects for one property can only disagree: the
+ * dimension would overwrite the template option's choice at its next change.
  *
  * A deactivated dimension is not sent to the editor, or is sent flagged, and
  * no longer decides: its option comes back. So does a dimension with no value
