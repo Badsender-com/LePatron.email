@@ -68,6 +68,17 @@ describe.skip('publication route requires both texts', () => {
     expect(await activeVersion()).toEqual({ major: 1, minor: 0 });
   });
 
+  it('refuses the generic sentence a minor version used to get as a release note', async () => {
+    const res = await publish({
+      changelog: 'Typo',
+      releaseNotes: 'Correction mineure sans changement de doctrine.',
+    });
+
+    expect(res.status).toBe(400);
+    expect(res.body.message).toMatch(/release note/i);
+    expect(await activeVersion()).toEqual({ major: 1, minor: 0 });
+  });
+
   it('refuses a minor version without a change log', async () => {
     const res = await publish({ releaseNotes: 'Subjects get shorter.' });
 

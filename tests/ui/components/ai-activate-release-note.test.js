@@ -90,6 +90,19 @@ describe.skip('activation modal requires both texts', () => {
     expect(confirm.mock.calls[0][0]).toMatchObject(texts);
   });
 
+  it('keeps the publish button of a minor version disabled until both texts are written', async () => {
+    const { vm } = await mountModal({
+      seed: { changelog: '', releaseNotes: '' },
+    });
+    expect(vm.canSubmit).toBe(false);
+
+    vm.payload.releaseNotes = 'Subjects get shorter.';
+    expect(vm.canSubmit).toBe(false);
+
+    vm.payload.changelog = 'Typo';
+    expect(vm.canSubmit).toBe(true);
+  });
+
   it('leaves blank the generic sentence of an older draft, for the person to write', async () => {
     const { vm, confirm } = await mountModal({ seed: GENERIC });
 
