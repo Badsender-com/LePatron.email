@@ -29,13 +29,11 @@ const {
 } = require('./mcp-skill-catalog.js');
 const { uriOf: expertiseUriOf } = require('./mcp-expertises.js');
 const { READ_ONLY } = require('./mcp-tool-grammar.js');
+const { periodOf, DEFAULT_DAYS } = require('./mcp-list-changes-period.js');
 
-const DAY_MS = 24 * 3600 * 1000;
-const DEFAULT_DAYS = 7;
 const MAX_CHANGES = 200;
 const MAX_DATE_LENGTH = 40;
 const CHANGES = ['created', 'updated', 'opened', 'withdrawn'];
-const DAY = /^\d{4}-\d{2}-\d{2}$/;
 
 // What is read of each item: never a body, nor a skill's test cases.
 const READ = {
@@ -123,37 +121,6 @@ const OUTPUT = z.object({
       `true when more than ${MAX_CHANGES} changes were found: the ${MAX_CHANGES} most recent are listed, narrow the period to read the others.`
     ),
 });
-
-// A date as given, or the reason it cannot be read.
-function dateOf(text, { endOfDay }) {
-  if (DAY.test(text)) {
-    const start = Date.parse(`${text}T00:00:00.000Z`);
-    return endOfDay ? start + DAY_MS - 1 : start;
-  }
-  const at = Date.parse(text);
-  return Number.isNaN(at) ? null : at;
-}
-
-function periodOf({ since, until }) {
-  const end = until ? dateOf(until, { endOfDay: true }) : Date.now();
-  const start = since
-    ? dateOf(since, { endOfDay: false })
-    : end - DEFAULT_DAYS * DAY_MS;
-  if (start === null || end === null) {
-    return {
-      refused: `"${
-        start === null ? since : until
-      }" is not a date: give an ISO 8601 date, such as 2026-11-16, or a date-time.`,
-    };
-  }
-  if (start > end) {
-    return {
-      refused:
-        'The period ends before it starts: since must come before until.',
-    };
-  }
-  return { since: start, until: end };
-}
 
 // Whether a skill reaches assistants, at the last version it published, as
 // find_skills decides (mcp-skill-catalog.js).

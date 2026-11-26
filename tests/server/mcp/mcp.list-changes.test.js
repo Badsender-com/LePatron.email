@@ -307,6 +307,38 @@ describe('list_changes', () => {
         /date/i
       );
     });
+
+    it.each([
+      ['a month that does not exist', '2026-13-01'],
+      ['a day that does not exist', '2026-02-31'],
+      ['an hour that does not exist', '2026-11-16T24:00'],
+      ['a month alone', '2026-11'],
+      ['another form than ISO 8601', '11/16/2026'],
+      ['a number', '0'],
+      ['a lowercase separator', '2026-11-16t10:00Z'],
+    ])('refuses %s, saying what a date is', async (_case, since) => {
+      const answer = await call(await asClient(), { since });
+
+      expect(answer.error).toMatch(/is not an ISO 8601 date/);
+      expect(answer.error).toContain(since);
+    });
+
+    it('reads a date-time without a zone in UTC, and one with an offset at its zone', async () => {
+      const client = await asClient();
+
+      expect(
+        await call(client, {
+          since: '2026-11-16T10:00',
+          until: '2026-11-17T10:00:30.5',
+        })
+      ).toMatchObject({
+        since: '2026-11-16T10:00:00.000Z',
+        until: '2026-11-17T10:00:30.500Z',
+      });
+      expect(
+        await call(client, { since: '2026-11-16T10:00:00+01:00' })
+      ).toMatchObject({ since: '2026-11-16T09:00:00.000Z' });
+    });
   });
 
   // Turned on by #1668 (openings and withdrawals)
