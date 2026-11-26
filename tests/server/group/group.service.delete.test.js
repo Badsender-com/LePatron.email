@@ -1,8 +1,8 @@
 'use strict';
 
-// Deleting a company deletes what its users wrote from their connected
-// applications (ADR 0012, ADR 0021): its feedbacks and its retex, open ones
-// included, which have no expiry of their own.
+// Deleting a company deletes its taxonomy (ADR-0032), and what its users wrote
+// from their connected applications (ADR 0012, ADR 0021): its feedbacks and its
+// retex, open ones included, which have no expiry of their own.
 
 const { Types } = require('mongoose');
 
@@ -26,6 +26,8 @@ jest.mock('../../../packages/server/common/models.common.js', () => ({
     deleteMany: jest.fn().mockResolvedValue({}),
     updateMany: jest.fn().mockResolvedValue({}),
   },
+  TaxonomyDimensions: { deleteMany: jest.fn().mockResolvedValue({}) },
+  TaxonomyItems: { deleteMany: jest.fn().mockResolvedValue({}) },
 }));
 jest.mock('../../../packages/server/mcp/mcp-connections.js', () => ({
   revokeConnections: jest.fn().mockResolvedValue({}),
@@ -41,6 +43,8 @@ const groupService = require('../../../packages/server/group/group.service.js');
 const {
   McpFeedbacks,
   McpRetexes,
+  TaxonomyDimensions,
+  TaxonomyItems,
 } = require('../../../packages/server/common/models.common.js');
 
 describe('deleting a company', () => {
@@ -67,5 +71,20 @@ describe('deleting a company', () => {
     const [filter, update] = McpRetexes.updateMany.mock.calls[0];
     expect(String(filter._connectedCompany)).toBe(groupId);
     expect(update).toEqual({ $set: { _connectedCompany: null } });
+  });
+
+  it('deletes its taxonomy: its dimensions and their values', async () => {
+    const groupId = String(new Types.ObjectId());
+    const next = jest.fn();
+
+    await groupService.deleteGroup(groupId, {}, next);
+
+    expect(next).not.toHaveBeenCalled();
+    [TaxonomyDimensions, TaxonomyItems].forEach((model) => {
+      const ofThisCompany = model.deleteMany.mock.calls.filter(
+        ([filter]) => String(filter._company) === groupId
+      );
+      expect(ofThisCompany).toHaveLength(1);
+    });
   });
 });

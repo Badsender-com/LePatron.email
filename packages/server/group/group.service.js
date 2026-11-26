@@ -15,6 +15,8 @@ const {
   AIPlaygroundScenarios,
   McpFeedbacks,
   McpRetexes,
+  TaxonomyDimensions,
+  TaxonomyItems,
 } = require('../common/models.common.js');
 const { revokeConnections } = require('../mcp/mcp-connections.js');
 const { forgetCompanyClients } = require('../mcp/mcp-clients.js');
@@ -196,6 +198,12 @@ async function deleteGroup(groupId) {
       { _connectedCompany: mongoose.Types.ObjectId(groupId) },
       { $set: { _connectedCompany: null } }
     ),
+    // Its taxonomy: the dimensions it declined its emails by, the standard
+    // ones included, and their values (ADR-0032).
+    TaxonomyDimensions.deleteMany({
+      _company: mongoose.Types.ObjectId(groupId),
+    }),
+    TaxonomyItems.deleteMany({ _company: mongoose.Types.ObjectId(groupId) }),
     // And the MCP clients it registered, with their secrets (ADR 0012).
     forgetCompanyClients(mongoose.Types.ObjectId(groupId)),
     Groups.deleteOne({
