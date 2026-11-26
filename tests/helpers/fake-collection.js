@@ -8,7 +8,8 @@
  * model: the taxonomy acceptance tests need dimensions, values and mailings
  * that they create, update and delete through the services, not only read.
  * Filters, sort and projection are read as MongoDB reads them, by
- * fake-mongo-query.js, and updates applied by fake-mongo-update.js. Where the
+ * fake-mongo-query.js, and updates applied by fake-mongo-update.js; a query is
+ * a thenable of fake-query.js. Where the
  * fake would answer something Mongoose would not, it throws: an operator, an
  * option or a method argument it does not know is an error, never ignored.
  *
@@ -35,15 +36,11 @@
 
 const { Types } = require('mongoose');
 
-const {
-  equals,
-  matches,
-  sortedBy,
-  projected,
-} = require('./fake-mongo-query.js');
+const { equals, matches, sortedBy } = require('./fake-mongo-query.js');
 const { copyOf, applyUpdate } = require('./fake-mongo-update.js');
 const { fakeSchema } = require('./fake-schema.js');
 const { fakeDocument, same } = require('./fake-document.js');
+const { fakeQuery } = require('./fake-query.js');
 
 function assertOptions(method, options, supported) {
   Object.keys(options || {}).forEach((option) => {
@@ -130,43 +127,11 @@ function fakeCollection({ schema, defaults = {}, unique = [] } = {}) {
   const toDocument = (record) =>
     fakeDocument(record, { schema: plugged, save: saveChanges });
 
-  // Mongoose queries are thenables with a fluent API. `run` answers the
-  // records, already in their final order, once the query is awaited.
-  function query(run, { single = false, sort, projection, lean = false } = {}) {
-    const state = { sort, projection, lean, limit: undefined };
-    const exec = async () => {
-      const found = await run(state);
-      const kept =
-        state.limit === undefined ? found : found.slice(0, state.limit);
-      const shaped = kept.map((record) => {
-        const fields = projected(record, state.projection);
-        return state.lean ? copyOf(fields) : toDocument(fields);
-      });
-      return single ? shaped[0] || null : shaped;
-    };
-    const chain = {
-      sort: (spec) => {
-        state.sort = spec;
-        return chain;
-      },
-      select: (spec) => {
-        state.projection = spec;
-        return chain;
-      },
-      limit: (count) => {
-        state.limit = count;
-        return chain;
-      },
-      lean: (flag = true) => {
-        state.lean = !!flag;
-        return chain;
-      },
-      exec,
-      then: (resolve, reject) => exec().then(resolve, reject),
-      catch: (reject) => exec().catch(reject),
-    };
-    return chain;
-  }
+  const query = (run, options) =>
+    fakeQuery(run, {
+      ...options,
+      shape: (fields, lean) => (lean ? copyOf(fields) : toDocument(fields)),
+    });
 
   const READ_OPTIONS = ['sort', 'limit', 'lean'];
 
