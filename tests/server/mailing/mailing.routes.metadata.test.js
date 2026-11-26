@@ -61,3 +61,15 @@ describe('mailing routes — the flag gates nothing else', () => {
     expect(guardsOf(method, path)).not.toContain(GUARD_EMAIL_METADATA);
   });
 });
+
+describe('mailing routes — the governance context', () => {
+  it('is a read open to any signed-in user, outside the metadata flag', () => {
+    const {
+      GUARD_USER,
+    } = require('../../../packages/server/account/auth.guard.js');
+
+    expect(guardsOf('get', '/:mailingId/governance-context')).toEqual([
+      GUARD_USER,
+    ]);
+  });
+});

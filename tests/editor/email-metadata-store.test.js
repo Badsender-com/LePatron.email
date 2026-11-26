@@ -98,6 +98,33 @@ describe('email metadata store', () => {
       expect(store.payload()).toEqual({});
     });
 
+    // The section offers a deactivated value only while the email holds it on
+    // the server: it learns from each save what the email now carries.
+    it('tells the section what a successful save wrote', () => {
+      const saved = jest.fn();
+      store.onSaved(saved);
+      const sent = { ...FORM, taxonomyItemIds: ['vip'] };
+      store.setCurrent({ ...sent, subject: 'Typed during the save' });
+
+      store.markSaved(sent);
+
+      expect(saved).toHaveBeenCalledWith(sent);
+    });
+
+    it('stops telling a section that stopped listening, or a disposed store', () => {
+      const saved = jest.fn();
+      const stop = store.onSaved(saved);
+      stop();
+      store.markSaved();
+      const other = jest.fn();
+      store.onSaved(other);
+      store.dispose();
+      store.markSaved();
+
+      expect(saved).not.toHaveBeenCalled();
+      expect(other).not.toHaveBeenCalled();
+    });
+
     // The comparison base moves with each successful save, so the second PATCH of
     // a session carries the second edit only — not the first one again.
     it('measures the payload against what the last save wrote', () => {

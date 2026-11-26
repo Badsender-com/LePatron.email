@@ -1,0 +1,441 @@
+'use strict';
+
+// Acceptance tests of the taxonomy screen's logic (epic #1351).
+//
+// The screen's components stay thin; what it decides (the order dimensions are
+// listed in, what each one allows, what a dimension may hang under) lives in pure
+// helpers, tested here, the way the rest of packages/ui is tested.
+
+// Orders as a company gets them: the standard dimensions seeded at 10 and 20,
+// then each declared dimension at the next order (brand, market, language).
+const EMAIL_TYPE = {
+  name: 'emailType',
+  label: 'Typologie',
+  standard: true,
+  isActive: true,
+  order: 10,
+  precedence: 40,
+};
+const TRIGGER = {
+  name: 'trigger',
+  label: 'Déclenchement',
+  standard: true,
+  isActive: true,
+  order: 20,
+  precedence: 0,
+};
+const MARKET = {
+  name: 'market',
+  label: 'Marché',
+  standard: false,
+  isActive: true,
+  order: 22,
+  precedence: 20,
+};
+const LANGUAGE = {
+  name: 'language',
+  label: 'Langue',
+  standard: false,
+  isActive: true,
+  order: 23,
+  precedence: 30,
+  parentName: 'market',
+};
+const BRAND = {
+  name: 'brand',
+  label: 'Marque',
+  standard: false,
+  isActive: true,
+  order: 21,
+  precedence: 10,
+};
+
+const HELPERS = '../../../packages/ui/helpers/taxonomy-builder.js';
+
+// Turned on by #1353 (dimensions are records; the email type and the trigger as
+// standard dimensions)
+describe('taxonomy screen: standard dimensions', () => {
+  let sortDimensions;
+  let dimensionActions;
+
+  beforeAll(() => {
+    // Required here, not at the top of the file: the module doesn't exist until
+    // #1353 ships it.
+    ({ sortDimensions, dimensionActions } = require(HELPERS));
+  });
+
+  // One order for the screen, the editor and the server's listing (decision on
+  // #1361): the standard dimensions are seeded at 10 and 20 and a new dimension
+  // takes the next order, so they come first until the company reorders them.
+  it('lists the standard dimensions by their order, like any other', () => {
+    expect(
+      sortDimensions([MARKET, TRIGGER, BRAND, EMAIL_TYPE]).map((d) => d.name)
+    ).toEqual(['emailType', 'trigger', 'brand', 'market']);
+    expect(
+      sortDimensions([MARKET, TRIGGER, { ...BRAND, order: 5 }, EMAIL_TYPE]).map(
+        (d) => d.name
+      )
+    ).toEqual(['brand', 'emailType', 'trigger', 'market']);
+  });
+
+  it('locks a standard dimension: no rename, no deactivation, no deletion', () => {
+    expect(dimensionActions(EMAIL_TYPE, { valueCount: 0 })).toMatchObject({
+      canRename: false,
+      canDeactivate: false,
+      canDelete: false,
+      canEditValues: true,
+    });
+  });
+
+  it('shows the trigger values without letting anyone edit them', () => {
+    expect(dimensionActions(TRIGGER, { valueCount: 0 })).toMatchObject({
+      canDeactivate: false,
+      canDelete: false,
+      canEditValues: false,
+    });
+  });
+});
+
+// Turned on by #1354 (declare a company dimension and its values)
+describe('taxonomy screen: company dimensions', () => {
+  let sortDimensions;
+  let dimensionActions;
+  let isValidDimensionName;
+  let proposeIdentifier;
+
+  beforeAll(() => {
+    // Required here: the module doesn't exist until #1353.
+    ({
+      sortDimensions,
+      dimensionActions,
+      isValidDimensionName,
+      proposeIdentifier,
+    } = require(HELPERS));
+  });
+
+  it('lists company dimensions in their declared order, then the first declared first', () => {
+    const market = { ...MARKET, createdAt: '2026-11-01T10:00:00.000Z' };
+    const audience = {
+      ...MARKET,
+      name: 'audience',
+      label: 'Cible',
+      createdAt: '2026-11-02T10:00:00.000Z',
+    };
+
+    expect(
+      sortDimensions([audience, market, BRAND]).map((d) => d.name)
+    ).toEqual(['brand', 'market', 'audience']);
+  });
+
+  it.each(['audience', 'emailType2', '_internal', 'Brand'])(
+    'accepts %p as a name a template can read',
+    (name) => {
+      expect(isValidDimensionName(name)).toBe(true);
+    }
+  );
+
+  it.each(['my-audience', '2audience', 'audience name', 'cible€', '', null])(
+    'refuses %p before the server does',
+    (name) => {
+      expect(isValidDimensionName(name)).toBe(false);
+    }
+  );
+
+  it.each([...Object.getOwnPropertyNames(Object.prototype), 'prototype'])(
+    'flags %p as reserved, though a template could read it',
+    (name) => {
+      const { isReservedDimensionName } = require(HELPERS);
+      expect(isValidDimensionName(name)).toBe(true);
+      expect(isReservedDimensionName(name)).toBe(true);
+    }
+  );
+
+  // The editor publishes a dimension to the root property of the same name:
+  // under one of these, it would overwrite the email's own structure.
+  it.each(['type', 'theme', 'mainBlocks', 'customStyle'])(
+    'flags %p as reserved, a piece of the content the editor builds',
+    (name) => {
+      const { isReservedDimensionName } = require(HELPERS);
+      expect(isValidDimensionName(name)).toBe(true);
+      expect(isReservedDimensionName(name)).toBe(true);
+    }
+  );
+
+  it.each(['country', 'bodyWidth', 'audience'])(
+    'leaves %p free, a template option included',
+    (name) => {
+      const { isReservedDimensionName } = require(HELPERS);
+      expect(isReservedDimensionName(name)).toBe(false);
+    }
+  );
+
+  it.each([
+    ['Canada', 'canada'],
+    ['Clients fidèles', 'clients-fideles'],
+    ['  Français (Belgique) ', 'francais-belgique'],
+    ['Black Friday 2026', 'black-friday-2026'],
+    ['!!!', ''],
+    ['Œuvre', 'oeuvre'],
+    ['Cœur de cible', 'coeur-de-cible'],
+    ['Ægide', 'aegide'],
+    ['Straße', 'strasse'],
+    ['Ørsted Łódź', 'orsted-lodz'],
+  ])('proposes the identifier of %p as %p', (label, identifier) => {
+    expect(proposeIdentifier(label)).toBe(identifier);
+  });
+
+  // A label may hold 120 characters, an identifier 60: past that the server
+  // would refuse the proposal with a generic error.
+  it('cuts the identifier to the length the server accepts', () => {
+    const identifier = proposeIdentifier('Clients fidèles '.repeat(8));
+
+    expect(identifier.length).toBeLessThanOrEqual(60);
+    expect(identifier).toMatch(/^clients-fideles-clients-fideles-/);
+  });
+
+  it('never ends a cut identifier on a hyphen', () => {
+    // 59 letters, then a word: the cut lands right after the hyphen.
+    const identifier = proposeIdentifier(`${'a'.repeat(59)} suite`);
+
+    expect(identifier).toBe('a'.repeat(59));
+  });
+
+  it('never lets a name be renamed, and deletes only an empty dimension', () => {
+    expect(dimensionActions(MARKET, { valueCount: 0 })).toMatchObject({
+      canRename: false,
+      canDeactivate: true,
+      canDelete: true,
+      canEditValues: true,
+    });
+    expect(dimensionActions(MARKET, { valueCount: 3 })).toMatchObject({
+      canDelete: false,
+    });
+  });
+});
+
+// Turned on by #1358 (nested dimensions and availability)
+describe('taxonomy screen: nesting', () => {
+  let parentCandidates;
+
+  beforeAll(() => {
+    // Required here: the module doesn't exist until #1353.
+    ({ parentCandidates } = require(HELPERS));
+  });
+
+  const ALL = [EMAIL_TYPE, TRIGGER, MARKET, LANGUAGE, BRAND];
+
+  it('offers the email type and every other active dimension as a parent', () => {
+    expect(parentCandidates(ALL, BRAND).sort()).toEqual(
+      ['emailType', 'language', 'market'].sort()
+    );
+  });
+
+  it('never offers the trigger, the dimension itself, or one of its descendants', () => {
+    const candidates = parentCandidates(ALL, MARKET);
+
+    expect(candidates).not.toContain('trigger');
+    expect(candidates).not.toContain('market');
+    // Market under language would be a cycle: language already hangs under it.
+    expect(candidates).not.toContain('language');
+  });
+
+  it('never offers a deactivated dimension', () => {
+    expect(
+      parentCandidates(
+        [...ALL, { ...MARKET, name: 'old', isActive: false }],
+        BRAND
+      )
+    ).not.toContain('old');
+  });
+});
+
+// Turned on by #1359 (design tokens and precedence)
+describe('taxonomy screen: precedence', () => {
+  let resolutionOrder;
+
+  beforeAll(() => {
+    // Required here: the module doesn't exist until #1353.
+    ({ resolutionOrder } = require(HELPERS));
+  });
+
+  it('shows the resolution order, the last one winning', () => {
+    expect(
+      resolutionOrder([EMAIL_TYPE, TRIGGER, MARKET, LANGUAGE, BRAND])
+    ).toEqual(['brand', 'market', 'language', 'emailType']);
+  });
+
+  it('breaks a tie of precedence: the dimension listed later wins, as in the editor', () => {
+    expect(
+      resolutionOrder([
+        { ...MARKET, precedence: 10 },
+        { ...BRAND, precedence: 10 },
+      ])
+    ).toEqual(['brand', 'market']);
+  });
+
+  it('leaves deactivated dimensions out', () => {
+    expect(resolutionOrder([BRAND, { ...MARKET, isActive: false }])).toEqual([
+      'brand',
+    ]);
+  });
+});
+
+describe('taxonomy screen: the wording of a dimension', () => {
+  let buildDimensionPayload;
+
+  beforeAll(() => {
+    ({ buildDimensionPayload } = require(HELPERS));
+  });
+
+  it('sends the trimmed label and the description, never the name', () => {
+    expect(
+      buildDimensionPayload({
+        name: 'emailType',
+        label: '  Famille de message ',
+        description: 'Ce que le message apporte.',
+      })
+    ).toEqual({
+      label: 'Famille de message',
+      description: 'Ce que le message apporte.',
+    });
+  });
+
+  it('sends the trimmed name once, when the dimension is declared', () => {
+    const { buildNewDimensionPayload } = require(HELPERS);
+
+    expect(
+      buildNewDimensionPayload({
+        name: ' audience ',
+        label: 'Cible',
+        description: '',
+      })
+    ).toEqual({ name: 'audience', label: 'Cible', description: null });
+  });
+
+  it('clears an emptied description with null', () => {
+    expect(
+      buildDimensionPayload({ label: 'Typologie', description: '' })
+    ).toEqual({ label: 'Typologie', description: null });
+  });
+});
+
+describe('taxonomy screen: the design tokens of a value', () => {
+  let tokenRows;
+  let tokensFromRows;
+
+  beforeAll(() => {
+    ({ tokenRows, tokensFromRows } = require(HELPERS));
+  });
+
+  it('turns the tokens into rows and back', () => {
+    const tokens = { mainColorVar: '#ffd845', textColorVar: '#1a1a1a' };
+
+    expect(tokensFromRows(tokenRows(tokens))).toEqual(tokens);
+  });
+
+  it('drops a row with no name, and trims the names', () => {
+    expect(
+      tokensFromRows([
+        { name: ' mainColorVar ', value: '#ffd845' },
+        { name: '', value: '#000000' },
+      ])
+    ).toEqual({ mainColorVar: '#ffd845' });
+  });
+});
+
+// What the server would refuse, said row by row in the form before the save
+// (review of #1500): a 400 would only reach the admin as a generic message.
+describe('taxonomy screen: the errors of the token rows', () => {
+  let tokenRowErrors;
+  let TOKENS_PER_VALUE;
+
+  beforeAll(() => {
+    ({ tokenRowErrors, TOKENS_PER_VALUE } = require(HELPERS));
+  });
+
+  const errorsOf = (row) => tokenRowErrors([row])[0];
+
+  it('caps the tokens of a value at the server limit', () => {
+    expect(TOKENS_PER_VALUE).toBe(24);
+  });
+
+  it('finds nothing wrong with a valid row', () => {
+    expect(errorsOf({ name: 'mainColorVar', value: '#ffd845' })).toEqual({
+      name: null,
+      value: null,
+    });
+  });
+
+  it('ignores a row left entirely empty, which is dropped', () => {
+    expect(errorsOf({ name: ' ', value: '' })).toEqual({
+      name: null,
+      value: null,
+    });
+  });
+
+  it.each([
+    ['no value', { name: 'mainColorVar', value: '  ' }, 'required'],
+    [
+      'a value past the limit',
+      { name: 'mainColorVar', value: 'a'.repeat(201) },
+      'tooLong',
+    ],
+    [
+      'markup in the value',
+      { name: 'mainColorVar', value: '</style>' },
+      'unsafe',
+    ],
+    [
+      'CSS in the value',
+      { name: 'mainColorVar', value: 'red; x: y' },
+      'unsafe',
+    ],
+    [
+      'a script link split by a tab',
+      { name: 'linkVar', value: 'java\tscript:alert(1)' },
+      'unsafe',
+    ],
+    [
+      'a script link split by a newline',
+      { name: 'linkVar', value: 'java\nscript:alert(1)' },
+      'unsafe',
+    ],
+    ['a CSS comment', { name: 'mainColorVar', value: 'a/*b' }, 'unsafe'],
+  ])('refuses a row with %s', (kind, row, reason) => {
+    expect(errorsOf(row).value).toBe(reason);
+  });
+
+  it.each([
+    ['no name', { name: '', value: '#000' }, 'required'],
+    [
+      'a name no template reads',
+      { name: 'main-color', value: '#000' },
+      'invalid',
+    ],
+    [
+      'a name past the limit',
+      { name: `a${'b'.repeat(60)}`, value: '#000' },
+      'tooLong',
+    ],
+    ['a name the editor builds', { name: 'theme', value: '#000' }, 'reserved'],
+    ['the name of the language', { name: 'locale', value: 'fr' }, 'reserved'],
+  ])('refuses a row with %s', (kind, row, reason) => {
+    expect(errorsOf(row).name).toBe(reason);
+  });
+
+  it('accepts a name as long as a dimension name may be', () => {
+    expect(errorsOf({ name: `a${'b'.repeat(59)}`, value: '#000' }).name).toBe(
+      null
+    );
+  });
+
+  it('flags every row of a name used twice, which would merge', () => {
+    expect(
+      tokenRowErrors([
+        { name: 'mainColorVar', value: '#ffd845' },
+        { name: 'textColorVar', value: '#1a1a1a' },
+        { name: ' mainColorVar', value: '#0050ff' },
+      ]).map((errors) => errors.name)
+    ).toEqual(['duplicate', null, 'duplicate']);
+  });
+});

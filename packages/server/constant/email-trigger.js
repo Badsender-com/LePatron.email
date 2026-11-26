@@ -1,5 +1,13 @@
 'use strict';
 
+const {
+  EMAIL_TRIGGERS,
+  EMAIL_TRIGGER_VALUES,
+} = require('../../shared/taxonomy/constants.js');
+const {
+  EMAIL_TRIGGER_DEFINITIONS,
+} = require('../../shared/taxonomy/trigger-definitions.js');
+
 /**
  * How an email's send is decided — the second dimension of the Badsender
  * classification, independent of the email type.
@@ -23,13 +31,16 @@
  * drift the classification exists to prevent. The type carries the company's own
  * words; this dimension carries the doctrine's.
  */
-const EmailTrigger = Object.freeze({
-  // A send the team decided on, this once.
-  AD_HOC: 'adhoc',
-  // A send a rule decides, every time.
-  AUTOMATED: 'automated',
-});
+// Defined in packages/shared/taxonomy/constants.js, which the taxonomy screen
+// reads too.
+const EmailTrigger = EMAIL_TRIGGERS;
 
-const EmailTriggerValues = Object.freeze(Object.values(EmailTrigger));
+const EmailTriggerValues = EMAIL_TRIGGER_VALUES;
 
-module.exports = { EmailTrigger, EmailTriggerValues };
+// The doctrine's words for each value, by language: the AI features read them
+// through the governance context. Defined in
+// packages/shared/taxonomy/trigger-definitions.js, which the taxonomy screen
+// and the editor read too, so the model reads what the admin reads.
+const EmailTriggerDefinitions = EMAIL_TRIGGER_DEFINITIONS;
+
+module.exports = { EmailTrigger, EmailTriggerValues, EmailTriggerDefinitions };

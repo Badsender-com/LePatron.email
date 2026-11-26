@@ -1,5 +1,6 @@
 import { ERROR_CODES } from '~/helpers/constants/error-codes.js';
 import { EMAIL_TYPES } from '~/helpers/email-types.js';
+import { TAXONOMY_LIMITS } from '../../shared/taxonomy/constants.js';
 
 /**
  * Pure helpers for the taxonomy screens.
@@ -10,15 +11,11 @@ import { EMAIL_TYPES } from '~/helpers/email-types.js';
  */
 
 /**
- * Bounds of the editable fields, mirroring `TaxonomyLimits` in
- * packages/server/constant/taxonomy-type.js. The form tells the user before the
+ * Bounds of the editable fields, the server's own
+ * (packages/shared/taxonomy/constants.js). The form tells the user before the
  * request rather than letting a 400 do it.
  */
-export const TAXONOMY_LIMITS = Object.freeze({
-  LABEL: 120,
-  DESCRIPTION: 2000,
-  CANONICAL_TYPE: 60,
-});
+export { TAXONOMY_LIMITS };
 
 /**
  * The vocabulary a company may map its own typology onto — the six Badsender
@@ -87,10 +84,124 @@ export function taxonomyErrorFor(error) {
       };
     }
 
+    case ERROR_CODES.TAXONOMY_ITEM_IDENTIFIER_ALREADY_EXISTS:
+      return {
+        key: 'taxonomy.errors.identifierAlreadyExists',
+        params: {},
+        count: null,
+        field: 'canonicalType',
+      };
+
+    // Next to the tokens of the value form, naming the token to rename.
+    case ERROR_CODES.TAXONOMY_TOKEN_NAME_IS_DIMENSION:
+      return {
+        key: 'taxonomy.errors.tokenNameIsDimension',
+        params: { name: data.details?.name },
+        count: null,
+        field: 'tokens',
+      };
+
+    // Next to the name of the dimension being declared, naming the token.
+    case ERROR_CODES.DIMENSION_NAME_IS_TOKEN:
+      return {
+        key: 'taxonomy.errors.dimensionNameIsToken',
+        params: { name: data.details?.name },
+        count: null,
+        field: 'name',
+      };
+
+    case ERROR_CODES.DIMENSION_NAME_ALREADY_EXISTS:
+      return {
+        key: 'taxonomy.errors.dimensionNameAlreadyExists',
+        params: {},
+        count: null,
+        field: 'name',
+      };
+
+    case ERROR_CODES.DIMENSION_NAME_RESERVED:
+      return {
+        key: 'taxonomy.errors.dimensionNameReserved',
+        params: {},
+        count: null,
+        field: 'name',
+      };
+
+    case ERROR_CODES.DIMENSION_NAME_TOO_LONG:
+      return {
+        key: 'taxonomy.errors.dimensionNameTooLong',
+        params: { limit: data.details?.limit },
+        count: null,
+        field: 'name',
+      };
+
+    case ERROR_CODES.INVALID_DIMENSION:
+      return {
+        key: 'taxonomy.errors.invalidDimension',
+        params: {},
+        count: null,
+        field: null,
+      };
+
+    case ERROR_CODES.STANDARD_DIMENSION_LOCKED:
+      return {
+        key: 'taxonomy.errors.standardDimensionLocked',
+        params: {},
+        count: null,
+        field: null,
+      };
+
+    case ERROR_CODES.DIMENSION_NOT_FOUND:
+      return {
+        key: 'taxonomy.errors.dimensionNotFound',
+        params: {},
+        count: null,
+        field: null,
+      };
+
+    case ERROR_CODES.DIMENSION_HAS_VALUES: {
+      const count = data.details?.valueCount || 0;
+      return {
+        key: 'taxonomy.errors.dimensionHasValues',
+        params: { count },
+        count,
+        field: null,
+      };
+    }
+
+    case ERROR_CODES.TAXONOMY_ITEM_IS_PARENT: {
+      const count = data.details?.childCount || 0;
+      return {
+        key: 'taxonomy.errors.isParent',
+        params: { count },
+        count,
+        field: null,
+      };
+    }
+
+    case ERROR_CODES.DIMENSION_HAS_CHILDREN:
+      return {
+        key: 'taxonomy.errors.dimensionHasChildren',
+        params: {},
+        count: null,
+        field: null,
+      };
+
+    case ERROR_CODES.DIMENSION_HAS_AVAILABILITY: {
+      const count = data.details?.valueCount || 0;
+      return {
+        key: 'taxonomy.errors.dimensionHasAvailability',
+        params: { count },
+        count,
+        field: null,
+      };
+    }
+
+    // The same message for the dimensions of a company and the values of a
+    // dimension: the screen the admin is on says which one is full.
     case ERROR_CODES.TAXONOMY_LIMIT_REACHED:
       return {
         key: 'taxonomy.errors.limitReached',
-        params: {},
+        params: { limit: data.details?.limit },
         count: null,
         field: null,
       };
@@ -98,6 +209,22 @@ export function taxonomyErrorFor(error) {
     default:
       return generic;
   }
+}
+
+/**
+ * The existing name a declared dimension's name differs from only by its case,
+ * when that is why the server refused it. The screen then asks the admin to
+ * confirm, and sends the declaration again with `confirmCaseVariant: true`.
+ *
+ * @param {Error} error an axios error
+ * @returns {string|null}
+ */
+export function caseVariantOf(error) {
+  const data = error?.response?.data || {};
+  if (data.message !== ERROR_CODES.DIMENSION_NAME_DIFFERS_ONLY_BY_CASE) {
+    return null;
+  }
+  return data.details?.existingName || null;
 }
 
 /**

@@ -1,5 +1,13 @@
 'use strict';
 
+// Read by the server only (mailing.schema.js hands the strings to the editor),
+// so it may require the shared definitions.
+const {
+  EMAIL_TRIGGER_DEFINITIONS,
+} = require('../../packages/shared/taxonomy/trigger-definitions.js');
+
+const TRIGGERS = EMAIL_TRIGGER_DEFINITIONS.fr;
+
 module.exports = {
   // edit title
   'edit-title-double-click': 'Double-cliquer pour modifier',
@@ -377,22 +385,32 @@ module.exports = {
   'email-metadata-typology': 'Typologie',
   'email-metadata-typology-none': 'Aucune',
   'email-metadata-typology-empty':
-    'Aucune typologie active pour votre entreprise. Elles se configurent dans Paramètres → Général → Typologies.',
+    'Aucune typologie active pour votre entreprise. Elles se configurent dans Paramètres → Général → Taxonomie.',
   'email-metadata-error': "L'enregistrement des métadonnées a échoué",
   'email-metadata-error-disabled':
     'Les métadonnées ne sont pas activées pour cette entreprise',
   'email-metadata-error-typology': "Cette typologie n'est plus disponible",
+  'email-metadata-error-dimension-value':
+    "Une valeur choisie n'est plus disponible",
   'email-metadata-typology-missing': 'Typologie désactivée',
+  // A deactivated value of a company dimension that the email still carries.
+  'email-metadata-dimension-value-deactivated': '__label__ (valeur désactivée)',
   'email-metadata-trigger': 'Déclenchement',
   'email-metadata-trigger-none': 'Aucun',
-  'email-metadata-trigger-adhoc': 'Ad hoc',
-  'email-metadata-trigger-automated': 'Automatisé',
+  // The empty choice of a company dimension select, whatever its name.
+  'email-metadata-dimension-none': 'Aucune valeur',
+  // Under a dimension whose value is no longer offered under its parent value.
+  'email-metadata-dimension-unavailable':
+    "Cette valeur n'est plus proposée pour ce choix. L'email peut tout de même être enregistré.",
+  // Les mots de la doctrine, les mêmes que l'écran de taxonomie et l'IA
+  // (packages/shared/taxonomy/trigger-definitions.js).
+  'email-metadata-trigger-adhoc': TRIGGERS.adhoc.label,
+  'email-metadata-trigger-automated': TRIGGERS.automated.label,
   // Affichées sous le champ pour la valeur sélectionnée, et en infobulle sur les
   // options. Des phrases complètes : elles ne suivent plus un libellé.
-  'email-metadata-trigger-adhoc-description':
-    "Un envoi décidé par l'équipe, pour cette fois.",
+  'email-metadata-trigger-adhoc-description': TRIGGERS.adhoc.description,
   'email-metadata-trigger-automated-description':
-    'Un envoi décidé par une règle, à chaque fois.',
+    TRIGGERS.automated.description,
   'email-metadata-error-no-company':
     "Cet email n'est rattaché à aucune entreprise : la typologie ne peut pas être enregistrée",
   'email-metadata-error-invalid': 'Une des valeurs saisies a été refusée',

@@ -1,0 +1,143 @@
+'use strict';
+
+// What the server and the taxonomy screen both read of the taxonomy (ADR 0032),
+// defined once: each side kept its own copy, and two copies of a rule are one
+// chance to disagree.
+//
+// No syntax that needs a Babel helper here (spread, classes, `for...of`): the
+// UI's build compiles this file, and an injected helper import would turn it
+// into a module that can no longer use `module.exports`.
+
+// The two standard dimensions: the doctrine defines them, so every company has
+// them and none can deactivate or delete them. Listed in the order the screen
+// shows them.
+const STANDARD_DIMENSIONS = Object.freeze({
+  EMAIL_TYPE: 'emailType',
+  TRIGGER: 'trigger',
+});
+const STANDARD_DIMENSION_NAMES = Object.freeze([
+  STANDARD_DIMENSIONS.EMAIL_TYPE,
+  STANDARD_DIMENSIONS.TRIGGER,
+]);
+
+// The trigger's two values, the doctrine's: a company neither renames them nor
+// adds a third, so they are never taxonomy items.
+const EMAIL_TRIGGERS = Object.freeze({
+  // A send the team decided on, this once.
+  AD_HOC: 'adhoc',
+  // A send a rule decides, every time.
+  AUTOMATED: 'automated',
+});
+const EMAIL_TRIGGER_VALUES = Object.freeze([
+  EMAIL_TRIGGERS.AD_HOC,
+  EMAIL_TRIGGERS.AUTOMATED,
+]);
+
+// A dimension's name is what a template reads (ADR-0015), so it accepts exactly
+// what a template property name accepts. Capitals are allowed: `emailType` is
+// one of the two standard dimensions.
+const DIMENSION_NAME_PATTERN = /^[A-Za-z_][A-Za-z0-9_]*$/;
+
+// The names every JavaScript object already answers to, through
+// Object.prototype, plus `prototype`. The editor keys an email's values by
+// dimension name. Under `__proto__` a chosen value is not stored but sets the
+// object's prototype, lost without a word. Under the others it is stored, but
+// an email that has no value for that dimension reads back the inherited
+// function instead of nothing: `{}.toString` is a function, and once a value
+// sits there, `{ hasOwnProperty: 'ca' }.hasOwnProperty(x)` throws.
+//
+// Listed rather than read from Object.prototype at run time, so the server and
+// the browser refuse the same names whatever their engine adds; a test checks
+// the list still covers Object.prototype.
+const OBJECT_PROTOTYPE_NAMES = [
+  '__proto__',
+  '__defineGetter__',
+  '__defineSetter__',
+  '__lookupGetter__',
+  '__lookupSetter__',
+  'constructor',
+  'hasOwnProperty',
+  'isPrototypeOf',
+  'propertyIsEnumerable',
+  'toLocaleString',
+  'toString',
+  'valueOf',
+  'prototype',
+];
+
+// The root properties of an email's content that the editor builds itself,
+// beside the template's options: the template's name (`type`), the theme's
+// styles (`theme`), the list of blocks (`mainBlocks`), and the custom style
+// switch (`customStyle`). The editor publishes a dimension to the root property
+// of the same name (ADR-0015): under one of these, it would overwrite the
+// email's own structure. A template option's name (`country`, `bodyWidth`)
+// stays allowed: a dimension may fill one in.
+const EDITOR_CONTENT_NAMES = ['type', 'theme', 'mainBlocks', 'customStyle'];
+
+const RESERVED_DIMENSION_NAMES = Object.freeze(
+  OBJECT_PROTOTYPE_NAMES.concat(EDITOR_CONTENT_NAMES)
+);
+
+// A design token is published to the root property of its own name, like a
+// dimension, so it takes none of the names above. Nor `locale`, reserved for
+// the email's language, which the template receives under that name
+// (ADR-0023): a token would shadow it (ADR-0015).
+const RESERVED_TOKEN_NAMES = Object.freeze(
+  RESERVED_DIMENSION_NAMES.concat(['locale'])
+);
+
+// Bounds of the editable fields, read by the Mongoose schemas, the services and
+// the forms.
+const TAXONOMY_LIMITS = Object.freeze({
+  LABEL: 120,
+  DESCRIPTION: 2000,
+  // A value's identifier, what a template compares against.
+  CANONICAL_TYPE: 60,
+  // A dimension's name, what a template reads as a property: its own bound,
+  // not the identifier's, though both happen to be 60 today.
+  DIMENSION_NAME: 60,
+  // A company describing its own editorial vocabulary needs tens of values per
+  // dimension, not thousands. Bounds both the unpaginated read and the storage.
+  // Counted per dimension: a full dimension leaves the others open.
+  VALUES_PER_DIMENSION: 200,
+  // A company declines its emails by a handful of axes, not a hundred. The
+  // standard dimensions count.
+  DIMENSIONS_PER_COMPANY: 20,
+  // The design tokens of one value: a brand's palette and type, not a theme.
+  TOKENS_PER_VALUE: 24,
+  // A colour, a font stack, a size: never a block of CSS.
+  TOKEN_VALUE: 200,
+});
+
+// What a design token's value may not hold (ADR-0015). A template prints it
+// inside a style (`-ko-color: @_root_.mainColorVar`) or renders it as HTML: a
+// colour, a font stack, a size or a link, never markup or a block of CSS that
+// would close what it sits in. Checked by the server on save and by the editor
+// before it publishes a value stored before the check existed.
+//
+// No control character either: a browser drops a tab or a newline inside a
+// link's scheme, so `java\tscript:` would read as `javascript:`. Nor `/*`,
+// which in a style comments out the declarations after it.
+const TOKEN_VALUE_FORBIDDEN =
+  // eslint-disable-next-line no-control-regex
+  /[<>{};\\\u0000-\u001F\u007F]|\/\*|javascript:|vbscript:|expression\(|@import|url\(/i;
+
+/**
+ * @param {*} token a design token's value
+ * @returns {boolean} whether a template may receive it
+ */
+function isTokenValue(token) {
+  return typeof token === 'string' && !TOKEN_VALUE_FORBIDDEN.test(token);
+}
+
+module.exports = {
+  STANDARD_DIMENSIONS,
+  STANDARD_DIMENSION_NAMES,
+  EMAIL_TRIGGERS,
+  EMAIL_TRIGGER_VALUES,
+  DIMENSION_NAME_PATTERN,
+  RESERVED_DIMENSION_NAMES,
+  RESERVED_TOKEN_NAMES,
+  TAXONOMY_LIMITS,
+  isTokenValue,
+};

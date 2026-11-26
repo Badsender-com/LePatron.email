@@ -35,6 +35,8 @@ function createEmailMetadataStore() {
   let current = null;
   // The section, told when a field is written from outside it (an AI action).
   let writeListeners = [];
+  // The section, told what the email now carries once a save went through.
+  let saveListeners = [];
 
   /** Whether a metadata section is mounted at all. */
   function isActive() {
@@ -73,6 +75,17 @@ function createEmailMetadataStore() {
     writeListeners.push(listener);
     return () => {
       writeListeners = writeListeners.filter((l) => l !== listener);
+    };
+  }
+
+  /**
+   * The section learns what a successful save wrote: what the email carries
+   * from then on, such as the deactivated values it may still offer.
+   */
+  function onSaved(listener) {
+    saveListeners.push(listener);
+    return () => {
+      saveListeners = saveListeners.filter((l) => l !== listener);
     };
   }
 
@@ -122,6 +135,7 @@ function createEmailMetadataStore() {
   function markSaved(sent) {
     if (!isActive()) return;
     initial = { ...(sent || current) };
+    saveListeners.forEach((listener) => listener({ ...initial }));
   }
 
   /** Torn down with the section when the editor swaps templates. */
@@ -129,6 +143,7 @@ function createEmailMetadataStore() {
     initial = null;
     current = null;
     writeListeners = [];
+    saveListeners = [];
   }
 
   return {
@@ -137,6 +152,7 @@ function createEmailMetadataStore() {
     setCurrent,
     writeField,
     onWrite,
+    onSaved,
     isDirty,
     payload,
     snapshot,

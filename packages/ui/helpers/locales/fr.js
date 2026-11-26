@@ -1,3 +1,5 @@
+import { EMAIL_TRIGGER_DEFINITIONS } from '../../../shared/taxonomy/trigger-definitions.js';
+
 export default {
   authCard: {
     changeAccount: 'Changer de compte',
@@ -1328,7 +1330,7 @@ export default {
         'Lorsque l\'option est désactivée, ces champs n\'apparaissent nulle part et l\'API les refuse ; les données déjà saisies sont conservées.',
       taxonomyAction: 'Gérer les typologies',
       taxonomyHint:
-        'Les typologies d\'email se configurent dans Paramètres → Général → Typologies, indépendamment de cette option.',
+        'Les typologies d\'email se configurent dans Paramètres → Général → Taxonomie, indépendamment de cette option.',
     },
     snackbars: {
       invalid: 'Les réglages envoyés n\'ont pas été acceptés.',
@@ -1338,10 +1340,132 @@ export default {
   taxonomy: {
     active: 'Actif',
     inactive: 'Inactif',
-    title: 'Typologies d\'email',
-    sidebarLabel: 'Typologies',
+    title: 'Taxonomie',
+    sidebarLabel: 'Taxonomie',
     description:
+      'Les dimensions selon lesquelles vous déclinez vos emails. La typologie et le déclenchement sont communs à toutes les entreprises : vous choisissez leurs mots, pas leur existence.',
+    emailTypeHint:
       'Vos typologies d\'email, dans vos mots. La définition que vous en donnez est ce qui compte : elle sert de référence à vos équipes, et de contexte à l\'IA. Les six typologies Badsender vous servent de socle : renommez-les, précisez-les, désactivez celles qui ne vous servent pas.',
+    dimensions: {
+      standard: 'Standard',
+      emailType: 'Typologie',
+      loadError: 'Impossible de charger les dimensions de votre taxonomie',
+      updated: 'Dimension mise à jour',
+      created: 'Dimension créée',
+      deleted: 'Dimension supprimée',
+      deactivated: 'Dimension désactivée',
+      reactivated: 'Dimension réactivée',
+      inactive: 'Désactivée',
+      inactiveHint:
+        'Elle n\'est plus proposée sur les emails et ne reçoit plus de nouvelle valeur. Les emails qui portent déjà une de ses valeurs la conservent.',
+      resolution:
+        'Résolution des tokens : {order}. La dernière l\'emporte quand deux valeurs portent le même token.',
+      under: 'Sous {parent}',
+      deactivate: 'Désactiver',
+      reactivate: 'Réactiver',
+      declare: 'Ajouter une dimension',
+      full: 'Limite de {limit} dimensions atteinte, standard comprises.',
+      deleteConfirmTitle: 'Supprimer cette dimension ?',
+      deleteConfirmMessage:
+        'La dimension « {label} » sera supprimée, et son nom pourra être repris.',
+      caseVariant: {
+        title: 'Un nom presque identique existe déjà',
+        message:
+          'La dimension « {existingName} » existe déjà, et « {name} » ne s\'en distingue que par les majuscules.',
+        consequence:
+          'Vos équipes verront deux listes dans l\'éditeur, et un template ne lit que le nom exact qu\'il attend. Le nom ne pourra plus être corrigé ensuite.',
+        confirm: 'Créer quand même',
+      },
+      trigger: {
+        readOnly:
+          'Ses deux valeurs sont celles de la doctrine Badsender : elles ne se renomment pas et ne se complètent pas.',
+        // The doctrine's words, shared with the editor and the AI
+        // (packages/shared/taxonomy/trigger-definitions.js).
+        adhoc: EMAIL_TRIGGER_DEFINITIONS.fr.adhoc,
+        automated: EMAIL_TRIGGER_DEFINITIONS.fr.automated,
+      },
+      form: {
+        createTitle: 'Nouvelle dimension',
+        editTitle: 'Modifier la dimension',
+        name: 'Nom lu par les templates',
+        namePlaceholder: 'audience',
+        nameCreateHint:
+          'Définitif une fois créé : les templates liront ce nom. Lettres sans accent, chiffres et _, sans commencer par un chiffre.',
+        nameInvalid:
+          'Lettres sans accent, chiffres et _ seulement, sans commencer par un chiffre.',
+        nameHint:
+          'Fixé à la création : les templates lisent ce nom, le changer les casserait.',
+        descriptionHint:
+          'Ce que cette dimension décide pour un email, chez vous. Ce texte sert de contexte à l\'IA.',
+        parent: 'Sous la dimension',
+        parentNone: 'Aucune : premier niveau',
+        parentDeactivated: '{label} (désactivée)',
+        parentHint:
+          'Ses valeurs seront proposées selon la valeur choisie pour la dimension parente : la Langue selon le Marché.',
+        precedence: 'Priorité',
+        precedenceHint:
+          'Quand deux valeurs choisies sur un email portent le même token, celle de la dimension à la plus haute priorité l\'emporte.',
+        precedenceInvalid: 'Indiquez la priorité : un nombre entier, 0 par défaut.',
+      },
+    },
+    values: {
+      deleteConfirmTitle: 'Supprimer cette valeur ?',
+      deleteConfirmMessage: 'La valeur « {label} » sera supprimée.',
+      deleteConfirmHint:
+        'Si des emails l\'utilisent, la suppression sera refusée : désactivez-la plutôt.',
+      loadError: {
+        title: 'Impossible de charger les valeurs de cette dimension',
+      },
+      empty: {
+        action: 'Ajouter une valeur',
+        title: 'Aucune valeur pour le moment',
+        description:
+          'Ajoutez les valeurs entre lesquelles vos équipes choisiront sur un email.',
+      },
+      form: {
+        createTitle: 'Nouvelle valeur',
+        editTitle: 'Modifier la valeur',
+        labelPlaceholder: 'Clients fidèles',
+        labelHint: 'Le nom que vos équipes utilisent réellement.',
+        descriptionPlaceholder:
+          'Plus de trois commandes dans l\'année, abonnés à l\'infolettre.',
+        descriptionHint:
+          'Ce que cette valeur recouvre chez vous. C\'est ce texte qui guidera l\'IA.',
+        identifier: 'Identifiant',
+        identifierHint:
+          'Ce que les templates comparent. Proposé depuis le libellé, unique dans la dimension.',
+        availability: 'Disponible sous',
+        availabilityHint:
+          'Les valeurs de « {parent} » sous lesquelles celle-ci est proposée. Vide : proposée sous toutes.',
+        tokens: 'Tokens de design',
+        tokensHint:
+          'Des valeurs nommées que les templates lisent sous leur nom, comme la couleur principale d\'une marque : mainColorVar = #ffd845.',
+        tokenName: 'Nom du token',
+        tokenValue: 'Valeur du token',
+        tokenNamePlaceholder: 'mainColorVar',
+        tokenValuePlaceholder: '#ffd845',
+        tokenNameInvalid:
+          'Lettres sans accent, chiffres et _ seulement, sans commencer par un chiffre.',
+        tokenNameRequired: 'Donnez un nom à ce token, ou retirez la ligne.',
+        tokenNameTooLong: 'Le nom ne peut pas dépasser {max} caractères.',
+        tokenNameReserved:
+          'Ce nom est réservé par JavaScript, par l’éditeur (comme theme ou type) ou à la langue de l’email, que le template reçoit sous le nom locale.',
+        tokenNameDuplicate: 'Deux tokens portent ce nom : gardez-en un seul.',
+        tokenValueRequired: 'Donnez une valeur à ce token, ou retirez la ligne.',
+        tokenValueTooLong: 'La valeur ne peut pas dépasser {max} caractères.',
+        tokenValueUnsafe:
+          'Une couleur, une police, une taille ou un lien : ni balise, ni accolade, ni point-virgule, ni antislash, ni commentaire (/*), ni tabulation ou retour à la ligne, ni javascript:, url( ou @import.',
+        addToken: 'Ajouter un token',
+        tokensFull: 'Limite de {limit} tokens atteinte.',
+        isActiveHint:
+          'Une valeur désactivée disparaît des listes de choix, mais les emails qui l\'utilisent la conservent.',
+      },
+      snackbars: {
+        created: 'Valeur créée',
+        updated: 'Valeur mise à jour',
+        deleted: 'Valeur supprimée',
+      },
+    },
     table: {
       label: 'Libellé',
       description: 'Définition',
@@ -1399,10 +1523,36 @@ export default {
         'Créez les typologies dont vos équipes ont besoin : leur libellé et leur définition sont les vôtres.',
     },
     errors: {
-      limitReached: 'Vous avez atteint le nombre maximum de typologies pour cette entreprise.',
-      labelAlreadyExists: 'Une typologie porte déjà ce libellé.',
+      limitReached:
+        'Limite atteinte : {limit} au maximum. Supprimez-en avant d\'en ajouter d\'autres.',
+      labelAlreadyExists: 'Ce libellé est déjà pris dans cette dimension.',
+      tokenNameIsDimension:
+        '« {name} » est déjà le nom d\'une dimension de l\'entreprise : choisissez un autre nom pour ce token.',
+      identifierAlreadyExists:
+        'Cet identifiant est déjà pris dans cette dimension.',
+      dimensionNameIsToken:
+        '« {name} » est déjà le nom d\'un token de design d\'une valeur : la dimension le désactiverait. Choisissez un autre nom, ou renommez d\'abord le token.',
+      dimensionNameReserved:
+        'Ce nom est réservé par JavaScript (comme constructor ou toString) ou par l’éditeur (comme theme ou type) : une valeur choisie sous ce nom serait perdue, mal relue ou abîmerait l’email.',
+      dimensionNameTooLong: 'Le nom ne peut pas dépasser {limit} caractères.',
+      invalidDimension:
+        'Cette dimension n\'a pas pu être enregistrée : vérifiez son nom et son libellé.',
+      standardDimensionLocked:
+        'Une dimension standard ne se désactive pas et ne se supprime pas.',
+      dimensionNotFound:
+        'Cette dimension n\'existe plus. Rechargez la page.',
+      dimensionNameAlreadyExists:
+        'Une dimension porte déjà ce nom, peut-être désactivée.',
+      isParent:
+        '{count} valeur est proposée sous celle-ci : retirez-la de sa disponibilité ou désactivez celle-ci. | {count} valeurs sont proposées sous celle-ci : retirez-la de leur disponibilité ou désactivez celle-ci.',
+      dimensionHasChildren:
+        'Une autre dimension est placée sous celle-ci : déplacez-la d\'abord.',
+      dimensionHasAvailability:
+        '{count} valeur a une disponibilité sous la dimension actuelle : videz-la avant de déplacer la dimension. | {count} valeurs ont une disponibilité sous la dimension actuelle : videz-les avant de déplacer la dimension.',
+      dimensionHasValues:
+        'Cette dimension a {count} valeur : désactivez-la plutôt que de la supprimer. | Cette dimension a {count} valeurs : désactivez-la plutôt que de la supprimer.',
       inUse:
-        'Cette typologie est utilisée par {count} email : désactivez-la plutôt que de la supprimer. | Cette typologie est utilisée par {count} emails : désactivez-la plutôt que de la supprimer.',
+        'Utilisée par {count} email : désactivez-la plutôt que de la supprimer. | Utilisée par {count} emails : désactivez-la plutôt que de la supprimer.',
     },
     defaults: {
       action: 'Typologies par défaut',

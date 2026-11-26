@@ -3,7 +3,7 @@
 const { Schema } = require('mongoose');
 const { ObjectId } = Schema.Types;
 
-const { trimString } = require('../utils/model');
+const { trimString } = require('../../utils/model');
 
 // `trimString` does `String(value).trim()`, so clearing an optional field by
 // assigning `undefined` stored the literal string "undefined" — which then showed
@@ -11,21 +11,28 @@ const { trimString } = require('../utils/model');
 // of changing the shared helper, which every other schema relies on.
 const trimOptionalString = (value) =>
   value === undefined || value === null ? value : trimString(value);
-const { GroupModel } = require('../constant/model.names.js');
 const {
-  TaxonomyTypeValues,
+  GroupModel,
+  TaxonomyItemModel,
+} = require('../../constant/model.names.js');
+const {
+  StandardDimensions,
+  DIMENSION_NAME_PATTERN,
   TaxonomyLimits,
-} = require('../constant/taxonomy-type.js');
+} = require('../../constant/taxonomy-type.js');
 
 /**
  * @apiDefine taxonomyItem
  * @apiSuccess {String} id
- * @apiSuccess {String} type the taxonomy this item belongs to (eg. `emailType`)
+ * @apiSuccess {String} type the name of the dimension this value belongs to (eg.
+ *   `emailType`)
  * @apiSuccess {String} label the label shown to users, freely editable
  * @apiSuccess {String} description the company's own definition of this item
  * @apiSuccess {String} canonicalType optional mapping onto the AI skills vocabulary
  * @apiSuccess {Boolean} isActive
  * @apiSuccess {Number} order
+ * @apiSuccess {String[]} parentIds the availability: the values of the parent
+ *   dimension it is offered under, all of them when empty
  * @apiSuccess {Object} group the company it belongs to
  */
 
@@ -37,10 +44,18 @@ const TaxonomyItemSchema = Schema(
       required: [true, 'company is required'],
       alias: 'group',
     },
+    // The name of the dimension this value belongs to (ADR-0015): `emailType` or
+    // one the company declared. The service checks it against the company's
+    // dimensions; the schema only refuses what can never be one.
     type: {
       type: String,
-      enum: TaxonomyTypeValues,
       required: [true, 'type is required'],
+      match: [DIMENSION_NAME_PATTERN, 'type must be a dimension name'],
+      // The trigger's two values are the doctrine's, never taxonomy items.
+      validate: {
+        validator: (type) => type !== StandardDimensions.TRIGGER,
+        message: 'the trigger takes no taxonomy item',
+      },
     },
     // Each company uses its own words: "Infolettre", "Newsletter", "Black Friday".
     label: {
@@ -74,8 +89,34 @@ const TaxonomyItemSchema = Schema(
       type: Number,
       default: 0,
     },
+    // The availability: the values of the parent dimension this value is
+    // offered under. Empty: offered under all of them. Answered as `parentIds`,
+    // the name the request and the editor use.
+    _parents: {
+      type: [{ type: ObjectId, ref: TaxonomyItemModel }],
+      alias: 'parentIds',
+    },
+    // Design tokens a template reads under their name (`_root_.mainColorVar`):
+    // a brand's colour as a role, not as `#ffd845`. The service checks the
+    // names and the count.
+    tokens: {
+      type: Map,
+      of: { type: String, maxlength: TaxonomyLimits.TOKEN_VALUE },
+    },
   },
-  { timestamps: true, toJSON: { virtuals: true }, toObject: { virtuals: true } }
+  {
+    timestamps: true,
+    toJSON: {
+      virtuals: true,
+      // The availability is answered under its alias only, the name the
+      // request takes: one name per field in the API.
+      transform: (doc, json) => {
+        delete json._parents;
+        return json;
+      },
+    },
+    toObject: { virtuals: true },
+  }
 );
 
 // Two companies may use the same label; one company may not use it twice for the
@@ -83,5 +124,8 @@ const TaxonomyItemSchema = Schema(
 TaxonomyItemSchema.index({ _company: 1, type: 1, label: 1 }, { unique: true });
 // Serves the select lists: active items of one taxonomy, in display order.
 TaxonomyItemSchema.index({ _company: 1, type: 1, isActive: 1, order: 1 });
+
+// Serves the refusal to delete a value another value is offered under.
+TaxonomyItemSchema.index({ _company: 1, _parents: 1 });
 
 module.exports = TaxonomyItemSchema;

@@ -27,19 +27,20 @@ jest.mock('../../../packages/server/utils/logger.js', () => ({
 const {
   TaxonomyItems,
 } = require('../../../packages/server/common/models.common.js');
-const taxonomyDefaultsService = require('../../../packages/server/taxonomy/taxonomy-defaults.service.js');
+const taxonomyDefaultsService = require('../../../packages/server/taxonomy/services/taxonomy-defaults.service.js');
 const {
   DEFAULT_EMAIL_TYPES,
   pickSeedLang,
   buildDefaultEmailTypes,
   planMissingDefaultEmailTypes,
-} = require('../../../packages/server/taxonomy/default-email-types.js');
+} = require('../../../packages/server/taxonomy/services/default-email-types.js');
 const {
   EmailTypeCanonicalValues,
 } = require('../../../packages/server/constant/email-type-canonical.js');
 const {
   TaxonomyLimits,
 } = require('../../../packages/server/constant/taxonomy-type.js');
+const ERROR_CODES = require('../../../packages/server/constant/error-codes.js');
 
 const COMPANY = '507f1f77bcf86cd799439a01';
 
@@ -372,18 +373,23 @@ describe('addMissingDefaultEmailTypes', () => {
 
   it('refuses to push the company past its item cap', async () => {
     mockExisting(
-      Array.from({ length: TaxonomyLimits.ITEMS_PER_COMPANY }, (_, i) => ({
+      Array.from({ length: TaxonomyLimits.VALUES_PER_DIMENSION }, (_, i) => ({
         label: `Typologie ${i}`,
         canonicalType: null,
       }))
     );
 
+    // The limit travels with the refusal, so the screen names it.
     await expect(
       taxonomyDefaultsService.addMissingDefaultEmailTypes({
         user,
         groupId: COMPANY,
       })
-    ).rejects.toMatchObject({ status: 409 });
+    ).rejects.toMatchObject({
+      status: 409,
+      message: ERROR_CODES.TAXONOMY_LIMIT_REACHED,
+      details: { limit: 200 },
+    });
     expect(TaxonomyItems.insertMany).not.toHaveBeenCalled();
   });
 

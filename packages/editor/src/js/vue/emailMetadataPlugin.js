@@ -9,8 +9,26 @@ const {
   selectedDescription,
 } = require('../utils/email-metadata-options');
 const {
+  dimensionSelects,
+  reconcileSelections,
+  selectionsFromIds,
+  idsFromSelections,
+} = require('../utils/dimension-selects');
+const {
   createEmailMetadataStore,
 } = require('../utils/email-metadata-store');
+const {
+  governanceValues,
+  rememberValued,
+} = require('../utils/governance-values');
+const {
+  createTemplatePublisher,
+  publishOutsideUndo,
+} = require('../utils/publish-to-template');
+const {
+  exposeHiddenTemplateOptions,
+  hideTemplateOptionsFedBy,
+} = require('../utils/template-options');
 const template = require('./components/email-metadata/email-metadata.template');
 
 // The mounted Vue instance, kept so `dispose` can tear it down when the editor
@@ -26,7 +44,7 @@ let activeStore = null;
 
 /**
  * The email settings of the Content tab: subject, planned send date, typology,
- * trigger.
+ * trigger, and one select per company dimension.
  *
  * A group of fields, not a panel. The first implementation followed the comments
  * panel — a slidebar opened from the top bar — and that was the wrong precedent:
@@ -61,6 +79,10 @@ module.exports = {
     // is the same path it took before this feature existed, without having to test
     // for the store's existence.
     vm.emailMetadataStore = createEmailMetadataStore();
+
+    // The option of a root property the email settings feed is hidden from
+    // the template options: the settings decide (utils/template-options.js).
+    exposeHiddenTemplateOptions(vm);
   },
 
   init(vm) {
@@ -78,6 +100,27 @@ module.exports = {
     // user has had a chance to type anything.
     store.reset(initialForm);
 
+    const dimensions = config.dimensions || [];
+    // Before the section mounts: the options its dimensions feed are hidden
+    // even if it never does. Those a design token feeds follow the chosen
+    // values, below.
+    hideTemplateOptionsFedBy(vm, config);
+    // Every dimension gets its key up front: Vue 2 does not see a key added
+    // later, and the select of a dimension the email has no value for would not
+    // react.
+    const initialSelections = dimensions.reduce(
+      (selections, dimension) => ({ ...selections, [dimension.name]: '' }),
+      {}
+    );
+    Object.assign(
+      initialSelections,
+      selectionsFromIds(dimensions, initialForm.taxonomyItemIds)
+    );
+
+    // One per section: it remembers what the template held before a token was
+    // first written, to give it back when no chosen value carries it any more.
+    const templatePublisher = createTemplatePublisher();
+
     Vue.component('EmailMetadataPlugin', {
       data: () => ({
         subject: initialForm.subject,
@@ -86,6 +129,18 @@ module.exports = {
         trigger: initialForm.trigger,
         emailTypes: config.emailTypes || [],
         triggers: config.triggers || [],
+        dimensions,
+        selections: initialSelections,
+        // The values the email holds on the server, refreshed by each save:
+        // they decide which deactivated values are still offered.
+        carriedIds: initialForm.taxonomyItemIds,
+        // The dimensions the email has had a value for: only those are
+        // published empty once emptied (utils/governance-values.js).
+        valued: rememberValued([], {
+          selections: initialSelections,
+          emailTypeId: initialForm.emailTypeId,
+          trigger: initialForm.trigger,
+        }),
         subjectHardLimit: SUBJECT_HARD_LIMIT,
       }),
 
@@ -133,27 +188,88 @@ module.exports = {
           }
           return null;
         },
+        dimensionChoices() {
+          return dimensionSelects({
+            dimensions: this.dimensions,
+            selections: this.selections,
+            emailTypeId: this.emailTypeId,
+            carriedIds: this.carriedIds,
+            deactivatedLabel: (label) =>
+              vm.t('email-metadata-dimension-value-deactivated', { label }),
+          });
+        },
+        // What the template reads of the email's settings (ADR-0015), recomputed
+        // as the user picks: the preview follows without a save. `values` is
+        // what is published, `sources` the design tokens the chosen values
+        // carry.
+        governance() {
+          return governanceValues({
+            dimensions: this.dimensions,
+            selections: this.selections,
+            emailTypes: this.emailTypes,
+            emailTypeId: this.emailTypeId,
+            emailTypePrecedence: config.emailTypePrecedence,
+            emailTypePosition: config.emailTypePosition,
+            trigger: this.trigger,
+            valued: this.valued,
+          });
+        },
         triggerHintId() {
           return this.triggerDescription ? 'email-metadata-trigger-hint' : null;
         },
         // Watched rather than pushed field by field: one watcher, and the store
-        // receives a complete snapshot every time instead of four partial ones.
+        // receives a complete snapshot every time instead of partial ones.
         formState() {
           return {
             subject: this.subject,
             plannedSendDate: this.plannedSendDate,
             emailTypeId: this.emailTypeId,
             trigger: this.trigger,
+            // The values of dimensions no longer on screen are taken from the
+            // state the section opened with: nothing here can change them.
+            taxonomyItemIds: idsFromSelections(
+              this.dimensions,
+              initialForm.taxonomyItemIds,
+              this.selections
+            ),
           };
         },
       },
 
       watch: {
+        // Immediate: the content must hold what the email carries from the
+        // moment it opens, not from the first change. Outside the undo
+        // history: an undo must not take the content away from the settings.
+        // The option of a token is hidden from the same result that writes
+        // it: hidden while a chosen value carries it, given back with the
+        // template's own value once none does (utils/template-options.js).
+        governance: {
+          handler({ values, sources }) {
+            publishOutsideUndo(vm, values, templatePublisher.publish);
+            hideTemplateOptionsFedBy(vm, config, Object.keys(sources));
+          },
+          immediate: true,
+        },
         formState: {
           handler(state) {
             store.setCurrent(state);
           },
           deep: true,
+        },
+        selections: {
+          handler() {
+            this.trackValued();
+          },
+          deep: true,
+        },
+        // A dimension may hang under the email type: changing it reconciles
+        // the values offered under it.
+        emailTypeId() {
+          this.reconcile(['emailType']);
+          this.trackValued();
+        },
+        trigger() {
+          this.trackValued();
         },
       },
 
@@ -163,16 +279,47 @@ module.exports = {
         this.stopListening = store.onWrite((name, value) => {
           this[name] = value;
         });
+        // What the email carries moves with each save: a deactivated value the
+        // save dropped is no longer offered.
+        this.stopSaved = store.onSaved((saved) => {
+          this.carriedIds = saved.taxonomyItemIds || [];
+        });
       },
 
       beforeDestroy() {
         this.stopListening();
+        this.stopSaved();
       },
 
       methods: {
+        choose(name, value) {
+          this.selections[name] = value;
+          this.reconcile([name]);
+        },
+        // Only the descendants of what the user changed are looked at: a
+        // combination narrowed since the email chose it is kept, with its notice,
+        // until the user changes its parent.
+        reconcile(changed) {
+          const kept = reconcileSelections({
+            dimensions: this.dimensions,
+            selections: this.selections,
+            emailTypeId: this.emailTypeId,
+            changed,
+          });
+          Object.keys(this.selections).forEach((name) => {
+            this.selections[name] = kept[name] || '';
+          });
+        },
         // The second argument matters: vm.t(key, params) interpolates __token__
         // placeholders, and dropping it would lose them without an error.
         t: (key, params) => vm.t(key, params),
+        trackValued() {
+          this.valued = rememberValued(this.valued, {
+            selections: this.selections,
+            emailTypeId: this.emailTypeId,
+            trigger: this.trigger,
+          });
+        },
       },
 
       template,

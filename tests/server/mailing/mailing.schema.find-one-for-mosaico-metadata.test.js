@@ -28,6 +28,14 @@ jest.mock('../../../packages/server/mailing/mailing.service.js', () => ({
 // service, so that is what these tests stub.
 jest.mock('../../../packages/server/common/models.common.js', () => ({
   TaxonomyItems: { find: jest.fn(), findOne: jest.fn() },
+  // No company dimension, nor the email type's: what the editor receives of
+  // them is covered by mailing-metadata.editor-dimensions.test.js. Unseeded,
+  // the email type's precedence is the standard default.
+  TaxonomyDimensions: {
+    find: () => ({
+      select: () => ({ lean: async () => [] }),
+    }),
+  },
   Mailings: {},
   // Whether the company shares previews (share-link.service.js): it does.
   Groups: { findById: () => ({ lean: () => Promise.resolve({}) }) },
@@ -308,14 +316,19 @@ describe('findOneForMosaico — company opted in', () => {
         label: 'Infolettre',
         canonicalType: 'newsletter',
         description: 'Notre rendez-vous mensuel.',
+        tokens: {},
       },
       {
         id: mongoose.Types.ObjectId('507f1f77bcf86cd799439102'),
         label: 'Promo',
         canonicalType: undefined,
         description: undefined,
+        tokens: {},
       },
     ]);
+    // The standard default, the email type's dimension never having been read.
+    expect(emailMetadataConfig.emailTypePrecedence).toBe(100);
+    expect(emailMetadataConfig.emailTypePosition).toBe(0);
     expect(emailMetadataConfig.url.update).toBe(
       `/api/mailings/${MAILING}/metadata`
     );
@@ -357,6 +370,7 @@ describe('findOneForMosaico — company opted in', () => {
       'emailTypeId',
       'plannedSendDate',
       'subject',
+      'taxonomyItemIds',
       'trigger',
     ]);
   });

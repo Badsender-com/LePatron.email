@@ -27,6 +27,8 @@ var undoManager = function (model, options) {
   var MODE_ONCE = 2; // only one sequential change for each property is added to the stack
   var MODE_MERGE = 3; // merge next change with the last one
   var mode = MODE_NORMAL;
+  // The mode `suspend` left, which `resume` puts back; null when not suspended.
+  var suspendedMode = null;
 
   var defaultOptions = {
     levels: 100,
@@ -268,6 +270,20 @@ var undoManager = function (model, options) {
     setModeIgnore: function () {
       mode = MODE_IGNORE;
       _removeMergedAction(undoStack);
+    },
+    // Changes made between the two are applied but never become a step, and
+    // whatever the stack was doing (a merge window included) carries on after
+    // `resume` as if nothing had happened: unlike setModeIgnore, the pending
+    // merge is left alone.
+    suspend: function () {
+      if (suspendedMode !== null) return;
+      suspendedMode = mode;
+      mode = MODE_IGNORE;
+    },
+    resume: function () {
+      if (suspendedMode === null) return;
+      mode = suspendedMode;
+      suspendedMode = null;
     },
     setUndoActionMaker: function (maker) {
       makeUndoAction = maker;

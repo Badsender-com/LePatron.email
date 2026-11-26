@@ -57,6 +57,13 @@ var addUndoStackExtensionMaker = function (performanceAwareCaller) {
     );
     viewModel.setUndoModeMerge = undoRedoStack.setModeMerge;
     viewModel.setUndoModeOnce = undoRedoStack.setModeOnce;
+    // A content write that is not the user's edit but follows from a setting
+    // held outside the content (the email settings, publish-to-template.js):
+    // undoing it would leave the content disagreeing with that setting. Not
+    // the stack's setModeIgnore: resuming puts back the mode it was in, a
+    // merge in progress included.
+    viewModel.suspendUndo = undoRedoStack.suspend;
+    viewModel.resumeUndo = undoRedoStack.resume;
     undoRedoStack.setModeIgnore();
     undoRedoStack.setUndoActionMaker(
       undoserializer.makeUndoAction.bind(undefined, viewModel.content)

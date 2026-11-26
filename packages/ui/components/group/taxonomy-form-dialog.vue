@@ -5,11 +5,15 @@ import BsModalForm from '~/components/modal/bs-modal-form.vue';
 import BsTextField from '~/components/form/bs-text-field.vue';
 import BsSelect from '~/components/form/bs-select.vue';
 import BsTextarea from '~/components/form/bs-textarea.vue';
+import BsTaxonomyFormOrderStatus from '~/components/group/taxonomy-form-order-status.vue';
+import BsTaxonomyAvailabilityField from '~/components/group/taxonomy-availability-field.vue';
+import BsTaxonomyTokensField from '~/components/group/taxonomy-tokens-field.vue';
 import {
   CANONICAL_TYPES,
   TAXONOMY_LIMITS,
   buildTaxonomyPayload,
 } from '~/helpers/taxonomy.js';
+import { proposeIdentifier } from '~/helpers/taxonomy-builder.js';
 
 function emptyItem() {
   return {
@@ -28,10 +32,19 @@ export default {
     BsTextField,
     BsSelect,
     BsTextarea,
+    BsTaxonomyFormOrderStatus,
+    BsTaxonomyAvailabilityField,
+    BsTaxonomyTokensField,
   },
   mixins: [validationMixin],
   props: {
     loading: { type: Boolean, default: false },
+    // The email type maps a value onto the doctrine's six types; any other
+    // dimension gives it an identifier of its own.
+    isEmailType: { type: Boolean, default: true },
+    // The values of the parent dimension, null when the dimension has none.
+    parentValues: { type: Array, default: null },
+    parentLabel: { type: String, default: '' },
   },
   data() {
     return {
@@ -40,6 +53,13 @@ export default {
       // A refusal the server alone can decide — a label already taken — shown next
       // to the field rather than in a snackbar at the other end of the screen.
       serverLabelError: null,
+      serverIdentifierError: null,
+      serverTokensError: null,
+      // The identifier follows the label until the admin writes their own.
+      identifierTouched: false,
+      // Counts the openings: the token rows are mounted afresh at each one,
+      // the dialog staying mounted while closed.
+      openings: 0,
     };
   },
   validations: {
@@ -49,13 +69,19 @@ export default {
     },
   },
   computed: {
+    wording() {
+      return this.isEmailType ? 'taxonomy' : 'taxonomy.values';
+    },
+    identifierMaxLength() {
+      return TAXONOMY_LIMITS.CANONICAL_TYPE;
+    },
     isEditing() {
       return this.editingId !== null;
     },
     title() {
       return this.isEditing
-        ? this.$t('taxonomy.form.editTitle')
-        : this.$t('taxonomy.form.createTitle');
+        ? this.$t(`${this.wording}.form.editTitle`)
+        : this.$t(`${this.wording}.form.createTitle`);
     },
     submitLabel() {
       return this.isEditing ? this.$t('global.save') : this.$t('global.create');
@@ -107,6 +133,12 @@ export default {
       return errors;
     },
   },
+  watch: {
+    'form.label'(label) {
+      if (this.isEmailType || this.isEditing || this.identifierTouched) return;
+      this.form.canonicalType = proposeIdentifier(label) || null;
+    },
+  },
   methods: {
     /**
      * @param {Object|null} item the row to edit, or null to create
@@ -115,6 +147,10 @@ export default {
     open(item = null, suggestedOrder = 0) {
       this.editingId = item ? item.id : null;
       this.serverLabelError = null;
+      this.serverIdentifierError = null;
+      this.serverTokensError = null;
+      this.identifierTouched = false;
+      this.openings += 1;
       this.form = item
         ? {
             label: item.label || '',
@@ -122,21 +158,43 @@ export default {
             canonicalType: item.canonicalType || null,
             isActive: item.isActive !== false,
             order: typeof item.order === 'number' ? item.order : 0,
+            parentIds: (item.parentIds || []).map(String),
+            tokens: { ...(item.tokens || {}) },
           }
-        : { ...emptyItem(), order: suggestedOrder };
+        : { ...emptyItem(), order: suggestedOrder, parentIds: [], tokens: {} };
       this.$v.$reset();
       this.$refs.modal.open();
     },
 
     /**
-     * Attach a server-side refusal to the label field. Called by the parent, which
-     * is the one that talks to the API.
+     * Attach a server-side refusal to its field. Called by the parent, which is
+     * the one that talks to the API.
      *
+     * @param {string} field `label`, `canonicalType` or `tokens`
      * @param {string} message already translated
+     * @returns {boolean} whether this form has that field
      */
-    setLabelError(message) {
-      this.serverLabelError = message;
-      this.$v.form.label.$touch();
+    setFieldError(field, message) {
+      if (field === 'label') {
+        this.serverLabelError = message;
+        this.$v.form.label.$touch();
+        return true;
+      }
+      if (field === 'canonicalType' && !this.isEmailType) {
+        this.serverIdentifierError = message;
+        return true;
+      }
+      if (field === 'tokens') {
+        this.serverTokensError = message;
+        return true;
+      }
+      return false;
+    },
+
+    onIdentifierInput(value) {
+      this.identifierTouched = true;
+      this.serverIdentifierError = null;
+      this.form.canonicalType = value || null;
     },
 
     close() {
@@ -144,15 +202,21 @@ export default {
     },
 
     onSubmit() {
-      // A previous refusal must not survive a corrected label.
+      // A previous refusal must not survive a corrected field.
       this.serverLabelError = null;
+      this.serverIdentifierError = null;
+      this.serverTokensError = null;
       this.$v.$touch();
-      if (this.$v.$invalid) return;
+      // Every row's errors shown, not only the first form error's.
+      const tokensValid = this.$refs.tokensField
+        ? this.$refs.tokensField.validate()
+        : true;
+      if (this.$v.$invalid || !tokensValid) return;
 
-      this.$emit('save', {
-        id: this.editingId,
-        payload: buildTaxonomyPayload(this.form),
-      });
+      const payload = buildTaxonomyPayload(this.form);
+      if (this.parentValues) payload.parentIds = this.form.parentIds;
+      payload.tokens = this.form.tokens;
+      this.$emit('save', { id: this.editingId, payload });
     },
   },
 };
@@ -172,8 +236,8 @@ export default {
     <bs-text-field
       v-model="form.label"
       :label="$t('taxonomy.form.label')"
-      :placeholder="$t('taxonomy.form.labelPlaceholder')"
-      :hint="$t('taxonomy.form.labelHint')"
+      :placeholder="$t(`${wording}.form.labelPlaceholder`)"
+      :hint="$t(`${wording}.form.labelHint`)"
       :error-messages="labelErrors"
       :disabled="loading"
       required
@@ -188,8 +252,8 @@ export default {
     <bs-textarea
       v-model="form.description"
       :label="$t('taxonomy.form.description')"
-      :placeholder="$t('taxonomy.form.descriptionPlaceholder')"
-      :hint="$t('taxonomy.form.descriptionHint')"
+      :placeholder="$t(`${wording}.form.descriptionPlaceholder`)"
+      :hint="$t(`${wording}.form.descriptionHint`)"
       :error-messages="descriptionErrors"
       :disabled="loading"
       rows="4"
@@ -197,6 +261,7 @@ export default {
     />
 
     <bs-select
+      v-if="isEmailType"
       v-model="form.canonicalType"
       :label="$t('taxonomy.form.canonicalType')"
       :items="canonicalTypeItems"
@@ -205,88 +270,42 @@ export default {
       :disabled="loading"
       clearable
     />
+    <!-- Proposed from the label, and the admin's to change: templates compare
+         against it, so it is worth reading before saving. -->
+    <bs-text-field
+      v-else
+      :value="form.canonicalType"
+      :label="$t('taxonomy.values.form.identifier')"
+      :hint="$t('taxonomy.values.form.identifierHint')"
+      :error-messages="serverIdentifierError ? [serverIdentifierError] : []"
+      :disabled="loading"
+      :maxlength="identifierMaxLength"
+      persistent-hint
+      @input="onIdentifierInput"
+    />
 
-    <!-- Two columns, each with its own label above the control, so this row reads
-         like the fields above it rather than as a stray switch. -->
-    <div class="taxonomy-form__row">
-      <div class="taxonomy-form__col">
-        <!-- `min`/`step` rather than a free number: an order the server refuses
-             comes back as a generic 400, which the snackbar can only render as
-             "an error occurred" — no message next to the field to fix.
-             buildTaxonomyPayload does the rest, so nothing unusable is sent. -->
-        <bs-text-field
-          v-model="form.order"
-          :label="$t('taxonomy.form.order')"
-          :hint="$t('taxonomy.form.orderHint')"
-          :disabled="loading"
-          type="number"
-          min="0"
-          step="1"
-        />
-      </div>
+    <bs-taxonomy-availability-field
+      v-if="parentValues"
+      v-model="form.parentIds"
+      :parent-values="parentValues"
+      :parent-label="parentLabel"
+      :disabled="loading"
+    />
 
-      <!-- A fieldset rather than a bare span: the column needs a heading to line
-           up with the label opposite, and a heading a screen reader ignores is
-           decoration. -->
-      <fieldset class="taxonomy-form__col taxonomy-form__fieldset">
-        <legend class="taxonomy-form__label">
-          {{ $t('taxonomy.form.status') }}
-        </legend>
-        <v-switch
-          :input-value="form.isActive"
-          :label="$t('taxonomy.form.isActive')"
-          :disabled="loading"
-          color="accent"
-          hide-details
-          class="taxonomy-form__switch"
-          @change="form.isActive = Boolean($event)"
-        />
-        <p class="taxonomy-form__hint">
-          {{ $t('taxonomy.form.isActiveHint') }}
-        </p>
-      </fieldset>
-    </div>
+    <bs-taxonomy-tokens-field
+      ref="tokensField"
+      :key="openings"
+      v-model="form.tokens"
+      :server-error="serverTokensError"
+      :disabled="loading"
+      @input="serverTokensError = null"
+    />
+
+    <bs-taxonomy-form-order-status
+      :order.sync="form.order"
+      :is-active.sync="form.isActive"
+      :active-hint="$t(`${wording}.form.isActiveHint`)"
+      :loading="loading"
+    />
   </bs-modal-form>
 </template>
-
-<style lang="scss" scoped>
-.taxonomy-form {
-  &__row {
-    display: flex;
-    align-items: flex-start;
-    gap: 1.5rem;
-  }
-
-  &__col {
-    flex: 1 1 0;
-    min-width: 0;
-  }
-
-  &__fieldset {
-    border: 0;
-    padding: 0;
-    margin: 0;
-  }
-
-  // Same typography as the bs-* field labels, so the two columns line up.
-  &__label {
-    display: block;
-    font-size: 0.75rem;
-    font-weight: 500;
-    color: var(--gray-700);
-    margin-bottom: 0.375rem;
-  }
-
-  &__switch {
-    margin-top: 0;
-    padding-top: 0.375rem;
-  }
-
-  &__hint {
-    font-size: 0.75rem;
-    color: var(--field-placeholder);
-    margin: 0.25rem 0 0 0;
-    padding-left: 2px;
-  }
-}
-</style>

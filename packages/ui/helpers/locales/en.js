@@ -1,3 +1,5 @@
+import { EMAIL_TRIGGER_DEFINITIONS } from '../../../shared/taxonomy/trigger-definitions.js';
+
 export default {
   authCard: {
     changeAccount: 'Change account',
@@ -1736,7 +1738,7 @@ export default {
         'While the option is off, these fields appear nowhere and the API refuses them; data already entered is kept.',
       taxonomyAction: 'Manage email types',
       taxonomyHint:
-        'Email types are configured under Settings → General → Email types, independently of this option.',
+        'Email types are configured under Settings → General → Taxonomy, independently of this option.',
     },
     snackbars: {
       invalid: 'The settings sent were not accepted.',
@@ -1746,10 +1748,132 @@ export default {
   taxonomy: {
     active: 'Active',
     inactive: 'Inactive',
-    title: 'Email types',
-    sidebarLabel: 'Email types',
+    title: 'Taxonomy',
+    sidebarLabel: 'Taxonomy',
     description:
+      'The dimensions you decline your emails by. The email type and the trigger are shared by every company: you choose their words, not whether they exist.',
+    emailTypeHint:
       'Your email types, in your own words. The definition you give is what matters: it is the reference for your team, and the context for the AI. The six Badsender types are your starting point: rename them, narrow them, deactivate the ones you do not use.',
+    dimensions: {
+      standard: 'Standard',
+      emailType: 'Email type',
+      loadError: 'Your taxonomy dimensions could not be loaded',
+      updated: 'Dimension updated',
+      created: 'Dimension created',
+      deleted: 'Dimension deleted',
+      deactivated: 'Dimension deactivated',
+      reactivated: 'Dimension reactivated',
+      inactive: 'Deactivated',
+      inactiveHint:
+        'It is no longer offered on emails and takes no new value. Emails already carrying one of its values keep it.',
+      resolution:
+        'Token resolution: {order}. The last one wins when two values carry the same token.',
+      under: 'Under {parent}',
+      deactivate: 'Deactivate',
+      reactivate: 'Reactivate',
+      declare: 'Add a dimension',
+      full: 'Limit of {limit} dimensions reached, standard ones included.',
+      deleteConfirmTitle: 'Delete this dimension?',
+      deleteConfirmMessage:
+        'The dimension “{label}” will be deleted, and its name can be used again.',
+      caseVariant: {
+        title: 'An almost identical name already exists',
+        message:
+          'The dimension “{existingName}” already exists, and “{name}” differs from it only by its capitals.',
+        consequence:
+          'Your teams will see two lists in the editor, and a template reads only the exact name it expects. The name cannot be corrected later.',
+        confirm: 'Create anyway',
+      },
+      trigger: {
+        readOnly:
+          'Its two values are the Badsender doctrine\'s: they are neither renamed nor added to.',
+        // The doctrine's words, shared with the editor and the AI
+        // (packages/shared/taxonomy/trigger-definitions.js).
+        adhoc: EMAIL_TRIGGER_DEFINITIONS.en.adhoc,
+        automated: EMAIL_TRIGGER_DEFINITIONS.en.automated,
+      },
+      form: {
+        createTitle: 'New dimension',
+        editTitle: 'Edit the dimension',
+        name: 'Name read by templates',
+        namePlaceholder: 'audience',
+        nameCreateHint:
+          'Final once created: templates will read this name. Unaccented letters, digits and _, not starting with a digit.',
+        nameInvalid:
+          'Unaccented letters, digits and _ only, not starting with a digit.',
+        nameHint:
+          'Set on creation: templates read this name, and changing it would break them.',
+        descriptionHint:
+          'What this dimension decides about an email, for you. This text is context for the AI.',
+        parent: 'Under the dimension',
+        parentNone: 'None: first level',
+        parentDeactivated: '{label} (deactivated)',
+        parentHint:
+          'Its values will be offered according to the value chosen for the parent dimension: the Language according to the Market.',
+        precedence: 'Precedence',
+        precedenceHint:
+          'When two values chosen on an email carry the same token, the one of the dimension with the highest precedence wins.',
+        precedenceInvalid: 'Enter the precedence: a whole number, 0 by default.',
+      },
+    },
+    values: {
+      deleteConfirmTitle: 'Delete this value?',
+      deleteConfirmMessage: 'The value “{label}” will be deleted.',
+      deleteConfirmHint:
+        'If emails use it, the deletion will be refused: deactivate it instead.',
+      loadError: {
+        title: 'The values of this dimension could not be loaded',
+      },
+      empty: {
+        action: 'Add a value',
+        title: 'No value yet',
+        description:
+          'Add the values your team will choose from on an email.',
+      },
+      form: {
+        createTitle: 'New value',
+        editTitle: 'Edit the value',
+        labelPlaceholder: 'Loyal customers',
+        labelHint: 'The name your team actually uses.',
+        descriptionPlaceholder:
+          'More than three orders a year, subscribed to the newsletter.',
+        descriptionHint:
+          'What this value covers for you. This text is what guides the AI.',
+        identifier: 'Identifier',
+        identifierHint:
+          'What templates compare against. Proposed from the label, unique within the dimension.',
+        availability: 'Offered under',
+        availabilityHint:
+          'The values of “{parent}” this one is offered under. Empty: offered under all of them.',
+        tokens: 'Design tokens',
+        tokensHint:
+          'Named values templates read under their name, like a brand’s main colour: mainColorVar = #ffd845.',
+        tokenName: 'Token name',
+        tokenValue: 'Token value',
+        tokenNamePlaceholder: 'mainColorVar',
+        tokenValuePlaceholder: '#ffd845',
+        tokenNameInvalid:
+          'Unaccented letters, digits and _ only, not starting with a digit.',
+        tokenNameRequired: 'Give this token a name, or remove the row.',
+        tokenNameTooLong: 'The name cannot exceed {max} characters.',
+        tokenNameReserved:
+          'This name is reserved by JavaScript, by the editor (like theme or type) or for the email’s language, which the template receives under the name locale.',
+        tokenNameDuplicate: 'Two tokens have this name: keep only one.',
+        tokenValueRequired: 'Give this token a value, or remove the row.',
+        tokenValueTooLong: 'The value cannot exceed {max} characters.',
+        tokenValueUnsafe:
+          'A colour, a font, a size or a link: no markup, brace, semicolon, backslash, comment (/*), tab or line break, nor javascript:, url( or @import.',
+        addToken: 'Add a token',
+        tokensFull: 'Limit of {limit} tokens reached.',
+        isActiveHint:
+          'A deactivated value disappears from the select lists, but the emails using it keep it.',
+      },
+      snackbars: {
+        created: 'Value created',
+        updated: 'Value updated',
+        deleted: 'Value deleted',
+      },
+    },
     table: {
       label: 'Label',
       description: 'Definition',
@@ -1807,10 +1931,35 @@ export default {
         'Create the email types your team needs: the label and the definition are yours.',
     },
     errors: {
-      limitReached: 'You have reached the maximum number of email types for this company.',
-      labelAlreadyExists: 'An email type already uses this label.',
+      limitReached:
+        'Limit reached: {limit} at most. Delete some before adding more.',
+      labelAlreadyExists: 'This label is already taken in this dimension.',
+      tokenNameIsDimension:
+        '“{name}” is already the name of one of the company’s dimensions: choose another name for this token.',
+      identifierAlreadyExists:
+        'This identifier is already taken in this dimension.',
+      dimensionNameIsToken:
+        '“{name}” is already the name of a design token of a value: the dimension would turn it off. Choose another name, or rename the token first.',
+      dimensionNameReserved:
+        'This name is reserved by JavaScript (like constructor or toString) or by the editor (like theme or type): a value chosen under it would be lost, misread or would damage the email.',
+      dimensionNameTooLong: 'The name cannot exceed {limit} characters.',
+      invalidDimension:
+        'This dimension could not be saved: check its name and its label.',
+      standardDimensionLocked:
+        'A standard dimension cannot be deactivated or deleted.',
+      dimensionNotFound: 'This dimension no longer exists. Reload the page.',
+      dimensionNameAlreadyExists:
+        'A dimension already has this name, perhaps a deactivated one.',
+      isParent:
+        '{count} value is offered under this one: take it out of its availability, or deactivate this one. | {count} values are offered under this one: take it out of their availability, or deactivate this one.',
+      dimensionHasChildren:
+        'Another dimension sits under this one: move it first.',
+      dimensionHasAvailability:
+        '{count} value has an availability under the current parent: clear it before moving the dimension. | {count} values have an availability under the current parent: clear them before moving the dimension.',
+      dimensionHasValues:
+        'This dimension has {count} value: deactivate it instead of deleting it. | This dimension has {count} values: deactivate it instead of deleting it.',
       inUse:
-        'This email type is used by {count} email: deactivate it instead of deleting it. | This email type is used by {count} emails: deactivate it instead of deleting it.',
+        'Used by {count} email: deactivate it instead of deleting it. | Used by {count} emails: deactivate it instead of deleting it.',
     },
     defaults: {
       action: 'Default email types',

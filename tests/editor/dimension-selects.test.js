@@ -1,0 +1,402 @@
+'use strict';
+
+// Acceptance tests of the company dimension selects of the email settings (epic
+// #1351).
+//
+// `dimensions` is what the server sends the editor: the active company
+// dimensions in their declared order, each with its values. `selections` maps a
+// dimension name to the id of the value the email carries.
+
+const MARKET = {
+  name: 'market',
+  label: 'Marché',
+  values: [
+    { id: 'ca', label: 'Canada', isActive: true },
+    { id: 'be', label: 'Belgique', isActive: true },
+    { id: 'de', label: 'Allemagne', isActive: true },
+  ],
+};
+
+// Declared BEFORE its parent on purpose: a child is shown right after its
+// parent, whatever the declared order.
+const LANGUAGE = {
+  name: 'language',
+  label: 'Langue',
+  parentName: 'market',
+  values: [
+    { id: 'fr', label: 'Français', isActive: true, parentIds: ['ca', 'be'] },
+    { id: 'nl', label: 'Néerlandais', isActive: true, parentIds: ['be'] },
+    // No availability: offered under every market.
+    { id: 'en', label: 'Anglais', isActive: true, parentIds: [] },
+  ],
+};
+
+const AUDIENCE = {
+  name: 'audience',
+  label: 'Cible',
+  values: [
+    { id: 'vip', label: 'Clients VIP', isActive: true },
+    { id: 'old', label: 'Anciens clients', isActive: false },
+  ],
+};
+
+const labels = (select) => select.options.map((option) => option.label);
+
+// Turned on by #1355 (choose the values of company dimensions on an email)
+describe('selects of company dimensions', () => {
+  let dimensionSelects;
+
+  beforeAll(() => {
+    // Required here, not at the top of the file: the module doesn't exist until
+    // #1355 ships it.
+    ({
+      dimensionSelects,
+    } = require('../../packages/editor/src/js/utils/dimension-selects.js'));
+  });
+
+  it('gives one select per dimension, in the declared order', () => {
+    const selects = dimensionSelects({
+      dimensions: [AUDIENCE, MARKET],
+      selections: {},
+    });
+
+    expect(selects.map((select) => select.name)).toEqual([
+      'audience',
+      'market',
+    ]);
+    expect(selects[1]).toMatchObject({ label: 'Marché', value: null });
+    expect(labels(selects[1])).toEqual(['Canada', 'Belgique', 'Allemagne']);
+  });
+
+  it('shows the value the email carries', () => {
+    const [audience] = dimensionSelects({
+      dimensions: [AUDIENCE],
+      selections: { audience: 'vip' },
+    });
+
+    expect(audience.value).toBe('vip');
+  });
+
+  it('offers a deactivated value only to the email that carries it', () => {
+    const [carrying] = dimensionSelects({
+      dimensions: [AUDIENCE],
+      selections: { audience: 'old' },
+      carriedIds: ['old'],
+    });
+    const [other] = dimensionSelects({
+      dimensions: [AUDIENCE],
+      selections: {},
+      carriedIds: [],
+    });
+
+    expect(labels(carrying)).toEqual(['Clients VIP', 'Anciens clients']);
+    expect(carrying.value).toBe('old');
+    expect(labels(other)).toEqual(['Clients VIP']);
+  });
+
+  it('says a value is deactivated, as the email type does', () => {
+    const [audience] = dimensionSelects({
+      dimensions: [AUDIENCE],
+      selections: { audience: 'old' },
+      carriedIds: ['old'],
+      deactivatedLabel: (label) => `${label} (valeur désactivée)`,
+    });
+
+    expect(audience.options).toEqual([
+      { id: 'vip', label: 'Clients VIP' },
+      {
+        id: 'old',
+        label: 'Anciens clients (valeur désactivée)',
+        deactivated: true,
+      },
+    ]);
+  });
+
+  it('no longer offers a deactivated value once a save dropped it', () => {
+    // The email opened on the deactivated value, the writer switched to an
+    // active one and saved: the email no longer carries it, and the server
+    // would refuse it if chosen again.
+    const [audience] = dimensionSelects({
+      dimensions: [AUDIENCE],
+      selections: { audience: 'vip' },
+      carriedIds: ['vip'],
+    });
+
+    expect(labels(audience)).toEqual(['Clients VIP']);
+  });
+
+  // The section builds the label from this string; a missing entry would print
+  // the key itself in the select.
+  it.each([
+    ['fr', require('../../public/lang/badsender-fr.js')],
+    ['en', require('../../public/lang/badsender-en.js')],
+  ])('has the wording of a deactivated value in %s', (_, strings) => {
+    expect(strings['email-metadata-dimension-value-deactivated']).toMatch(
+      /__label__/
+    );
+  });
+
+  it('still offers the value the email opened with once the user picked another', () => {
+    // The user moved from the deactivated value to an active one, then wants
+    // it back before saving.
+    const [audience] = dimensionSelects({
+      dimensions: [AUDIENCE],
+      selections: { audience: 'vip' },
+      carriedIds: ['old'],
+    });
+
+    expect(labels(audience)).toEqual(['Clients VIP', 'Anciens clients']);
+  });
+});
+
+describe('the values an email carries, between the selects and the save', () => {
+  let selectionsFromIds;
+  let idsFromSelections;
+
+  beforeAll(() => {
+    ({
+      selectionsFromIds,
+      idsFromSelections,
+    } = require('../../packages/editor/src/js/utils/dimension-selects.js'));
+  });
+
+  it('reads the ids the email carries as one value per dimension', () => {
+    expect(selectionsFromIds([AUDIENCE, MARKET], ['be', 'old'])).toEqual({
+      audience: 'old',
+      market: 'be',
+    });
+  });
+
+  it('saves the values chosen, one per dimension', () => {
+    expect(
+      idsFromSelections([AUDIENCE, MARKET], ['be'], {
+        audience: 'vip',
+        market: 'ca',
+      })
+    ).toEqual(['vip', 'ca']);
+  });
+
+  it('drops a value cleared in its select', () => {
+    expect(
+      idsFromSelections([AUDIENCE, MARKET], ['vip', 'be'], {
+        audience: '',
+        market: 'be',
+      })
+    ).toEqual(['be']);
+  });
+
+  it('sends back the value of a dimension no longer on screen', () => {
+    // `language` was deactivated: the server no longer sends it, and the email
+    // keeps its French.
+    expect(
+      idsFromSelections([AUDIENCE], ['fr', 'vip'], { audience: 'old' })
+    ).toEqual(['fr', 'old']);
+  });
+});
+
+// Turned on by #1358 (nested dimensions and availability)
+describe('nested selects', () => {
+  let dimensionSelects;
+  let reconcileSelections;
+
+  beforeAll(() => {
+    // Required here: the module doesn't exist until #1355.
+    ({
+      dimensionSelects,
+      reconcileSelections,
+    } = require('../../packages/editor/src/js/utils/dimension-selects.js'));
+  });
+
+  const PROGRAMME = {
+    name: 'programme',
+    label: 'Programme',
+    parentName: 'emailType',
+    values: [
+      {
+        id: 'loyalty',
+        label: 'Fidélité',
+        isActive: true,
+        parentIds: ['promo'],
+      },
+    ],
+  };
+
+  const SCRIPT = {
+    name: 'script',
+    label: 'Écriture',
+    parentName: 'language',
+    values: [
+      { id: 'latin', label: 'Latin', isActive: true, parentIds: ['nl'] },
+    ],
+  };
+
+  it('puts a child right after its parent, whatever the declared order', () => {
+    const selects = dimensionSelects({
+      dimensions: [LANGUAGE, AUDIENCE, MARKET],
+      selections: { market: 'ca' },
+    });
+
+    expect(selects.map((select) => select.name)).toEqual([
+      'audience',
+      'market',
+      'language',
+    ]);
+  });
+
+  it('hides the child while its parent has no value', () => {
+    const selects = dimensionSelects({
+      dimensions: [MARKET, LANGUAGE],
+      selections: {},
+    });
+
+    expect(selects.map((select) => select.name)).toEqual(['market']);
+  });
+
+  it('shows a child carrying a value under a parent with no value, and says so', () => {
+    // Language was moved under Market after this email chose French with no
+    // market: French still reaches the template, so the writer must see it.
+    const language = dimensionSelects({
+      dimensions: [MARKET, LANGUAGE],
+      selections: { language: 'fr' },
+    }).find((select) => select.name === 'language');
+
+    expect(language).toMatchObject({ value: 'fr', unavailable: true });
+    // Nothing else is offered under no parent value: only clearing it.
+    expect(labels(language)).toEqual(['Français']);
+  });
+
+  it('shows a value chosen while the parent was deactivated, once it is reactivated', () => {
+    const selections = { language: 'nl' };
+    const whileDeactivated = dimensionSelects({
+      dimensions: [LANGUAGE],
+      selections,
+    });
+    const reactivated = dimensionSelects({
+      dimensions: [MARKET, LANGUAGE],
+      selections,
+    }).find((select) => select.name === 'language');
+
+    expect(whileDeactivated[0]).toMatchObject({
+      value: 'nl',
+      unavailable: false,
+    });
+    expect(reactivated).toMatchObject({ value: 'nl', unavailable: true });
+  });
+
+  it('offers only the values available under the parent value, and those offered everywhere', () => {
+    const language = (market) =>
+      dimensionSelects({
+        dimensions: [MARKET, LANGUAGE],
+        selections: { market },
+      }).find((select) => select.name === 'language');
+
+    expect(labels(language('ca'))).toEqual(['Français', 'Anglais']);
+    expect(labels(language('be'))).toEqual([
+      'Français',
+      'Néerlandais',
+      'Anglais',
+    ]);
+    expect(labels(language('de'))).toEqual(['Anglais']);
+  });
+
+  it('keeps showing a value no longer offered under the parent value, and says so', () => {
+    // An admin narrowed Dutch to Belgium after this email chose Canada + Dutch.
+    const language = dimensionSelects({
+      dimensions: [MARKET, LANGUAGE],
+      selections: { market: 'ca', language: 'nl' },
+    }).find((select) => select.name === 'language');
+
+    expect(language).toMatchObject({ value: 'nl', unavailable: true });
+    expect(labels(language)).toContain('Néerlandais');
+  });
+
+  it('offers a dimension under the email type by the email type chosen', () => {
+    const without = dimensionSelects({
+      dimensions: [PROGRAMME],
+      selections: {},
+    });
+    const promo = dimensionSelects({
+      dimensions: [PROGRAMME],
+      selections: {},
+      emailTypeId: 'promo',
+    });
+    const editorial = dimensionSelects({
+      dimensions: [PROGRAMME],
+      selections: {},
+      emailTypeId: 'editorial',
+    });
+
+    expect(without).toEqual([]);
+    expect(labels(promo[0])).toEqual(['Fidélité']);
+    expect(labels(editorial[0])).toEqual([]);
+  });
+
+  describe('when the user changes a parent value', () => {
+    it('keeps a child value still offered: Belgium + French, then Canada', () => {
+      expect(
+        reconcileSelections({
+          dimensions: [MARKET, LANGUAGE],
+          selections: { market: 'ca', language: 'fr' },
+        })
+      ).toEqual({ market: 'ca', language: 'fr' });
+    });
+
+    it('clears a child value no longer offered: Belgium + Dutch, then Canada', () => {
+      expect(
+        reconcileSelections({
+          dimensions: [MARKET, LANGUAGE],
+          selections: { market: 'ca', language: 'nl' },
+        })
+      ).toEqual({ market: 'ca' });
+    });
+
+    it('clears the child of a child it cleared', () => {
+      expect(
+        reconcileSelections({
+          dimensions: [MARKET, LANGUAGE, SCRIPT],
+          selections: { market: 'ca', language: 'nl', script: 'latin' },
+        })
+      ).toEqual({ market: 'ca' });
+    });
+
+    it('keeps a narrowed combination when an unrelated dimension changes', () => {
+      // Dutch was narrowed to Belgium after this email chose Canada + Dutch.
+      expect(
+        reconcileSelections({
+          dimensions: [AUDIENCE, MARKET, LANGUAGE],
+          selections: { audience: 'vip', market: 'ca', language: 'nl' },
+          changed: ['audience'],
+        })
+      ).toEqual({ audience: 'vip', market: 'ca', language: 'nl' });
+    });
+
+    it('clears the descendants of the value changed, down to the last level', () => {
+      expect(
+        reconcileSelections({
+          dimensions: [MARKET, LANGUAGE, SCRIPT],
+          selections: { market: 'ca', language: 'nl', script: 'latin' },
+          changed: ['market'],
+        })
+      ).toEqual({ market: 'ca' });
+    });
+
+    it('clears a child when its parent is emptied', () => {
+      expect(
+        reconcileSelections({
+          dimensions: [MARKET, LANGUAGE],
+          selections: { language: 'en' },
+        })
+      ).toEqual({});
+    });
+
+    it('follows a change of email type', () => {
+      expect(
+        reconcileSelections({
+          dimensions: [PROGRAMME],
+          selections: { programme: 'loyalty' },
+          emailTypeId: 'editorial',
+        })
+      ).toEqual({});
+    });
+  });
+});

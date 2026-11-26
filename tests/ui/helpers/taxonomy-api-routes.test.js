@@ -12,6 +12,9 @@ import {
   taxonomyDefaultEmailTypesRestore,
   taxonomyItemsCreate,
   taxonomyItemsItem,
+  taxonomyDimensions,
+  taxonomyDimensionsItem,
+  taxonomyDimensionsCreate,
 } from '../../../packages/ui/helpers/api-routes.js';
 
 const GROUP_ID = '507f1f77bcf86cd799439a01';
@@ -90,5 +93,31 @@ describe('taxonomy default email types', () => {
     taxonomyDefaultEmailTypesRestore(),
   ])('%s targets the defaults sub-resource', (url) => {
     expect(url.startsWith('/taxonomy-items/default-email-types')).toBe(true);
+  });
+});
+
+// The dimensions name their company in the query, which is what the list's guard
+// reads; the edit and the delete are scoped by the service.
+describe('taxonomy dimensions', () => {
+  it('names the company in the query on the list', () => {
+    expect(taxonomyDimensions(GROUP_ID)).toBe(
+      `/taxonomy-dimensions?groupId=${GROUP_ID}`
+    );
+  });
+
+  it('carries the interface language when given', () => {
+    expect(taxonomyDimensions(GROUP_ID, { lang: 'en' })).toBe(
+      `/taxonomy-dimensions?groupId=${GROUP_ID}&lang=en`
+    );
+  });
+
+  it('declares a dimension on the bare collection, the company in the body', () => {
+    expect(taxonomyDimensionsCreate()).toBe('/taxonomy-dimensions');
+  });
+
+  it('addresses one dimension by its id', () => {
+    expect(taxonomyDimensionsItem(ITEM_ID)).toBe(
+      `/taxonomy-dimensions/${ITEM_ID}`
+    );
   });
 });

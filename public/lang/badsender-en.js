@@ -1,5 +1,13 @@
 'use strict';
 
+// Read by the server only (mailing.schema.js hands the strings to the editor),
+// so it may require the shared definitions.
+const {
+  EMAIL_TRIGGER_DEFINITIONS,
+} = require('../../packages/shared/taxonomy/trigger-definitions.js');
+
+const TRIGGERS = EMAIL_TRIGGER_DEFINITIONS.en;
+
 module.exports = {
   // edit title
   'edit-title-double-click': 'Double click to edit',
@@ -365,21 +373,31 @@ module.exports = {
   'email-metadata-typology': 'Email type',
   'email-metadata-typology-none': 'None',
   'email-metadata-typology-empty':
-    'No active email type for your company. They are configured under Settings → General → Email types.',
+    'No active email type for your company. They are configured under Settings → General → Taxonomy.',
   'email-metadata-error': 'Could not save the metadata',
   'email-metadata-error-disabled': 'Metadata is not enabled for this company',
   'email-metadata-error-typology': 'This email type is no longer available',
+  'email-metadata-error-dimension-value':
+    'A chosen value is no longer available',
   'email-metadata-typology-missing': 'Deactivated email type',
+  // A deactivated value of a company dimension that the email still carries.
+  'email-metadata-dimension-value-deactivated': '__label__ (deactivated value)',
   'email-metadata-trigger': 'Trigger',
   'email-metadata-trigger-none': 'None',
-  'email-metadata-trigger-adhoc': 'One Shot',
-  'email-metadata-trigger-automated': 'Automated',
+  // The empty choice of a company dimension select, whatever its name.
+  'email-metadata-dimension-none': 'No value',
+  // Under a dimension whose value is no longer offered under its parent value.
+  'email-metadata-dimension-unavailable':
+    'This value is no longer offered for this choice. The email can still be saved.',
+  // The doctrine's words, the same as the taxonomy screen's and the AI's
+  // (packages/shared/taxonomy/trigger-definitions.js).
+  'email-metadata-trigger-adhoc': TRIGGERS.adhoc.label,
+  'email-metadata-trigger-automated': TRIGGERS.automated.label,
   // Shown under the field for the selected value, and as a tooltip on the options.
   // Full sentences: they stand on their own rather than trailing a label.
-  'email-metadata-trigger-adhoc-description':
-    'A send the team decided on, this once.',
+  'email-metadata-trigger-adhoc-description': TRIGGERS.adhoc.description,
   'email-metadata-trigger-automated-description':
-    'A send a rule decides, every time.',
+    TRIGGERS.automated.description,
   'email-metadata-error-no-company':
     'This email belongs to no company: the email type cannot be saved',
   'email-metadata-error-invalid': 'One of the values was refused',

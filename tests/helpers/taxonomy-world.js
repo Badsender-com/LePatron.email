@@ -1,0 +1,81 @@
+'use strict';
+
+/**
+ * The companies, users and small readers shared by the taxonomy acceptance tests
+ * (epic #1351). Two companies, so every test can check the tenant boundary.
+ */
+
+const COMPANY_A = '507f1f77bcf86cd799439a01';
+const COMPANY_B = '507f1f77bcf86cd799439b01';
+const PLATFORM = '507f1f77bcf86cd799439f01';
+
+const adminA = { role: 'company_admin', group: { id: COMPANY_A } };
+const techAdminA = { role: 'company_admin_tech', group: { id: COMPANY_A } };
+const adminB = { role: 'company_admin', group: { id: COMPANY_B } };
+// A super admin belongs to the platform company and acts for the one it names,
+// or else the one it selected; never for its own.
+const superAdmin = { role: 'super_admin', group: { id: PLATFORM } };
+
+const idOf = (doc) => String(doc.id || doc._id);
+
+const idsOf = (list) => (list || []).map((value) => String(value));
+
+// Tokens travel as a Mongoose Map on a document and as a plain object once
+// serialised; a test compares their content, whichever it receives.
+const plainTokens = (tokens) =>
+  tokens instanceof Map ? Object.fromEntries(tokens) : { ...(tokens || {}) };
+
+/**
+ * The model collections the taxonomy services read, as in-memory fakes. Called
+ * from a `jest.mock` factory, so it builds fresh collections per test file.
+ */
+function fakeTaxonomyModels() {
+  // Required here rather than at the top: a jest.mock factory may only reach
+  // what it requires itself.
+  const { fakeCollection } = require('./fake-collection.js');
+  const SERVER = '../../packages/server';
+  // The taxonomy's own collections run on their real schemas: a test passes
+  // only on what the schema would store (trimmed labels, ids cast, the
+  // trigger refused as a value's type). The unique indexes are the schemas'.
+  return {
+    TaxonomyDimensions: fakeCollection({
+      schema: require(`${SERVER}/taxonomy/models/dimension.schema.js`),
+      unique: [['_company', 'name']],
+    }),
+    TaxonomyItems: fakeCollection({
+      schema: require(`${SERVER}/taxonomy/models/taxonomy.schema.js`),
+      unique: [['_company', 'type', 'label']],
+    }),
+    // Without its schema: `_taxonomyItems` joins it with #1355, and the tests
+    // only seed emails and count them.
+    Mailings: fakeCollection(),
+    Groups: fakeCollection(),
+    Templates: fakeCollection(),
+    Workspaces: fakeCollection(),
+    Folders: fakeCollection(),
+    Galleries: fakeCollection(),
+  };
+}
+
+function resetTaxonomyModels(models) {
+  [
+    'TaxonomyDimensions',
+    'TaxonomyItems',
+    'Mailings',
+    'Groups',
+  ].forEach((name) => models[name].reset());
+}
+
+module.exports = {
+  COMPANY_A,
+  COMPANY_B,
+  adminA,
+  techAdminA,
+  adminB,
+  superAdmin,
+  idOf,
+  idsOf,
+  plainTokens,
+  fakeTaxonomyModels,
+  resetTaxonomyModels,
+};

@@ -445,3 +445,54 @@ _Avoid_: Title, object
 The hidden preview text shown after the subject in the inbox, declared by the template.
 _UI_: Préheader
 _Avoid_: Preview text, pre-header, view-online banner
+
+### Taxonomy
+
+**Dimension**:
+An axis a company declines its emails by: what an email brings, the markets it is sent to, the brand speaking, the audience it addresses. Its name is what a template reads, and it never changes.
+_UI_: Dimension
+_Avoid_: Axis, criterion, variant, taxonomy type
+
+**Standard dimension**:
+A dimension every company has, defined by the Badsender classification doctrine: the email type and the email trigger. A company can neither remove nor rename one.
+_UI_: Standard
+
+**Company dimension**:
+A dimension a company declares for itself: market, language, brand, audience, or any other way it declines its emails.
+_UI_: Propre à l'entreprise
+_Avoid_: Custom dimension, group dimension
+
+**Value**:
+One of the possibilities of a dimension: Canada, French, Newsletter. An email carries at most one value per dimension.
+_UI_: Valeur
+_Avoid_: Item, entry, option, tag (the code keeps `TaxonomyItems`, and `taxonomyItemIds` once an email carries company dimensions, #1355)
+
+**Email type**:
+The standard dimension that says what an email brings to the person receiving it. Each company names its own values, and maps each onto one of the doctrine's six types.
+_UI_: Typologie
+_Avoid_: Category, campaign type
+
+**Email trigger**:
+The standard dimension that says whether someone decided this particular send: one shot or automated. Its two values are the doctrine's, and no company adds, renames or removes one.
+_UI_: Déclenchement
+_Avoid_: Send mode, scenario
+
+**Identifier**:
+The name of a value that a template compares against, apart from its label. It is proposed from the label and stays editable. Two values of one dimension never share one, except under the email type, where it names one of the doctrine's types. Only an identifier made of letters, digits, `-` and `_` reaches a template; the editor publishes the value's id in place of any other (ADR-0015).
+_UI_: Identifiant
+_Avoid_: Slug, code, key, canonical type (the code keeps `canonicalType`)
+
+**Availability**:
+The values of the parent dimension under which a value is offered: French is offered under Canada, Switzerland and Belgium, and nowhere else. A value with no availability is offered under all of them.
+_UI_: Disponibilité
+_Avoid_: Parent, hierarchy, dependency (the code keeps `parentIds`, the name the API and the editor use, stored as `_parents`)
+
+**Design token**:
+A named value that a value carries and a template reads under that name: a brand's main colour as a role, not as `#ffd845`.
+_UI_: Token
+_Avoid_: Variable, theme colour, palette entry
+
+**Precedence**:
+Which dimension wins when the values chosen for one email carry the same design token: the highest. Unrelated to the order dimensions are listed in, except to break a tie, which the dimension listed later wins.
+_UI_: Priorité
+_Avoid_: Order, weight

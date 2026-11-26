@@ -1,0 +1,265 @@
+'use strict';
+
+const { NotFound, Conflict, InternalServerError } = require('http-errors');
+
+const { TaxonomyItems, Mailings } = require('../../common/models.common.js');
+const ERROR_CODES = require('../../constant/error-codes.js');
+const {
+  TaxonomyLimits,
+  StandardDimensions,
+} = require('../../constant/taxonomy-type.js');
+const {
+  isObjectId,
+  validatePayload,
+  limitReached,
+} = require('./taxonomy.validation.js');
+const {
+  resolveCompanyId,
+  resolveExistingCompanyId,
+  scopedById,
+} = require('./company-scope.js');
+const { assertValueType } = require('./dimension.service.js');
+const {
+  assertLabelIsFree,
+  assertIdentifierIsFree,
+  assertNoTokenNamedLikeDimension,
+} = require('./value-uniqueness.js');
+const {
+  readAvailability,
+  assertNotOfferedUnder,
+} = require('./availability.js');
+const logger = require('../../utils/logger.js');
+
+module.exports = {
+  listTaxonomyItems,
+  createTaxonomyItem,
+  updateTaxonomyItem,
+  deleteTaxonomyItem,
+  resolveCompanyId,
+};
+
+/**
+ * @param {Object} params
+ * @param {Object} params.user
+ * @param {string} [params.groupId] company to read, super admin only
+ * @param {string} params.type the dimension to read, eg. `emailType`
+ * @param {boolean} [params.activeOnly] only items usable in a select list
+ * @returns {Promise<Array>} the company's items, in display order
+ */
+async function listTaxonomyItems({ user, groupId, type, activeOnly = false }) {
+  logger.log('taxonomyService:listTaxonomyItems');
+
+  const companyId = resolveCompanyId(user, groupId);
+  const taxonomyType = await assertValueType({ companyId, type });
+
+  const query = { _company: companyId, type: taxonomyType };
+  if (activeOnly) {
+    query.isActive = true;
+  }
+
+  return TaxonomyItems.find(query).sort({ order: 1, label: 1 });
+}
+
+async function createTaxonomyItem({ user, groupId, type, payload = {} }) {
+  logger.log('taxonomyService:createTaxonomyItem');
+
+  // Checked to exist: the email type takes a value without reading any
+  // dimension, so a super admin naming no company would otherwise write one.
+  const companyId = await resolveExistingCompanyId(user, groupId);
+  const taxonomyType = await assertValueType({
+    companyId,
+    type,
+    toWrite: true,
+  });
+  const { parentIds, ...fields } = validatePayload(payload, { partial: false });
+  if (parentIds !== undefined) {
+    fields._parents = await readAvailability({
+      companyId,
+      type: taxonomyType,
+      parentIds,
+    });
+  }
+
+  await assertLabelIsFree({
+    companyId,
+    type: taxonomyType,
+    label: fields.label,
+  });
+  await assertIdentifierIsFree({
+    companyId,
+    type: taxonomyType,
+    identifier: fields.canonicalType,
+  });
+  await assertNoTokenNamedLikeDimension({ companyId, tokens: fields.tokens });
+
+  // Unlike the label, the cap has no index to fall back on, so concurrent
+  // creations can land a handful of items past it. Accepted rather than solved
+  // with a transaction: the cap exists to keep the unpaginated read and the
+  // storage bounded, and 203 items bounds them exactly as well as 200. What must
+  // not drift is the per-company uniqueness, and that one the index holds.
+  const existingCount = await TaxonomyItems.countDocuments({
+    _company: companyId,
+    type: taxonomyType,
+  });
+
+  if (existingCount >= TaxonomyLimits.VALUES_PER_DIMENSION) {
+    throw limitReached(TaxonomyLimits.VALUES_PER_DIMENSION);
+  }
+
+  let created;
+  try {
+    created = await TaxonomyItems.create({
+      ...fields,
+      _company: companyId,
+      type: taxonomyType,
+    });
+  } catch (error) {
+    // The check above is not atomic with the insert; the unique index is what
+    // actually holds. Without this, two concurrent creations of the same label
+    // answer a 500 carrying the raw Mongo error — collection and index names
+    // included — instead of the conflict the caller can act on.
+    if (error?.code === 11000) {
+      throw new Conflict(ERROR_CODES.TAXONOMY_ITEM_LABEL_ALREADY_EXISTS);
+    }
+    throw error;
+  }
+
+  // Read again once written: a deletion of the dimension that started after
+  // the first check has deactivated it by now (deleteDimension), and may have
+  // counted its values before this one landed. The value is taken back rather
+  // than left under a name nothing declares.
+  try {
+    await assertValueType({ companyId, type: taxonomyType, toWrite: true });
+  } catch (error) {
+    await TaxonomyItems.deleteOne({ _id: created._id, _company: companyId });
+    throw error;
+  }
+
+  return created;
+}
+
+async function updateTaxonomyItem({ user, itemId, payload = {} }) {
+  logger.log('taxonomyService:updateTaxonomyItem');
+
+  const item = await findScopedItem({ user, itemId });
+  const { parentIds, ...fields } = validatePayload(payload, { partial: true });
+  // Narrowing an availability leaves the emails using the combination as they
+  // are: the server checks it again only when a request changes it (ADR-0032).
+  if (parentIds !== undefined) {
+    fields._parents = await readAvailability({
+      companyId: item._company,
+      type: item.type,
+      parentIds,
+    });
+  }
+
+  if (fields.label !== undefined && fields.label !== item.label) {
+    await assertLabelIsFree({
+      companyId: item._company,
+      type: item.type,
+      label: fields.label,
+      exceptId: item._id,
+    });
+  }
+  if (
+    fields.canonicalType !== undefined &&
+    fields.canonicalType !== item.canonicalType
+  ) {
+    await assertIdentifierIsFree({
+      companyId: item._company,
+      type: item.type,
+      identifier: fields.canonicalType,
+      exceptId: item._id,
+    });
+  }
+
+  await assertNoTokenNamedLikeDimension({
+    companyId: item._company,
+    tokens: fields.tokens,
+  });
+
+  Object.assign(item, fields);
+
+  try {
+    await item.save();
+  } catch (error) {
+    if (error?.code === 11000) {
+      throw new Conflict(ERROR_CODES.TAXONOMY_ITEM_LABEL_ALREADY_EXISTS);
+    }
+    throw error;
+  }
+
+  return item;
+}
+
+/**
+ * Delete an item, or refuse when an email still points at it.
+ *
+ * The count is taken on demand rather than kept on the document: a denormalised
+ * counter of the `Tag` kind drifts, and drifting here either blocks a legitimate
+ * delete forever or allows one that breaks existing emails.
+ */
+async function deleteTaxonomyItem({ user, itemId }) {
+  logger.log('taxonomyService:deleteTaxonomyItem');
+
+  const item = await findScopedItem({ user, itemId });
+
+  // Scoped by company as well as by item: an email can only ever reference a
+  // value of its own company — `transferToUser` clears `_emailType` and
+  // `_taxonomyItems` when a transfer moves the mailing to another company
+  // (mailing.controller.js). The email type has its own field on the email, and
+  // the count serves the `{_company, _emailType}` index; every other
+  // dimension's value sits in the one list (ADR-0032), counted through the
+  // `{_company, _taxonomyItems}` index.
+  const usageCount = await Mailings.countDocuments({
+    _company: item._company,
+    ...(item.type === StandardDimensions.EMAIL_TYPE
+      ? { _emailType: item._id }
+      : { _taxonomyItems: item._id }),
+  });
+
+  // The count and the delete are two statements: an email assigned this typology
+  // in between keeps a `_emailType` pointing at nothing. Nothing dereferences it
+  // — the metadata endpoint answers the raw id (mailing-metadata.controller.js)
+  // — so a lost race costs an email whose picker matches no entry, not a broken
+  // screen. A transaction here would mean a replica set, which this deployment
+  // does not have.
+  if (usageCount > 0) {
+    const error = new Conflict(ERROR_CODES.TAXONOMY_ITEM_IN_USE);
+    // The count is what makes the message actionable: "used by 12 emails" tells
+    // the admin whether to reassign them or just deactivate the item.
+    error.details = { usageCount };
+    throw error;
+  }
+  await assertNotOfferedUnder(item);
+
+  const deleted = await TaxonomyItems.deleteOne({
+    _id: item._id,
+    _company: item._company,
+  });
+
+  if (deleted.deletedCount !== 1) {
+    throw new InternalServerError(ERROR_CODES.FAILED_TAXONOMY_ITEM_DELETE);
+  }
+
+  return deleted;
+}
+
+/**
+ * Load one item, bounded to the caller's company in the same query as the id.
+ * An item of another company reads as "not found" — the caller learns nothing
+ * about what exists elsewhere.
+ */
+async function findScopedItem({ user, itemId }) {
+  if (!itemId || !isObjectId(itemId)) {
+    throw new NotFound(ERROR_CODES.TAXONOMY_ITEM_NOT_FOUND);
+  }
+
+  const item = await TaxonomyItems.findOne(scopedById(user, itemId));
+
+  if (!item) {
+    throw new NotFound(ERROR_CODES.TAXONOMY_ITEM_NOT_FOUND);
+  }
+
+  return item;
+}

@@ -7,6 +7,7 @@
 
 import {
   taxonomyErrorFor,
+  caseVariantOf,
   emailMetadataErrorKeyFor,
   canonicalTypeLabelKey,
   nextOrder,
@@ -56,6 +57,111 @@ describe('taxonomyErrorFor', () => {
     );
   });
 
+  it('names the limit that was reached', () => {
+    expect(
+      taxonomyErrorFor(axiosError('TAXONOMY_LIMIT_REACHED', { limit: 20 }))
+        .params
+    ).toEqual({ limit: 20 });
+  });
+
+  it('sends a taken identifier to the identifier field', () => {
+    const result = taxonomyErrorFor(
+      axiosError('TAXONOMY_ITEM_IDENTIFIER_ALREADY_EXISTS')
+    );
+
+    expect(result.key).toBe('taxonomy.errors.identifierAlreadyExists');
+    expect(result.field).toBe('canonicalType');
+  });
+
+  it('sends a token named like a dimension to the tokens, naming it', () => {
+    const result = taxonomyErrorFor(
+      axiosError('TAXONOMY_TOKEN_NAME_IS_DIMENSION', { name: 'brand' })
+    );
+
+    expect(result.key).toBe('taxonomy.errors.tokenNameIsDimension');
+    expect(result.params).toEqual({ name: 'brand' });
+    expect(result.field).toBe('tokens');
+  });
+
+  it('sends a dimension named like a token to the name field, naming it', () => {
+    const result = taxonomyErrorFor(
+      axiosError('DIMENSION_NAME_IS_TOKEN', { name: 'mainColorVar' })
+    );
+
+    expect(result.key).toBe('taxonomy.errors.dimensionNameIsToken');
+    expect(result.params).toEqual({ name: 'mainColorVar' });
+    expect(result.field).toBe('name');
+  });
+
+  it('sends a taken dimension name to the name field', () => {
+    const result = taxonomyErrorFor(
+      axiosError('DIMENSION_NAME_ALREADY_EXISTS')
+    );
+
+    expect(result.key).toBe('taxonomy.errors.dimensionNameAlreadyExists');
+    expect(result.field).toBe('name');
+  });
+
+  it.each([
+    ['DIMENSION_NAME_RESERVED', 'taxonomy.errors.dimensionNameReserved'],
+    ['DIMENSION_NAME_TOO_LONG', 'taxonomy.errors.dimensionNameTooLong'],
+  ])('sends %s to the name field', (code, key) => {
+    const result = taxonomyErrorFor(axiosError(code, { limit: 60 }));
+
+    expect(result.key).toBe(key);
+    expect(result.field).toBe('name');
+  });
+
+  it('names the bound of a name that is too long', () => {
+    expect(
+      taxonomyErrorFor(axiosError('DIMENSION_NAME_TOO_LONG', { limit: 60 }))
+        .params
+    ).toEqual({ limit: 60 });
+  });
+
+  // A failed save of a dimension says what went wrong, not "an error occurred".
+  it.each([
+    ['INVALID_DIMENSION', 'taxonomy.errors.invalidDimension'],
+    ['STANDARD_DIMENSION_LOCKED', 'taxonomy.errors.standardDimensionLocked'],
+    ['DIMENSION_NOT_FOUND', 'taxonomy.errors.dimensionNotFound'],
+  ])('translates %s', (code, key) => {
+    expect(taxonomyErrorFor(axiosError(code)).key).toBe(key);
+  });
+
+  it('carries the value count of a dimension that cannot be deleted', () => {
+    const result = taxonomyErrorFor(
+      axiosError('DIMENSION_HAS_VALUES', { valueCount: 3 })
+    );
+
+    expect(result.key).toBe('taxonomy.errors.dimensionHasValues');
+    expect(result.count).toBe(3);
+    expect(result.params).toEqual({ count: 3 });
+  });
+
+  it('carries how many values are offered under a value that cannot be deleted', () => {
+    const result = taxonomyErrorFor(
+      axiosError('TAXONOMY_ITEM_IS_PARENT', { childCount: 2 })
+    );
+
+    expect(result.key).toBe('taxonomy.errors.isParent');
+    expect(result.count).toBe(2);
+  });
+
+  it('carries how many values hold an availability when a dimension cannot move', () => {
+    const result = taxonomyErrorFor(
+      axiosError('DIMENSION_HAS_AVAILABILITY', { valueCount: 4 })
+    );
+
+    expect(result.key).toBe('taxonomy.errors.dimensionHasAvailability');
+    expect(result.params).toEqual({ count: 4 });
+  });
+
+  it('says a dimension another one hangs under cannot be deleted', () => {
+    expect(taxonomyErrorFor(axiosError('DIMENSION_HAS_CHILDREN')).key).toBe(
+      'taxonomy.errors.dimensionHasChildren'
+    );
+  });
+
   // The taxonomy is no longer gated by `emailMetadata.enabled`, so this code
   // cannot come back from a taxonomy call — it falls through to the generic
   // message like any other unexpected one.
@@ -83,6 +189,29 @@ describe('taxonomyErrorFor', () => {
       axiosError('emailMetadata.requiredFields[0] is not a known field')
     );
     expect(result.key).toBe('global.errors.errorOccured');
+  });
+});
+
+// The screen asks the admin to confirm a name differing from an existing one
+// only by its case, rather than showing an error.
+describe('caseVariantOf', () => {
+  it('names the existing dimension the server compared against', () => {
+    expect(
+      caseVariantOf(
+        axiosError('DIMENSION_NAME_DIFFERS_ONLY_BY_CASE', {
+          existingName: 'market',
+        })
+      )
+    ).toBe('market');
+  });
+
+  it.each([
+    [axiosError('DIMENSION_NAME_ALREADY_EXISTS', { existingName: 'market' })],
+    [axiosError('DIMENSION_NAME_DIFFERS_ONLY_BY_CASE')],
+    [{}],
+    [undefined],
+  ])('answers null for any other refusal: %p', (error) => {
+    expect(caseVariantOf(error)).toBeNull();
   });
 });
 
@@ -210,32 +339,25 @@ describe('buildTaxonomyPayload', () => {
 });
 
 describe('TAXONOMY_LIMITS', () => {
-  // Compared to the server constant rather than to a copy of its numbers: the
-  // form must refuse exactly what the API refuses, and pinning both sides by hand
-  // means a server-side change leaves this green while the two have drifted.
-  it('matches the server-side bounds', () => {
-    expect(TAXONOMY_LIMITS).toEqual({
-      LABEL: TaxonomyLimits.LABEL,
-      DESCRIPTION: TaxonomyLimits.DESCRIPTION,
-      CANONICAL_TYPE: TaxonomyLimits.CANONICAL_TYPE,
-    });
+  // The same object, not a copy of its numbers: the form must refuse exactly
+  // what the API refuses, and both read packages/shared/taxonomy/constants.js.
+  it('is the server-side bounds', () => {
+    expect(TAXONOMY_LIMITS).toBe(TaxonomyLimits);
   });
 
-  // Pinned as well as compared: the assertion above stays green if both sides are
-  // changed together by accident, and these three bounds are a product decision.
+  // Pinned as well: the assertion above stays green if the shared file is
+  // changed by accident, and these bounds are a product decision.
   it('holds the bounds the product defines', () => {
     expect(TAXONOMY_LIMITS).toEqual({
       LABEL: 120,
       DESCRIPTION: 2000,
       CANONICAL_TYPE: 60,
+      DIMENSION_NAME: 60,
+      VALUES_PER_DIMENSION: 200,
+      DIMENSIONS_PER_COMPANY: 20,
+      TOKENS_PER_VALUE: 24,
+      TOKEN_VALUE: 200,
     });
-  });
-
-  // The cap has no UI counterpart to compare against — it only ever surfaces as
-  // a 409 — so it is pinned here to keep it in sight of the other three.
-  it('leaves the per-company cap to the server alone', () => {
-    expect(TAXONOMY_LIMITS.ITEMS_PER_COMPANY).toBeUndefined();
-    expect(TaxonomyLimits.ITEMS_PER_COMPANY).toBe(200);
   });
 });
 

@@ -1,19 +1,20 @@
 'use strict';
 
-const { Conflict } = require('http-errors');
-
-const { TaxonomyItems } = require('../common/models.common.js');
-const ERROR_CODES = require('../constant/error-codes.js');
+const { TaxonomyItems } = require('../../common/models.common.js');
 const {
   TaxonomyLimits,
   TaxonomyTypes,
-} = require('../constant/taxonomy-type.js');
+} = require('../../constant/taxonomy-type.js');
 const {
   buildDefaultEmailTypes,
   planMissingDefaultEmailTypes,
 } = require('./default-email-types.js');
-const { resolveCompanyId } = require('./taxonomy.service.js');
-const logger = require('../utils/logger.js');
+const {
+  resolveCompanyId,
+  resolveExistingCompanyId,
+} = require('./company-scope.js');
+const { limitReached } = require('./taxonomy.validation.js');
+const logger = require('../../utils/logger.js');
 
 /**
  * The Badsender default email types, written into a company's taxonomy: the
@@ -132,7 +133,9 @@ async function previewMissingDefaultEmailTypes({ user, groupId, lang }) {
 async function addMissingDefaultEmailTypes({ user, groupId, lang }) {
   logger.log('taxonomyDefaultsService:addMissingDefaultEmailTypes');
 
-  const companyId = resolveCompanyId(user, groupId);
+  // Checked to exist: a super admin naming no company would otherwise have
+  // the default email types written for it.
+  const companyId = await resolveExistingCompanyId(user, groupId);
   const type = TaxonomyTypes.EMAIL_TYPE;
 
   const existing = await TaxonomyItems.find({ _company: companyId, type })
@@ -145,8 +148,8 @@ async function addMissingDefaultEmailTypes({ user, groupId, lang }) {
 
   // Same cap as createTaxonomyItem, checked before the write rather than letting
   // six inserts take a company past it one at a time.
-  if (existing.length + toCreate.length > TaxonomyLimits.ITEMS_PER_COMPANY) {
-    throw new Conflict(ERROR_CODES.TAXONOMY_LIMIT_REACHED);
+  if (existing.length + toCreate.length > TaxonomyLimits.VALUES_PER_DIMENSION) {
+    throw limitReached(TaxonomyLimits.VALUES_PER_DIMENSION);
   }
 
   const items = toCreate.map((item) => ({

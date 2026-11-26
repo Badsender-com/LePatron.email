@@ -11,7 +11,7 @@ const {
   GUARD_CAN_ACCESS_GROUP_FROM_BODY,
   GUARD_CAN_ACCESS_GROUP_FROM_QUERY,
 } = require('../group/group.guard.js');
-const taxonomy = require('./taxonomy.controller.js');
+const taxonomy = require('./controllers/taxonomy.controller.js');
 
 // Deliberately NOT gated by `emailMetadata.enabled`. A taxonomy is a
 // cross-cutting concern — the coming CRM Governance module will read it too — and,
