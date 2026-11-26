@@ -9,6 +9,14 @@ const {
 
 module.exports = { readGovernanceContext: asyncHandler(readGovernanceContext) };
 
+// What buildGovernanceContext reads of an email.
+const GOVERNANCE_FIELDS = {
+  _company: 1,
+  _emailType: 1,
+  trigger: 1,
+  _taxonomyItems: 1,
+};
+
 /**
  * @api {get} /mailings/:mailingId/governance-context the email's governance
  * @apiPermission user
@@ -30,9 +38,12 @@ async function readGovernanceContext(req, res) {
   const { user } = req;
 
   // Scoped on the user's company: an email of another one reads as absent.
+  // Only the fields the context reads: the editor's content (`data`) weighs
+  // hundreds of KB, and the AI features ask for the context at each generation.
   const mailing = await mailingService.findOneForUser(
     req.params.mailingId,
-    user
+    user,
+    GOVERNANCE_FIELDS
   );
 
   res.json(await buildGovernanceContext({ mailing, lang: user.lang }));
