@@ -20,6 +20,8 @@ const ERROR_CODES = require('../../../packages/server/constant/error-codes.js');
 const dimensionService = require('../../../packages/server/taxonomy/services/dimension.service.js');
 const {
   COMPANY_A,
+  COMPANY_B,
+  adminA,
   resetTaxonomyModels,
 } = require('../../helpers/taxonomy-world.js');
 
@@ -82,6 +84,28 @@ describe('the company a dimension request acts for', () => {
         })
       ).resolves.toMatchObject({ name: 'audience' });
       expect(companiesWithDimensions()).toEqual(new Set([COMPANY_A]));
+    });
+  });
+
+  // The route guard refuses it first (dimension.routes.test.js); the service
+  // refuses it again, on its own.
+  describe("a company admin naming another company's id", () => {
+    it('is refused the list, and nothing is seeded for either company', async () => {
+      await expect(
+        dimensionService.listDimensions({ user: adminA, groupId: COMPANY_B })
+      ).rejects.toMatchObject({ status: 403 });
+      expect(models.TaxonomyDimensions.all()).toHaveLength(0);
+    });
+
+    it('is refused a declaration, written in neither company', async () => {
+      await expect(
+        dimensionService.createDimension({
+          user: adminA,
+          groupId: COMPANY_B,
+          payload: { name: 'audience', label: 'Cible' },
+        })
+      ).rejects.toMatchObject({ status: 403 });
+      expect(models.TaxonomyDimensions.all()).toHaveLength(0);
     });
   });
 });

@@ -20,8 +20,6 @@ const {
 const {
   GUARD_EMAIL_METADATA,
 } = require('../../../packages/server/mailing/email-metadata.guard.js');
-const permissions = require('../../../packages/server/account/permissions.js');
-const { CAPABILITIES } = require('../../../packages/shared/access/roles.js');
 const { routeInspector } = require('../../helpers/express-router.js');
 
 // Turned on by #1353 (dimensions are records; the email type and the trigger as
@@ -73,18 +71,89 @@ describe('dimension routes', () => {
     );
   });
 
-  it('lets a tech admin through the admin guard, and not a regular user', () => {
-    expect(
-      permissions.can(
-        { role: 'company_admin_tech', group: { id: 'a' } },
-        CAPABILITIES.GROUP_MANAGE
-      )
-    ).toBe(true);
-    expect(
-      permissions.can(
-        { role: 'regular_user', group: { id: 'a' } },
-        CAPABILITIES.GROUP_MANAGE
-      )
-    ).toBe(false);
+  // The guards run as express runs them, for each of the six roles: a request
+  // reaches the controller only if every guard calls `next()` without an error.
+  describe('who gets through', () => {
+    const COMPANY_A = '507f1f77bcf86cd799439a01';
+    const COMPANY_B = '507f1f77bcf86cd799439b01';
+    const PLATFORM = '507f1f77bcf86cd799439f01';
+    const DIMENSION_ID = '507f1f77bcf86cd799439d01';
+
+    const userOf = (role) => ({
+      role,
+      group: { id: role === 'super_admin' ? PLATFORM : COMPANY_A },
+    });
+
+    const requestFor = (method, user, groupId) => {
+      if (method === 'get') return { user, query: { groupId } };
+      if (method === 'post') return { user, body: { groupId } };
+      return { user, params: { dimensionId: DIMENSION_ID } };
+    };
+
+    const reachesController = (method, path, req) =>
+      guardsOf(method, path).every((guard) => {
+        let passed = false;
+        guard(req, {}, (error) => {
+          passed = !error;
+        });
+        return passed;
+      });
+
+    const ROUTES = [
+      ['get', ''],
+      ['post', ''],
+      ['patch', '/:dimensionId'],
+      ['delete', '/:dimensionId'],
+    ];
+
+    describe.each([
+      ['super_admin', true],
+      ['company_admin_tech', true],
+      ['company_admin', true],
+      ['regular_user', false],
+      ['writer', false],
+      ['reviewer', false],
+    ])('a %s', (role, allowed) => {
+      it.each(ROUTES)(
+        `${allowed ? 'reaches' : 'is refused'} %s %s for company A`,
+        (method, path) => {
+          expect(
+            reachesController(
+              method,
+              path,
+              requestFor(method, userOf(role), COMPANY_A)
+            )
+          ).toBe(allowed);
+        }
+      );
+    });
+
+    it.each([['get'], ['post']])(
+      "refuses %s to an admin of company A naming company B's id",
+      (method) => {
+        ['company_admin', 'company_admin_tech'].forEach((role) => {
+          expect(
+            reachesController(
+              method,
+              '',
+              requestFor(method, userOf(role), COMPANY_B)
+            )
+          ).toBe(false);
+        });
+      }
+    );
+
+    it.each([['get'], ['post']])(
+      'lets a super admin name company B on %s',
+      (method) => {
+        expect(
+          reachesController(
+            method,
+            '',
+            requestFor(method, userOf('super_admin'), COMPANY_B)
+          )
+        ).toBe(true);
+      }
+    );
   });
 });
