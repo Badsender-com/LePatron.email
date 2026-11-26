@@ -104,6 +104,8 @@ module.exports = {
     vm.hiddenTemplateOptions(
       hiddenTemplateOptions({
         dimensions,
+        emailTypes: config.emailTypes,
+        triggers: config.triggers,
         templateProperties: rootPropertiesOf(vm.content && vm.content()),
       })
     );
@@ -137,6 +139,7 @@ module.exports = {
         valued: rememberValued([], {
           selections: initialSelections,
           emailTypeId: initialForm.emailTypeId,
+          trigger: initialForm.trigger,
         }),
         subjectHardLimit: SUBJECT_HARD_LIMIT,
       }),
@@ -253,6 +256,9 @@ module.exports = {
         emailTypeId() {
           this.trackValued();
         },
+        trigger() {
+          this.trackValued();
+        },
       },
 
       // A field written from outside the section (an AI action, through
@@ -281,6 +287,7 @@ module.exports = {
           this.valued = rememberValued(this.valued, {
             selections: this.selections,
             emailTypeId: this.emailTypeId,
+            trigger: this.trigger,
           });
         },
       },

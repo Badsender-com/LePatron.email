@@ -199,8 +199,22 @@ describe('publishing dimensions to the template', () => {
       governanceValues({ dimensions: [], selections: {}, trigger: 'automated' })
         .values.trigger
     ).toBe('automated');
+  });
+
+  it('publishes nothing for a trigger the email never had', () => {
     expect(
-      governanceValues({ dimensions: [], selections: {} }).values.trigger
+      governanceValues({ dimensions: [], selections: {}, trigger: '' }).values
+    ).not.toHaveProperty('trigger');
+  });
+
+  it('publishes an empty trigger once the writer emptied it', () => {
+    expect(
+      governanceValues({
+        dimensions: [],
+        selections: {},
+        trigger: '',
+        valued: ['trigger'],
+      }).values.trigger
     ).toBe('');
   });
 });
@@ -212,13 +226,20 @@ describe('the dimensions an email has had a value for', () => {
     rememberValued,
   } = require('../../packages/editor/src/js/utils/governance-values.js');
 
-  it('are those it opens with a value for, the email type included', () => {
+  it('are those it opens with a value for, the email type and trigger included', () => {
     expect(
       rememberValued([], {
         selections: { audience: '64a0000000000000000000a1', brand: '' },
         emailTypeId: '64a0000000000000000000c1',
+        trigger: 'adhoc',
       }).sort()
-    ).toEqual(['audience', 'emailType']);
+    ).toEqual(['audience', 'emailType', 'trigger']);
+  });
+
+  it('leave out an email type or a trigger the email does not have', () => {
+    expect(
+      rememberValued([], { selections: {}, emailTypeId: '', trigger: '' })
+    ).toEqual([]);
   });
 
   it('keep a dimension the writer empties', () => {

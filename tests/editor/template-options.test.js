@@ -86,6 +86,40 @@ describe('template options fed by a dimension', () => {
   });
 });
 
+// The email type and trigger selects of the email settings feed the
+// `emailType` and `trigger` properties: the same rule.
+describe('template options fed by the email type and the trigger', () => {
+  const PROPERTIES = ['emailType', 'trigger', 'country'];
+
+  it('hides the options the email type and trigger selects feed', () => {
+    expect(
+      hiddenTemplateOptions({
+        dimensions: [],
+        emailTypes: [{ id: '64a0000000000000000000c1' }],
+        triggers: ['adhoc', 'automated'],
+        templateProperties: PROPERTIES,
+      })
+    ).toEqual(['emailType', 'trigger']);
+  });
+
+  it('keeps the email type option while the company offers no email type', () => {
+    expect(
+      hiddenTemplateOptions({
+        dimensions: [],
+        emailTypes: [],
+        triggers: ['adhoc', 'automated'],
+        templateProperties: PROPERTIES,
+      })
+    ).toEqual(['trigger']);
+  });
+
+  it('keeps both while the editor was sent neither', () => {
+    expect(
+      hiddenTemplateOptions({ dimensions: [], templateProperties: PROPERTIES })
+    ).toEqual([]);
+  });
+});
+
 describe('the root properties of an email content', () => {
   const observable = (value) => ko.observable(value);
 

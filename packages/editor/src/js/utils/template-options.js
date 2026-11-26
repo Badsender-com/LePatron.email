@@ -1,5 +1,8 @@
 'use strict';
 
+const {
+  STANDARD_DIMENSIONS,
+} = require('../../../../shared/taxonomy/constants.js');
 const { isPublishable } = require('./publish-to-template');
 
 /**
@@ -11,18 +14,37 @@ const { isPublishable } = require('./publish-to-template');
  * A deactivated dimension is not sent to the editor, or is sent flagged, and
  * no longer decides: its option comes back. So does a dimension with no value
  * to offer, declared before its values or with all of them deactivated: hiding
- * the option would leave nothing in its place. Covered by
+ * the option would leave nothing in its place. The email type and the trigger
+ * follow the same rule: their selects in the email settings feed the
+ * `emailType` and `trigger` properties. Covered by
  * tests/editor/template-options.test.js.
  *
  * @param {Object} params
  * @param {Array} params.dimensions the company dimensions the server sent the
  *   editor
+ * @param {Array} [params.emailTypes] the email types the editor offers
+ * @param {string[]} [params.triggers] the triggers the editor offers
  * @param {string[]} params.templateProperties the root properties of the template
  * @returns {string[]} the properties whose option is hidden
  */
-function hiddenTemplateOptions({ dimensions, templateProperties }) {
-  const fed = (dimensions || [])
-    .filter((dimension) => dimension.isActive !== false && offersValues(dimension))
+function hiddenTemplateOptions({
+  dimensions,
+  emailTypes,
+  triggers,
+  templateProperties,
+}) {
+  const standard = [
+    { name: STANDARD_DIMENSIONS.EMAIL_TYPE, values: emailTypes },
+    {
+      name: STANDARD_DIMENSIONS.TRIGGER,
+      values: (triggers || []).map((trigger) => ({ id: trigger })),
+    },
+  ];
+  const fed = standard
+    .concat(dimensions || [])
+    .filter(
+      (dimension) => dimension.isActive !== false && offersValues(dimension)
+    )
     .map((dimension) => dimension.name);
   return (templateProperties || []).filter((property) =>
     fed.includes(property)
