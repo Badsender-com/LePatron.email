@@ -69,6 +69,78 @@ describe('nesting: what is refused rather than left dangling', () => {
     });
   });
 
+  // Deactivated, then checked, then deleted: no dimension hung under it
+  // meanwhile is left pointing at a name nothing declares.
+  describe('while a dimension is being hung under the one deleted', () => {
+    let brand;
+
+    // Runs `during` right after the deletion's first write: its deactivation.
+    const duringDeletion = (during) => {
+      const { updateOne } = models.TaxonomyDimensions;
+      jest
+        .spyOn(models.TaxonomyDimensions, 'updateOne')
+        .mockImplementationOnce(async (...args) => {
+          const result = await updateOne(...args);
+          await during();
+          return result;
+        });
+    };
+    const deleteBrand = () =>
+      dimensionService.deleteDimension({
+        user: adminA,
+        dimensionId: idOf(brand),
+      });
+
+    beforeEach(async () => {
+      brand = await declare({ name: 'brand', label: 'Marque' });
+    });
+
+    afterEach(() => jest.restoreAllMocks());
+
+    it('refuses a child hung under it once the deletion started, and deletes', async () => {
+      let move;
+      duringDeletion(async () => {
+        move = dimensionService
+          .updateDimension({
+            user: adminA,
+            dimensionId: idOf(language),
+            payload: { parentName: 'brand' },
+          })
+          .catch((error) => error);
+        await move;
+      });
+
+      await deleteBrand();
+
+      expect(await move).toMatchObject({
+        status: 400,
+        message: ERROR_CODES.INVALID_DIMENSION,
+      });
+      expect(await dimensionNamed('brand')).toBeUndefined();
+      expect(await dimensionNamed('language')).toMatchObject({
+        parentName: 'market',
+      });
+    });
+
+    it('sees a child that landed before the check, and leaves the dimension active', async () => {
+      // Loaded before the deletion, like an admin's PATCH already under way.
+      const patch = await models.TaxonomyDimensions.findOne({
+        _id: language._id,
+      });
+      duringDeletion(async () => {
+        patch.parentName = 'brand';
+        await patch.save();
+      });
+
+      await expect(deleteBrand()).rejects.toMatchObject({
+        status: 409,
+        message: ERROR_CODES.DIMENSION_HAS_CHILDREN,
+        details: { childNames: ['language'] },
+      });
+      expect(await dimensionNamed('brand')).toMatchObject({ isActive: true });
+    });
+  });
+
   it('refuses to move a dimension whose values carry an availability, giving their count', async () => {
     await declare({ name: 'brand', label: 'Marque' });
     await addValue('language', {

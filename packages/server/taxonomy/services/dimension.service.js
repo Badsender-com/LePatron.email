@@ -199,14 +199,15 @@ async function updateDimension({ user, dimensionId, payload = {} }) {
 }
 
 /**
- * Delete a dimension while it has no values. Once it has some, it is
- * deactivated instead: deleting it would leave its values, and the emails
- * carrying them, under a name nothing declares.
+ * Delete a dimension while it has no values and no dimension hangs under it.
+ * Once it has values, it is deactivated instead: deleting it would leave its
+ * values, and the emails carrying them, under a name nothing declares.
  *
- * Deactivated first, then counted, then deleted. An inactive dimension takes no
- * new value (assertValueType), so a value created while this runs is either in
- * the count or refused. Counting first would let one created between the count
- * and the delete stay behind, and come back if the name were declared again.
+ * Deactivated first, then checked, then deleted. An inactive dimension takes no
+ * new value (assertValueType) and no new child (assertParentName), so a value
+ * created or a child hung under it while this runs is either seen by the checks
+ * or refused. Checking first would let one land between the check and the
+ * delete, and leave it under a name nothing declares.
  */
 async function deleteDimension({ user, dimensionId }) {
   logger.log('dimensionService:deleteDimension');
@@ -216,11 +217,9 @@ async function deleteDimension({ user, dimensionId }) {
   if (dimension.standard) {
     throw new Conflict(ERROR_CODES.STANDARD_DIMENSION_LOCKED);
   }
-  // Before the deactivation below, so a refusal leaves the dimension as it was.
-  await assertNoChildDimension(dimension);
 
-  // Stamped by hand, so the refused path below can tell its own deactivation
-  // from an edit made meanwhile.
+  // Stamped by hand, so a refusal can tell its own deactivation from an edit
+  // made meanwhile.
   const scope = { _id: dimension._id, _company: dimension._company };
   const deactivatedAt = new Date();
   await TaxonomyDimensions.updateOne(
@@ -228,25 +227,34 @@ async function deleteDimension({ user, dimensionId }) {
     { $set: { isActive: false, updatedAt: deactivatedAt } },
     { timestamps: false }
   );
-
-  const valueCount = await TaxonomyItems.countDocuments({
-    _company: dimension._company,
-    type: dimension.name,
-  });
-  if (valueCount > 0) {
-    // Refused: the dimension goes back to active if it was, and only if
-    // nothing touched it since this deactivation. A PATCH deactivating it
-    // meanwhile stands. A value created during this brief window got a 400,
-    // by design: the dimension was inactive then.
+  // Refused: the dimension goes back to active if it was, and only if nothing
+  // touched it since this deactivation. A PATCH deactivating it meanwhile
+  // stands. A value created or a child hung under it during this brief window
+  // got a 400, by design: the dimension was inactive then.
+  const refuse = async (error) => {
     if (dimension.isActive) {
       await TaxonomyDimensions.updateOne(
         { ...scope, isActive: false, updatedAt: deactivatedAt },
         { $set: { isActive: true } }
       );
     }
+    throw error;
+  };
+
+  try {
+    await assertNoChildDimension(dimension);
+  } catch (error) {
+    await refuse(error);
+  }
+
+  const valueCount = await TaxonomyItems.countDocuments({
+    _company: dimension._company,
+    type: dimension.name,
+  });
+  if (valueCount > 0) {
     const error = new Conflict(ERROR_CODES.DIMENSION_HAS_VALUES);
     error.details = { valueCount };
-    throw error;
+    await refuse(error);
   }
 
   await TaxonomyDimensions.deleteOne(scope);
