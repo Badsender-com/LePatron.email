@@ -156,12 +156,12 @@ describe.each(ENTITIES)('versioned lifecycle — $label', (entity) => {
       expect(doc.save).toHaveBeenCalled();
     });
 
-    it('pre-fills the release notes, so activation does not ask for them', async () => {
+    it('leaves its texts to write, as a major does (ADR 0031)', async () => {
       build({ versions: [makeVersion()] });
       await service.createMinorVersion('an-id', USER_ID);
       const created = doc.versions[1];
-      expect(created.changelog).toBeTruthy();
-      expect(created.releaseNotes).toBeTruthy();
+      expect(created.changelog).toBe('');
+      expect(created.releaseNotes).toBe('');
     });
 
     it('refuses when nothing is published yet', async () => {
@@ -449,7 +449,7 @@ describe.each(ENTITIES)('versioned lifecycle — $label', (entity) => {
       await service.activateVersion(
         'an-id',
         { major: 1, minor: 1 },
-        { updatedAt: READ_AT.toISOString() },
+        { updatedAt: READ_AT.toISOString(), changelog: 'c', releaseNotes: 'r' },
         USER_ID
       );
 
@@ -561,10 +561,10 @@ describe.each(ENTITIES)('versioned lifecycle — $label', (entity) => {
       });
       await expect(
         service.activateVersion('an-id', { major: 1, minor: 0 }, {}, USER_ID)
-      ).rejects.toThrow(/changelog and releaseNotes are required/);
+      ).rejects.toThrow(/release note/);
     });
 
-    it('does not demand them for a minor', async () => {
+    it('takes them from a minor draft that carries them', async () => {
       build({
         versions: [
           makeVersion({

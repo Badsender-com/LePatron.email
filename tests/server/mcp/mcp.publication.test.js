@@ -463,7 +463,7 @@ describe('publishing and opening from an assistant', () => {
         id: SUBJECT_LINES,
       });
 
-      expect(answer.error).toMatch(/changelog/i);
+      expect(answer.error).toMatch(/release note/i);
       expect(harness.stored('guardRuns')).toEqual([]);
     });
 

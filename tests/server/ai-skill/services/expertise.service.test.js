@@ -246,7 +246,7 @@ describe('expertise.service', () => {
       ).rejects.toMatchObject({ status: 400 });
     });
 
-    it('increments minor and pre-fills the changelog', async () => {
+    it('increments minor, its texts left to write', async () => {
       const doc = mockExpertiseDoc({
         activeVersion: { major: 1, minor: 0 },
         versions: [
@@ -263,7 +263,8 @@ describe('expertise.service', () => {
       const created = doc.versions[doc.versions.length - 1];
       expect(created.versionMajor).toBe(1);
       expect(created.versionMinor).toBe(1);
-      expect(created.changelog).toBe('Correction mineure');
+      // Every publication writes its own (ADR 0031).
+      expect(created.changelog).toBe('');
     });
   });
 

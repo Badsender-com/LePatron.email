@@ -11,7 +11,7 @@ const {
 const {
   Audiences,
   SkillNatures,
-  MinorVersionDefaults,
+  LegacyMinorVersionTexts,
 } = require('../ai-skill/constant/skill-constants.js');
 const {
   withIdentity,
@@ -112,7 +112,7 @@ const MAX_DRAFT_CHANGELOG = 10000;
 
 function changelogAfter(version, changelog) {
   const before = String(version.changelog || '').trim();
-  const said = before && before !== MinorVersionDefaults.changelog;
+  const said = before && before !== LegacyMinorVersionTexts.changelog;
   const after = said ? `${before}\n${changelog}` : changelog;
   if (after.length > MAX_DRAFT_CHANGELOG) {
     throw createError(

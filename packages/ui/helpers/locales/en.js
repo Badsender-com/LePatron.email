@@ -2435,11 +2435,14 @@ export default {
       openToAll: 'Open it to all companies',
       openToAllNotice:
         'This item opens to all companies as soon as it is published.',
-      activateBodyMinor: 'Activating this minor version makes it immutable and immediately changes the doctrine features consume. Changelog and notes are pre-filled from the draft (optional for a minor).',
+      activateBodyMinor: 'Activating this minor version makes it immutable and immediately changes the doctrine features consume. Changelog and release notes are required.',
       changelog: 'Changelog',
       changelogPlaceholder:
         'What changes vs the previous version — e.g. "Added the urgency rule, reworded the length criterion"',
       releaseNotes: 'Release notes',
+      releaseNotesHint:
+        'What changes for whoever uses this item, in {max} characters at most: every company that reads it will see it.',
+      releaseNotesTooLong: 'No more than {max} characters.',
       releaseNotesPlaceholder:
         'What to know about this version — e.g. "Tested on FR promo emails only; exceptions section to validate in the field"',
       outputFormatNote:

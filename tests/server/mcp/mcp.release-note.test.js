@@ -58,7 +58,7 @@ describe('release note required at publication', () => {
   afterEach(() => harness.disconnect());
 
   // Turned on by #1665 (a publication requires both texts)
-  describe.skip('from an assistant', () => {
+  describe('from an assistant', () => {
     it('refuses a minor version without a release note', async () => {
       const answer = await publish(await asAuthor(), { changelog: 'Typo' });
 

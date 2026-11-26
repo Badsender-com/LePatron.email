@@ -37,7 +37,7 @@ const publish = () =>
   skillService.activateVersion(
     'qc.read-sending-report',
     { major: 1, minor: 1 },
-    {},
+    { changelog: 'c', releaseNotes: 'r' },
     null
   );
 
