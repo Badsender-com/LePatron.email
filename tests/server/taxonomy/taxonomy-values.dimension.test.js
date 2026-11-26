@@ -195,6 +195,45 @@ describe('values of a company dimension', () => {
     ).resolves.toMatchObject({ label: 'Prospects' });
   });
 
+  // The email type is the exception: its field maps a value onto one of the
+  // doctrine's six types, and several values map onto the same one. That is
+  // why the identifier's uniqueness is checked by the service, not an index.
+  it('lets two email type values share one doctrine type', async () => {
+    await addValue('emailType', {
+      label: 'Infolettre',
+      canonicalType: 'editorial',
+    });
+
+    await expect(
+      addValue('emailType', {
+        label: 'Lettre du dimanche',
+        canonicalType: 'editorial',
+      })
+    ).resolves.toMatchObject({
+      type: 'emailType',
+      canonicalType: 'editorial',
+    });
+  });
+
+  it('lets an email type value be edited onto a doctrine type another one has', async () => {
+    await addValue('emailType', {
+      label: 'Infolettre',
+      canonicalType: 'editorial',
+    });
+    const other = await addValue('emailType', {
+      label: 'Soldes',
+      canonicalType: 'promotional',
+    });
+
+    await expect(
+      taxonomyService.updateTaxonomyItem({
+        user: adminA,
+        itemId: idOf(other),
+        payload: { canonicalType: 'editorial' },
+      })
+    ).resolves.toMatchObject({ canonicalType: 'editorial' });
+  });
+
   it('refuses the 201st value of a dimension, naming the limit', async () => {
     models.TaxonomyItems.seed(
       Array.from({ length: 200 }, (_, i) => ({

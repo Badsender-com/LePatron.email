@@ -40,6 +40,7 @@ const {
 const {
   TaxonomyLimits,
 } = require('../../../packages/server/constant/taxonomy-type.js');
+const ERROR_CODES = require('../../../packages/server/constant/error-codes.js');
 
 const COMPANY = '507f1f77bcf86cd799439a01';
 
@@ -378,12 +379,17 @@ describe('addMissingDefaultEmailTypes', () => {
       }))
     );
 
+    // The limit travels with the refusal, so the screen names it.
     await expect(
       taxonomyDefaultsService.addMissingDefaultEmailTypes({
         user,
         groupId: COMPANY,
       })
-    ).rejects.toMatchObject({ status: 409 });
+    ).rejects.toMatchObject({
+      status: 409,
+      message: ERROR_CODES.TAXONOMY_LIMIT_REACHED,
+      details: { limit: 200 },
+    });
     expect(TaxonomyItems.insertMany).not.toHaveBeenCalled();
   });
 
