@@ -76,7 +76,10 @@ async function changeOf({ kind, id, audience, openExpertiseIds }) {
   const active = findActiveVersion(doc);
   const opening = audience === Audiences.ALL;
   if (opening && doc.status === SkillStatuses.ARCHIVED) {
-    throw createError(409, `"${id}" is archived: it is opened to no company.`);
+    throw createError(
+      409,
+      `"${id}" is archived: publish a version of it again before opening it.`
+    );
   }
   if (opening && !active) {
     throw createError(

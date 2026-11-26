@@ -2054,6 +2054,8 @@ export default {
         'These expertises consumed do not exist: {expertiseIds}. Remove them from the version.',
       SKILL_OPEN_EXPERTISES_INVALID:
         'Only the published expertises this version consumes that are kept to the platform company open with the skill, and only when the skill opens to all companies.',
+      SKILL_OPEN_ARCHIVED:
+        'This item is archived: publish a version again before opening it to all companies.',
       SKILL_OPEN_NEVER_PUBLISHED:
         'This item was never published: publish a version before opening it to all companies.',
       SKILL_NOT_AVAILABLE_TO_COMPANY:

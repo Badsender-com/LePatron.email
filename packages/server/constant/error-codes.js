@@ -209,6 +209,9 @@ module.exports = {
   // A skill or an expertise opened to every company before any version of it
   // was published: a company reads the active version only (ADR 0031).
   SKILL_OPEN_NEVER_PUBLISHED: 'SKILL_OPEN_NEVER_PUBLISHED',
+  // An archived skill or expertise opened to every company: no company reads
+  // it until a version of it is published again (ADR 0031).
+  SKILL_OPEN_ARCHIVED: 'SKILL_OPEN_ARCHIVED',
   // A feature skill still meant for the platform company, invoked on behalf
   // of a user of another company (ADR 0013).
   SKILL_NOT_AVAILABLE_TO_COMPANY: 'SKILL_NOT_AVAILABLE_TO_COMPANY',

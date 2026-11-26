@@ -26,7 +26,8 @@ function record(doc, entry) {
 /**
  * Sets an item's audience, and records the change when it is one. A company
  * reads the active version only: an item never published is never opened,
- * from the back office as from an assistant (`set_audience`).
+ * nor an archived one until a version of it is published again, from the
+ * back office as from an assistant (`set_audience`).
  *
  * @param {Object} doc the item, stored or plain, with its versions, saved by
  *   the caller
@@ -34,10 +35,13 @@ function record(doc, entry) {
  * @param {*} [userId] who sets it
  * @param {Date} [at] when, the same date as what is written with it
  * @returns {boolean} whether it changed
- * @throws {HttpError} 409 SKILL_OPEN_NEVER_PUBLISHED
+ * @throws {HttpError} 409 SKILL_OPEN_ARCHIVED, SKILL_OPEN_NEVER_PUBLISHED
  */
 function setAudience(doc, audience, userId, at = new Date()) {
   if (doc.audience === audience) return false;
+  if (audience === Audiences.ALL && doc.status === SkillStatuses.ARCHIVED) {
+    throw createError(409, ERROR_CODES.SKILL_OPEN_ARCHIVED);
+  }
   if (audience === Audiences.ALL && !findActiveVersion(doc)) {
     throw createError(409, ERROR_CODES.SKILL_OPEN_NEVER_PUBLISHED);
   }
