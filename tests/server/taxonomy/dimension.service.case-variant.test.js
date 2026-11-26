@@ -8,9 +8,14 @@
 // The collections are in-memory fakes that interpret queries like MongoDB, so
 // these tests hold the service to its answers, not to the shape of its queries.
 //
-// As everywhere in the taxonomy (ADR-0032), a malformed request, or one naming
-// something the company does not have, is a 400; a well-formed request that
-// clashes with what is stored is a 409.
+// The refusals, as everywhere in the taxonomy (ADR-0032):
+// - 400, a malformed request, or one referring to something that does not
+//   exist, such as an undeclared dimension or a parent of another company;
+// - 403, a request naming another company outright, by its groupId;
+// - 404, a record asked for by its id that is absent or another company's,
+//   the two never told apart, or a company a super admin names that does not
+//   exist;
+// - 409, a well-formed request that clashes with what is stored.
 
 jest.mock('../../../packages/server/common/models.common.js', () =>
   require('../../helpers/taxonomy-world.js').fakeTaxonomyModels()
