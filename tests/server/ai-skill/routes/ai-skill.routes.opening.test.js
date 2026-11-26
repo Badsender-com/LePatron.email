@@ -18,7 +18,7 @@ jest.mock('../../../../packages/server/account/auth.guard', () =>
 );
 
 const request = require('../../../helpers/local-request.js');
-const { aiSkillApp } = require('../../../helpers/ai-skill-app.js');
+const { aiSkillApp, SUPER_ADMIN } = require('../../../helpers/ai-skill-app.js');
 const {
   seedOpening,
   expertise,
@@ -31,9 +31,14 @@ const {
 } = require('../../../../packages/server/common/models.common');
 const logger = require('../../../../packages/server/utils/logger.js');
 
+// The application is loaded once, as the file is, and its first request
+// made before the first test: loading it is not what a test measures, and
+// without Jest's cache it takes longer than a test may.
+const loaded = aiSkillApp();
+beforeAll(() => request(loaded).get('/api/ai-skills/qc.none'));
 beforeEach(() => seedOpening(mockStore));
 
-const app = () => aiSkillApp();
+const app = () => loaded;
 const publish = (body) =>
   request(app())
     .post('/api/ai-skills/qc.review/versions/1.0/activate')
@@ -166,6 +171,64 @@ describe('publishing an expertise open to every company', () => {
 
     expect(res.status).toBe(200);
     expect(res.body).toMatchObject({ status: 'ACTIVE', audience: 'all' });
+  });
+});
+
+// Every change of audience from the back office is kept, with who made it,
+// and so is an archiving (ADR 0031).
+describe('the audience history, from the back office', () => {
+  const {
+    LePatronSkills,
+  } = require('../../../../packages/server/common/models.common');
+  const stored = async (Model, filter) =>
+    (await Model.findOne(filter).lean()) || {};
+  const asSet = ({ audience, archived, _by }) => ({
+    audience,
+    ...(archived !== undefined && { archived }),
+    _by: String(_by),
+  });
+
+  it('keeps a skill opened from its details, and who opened it', async () => {
+    await request(app()).patch('/api/ai-skills/qc.live').send({
+      audience: 'all',
+    });
+
+    const { audienceHistory } = await stored(LePatronSkills, {
+      skillId: 'qc.live',
+    });
+    expect(audienceHistory.map(asSet)).toEqual([
+      { audience: 'all', _by: SUPER_ADMIN.id },
+    ]);
+  });
+
+  it('keeps an expertise kept to the platform company again, and who did it', async () => {
+    const res = await request(app())
+      .patch('/api/ai-expertise/brand.tone')
+      .send({ audience: 'platform' });
+
+    expect(res.status).toBe(200);
+    const { audienceHistory } = await stored(Expertises, {
+      expertiseId: 'brand.tone',
+    });
+    expect(audienceHistory.map(asSet)).toEqual([
+      { audience: 'platform', _by: SUPER_ADMIN.id },
+    ]);
+  });
+
+  it('dates an archiving, and keeps it with who archived', async () => {
+    const res = await request(app())
+      .post('/api/ai-expertise/brand.tone/archive')
+      .send({});
+
+    expect(res.status).toBe(200);
+    const archived = await stored(Expertises, { expertiseId: 'brand.tone' });
+    expect(archived.status).toBe('ARCHIVED');
+    expect(new Date(archived.archivedAt).getTime()).toBe(
+      new Date(archived.audienceHistory[0].at).getTime()
+    );
+    expect(archived.audienceHistory.map(asSet)).toEqual([
+      { audience: 'all', archived: true, _by: SUPER_ADMIN.id },
+    ]);
   });
 });
 
