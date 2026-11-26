@@ -67,7 +67,10 @@ describe('GET /mailings/:mailingId/governance-context', () => {
     expect(res.json).toHaveBeenCalledWith(context);
   });
 
-  it('answers 404 for an email of another company, and builds nothing', async () => {
+  // The company boundary itself is findOneForUser's, covered by
+  // tests/server/mailing/mailing.service.find-one-for-user.test.js. Here, only
+  // that its refusal reaches the caller untouched.
+  it('passes on the refusal of the email lookup, and builds nothing', async () => {
     const notFound = new NotFound('MAILING_NOT_FOUND');
     mailingService.findOneForUser.mockRejectedValue(notFound);
 
