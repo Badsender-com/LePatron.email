@@ -57,6 +57,9 @@ export default {
       serverTokensError: null,
       // The identifier follows the label until the admin writes their own.
       identifierTouched: false,
+      // Counts the openings: the token rows are mounted afresh at each one,
+      // the dialog staying mounted while closed.
+      openings: 0,
     };
   },
   validations: {
@@ -147,6 +150,7 @@ export default {
       this.serverIdentifierError = null;
       this.serverTokensError = null;
       this.identifierTouched = false;
+      this.openings += 1;
       this.form = item
         ? {
             label: item.label || '',
@@ -203,7 +207,11 @@ export default {
       this.serverIdentifierError = null;
       this.serverTokensError = null;
       this.$v.$touch();
-      if (this.$v.$invalid) return;
+      // Every row's errors shown, not only the first form error's.
+      const tokensValid = this.$refs.tokensField
+        ? this.$refs.tokensField.validate()
+        : true;
+      if (this.$v.$invalid || !tokensValid) return;
 
       const payload = buildTaxonomyPayload(this.form);
       if (this.parentValues) payload.parentIds = this.form.parentIds;
@@ -285,6 +293,8 @@ export default {
     />
 
     <bs-taxonomy-tokens-field
+      ref="tokensField"
+      :key="openings"
       v-model="form.tokens"
       :server-error="serverTokensError"
       :disabled="loading"

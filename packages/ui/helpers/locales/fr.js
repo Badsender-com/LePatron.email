@@ -1445,6 +1445,15 @@ export default {
         tokenValuePlaceholder: '#ffd845',
         tokenNameInvalid:
           'Lettres sans accent, chiffres et _ seulement, sans commencer par un chiffre.',
+        tokenNameRequired: 'Donnez un nom à ce token, ou retirez la ligne.',
+        tokenNameTooLong: 'Le nom ne peut pas dépasser {max} caractères.',
+        tokenNameReserved:
+          'Ce nom est réservé par JavaScript, par l’éditeur (comme theme ou type) ou à la langue de l’email (locale).',
+        tokenNameDuplicate: 'Deux tokens portent ce nom : gardez-en un seul.',
+        tokenValueRequired: 'Donnez une valeur à ce token, ou retirez la ligne.',
+        tokenValueTooLong: 'La valeur ne peut pas dépasser {max} caractères.',
+        tokenValueUnsafe:
+          'Une couleur, une police, une taille ou un lien : ni balise, ni accolade, ni point-virgule, ni antislash, ni javascript:, url( ou @import.',
         addToken: 'Ajouter un token',
         tokensFull: 'Limite de {limit} tokens atteinte.',
         isActiveHint:

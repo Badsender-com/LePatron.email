@@ -1853,6 +1853,15 @@ export default {
         tokenValuePlaceholder: '#ffd845',
         tokenNameInvalid:
           'Unaccented letters, digits and _ only, not starting with a digit.',
+        tokenNameRequired: 'Give this token a name, or remove the row.',
+        tokenNameTooLong: 'The name cannot exceed {max} characters.',
+        tokenNameReserved:
+          'This name is reserved by JavaScript, by the editor (like theme or type) or for the email’s language (locale).',
+        tokenNameDuplicate: 'Two tokens have this name: keep only one.',
+        tokenValueRequired: 'Give this token a value, or remove the row.',
+        tokenValueTooLong: 'The value cannot exceed {max} characters.',
+        tokenValueUnsafe:
+          'A colour, a font, a size or a link: no markup, brace, semicolon or backslash, nor javascript:, url( or @import.',
         addToken: 'Add a token',
         tokensFull: 'Limit of {limit} tokens reached.',
         isActiveHint:

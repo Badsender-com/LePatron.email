@@ -11,7 +11,9 @@ import {
   EMAIL_TRIGGER_VALUES,
   DIMENSION_NAME_PATTERN,
   RESERVED_DIMENSION_NAMES,
+  RESERVED_TOKEN_NAMES,
   TAXONOMY_LIMITS,
+  isTokenValue,
 } from '../../shared/taxonomy/constants.js';
 import { compareDimensions } from '../../shared/taxonomy/sort.js';
 
@@ -227,11 +229,18 @@ export function resolutionOrder(dimensions = []) {
 }
 
 /**
- * The design tokens a value carries, as rows the form edits, and back. Rows
- * with no name are dropped on the way back; the server checks the rest.
+ * The bounds of a value's design tokens: the server's
+ * (packages/shared/taxonomy/constants.js).
  */
-export const TOKENS_PER_VALUE = 24;
+export const TOKENS_PER_VALUE = TAXONOMY_LIMITS.TOKENS_PER_VALUE;
+export const TOKEN_NAME_MAX_LENGTH = TAXONOMY_LIMITS.DIMENSION_NAME;
+export const TOKEN_VALUE_MAX_LENGTH = TAXONOMY_LIMITS.TOKEN_VALUE;
 
+/**
+ * The design tokens a value carries, as rows the form edits, and back. Rows
+ * with no name are dropped on the way back; tokenRowErrors says what is wrong
+ * with the others before they are sent.
+ */
 export function tokenRows(tokens = {}) {
   return Object.entries(tokens || {}).map(([name, value]) => ({ name, value }));
 }
@@ -242,4 +251,50 @@ export function tokensFromRows(rows = []) {
       .map((row) => [String(row.name || '').trim(), String(row.value || '')])
       .filter(([name]) => name !== '')
   );
+}
+
+/**
+ * What the server would refuse in the rows of the token form, said row by row
+ * before anything is sent. A row left entirely empty is no token and no error:
+ * it is dropped. Two rows of the same name would merge into one token: both
+ * are flagged. Whether a name is one of the company's dimensions only the
+ * server knows.
+ *
+ * @param {Array<{name: string, value: string}>} rows
+ * @returns {Array<{name: string|null, value: string|null}>} for each row, the
+ *   reason its name and its value are refused: `required`, `invalid`,
+ *   `tooLong`, `reserved` or `duplicate` for a name; `required`, `tooLong` or
+ *   `unsafe` for a value; null when fine
+ */
+export function tokenRowErrors(rows = []) {
+  const names = rows.map((row) => String(row.name || '').trim());
+  const count = names.reduce(
+    (counts, name) => ({ ...counts, [name]: (counts[name] || 0) + 1 }),
+    {}
+  );
+  return rows.map((row, index) => {
+    const name = names[index];
+    const value = String(row.value || '');
+    if (name === '' && value.trim() === '') return { name: null, value: null };
+    return {
+      name: tokenNameError(name, count[name]),
+      value: tokenValueError(value),
+    };
+  });
+}
+
+function tokenNameError(name, occurrences) {
+  if (name === '') return 'required';
+  if (!DIMENSION_NAME_PATTERN.test(name)) return 'invalid';
+  if (name.length > TOKEN_NAME_MAX_LENGTH) return 'tooLong';
+  if (RESERVED_TOKEN_NAMES.includes(name)) return 'reserved';
+  if (occurrences > 1) return 'duplicate';
+  return null;
+}
+
+function tokenValueError(value) {
+  if (value.trim() === '') return 'required';
+  if (value.length > TOKEN_VALUE_MAX_LENGTH) return 'tooLong';
+  if (!isTokenValue(value)) return 'unsafe';
+  return null;
 }

@@ -3,14 +3,35 @@ import { Plus, X } from 'lucide-vue';
 import BsTextField from '~/components/form/bs-text-field.vue';
 import {
   TOKENS_PER_VALUE,
-  isValidDimensionName,
+  TOKEN_NAME_MAX_LENGTH,
+  TOKEN_VALUE_MAX_LENGTH,
   tokenRows,
   tokensFromRows,
+  tokenRowErrors,
 } from '~/helpers/taxonomy-builder.js';
+
+// The message of each reason tokenRowErrors gives, under `taxonomy.values.form`.
+const NAME_MESSAGES = {
+  required: 'tokenNameRequired',
+  invalid: 'tokenNameInvalid',
+  tooLong: 'tokenNameTooLong',
+  reserved: 'tokenNameReserved',
+  duplicate: 'tokenNameDuplicate',
+};
+const VALUE_MESSAGES = {
+  required: 'tokenValueRequired',
+  tooLong: 'tokenValueTooLong',
+  unsafe: 'tokenValueUnsafe',
+};
 
 /**
  * The design tokens of a value: named values a template reads under their name
  * (`_root_.mainColorVar`). Edited as rows; the whole set is sent on save.
+ *
+ * A row's errors show once it has been left, or once a save was tried: the
+ * form calls `validate()` and sends nothing while a row is wrong. Mounted
+ * afresh at each opening of the form (its `key`), so no row is left over from
+ * the previous one.
  */
 export default {
   name: 'BsTaxonomyTokensField',
@@ -23,7 +44,10 @@ export default {
     serverError: { type: String, default: null },
   },
   data() {
-    return { rows: tokenRows(this.value) };
+    return {
+      rows: tokenRows(this.value).map((row) => ({ ...row, touched: false })),
+      submitted: false,
+    };
   },
   computed: {
     isFull() {
@@ -32,29 +56,59 @@ export default {
     limit() {
       return TOKENS_PER_VALUE;
     },
-  },
-  watch: {
-    // Another value opened in the same form.
-    value(tokens) {
-      if (
-        JSON.stringify(tokens) !== JSON.stringify(tokensFromRows(this.rows))
-      ) {
-        this.rows = tokenRows(tokens);
-      }
+    nameMaxLength() {
+      return TOKEN_NAME_MAX_LENGTH;
+    },
+    valueMaxLength() {
+      return TOKEN_VALUE_MAX_LENGTH;
+    },
+    errors() {
+      return tokenRowErrors(this.rows);
+    },
+    isValid() {
+      return this.errors.every((error) => !error.name && !error.value);
     },
   },
   methods: {
-    nameErrors(row) {
-      return row.name && !isValidDimensionName(String(row.name).trim())
-        ? [this.$t('taxonomy.values.form.tokenNameInvalid')]
-        : [];
+    shown(index) {
+      return this.submitted || this.rows[index].touched;
+    },
+    nameErrors(index) {
+      const reason = this.errors[index].name;
+      if (!reason || !this.shown(index)) return [];
+      return [
+        this.$t(`taxonomy.values.form.${NAME_MESSAGES[reason]}`, {
+          max: TOKEN_NAME_MAX_LENGTH,
+        }),
+      ];
+    },
+    valueErrors(index) {
+      const reason = this.errors[index].value;
+      if (!reason || !this.shown(index)) return [];
+      return [
+        this.$t(`taxonomy.values.form.${VALUE_MESSAGES[reason]}`, {
+          max: TOKEN_VALUE_MAX_LENGTH,
+        }),
+      ];
+    },
+    /**
+     * Show every row's errors, for a save the form is about to send.
+     *
+     * @returns {boolean} whether the rows may be sent
+     */
+    validate() {
+      this.submitted = true;
+      return this.isValid;
     },
     add() {
-      this.rows.push({ name: '', value: '' });
+      this.rows.push({ name: '', value: '', touched: false });
     },
     remove(index) {
       this.rows.splice(index, 1);
       this.emit();
+    },
+    touch(index) {
+      this.rows[index].touched = true;
     },
     emit() {
       this.$emit('input', tokensFromRows(this.rows));
@@ -79,17 +133,23 @@ export default {
         :label="$t('taxonomy.values.form.tokenName')"
         hide-label
         :placeholder="$t('taxonomy.values.form.tokenNamePlaceholder')"
-        :error-messages="nameErrors(row)"
+        :error-messages="nameErrors(index)"
+        :maxlength="nameMaxLength"
         :disabled="disabled"
         @input="emit"
+        @blur="touch(index)"
       />
       <bs-text-field
         v-model="row.value"
         :label="$t('taxonomy.values.form.tokenValue')"
         hide-label
         :placeholder="$t('taxonomy.values.form.tokenValuePlaceholder')"
+        :error-messages="valueErrors(index)"
+        :maxlength="valueMaxLength"
+        :counter="valueMaxLength"
         :disabled="disabled"
         @input="emit"
+        @blur="touch(index)"
       />
       <v-btn
         class="taxonomy-tokens__remove"

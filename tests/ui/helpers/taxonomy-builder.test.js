@@ -342,3 +342,89 @@ describe('taxonomy screen: the design tokens of a value', () => {
     ).toEqual({ mainColorVar: '#ffd845' });
   });
 });
+
+// What the server would refuse, said row by row in the form before the save
+// (review of #1500): a 400 would only reach the admin as a generic message.
+describe('taxonomy screen: the errors of the token rows', () => {
+  let tokenRowErrors;
+  let TOKENS_PER_VALUE;
+
+  beforeAll(() => {
+    ({ tokenRowErrors, TOKENS_PER_VALUE } = require(HELPERS));
+  });
+
+  const errorsOf = (row) => tokenRowErrors([row])[0];
+
+  it('caps the tokens of a value at the server limit', () => {
+    expect(TOKENS_PER_VALUE).toBe(24);
+  });
+
+  it('finds nothing wrong with a valid row', () => {
+    expect(errorsOf({ name: 'mainColorVar', value: '#ffd845' })).toEqual({
+      name: null,
+      value: null,
+    });
+  });
+
+  it('ignores a row left entirely empty, which is dropped', () => {
+    expect(errorsOf({ name: ' ', value: '' })).toEqual({
+      name: null,
+      value: null,
+    });
+  });
+
+  it.each([
+    ['no value', { name: 'mainColorVar', value: '  ' }, 'required'],
+    [
+      'a value past the limit',
+      { name: 'mainColorVar', value: 'a'.repeat(201) },
+      'tooLong',
+    ],
+    [
+      'markup in the value',
+      { name: 'mainColorVar', value: '</style>' },
+      'unsafe',
+    ],
+    [
+      'CSS in the value',
+      { name: 'mainColorVar', value: 'red; x: y' },
+      'unsafe',
+    ],
+  ])('refuses a row with %s', (kind, row, reason) => {
+    expect(errorsOf(row).value).toBe(reason);
+  });
+
+  it.each([
+    ['no name', { name: '', value: '#000' }, 'required'],
+    [
+      'a name no template reads',
+      { name: 'main-color', value: '#000' },
+      'invalid',
+    ],
+    [
+      'a name past the limit',
+      { name: `a${'b'.repeat(60)}`, value: '#000' },
+      'tooLong',
+    ],
+    ['a name the editor builds', { name: 'theme', value: '#000' }, 'reserved'],
+    ['the name of the language', { name: 'locale', value: 'fr' }, 'reserved'],
+  ])('refuses a row with %s', (kind, row, reason) => {
+    expect(errorsOf(row).name).toBe(reason);
+  });
+
+  it('accepts a name as long as a dimension name may be', () => {
+    expect(errorsOf({ name: `a${'b'.repeat(59)}`, value: '#000' }).name).toBe(
+      null
+    );
+  });
+
+  it('flags every row of a name used twice, which would merge', () => {
+    expect(
+      tokenRowErrors([
+        { name: 'mainColorVar', value: '#ffd845' },
+        { name: 'textColorVar', value: '#1a1a1a' },
+        { name: ' mainColorVar', value: '#0050ff' },
+      ]).map((errors) => errors.name)
+    ).toEqual(['duplicate', null, 'duplicate']);
+  });
+});
