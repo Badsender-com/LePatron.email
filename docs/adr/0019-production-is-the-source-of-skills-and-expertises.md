@@ -4,6 +4,7 @@
 - Date: 2026-11-05
 - Epic: #1420, #1421, #1422
 - Amends: ADR 0013 (one doctrine, thin skills; an audience a copy receives; a feature skill drafted before its code), ADR 0014 (an assistant may publish and change an audience, in two steps), ADR 0018 (a copy follows production, which wins)
+- Amended by ADR 0031 (the audience keeps its history: which way it went, when, and who set it)
 
 Loading some sixty skills and expertises written outside LePatron, then moving them to a test instance, showed two blocks. Every imported item arrived as a draft to publish by hand, one by one. And the platform company's team, who want to improve their skills and expertises every day from an assistant, could only draft there, then go to the back office to publish. Behind both: no instance was the reference, and a skill that a feature uses was treated like any other, so the only safety was to change nothing.
 

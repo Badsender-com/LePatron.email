@@ -214,17 +214,17 @@ A connection's mode in which an assistant is served the draft version of every s
 _Avoid_: Preview mode, test mode, sandbox
 
 **Release note**:
-What a person writes when publishing a version of a skill or an expertise, for every company that reads it: what changed for whoever uses it. Every published version has one.
+What a person writes when publishing a version of a skill or an expertise, for every company that reads it: what changed for whoever uses it. Every version published from now on has one. The code calls it `releaseNotes`.
 _UI_: Note de version
-_Avoid_: Changelog, release notes summary
+_Avoid_: Release notes summary
 
 **Change log**:
-What a person writes when publishing a version, for the platform company alone: how and why the version was written. No other company reads it.
+What a person writes when publishing a version, for the platform company alone: how and why the version was written. No other company reads it; a super admin reads it through any connection. The code calls it `changelog`.
 _UI_: Journal des modifications
 _Avoid_: Release note, history
 
 **Catalog change**:
-A dated event in the life of a skill or an expertise, as a company sees it: created, updated by a new version, opened to every company, or withdrawn from them. For a company other than the platform company, the opening is when the item appears.
+A dated event in the life of a skill or an expertise, as a company sees it: created, updated by a new version, opened to every company, or withdrawn from them. An archived item is withdrawn. A company other than the platform company sees no opening: to it, an opening or a reopening is a creation.
 _UI_: Nouveauté
 _Avoid_: News, update, event
 
