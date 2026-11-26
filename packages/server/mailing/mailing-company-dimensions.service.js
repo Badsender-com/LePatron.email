@@ -8,7 +8,10 @@ const {
   TaxonomyItems,
 } = require('../common/models.common.js');
 const ERROR_CODES = require('../constant/error-codes.js');
-const { StandardDimensionNames } = require('../constant/taxonomy-type.js');
+const {
+  StandardDimensionNames,
+  TaxonomyLimits,
+} = require('../constant/taxonomy-type.js');
 
 /**
  * The company dimensions an email carries (ADR-0032): one list of values, at most
@@ -48,6 +51,10 @@ async function validateTaxonomyItemIds(rawIds, { companyId, currentIds = [] }) {
   if (rawIds === null) return [];
   if (!Array.isArray(rawIds)) throw invalid();
   if (rawIds.length === 0) return [];
+  // At most one value per dimension: a longer list is refused before any id is
+  // read, rather than checked one by one and sent to the database as one
+  // oversized `$in`.
+  if (rawIds.length > TaxonomyLimits.DIMENSIONS_PER_COMPANY) throw invalid();
 
   // Strings only: a number or an object is no id, and an object would reach the
   // query as an operator.

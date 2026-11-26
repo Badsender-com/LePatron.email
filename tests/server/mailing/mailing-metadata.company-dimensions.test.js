@@ -25,6 +25,9 @@ jest.mock('../../../packages/server/utils/logger.js', () => ({
 const models = require('../../../packages/server/common/models.common.js');
 const ERROR_CODES = require('../../../packages/server/constant/error-codes.js');
 const {
+  TAXONOMY_LIMITS,
+} = require('../../../packages/shared/taxonomy/constants.js');
+const {
   COMPANY_A,
   adminA,
   adminB,
@@ -147,6 +150,27 @@ describe('an email carries company dimensions', () => {
       status: 404,
       message: ERROR_CODES.TAXONOMY_ITEM_NOT_FOUND,
     });
+  });
+
+  it('refuses a list longer than the dimensions a company may declare, before reading any id', async () => {
+    const find = jest.spyOn(models.TaxonomyItems, 'find');
+    // Well-formed ids that exist nowhere: checked one by one, they would read
+    // as "not found". The length alone is refused.
+    const tooMany = Array.from(
+      { length: TAXONOMY_LIMITS.DIMENSIONS_PER_COMPANY + 1 },
+      (_, index) => `507f1f77bcf86cd7994${String(index).padStart(5, '0')}`
+    );
+
+    await expect(
+      metadataService.applyMetadataToMailing(newMailing(), {
+        taxonomyItemIds: tooMany,
+      })
+    ).rejects.toMatchObject({
+      status: 422,
+      message: ERROR_CODES.INVALID_EMAIL_METADATA,
+    });
+    expect(find).not.toHaveBeenCalled();
+    find.mockRestore();
   });
 
   it('refuses an email type value in the list: it has its own field', async () => {
