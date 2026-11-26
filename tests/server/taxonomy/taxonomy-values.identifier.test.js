@@ -119,12 +119,22 @@ describe('the identifier of a value', () => {
       addValue('audience', { label: 'Clients VIP' })
     ).resolves.toMatchObject({ label: 'Clients VIP' });
   });
+});
 
-  // No format is decided on the server: it trims and bounds the identifier
-  // only. The screen proposes lowercase letters, digits and hyphens
-  // (proposeIdentifier), but a request may store any string a template could
-  // never be written against. To turn on once the format is decided.
-  it.skip.each(['Clients VIP', 'clients vip', 'élite', 'vip!'])(
+// Turned on by a471fdc93 (#1359: a token and an identifier hold a value, never
+// markup). Outside the email type, an identifier is letters, digits, `_` and
+// `-` (`/^[A-Za-z0-9_-]+$/`, value-fields.js): what a template compares
+// against, never markup. Under the email type it names a doctrine type, and is
+// left free.
+describe.skip('the format of an identifier', () => {
+  beforeEach(async () => {
+    await dimensionService.createDimension({
+      user: adminA,
+      payload: { name: 'audience', label: 'Cible' },
+    });
+  });
+
+  it.each(['Clients VIP', 'élite', 'vip!', '<b>vip</b>'])(
     'refuses %p, which is not an identifier',
     async (canonicalType) => {
       await expect(
@@ -135,4 +145,22 @@ describe('the identifier of a value', () => {
       });
     }
   );
+
+  it.each(['vip', 'Clients_VIP', 'top-clients-2026'])(
+    'accepts %p',
+    async (canonicalType) => {
+      await expect(
+        addValue('audience', { label: 'Clients VIP', canonicalType })
+      ).resolves.toMatchObject({ canonicalType });
+    }
+  );
+
+  it('leaves the email type free', async () => {
+    await expect(
+      addValue('emailType', {
+        label: 'Infolettre',
+        canonicalType: 'Clients VIP',
+      })
+    ).resolves.toMatchObject({ canonicalType: 'Clients VIP' });
+  });
 });
