@@ -7,7 +7,10 @@ const {
   assertSyntheticHtmlAllowed,
 } = require('./synthetic-block-guard.js');
 const { validateSyntheticBlocks } = require('./synthetic-block-sizes.js');
-const { rebuildComposedMarkup } = require('./builder-block-integrity.js');
+const {
+  rebuildComposedMarkup,
+  assertComposedBlocksAllowed,
+} = require('./builder-block-integrity.js');
 
 // What every write of synthetic content goes through: the mailing save
 // (mailing.controller.js updateMosaico) and the personalized blocks
@@ -18,10 +21,12 @@ const { rebuildComposedMarkup } = require('./builder-block-integrity.js');
 // The order matters:
 // 1. the sizes, each block's and their sum (synthetic-block-sizes.js), on what
 //    the request sent, so the rebuild never runs on oversized input;
-// 2. each composed block's markup rebuilt from its state
+// 2. the builder flag, so the rebuild never runs for a template without the
+//    builder (builder-block-integrity.js);
+// 3. each composed block's markup rebuilt from its state
 //    (builder-block-integrity.js);
-// 3. the sizes again, on what was rebuilt — what will actually be stored;
-// 4. the template flags, judged on that same stored content.
+// 4. the sizes again, on what was rebuilt — what will actually be stored;
+// 5. the template flags, judged on that same stored content.
 
 /**
  * @param {Object} data a content model
@@ -56,11 +61,14 @@ async function normalizeAndGuardSyntheticContent({
   if (!hasSyntheticBlock(data)) return;
 
   assertSizes(data);
+
+  const flags = (await loadFlags()) || {};
+  assertComposedBlocksAllowed({ data, previousData, flags });
+
   rebuildComposedMarkup(data, previousData);
   assertSizes(data);
 
-  const flags = await loadFlags();
-  assertSyntheticHtmlAllowed({ data, previousData, flags: flags || {} });
+  assertSyntheticHtmlAllowed({ data, previousData, flags });
 }
 
 module.exports = { normalizeAndGuardSyntheticContent };

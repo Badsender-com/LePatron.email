@@ -13,13 +13,19 @@ const {
   emptyState,
   STARTER_ATTRIBUTE,
 } = require('../../../packages/shared/block-builder/generate.js');
+const {
+  singleColumnRows,
+} = require('../../../packages/shared/block-builder/composition.js');
 
 const STARTERS = {
   text: { key: 'content', text: 'Saisissez votre texte…' },
   button: { key: 'label', text: 'Votre bouton' },
 };
 
-const stateWith = (...elements) => ({ ...emptyState(), elements });
+const stateWith = (...elements) => ({
+  ...emptyState(),
+  rows: singleColumnRows(elements),
+});
 const text = (content) => ({ id: 't1', type: 'text', content });
 const button = (label) => ({ id: 'b1', type: 'button', label });
 

@@ -17,9 +17,21 @@
 //
 // EVERY media query is forced, not only the `max-width` ones: a desktop-only
 // `min-width` query applies too. Blunt, but it is how the template behaves.
+//
+// The block builder's own preview forces the same way, through forceMedia, in
+// its Mobile view: its iframe is 600px wide on Desktop, exactly the breakpoint,
+// so a condition evaluated there would hold in both views. One rewrite for
+// both previews, so the modal and the canvas cannot drift on what a forced
+// stylesheet is.
+
+const cssParse = require('mensch/lib/parser.js');
+const cssStringify = require('mensch/lib/stringify.js');
 
 const ALWAYS_TRUE_MEDIA = 'only screen and (min-width: 0px)';
 const VISIBLE_ON_BOTH_SUFFIX = '.visible-on-both';
+
+// At-rules that can hold a media query, as scope-css.js descends into them.
+const NESTING_AT_RULES = new Set(['media', 'supports', 'document']);
 
 /**
  * @param {string} [mode] the editor's `previewMode`
@@ -32,8 +44,46 @@ function previewMediaFor(mode) {
   };
 }
 
+/**
+ * Replaces the condition of every media query, at any depth, by one that
+ * always holds. In place.
+ *
+ * @param {Array} rules mensch AST nodes
+ * @returns {Array} the same rules
+ */
+function forceMediaRules(rules) {
+  if (!Array.isArray(rules)) return rules;
+  rules.forEach((rule) => {
+    if (!rule || !NESTING_AT_RULES.has(rule.type)) return;
+    if (rule.type === 'media') rule.name = ALWAYS_TRUE_MEDIA;
+    forceMediaRules(rule.rules);
+  });
+  return rules;
+}
+
+/**
+ * A stylesheet with every media query forced, everything else as written.
+ *
+ * @param {string} css
+ * @returns {string} the forced stylesheet, '' for an empty one or one that
+ *   cannot be parsed — nothing applied rather than something wrong
+ */
+function forceMedia(css) {
+  if (typeof css !== 'string' || css.trim() === '') return '';
+  try {
+    const sheet = cssParse(css, { comments: true });
+    if (!sheet || !sheet.stylesheet) return '';
+    forceMediaRules(sheet.stylesheet.rules);
+    return cssStringify(sheet, { indentation: '' });
+  } catch (error) {
+    return '';
+  }
+}
+
 module.exports = {
   ALWAYS_TRUE_MEDIA,
   VISIBLE_ON_BOTH_SUFFIX,
   previewMediaFor,
+  forceMedia,
+  forceMediaRules,
 };

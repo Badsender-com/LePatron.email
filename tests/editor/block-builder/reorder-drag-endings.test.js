@@ -37,14 +37,14 @@ describe('a reorder ends', () => {
   it('keeps the moved element selected', async () => {
     const { modal, doc } = await openModal(['text', 'button', 'divider']);
     layOutRows(doc, 100);
-    const [, second] = modal.state.elements;
+    const [, second] = modal.columnElements;
 
     fireIn(doc, 'dragstart', rowsOf(doc)[1]);
     moveTo(doc, 10);
     // The browser fires dragend after the drop: it must not undo the choice.
     fireIn(doc, 'dragend', rowsOf(doc)[0]);
 
-    expect(modal.selectedId).toBe(second.id);
+    expect(modal.selectedElementId).toBe(second.id);
     expect(modal.selected.type).toBe('button');
   });
 
@@ -79,24 +79,24 @@ describe('a reorder ends', () => {
   // it moved nothing, and the selection should not have moved either.
   it('gives the selection back when the drag ends without a drop', async () => {
     const { modal, doc } = await openModal(['text', 'button', 'divider']);
-    const [first] = modal.state.elements;
-    modal.selectedId = first.id;
+    const [first] = modal.columnElements;
+    modal.selectElement(first.id);
 
     fireIn(doc, 'dragstart', rowsOf(doc)[2]);
     expect(modal.selected.type).toBe('divider');
     fireIn(doc, 'dragend', rowsOf(doc)[2]);
 
-    expect(modal.selectedId).toBe(first.id);
+    expect(modal.selectedElementId).toBe(first.id);
   });
 
   it('gives back no selection when there was none', async () => {
     const { modal, doc } = await openModal(['text', 'button']);
-    modal.selectedId = null;
+    modal.selectElement(null);
 
     fireIn(doc, 'dragstart', rowsOf(doc)[1]);
     fireIn(doc, 'dragend', rowsOf(doc)[1]);
 
-    expect(modal.selectedId).toBeNull();
+    expect(modal.selectedElementId).toBeNull();
   });
 });
 
@@ -120,7 +120,7 @@ describe('a reorder and an insertion do not get confused', () => {
     moveTo(doc, 10);
 
     expect(typesOf(modal)).toEqual(['button', 'text']);
-    expect(modal.state.elements).toHaveLength(2);
+    expect(modal.columnElements).toHaveLength(2);
   });
 
   // WebKit can lose the dragend of a drag that crossed the iframe's edge. The
@@ -129,7 +129,7 @@ describe('a reorder and an insertion do not get confused', () => {
   it('inserts after a reorder whose dragend never came', async () => {
     const { modal, doc } = await openModal(['text', 'button']);
     layOutRows(doc, 100);
-    const before = modal.state.elements.map((element) => element.id);
+    const before = modal.columnElements.map((element) => element.id);
 
     fireIn(doc, 'dragstart', rowsOf(doc)[1]);
     startPaletteDrag('divider');
@@ -137,7 +137,7 @@ describe('a reorder and an insertion do not get confused', () => {
     dropAt(doc, 10);
 
     expect(typesOf(modal)).toEqual(['divider', 'text', 'button']);
-    expect(modal.state.elements.slice(1).map((element) => element.id)).toEqual(
+    expect(modal.columnElements.slice(1).map((element) => element.id)).toEqual(
       before
     );
     expect(modal.selected.type).toBe('divider');

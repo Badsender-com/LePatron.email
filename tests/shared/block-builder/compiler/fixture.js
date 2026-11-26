@@ -16,6 +16,7 @@ const {
  * @param {string} [options.script] the inside of `<script setup>`; by default
  *   a defineProps of every slot and variant prop, as String or Boolean
  * @param {string} [options.extra] anything to append to the SFC
+ * @param {string} [options.kind] `layout` to compile it as a layout
  * @returns {string}
  */
 function sfc({ template, slots, variants, script, extra = '' }) {
@@ -32,12 +33,13 @@ function sfc({ template, slots, variants, script, extra = '' }) {
 }
 
 // Every slot needs a default of its context's type; a fixture that is not
-// testing defaults should not have to spell one out.
+// testing defaults should not have to spell one out. MARKUP takes none.
 const withDefaults = (slots) =>
   Object.keys(slots).reduce((all, name) => {
     const slot = slots[name];
     const fill = slot.context === 'PX' ? 0 : '';
-    all[name] = 'default' in slot ? slot : { ...slot, default: fill };
+    const needsDefault = !('default' in slot) && slot.context !== 'MARKUP';
+    all[name] = needsDefault ? { ...slot, default: fill } : slot;
     return all;
   }, {});
 
@@ -52,6 +54,9 @@ function compileFixture(options) {
     manifest: {
       slots: withDefaults(options.slots),
       variants: options.variants,
+      // Only a layout may declare the one context that does not escape, so a
+      // fixture testing that has to be able to claim it — and to fail to.
+      ...(options.kind ? { kind: options.kind } : {}),
     },
   });
 }

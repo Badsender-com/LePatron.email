@@ -128,10 +128,13 @@ describe('personalized blocks — sizes and composed markup', () => {
     serialiseState,
     parseState,
   } = require('../../../packages/shared/block-builder/state.js');
+  const {
+    singleColumnRows,
+  } = require('../../../packages/shared/block-builder/composition.js');
 
   const builderState = serialiseState({
     ...emptyState(),
-    elements: [{ id: 'el-1', type: 'text', content: 'Bonjour' }],
+    rows: singleColumnRows([{ id: 'el-1', type: 'text', content: 'Bonjour' }]),
   });
 
   it('refuses an oversized HTML code block before loading anything', async () => {

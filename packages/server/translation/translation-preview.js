@@ -11,7 +11,7 @@ const {
   htmlOf,
 } = require('../mailing/synthetic-block-guard.js');
 const { injectHeadCss } = require('../../shared/head-css/inject-head-css.js');
-const { headCssToExport } = require('../mailing/head-css-guard.js');
+const { headCssToExport } = require('../mailing/head-css-export.js');
 const { splitBuilderTranslations } = require('./builder-block-texts.js');
 const { swapBuilderMarkup } = require('./builder-preview-swap.js');
 const { runTranslationStep } = require('./translation-step.utils.js');
@@ -97,12 +97,13 @@ async function buildTranslatedPreview({
     )
   );
 
-  // The head CSS is put back as stored for the same reason: the sanitizer
-  // drops a whole <style> whose text holds `<` and a letter — a
+  // The head stylesheet is put back after the sanitizer for the same reason:
+  // it drops a whole <style> whose text holds `<` and a letter — a
   // `/* <table> */` comment, an SVG data URI — and the copy's previewHtml
-  // is what its multi-mailing ZIP exports. Only while the copy holds an
-  // HTML code block, as in the editor's export: without one, the CSS has
-  // nothing to style and is left out (head-css-guard.js).
+  // is what its multi-mailing ZIP exports. It is what the editor's export
+  // would carry for the translated content (head-css-export.js): the
+  // stylesheet its composed blocks derive, and the author's CSS while it
+  // holds an HTML code block.
   const html = await runTranslationStep('injectHeadCss', () =>
     injectHeadCss(
       sanitized,

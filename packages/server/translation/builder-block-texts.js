@@ -5,6 +5,9 @@ const {
   parseState,
   serialiseState,
 } = require('../../shared/block-builder/state.js');
+const {
+  elementsOfState,
+} = require('../../shared/block-builder/composition.js');
 const { elementFor } = require('../../shared/block-builder/elements/index.js');
 const { isTranslatableValue } = require('./mosaico-text-extractor.js');
 const { BLOCK_BUILDER_BLOCK } = require('../../shared/synthetic-blocks.js');
@@ -85,7 +88,9 @@ function extractBuilderTexts(data) {
     const state = parseState(block[STATE_PROPERTY]);
     if (!state) return;
 
-    state.elements.forEach((element, elementIndex) => {
+    // In document order, row by row and column by column: a flat composition
+    // keeps the keys it had before columns.
+    elementsOfState(state).forEach((element, elementIndex) => {
       // parseState drops an element of unknown type, so the definition exists.
       elementFor(element.type).translatable.forEach((field) => {
         const value = element[field];
@@ -160,7 +165,10 @@ function parseKey(key) {
 function readBlock(block) {
   const state = parseState(block[STATE_PROPERTY]);
   const outdated = state !== null && generate(state) !== block[HTML_PROPERTY];
-  return { block, state, outdated };
+  // The state's own objects: a translation written into one of them lands in
+  // the composition that is regenerated.
+  const elements = state ? elementsOfState(state) : [];
+  return { block, state, elements, outdated };
 }
 
 /**
@@ -189,8 +197,8 @@ function applyToStates(data, entries) {
     }
 
     if (!states.has(id)) states.set(id, readBlock(block));
-    const { state } = states.get(id);
-    const element = state && state.elements[parsed.elementIndex];
+    const { elements } = states.get(id);
+    const element = elements[parsed.elementIndex];
     // Only a field the extraction could have sent: one of the element's
     // translatable slots (see extractBuilderTexts), held by the element itself.
     // A translation never writes a link, a colour or a size.

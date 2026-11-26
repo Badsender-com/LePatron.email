@@ -15,8 +15,15 @@ const {
   STATE_VERSION,
   GENERATOR_VERSION,
 } = require('../../../packages/shared/block-builder/generate.js');
+const {
+  singleColumnRows,
+  elementsOfState,
+} = require('../../../packages/shared/block-builder/composition.js');
 
-const stateWith = (...elements) => ({ ...emptyState(), elements });
+const stateWith = (...elements) => ({
+  ...emptyState(),
+  rows: singleColumnRows(elements),
+});
 const textElement = (overrides) => ({
   id: 'a',
   type: 'text',
@@ -34,9 +41,9 @@ describe('a round trip', () => {
 
     const back = parseState(serialiseState(state));
 
-    expect(back.elements).toHaveLength(2);
-    expect(back.elements[0].content).toBe('Bonjour');
-    expect(back.elements[1].height).toBe(40);
+    expect(elementsOfState(back)).toHaveLength(2);
+    expect(elementsOfState(back)[0].content).toBe('Bonjour');
+    expect(elementsOfState(back)[1].height).toBe(40);
   });
 
   it('comes back with the block settings', () => {
@@ -53,10 +60,26 @@ describe('a round trip', () => {
     });
   });
 
-  it('stamps the schema version it was written with', () => {
-    expect(JSON.parse(serialiseState(stateWith(textElement()))).v).toBe(
-      STATE_VERSION
-    );
+  // A single full-width column is stored flat, in the version every reader
+  // knows; only a composition that needs rows is stored as rows.
+  it('stamps the version of the shape it was written in', () => {
+    expect(JSON.parse(serialiseState(stateWith(textElement()))).v).toBe(1);
+    expect(
+      JSON.parse(
+        serialiseState({
+          ...emptyState(),
+          rows: [
+            {
+              id: 'row-a-1',
+              columns: [
+                { width: 50, elements: [textElement()] },
+                { width: 50, elements: [textElement({ id: 'b' })] },
+              ],
+            },
+          ],
+        })
+      ).v
+    ).toBe(STATE_VERSION);
   });
 });
 
@@ -107,8 +130,8 @@ describe('cleaning what comes back', () => {
 
     const back = parseState(stored);
 
-    expect(back.elements).toHaveLength(1);
-    expect(back.elements[0].id).toBe('b');
+    expect(elementsOfState(back)).toHaveLength(1);
+    expect(elementsOfState(back)[0].id).toBe('b');
   });
 
   // Settings from a newer version would ride along invisibly and be written
@@ -119,7 +142,7 @@ describe('cleaning what comes back', () => {
       elements: [textElement({ somethingNew: 'from the future' })],
     });
 
-    expect(parseState(stored).elements[0].somethingNew).toBeUndefined();
+    expect(elementsOfState(parseState(stored))[0].somethingNew).toBeUndefined();
   });
 
   it('fills a setting the stored element is missing', () => {
@@ -129,7 +152,7 @@ describe('cleaning what comes back', () => {
     });
 
     // The template default, not undefined.
-    expect(parseState(stored).elements[0].fontSize).toBe(14);
+    expect(elementsOfState(parseState(stored))[0].fontSize).toBe(14);
   });
 
   test.each([
@@ -205,7 +228,7 @@ describe('coercing element settings', () => {
         v: 1,
         elements: [{ id: 'a', type: 'button', ...overrides }],
       })
-    ).elements[0];
+    ).rows[0].columns[0].elements[0];
 
   // The modal slices a button label for the element list: a number threw.
   it('turns a number where text is expected into text', () => {
@@ -238,7 +261,9 @@ describe('coercing element settings', () => {
 // sharing one would select, move and render as one.
 describe('element ids', () => {
   const idsOf = (elements) =>
-    parseState(JSON.stringify({ v: 1, elements })).elements.map((e) => e.id);
+    elementsOfState(parseState(JSON.stringify({ v: 1, elements }))).map(
+      (e) => e.id
+    );
 
   it('keeps distinct stored ids', () => {
     expect(

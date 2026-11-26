@@ -8,38 +8,42 @@
 // is what `v` and `gen` are for — a stored block records which schema and which
 // generator produced it, so a divergence can be surfaced rather than applied.
 //
-// Mono-column by design, for the MVP. Rows and columns are a schema change, and
-// `v` is what will carry that migration.
+// A composition is rows of columns (see composition.js). One that is a single
+// full-width column renders exactly as the flat list it was before columns.
+// What one element renders is element-markup.js; what a row of columns renders
+// is row-markup.js. This module decides the block around them.
 
-const { elementFor } = require('./elements/index.js');
-const { escapeForContext, COLOR, PX, ATTR } = require('./slot-contexts.js');
+const {
+  generateElement,
+  renderElement,
+  elementAttributes,
+  isBlankRichText,
+  ELEMENT_ATTRIBUTE,
+  STARTER_ATTRIBUTE,
+} = require('./element-markup.js');
+const {
+  generateRow,
+  COLUMN_ROW_ATTRIBUTE,
+  COLUMN_INDEX_ATTRIBUTE,
+  COLUMN_CHROME_CLASS,
+} = require('./row-markup.js');
+const { escapeForContext, COLOR, PX } = require('./slot-contexts.js');
+const {
+  flatRowOf,
+  singleColumnRows,
+  withoutEmptyRows,
+} = require('./composition.js');
 
 // Bumped when the shape of a state changes in a way a reader must know about.
-const STATE_VERSION = 1;
+// The latest version this code reads and writes: 1 stores a flat `elements`
+// list, 2 stores `rows` of columns. Which one a composition is written in is
+// decided by its shape (see serialiseState in state.js).
+const STATE_VERSION = 2;
 
 // Bumped when a template changes in a way that alters rendered output. A block
 // whose stored `gen` is behind can be offered an update; it is never updated
 // on its own.
 const GENERATOR_VERSION = '1.0.0';
-
-// Identifies an element in the rendered markup, so a click can select the one it
-// landed on and a drag can pick it up.
-//
-// OFF BY DEFAULT, and that is the point: this is editing chrome, and what
-// `generate` returns is what gets stored and mailed. An internal id in a
-// recipient's inbox is noise at best — it survives the export untouched, since
-// the markup is substituted verbatim after every other pass has run, so nothing
-// downstream would ever strip it.
-//
-// The preview asks for it explicitly (`{ elementIds: true }`); the apply path
-// and the control gallery do not.
-const ELEMENT_ATTRIBUTE = 'data-lp-el';
-
-// Marks a row that shows its starter rather than anything the user wrote — see
-// the `starters` option. Editing chrome, off by default, for the same reason as
-// ELEMENT_ATTRIBUTE: only the preview asks for starters, so only the preview
-// ever carries it. Its value is the element type, for the preview's stylesheet.
-const STARTER_ATTRIBUTE = 'data-lp-starter';
 
 const DEFAULT_BLOCK = {
   backgroundColor: 'transparent',
@@ -47,68 +51,37 @@ const DEFAULT_BLOCK = {
   paddingBottom: 0,
 };
 
-// Blank as a reader sees it: a rich text the editor emptied can still hold a
-// `<br>` or a non-breaking space, and renders nothing all the same. Shared with
-// the modal's rich-text field, whose placeholder shows exactly when the
-// generator would render the starter text instead.
-function isBlankRichText(value) {
-  if (typeof value !== 'string') return true;
-  return (
-    value
-      .replace(/<[^>]*>/g, '')
-      .replace(/&nbsp;|\u00a0/g, ' ')
-      .trim() === ''
-  );
-}
-
-// The values to render in place of a blank slot, or null when the element has
-// no starter or is not blank. A starter without `text` only marks the row: the
-// preview's stylesheet has something to draw, and nothing is substituted.
-function starterValues(type, values, options) {
-  const starters = options && options.starters;
-  if (!starters || !Object.prototype.hasOwnProperty.call(starters, type)) {
-    return null;
-  }
-  const starter = starters[type];
-  if (!starter || !isBlankRichText(values[starter.key])) return null;
-  return typeof starter.text === 'string'
-    ? { ...values, [starter.key]: starter.text }
-    : values;
-}
-
 /**
- * @param {Object} element one entry of `state.elements`
+ * The row a composition renders as a flat list from, or null when it renders
+ * rows.
+ *
+ * What is written is judged on the rows that hold something (flatRowOf), so a
+ * flat block with an empty row added keeps its markup to the byte. The
+ * preview's chrome renders every row instead, empty ones included, so there a
+ * second row — empty or not — is a composition of rows. Whoever reads the
+ * preview (the drag, which aims at its columns) asks here, so it and the
+ * markup can never disagree on whether there are columns to aim at.
+ *
+ * @param {Object} state
  * @param {Object} [options] see generate
- * @returns {string} the element's markup
+ * @returns {Object|null}
  */
-function generateElement(element, options) {
-  if (!element || typeof element !== 'object') return '';
-
-  const definition = elementFor(element.type);
-  // An unknown type means a state written by a newer version, or a corrupted
-  // one. Skipping it keeps the rest of the block renderable.
-  if (!definition) return '';
-
-  const values = { ...definition.defaults, ...element };
-  const starter = starterValues(definition.type, values, options);
-  const id =
-    options && options.elementIds ? escapeForContext(element.id, ATTR) : '';
-  const attributes =
-    (id ? ` ${ELEMENT_ATTRIBUTE}="${id}"` : '') +
-    (starter ? ` ${STARTER_ATTRIBUTE}="${definition.type}"` : '');
-
-  return (
-    `<tr><td${attributes}>` +
-    definition.render(starter || values) +
-    '</td></tr>'
-  );
+function renderedFlatRow(state, options) {
+  const rows = state && Array.isArray(state.rows) ? state.rows : [];
+  if (options && options.chrome && rows.length > 1) return null;
+  return flatRowOf(state);
 }
 
 /**
  * @param {Object} state
  * @param {Object} [options]
- * @param {boolean} [options.elementIds] mark each row with its element id.
+ * @param {boolean} [options.elementIds] mark each element with its id.
  *   Editing chrome — see ELEMENT_ATTRIBUTE. Off unless the preview asks.
+ * @param {boolean} [options.chrome] the preview's own markup around the
+ *   elements: every column marked with its row and its index (see
+ *   COLUMN_ROW_ATTRIBUTE), and the rows that hold nothing rendered too, as
+ *   empty columns to drop into. Off unless the preview asks; never in what is
+ *   stored, where a row holding nothing is not written.
  * @param {Object} [options.starters] by element type, `{ key, text }`: what an
  *   element shows while its `key` is blank, so a fresh one is visible in the
  *   preview at all. Editing chrome too — see STARTER_ATTRIBUTE. The words are
@@ -116,17 +89,46 @@ function generateElement(element, options) {
  * @returns {string} the block's markup, or an empty string for an empty state
  */
 function generate(state, options) {
-  if (!state || !Array.isArray(state.elements)) return '';
+  if (!state || typeof state !== 'object') return '';
 
-  // `.map(generateElement)` would hand the index as a second argument, which is
-  // exactly where the options go — every element after the first would get
+  // `.map(fn)` would hand the index as a second argument, which is exactly
+  // where the options go — everything after the first entry would get
   // `elementIds` from a number.
-  const rows = state.elements
-    .map((element) => generateElement(element, options))
-    .join('');
+  // Each branch produces markup that stands on its own inside the block's
+  // cell: a row is already a table, and the flat list's rows need one around
+  // them. Deciding that here rather than wrapping afterwards is what keeps a
+  // single-column composition rendering exactly as it did.
+  //
+  // Which shape renders follows the shape of the composition, the same rule
+  // that decides how it is stored: a flat one — one row of one full-width
+  // column, nothing set on either — renders as the flat list it always was,
+  // byte for byte; anything else renders its rows. Without chrome, both are
+  // judged on the rows that are written (withoutEmptyRows), as the stored
+  // shape is, so the applied markup and the server's rebuild agree. With it,
+  // every row is rendered (see renderedFlatRow).
+  const flatRow = renderedFlatRow(state, options);
+  let body;
+  if (!flatRow) {
+    const rows =
+      options && options.chrome && Array.isArray(state.rows)
+        ? state.rows
+        : withoutEmptyRows(state.rows);
+    body = rows.map((row) => generateRow(row, options)).join('');
+  } else {
+    const cells = flatRow.columns[0].elements
+      .map((element) => generateElement(element, options))
+      .join('');
+    body =
+      cells === ''
+        ? ''
+        : '<table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%">' +
+          cells +
+          '</table>';
+  }
+
   // An empty block exports nothing at all — same rule as the HTML code block,
   // whose empty root had to be stripped to avoid shipping a bare <div>.
-  if (rows === '') return '';
+  if (body === '') return '';
 
   const block = { ...DEFAULT_BLOCK, ...(state.block || {}) };
   const background = escapeForContext(
@@ -143,9 +145,7 @@ function generate(state, options) {
     ` style="background-color:${background};">` +
     '<tr>' +
     `<td style="padding:${paddingTop}px 0 ${paddingBottom}px 0;">` +
-    '<table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%">' +
-    rows +
-    '</table>' +
+    body +
     '</td>' +
     '</tr>' +
     '</table>'
@@ -162,18 +162,26 @@ function emptyState() {
     v: STATE_VERSION,
     gen: GENERATOR_VERSION,
     block: { ...DEFAULT_BLOCK },
-    elements: [],
+    // One row of one full-width column, so a new composition always has
+    // somewhere to put an element.
+    rows: singleColumnRows(),
   };
 }
 
 module.exports = {
   generate,
+  renderedFlatRow,
   generateElement,
+  renderElement,
+  elementAttributes,
   emptyState,
   STATE_VERSION,
   GENERATOR_VERSION,
   ELEMENT_ATTRIBUTE,
   STARTER_ATTRIBUTE,
+  COLUMN_ROW_ATTRIBUTE,
+  COLUMN_INDEX_ATTRIBUTE,
+  COLUMN_CHROME_CLASS,
   DEFAULT_BLOCK,
   isBlankRichText,
 };

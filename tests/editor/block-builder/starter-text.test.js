@@ -106,12 +106,20 @@ describe('an empty element still takes room in the preview', () => {
     );
   });
 
-  // `min-height` is ignored on a table cell; `height` there is the floor.
+  // `min-height` is ignored on a table cell; `height` there is the floor. On
+  // the div that holds an element inside a column, `height` is a size: it cut
+  // every element to the floor, and a tall image spilled over the rows under
+  // it. So the floor is said for both, each in the property its node honours
+  // (preview-element-floor.test.js).
   it('gives every row a floor that a table cell honours', async () => {
     const { doc } = await openModal(['spacer']);
+    const css = stylesheet(doc);
+    const elementRule = css.match(/(^|\})\[data-lp-el\]\{[^}]*\}/)[0];
+    const cellRule = css.match(/td\[data-lp-el\]\{[^}]*\}/)[0];
 
-    expect(stylesheet(doc)).toMatch(/\[data-lp-el\]\{[^}]*;height:\d+px/);
-    expect(stylesheet(doc)).not.toContain('min-height');
+    expect(elementRule).toMatch(/;min-height:\d+px/);
+    expect(elementRule).not.toMatch(/[{;]height:/);
+    expect(cellRule).toMatch(/\{height:\d+px/);
   });
 });
 

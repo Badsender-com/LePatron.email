@@ -8,6 +8,7 @@
 
 const {
   escapeForContext,
+  MARKUP,
 } = require('../../packages/shared/block-builder/slot-contexts.js');
 const {
   fallbackOf,
@@ -22,6 +23,17 @@ const {
  * detail of the literal.
  */
 function checkDefault(where, slot) {
+  // The generator always fills a MARKUP slot, and a value it refuses renders
+  // as nothing rather than as a fallback: a default would never be read.
+  if (slot.context === MARKUP) {
+    if (slot.default !== undefined || slot.fallback !== undefined) {
+      throw new Error(
+        `${where} is MARKUP: it takes no default and no fallback. The ` +
+          'generator always fills it, and a refused value renders nothing.'
+      );
+    }
+    return;
+  }
   if (slot.context === 'PX') {
     if (!Number.isInteger(slot.default)) {
       throw new Error(`${where} is PX: its default must be an integer.`);
@@ -91,7 +103,7 @@ function checkFallback(where, slot) {
  *
  * @param {string} name
  * @param {Object} manifest what `<name>.slots.js` exports
- * @returns {{slots: Object, variants: Object}}
+ * @returns {{slots: Object, variants: Object, isLayout: boolean}}
  */
 function checkManifest(name, manifest) {
   const slots = (manifest && manifest.slots) || {};
@@ -100,10 +112,26 @@ function checkManifest(name, manifest) {
     throw new Error(`${name}.slots.js exports no slots.`);
   }
 
+  // Declared by the manifest, not inferred from the file name: unlocking the
+  // one context that does not escape has to be something a reviewer sees.
+  const isLayout = manifest && manifest.kind === 'layout';
+
   Object.entries(slots).forEach(([slotName, slot]) => {
     if (!slot || !slot.context) {
       throw new Error(
         `${name}.slots.js: slot "${slotName}" declares no context.`
+      );
+    }
+    // The whole security argument for MARKUP is where it may be declared. An
+    // element's slots are filled from stored state — from what a user typed —
+    // so a MARKUP slot there would hand that state to the output unescaped. A
+    // layout's are filled by the generator with its own markup.
+    if (slot.context === MARKUP && !isLayout) {
+      throw new Error(
+        `${name}.slots.js: slot "${slotName}" is MARKUP, which only a layout ` +
+          "may declare. An element's slots are filled from stored state, so " +
+          "MARKUP there would ship it unescaped. Add `kind: 'layout'` to " +
+          'the manifest only if the generator — never a user — fills this slot.'
       );
     }
     checkDefault(`${name}.slots.js: slot "${slotName}"`, slot);
@@ -117,7 +145,7 @@ function checkManifest(name, manifest) {
   // `{ default: {} }` keeps the two cases on the same path.
   const variants = manifest.variants || { default: {} };
 
-  return { slots, variants };
+  return { slots, variants, isLayout };
 }
 
 const quoted = (names) => names.map((n) => `"${n}"`).join(', ');

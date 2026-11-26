@@ -9,7 +9,14 @@ const {
 } = require('../../../packages/editor/src/js/vue/components/block-builder-modal/element-settings.js');
 const {
   PALETTE,
+  ELEMENT_LIST_LABEL_KEYS,
 } = require('../../../packages/editor/src/js/vue/components/block-builder-modal/element-list.js');
+const {
+  ROW_LABEL_KEYS,
+} = require('../../../packages/editor/src/js/vue/components/block-builder-modal/row-settings.js');
+const {
+  ROW_LAYOUT_LABEL_KEYS,
+} = require('../../../packages/editor/src/js/vue/components/block-builder-modal/row-layout-bar.js');
 const MODAL_TEMPLATE = require('../../../packages/editor/src/js/vue/components/block-builder-modal/modal-template.js');
 const fr = require('../../../public/lang/badsender-fr.js');
 const en = require('../../../public/lang/badsender-en.js');
@@ -23,7 +30,11 @@ const templateKeys = Array.from(
 
 // Strings written into the preview iframe, rather than through the template.
 // The starters are in LABEL_KEYS, which the modal resolves for both places.
-const scriptKeys = ['block-builder-drop-here'];
+// The row panel's labels carry variables, so it builds them in script.
+const scriptKeys = ['block-builder-drop-here']
+  .concat(ROW_LABEL_KEYS)
+  .concat(ROW_LAYOUT_LABEL_KEYS)
+  .concat(ELEMENT_LIST_LABEL_KEYS);
 
 const keys = Array.from(
   new Set(

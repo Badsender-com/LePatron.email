@@ -1,0 +1,118 @@
+// Block builder modal — the rows panel: the list of rows, and the structure of
+// the selected one (its presets; its bar and its stack spacing are in
+// badsender-block-builder-row-layout.less). Split from
+// badsender-block-builder.less, which lays out the modal around it, and which
+// holds `.bb-pickable()`.
+
+.bb-modal {
+  &__rows {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  // A row and an element are both things you pick in this panel, so they share
+  // one look rather than two spellings of it that drift.
+  &__row {
+    .bb-pickable();
+  }
+
+  // The selected row's actions are the element's bar (`__actions` and
+  // `__action`, in badsender-block-builder.less), between the list and this.
+  &__add-row {
+    display: block;
+    width: 100%;
+    margin: 0.25rem 0 0.75rem;
+    padding: 0.3125rem;
+    font-size: 0.8125rem;
+    cursor: pointer;
+    border: 1px dashed #c8c8c8;
+    border-radius: 2px;
+    background: none;
+
+    &:hover {
+      border-color: @bs-accent-color;
+      color: @bs-accent-color;
+    }
+
+    // At the row limit (MAX_ROWS), where its label says the limit. After
+    // :hover, so the button does not light up as if it still worked.
+    &:disabled {
+      cursor: default;
+      opacity: 0.4;
+      border-color: #c8c8c8;
+      color: inherit;
+    }
+  }
+
+  &__presets {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.3125rem;
+  }
+
+  // Each preset draws the structure it sets: cells in proportion, which reads
+  // faster than "66/34" and needs no translation.
+  //
+  // The cells are drawn whatever the page says of buttons: a global rule gives
+  // them `align-items: flex-start`, which left each cell 0px tall. So the cells
+  // stretch, and carry the full height of the button too.
+  &__preset {
+    display: flex;
+    align-items: stretch;
+    gap: 2px;
+    width: 3rem;
+    height: 1.5rem;
+    padding: 2px;
+    cursor: pointer;
+    border: 1px solid #d5d5d5;
+    border-radius: 2px;
+    background: #fff;
+
+    &:hover {
+      border-color: @bs-accent-color;
+    }
+
+    &--on {
+      border-color: @bs-accent-color;
+      box-shadow: inset 0 0 0 1px @bs-accent-color;
+    }
+
+    &:focus-visible {
+      outline: 2px solid fade(@bs-accent-color, 60%);
+      outline-offset: 1px;
+    }
+  }
+
+  &__preset-cell {
+    height: 100%;
+    background: #b9b9b9;
+    border-radius: 1px;
+  }
+
+  // Where the elements of a column that disappeared went. Always in the DOM,
+  // empty until there is something to say: a status region inserted with its
+  // message is not reliably announced.
+  &__folded:not(:empty) {
+    margin: 0.5rem 0 0;
+    font-size: 0.75rem;
+    color: rgba(0, 0, 0, 0.72);
+  }
+
+  // Dragging a row in the list (row-drag.js). The insertion line is a shadow
+  // inside the row it lands before, or the last one for the end: no node of
+  // its own, nothing that shifts the rows under the cursor. The secondary
+  // blue, as in the preview: a line that says something reaches 3:1.
+  &__row--drop-before {
+    box-shadow: inset 0 3px 0 @bs-secondary-color;
+  }
+
+  &__rows-drop--end &__row:last-child {
+    box-shadow: inset 0 -3px 0 @bs-secondary-color;
+  }
+
+  // Room under the last row while one is dragged, to aim at the end.
+  &__rows-drop--active {
+    padding-bottom: 1.5rem;
+  }
+}

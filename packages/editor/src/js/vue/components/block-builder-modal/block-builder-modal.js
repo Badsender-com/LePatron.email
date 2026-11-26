@@ -9,6 +9,14 @@ const { PreviewSurfaceMixin } = require('./preview-surface.js');
 const { ElementListMixin } = require('./element-list.js');
 const { DismissalMixin } = require('./dismissal.js');
 const { DragSurfaceMixin } = require('./drag-surface.js');
+const { ColumnTargetMixin } = require('./column-target.js');
+const { PageGuardMixin } = require('./page-guard.js');
+const { RowSettingsMixin } = require('./row-settings.js');
+const { RowSpacingMixin } = require('./row-spacing-settings.js');
+const { RowLayoutBarMixin } = require('./row-layout-bar.js');
+const { RowActionsMixin } = require('./row-actions.js');
+const { RowDragMixin } = require('./row-drag.js');
+const { SelectionMixin } = require('./selection.js');
 const MODAL_TEMPLATE = require('./modal-template.js');
 const {
   validateBlockBuilderLength,
@@ -21,6 +29,10 @@ const {
   parseState,
   serialiseState,
 } = require('../../../../../../shared/block-builder/state.js');
+const {
+  elementsOfState,
+  isWritableComposition,
+} = require('../../../../../../shared/block-builder/composition.js');
 
 // The composing surface of the block builder.
 //
@@ -50,12 +62,25 @@ const BlockBuilderModalComponent = Vue.component('BlockBuilderModal', {
   // rendering into it, and the selection it carries. See preview-surface.js.
   // The element list is another: adding, selecting, moving, removing. See
   // element-list.js. The drag adds the gesture on top of the preview — see
-  // drag-surface.js. And Escape or a backdrop click ask before losing work —
-  // see dismissal.js.
+  // drag-surface.js, column-target.js for the column it aims at, and
+  // page-guard.js for the editor page around it. And Escape or a backdrop
+  // click ask before losing work — see dismissal.js.
+  // What is selected is one state of its own — see selection.js. A row's
+  // structure is row-settings.js, the bar that lays its columns and gutters
+  // out row-layout-bar.js, its stack spacing row-spacing-settings.js, moving
+  // one is row-actions.js, and dragging one in the list row-drag.js.
   mixins: [
+    SelectionMixin,
     PreviewSurfaceMixin,
     ElementListMixin,
     DragSurfaceMixin,
+    ColumnTargetMixin,
+    PageGuardMixin,
+    RowSettingsMixin,
+    RowSpacingMixin,
+    RowLayoutBarMixin,
+    RowActionsMixin,
+    RowDragMixin,
     DismissalMixin,
   ],
   props: {
@@ -76,22 +101,18 @@ const BlockBuilderModalComponent = Vue.component('BlockBuilderModal', {
     // on the way in. The stored markup is frozen until the user applies, and
     // applying rebuilds it, so they are told before rather than surprised after.
     rebuildsMarkup: false,
-    // The serialised state an apply was refused for, for its size. Kept rather
-    // than a boolean so the message goes as soon as the composition changes.
+    // The serialised state an apply was refused for: too large, or more rows
+    // than a stored composition is read with. Kept rather than a boolean so
+    // the message goes as soon as the composition changes.
     refusedState: null,
     state: emptyState(),
-    selectedId: null,
     previewWidth: DESKTOP_WIDTH,
     desktopWidth: DESKTOP_WIDTH,
     mobileWidth: MOBILE_WIDTH,
   }),
+  // The column the list works on, and the selected element, come with the
+  // selection: see selection.js.
   computed: {
-    selected() {
-      return (
-        this.state.elements.find((element) => element.id === this.selectedId) ||
-        null
-      );
-    },
     // What the block will actually store and mail: no element ids, which are
     // editing chrome and have no business in a recipient's inbox.
     html() {
@@ -99,11 +120,13 @@ const BlockBuilderModalComponent = Vue.component('BlockBuilderModal', {
     },
 
     // What the preview renders. Same markup plus the ids the selection and the
-    // drag need, and the greyed starter of each element still blank — none of
-    // which leaves this iframe.
+    // drag need, the columns the drag aims at — empty rows included, so a row
+    // just added can be seen and filled — and the greyed starter of each
+    // element still blank. None of which leaves this iframe.
     previewMarkup() {
       return generate(this.state, {
         elementIds: true,
+        chrome: true,
         starters: this.previewStarters,
       });
     },
@@ -119,14 +142,24 @@ const BlockBuilderModalComponent = Vue.component('BlockBuilderModal', {
         { image: { key: 'src' } }
       );
     },
+    // The whole composition, not the active column: an empty column beside
+    // content is not an empty block.
     isEmpty() {
-      return this.state.elements.length === 0;
+      return elementsOfState(this.state).length === 0;
     },
-    tooLarge() {
+    refused() {
       return (
         this.refusedState !== null &&
         this.refusedState === serialiseState(this.state)
       );
+    },
+    // One reason shown at a time: the rows first, since cutting rows down is
+    // also what makes the composition smaller.
+    tooManyRows() {
+      return this.refused && !isWritableComposition(this.state);
+    },
+    tooLarge() {
+      return this.refused && !this.tooManyRows;
     },
     // Translated here, where the view-model is, and handed to the settings
     // panel as plain strings keyed by i18n key.
@@ -145,7 +178,7 @@ const BlockBuilderModalComponent = Vue.component('BlockBuilderModal', {
     },
     // Only the outline moves, so the body is left alone — re-rendering it would
     // refetch the images on every change of selection.
-    selectedId() {
+    selectedElementId() {
       this.applySelectionHighlight();
     },
   },
@@ -172,9 +205,8 @@ const BlockBuilderModalComponent = Vue.component('BlockBuilderModal', {
         typeof existingMarkup === 'string' &&
         existingMarkup !== '';
       this.rebuildsMarkup = Boolean(restored) && existingMarkup !== this.html;
-      this.selectedId = this.state.elements.length
-        ? this.state.elements[0].id
-        : null;
+      const [first] = elementsOfState(this.state);
+      this.selectElement(first ? first.id : null);
       this.previewWidth = DESKTOP_WIDTH;
       this.rememberOpenedState();
       this.$refs.modalRef?.openModal();
@@ -208,8 +240,13 @@ const BlockBuilderModalComponent = Vue.component('BlockBuilderModal', {
       const html = this.html;
       const state = serialiseState(this.state);
       // Refused here, in the modal, where the composition can still be cut
-      // down: applied, it would make every autosave fail on the server.
-      if (!validateBlockBuilderLength(html, state).valid) {
+      // down: applied, it would make every autosave fail on the server — too
+      // large, or with more rows than the read accepts, which the server
+      // reports as unreadable and a reopening would lose.
+      if (
+        !isWritableComposition(this.state) ||
+        !validateBlockBuilderLength(html, state).valid
+      ) {
         this.refusedState = state;
         return;
       }
@@ -240,7 +277,7 @@ const BlockBuilderModalComponent = Vue.component('BlockBuilderModal', {
       this.rebuildsMarkup = false;
       this.refusedState = null;
       this.state = emptyState();
-      this.selectedId = null;
+      this.selectElement(null);
       this.openedState = '';
     },
   },

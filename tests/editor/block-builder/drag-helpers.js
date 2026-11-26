@@ -110,31 +110,53 @@ function layOutRows(doc, height) {
  * `stopPropagation` and nothing bubbles, which is exactly what hid the editor
  * page's drag guard from the tests the first time round.
  */
-function fireIn(doc, type, target, clientY) {
+function fireIn(doc, type, target, clientY, clientX) {
   const event = new doc.defaultView.Event(type, {
     bubbles: true,
     cancelable: true,
   });
   event.dataTransfer = transfer();
   if (clientY !== undefined) event.clientY = clientY;
+  if (clientX !== undefined) event.clientX = clientX;
   target.dispatchEvent(event);
   return event;
 }
 
-/** A dragover, then a drop, at a height in the preview. */
-const dragOverAt = (doc, clientY) => fireIn(doc, 'dragover', doc.body, clientY);
-const dropAt = (doc, clientY) => fireIn(doc, 'drop', doc.body, clientY);
+/** A dragover at a point in the preview; `clientX` only matters to columns. */
+const dragOverAt = (doc, clientY, clientX) =>
+  fireIn(doc, 'dragover', doc.body, clientY, clientX);
 
 /**
- * A reorder's drop as a browser delivers it: a dragover at the same height
- * first — no drop comes without one, and a dragover left uncancelled would
- * have refused it — then the drop itself.
+ * A drop as a browser delivers it: a dragover at the same point first — no
+ * drop comes without one, and the drop lands where that dragover's line said
+ * — then the drop itself.
  */
-function moveTo(doc, clientY) {
-  const over = dragOverAt(doc, clientY);
+function dropAt(doc, clientY, clientX) {
+  dragOverAt(doc, clientY, clientX);
+  return fireIn(doc, 'drop', doc.body, clientY, clientX);
+}
+
+/** A move's drop, checking its dragover accepted it as one. */
+function moveTo(doc, clientY, clientX) {
+  const over = dragOverAt(doc, clientY, clientX);
   expect(over.defaultPrevented).toBe(true);
   expect(over.dataTransfer.dropEffect).toBe('move');
-  return dropAt(doc, clientY);
+  return fireIn(doc, 'drop', doc.body, clientY, clientX);
+}
+
+/**
+ * Gives a node a box. jsdom lays nothing out; whatever a test measures has
+ * to be told where it is.
+ */
+function placeAt(node, { left = 0, top, width = 600, height }) {
+  node.getBoundingClientRect = () => ({
+    left,
+    top,
+    width,
+    height,
+    right: left + width,
+    bottom: top + height,
+  });
 }
 
 /** The palette entry for a type, queried on the document. */
@@ -181,7 +203,7 @@ const nextTask = () => new Promise((resolve) => setTimeout(resolve, 0));
 const dropLineOf = (doc) => doc.getElementById(DROP_LINE_ID);
 
 /** The element types currently composed, in order. */
-const typesOf = (modal) => modal.state.elements.map((element) => element.type);
+const typesOf = (modal) => modal.columnElements.map((element) => element.type);
 
 module.exports = {
   openModal,
@@ -194,6 +216,7 @@ module.exports = {
   dragOverAt,
   dropAt,
   moveTo,
+  placeAt,
   paletteEntry,
   startPaletteDrag,
   dragOverPage,

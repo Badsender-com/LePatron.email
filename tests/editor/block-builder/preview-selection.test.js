@@ -63,26 +63,26 @@ describe('the preview document', () => {
 describe('clicking an element in the preview', () => {
   it('selects the one that was clicked', async () => {
     const { modal, doc } = await openModal(['text', 'button']);
-    const [, second] = modal.state.elements;
-    modal.selectedId = null;
+    const [, second] = modal.columnElements;
+    modal.selectElement(null);
 
     clickIn(doc, rowOf(doc, second.id));
 
-    expect(modal.selectedId).toBe(second.id);
+    expect(modal.selectedElementId).toBe(second.id);
     expect(modal.selected.type).toBe('button');
   });
 
   // Nobody clicks the row: they click a word, or a pixel of an image.
   it('selects it from a click on something inside it', async () => {
     const { modal, doc } = await openModal(['button']);
-    const [element] = modal.state.elements;
-    modal.selectedId = null;
+    const [element] = modal.columnElements;
+    modal.selectElement(null);
 
     const link = doc.body.querySelector('a');
     expect(link).not.toBeNull();
     clickIn(doc, link);
 
-    expect(modal.selectedId).toBe(element.id);
+    expect(modal.selectedElementId).toBe(element.id);
   });
 
   // A button renders a real `<a href>`. An uncancelled click navigates the
@@ -97,18 +97,18 @@ describe('clicking an element in the preview', () => {
 
   it('keeps the current selection when the click lands on nothing', async () => {
     const { modal, doc } = await openModal(['text']);
-    const [element] = modal.state.elements;
+    const [element] = modal.columnElements;
 
     clickIn(doc, doc.body);
 
-    expect(modal.selectedId).toBe(element.id);
+    expect(modal.selectedElementId).toBe(element.id);
   });
 });
 
 describe('the selected element is outlined in the preview', () => {
   it('marks the selected row and no other', async () => {
     const { modal, doc } = await openModal(['text', 'button']);
-    const [first, second] = modal.state.elements;
+    const [first, second] = modal.columnElements;
 
     // addElement selected the last one.
     expect(rowOf(doc, second.id).classList.contains(SELECTED_CLASS)).toBe(true);
@@ -119,10 +119,10 @@ describe('the selected element is outlined in the preview', () => {
   // without the body being rewritten — rewriting it refetches every image.
   it('follows a selection made outside the preview', async () => {
     const { modal, doc } = await openModal(['text', 'button']);
-    const [first, second] = modal.state.elements;
+    const [first, second] = modal.columnElements;
     const row = rowOf(doc, first.id);
 
-    modal.selectedId = first.id;
+    modal.selectElement(first.id);
     await Vue.nextTick();
 
     expect(rowOf(doc, first.id)).toBe(row);
@@ -134,7 +134,7 @@ describe('the selected element is outlined in the preview', () => {
 
   it('survives a re-render, which replaces the body', async () => {
     const { modal, doc } = await openModal(['text', 'button']);
-    const [, second] = modal.state.elements;
+    const [, second] = modal.columnElements;
 
     modal.renderPreview();
 
@@ -144,7 +144,7 @@ describe('the selected element is outlined in the preview', () => {
   it('outlines nothing when nothing is selected', async () => {
     const { modal, doc } = await openModal(['text']);
 
-    modal.selectedId = null;
+    modal.selectElement(null);
     await Vue.nextTick();
 
     expect(doc.body.querySelectorAll(`.${SELECTED_CLASS}`)).toHaveLength(0);

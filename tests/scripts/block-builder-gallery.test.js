@@ -11,12 +11,17 @@ const {
 const {
   ELEMENTS,
 } = require('../../packages/shared/block-builder/elements/index.js');
+const {
+  elementsOfState,
+} = require('../../packages/shared/block-builder/composition.js');
 
 describe('specimens', () => {
   it('exercises every element at least once', () => {
     const rendered = new Set();
     specimens().forEach((spec) =>
-      spec.state.elements.forEach((element) => rendered.add(element.type))
+      elementsOfState(spec.state).forEach((element) =>
+        rendered.add(element.type)
+      )
     );
 
     ELEMENTS.forEach((element) => {
@@ -26,10 +31,42 @@ describe('specimens', () => {
 
   it('gives every element a unique id', () => {
     const ids = specimens().flatMap((spec) =>
-      spec.state.elements.map((element) => element.id)
+      elementsOfState(spec.state).map((element) => element.id)
     );
 
     expect(new Set(ids).size).toBe(ids.length);
+  });
+
+  // What #1207 asks the client tests to cover: the three presets, each with an
+  // image and some text.
+  test.each([[[50, 50]], [[33, 33, 34]], [[66, 34]]])(
+    'lays out a row of %j with an image and a text',
+    (widths) => {
+      const spec = specimens().find(
+        (candidate) =>
+          Array.isArray(candidate.state.rows) &&
+          JSON.stringify(
+            candidate.state.rows[0].columns.map((column) => column.width)
+          ) === JSON.stringify(widths)
+      );
+      const types = elementsOfState(spec.state).map((element) => element.type);
+
+      expect(types).toContain('image');
+      expect(types).toContain('text');
+    }
+  );
+
+  // #1683: two images side by side, with a space between them on a desktop and
+  // once stacked on a phone.
+  it('lays out a row with gutters that differ, and a stack spacing', () => {
+    const spec = specimens().find(
+      (candidate) =>
+        Array.isArray(candidate.state.rows[0].gutters) &&
+        candidate.state.rows[0].stackSpacing > 0
+    );
+
+    expect(spec).toBeDefined();
+    expect(new Set(spec.state.rows[0].gutters).size).toBeGreaterThan(1);
   });
 
   // Called twice by a watcher, or by a test and then a build.
@@ -51,6 +88,25 @@ describe('renderGallery', () => {
     specimens().forEach((spec) => {
       expect(html).toContain(spec.title);
     });
+  });
+
+  it('stacks the columns on a phone', () => {
+    expect(html).toMatch(/@media[^{]*max-width:600px\)\{\.lp-stack\{/);
+    expect(html).toContain('class="lp-stack"');
+  });
+
+  it('pads the columns after each gutter, and spaces them on a phone', () => {
+    expect(html).toMatch(/padding-left:12px;/);
+    expect(html).toMatch(/padding-left:36px;/);
+    expect(html).toContain('class="lp-stack lp-stack-spacing-16"');
+    expect(html).toContain('class="lp-stack lp-gutter lp-stack-spacing-16"');
+    expect(html).toContain('class="lp-stack lp-gutter"');
+    expect(html).toContain(
+      '.lp-gutter{padding-left:0 !important;padding-right:0 !important;}'
+    );
+    expect(html).toContain(
+      '.lp-stack-spacing-16{padding-bottom:16px !important;}'
+    );
   });
 
   it('leaves no placeholder behind', () => {

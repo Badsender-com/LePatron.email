@@ -8,6 +8,8 @@
 //
 // It is read by the component and by nothing else; every binding it names lives
 // there or in one of its mixins.
+const STRUCTURE_TEMPLATE = require('./structure-template.js');
+
 module.exports = `<modal-component
   ref="modalRef"
   :is-full-width="true"
@@ -24,6 +26,9 @@ module.exports = `<modal-component
     </p>
     <p v-if="tooLarge" class="bb-modal__error" role="alert">
       {{ vm.t('block-builder-too-large') }}
+    </p>
+    <p v-if="tooManyRows" class="bb-modal__error" role="alert">
+      {{ vm.t('block-builder-too-many-rows', { max: maxRows }) }}
     </p>
 
     <div class="bb-modal__layout">
@@ -44,35 +49,112 @@ module.exports = `<modal-component
           @keydown="onPaletteKeydown($event, item.type)"
           @keyup="onPaletteKeyup($event, item.type)">+ {{ vm.t(item.labelKey) }}</div>
 
+        <p class="bb-modal__section">{{ vm.t('block-builder-rows') }}</p>
+        <div
+          class="bb-modal__rows-drop"
+          :class="{
+            'bb-modal__rows-drop--active': draggingRowId !== null,
+            'bb-modal__rows-drop--end': rowDropIndex === state.rows.length
+          }"
+          @dragenter="handleRowDragOver"
+          @dragover="handleRowDragOver"
+          @dragleave="handleRowDragLeave"
+          @drop="handleRowDrop">
+          <ul class="bb-modal__rows" role="listbox" :aria-label="vm.t('block-builder-rows')">
+            <li
+              v-for="(row, index) in state.rows"
+              :key="row.id"
+              role="option"
+              :aria-selected="String(row.id === selectedRowId)"
+              :tabindex="rowTabIndex(index)"
+              class="bb-modal__row"
+              :class="{
+                'bb-modal__row--on': row.id === selectedRowId,
+                'bb-modal__row--drop-before': index === rowDropIndex
+              }"
+              draggable="true"
+              :aria-keyshortcuts="rowMoveShortcuts"
+              @click="selectRow(row.id)"
+              @keydown="onRowKeydown($event, index)"
+              @dragstart="startRowDrag(row.id, $event)"
+              @drag="handleDrag"
+              @dragend="handleDragEnd">{{ rowLabel(row, index) }}</li>
+          </ul>
+        </div>
+        <div v-if="selectedRow" class="bb-modal__actions bb-modal__row-actions">
+          <button
+            ref="rowMoveUp"
+            type="button"
+            class="bb-modal__action"
+            :disabled="!canMoveRow(-1)"
+            :title="vm.t('block-builder-move-row-up')"
+            :aria-label="vm.t('block-builder-move-row-up')"
+            @click.prevent="onRowMoveClick(-1)">↑</button>
+          <button
+            ref="rowMoveDown"
+            type="button"
+            class="bb-modal__action"
+            :disabled="!canMoveRow(1)"
+            :title="vm.t('block-builder-move-row-down')"
+            :aria-label="vm.t('block-builder-move-row-down')"
+            @click.prevent="onRowMoveClick(1)">↓</button>
+          <button
+            type="button"
+            class="bb-modal__action"
+            :disabled="rowLimitReached"
+            :title="rowLimitReached ? vm.t('block-builder-row-limit', { max: maxRows }) : vm.t('block-builder-duplicate-row')"
+            :aria-label="vm.t('block-builder-duplicate-row')"
+            @click.prevent="duplicateSelectedRow">⧉</button>
+          <button
+            type="button"
+            class="bb-modal__action bb-modal__action--destructive"
+            :title="vm.t('block-builder-delete-row')"
+            :aria-label="vm.t('block-builder-delete-row')"
+            @click.prevent="onRowDeleteClick">✕</button>
+        </div>
+        <button
+          ref="addRowButton"
+          type="button"
+          class="bb-modal__add-row"
+          :disabled="rowLimitReached"
+          :title="rowLimitReached ? vm.t('block-builder-row-limit', { max: maxRows }) : null"
+          @click.prevent="addRow">{{ addRowLabel }}</button>
+
+${STRUCTURE_TEMPLATE}
+
         <p :id="listLabelId" class="bb-modal__section">{{ vm.t('block-builder-elements') }}</p>
-        <p v-if="isEmpty" class="bb-modal__empty">{{ vm.t('block-builder-empty') }}</p>
-        <ul v-else class="bb-modal__list" role="listbox" :aria-labelledby="listLabelId">
+        <p v-if="columnTitle" :id="columnTitleId" class="bb-modal__list-column">{{ columnTitle }}</p>
+        <p v-if="columnElements.length === 0" class="bb-modal__empty">{{ vm.t('block-builder-empty') }}</p>
+        <ul v-else class="bb-modal__list" role="listbox" :aria-labelledby="listLabelledBy">
           <li
-            v-for="(element, index) in state.elements"
+            v-for="(element, index) in columnElements"
             :key="element.id"
             role="option"
-            :aria-selected="String(element.id === selectedId)"
+            :aria-selected="String(element.id === selectedElementId)"
             :tabindex="optionTabIndex(index)"
             class="bb-modal__item"
-            :class="{ 'bb-modal__item--on': element.id === selectedId }"
-            @click="selectedId = element.id"
+            :class="{ 'bb-modal__item--on': element.id === selectedElementId }"
+            @click="selectElement(element.id)"
             @keydown="onOptionKeydown($event, index)">{{ labelFor(element) }}</li>
         </ul>
         <div v-if="selected" class="bb-modal__actions">
           <button
             type="button"
+            class="bb-modal__action"
             :disabled="!canMove(-1)"
             :title="vm.t('block-builder-move-up')"
             :aria-label="vm.t('block-builder-move-up')"
             @click.prevent="move(-1)">↑</button>
           <button
             type="button"
+            class="bb-modal__action"
             :disabled="!canMove(1)"
             :title="vm.t('block-builder-move-down')"
             :aria-label="vm.t('block-builder-move-down')"
             @click.prevent="move(1)">↓</button>
           <button
             type="button"
+            class="bb-modal__action bb-modal__action--destructive"
             :title="vm.t('block-builder-remove')"
             :aria-label="vm.t('block-builder-remove')"
             @click.prevent="removeSelected">✕</button>

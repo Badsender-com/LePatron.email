@@ -13,6 +13,9 @@ const {
   emptyState,
   STATE_VERSION,
 } = require('../../../packages/shared/block-builder/generate.js');
+const {
+  singleColumnRows,
+} = require('../../../packages/shared/block-builder/composition.js');
 
 describe('isEmptyComposition', () => {
   it('recognises what the editor stores for an emptied block', () => {
@@ -20,11 +23,24 @@ describe('isEmptyComposition', () => {
   });
 
   it.each([
+    ['no rows', JSON.stringify({ v: 2, rows: [] })],
+    [
+      'rows of empty columns',
+      JSON.stringify({
+        v: 2,
+        rows: [{ columns: [{ width: 50, elements: [] }, { width: 50 }] }],
+      }),
+    ],
+  ])('is true for %s', (_label, value) => {
+    expect(isEmptyComposition(value)).toBe(true);
+  });
+
+  it.each([
     [
       'a composition with elements',
       serialiseState({
         ...emptyState(),
-        elements: [{ id: 'a', type: 'text' }],
+        rows: singleColumnRows([{ id: 'a', type: 'text' }]),
       }),
     ],
     ['nothing stored', ''],
@@ -35,6 +51,20 @@ describe('isEmptyComposition', () => {
       JSON.stringify({ v: STATE_VERSION + 1, elements: [] }),
     ],
     ['a value that is not a string', { elements: [] }],
+    // Judged on what is stored, not on what reading it keeps.
+    [
+      'elements of an unknown type only',
+      JSON.stringify({ v: 1, elements: [{ id: 'a', type: 'nope' }] }),
+    ],
+    ['an element that is null', JSON.stringify({ v: 1, elements: [null] })],
+    [
+      'a column holding anything',
+      JSON.stringify({ v: 2, rows: [{ columns: [{ elements: [42] }] }] }),
+    ],
+    [
+      'rows beside a non-empty flat list',
+      JSON.stringify({ v: 2, rows: [], elements: [{ type: 'text' }] }),
+    ],
   ])('is false for %s', (_label, value) => {
     expect(isEmptyComposition(value)).toBe(false);
   });

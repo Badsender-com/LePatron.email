@@ -5,6 +5,37 @@
 // selected element on the right. The preview is the widest column on purpose —
 // it is the thing being judged.
 
+// The look of anything you pick in the left panel — a row, an element.
+//
+// A NAMED mixin, not `.bb-modal__item` called as one: that selector is produced
+// by `&__item` inside `.bb-modal`, and LESS resolves a mixin against the
+// selectors written in the source, never against the ones `&` generates. The
+// call compiled to nothing you could see and broke the editor stylesheet.
+.bb-pickable() {
+  padding: 0.4375rem 0.625rem;
+  font-size: 0.8125rem;
+  cursor: pointer;
+  border-radius: 2px;
+  // A long text label must not push the column wider.
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+
+  &:hover {
+    background: #f5f5f5;
+  }
+
+  &--on {
+    background: rgba(0, 172, 220, 0.12);
+    font-weight: 500;
+  }
+
+  &:focus-visible {
+    outline: 2px solid rgba(0, 172, 220, 0.6);
+    outline-offset: -2px;
+  }
+}
+
 .bb-modal {
   display: flex;
   flex-direction: column;
@@ -98,6 +129,14 @@
     }
   }
 
+  // The column the element list shows, when the block has more than one.
+  &__list-column {
+    margin: 0 0 0.25rem;
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: rgba(0, 0, 0, 0.72);
+  }
+
   &__empty {
     margin: 0;
     font-size: 0.75rem;
@@ -111,53 +150,50 @@
   }
 
   &__item {
-    padding: 0.4375rem 0.625rem;
-    font-size: 0.8125rem;
+    .bb-pickable();
+  }
+
+  // The bar under a list, acting on what is selected in it: the element, or
+  // the row (badsender-block-builder-rows.less places that one).
+  &__actions {
+    display: flex;
+    gap: 0.25rem;
+    margin-top: 0.5rem;
+  }
+
+  // One button of that bar. A class of its own rather than `button` under the
+  // bar, so the element's and the row's actions share one look by name.
+  &__action {
+    flex: 1;
+    padding: 0.25rem;
     cursor: pointer;
+    background: #fff;
+    border: 1px solid rgba(0, 0, 0, 0.16);
     border-radius: 2px;
-    // A long text label must not push the column wider.
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
 
     &:hover {
       background: #f5f5f5;
     }
 
-    &--on {
-      background: rgba(0, 172, 220, 0.12);
-      font-weight: 500;
-    }
-
-    &:focus-visible {
-      outline: 2px solid rgba(0, 172, 220, 0.6);
-      outline-offset: -2px;
-    }
-  }
-
-  &__actions {
-    display: flex;
-    gap: 0.25rem;
-    margin-top: 0.5rem;
-
-    button {
-      flex: 1;
-      padding: 0.25rem;
-      cursor: pointer;
-      background: #fff;
-      border: 1px solid rgba(0, 0, 0, 0.16);
-      border-radius: 2px;
+    // Removing: done at once, without a confirmation, so it says what it is
+    // before it is clicked — the error colour the UX guidelines give a
+    // destructive action. Kept on white: the glyph is 3:1 against it, not
+    // against the grey of the hover.
+    &--destructive {
+      color: @error-color;
 
       &:hover {
-        background: #f5f5f5;
-      }
-
-      // Disabled at the ends of the list, where moving further does nothing.
-      &:disabled {
-        cursor: default;
-        opacity: 0.4;
         background: #fff;
+        border-color: @error-color;
       }
+    }
+
+    // Disabled at the ends of the list, where moving further does nothing.
+    // Last, so a disabled button does not light up on hover.
+    &:disabled {
+      cursor: default;
+      opacity: 0.4;
+      background: #fff;
     }
   }
 

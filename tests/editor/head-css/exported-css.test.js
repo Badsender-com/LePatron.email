@@ -33,7 +33,7 @@ const addUndoStackExtensionMaker = require('../../../packages/editor/src/js/undo
 const {
   injectHeadCss,
 } = require('../../../packages/shared/head-css/inject-head-css.js');
-const serverGuard = require('../../../packages/server/mailing/head-css-guard.js');
+const serverExport = require('../../../packages/server/mailing/head-css-export.js');
 
 const CSS = '.classred{color:red}';
 const DOC =
@@ -44,6 +44,24 @@ const textBlock = () => ({ type: 'textBlock', text: 'Hello' });
 const builderBlock = () => ({
   type: 'blockBuilderBlock',
   builderHtml: '<p>x</p>',
+});
+// A composed block whose two columns derive a stacking rule.
+const composedBlock = () => ({
+  type: 'blockBuilderBlock',
+  builderHtml: '<p>x</p>',
+  builderState: JSON.stringify({
+    v: 2,
+    gen: '1.0.0',
+    rows: [
+      {
+        id: 'r1',
+        columns: [
+          { width: 50, elements: [{ id: 'e1', type: 'text', content: 'a' }] },
+          { width: 50, elements: [{ id: 'e2', type: 'text', content: 'b' }] },
+        ],
+      },
+    ],
+  }),
 });
 
 // The shape Mosaico gives the content once instrumented: every level an
@@ -222,25 +240,72 @@ describe('the exported head CSS', () => {
 });
 
 // The server writes stored copies itself (a translated duplicate's previewHtml)
-// and must decide as the editor's export does. The two walk different shapes —
-// instrumented here, plain there — so they are kept apart, and pinned to agree.
+// and must decide as the editor's export does. The rule is shared; what each
+// side does on its own is collect its inputs, from different shapes —
+// instrumented here, plain there — so the two are pinned to agree.
 describe('the server counterpart', () => {
-  it.each([
-    ['a block in mainBlocks', { mainBlocks: { blocks: [htmlBlock()] } }],
+  const IMPORT = '@import url(a.css);';
+  const cases = [
+    ['a block in mainBlocks', { mainBlocks: [htmlBlock()] }, CSS],
     [
       'a block in another container',
-      { mainBlocks: { blocks: [] }, footerBlocks: { blocks: [htmlBlock()] } },
+      { mainBlocks: [], footerBlocks: [htmlBlock()] },
+      CSS,
     ],
     [
       'an empty block',
-      { mainBlocks: { blocks: [{ type: 'htmlCodeBlock', htmlCode: '' }] } },
+      { mainBlocks: [{ type: 'htmlCodeBlock', htmlCode: '' }] },
+      CSS,
     ],
-    ['no block', { mainBlocks: { blocks: [textBlock()] } }],
-    ['a builder block only', { mainBlocks: { blocks: [builderBlock()] } }],
+    ['no block', { mainBlocks: [textBlock()] }, CSS],
+    ['a builder block with no state', { mainBlocks: [builderBlock()] }, CSS],
+    ['a composed block alone', { mainBlocks: [composedBlock()] }, ''],
+    [
+      'author CSS and a composed block, no HTML code block',
+      { mainBlocks: [composedBlock(), textBlock()] },
+      CSS,
+    ],
+    [
+      'author CSS, an HTML code block and no composed block',
+      { mainBlocks: [htmlBlock(), textBlock()] },
+      IMPORT + CSS,
+    ],
+    [
+      'both blocks, in different containers',
+      { mainBlocks: [composedBlock()], footerBlocks: [htmlBlock()] },
+      IMPORT + CSS,
+    ],
+  ];
+
+  const plain = (containers) =>
+    Object.keys(containers).reduce((model, name) => {
+      model[name] = { blocks: containers[name] };
+      return model;
+    }, {});
+
+  it.each(cases)('agrees on %s', (_label, containers, css) => {
+    const data = plain(containers);
+    const onTheServer = serverExport.headCssToExport({ data, headCss: css });
+
+    expect(headCssToExport(data, css)).toBe(onTheServer);
+    // And on the model the editor actually holds.
+    expect(headCssToExport(wrapModel(containers), css)).toBe(onTheServer);
+  });
+
+  it('agrees on a stylesheet with something in it', () => {
+    // Two empty strings agree too: at least one case must carry both sources.
+    const data = plain({ mainBlocks: [composedBlock(), htmlBlock()] });
+    const onTheServer = serverExport.headCssToExport({ data, headCss: CSS });
+
+    expect(onTheServer).toContain('.lp-stack{');
+    expect(onTheServer).toContain(CSS);
+  });
+
+  it.each([
     ['no container', { titleText: 'htmlCodeBlock' }],
     ['no content', undefined],
   ])('agrees on %s', (_label, data) => {
-    expect(serverGuard.headCssToExport({ data, headCss: CSS })).toBe(
+    expect(serverExport.headCssToExport({ data, headCss: CSS })).toBe(
       headCssToExport(data, CSS)
     );
   });

@@ -40,9 +40,14 @@ const {
 const {
   generate,
 } = require('../../../packages/shared/block-builder/generate.js');
+const {
+  singleColumnRows,
+} = require('../../../packages/shared/block-builder/composition.js');
 
 const COMPOSED = generate({
-  elements: [{ id: 'a', type: 'text', content: 'Bonjour <b>à tous</b>' }],
+  rows: singleColumnRows([
+    { id: 'a', type: 'text', content: 'Bonjour <b>à tous</b>' },
+  ]),
 });
 const PASTED =
   '<table width="600"><tr><td style="color:red">x</td></tr></table>';
