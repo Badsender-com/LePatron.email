@@ -18,6 +18,15 @@ const { seenBy, DATING_FIELDS } = require('./mcp-catalog-dates.js');
 const EXPERTISE_FIELD = 'expertise';
 
 const uriOf = (skillId) => `lepatron://skills/${skillId}`;
+
+// The kind of a skill among the results of search, the first part of their
+// id (`skill:<skillId>`).
+const SKILL_KIND = 'skill';
+const SKILL_ID_PREFIX = `${SKILL_KIND}:`;
+
+/** A skillId, from itself or from the id search gives it. */
+const bareSkillId = (id) =>
+  id.startsWith(SKILL_ID_PREFIX) ? id.slice(SKILL_ID_PREFIX.length) : id;
 // The nature of a skill is its active version's (ADR 0013). One stored before
 // natures were versioned has none, and is a feature skill.
 const natureOf = (version) => version.nature || SkillNatures.FEATURE;
@@ -200,6 +209,8 @@ function inputOf(found, args) {
 
 module.exports = {
   uriOf,
+  SKILL_KIND,
+  bareSkillId,
   natureOf,
   isTask,
   isServed,
