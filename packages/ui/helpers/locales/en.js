@@ -1783,9 +1783,9 @@ export default {
         readOnly:
           'Its two values are the Badsender doctrine\'s: they are neither renamed nor added to.',
         adhoc: {
-          label: 'Ad hoc',
+          label: 'One Shot',
           description:
-            'Someone decided this particular send, this once. A newsletter written and scheduled every week is still ad hoc.',
+            'Someone decided this particular send, this once. A newsletter written and scheduled every week is still one shot.',
         },
         automated: {
           label: 'Automated',

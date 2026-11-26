@@ -1375,9 +1375,9 @@ export default {
         readOnly:
           'Ses deux valeurs sont celles de la doctrine Badsender : elles ne se renomment pas et ne se complètent pas.',
         adhoc: {
-          label: 'Ponctuel',
+          label: 'Ad hoc',
           description:
-            'Quelqu\'un a décidé de cet envoi-là, cette fois-ci. Une infolettre écrite et programmée chaque semaine reste ponctuelle.',
+            'Quelqu\'un a décidé de cet envoi-là, cette fois-ci. Une infolettre écrite et programmée chaque semaine reste ad hoc.',
         },
         automated: {
           label: 'Automatisé',

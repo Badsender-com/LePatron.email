@@ -37,12 +37,12 @@ const STANDARD_DIMENSIONS = Object.freeze([
     fr: {
       label: 'Déclenchement',
       description:
-        "Si quelqu'un a décidé de cet envoi-là (ponctuel) ou si une règle le décide à chaque fois (automatisé). Décide de ce que l'email peut supposer du moment où il est lu.",
+        "Si quelqu'un a décidé de cet envoi-là (ad hoc) ou si une règle le décide à chaque fois (automatisé). Décide de ce que l'email peut supposer du moment où il est lu.",
     },
     en: {
       label: 'Trigger',
       description:
-        'Whether someone decided this particular send (ad hoc) or a rule decides it every time (automated). Decides what the email may assume about the moment it is read.',
+        'Whether someone decided this particular send (one shot) or a rule decides it every time (automated). Decides what the email may assume about the moment it is read.',
     },
   },
 ]);
