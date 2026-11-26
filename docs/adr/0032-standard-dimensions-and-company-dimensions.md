@@ -23,6 +23,12 @@ Nothing is ever rewritten silently, so each change that would invalidate existin
 - Deactivating a dimension keeps its values on the emails. It stops offering, publishing and sending the dimension to the AI, and reactivating restores all of it.
 - A dimension can be deleted only while it has no values, which frees its name. A standard dimension can be neither deleted nor deactivated.
 
+A request is refused in one of two ways, everywhere in the taxonomy. A request that is malformed, or that names something the company does not have (an undeclared dimension, a parent value of another dimension or of another company), is a 400; another company's records are never told apart from records that do not exist. A well-formed request that clashes with what is stored (a duplicate name or identifier, a limit reached, a standard dimension's lock, a value still in use) is a 409, and carries what the screen needs to explain it: the count, the limit or the existing name.
+
+Dimensions are listed in one order, on the taxonomy screen as in the editor: by `order`, then by creation date. Precedence decides which dimension wins a design token two chosen values carry, the highest winning; between two dimensions of equal precedence, the one listed later wins.
+
+A value's identifier is unique within its dimension, except under the email type, where several values map onto the same doctrine type. That exception is why no unique index holds it: the identifier shares its field with the email type's mapping, so uniqueness is a check before the write, and two creations at the same instant can still store the same identifier twice. The label, which an index does hold, cannot. The identifier stays editable, so an admin who meets the duplicate fixes it on the screen.
+
 A company dimension may hang under the email type, whose values are real values, but not under the trigger, whose values are not stored. Dimensions are optional on an email: making one mandatory is a quality-control rule, not a taxonomy one.
 
 What a governance rule attaches to, one value or a combination of values, is deliberately left to the governance module. The taxonomy exposes dimensions, values and their resolution, and has no notion of a rule.

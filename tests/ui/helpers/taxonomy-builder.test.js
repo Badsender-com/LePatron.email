@@ -246,7 +246,7 @@ describe.skip('taxonomy screen: precedence', () => {
     ).toEqual(['brand', 'market', 'language', 'emailType']);
   });
 
-  it('breaks a tie by the declared order, like the editor does', () => {
+  it('breaks a tie of precedence: the dimension listed later wins, as in the editor', () => {
     expect(
       resolutionOrder([
         { ...MARKET, precedence: 10 },

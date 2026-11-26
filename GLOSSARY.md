@@ -465,7 +465,7 @@ _Avoid_: Custom dimension, group dimension
 **Value**:
 One of the possibilities of a dimension: Canada, French, Newsletter. An email carries at most one value per dimension.
 _UI_: Valeur
-_Avoid_: Item, entry, option, tag
+_Avoid_: Item, entry, option, tag (the code keeps `TaxonomyItems` and `taxonomyItemIds`)
 
 **Email type**:
 The standard dimension that says what an email brings to the person receiving it. Each company names its own values, and maps each onto one of the doctrine's six types.
@@ -478,14 +478,14 @@ _UI_: Déclenchement
 _Avoid_: Send mode, scenario
 
 **Identifier**:
-The stable name of a value, which a template compares against, unlike its freely edited label.
+The name of a value that a template compares against, apart from its label. It is proposed from the label and stays editable. Two values of one dimension never share one, except under the email type, where it names one of the doctrine's types.
 _UI_: Identifiant
-_Avoid_: Slug, code, key, canonical type
+_Avoid_: Slug, code, key, canonical type (the code keeps `canonicalType`)
 
 **Availability**:
 The values of the parent dimension under which a value is offered: French is offered under Canada, Switzerland and Belgium, and nowhere else. A value with no availability is offered under all of them.
 _UI_: Disponibilité
-_Avoid_: Parent, hierarchy, dependency
+_Avoid_: Parent, hierarchy, dependency (the code keeps `parentIds` and `_parents`)
 
 **Design token**:
 A named value that a value carries and a template reads under that name: a brand's main colour as a role, not as `#ffd845`.
@@ -493,6 +493,6 @@ _UI_: Token
 _Avoid_: Variable, theme colour, palette entry
 
 **Precedence**:
-Which dimension wins when the values chosen for one email carry the same design token. Unrelated to the order dimensions are listed in.
+Which dimension wins when the values chosen for one email carry the same design token: the highest. Unrelated to the order dimensions are listed in, except to break a tie, which the dimension listed later wins.
 _UI_: Priorité
 _Avoid_: Order, weight

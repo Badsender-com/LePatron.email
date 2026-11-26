@@ -7,7 +7,7 @@
 // reads (`_root_.audience`), valued by the identifier of the chosen value. The
 // design tokens of the chosen values are published under their own names, and
 // when two of them carry the same token the dimension with the highest
-// precedence wins.
+// precedence wins; between equal precedences, the one listed later (ADR-0032).
 
 const AUDIENCE = {
   name: 'audience',
@@ -166,7 +166,7 @@ describe.skip('publishing design tokens', () => {
     expect(values.mainColorVar).toBe('#ffd845');
   });
 
-  it('breaks a tie by the declared order: the later dimension wins', () => {
+  it('breaks a tie of precedence: the dimension listed later wins', () => {
     const { values } = governanceValues({
       dimensions: [
         { ...EMAIL_TYPE, precedence: 10 },

@@ -7,8 +7,9 @@
 // The collections are in-memory fakes that interpret queries like MongoDB, so
 // these tests hold the service to its answers, not to the shape of its queries.
 //
-// A malformed request is a 400, as everywhere else in the taxonomy module; a
-// request that is well formed but contradicts what is stored is a 409.
+// As everywhere in the taxonomy (ADR-0032), a malformed request, or one naming
+// something the company does not have, is a 400; a well-formed request that
+// clashes with what is stored is a 409.
 
 jest.mock('../../../packages/server/common/models.common.js', () =>
   require('../../helpers/taxonomy-world.js').fakeTaxonomyModels()
