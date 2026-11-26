@@ -53,10 +53,14 @@ const PREVIEW_RENDERED_EVENT = 'preview-rendered';
 // The preview document's own chrome. It is never exported — only the generated
 // markup is — so these rules exist purely to make the surface usable.
 //
-// Every row gets a `height`, which on a table cell is a floor rather than a
-// size — `min-height` does nothing on a <td>. An element that renders nothing
-// would otherwise be zero pixels tall: impossible to click, impossible to drop
-// against. The same trap as the empty block placeholder in the canvas.
+// Every element gets a floor of 24px: one that renders nothing would otherwise
+// be zero pixels tall, impossible to click, impossible to drop against. The
+// same trap as the empty block placeholder in the canvas. A floor, never a
+// size: an image or a button taller than that keeps its own height, or it
+// spills over what follows it. Said twice, because the marked node is not
+// always the same: a <td> in a flat block, where `min-height` does nothing and
+// `height` is the floor, and a <div> in a column, where `height` would cut the
+// element to 24px and `min-height` is the floor.
 //
 // An image with no source yet goes further: it is a starter too (marked by the
 // generator, with no words to substitute), drawn here as a grey frame with a
@@ -92,11 +96,13 @@ const PREVIEW_DOCUMENT = [
   'img{max-width:100%;}',
   // A row can be clicked and picked up: `grab` says the second, which a
   // pointer would not, and `grabbing` takes over once it is held.
-  `[${ELEMENT_ATTRIBUTE}]{cursor:grab;height:24px;}`,
+  `[${ELEMENT_ATTRIBUTE}]{cursor:grab;min-height:24px;}`,
+  `td[${ELEMENT_ATTRIBUTE}]{height:24px;}`,
   `[${ELEMENT_ATTRIBUTE}]:active,`,
   `body.${DRAGGING_CLASS} [${ELEMENT_ATTRIBUTE}]{cursor:grabbing;}`,
   `[${STARTER_ATTRIBUTE}]>table{opacity:0.6;}`,
-  `[${STARTER_ATTRIBUTE}="image"]{height:120px;`,
+  // Named on a cell too, to outrank the cell's floor above.
+  `td[${STARTER_ATTRIBUTE}="image"],[${STARTER_ATTRIBUTE}="image"]{height:120px;`,
   `background:#eeeeee ${IMAGE_ICON} no-repeat center;}`,
   `[${STARTER_ATTRIBUTE}="image"] img{display:none;}`,
   `[${ELEMENT_ATTRIBUTE}].${SELECTED_CLASS}{`,
