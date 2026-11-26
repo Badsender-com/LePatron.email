@@ -1862,7 +1862,7 @@ export default {
         tokenValueRequired: 'Give this token a value, or remove the row.',
         tokenValueTooLong: 'The value cannot exceed {max} characters.',
         tokenValueUnsafe:
-          'A colour, a font, a size or a link: no markup, brace, semicolon or backslash, nor javascript:, url( or @import.',
+          'A colour, a font, a size or a link: no markup, brace, semicolon, backslash, comment (/*), tab or line break, nor javascript:, url( or @import.',
         addToken: 'Add a token',
         tokensFull: 'Limit of {limit} tokens reached.',
         isActiveHint:

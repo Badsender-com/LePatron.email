@@ -1454,7 +1454,7 @@ export default {
         tokenValueRequired: 'Donnez une valeur à ce token, ou retirez la ligne.',
         tokenValueTooLong: 'La valeur ne peut pas dépasser {max} caractères.',
         tokenValueUnsafe:
-          'Une couleur, une police, une taille ou un lien : ni balise, ni accolade, ni point-virgule, ni antislash, ni javascript:, url( ou @import.',
+          'Une couleur, une police, une taille ou un lien : ni balise, ni accolade, ni point-virgule, ni antislash, ni commentaire (/*), ni tabulation ou retour à la ligne, ni javascript:, url( ou @import.',
         addToken: 'Ajouter un token',
         tokensFull: 'Limite de {limit} tokens atteinte.',
         isActiveHint:

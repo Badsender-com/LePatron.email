@@ -390,6 +390,17 @@ describe('taxonomy screen: the errors of the token rows', () => {
       { name: 'mainColorVar', value: 'red; x: y' },
       'unsafe',
     ],
+    [
+      'a script link split by a tab',
+      { name: 'linkVar', value: 'java\tscript:alert(1)' },
+      'unsafe',
+    ],
+    [
+      'a script link split by a newline',
+      { name: 'linkVar', value: 'java\nscript:alert(1)' },
+      'unsafe',
+    ],
+    ['a CSS comment', { name: 'mainColorVar', value: 'a/*b' }, 'unsafe'],
   ])('refuses a row with %s', (kind, row, reason) => {
     expect(errorsOf(row).value).toBe(reason);
   });

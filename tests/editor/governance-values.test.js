@@ -411,6 +411,9 @@ describe('publishing design tokens', () => {
     ['a script link', 'javascript:alert(1)'],
     ['an import', '@import "https://example.com/x.css"'],
     ['a CSS url', 'url(https://example.com/x.png)'],
+    ['a script link split by a tab', 'java\tscript:alert(1)'],
+    ['a script link split by a newline', 'java\nscript:alert(1)'],
+    ['a CSS comment', 'a/*b'],
   ])('never publishes a token holding %s', (kind, token) => {
     const { values, sources } = governanceValues({
       dimensions: [

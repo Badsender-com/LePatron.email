@@ -72,6 +72,17 @@ describe('design tokens', () => {
     });
   });
 
+  // A value pasted with a line break at its end is trimmed, not refused: only a
+  // control character inside it could split a link's scheme.
+  it('trims a value pasted with a line break at its end', async () => {
+    const brand = await addValue('brand', {
+      label: 'Marque A',
+      tokens: { mainColorVar: '#ffd845\n' },
+    });
+
+    expect(plainTokens(brand.tokens)).toEqual({ mainColorVar: '#ffd845' });
+  });
+
   it('replaces the tokens of a value on edit', async () => {
     const brand = await addValue('brand', {
       label: 'Marque A',
@@ -252,6 +263,10 @@ describe('what a token may hold', () => {
     ['a CSS expression', 'expression(alert(1))'],
     ['an import', '@import "https://example.com/x.css"'],
     ['a CSS url', 'url(https://example.com/x.png)'],
+    // A browser drops a tab or a newline inside a link's scheme.
+    ['a script link split by a tab', 'java\tscript:alert(1)'],
+    ['a script link split by a newline', 'java\nscript:alert(1)'],
+    ['a CSS comment', 'a/*b'],
   ])('refuses %s', async (kind, value) => {
     await expect(
       addValue('brand', { label: 'Marque A', tokens: { mainColorVar: value } })

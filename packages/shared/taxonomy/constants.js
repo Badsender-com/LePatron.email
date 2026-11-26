@@ -114,7 +114,13 @@ const TAXONOMY_LIMITS = Object.freeze({
 // colour, a font stack, a size or a link, never markup or a block of CSS that
 // would close what it sits in. Checked by the server on save and by the editor
 // before it publishes a value stored before the check existed.
-const TOKEN_VALUE_FORBIDDEN = /[<>{};\\]|javascript:|vbscript:|expression\(|@import|url\(/i;
+//
+// No control character either: a browser drops a tab or a newline inside a
+// link's scheme, so `java\tscript:` would read as `javascript:`. Nor `/*`,
+// which in a style comments out the declarations after it.
+const TOKEN_VALUE_FORBIDDEN =
+  // eslint-disable-next-line no-control-regex
+  /[<>{};\\\u0000-\u001F\u007F]|\/\*|javascript:|vbscript:|expression\(|@import|url\(/i;
 
 /**
  * @param {*} token a design token's value

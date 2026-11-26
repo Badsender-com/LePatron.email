@@ -207,7 +207,7 @@ function readTokens(value) {
     if (token.length > TaxonomyLimits.TOKEN_VALUE) throw invalid();
     // A value a template prints inside a style or an attribute, never markup
     // or CSS that would close it (packages/shared/taxonomy/constants.js).
-    if (!isTokenValue(token)) throw invalid();
+    if (!isTokenValue(token.trim())) throw invalid();
   });
   return Object.fromEntries(
     entries.map(([name, token]) => [name, token.trim()])
