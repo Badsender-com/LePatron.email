@@ -35,14 +35,14 @@ const MAX_CHANGES = 200;
 const MAX_DATE_LENGTH = 40;
 const CHANGES = ['created', 'updated', 'opened', 'withdrawn'];
 
-// What is read of each item: never a body, nor a skill's test cases.
+// What is read of each item: never a body, nor a skill's test cases; the
+// change log and the retex only for a reader who reads them.
 const READ = {
   title: 1,
   category: 1,
   status: 1,
   audience: 1,
   audienceHistory: 1,
-  archivedAt: 1,
   servedToAssistants: 1,
   activeVersion: 1,
   'versions.versionMajor': 1,
@@ -50,10 +50,13 @@ const READ = {
   'versions.status': 1,
   'versions.activatedAt': 1,
   'versions.releaseNotes': 1,
-  'versions.changelog': 1,
-  'versions.retexIds': 1,
   'versions.nature': 1,
 };
+const projectionFor = (reader) => ({
+  ...READ,
+  ...(reader.changelog && { 'versions.changelog': 1 }),
+  ...(reader.consultant && { 'versions.retexIds': 1 }),
+});
 
 const DATE = z.string().max(MAX_DATE_LENGTH).optional();
 const INPUT = z.object({
@@ -69,6 +72,7 @@ const INPUT = z.object({
     .describe('Only the skills, or only the expertises. Default: both.'),
   change: z
     .array(z.enum(CHANGES))
+    .min(1)
     .max(CHANGES.length)
     .optional()
     .describe(
@@ -156,10 +160,19 @@ const SOURCES = [
   },
 ];
 
-async function itemsOf(source) {
+// The items that may have changed in the period: a version published, or
+// an audience changed (an archiving and a republication included), since it
+// started. Every change is dated by one of them.
+async function itemsOf(source, reader, since) {
   return source.Model.find(
-    { status: { $in: [SkillStatuses.ACTIVE, SkillStatuses.ARCHIVED] } },
-    { ...READ, [source.idField]: 1 }
+    {
+      status: { $in: [SkillStatuses.ACTIVE, SkillStatuses.ARCHIVED] },
+      $or: [
+        { versions: { $elemMatch: { activatedAt: { $gte: since } } } },
+        { audienceHistory: { $elemMatch: { at: { $gte: since } } } },
+      ],
+    },
+    { ...projectionFor(reader), [source.idField]: 1 }
   ).lean();
 }
 
@@ -181,7 +194,10 @@ async function listChanges({ user, group }, args) {
     consultant,
   };
   const sources = SOURCES.filter((s) => !args.kind || s.kind === args.kind);
-  const found = await Promise.all(sources.map(itemsOf));
+  const since = new Date(period.since);
+  const found = await Promise.all(
+    sources.map((source) => itemsOf(source, reader, since))
+  );
   const changes = sources
     .flatMap((source, index) =>
       found[index]

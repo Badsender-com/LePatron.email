@@ -339,6 +339,13 @@ describe('list_changes', () => {
         await call(client, { since: '2026-11-16T10:00:00+01:00' })
       ).toMatchObject({ since: '2026-11-16T09:00:00.000Z' });
     });
+
+    it('refuses an empty list of changes', async () => {
+      const answer = await call(await asClient(), { ...WEEK, change: [] });
+
+      expect(answer.error).toEqual(expect.any(String));
+      expect(answer).not.toHaveProperty('changes');
+    });
   });
 
   // Turned on by #1668 (openings and withdrawals)
