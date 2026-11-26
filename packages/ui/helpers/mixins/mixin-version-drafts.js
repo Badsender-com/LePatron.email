@@ -17,6 +17,26 @@
 //   • `activeVersionRef`      → the entity's `activeVersion` ({ major, minor })
 //   • `editableVersionFields` → the field names the panel lets one edit
 
+import { MAX_RELEASE_NOTE_LENGTH } from '../../../shared/ai-skill/constants.js';
+import {
+  writtenChangeLog,
+  writtenReleaseNote,
+  isReleaseNoteTooLong,
+} from '../../../shared/ai-skill/release-texts.js';
+
+// What a field shows of the server's version. The generic sentence an older
+// minor draft holds says nothing: it shows blank, for the person to write, as
+// the activation modal leaves it (ADR 0031). Untouched, it is no edit.
+const SHOWN = new Map([
+  ['changelog', writtenChangeLog],
+  ['releaseNotes', writtenReleaseNote],
+]);
+
+function shownValue(v, name) {
+  const value = v[name];
+  return SHOWN.has(name) && value != null ? SHOWN.get(name)(value) : value;
+}
+
 function sameValue(a, b) {
   const normalise = (v) => (v === undefined ? null : v);
   return JSON.stringify(normalise(a)) === JSON.stringify(normalise(b));
@@ -34,6 +54,9 @@ export default {
         }
         return b.versionMinor - a.versionMinor;
       });
+    },
+    maxReleaseNote() {
+      return MAX_RELEASE_NOTE_LENGTH;
     },
     hasActive() {
       const av = this.activeVersionRef;
@@ -57,9 +80,6 @@ export default {
       if (v.status === 'ACTIVE') return 'success';
       return v.status === 'ARCHIVED' ? 'grey' : 'warning';
     },
-    isMajorDraft(v) {
-      return v.status === 'DRAFT' && v.versionMinor === 0;
-    },
     syncVersionDrafts() {
       const next = {};
       (this.versionsSource || []).forEach((v) => {
@@ -75,7 +95,7 @@ export default {
     newVersionDraft(v) {
       const draft = { __stamp: this.versionStamp(v) };
       this.editableVersionFields.forEach((name) => {
-        const value = v[name];
+        const value = shownValue(v, name);
         draft[name] = Array.isArray(value) ? [...value] : value;
       });
       return draft;
@@ -85,6 +105,25 @@ export default {
     // rather than a silent write into a throwaway object.
     draftFor(v) {
       return this.versionDrafts[this.versionLabel(v)];
+    },
+    // What a version's change log says, for its line in the list: nothing
+    // for the generic sentence of an older minor version (ADR 0031).
+    changeLogOf(v) {
+      return writtenChangeLog(v.changelog);
+    },
+    // A draft's release note over the limit is neither saved nor published,
+    // and says why where it is typed, as in the activation modal.
+    releaseNoteTooLong(v) {
+      const draft = this.draftFor(v);
+      return !!draft && isReleaseNoteTooLong(draft.releaseNotes);
+    },
+    releaseNoteErrors(v) {
+      if (!this.releaseNoteTooLong(v)) return [];
+      return [
+        this.$t('aiSkills.version.releaseNotesTooLong', {
+          max: MAX_RELEASE_NOTE_LENGTH,
+        }),
+      ];
     },
     // The version as it stands on screen: server document + pending edits.
     mergedVersion(v) {
@@ -99,7 +138,7 @@ export default {
       const draft = this.draftFor(v);
       if (!draft) return false;
       return this.editableVersionFields.some(
-        (name) => !sameValue(draft[name], v[name])
+        (name) => !sameValue(draft[name], shownValue(v, name))
       );
     },
     emitSaveVersion(v) {

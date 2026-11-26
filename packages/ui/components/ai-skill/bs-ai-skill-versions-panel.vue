@@ -186,10 +186,10 @@ export default {
                 {{ $t('aiSkills.version.unsavedChanges') }}
               </v-chip>
               <span
-                v-if="v.changelog"
+                v-if="changeLogOf(v)"
                 class="text-caption text--secondary text-truncate version-changelog"
               >
-                — {{ v.changelog }}
+                — {{ changeLogOf(v) }}
               </span>
               <v-spacer />
               <v-tooltip left>
@@ -269,6 +269,11 @@ export default {
               v-model="draftFor(v).releaseNotes"
               :label="$t('aiSkills.version.releaseNotes')"
               :placeholder="$t('aiSkills.version.releaseNotesPlaceholder')"
+              :hint="
+                $t('aiSkills.version.releaseNotesHint', { max: maxReleaseNote })
+              "
+              :error-messages="releaseNoteErrors(v)"
+              :counter="maxReleaseNote"
               :rows="2"
             />
             <v-alert
@@ -299,6 +304,7 @@ export default {
                 text
                 color="primary"
                 :loading="saving"
+                :disabled="releaseNoteTooLong(v)"
                 @click="emitSaveVersion(v)"
               >
                 {{ $t('aiSkills.version.saveDraft') }}
@@ -307,6 +313,7 @@ export default {
                 color="accent"
                 elevation="0"
                 :loading="saving"
+                :disabled="releaseNoteTooLong(v)"
                 @click="emitActivateVersion(v)"
               >
                 <lucide-check-circle2 :size="18" class="mr-2" />
