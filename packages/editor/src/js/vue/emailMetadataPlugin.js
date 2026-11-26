@@ -20,7 +20,7 @@ const {
   governanceValues,
   rememberValued,
 } = require('../utils/governance-values');
-const { publishToTemplate } = require('../utils/publish-to-template');
+const { publishOutsideUndo } = require('../utils/publish-to-template');
 const {
   hiddenTemplateOptions,
   rootPropertiesOf,
@@ -227,10 +227,11 @@ module.exports = {
 
       watch: {
         // Immediate: the content must hold what the email carries from the
-        // moment it opens, not from the first change.
+        // moment it opens, not from the first change. Outside the undo
+        // history: an undo must not take the content away from the settings.
         templateValues: {
           handler(values) {
-            publishToTemplate(vm.content && vm.content(), values);
+            publishOutsideUndo(vm, values);
           },
           immediate: true,
         },

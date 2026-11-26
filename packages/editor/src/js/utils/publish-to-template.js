@@ -36,6 +36,30 @@ function publishToTemplate(content, values) {
 }
 
 /**
+ * Publish to the email's content outside the undo history. The values follow
+ * the email settings, which the history does not hold: an undo that took them
+ * back would leave the content disagreeing with the settings on screen, and
+ * the export with the metadata saved. Republishing after each undo instead
+ * would still let the undo rewrite the content first, and needs the history
+ * paused anyway for its own write; kept out, they are simply never undone.
+ *
+ * @param {Object} vm the editor's viewModel, `content` and the undo stack's
+ *   `setUndoModeIgnore` / `restoreUndoMode` (undomanager/undomain.js), absent
+ *   before the stack starts, when nothing is recorded anyway
+ * @param {Object} values template property → value
+ * @returns {{applied: string[], skipped: string[]}}
+ */
+function publishOutsideUndo(vm, values) {
+  const pausable = typeof vm.setUndoModeIgnore === 'function';
+  if (pausable) vm.setUndoModeIgnore();
+  try {
+    return publishToTemplate(vm.content && vm.content(), values);
+  } finally {
+    if (pausable) vm.restoreUndoMode();
+  }
+}
+
+/**
  * Whether a root property of the content is one a published value may replace:
  * an observable holding a plain value (a text, a number, a boolean, or nothing
  * yet), what a template option holds. Never one holding an object or a list,
@@ -52,4 +76,4 @@ function isPublishable(target) {
   return ['string', 'number', 'boolean'].includes(typeof current);
 }
 
-module.exports = { publishToTemplate, isPublishable };
+module.exports = { publishToTemplate, publishOutsideUndo, isPublishable };
