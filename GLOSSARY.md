@@ -213,6 +213,21 @@ _Avoid_: Pending version, unpublished version
 A connection's mode in which an assistant is served the draft version of every skill and expertise that has one, and those never published, so that whoever may manage the platform tries them before publishing. It ends after four hours and at every new connection.
 _Avoid_: Preview mode, test mode, sandbox
 
+**Release note**:
+What a person writes when publishing a version of a skill or an expertise, for every company that reads it: what changed for whoever uses it. Every version published from now on has one. The code calls it `releaseNotes`.
+_UI_: Note de version
+_Avoid_: Release notes summary
+
+**Change log**:
+What a person writes when publishing a version, for the platform company alone: how and why the version was written. No other company reads it; a super admin reads it through any connection. The code calls it `changelog`.
+_UI_: Journal des modifications
+_Avoid_: Release note, history
+
+**Catalog change**:
+A dated event in the life of a skill or an expertise, as a company sees it: created, updated by a new version, opened to every company, or withdrawn from them. An archived item is withdrawn, and one published again is opened again. A company other than the platform company sees no opening: to it, an opening or a reopening is a creation. A company is never told of an item it never saw.
+_UI_: Nouveauté
+_Avoid_: News, update, event
+
 **CRM governance**:
 A company's own rules for its emails, such as its brand charter and its writing guidelines, kept by the company rather than written as skills or expertises. A module to come.
 _Avoid_: Client expertise, brand skill
@@ -303,7 +318,7 @@ _UI_: Passage
 _Avoid_: Paragraph, rule (a rule belongs to the quality control)
 
 **Addressed retex**:
-A retex a published version took into account: the draft cites it, and it is marked addressed, with that skill or expertise and its version, when the version is published. A retex on one skill may be addressed by another, or by an expertise. A draft deleted before leaves it open.
+A retex a published version took into account: the draft cites it, and it is marked addressed, with that skill or expertise and its version, when the version is published. A retex on one skill may be addressed by another, or by an expertise. It keeps the date it was addressed, the publication date of that version, the same for every retex the version addressed. A draft deleted before leaves it open.
 _UI_: Pris en compte en <version>
 _Avoid_: Done, fixed, applied
 

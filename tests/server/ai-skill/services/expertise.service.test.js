@@ -28,6 +28,13 @@ function mockExpertiseDoc(overrides = {}) {
   };
 }
 
+// An expertise published: only one is ever opened to every company.
+const PUBLISHED = Object.freeze({
+  status: 'ACTIVE',
+  activeVersion: { major: 1, minor: 0 },
+  versions: [{ versionMajor: 1, versionMinor: 0, status: 'ACTIVE' }],
+});
+
 beforeEach(() => jest.clearAllMocks());
 
 describe('expertise.service', () => {
@@ -113,7 +120,7 @@ describe('expertise.service', () => {
   // What the publication's confirmation sends to open an expertise to every
   // company (ADR 0013).
   it('updateExpertise patches the audience', async () => {
-    const doc = mockExpertiseDoc({ audience: 'platform' });
+    const doc = mockExpertiseDoc({ ...PUBLISHED, audience: 'platform' });
     Expertises.findOne.mockResolvedValue(doc);
 
     await expertiseService.updateExpertise('a', { audience: 'all' });
@@ -128,6 +135,7 @@ describe('expertise.service', () => {
     const readAt = new Date('2026-11-10T09:00:00.000Z');
     let condition;
     const doc = mockExpertiseDoc({
+      ...PUBLISHED,
       audience: 'platform',
       updatedAt: readAt,
       save: jest.fn().mockImplementation(async function () {
@@ -148,7 +156,11 @@ describe('expertise.service', () => {
 
   it('updateExpertise marks the item written, later than it was read', async () => {
     const readAt = new Date('2026-11-10T09:00:00.000Z');
-    const doc = mockExpertiseDoc({ audience: 'platform', updatedAt: readAt });
+    const doc = mockExpertiseDoc({
+      ...PUBLISHED,
+      audience: 'platform',
+      updatedAt: readAt,
+    });
     Expertises.findOne.mockResolvedValue(doc);
 
     await expertiseService.updateExpertise(
@@ -163,7 +175,7 @@ describe('expertise.service', () => {
 
   // On a copy, what an assistant changes there stays there (ADR 0019).
   it('updateExpertise keeps the item on a copy in the same write', async () => {
-    const doc = mockExpertiseDoc({ audience: 'platform' });
+    const doc = mockExpertiseDoc({ ...PUBLISHED, audience: 'platform' });
     Expertises.findOne.mockResolvedValue(doc);
 
     await expertiseService.updateExpertise(
@@ -246,7 +258,7 @@ describe('expertise.service', () => {
       ).rejects.toMatchObject({ status: 400 });
     });
 
-    it('increments minor and pre-fills the changelog', async () => {
+    it('increments minor, its texts left to write', async () => {
       const doc = mockExpertiseDoc({
         activeVersion: { major: 1, minor: 0 },
         versions: [
@@ -263,7 +275,8 @@ describe('expertise.service', () => {
       const created = doc.versions[doc.versions.length - 1];
       expect(created.versionMajor).toBe(1);
       expect(created.versionMinor).toBe(1);
-      expect(created.changelog).toBe('Correction mineure');
+      // Every publication writes its own (ADR 0031).
+      expect(created.changelog).toBe('');
     });
   });
 

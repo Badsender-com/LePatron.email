@@ -25,6 +25,7 @@ const {
   platformOnlyExpertises,
 } = require('./consumed-expertises.js');
 const { assertOpenable, openExpertises } = require('./audience-opening.js');
+const { setAudience } = require('./audience-history.js');
 const { saveItem } = require('./item-save.js');
 const {
   createVersionedEntityService,
@@ -221,10 +222,17 @@ async function updateSkill(skillId, patch, options) {
     patch.audience === Audiences.ALL
   );
   for (const key of PATCHABLE_FIELDS) {
-    if (patch[key] !== undefined) skill[key] = patch[key];
+    if (patch[key] === undefined) continue;
+    // Its changes are kept (ADR 0031).
+    if (key === 'audience') {
+      setAudience(skill, patch.audience, options && options.userId);
+    } else skill[key] = patch[key];
   }
   await saveItem(skill, options);
-  return { skill, warnings: await openExpertises(opened, skillId) };
+  return {
+    skill,
+    warnings: await openExpertises(opened, skillId, options && options.userId),
+  };
 }
 
 // ─── Versioning ────────────────────────────────────────────────────────────
@@ -350,7 +358,7 @@ async function activateVersion(skillId, ref, payload = {}, userId) {
           payload.openToAll === true
         );
   const skill = await versioned.activateVersion(skillId, ref, payload, userId);
-  return { skill, warnings: await openExpertises(opened, skillId) };
+  return { skill, warnings: await openExpertises(opened, skillId, userId) };
 }
 
 /**
@@ -424,9 +432,13 @@ async function writeDraftIfUnchanged(doc, version, patch, userId) {
  */
 async function archiveSkill(skillId, options = {}) {
   let warnings = [];
-  const skill = await versioned.archive(skillId, (doc) => {
-    warnings = archiveUsage('skill', doc, options);
-  });
+  const skill = await versioned.archive(
+    skillId,
+    (doc) => {
+      warnings = archiveUsage('skill', doc, options);
+    },
+    options.userId
+  );
   return { skill, warnings };
 }
 

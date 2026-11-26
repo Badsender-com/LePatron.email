@@ -3,6 +3,12 @@ import BsModalConfirm from '~/components/modal-confirm.vue';
 import BsTextarea from '~/components/form/bs-textarea.vue';
 import BsAiOpenExpertisesChoice from '~/components/ai-skill/bs-ai-open-expertises-choice.vue';
 import { openingPayload } from '~/helpers/ai-skill-audience-change.js';
+import { MAX_RELEASE_NOTE_LENGTH } from '../../../shared/ai-skill/constants.js';
+import {
+  writtenChangeLog,
+  writtenReleaseNote,
+  isReleaseNoteTooLong,
+} from '../../../shared/ai-skill/release-texts.js';
 import { CheckCircle2 } from 'lucide-vue';
 
 export default {
@@ -19,8 +25,8 @@ export default {
     showImpact: { type: Boolean, default: false },
     // Matches: [{ featureType, description, matchedFilter:{scope,categories,emailType} }].
     impact: { type: Array, default: () => [] },
-    // Changelog / release notes are mandatory for a major version, optional for
-    // a minor (both go through this modal so the impact alert always shows).
+    // Changelog and release notes are required for every version (ADR 0031);
+    // a major and a minor only say it differently.
     isMajor: { type: Boolean, default: true },
     // The item is still used by the platform company only (ADR 0013):
     // publishing does not open it, so the modal says so and offers to.
@@ -51,19 +57,38 @@ export default {
         ? this.$t('aiSkills.copy.publishFollowed')
         : this.$t('aiSkills.copy.publishLocal');
     },
+    maxReleaseNote() {
+      return MAX_RELEASE_NOTE_LENGTH;
+    },
+    releaseNoteTooLong() {
+      return isReleaseNoteTooLong(this.payload.releaseNotes);
+    },
+    releaseNoteErrors() {
+      return this.releaseNoteTooLong
+        ? [
+            this.$t('aiSkills.version.releaseNotesTooLong', {
+              max: MAX_RELEASE_NOTE_LENGTH,
+            }),
+          ]
+        : [];
+    },
     canSubmit() {
-      if (!this.isMajor) return true;
-      return !!this.payload.changelog && !!this.payload.releaseNotes;
+      return (
+        !!this.payload.changelog.trim() &&
+        !!this.payload.releaseNotes.trim() &&
+        !this.releaseNoteTooLong
+      );
     },
   },
   methods: {
     // `seed` is the DRAFT version being activated: its changelog / release
     // notes pre-fill the fields (still editable — the value confirmed here is
-    // what gets persisted at activation).
+    // what gets persisted at activation). The generic sentence of an older
+    // minor draft says nothing, and is left for the person to write (ADR 0031).
     open(seed) {
       this.payload = {
-        changelog: (seed && seed.changelog) || '',
-        releaseNotes: (seed && seed.releaseNotes) || '',
+        changelog: writtenChangeLog(seed && seed.changelog),
+        releaseNotes: writtenReleaseNote(seed && seed.releaseNotes),
       };
       this.openToAll = false;
       this.openExpertiseIds = [];
@@ -120,14 +145,20 @@ export default {
       <bs-textarea
         v-model="payload.changelog"
         :label="$t('aiSkills.version.changelog')"
+        :hint="$t('aiSkills.version.changelogHint')"
         :rows="2"
         :disabled="loading"
+        required
       />
       <bs-textarea
         v-model="payload.releaseNotes"
         :label="$t('aiSkills.version.releaseNotes')"
+        :hint="$t('aiSkills.version.releaseNotesHint', { max: maxReleaseNote })"
+        :error-messages="releaseNoteErrors"
+        :counter="maxReleaseNote"
         :rows="2"
         :disabled="loading"
+        required
       />
 
       <v-alert

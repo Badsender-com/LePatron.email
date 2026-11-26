@@ -2085,6 +2085,10 @@ export default {
         'Ces Expertises consommées n\'existent pas : {expertiseIds}. Retirez-les de la version.',
       SKILL_OPEN_EXPERTISES_INVALID:
         'Seules les Expertises publiées que cette version consomme et qui sont réservées à l\'entreprise plateforme s\'ouvrent avec le Skill, et seulement quand le Skill s\'ouvre à toutes les entreprises.',
+      SKILL_OPEN_ARCHIVED:
+        'Cet élément est archivé : republiez une version avant de l\'ouvrir à toutes les entreprises.',
+      SKILL_OPEN_NEVER_PUBLISHED:
+        'Cet élément n\'a jamais été publié : publiez une version avant de l\'ouvrir à toutes les entreprises.',
       SKILL_NOT_AVAILABLE_TO_COMPANY:
         'Cette fonctionnalité n\'est pas encore disponible pour votre entreprise.',
       SKILL_PROCEDURE_REQUIRED_TO_PUBLISH:
@@ -2197,6 +2201,12 @@ export default {
         'La vérification n\'a pas pu aboutir : relancez-la.',
       SKILL_PUBLICATION_GUARD_INTERRUPTED:
         'La vérification a été interrompue sur le serveur : relancez-la.',
+      RELEASE_NOTE_REQUIRED:
+        'Écrivez la note de version : ce qui change pour qui utilise cet élément.',
+      CHANGELOG_REQUIRED:
+        'Écrivez le journal des modifications : comment et pourquoi cette version a été écrite.',
+      RELEASE_NOTE_TOO_LONG:
+        'La note de version ne doit pas dépasser {max} caractères.',
       SKILLS_PUBLICATION_SELECTION_EMPTY:
         'Sélectionnez au moins une skill ou une expertise.',
       SKILLS_PUBLICATION_SELECTION_TOO_BIG:
@@ -2235,7 +2245,9 @@ export default {
         not_found: 'version introuvable',
         draft_changed: 'modifié depuis sa lecture : rechargez sa page avant de le publier',
         not_draft: 'n\'est plus un brouillon',
-        release_notes_required: 'version majeure : renseignez le changelog et les notes de version sur sa page',
+        release_notes_required: 'sans note de version : écrivez-la sur sa page',
+        changelog_required: 'sans journal des modifications : écrivez-le sur sa page',
+        release_note_too_long: 'note de version trop longue : raccourcissez-la sur sa page',
         failed: 'la publication a échoué',
       },
     },
@@ -2463,17 +2475,22 @@ export default {
       unsavedChanges: 'Modifications non enregistrées',
       activate: 'Activer',
       activateTitle: 'Activer cette version',
-      activateBody: 'Activer une version la rend immuable. Le changelog et les notes de version sont obligatoires.',
+      activateBody: 'Activer une version la rend immuable. Le journal des modifications et la note de version sont obligatoires.',
       platformOnlyReminder:
         'Cette fiche reste visible par l\'entreprise plateforme uniquement.',
       openToAll: 'L\'ouvrir à toutes les entreprises',
       openToAllNotice:
         'Cette fiche sera ouverte à toutes les entreprises dès sa publication.',
-      activateBodyMinor: 'Activer cette version mineure la rend immuable et change immédiatement la doctrine consommée par les fonctionnalités. Changelog et notes pré-remplis depuis le brouillon (facultatifs pour une mineure).',
-      changelog: 'Changelog',
+      activateBodyMinor: 'Activer cette version mineure la rend immuable et change immédiatement la doctrine consommée par les fonctionnalités. Le journal des modifications et la note de version sont obligatoires.',
+      changelog: 'Journal des modifications',
+      changelogHint:
+        'Comment et pourquoi cette version a été écrite : seule l\'entreprise plateforme le lit.',
       changelogPlaceholder:
         'Ce qui change par rapport à la version précédente — ex. « Ajout de la règle d\'urgence, reformulation du critère de longueur »',
-      releaseNotes: 'Notes de version',
+      releaseNotes: 'Note de version',
+      releaseNotesHint:
+        'Ce qui change pour qui utilise cet élément, en {max} caractères au plus : chaque entreprise qui le lit la verra.',
+      releaseNotesTooLong: 'Pas plus de {max} caractères.',
       releaseNotesPlaceholder:
         'À savoir sur cette version — ex. « Testée uniquement sur les emails promo FR ; section exceptions à valider terrain »',
       outputFormatNote:

@@ -19,6 +19,8 @@ export const PUBLISH_FAILURE_REASONS = [
   'not_found',
   'not_draft',
   'release_notes_required',
+  'changelog_required',
+  'release_note_too_long',
   'failed',
 ];
 

@@ -295,6 +295,29 @@ describe('publishing and opening from an assistant', () => {
       expect(answer.error).not.toMatch(/a person publishes/i);
     });
 
+    // Read by no company until a version of it is published again, as the
+    // back office refuses it (SKILL_OPEN_ARCHIVED).
+    it('never opens what is archived, and says to publish it again', async () => {
+      harness.seed({
+        ...SEED,
+        expertises: SEED.expertises.map((e) =>
+          e.expertiseId === SUBJECT_LINES ? { ...e, status: 'ARCHIVED' } : e
+        ),
+      });
+
+      const answer = await call(await asAuthor(), AUDIENCE, {
+        kind: 'expertise',
+        id: SUBJECT_LINES,
+        audience: 'all',
+      });
+
+      expect(answer.error).toMatch(/archived: publish a version of it again/i);
+      expect(subjectLines()).toMatchObject({
+        status: 'ARCHIVED',
+        audience: 'platform',
+      });
+    });
+
     it('refuses a user who may not manage the platform, whatever the token says', async () => {
       const client = await harness.connectAs(f.ERIN, { scopes: WRITE });
 
@@ -463,7 +486,7 @@ describe('publishing and opening from an assistant', () => {
         id: SUBJECT_LINES,
       });
 
-      expect(answer.error).toMatch(/changelog/i);
+      expect(answer.error).toMatch(/release note/i);
       expect(harness.stored('guardRuns')).toEqual([]);
     });
 

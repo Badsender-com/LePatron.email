@@ -189,3 +189,48 @@ describe('emits', () => {
     });
   });
 });
+
+// The release texts of a draft (ADR 0031): the generic sentence of an older
+// minor draft shows blank, as the activation modal leaves it, and a release
+// note over its limit says so.
+describe('release texts', () => {
+  const GENERIC = {
+    changelog: 'Correction mineure',
+    releaseNotes: 'Correction mineure sans changement de doctrine.',
+  };
+  const TEXT_FIELDS = ['body', 'changelog', 'releaseNotes'];
+
+  it('shows blank the generic sentences of an older minor draft, as no edit', () => {
+    const v = version({ versionMinor: 2, ...GENERIC });
+    const vm = makeVm({ versions: [v], fields: TEXT_FIELDS });
+
+    expect(vm.draftFor(v)).toMatchObject({ changelog: '', releaseNotes: '' });
+    expect(vm.isVersionDirty(v)).toBe(false);
+    expect(vm.changeLogOf(v)).toBe('');
+  });
+
+  it('keeps the texts a person wrote', () => {
+    const v = version({ changelog: 'Typo', releaseNotes: 'Shorter.' });
+    const vm = makeVm({ versions: [v], fields: TEXT_FIELDS });
+
+    expect(vm.draftFor(v)).toMatchObject({
+      changelog: 'Typo',
+      releaseNotes: 'Shorter.',
+    });
+    expect(vm.changeLogOf(v)).toBe('Typo');
+  });
+
+  it('says when a release note is over 500 characters', () => {
+    const v = version({ releaseNotes: 'x'.repeat(500) });
+    const vm = makeVm({ versions: [v], fields: TEXT_FIELDS });
+    expect(vm.releaseNoteTooLong(v)).toBe(false);
+    expect(vm.releaseNoteErrors(v)).toEqual([]);
+
+    vm.draftFor(v).releaseNotes = 'x'.repeat(501);
+
+    expect(vm.releaseNoteTooLong(v)).toBe(true);
+    expect(vm.releaseNoteErrors(v)).toEqual([
+      'aiSkills.version.releaseNotesTooLong',
+    ]);
+  });
+});

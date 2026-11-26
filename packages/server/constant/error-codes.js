@@ -206,6 +206,12 @@ module.exports = {
   SKILL_CONSUMED_EXPERTISES_TOO_MANY: 'SKILL_CONSUMED_EXPERTISES_TOO_MANY',
   SKILL_CONSUMED_EXPERTISES_NOT_FOUND: 'SKILL_CONSUMED_EXPERTISES_NOT_FOUND',
   SKILL_OPEN_EXPERTISES_INVALID: 'SKILL_OPEN_EXPERTISES_INVALID',
+  // A skill or an expertise opened to every company before any version of it
+  // was published: a company reads the active version only (ADR 0031).
+  SKILL_OPEN_NEVER_PUBLISHED: 'SKILL_OPEN_NEVER_PUBLISHED',
+  // An archived skill or expertise opened to every company: no company reads
+  // it until a version of it is published again (ADR 0031).
+  SKILL_OPEN_ARCHIVED: 'SKILL_OPEN_ARCHIVED',
   // A feature skill still meant for the platform company, invoked on behalf
   // of a user of another company (ADR 0013).
   SKILL_NOT_AVAILABLE_TO_COMPANY: 'SKILL_NOT_AVAILABLE_TO_COMPANY',
@@ -291,6 +297,11 @@ module.exports = {
   SKILL_PUBLICATION_GUARDS_BUSY: 'SKILL_PUBLICATION_GUARDS_BUSY',
   SKILL_PUBLICATION_GUARD_FAILED: 'SKILL_PUBLICATION_GUARD_FAILED',
   SKILL_PUBLICATION_GUARD_INTERRUPTED: 'SKILL_PUBLICATION_GUARD_INTERRUPTED',
+  // The two texts every publication writes (ADR 0031): a release note, at
+  // most `max` characters, and a change log. A generic one says nothing.
+  RELEASE_NOTE_REQUIRED: 'RELEASE_NOTE_REQUIRED',
+  CHANGELOG_REQUIRED: 'CHANGELOG_REQUIRED',
+  RELEASE_NOTE_TOO_LONG: 'RELEASE_NOTE_TOO_LONG',
   // The selection of several drafts to publish, with the `max` it holds.
   SKILLS_PUBLICATION_SELECTION_EMPTY: 'SKILLS_PUBLICATION_SELECTION_EMPTY',
   SKILLS_PUBLICATION_SELECTION_TOO_BIG: 'SKILLS_PUBLICATION_SELECTION_TOO_BIG',

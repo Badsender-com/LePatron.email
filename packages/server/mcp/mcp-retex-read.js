@@ -167,7 +167,7 @@ const LIST_OUTPUT = z.object({
   items: z
     .array(z.object({}).passthrough())
     .describe(
-      'The retex of the page, the latest first: its kind, what it is about and its passage, what it says, its company, the company a consultant worked for, and whether its author is a consultant or a client user.'
+      'The retex of the page, the latest first: its kind, what it is about and its passage, what it says, its company, the company a consultant worked for, and whether its author is a consultant or a client user; an addressed one, the version that addressed it and when (addressedAt, in UTC).'
     ),
   page: z.number(),
   pageSize: z.number(),

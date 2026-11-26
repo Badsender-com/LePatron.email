@@ -10,6 +10,7 @@ const {
   PLACEHOLDER_REGEX,
 } = require('../ai-skill/services/prompt-builder.service.js');
 const { audienceFilter } = require('../ai-skill/services/audience.js');
+const { seenBy, DATING_FIELDS } = require('./mcp-catalog-dates.js');
 
 // The expertise a feature skill applies is composed by the feature that calls
 // it in the app (findApplicable, with that feature's own scope). An assistant
@@ -17,16 +18,32 @@ const { audienceFilter } = require('../ai-skill/services/audience.js');
 const EXPERTISE_FIELD = 'expertise';
 
 const uriOf = (skillId) => `lepatron://skills/${skillId}`;
+
+// The kind of a skill among the results of search, the first part of their
+// id (`skill:<skillId>`).
+const SKILL_KIND = 'skill';
+const SKILL_ID_PREFIX = `${SKILL_KIND}:`;
+
+/** A skillId, from itself or from the id search gives it. */
+const bareSkillId = (id) =>
+  id.startsWith(SKILL_ID_PREFIX) ? id.slice(SKILL_ID_PREFIX.length) : id;
 // The nature of a skill is its active version's (ADR 0013). One stored before
 // natures were versioned has none, and is a feature skill.
 const natureOf = (version) => version.nature || SkillNatures.FEATURE;
 const isTask = (version) => natureOf(version) === SkillNatures.TASK;
 
 // What each read keeps of a skill and of its active version: a listing names
-// a skill and its arguments, a read runs it.
+// a skill and its arguments, a read runs it; both date it for the company
+// (ADR 0031).
 const LISTED = {
-  doc: ['skillId', 'title', 'description', 'servedToAssistants'],
-  version: ['nature', 'inputSchemaId', 'inputTemplate'],
+  doc: [
+    'skillId',
+    'title',
+    'description',
+    'servedToAssistants',
+    ...DATING_FIELDS,
+  ],
+  version: ['nature', 'inputSchemaId', 'inputTemplate', 'updatedAt'],
 };
 const READ = {
   doc: LISTED.doc,
@@ -62,6 +79,7 @@ async function servedSkills(group, drafts = false) {
   );
   return found
     .filter(isServed)
+    .map(seenBy(group))
     .sort((a, b) => a.doc.skillId.localeCompare(b.doc.skillId));
 }
 
@@ -87,7 +105,7 @@ async function servedSkill(skillId, group, drafts = false) {
     READ,
     { drafts }
   );
-  return found && isServed(found) ? found : null;
+  return found && isServed(found) ? seenBy(group)(found) : null;
 }
 
 // The paths a template places: `{{input.brand.name}}` gives `brand.name`.
@@ -191,8 +209,11 @@ function inputOf(found, args) {
 
 module.exports = {
   uriOf,
+  SKILL_KIND,
+  bareSkillId,
   natureOf,
   isTask,
+  isServed,
   servedSkills,
   servedSkill,
   namedSkills,

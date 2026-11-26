@@ -229,8 +229,7 @@ export default {
       this.platformOnlyExpertises = expertises || [];
       // Both major AND minor go through the modal: activating any version
       // instantly changes the doctrine features consume. Pre-filled from the
-      // draft (one click). Only difference: changelog/notes are required for a
-      // major (versionMinor === 0), optional for a minor.
+      // draft (one click). Both texts are required for either (ADR 0031).
       this.$refs.activateModal.open(version);
     },
     // Published, and opened to all with the expertises chosen when the

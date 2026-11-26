@@ -27,12 +27,23 @@ const APPLICABLE_FIELDS = Object.freeze({
   scope: 1,
   isTransversal: 1,
   activeVersion: 1,
+  // What dates it for a company other than the platform company (ADR 0031).
+  audience: 1,
+  audienceHistory: 1,
   versions: { $elemMatch: { status: SkillStatuses.ACTIVE } },
 });
 // The same, of the version an expertise is served at in a super admin's
 // drafts mode (ADR 0014, #1385).
 const SERVED_FIELDS = Object.freeze({
-  doc: ['expertiseId', 'title', 'category', 'scope', 'isTransversal'],
+  doc: [
+    'expertiseId',
+    'title',
+    'category',
+    'scope',
+    'isTransversal',
+    'audience',
+    'audienceHistory',
+  ],
   version: ['body', 'examplesGood', 'examplesBad', 'sections'],
 });
 // What a super admin trying the drafts reads besides the active expertises.
@@ -82,17 +93,22 @@ const TRIED_STATUSES = [SkillStatuses.ACTIVE, SkillStatuses.DRAFT];
 async function findApplicable(filters = {}) {
   const query = applicableQuery(filters);
   const audience = await audienceOf(filters.groupId, filters.everyAudience);
-  return matching(query, audience, filters);
+  return (await matching(query, audience, filters)).map(
+    ({ expertise }) => expertise
+  );
 }
 
 /**
  * `findApplicable`, with the scopes in use for the same company: those of
  * the active, scoped expertises it may read, normalised. A transversal one
  * applies whatever the scope, so its own scopes match nothing. The company
- * is read once, for both.
+ * is read once, for both. Each expertise found comes with the item it was
+ * read from (`doc`), its audience history included, which dates it for a
+ * company (ADR 0031).
  *
  * @param {Object} filters as findApplicable takes them
- * @returns {Promise<{expertises: Object[], scopesInUse: string[]}>}
+ * @returns {Promise<{expertises: Array<{ doc: Object, expertise: Object }>,
+ *   scopesInUse: string[]}>}
  */
 async function findApplicableWithScopesInUse(filters = {}) {
   const query = applicableQuery(filters);
@@ -190,9 +206,8 @@ async function matching({ scopes, and }, audience, filters) {
   // transversal (general) first, then alphabetical by expertiseId. Stable so
   // features and the playground filter mode get a predictable, reviewable mix.
   return found
-    .map(({ expertise }) => expertise)
-    .filter((d) => d !== null)
-    .sort((a, b) => {
+    .filter(({ expertise }) => expertise !== null)
+    .sort(({ expertise: a }, { expertise: b }) => {
       if (a.isTransversal !== b.isTransversal) return a.isTransversal ? -1 : 1;
       return a.expertiseId.localeCompare(b.expertiseId);
     });
@@ -289,6 +304,7 @@ function projectVersion(doc, version) {
     isTransversal: !!doc.isTransversal,
     versionMajor: version.versionMajor,
     versionMinor: version.versionMinor,
+    activatedAt: version.activatedAt || null,
     body: version.body,
     examplesGood: version.examplesGood || [],
     examplesBad: version.examplesBad || [],

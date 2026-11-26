@@ -16,8 +16,8 @@
  * logic. What genuinely differs per entity is passed in:
  *
  *   - `contentFields`: which fields a new version inherits from its source.
- *     Everything else (numbering, status, changelog defaults, timestamps) is
- *     lifecycle and lives here.
+ *     Everything else (numbering, status, the blank changelog and release
+ *     notes, timestamps) is lifecycle and lives here.
  *   - `activationGate`: extra publication checks. Skills validate their
  *     input/output schemas and template coherence; expertises have none.
  *
@@ -28,11 +28,7 @@
 
 const createError = require('http-errors');
 const ERROR_CODES = require('../../constant/error-codes.js');
-const {
-  SkillStatuses,
-  MinorVersionDefaults,
-  Audiences,
-} = require('../constant/skill-constants.js');
+const { SkillStatuses, Audiences } = require('../constant/skill-constants.js');
 const {
   findVersion,
   findActiveVersion,
@@ -49,6 +45,8 @@ const {
   readAtOf,
   saveIfUnchanged,
 } = require('./versioned-draft.js');
+const { assertReleaseTexts } = require('./release-texts.js');
+const { setAudience, setArchived } = require('./audience-history.js');
 
 /**
  * @param {Object} options
@@ -115,10 +113,9 @@ function createVersionedEntityService({
     'releaseNotes',
   ];
 
-  // A minor draft on top of the active version: a minor release carries no
-  // doctrine change, so it is pre-filled and the activation gate does not ask
-  // for it (unlike a major). These are stored CONTENT, displayed as authored —
-  // see MinorVersionDefaults for why they are French and not an i18n key.
+  // A minor draft on top of the active version. Its changelog and release
+  // notes start empty, as a major's: every publication requires both (ADR
+  // 0031).
   function minorDraftOf(doc, active, userId) {
     const now = new Date();
     return {
@@ -126,8 +123,8 @@ function createVersionedEntityService({
       versionMinor: maxMinorFor(doc, active.versionMajor) + 1,
       status: 'DRAFT',
       ...cloneVersionContent(active),
-      changelog: MinorVersionDefaults.changelog,
-      releaseNotes: MinorVersionDefaults.releaseNotes,
+      changelog: '',
+      releaseNotes: '',
       createdBy: userId,
       createdAt: now,
       updatedBy: userId,
@@ -351,9 +348,9 @@ function createVersionedEntityService({
   /**
    * What a publication checks before it writes, at no cost: the version is
    * a draft, as the screen read it (readAtOf), passes the entity's own gate,
-   * and a major has its changelog and release notes. Read before the
-   * publication guard replays anything (ADR 0019), on a document already
-   * read, stored or plain.
+   * and has its changelog and release note, minor or major (ADR 0031). Read
+   * before the publication guard replays anything (ADR 0019), on a document
+   * already read, stored or plain.
    *
    * @returns {Promise<{ version: Object, readAt: Date|null }>}
    */
@@ -367,22 +364,19 @@ function createVersionedEntityService({
 
     if (activationGate) await activationGate(version, doc);
 
-    // Major releases require explicit changelog and releaseNotes. Minor
-    // releases inherit the auto-filled defaults from createMinorVersion.
-    const isMajor = version.versionMinor === 0;
-    if (isMajor && (!payload.changelog || !payload.releaseNotes)) {
-      throw createError(
-        400,
-        'changelog and releaseNotes are required to activate a major version'
-      );
-    }
+    // Every publication, minor or major, says what changes and why (ADR
+    // 0031): the texts given, or the draft's own.
+    assertReleaseTexts({
+      changelog: payload.changelog || version.changelog,
+      releaseNotes: payload.releaseNotes || version.releaseNotes,
+    });
     return { version, readAt };
   }
 
   /**
-   * Publish a DRAFT: run the entity's own gate, require release notes on a
-   * major, archive the version it replaces, and move the `activeVersion`
-   * pointer. `payload.openToAll` opens the item to every company in the same
+   * Publish a DRAFT: run the entity's own gate, require its changelog and
+   * release note, archive the version it replaces, and move the
+   * `activeVersion` pointer. `payload.openToAll` opens the item to every company in the same
    * write (ADR 0013), so a publication never stands half done.
    * `payload.updatedAt`, when given, is the update date of the draft the
    * screen read: a draft written since is not published unread (readAtOf).
@@ -422,8 +416,12 @@ function createVersionedEntityService({
       major: version.versionMajor,
       minor: version.versionMinor,
     };
-    doc.status = SkillStatuses.ACTIVE;
-    if (payload.openToAll === true) doc.audience = Audiences.ALL;
+    // An archived item published again is back for whoever reads it, its
+    // return kept in its history (ADR 0031).
+    setArchived(doc, false, userId, now);
+    // Opened in the same write, its opening dated with the publication.
+    if (payload.openToAll === true)
+      setAudience(doc, Audiences.ALL, userId, now);
     if (payload.keepOnCopy === true) {
       doc.keptOnCopy = true;
       doc.keptOnCopyAt = now;
@@ -435,10 +433,12 @@ function createVersionedEntityService({
 
   // `before`, given the item as read, may refuse or record on it what the
   // archive does, saved with it.
-  async function archive(id, before) {
+  async function archive(id, before, userId) {
     const doc = await getDoc(id);
     if (before) before(doc);
-    doc.status = SkillStatuses.ARCHIVED;
+    // Withdrawn from every company that read it, and kept in its history
+    // (ADR 0031); archived again, it stays dated by its first archiving.
+    setArchived(doc, true, userId);
     await doc.save();
     return doc;
   }

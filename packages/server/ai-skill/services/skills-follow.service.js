@@ -46,8 +46,9 @@ const asRead = (idField, read) => ({
 
 // Writes the followed fields over the item read, through the model's own
 // rules (an expertise derives its sections), on the condition that it was
-// not written since. The fields production no longer has are unset.
-async function writeIfUnchanged(kind, doc, read, { fields, unset }) {
+// not written since. The fields production no longer has are unset, and
+// the audience history is added to.
+async function writeIfUnchanged(kind, doc, read, { fields, unset, history }) {
   const { idField } = ENTITIES[kind];
   Object.assign(doc, fields);
   unset.forEach((field) => {
@@ -58,6 +59,10 @@ async function writeIfUnchanged(kind, doc, read, { fields, unset }) {
   const update = { $set: { ...fields, versions: doc.versions.map(plain) } };
   if (unset.length) {
     update.$unset = Object.fromEntries(unset.map((field) => [field, '']));
+  }
+  // Added to, never written over (audience-history.js).
+  if (history && history.length) {
+    update.$push = { audienceHistory: { $each: history } };
   }
   const written = await modelOf(kind).findOneAndUpdate(
     asRead(idField, read),

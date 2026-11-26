@@ -2054,6 +2054,10 @@ export default {
         'These expertises consumed do not exist: {expertiseIds}. Remove them from the version.',
       SKILL_OPEN_EXPERTISES_INVALID:
         'Only the published expertises this version consumes that are kept to the platform company open with the skill, and only when the skill opens to all companies.',
+      SKILL_OPEN_ARCHIVED:
+        'This item is archived: publish a version again before opening it to all companies.',
+      SKILL_OPEN_NEVER_PUBLISHED:
+        'This item was never published: publish a version before opening it to all companies.',
       SKILL_NOT_AVAILABLE_TO_COMPANY:
         'This feature is not available to your company yet.',
       SKILL_PROCEDURE_REQUIRED_TO_PUBLISH:
@@ -2166,6 +2170,12 @@ export default {
         'The check could not end: run it again.',
       SKILL_PUBLICATION_GUARD_INTERRUPTED:
         'The check was interrupted on the server: run it again.',
+      RELEASE_NOTE_REQUIRED:
+        'Write the release note: what changes for whoever uses this item.',
+      CHANGELOG_REQUIRED:
+        'Write the change log: how and why this version was written.',
+      RELEASE_NOTE_TOO_LONG:
+        'The release note may not exceed {max} characters.',
       SKILLS_PUBLICATION_SELECTION_EMPTY:
         'Select at least one skill or expertise.',
       SKILLS_PUBLICATION_SELECTION_TOO_BIG:
@@ -2204,7 +2214,9 @@ export default {
         not_found: 'version not found',
         draft_changed: 'changed since it was read: reload its page before publishing it',
         not_draft: 'no longer a draft',
-        release_notes_required: 'major version: fill in the changelog and release notes on its page',
+        release_notes_required: 'no release note: write it on its page',
+        changelog_required: 'no change log: write it on its page',
+        release_note_too_long: 'release note too long: shorten it on its page',
         failed: 'the publication failed',
       },
     },
@@ -2429,17 +2441,22 @@ export default {
       unsavedChanges: 'Unsaved changes',
       activate: 'Activate',
       activateTitle: 'Activate this version',
-      activateBody: 'Activating a version makes it immutable. Changelog and release notes are required.',
+      activateBody: 'Activating a version makes it immutable. The change log and the release note are required.',
       platformOnlyReminder:
         'This item stays visible to the platform company only.',
       openToAll: 'Open it to all companies',
       openToAllNotice:
         'This item opens to all companies as soon as it is published.',
-      activateBodyMinor: 'Activating this minor version makes it immutable and immediately changes the doctrine features consume. Changelog and notes are pre-filled from the draft (optional for a minor).',
-      changelog: 'Changelog',
+      activateBodyMinor: 'Activating this minor version makes it immutable and immediately changes the doctrine features consume. The change log and the release note are required.',
+      changelog: 'Change log',
+      changelogHint:
+        'How and why this version was written: only the platform company reads it.',
       changelogPlaceholder:
         'What changes vs the previous version — e.g. "Added the urgency rule, reworded the length criterion"',
-      releaseNotes: 'Release notes',
+      releaseNotes: 'Release note',
+      releaseNotesHint:
+        'What changes for whoever uses this item, in {max} characters at most: every company that reads it will see it.',
+      releaseNotesTooLong: 'No more than {max} characters.',
       releaseNotesPlaceholder:
         'What to know about this version — e.g. "Tested on FR promo emails only; exceptions section to validate in the field"',
       outputFormatNote:

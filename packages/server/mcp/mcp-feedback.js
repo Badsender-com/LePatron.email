@@ -7,7 +7,7 @@ const { versionLabel } = require('../ai-skill/services/version-helpers.js');
 const { withIdentity, success, failure } = require('./mcp-identity.js');
 const { ADDITIVE } = require('./mcp-tool-grammar.js');
 const { namedExpertises, bareExpertiseId } = require('./mcp-expertises.js');
-const { namedSkills } = require('./mcp-skill-catalog.js');
+const { namedSkills, bareSkillId } = require('./mcp-skill-catalog.js');
 const { bareMailingId } = require('./mcp-mailings.js');
 const {
   findReadableMailings,
@@ -16,9 +16,13 @@ const { computeExpiresAt } = require('../group/log-retention.js');
 
 const keyOf = ({ kind, id }) => `${kind}:${id}`;
 
-// An expertise or a mailing is referred to by its own id, or by the one search
-// gives it, prefixed with its kind: both name the same thing.
-const BARE_ID = { expertise: bareExpertiseId, mailing: bareMailingId };
+// A skill, an expertise or a mailing is referred to by its own id, or by the
+// one search gives it, prefixed with its kind: both name the same thing.
+const BARE_ID = {
+  skill: bareSkillId,
+  expertise: bareExpertiseId,
+  mailing: bareMailingId,
+};
 const asReferred = (reference) =>
   BARE_ID[reference.kind]
     ? { ...reference, id: BARE_ID[reference.kind](reference.id) }
@@ -133,7 +137,7 @@ const FEEDBACK_INPUT = z.object({
           .string()
           .max(MAX_ID_LENGTH)
           .describe(
-            "A skill's skillId; an expertise's expertiseId, or its id from search (expertise:…); a mailing's id, as list_mailings or search gives it (mailing:…)."
+            "A skill's skillId, or its id from search (skill:…); an expertise's expertiseId, or its id from search (expertise:…); a mailing's id, as list_mailings or search gives it (mailing:…)."
           ),
       })
     )

@@ -13,13 +13,22 @@ const {
 } = require('./mcp-identity.js');
 const { mailingOf, asPlainText } = require('./mcp-mailing-read.js');
 const expertises = require('./mcp-expertises.js');
+const {
+  servedSkills,
+  uriOf: skillUriOf,
+  SKILL_KIND,
+} = require('./mcp-skill-catalog.js');
+const { readableSkill } = require('./mcp-skill-resources.js');
+const { publishedAtOf } = require('./mcp-catalog-dates.js');
 const { MAILING_KIND } = require('./mcp-mailings.js');
 const { READ_ONLY } = require('./mcp-tool-grammar.js');
 
 // `search` and `fetch` in the shape ChatGPT expects for deep research and
 // company knowledge (ADR 0012): a result is an id, a title and a URL, and
 // `fetch` reads one back. Over the mailings the user may read, by what
-// describes them, and the expertises served, by their title and sections.
+// describes them, the expertises served, by their title and sections, and
+// the skills served, by their id, title and description (ADR 0031), with
+// the rules of find_skills and of the resources.
 
 // Enough for an assistant to pick from; it narrows its words otherwise.
 const MAX_MAILINGS = 20;
@@ -34,6 +43,14 @@ const MAX_WORDS = 10;
 // The kinds of result, the first part of their id, are declared with what
 // reads them: get_mailing and submit_feedback read these ids too.
 const { EXPERTISE_KIND } = expertises;
+
+// What fetch says of a skill or an expertise: its version, and its
+// publication date as the company sees it; a draft is not dated.
+const catalogMetadata = ({ version, draft }) => ({
+  version: versionLabel(version),
+  publishedAt: publishedAtOf(version, draft),
+  ...(draft && { draft: true }),
+});
 
 const editorUrlOf = (mailingId) => `${siteOrigin()}/editor/${mailingId}`;
 
@@ -58,11 +75,12 @@ async function search({ user, group, drafts }, { query }) {
     found = await Promise.all([
       findMailingsByWords(user, words, MAX_MAILINGS),
       expertises.searchableExpertises(group, drafts),
+      servedSkills(group, drafts),
     ]);
   } catch (error) {
     return tooLongSearch(error);
   }
-  const [mailings, served] = found;
+  const [mailings, served, skills] = found;
   const patterns = words.map(containingRegExp);
   const results = [
     ...mailings.map((mailing) => ({
@@ -78,6 +96,18 @@ async function search({ user, group, drafts }, { query }) {
         id: `${EXPERTISE_KIND}:${doc.expertiseId}`,
         title: doc.title,
         url: expertises.uriOf(doc.expertiseId),
+      })),
+    // A skill by the words of its id, title or description (ADR 0031).
+    ...skills
+      .filter(({ doc }) =>
+        patterns.every((pattern) =>
+          pattern.test(`${doc.skillId} ${doc.title} ${doc.description || ''}`)
+        )
+      )
+      .map(({ doc }) => ({
+        id: `${SKILL_KIND}:${doc.skillId}`,
+        title: doc.title,
+        url: skillUriOf(doc.skillId),
       })),
   ];
   return success({ results });
@@ -117,10 +147,19 @@ async function documentOf(id, identity) {
         title: found.doc.title,
         text: expertises.asMarkdown(found),
         url: expertises.uriOf(found.doc.expertiseId),
-        metadata: {
-          version: versionLabel(found.version),
-          ...(found.draft && { draft: true }),
-        },
+        metadata: catalogMetadata(found),
+      }
+    );
+  }
+  if (kind === SKILL_KIND && key) {
+    const read = await readableSkill(key, identity.group, identity.drafts);
+    return (
+      read && {
+        id,
+        title: read.found.doc.title,
+        text: read.text,
+        url: skillUriOf(read.found.doc.skillId),
+        metadata: catalogMetadata(read.found),
       }
     );
   }
@@ -143,7 +182,7 @@ const SEARCH_INPUT = z.object({
     .string()
     .max(MAX_QUERY_LENGTH)
     .describe(
-      `A few words, as a person types them; only the first ${MAX_WORDS} are used. French words for the expertises.`
+      `A few words, as a person types them; only the first ${MAX_WORDS} are used. For the expertises and the skills, the words of their language.`
     ),
 });
 const SEARCH_OUTPUT = z.object({ results: z.array(RESULT) });
@@ -152,7 +191,7 @@ const FETCH_INPUT = z.object({
     .string()
     .max(MAX_ID_LENGTH)
     .describe(
-      'The id of a search result, as search gave it (mailing:… or expertise:…).'
+      'The id of a search result, as search gave it (mailing:…, expertise:… or skill:…).'
     ),
 });
 const FETCH_OUTPUT = RESULT.extend({
@@ -165,7 +204,7 @@ function registerSearchAndFetch(server) {
     'search',
     {
       title: 'Search LePatron',
-      description: `Searches the mailings the user may read, by words of their name, subject, tags or email type (not their content), and the expertises, by words of their title or section headings. Every word must match, whatever its case and accents; a word may be a part of a longer one. The expertises are written in French: search them with French words. At most ${MAX_MAILINGS} mailings are returned, the most recently updated first: narrow the words to find an older one. Read a result with fetch.`,
+      description: `Searches the mailings the user may read, by words of their name, subject, tags or email type (not their content), the expertises, by words of their title or section headings, and the skills, by words of their id, title or description. Every word must match, whatever its case and accents; a word may be a part of a longer one. Search the expertises and the skills with the words of their language. At most ${MAX_MAILINGS} mailings are returned, the most recently updated first: narrow the words to find an older one. Read a result with fetch.`,
       inputSchema: SEARCH_INPUT,
       outputSchema: SEARCH_OUTPUT,
       annotations: READ_ONLY,
@@ -177,7 +216,7 @@ function registerSearchAndFetch(server) {
     {
       title: 'Read a search result',
       description:
-        'Reads a result of search by its id: a mailing as text (its facts, then its content), an expertise as Markdown.',
+        'Reads a result of search by its id: a mailing as text (its facts, then its content), an expertise or a skill as Markdown, with its version and publication date.',
       inputSchema: FETCH_INPUT,
       outputSchema: FETCH_OUTPUT,
       annotations: READ_ONLY,

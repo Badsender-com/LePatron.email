@@ -112,7 +112,7 @@ const subjectLines = {
       examplesGood: [],
       examplesBad: [],
       changelog: 'Shorter',
-      releaseNotes: '',
+      releaseNotes: 'Subjects get shorter.',
     },
   ],
 };
@@ -136,7 +136,7 @@ const subjectIdeas = {
       skillBody: DRAFT_BODY,
       testCases: [CASE],
       changelog: 'Five',
-      releaseNotes: '',
+      releaseNotes: 'Five subject lines.',
     },
   ],
 };
@@ -570,6 +570,8 @@ describe('publishing what a feature uses', () => {
                 body: '## [words] Words\n\nNew.',
                 examplesGood: [],
                 examplesBad: [],
+                changelog: 'New words',
+                releaseNotes: 'New spam words.',
               },
             ],
           },
@@ -604,6 +606,8 @@ describe('publishing what a feature uses', () => {
                 body: '## [words] Words\n\nNew.',
                 examplesGood: [],
                 examplesBad: [],
+                changelog: 'New words',
+                releaseNotes: 'New spam words.',
               },
             ],
           },
@@ -1278,6 +1282,65 @@ describe('publishing what a feature uses', () => {
           id: SUBJECT_LINES,
           reason: 'release_notes_required',
           message: expect.any(String),
+        },
+      ]);
+    });
+
+    // Every version needs both texts (ADR 0031): each refusal says which.
+    const skippedFor = async (draft) => {
+      store.seed({
+        ...SEED,
+        expertises: [
+          {
+            ...subjectLines,
+            versions: [
+              subjectLines.versions[0],
+              { ...subjectLines.versions[1], ...draft },
+            ],
+          },
+          f.EXPERTISES[1],
+        ],
+      });
+      const { skipped } = await batch.draftsToPublish([
+        { kind: 'expertise', id: SUBJECT_LINES },
+      ]);
+      return skipped;
+    };
+
+    it('leaves out a minor draft that holds the generic texts of before, for its release note', async () => {
+      expect(
+        await skippedFor({
+          changelog: 'Correction mineure',
+          releaseNotes: 'Correction mineure sans changement de doctrine.',
+        })
+      ).toEqual([
+        {
+          kind: 'expertise',
+          id: SUBJECT_LINES,
+          reason: 'release_notes_required',
+          message: 'RELEASE_NOTE_REQUIRED',
+        },
+      ]);
+    });
+
+    it('leaves out a draft without a change log, saying so', async () => {
+      expect(await skippedFor({ changelog: '' })).toEqual([
+        {
+          kind: 'expertise',
+          id: SUBJECT_LINES,
+          reason: 'changelog_required',
+          message: 'CHANGELOG_REQUIRED',
+        },
+      ]);
+    });
+
+    it('leaves out a draft whose release note is too long, saying so', async () => {
+      expect(await skippedFor({ releaseNotes: 'x'.repeat(501) })).toEqual([
+        {
+          kind: 'expertise',
+          id: SUBJECT_LINES,
+          reason: 'release_note_too_long',
+          message: 'RELEASE_NOTE_TOO_LONG',
         },
       ]);
     });

@@ -246,7 +246,11 @@ describe('drafts mode', () => {
         id: 'expertise:redaction.subject-line',
       });
       expect(document.text).toContain(DRAFT_SUBJECT);
-      expect(document.metadata).toEqual({ version: '3.0', draft: true });
+      expect(document.metadata).toEqual({
+        version: '3.0',
+        publishedAt: null,
+        draft: true,
+      });
     });
 
     it('tells the client its prompts and resources changed, so it reloads them', async () => {

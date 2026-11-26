@@ -43,6 +43,18 @@ const MAX_CONSUMED_EXPERTISES = 20;
 // never a page of text.
 const EXPERTISE_SEARCH_MAX_LENGTH = 100;
 
+// What a release note may be, at most: read in an announcement of the
+// changes, every publication writes one (ADR 0031).
+const MAX_RELEASE_NOTE_LENGTH = 500;
+
+// The generic texts a minor version used to get by default, before every
+// publication wrote its own (ADR 0031): recognised as saying nothing, never
+// written again. French, as they were stored next to the doctrine.
+const LEGACY_MINOR_VERSION_TEXTS = Object.freeze({
+  changelog: 'Correction mineure',
+  releaseNotes: 'Correction mineure sans changement de doctrine.',
+});
+
 module.exports = {
   STATUSES,
   STATUS_VALUES,
@@ -52,4 +64,6 @@ module.exports = {
   AUDIENCE_VALUES,
   MAX_CONSUMED_EXPERTISES,
   EXPERTISE_SEARCH_MAX_LENGTH,
+  MAX_RELEASE_NOTE_LENGTH,
+  LEGACY_MINOR_VERSION_TEXTS,
 };

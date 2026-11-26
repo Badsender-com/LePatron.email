@@ -26,6 +26,7 @@ const {
 } = require('./mcp-mailing-read.js');
 const { registerPreviewApp } = require('./mcp-preview-app.js');
 const { registerSearchAndFetch } = require('./mcp-search.js');
+const { registerListChanges } = require('./mcp-list-changes.js');
 const { guardCalls } = require('./mcp-call-guard.js');
 const { hasScope, isConsultant, WRITE_SCOPE } = require('./mcp-identity.js');
 const { siteOrigin } = require('../utils/site-origin.js');
@@ -42,6 +43,7 @@ const INSTRUCTIONS = [
   "Apply them as they are, and always answer in the user's language, translating what you quote from them.",
   'To find a skill, search with French words, or list them all with find_skills and pick by their descriptions.',
   "The language of the email you work on may differ from the user's: an expertise may apply to emails in some languages only, so give find_applicable_expertises the language of the email.",
+  'To tell what is new in the skills and expertises, read list_changes: never guess a date or a reason.',
 ].join(' ');
 
 // What starts the retex loop (ADR 0021), in every client: the method lives in
@@ -127,6 +129,8 @@ function createMcpServer({ authInfo } = {}) {
   registerMailingResources(server);
   registerPreviewApp(server);
   registerSearchAndFetch(server);
+  // What changed in the catalog, as this company sees it (ADR 0031).
+  registerListChanges(server);
   // Only for a token that may draft skills and expertises (ADR 0014): the
   // others never see the writing tools.
   if (hasScope(authInfo, WRITE_SCOPE)) {

@@ -46,7 +46,7 @@ Repérer, sur la page **Skills & Expertise** :
 5. Recommencer, et cette fois **Publier malgré les écarts** : le brouillon devient la version active.
 6. **Contrat de sortie :** sur un nouveau brouillon de S, changer le corps pour que la réponse ne suive plus le contrat (par exemple demander du texte libre à la place du JSON attendu). Le rejeu affiche **La réponse ne respecte pas le contrat de sortie.** sous **Cette version**, et la publication reste possible.
 7. **Brouillon modifié après la vérification :** lancer la vérification, puis, dans un autre onglet, modifier et enregistrer le brouillon. Revenir et **Publier malgré les écarts** : la publication est refusée, le brouillon a changé depuis sa lecture. Recharger et recommencer.
-8. **Refusée de toute façon :** sur un brouillon majeur de S, **Publier** sans notes de version : le refus s'affiche tout de suite, sans fenêtre de vérification.
+8. **Textes de publication :** sur un brouillon mineur de S sans note de version, **Publier** : dans **Activer cette version**, le **Journal des modifications** et la **Note de version** portent un astérisque et le bouton reste grisé tant que l'un des deux manque. Une note de version de 501 caractères affiche « Pas plus de 500 caractères. » et le compteur dépasse 500. Un ancien brouillon mineur qui porte « Correction mineure sans changement de doctrine. » montre des champs vides, dans la fenêtre comme dans le panneau des versions.
 9. **Plafond :** sur une skill de fonctionnalité à plus de 30 cas, la fenêtre annonce 60 appels et le nombre de cas qui ne seront pas rejoués.
 10. **Moteur indisponible :** désactiver le moteur IA du groupe plateforme, relancer une vérification : chaque cas affiche **L'appel à l'IA a échoué.**, et la publication reste possible. Réactiver le moteur.
 
@@ -70,7 +70,7 @@ Sur L, créer un brouillon et le publier : la confirmation habituelle suffit, au
 5. **Annuler la publication** : le message dit que les brouillons restent des brouillons ; rien n'a été publié.
 6. Recommencer et publier : le **Résultat de la publication** liste S et L publiés, et garde les éléments laissés de côté à l'étape 3, avec leur raison.
 7. **L'expertise, puis la skill :** onglet **Expertise**, cocher E avec un nouveau brouillon, et publier : la vérification rejoue les cas de S avec le brouillon de E en place. Puis, onglet **Skills**, publier le brouillon de S : sa vérification rejoue ses cas avec E déjà publiée.
-8. **Version majeure sans notes :** un brouillon majeur sans changelog ni notes de version, coché dans un lot : il est **laissé de côté** dès l'ouverture de la fenêtre, « version majeure : renseignez le changelog et les notes de version sur sa page », avant toute vérification, et les autres sont publiés.
+8. **Brouillon sans ses textes :** un brouillon mineur sans journal des modifications, coché dans un lot : il est **laissé de côté** dès l'ouverture de la fenêtre, « sans journal des modifications : écrivez-le sur sa page », avant toute vérification, et les autres sont publiés. De même pour un ancien brouillon mineur qui porte encore la phrase générique (« sans note de version : écrivez-la sur sa page ») et pour une note de version de plus de 500 caractères (« note de version trop longue : raccourcissez-la sur sa page »).
 9. **Sur une copie :** la fenêtre propose **Garder sur cette copie**, cochée. Publier : chaque élément publié est gardé sur la copie. Recommencer case décochée : les éléments suivent toujours la production.
 
 ## 7. Changer ce qu'une fonctionnalité utilise sans publier

@@ -30,12 +30,13 @@ Dans une conversation, activez LePatron avec le bouton **+**, puis **Connectors*
 
 - lire les expertises de l'entreprise plateforme et retrouver celles qui s'appliquent à votre demande ;
 - utiliser les skills de l'entreprise plateforme, que vous retrouvez aussi parmi les commandes proposées ;
+- dire ce qui a changé dans les skills et les expertises sur une période ([Suivre les nouveautés](./nouveautes.md)) ;
 - envoyer un avis à l'entreprise plateforme quand vous le lui demandez ;
 - signaler un retour d'expérience sur une skill ou une expertise, avec votre accord ([Retours d'expérience](./retours-d-experience.md)).
 
 ### Ne plus confirmer chaque lecture
 
-C'est Claude, et non LePatron, qui vous demande d'autoriser chaque appel d'un outil. LePatron lui indique seulement quels outils ne font que lire. Dans les réglages du connecteur LePatron de Claude, autorisez une fois pour toutes les outils de lecture (`find_skills`, `find_applicable_expertises`, `search`, `fetch`, `list_mailings`, `get_mailing`…), et gardez la confirmation pour ceux qui écrivent (`report_retex`, `submit_feedback`, les brouillons et la publication).
+C'est Claude, et non LePatron, qui vous demande d'autoriser chaque appel d'un outil. LePatron lui indique seulement quels outils ne font que lire. Dans les réglages du connecteur LePatron de Claude, autorisez une fois pour toutes les outils de lecture (`find_skills`, `find_applicable_expertises`, `list_changes`, `search`, `fetch`, `list_mailings`, `get_mailing`…), et gardez la confirmation pour ceux qui écrivent (`report_retex`, `submit_feedback`, les brouillons et la publication).
 
 ## Claude Code
 

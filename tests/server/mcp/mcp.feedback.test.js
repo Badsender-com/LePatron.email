@@ -183,6 +183,32 @@ describe('feedback and retex', () => {
     });
   });
 
+  // search gives a skill's id prefixed with its kind too (`skill:…`).
+  it('records a skill referred to by the id search gives, once, by its skillId', async () => {
+    const client = await harness.connectAs(f.FRANK);
+    const { tools } = await client.listTools();
+    const { references } = tools.find(
+      (tool) => tool.name === 'submit_feedback'
+    ).inputSchema.properties;
+
+    expect(references.items.properties.id.description).toMatch(
+      /skillId, or its id from search \(skill:/
+    );
+    expect(
+      await submit(f.FRANK, {
+        rating: 'up',
+        references: [
+          { kind: 'skill', id: 'skill:redaction.subject-ideas' },
+          { kind: 'skill', id: 'redaction.subject-ideas' },
+        ],
+      })
+    ).toEqual({ recorded: true });
+    const [feedback] = harness.stored('feedbacks');
+    expect(feedback.references).toEqual([
+      expect.objectContaining({ kind: 'skill', id: 'redaction.subject-ideas' }),
+    ]);
+  });
+
   it('keeps who sent it, from which application, until the company’s log retention ends', async () => {
     const client = await harness.connectAs(f.FRANK, { clientId: 'claude' });
     const before = Date.now();

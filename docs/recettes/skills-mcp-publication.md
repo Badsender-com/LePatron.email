@@ -29,7 +29,7 @@ Sur le staging :
 
 ## 3. Publier avec la confirmation
 
-- [ ] Si le brouillon de E est une version majeure, demander de le publier sans changelog : refus avant toute vérification (« changelog and releaseNotes are required… »). Les lui faire écrire.
+- [ ] Demander de publier le brouillon de E, mineur ou majeur, sans changelog : refus avant toute vérification (« A changelog is required to publish a version… »). Sans note de version, ou avec une note de plus de 500 caractères : refus de même, en une phrase qui le dit. Les lui faire écrire.
 - [ ] Demander à l'assistant de publier le brouillon de E. Le client demande votre accord avant de lancer l'outil : l'accepter.
 - [ ] Premier appel : la réponse arrive tout de suite, rien n'est publié (le back-office montre toujours la version active d'avant). Elle dit `status: running`, la fonctionnalité qui utilise E et le nombre d'appels à l'IA.
 - [ ] L'assistant relit la vérification (`read_publication_check`) : le client ne demande pas d'accord pour cet outil. Une fois `status: done`, il montre chaque cas de test avant et après, les skills sans cas, et une clé de confirmation.

@@ -156,12 +156,12 @@ describe.each(ENTITIES)('versioned lifecycle — $label', (entity) => {
       expect(doc.save).toHaveBeenCalled();
     });
 
-    it('pre-fills the release notes, so activation does not ask for them', async () => {
+    it('leaves its texts to write, as a major does (ADR 0031)', async () => {
       build({ versions: [makeVersion()] });
       await service.createMinorVersion('an-id', USER_ID);
       const created = doc.versions[1];
-      expect(created.changelog).toBeTruthy();
-      expect(created.releaseNotes).toBeTruthy();
+      expect(created.changelog).toBe('');
+      expect(created.releaseNotes).toBe('');
     });
 
     it('refuses when nothing is published yet', async () => {
@@ -449,7 +449,7 @@ describe.each(ENTITIES)('versioned lifecycle — $label', (entity) => {
       await service.activateVersion(
         'an-id',
         { major: 1, minor: 1 },
-        { updatedAt: READ_AT.toISOString() },
+        { updatedAt: READ_AT.toISOString(), changelog: 'c', releaseNotes: 'r' },
         USER_ID
       );
 
@@ -561,10 +561,13 @@ describe.each(ENTITIES)('versioned lifecycle — $label', (entity) => {
       });
       await expect(
         service.activateVersion('an-id', { major: 1, minor: 0 }, {}, USER_ID)
-      ).rejects.toThrow(/changelog and releaseNotes are required/);
+      ).rejects.toMatchObject({
+        status: 400,
+        message: 'RELEASE_NOTE_REQUIRED',
+      });
     });
 
-    it('does not demand them for a minor', async () => {
+    it('takes them from a minor draft that carries them', async () => {
       build({
         versions: [
           makeVersion({
@@ -625,6 +628,68 @@ describe.each(ENTITIES)('versioned lifecycle — $label', (entity) => {
       expect(doc.status).toBe('ARCHIVED');
       expect(doc.versions[0].status).toBe('ACTIVE');
       expect(doc.save).toHaveBeenCalled();
+    });
+
+    // Withdrawn from every company that read it, and kept (ADR 0031).
+    it('dates the archiving and keeps it in the history, with who did it', async () => {
+      build({ versions: [makeVersion({ status: 'ACTIVE' })] });
+      doc.status = 'ACTIVE';
+      doc.audience = 'all';
+
+      await service.archive('an-id', null, USER_ID);
+
+      expect(doc.archivedAt).toBeInstanceOf(Date);
+      expect(doc.audienceHistory).toEqual([
+        { audience: 'all', archived: true, at: doc.archivedAt, _by: USER_ID },
+      ]);
+    });
+
+    it('keeps the date of the first archiving when archived again', async () => {
+      build({ versions: [makeVersion({ status: 'ACTIVE' })] });
+      const first = new Date('2026-11-10T08:00:00Z');
+      Object.assign(doc, {
+        status: 'ARCHIVED',
+        archivedAt: first,
+        audienceHistory: [],
+      });
+
+      await service.archive('an-id', null, USER_ID);
+
+      expect(doc.archivedAt).toBe(first);
+      expect(doc.audienceHistory).toEqual([]);
+    });
+
+    it('clears the archiving of an item published again, and keeps its return', async () => {
+      build({
+        versions: [
+          makeVersion({ status: 'ACTIVE' }),
+          makeVersion({ versionMinor: 1, status: 'DRAFT' }),
+        ],
+      });
+      Object.assign(doc, {
+        status: 'ARCHIVED',
+        audience: 'all',
+        archivedAt: new Date('2026-11-10T08:00:00Z'),
+        audienceHistory: [],
+      });
+
+      await service.activateVersion(
+        'an-id',
+        { major: 1, minor: 1 },
+        { changelog: 'c', releaseNotes: 'r' },
+        USER_ID
+      );
+
+      expect(doc.status).toBe('ACTIVE');
+      expect(doc.archivedAt).toBeNull();
+      expect(doc.audienceHistory).toEqual([
+        {
+          audience: 'all',
+          archived: false,
+          at: doc.versions[1].activatedAt,
+          _by: USER_ID,
+        },
+      ]);
     });
   });
 });

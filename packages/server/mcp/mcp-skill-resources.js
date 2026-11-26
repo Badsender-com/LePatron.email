@@ -23,6 +23,11 @@ const {
 } = require('../ai-skill/constant/skill-constants.js');
 const { draftNotice } = require('./mcp-drafts.js');
 const { READ_ONLY } = require('./mcp-tool-grammar.js');
+const {
+  publishedAtOf,
+  versionLine,
+  lastModifiedOf,
+} = require('./mcp-catalog-dates.js');
 
 // What an assistant reads of a skill: a task skill's procedure and the
 // expertises it consumes, a feature skill's instructions. An MCP prompt is only
@@ -44,7 +49,7 @@ function asMarkdown(found, readableIds = []) {
   return [
     `# ${doc.title}`,
     '',
-    `Version ${versionLabel(version)}.`,
+    versionLine(version, found.draft),
     '',
     ...(notice ? [notice, ''] : []),
     body,
@@ -54,13 +59,32 @@ function asMarkdown(found, readableIds = []) {
   ].join('\n');
 }
 
+/**
+ * A skill the company is served, as Markdown, with the expertises to read
+ * first among those it may read; null when it is not served to it. Read
+ * through its resource, and through `fetch` (mcp-search.js).
+ */
+async function readableSkill(skillId, group, drafts = false) {
+  const found = await servedSkill(skillId, group, drafts);
+  if (!found) return null;
+  const readable = await expertises.consumedExpertises(
+    found.version.consumedExpertiseIds,
+    group,
+    { drafts }
+  );
+  const readableIds = readable.map(({ doc }) => doc.expertiseId);
+  return { found, text: asMarkdown(found, readableIds) };
+}
+
 function asResource({ doc, version, draft }) {
+  const lastModified = lastModifiedOf(version);
   return {
     uri: uriOf(doc.skillId),
     name: doc.skillId,
     title: draft ? `${doc.title} (draft ${versionLabel(version)})` : doc.title,
     description: doc.description || undefined,
     mimeType: 'text/markdown',
+    ...(lastModified && { annotations: { lastModified } }),
   };
 }
 
@@ -79,21 +103,11 @@ function registerSkillResources(server) {
       mimeType: 'text/markdown',
     },
     withIdentity(async ({ group, drafts }, uri, { skillId }) => {
-      const found = await servedSkill(skillId, group, drafts);
-      if (!found) throw new ResourceNotFoundError(uri.href);
-      const readable = await expertises.consumedExpertises(
-        found.version.consumedExpertiseIds,
-        group,
-        { drafts }
-      );
-      const readableIds = readable.map(({ doc }) => doc.expertiseId);
+      const read = await readableSkill(skillId, group, drafts);
+      if (!read) throw new ResourceNotFoundError(uri.href);
       return {
         contents: [
-          {
-            uri: uri.href,
-            mimeType: 'text/markdown',
-            text: asMarkdown(found, readableIds),
-          },
+          { uri: uri.href, mimeType: 'text/markdown', text: read.text },
         ],
       };
     })
@@ -125,6 +139,13 @@ const FIND_OUTPUT = z.object({
       title: z.string(),
       description: z.string(),
       nature: z.enum(SkillNatureValues),
+      version: z.string(),
+      publishedAt: z
+        .string()
+        .nullable()
+        .describe(
+          'When this version was published, in UTC; null for a draft, or when it was never recorded.'
+        ),
       draft: z.boolean().optional(),
       uri: z.string(),
       openRetex: z
@@ -175,6 +196,8 @@ function registerFindSkills(server) {
             title: doc.title,
             description: doc.description || '',
             nature: natureOf(version),
+            version: versionLabel(version),
+            publishedAt: publishedAtOf(version, draft),
             ...(draft && { draft: true }),
             uri: uriOf(doc.skillId),
           })
@@ -191,4 +214,4 @@ function registerFindSkills(server) {
   );
 }
 
-module.exports = { registerSkillResources, registerFindSkills };
+module.exports = { registerSkillResources, registerFindSkills, readableSkill };

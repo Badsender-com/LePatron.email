@@ -17,6 +17,7 @@ const {
 } = require('../constant/skill-constants.js');
 const { newItemAudience } = require('../services/audience.js');
 const { followFields } = require('./follow-fields.js');
+const { audienceHistoryFields } = require('./audience-change.schema.js');
 
 const SectionSchema = new Schema(
   {
@@ -108,6 +109,7 @@ const ExpertiseSchema = new Schema(
       default: newItemAudience,
     },
     ...followFields(),
+    ...audienceHistoryFields(),
     activeVersion: {
       type: ActiveVersionSchema,
       default: () => ({ major: null, minor: 0 }),

@@ -113,6 +113,7 @@ describe('published.repository', () => {
           'versions.versionMajor',
           'versions.versionMinor',
           'versions.status',
+          'versions.activatedAt',
         ]);
         expect(found.version).not.toHaveProperty('testCases');
       }

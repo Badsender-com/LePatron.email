@@ -56,17 +56,17 @@ La première réponse et la publication disent aussi ce dont la publication aver
 
 **Un élément qui a plusieurs brouillons.** Quand une skill ou une expertise a plus d'un brouillon, l'outil ne choisit pas : il les liste, et l'assistant donne la version à publier (`version`, par exemple `2.1`) à chaque appel. Avec un seul brouillon, il n'y a rien à donner.
 
-**Changelog et notes de version.** Une version majeure se publie avec son changelog et ses notes de version, comme dans le back-office : ceux du brouillon, ou ceux que vous donnez à l'assistant. Sans eux, l'outil refuse avant la vérification, et l'assistant doit les écrire. La clé leur est liée : donnez les mêmes aux deux temps.
+**Journal des modifications et note de version.** Chaque version, mineure comme majeure, se publie avec son journal des modifications (`changelog`) et sa note de version (`releaseNotes`), comme dans le back-office : ceux du brouillon, ou ceux que vous donnez à l'assistant. La note de version dit, en 500 caractères au plus, ce qui change pour qui utilise l'élément : toutes les entreprises qui le lisent la verront ([Suivre les nouveautés](./nouveautes.md)). Le journal des modifications dit comment et pourquoi la version a été écrite : seuls l'entreprise plateforme, et un super admin quel que soit le connecteur, le lisent. Sans eux, l'outil refuse avant la vérification, et l'assistant doit les écrire. La clé leur est liée : donnez les mêmes aux deux temps.
 
 **Sur une copie** (staging, développement), l'élément publié est gardé sur la copie, comme la publication du back-office le propose par défaut : le suivi suivant de la production ne la défait pas. La réponse le dit (`keptOnCopy`).
 
-La clé est liée à ce brouillon exact, à vous, au changelog et aux notes de version vérifiés, et à une heure. L'outil la refuse dans ces cas :
+La clé est liée à ce brouillon exact, à vous, au journal des modifications et à la note de version vérifiés, et à une heure. L'outil la refuse dans ces cas :
 
 | Cas                                                                                            | Réponse de l'outil                                                                                                                                |
 | ---------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------- |
 | le brouillon a changé depuis la vérification                                                   | « The draft changed after it was checked: call publish_draft without a confirmation to check it again. »                                          |
 | la clé a plus d'une heure, est inventée, ou donnée pour un autre élément ou une autre personne | « This confirmation key is not valid for this draft, or has expired: call publish_draft without one to check the draft again. »                   |
-| le changelog ou les notes de version ne sont pas ceux vérifiés                                 | « The changelog or release notes differ from the ones checked: give the same ones, or call publish_draft without a confirmation to check again. » |
+| le journal des modifications ou la note de version ne sont pas ceux vérifiés                   | « The changelog or release notes differ from the ones checked: give the same ones, or call publish_draft without a confirmation to check again. » |
 | l'élément a plusieurs brouillons et aucune version n'est donnée                                | « "…" has several drafts: give the version to publish. », avec les brouillons                                                                     |
 | l'élément n'a pas de brouillon                                                                 | « "…" has no draft to publish: write one first, or it is already published. »                                                                     |
 
@@ -90,7 +90,7 @@ Il le fait en deux appels, comme une publication :
 
 Quand l'audience est déjà celle demandée, l'outil le dit (`changed: false`) et ne change rien, à l'un comme à l'autre appel. Sur une copie (staging, développement), l'élément est gardé sur la copie, pour que le suivi suivant de la production ne défasse pas le changement ; la réponse le dit (`keptOnCopy`).
 
-Les entreprises lisent toujours la version active, jamais un brouillon. Une skill ou une expertise jamais publiée ne s'ouvre pas : « "…" was never published: publish a version before opening it. » Une archivée non plus.
+Les entreprises lisent toujours la version active, jamais un brouillon. Une skill ou une expertise jamais publiée ne s'ouvre pas : « "…" was never published: publish a version before opening it. » Une archivée non plus, tant qu'une version n'en a pas été republiée : « "…" is archived: publish a version of it again before opening it. » Le back-office refuse les mêmes, avec « Cet élément n'a jamais été publié… » ou « Cet élément est archivé : republiez une version avant de l'ouvrir à toutes les entreprises. »
 
 Refermer une audience est immédiat : les assistants des entreprises ne la lisent plus à leur appel suivant.
 

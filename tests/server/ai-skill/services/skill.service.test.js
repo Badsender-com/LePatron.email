@@ -233,7 +233,12 @@ describe('skill.service', () => {
     // What the publication's confirmation sends to open a skill to every
     // company (ADR 0013).
     it('patches the audience', async () => {
-      const doc = mockSkillDoc({ audience: 'platform' });
+      const doc = mockSkillDoc({
+        audience: 'platform',
+        status: 'ACTIVE',
+        activeVersion: { major: 1, minor: 0 },
+        versions: [{ versionMajor: 1, versionMinor: 0, status: 'ACTIVE' }],
+      });
       LePatronSkills.findOne.mockResolvedValue(doc);
 
       await skillService.updateSkill('generic.text', { audience: 'all' });
@@ -292,7 +297,7 @@ describe('skill.service', () => {
       ).rejects.toMatchObject({ status: 400 });
     });
 
-    it('increments the minor on top of the active version and pre-fills changelog', async () => {
+    it('increments the minor on top of the active version, its texts left to write', async () => {
       const doc = mockSkillDoc({
         activeVersion: { major: 1, minor: 0 },
         versions: [
@@ -311,8 +316,9 @@ describe('skill.service', () => {
       expect(created.versionMinor).toBe(1);
       expect(created.status).toBe('DRAFT');
       expect(created.skillBody).toBe('body');
-      expect(created.changelog).toBe('Correction mineure');
-      expect(created.releaseNotes).toMatch(/Correction mineure/);
+      // Every publication writes its own (ADR 0031).
+      expect(created.changelog).toBe('');
+      expect(created.releaseNotes).toBe('');
     });
   });
 
@@ -553,7 +559,7 @@ describe('skill.service', () => {
       ).rejects.toMatchObject({ status: 400 });
     });
 
-    it('accepts a minor release without payload (defaults from createMinor)', async () => {
+    it('publishes a minor release with the texts its draft carries', async () => {
       const doc = mockSkillDoc({
         activeVersion: { major: 1, minor: 0 },
         versions: [
@@ -563,8 +569,8 @@ describe('skill.service', () => {
             versionMinor: 1,
             status: 'DRAFT',
             ...SCHEMAS,
-            changelog: 'Correction mineure',
-            releaseNotes: 'Correction mineure sans changement de doctrine.',
+            changelog: 'Typo in the prompt',
+            releaseNotes: 'A typo fixed.',
           },
         ],
       });

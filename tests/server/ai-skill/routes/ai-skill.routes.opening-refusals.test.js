@@ -124,6 +124,59 @@ describe('the expertises named to open with a change of audience', () => {
   });
 });
 
+// A company reads the active version only: an item never published is never
+// opened, from the back office as from an assistant (ADR 0031).
+describe('opening an item never published from its details', () => {
+  it.each([
+    ['a skill', '/api/ai-skills/qc.review', 'ai-skills', 'qc.review'],
+    ['an expertise', '/api/ai-expertise/qc.draft', 'ai-expertise', 'qc.draft'],
+  ])('is refused for %s, and writes nothing', async (_case, path, kind, id) => {
+    const res = await request(aiSkillApp())
+      .patch(path)
+      .send({ audience: 'all' });
+
+    expect(res.status).toBe(409);
+    expect(res.body.message).toBe('SKILL_OPEN_NEVER_PUBLISHED');
+    const stored = await read(`/api/${kind}/${id}`);
+    expect(stored.audience).toBe('platform');
+    expect(stored.audienceHistory || []).toEqual([]);
+  });
+
+  it('still keeps an item never published to the platform company', async () => {
+    const res = await request(aiSkillApp())
+      .patch('/api/ai-expertise/qc.draft')
+      .send({ audience: 'platform', title: 'Renamed' });
+
+    expect(res.status).toBe(200);
+    expect(res.body.title).toBe('Renamed');
+  });
+});
+
+// An archived item is read by no company until a version of it is published
+// again: opening it changes nothing a client reads (ADR 0031).
+describe('opening an archived item from its details', () => {
+  it.each([
+    ['a skill', 'ai-skills', 'qc.live'],
+    ['an expertise', 'ai-expertise', 'qc.other'],
+  ])('is refused for %s, and writes nothing', async (_case, kind, id) => {
+    const app = aiSkillApp();
+    expect((await request(app).post(`/api/${kind}/${id}/archive`)).status).toBe(
+      200
+    );
+    const archived = await read(`/api/${kind}/${id}`);
+
+    const res = await request(app)
+      .patch(`/api/${kind}/${id}`)
+      .send({ audience: 'all' });
+
+    expect(res.status).toBe(409);
+    expect(res.body.message).toBe('SKILL_OPEN_ARCHIVED');
+    const stored = await read(`/api/${kind}/${id}`);
+    expect(stored).toMatchObject({ status: 'ARCHIVED', audience: 'platform' });
+    expect(stored.audienceHistory).toEqual(archived.audienceHistory);
+  });
+});
+
 describe('a member of a company who is not a super admin', () => {
   it.each([
     ['/api/ai-skills/qc.review/versions/1.0/platform-only-expertises'],

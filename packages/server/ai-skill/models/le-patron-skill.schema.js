@@ -19,6 +19,7 @@ const {
 } = require('../constant/skill-constants.js');
 const { newItemAudience } = require('../services/audience.js');
 const { followFields } = require('./follow-fields.js');
+const { audienceHistoryFields } = require('./audience-change.schema.js');
 
 const INPUT_PLACEHOLDER_REGEX = /\{\{\s*input\b[^}]*\}\}/;
 
@@ -133,6 +134,7 @@ const LePatronSkillSchema = new Schema(
     // version is a feature skill's.
     servedToAssistants: { type: Boolean, default: false },
     ...followFields(),
+    ...audienceHistoryFields(),
     activeVersion: {
       type: ActiveVersionSchema,
       default: () => ({ major: null, minor: 0 }),

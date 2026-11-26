@@ -10,6 +10,7 @@ const manifestRegistry = require('./manifest-registry.js');
 const { normalizeScopes } = require('./expertise-scope.js');
 const { idsUsedByFeatures } = require('./feature-use.js');
 const { archiveUsage, watchUsage } = require('./usage-change.js');
+const { setAudience } = require('./audience-history.js');
 const { saveItem } = require('./item-save.js');
 const {
   createVersionedEntityService,
@@ -197,7 +198,9 @@ async function updateExpertise(expertiseId, patch, options = {}) {
   const settle = watchUsage('expertise', exp);
   for (const key of PATCHABLE_FIELDS) {
     if (patch[key] === undefined) continue;
-    exp[key] = key === 'scope' ? normalizeScopes(patch[key]) : patch[key];
+    // Its changes are kept (ADR 0031).
+    if (key === 'audience') setAudience(exp, patch.audience, options.userId);
+    else exp[key] = key === 'scope' ? normalizeScopes(patch[key]) : patch[key];
   }
   const warnings = settle(exp, options.userId);
   await saveItem(exp, options);
@@ -251,9 +254,13 @@ const {
  */
 async function archiveExpertise(expertiseId, { userId } = {}) {
   let warnings = [];
-  const expertise = await versioned.archive(expertiseId, (doc) => {
-    warnings = archiveUsage('expertise', doc, { userId });
-  });
+  const expertise = await versioned.archive(
+    expertiseId,
+    (doc) => {
+      warnings = archiveUsage('expertise', doc, { userId });
+    },
+    userId
+  );
   return { expertise, warnings };
 }
 

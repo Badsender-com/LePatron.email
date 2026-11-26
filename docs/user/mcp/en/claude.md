@@ -28,12 +28,13 @@ In a conversation, turn LePatron on with the **+** button, then **Connectors**. 
 
 - read the platform company's expertises and find the ones that apply to your request;
 - use the platform company's skills, which also show among the suggested commands;
+- tell what changed in the skills and expertises over a period ([Following what is new](./catalog-changes.md));
 - send feedback to the platform company when you ask it to;
 - report a retex on a skill or an expertise, with your approval ([Retex](./retex.md)).
 
 ### Stop confirming each read
 
-Claude, not LePatron, asks you to allow each call of a tool. LePatron only tells it which tools merely read. In Claude's settings of the LePatron connector, allow the reading tools (`find_skills`, `find_applicable_expertises`, `search`, `fetch`, `list_mailings`, `get_mailing`…) once and for all, and keep the confirmation for those that write (`report_retex`, `submit_feedback`, the drafts and the publication).
+Claude, not LePatron, asks you to allow each call of a tool. LePatron only tells it which tools merely read. In Claude's settings of the LePatron connector, allow the reading tools (`find_skills`, `find_applicable_expertises`, `list_changes`, `search`, `fetch`, `list_mailings`, `get_mailing`…) once and for all, and keep the confirmation for those that write (`report_retex`, `submit_feedback`, the drafts and the publication).
 
 ## Claude Code
 

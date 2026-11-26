@@ -163,16 +163,23 @@ export default {
               :clearable="v.status === 'DRAFT'"
               :readonly="v.status !== 'DRAFT'"
             />
+            <!-- Every draft, minor or major, is published with both (ADR 0031). -->
             <bs-textarea
-              v-if="isMajorDraft(v)"
+              v-if="v.status === 'DRAFT'"
               v-model="draftFor(v).changelog"
               :label="$t('aiSkills.version.changelog')"
+              :hint="$t('aiSkills.version.changelogHint')"
               :rows="2"
             />
             <bs-textarea
-              v-if="isMajorDraft(v)"
+              v-if="v.status === 'DRAFT'"
               v-model="draftFor(v).releaseNotes"
               :label="$t('aiSkills.version.releaseNotes')"
+              :hint="
+                $t('aiSkills.version.releaseNotesHint', { max: maxReleaseNote })
+              "
+              :error-messages="releaseNoteErrors(v)"
+              :counter="maxReleaseNote"
               :rows="2"
             />
             <div
@@ -193,6 +200,7 @@ export default {
                 text
                 color="primary"
                 :loading="saving"
+                :disabled="releaseNoteTooLong(v)"
                 @click="emitSaveVersion(v)"
               >
                 {{ $t('aiSkills.version.saveDraft') }}
@@ -201,6 +209,7 @@ export default {
                 color="accent"
                 elevation="0"
                 :loading="saving"
+                :disabled="releaseNoteTooLong(v)"
                 @click="emitActivateVersion(v)"
               >
                 <lucide-check-circle2 :size="18" class="mr-2" />
