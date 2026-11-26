@@ -89,6 +89,20 @@ describe('"Add a row"', () => {
     const button = document.querySelector('.bb-modal__add-row');
     expect(button.disabled).toBe(false);
     expect(button.hasAttribute('title')).toBe(false);
+    expect(button.hasAttribute('aria-describedby')).toBe(false);
+    expect(document.querySelector('.bb-modal__row-limit')).toBeNull();
+  });
+
+  // A tooltip is all a pointer gets: a keyboard or a touch screen never shows
+  // it. The reason is written under the button, which it describes.
+  it(`says why it is disabled, under it, at ${MAX_ROWS} rows`, async () => {
+    await withRows(MAX_ROWS);
+
+    const button = document.querySelector('.bb-modal__add-row');
+    const hint = document.querySelector('.bb-modal__row-limit');
+    expect(hint.textContent.trim()).toBe('block-builder-row-limit');
+    expect(button.nextElementSibling).toBe(hint);
+    expect(button.getAttribute('aria-describedby')).toBe(hint.id);
   });
 
   it(`adds nothing past ${MAX_ROWS} rows`, async () => {

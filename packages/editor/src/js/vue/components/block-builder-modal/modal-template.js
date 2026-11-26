@@ -118,7 +118,11 @@ module.exports = `<modal-component
           class="bb-modal__add-row"
           :disabled="rowLimitReached"
           :title="rowLimitReached ? vm.t('block-builder-row-limit', { max: maxRows }) : null"
+          :aria-describedby="rowLimitReached ? rowLimitHintId : null"
           @click.prevent="addRow">+ {{ vm.t('block-builder-add-row') }}</button>
+        <p v-if="rowLimitReached" :id="rowLimitHintId" class="bb-modal__row-limit">
+          {{ vm.t('block-builder-row-limit', { max: maxRows }) }}
+        </p>
 
 ${STRUCTURE_TEMPLATE}
 

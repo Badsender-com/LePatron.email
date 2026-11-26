@@ -37,12 +37,22 @@
 
     // At the row limit (MAX_ROWS). After :hover, so the button does not
     // light up as if it still worked.
+    // Its explanation, `__row-limit`, sits right under it.
     &:disabled {
+      margin-bottom: 0.25rem;
       cursor: default;
       opacity: 0.4;
       border-color: #c8c8c8;
       color: inherit;
     }
+  }
+
+  // Why "Add a row" is greyed out, said on the page rather than only in its
+  // tooltip, which a touch screen or a keyboard never shows.
+  &__row-limit {
+    margin: 0 0 0.75rem;
+    font-size: 0.75rem;
+    color: rgba(0, 0, 0, 0.72);
   }
 
   &__presets {

@@ -118,6 +118,10 @@ const RowSettingsMixin = {
       return MAX_ROWS;
     },
 
+    rowLimitHintId() {
+      return `bb-row-limit-${this._uid}`;
+    },
+
 
     foldedMessage() {
       const notice = this.foldedNotice;
