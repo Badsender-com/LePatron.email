@@ -3,22 +3,20 @@
 // Writing the published values where a template reads them: the root of the
 // email's content, one observable per property the template declares.
 
+const ko = require('knockout');
 const {
   publishToTemplate,
 } = require('../../packages/editor/src/js/utils/publish-to-template.js');
 
-// A Knockout observable as the content model holds one: read with no argument,
-// written with one. Counts its writes, so a test sees an untouched property.
+// A Knockout observable as the content model holds one. Counts its writes,
+// the same value included, so a test sees an untouched property.
 function observable(initial) {
-  let value = initial;
-  const read = (...args) => {
-    if (args.length === 0) return value;
-    value = args[0];
-    read.writes += 1;
-    return undefined;
-  };
-  read.writes = 0;
-  return read;
+  const target = ko.observable(initial).extend({ notify: 'always' });
+  target.writes = 0;
+  target.subscribe(() => {
+    target.writes += 1;
+  });
+  return target;
 }
 
 describe('publishing values to the template', () => {
@@ -83,6 +81,36 @@ describe('publishing values to the template', () => {
     expect(content).not.toHaveProperty('audience');
     expect(applied).toEqual([]);
     expect(skipped).toEqual(['audience']);
+  });
+
+  // A root function that is not an observable (a template-level helper such
+  // as `_nextVariant`) or a computed that cannot be written: never called.
+  it.each([
+    ['a plain function', () => jest.fn(() => 'be')],
+    ['a read-only computed', () => ko.pureComputed(() => 'be')],
+  ])('neither calls nor writes %s', (_label, make) => {
+    const target = make();
+    const content = { audience: target };
+
+    const { applied, skipped } = publishToTemplate(content, {
+      audience: 'vip',
+    });
+
+    if (jest.isMockFunction(target)) expect(target).not.toHaveBeenCalled();
+    expect(target()).toBe('be');
+    expect(applied).toEqual([]);
+    expect(skipped).toEqual(['audience']);
+  });
+
+  it('writes into a writable computed', () => {
+    const backing = ko.observable('be');
+    const content = {
+      audience: ko.computed({ read: backing, write: backing }),
+    };
+
+    publishToTemplate(content, { audience: 'vip' });
+
+    expect(backing()).toBe('vip');
   });
 
   it('writes nothing when the property already holds the value', () => {

@@ -1,5 +1,7 @@
 'use strict';
 
+const ko = require('knockout');
+
 /**
  * Write the values the editor publishes (utils/governance-values.js) where a
  * template reads them: `_root_.audience` compiles to the `audience` property at
@@ -61,17 +63,19 @@ function publishOutsideUndo(vm, values) {
 
 /**
  * Whether a root property of the content is one a published value may replace:
- * an observable holding a plain value (a text, a number, a boolean, or nothing
- * yet), what a template option holds. Never one holding an object or a list,
- * an observable array among them: those are the editor's own structure (the
- * theme's styles, the list of blocks), which a text would destroy.
+ * a writable observable holding a plain value (a text, a number, a boolean, or
+ * nothing yet), what a template option holds. Never one holding an object or a
+ * list, an observable array among them: those are the editor's own structure
+ * (the theme's styles, the list of blocks), which a text would destroy. Never
+ * a function that is not an observable (a template-level `_nextVariant`) or a
+ * read-only computed either: it is neither called nor written.
  *
  * @param {*} target a root property of the content
  * @returns {boolean}
  */
 function isPublishable(target) {
-  if (typeof target !== 'function') return false;
-  const current = target();
+  if (!ko.isWriteableObservable(target)) return false;
+  const current = target.peek();
   if (current === null || current === undefined) return true;
   return ['string', 'number', 'boolean'].includes(typeof current);
 }

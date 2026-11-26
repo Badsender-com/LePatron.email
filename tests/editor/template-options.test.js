@@ -9,6 +9,7 @@
 // dimensions. `templateProperties` are the root properties the template
 // declares.
 
+const ko = require('knockout');
 const {
   hiddenTemplateOptions,
   rootPropertiesOf,
@@ -54,10 +55,9 @@ describe('template options fed by a dimension', () => {
 });
 
 describe('the root properties of an email content', () => {
-  // A Knockout observable as the content holds one.
-  const observable = (value) => () => value;
+  const observable = (value) => ko.observable(value);
 
-  it('are the observables at its root holding a plain value', () => {
+  it('are the writable observables at its root holding a plain value', () => {
     expect(
       rootPropertiesOf({
         country: observable('be'),
@@ -65,6 +65,8 @@ describe('the root properties of an email content', () => {
         headerVisible: observable(true),
         preheaderText: observable(null),
         notAnObservable: 'template',
+        _nextVariant: () => 'next',
+        readOnly: ko.pureComputed(() => 'be'),
       })
     ).toEqual(['country', 'bodyWidth', 'headerVisible', 'preheaderText']);
   });
