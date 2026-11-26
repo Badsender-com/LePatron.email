@@ -1328,7 +1328,7 @@ export default {
         'Lorsque l\'option est désactivée, ces champs n\'apparaissent nulle part et l\'API les refuse ; les données déjà saisies sont conservées.',
       taxonomyAction: 'Gérer les typologies',
       taxonomyHint:
-        'Les typologies d\'email se configurent dans Paramètres → Général → Typologies, indépendamment de cette option.',
+        'Les typologies d\'email se configurent dans Paramètres → Général → Taxonomie, indépendamment de cette option.',
     },
     snackbars: {
       invalid: 'Les réglages envoyés n\'ont pas été acceptés.',

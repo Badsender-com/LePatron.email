@@ -1736,7 +1736,7 @@ export default {
         'While the option is off, these fields appear nowhere and the API refuses them; data already entered is kept.',
       taxonomyAction: 'Manage email types',
       taxonomyHint:
-        'Email types are configured under Settings → General → Email types, independently of this option.',
+        'Email types are configured under Settings → General → Taxonomy, independently of this option.',
     },
     snackbars: {
       invalid: 'The settings sent were not accepted.',

@@ -377,7 +377,7 @@ module.exports = {
   'email-metadata-typology': 'Typologie',
   'email-metadata-typology-none': 'Aucune',
   'email-metadata-typology-empty':
-    'Aucune typologie active pour votre entreprise. Elles se configurent dans Paramètres → Général → Typologies.',
+    'Aucune typologie active pour votre entreprise. Elles se configurent dans Paramètres → Général → Taxonomie.',
   'email-metadata-error': "L'enregistrement des métadonnées a échoué",
   'email-metadata-error-disabled':
     'Les métadonnées ne sont pas activées pour cette entreprise',
