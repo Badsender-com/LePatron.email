@@ -224,7 +224,7 @@ _UI_: Journal des modifications
 _Avoid_: Release note, history
 
 **Catalog change**:
-A dated event in the life of a skill or an expertise, as a company sees it: created, updated by a new version, opened to every company, or withdrawn from them. An archived item is withdrawn. A company other than the platform company sees no opening: to it, an opening or a reopening is a creation.
+A dated event in the life of a skill or an expertise, as a company sees it: created, updated by a new version, opened to every company, or withdrawn from them. An archived item is withdrawn, and one published again is opened again. A company other than the platform company sees no opening: to it, an opening or a reopening is a creation. A company is never told of an item it never saw.
 _UI_: Nouveauté
 _Avoid_: News, update, event
 
