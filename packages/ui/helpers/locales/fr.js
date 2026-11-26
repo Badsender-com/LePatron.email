@@ -1399,6 +1399,7 @@ export default {
           'Ce que cette dimension décide pour un email, chez vous. Ce texte sert de contexte à l\'IA.',
         parent: 'Sous la dimension',
         parentNone: 'Aucune : premier niveau',
+        parentDeactivated: '{label} (désactivée)',
         parentHint:
           'Ses valeurs seront proposées selon la valeur choisie pour la dimension parente : la Langue selon le Marché.',
         precedence: 'Précédence',

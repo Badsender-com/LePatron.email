@@ -70,14 +70,28 @@ export default {
       return this.editingId !== null;
     },
     parentItems() {
-      const labels = Object.fromEntries(
-        this.dimensions.map((dimension) => [dimension.name, dimension.label])
+      const byName = new Map(
+        this.dimensions.map((dimension) => [dimension.name, dimension])
       );
+      const names = parentCandidates(this.dimensions, { name: this.form.name });
+      // The parent it hangs under stays shown once deactivated, marked so: the
+      // card still says "Under Market", and the select must not show blank.
+      // Kept unchanged, it is not sent (onSubmit).
+      const current = byName.get(this.initialParentName);
+      if (current && !names.includes(current.name)) names.push(current.name);
       return [
         { value: null, text: this.$t('taxonomy.dimensions.form.parentNone') },
-        ...parentCandidates(this.dimensions, {
-          name: this.form.name,
-        }).map((name) => ({ value: name, text: labels[name] })),
+        ...names.map((name) => {
+          const { label, isActive } = byName.get(name);
+          return {
+            value: name,
+            text: isActive
+              ? label
+              : this.$t('taxonomy.dimensions.form.parentDeactivated', {
+                  label,
+                }),
+          };
+        }),
       ];
     },
     nameErrors() {

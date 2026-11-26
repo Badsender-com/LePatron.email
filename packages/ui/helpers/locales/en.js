@@ -1807,6 +1807,7 @@ export default {
           'What this dimension decides about an email, for you. This text is context for the AI.',
         parent: 'Under the dimension',
         parentNone: 'None: first level',
+        parentDeactivated: '{label} (deactivated)',
         parentHint:
           'Its values will be offered by the value chosen for the parent dimension: the Language by the Market.',
         precedence: 'Precedence',
