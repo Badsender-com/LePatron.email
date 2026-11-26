@@ -31,6 +31,7 @@ function openForm(dimension) {
       '~/components/form/bs-select.vue': {},
       '~/helpers/taxonomy.js': require('~/helpers/taxonomy.js'),
       '~/helpers/taxonomy-builder.js': require('~/helpers/taxonomy-builder.js'),
+      '~/helpers/taxonomy-roles.js': require('~/helpers/taxonomy-roles.js'),
     },
     mocks: { $t: (key) => key },
   });

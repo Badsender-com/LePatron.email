@@ -12,6 +12,9 @@ const {
   isTokenValue,
   RESERVED_TOKEN_NAMES,
 } = require('../../../shared/taxonomy/constants.js');
+const {
+  ROLES: DIMENSION_ROLES,
+} = require('../../../shared/locale/locale-codes.js');
 
 // `ObjectId.isValid` returns true for ANY 12-character string, reinterpreting its
 // bytes as an id: 'companyAdmin' becomes a perfectly valid ObjectId pointing at a
@@ -32,6 +35,8 @@ const EDITABLE_FIELDS = Object.freeze([
   'parentIds',
   // Design tokens, replaced as a whole on each edit.
   'tokens',
+  // The normalised code, checked against the dimension's role by the service.
+  'code',
 ]);
 
 // What a request may set on a dimension. The name is read apart, on creation
@@ -43,6 +48,7 @@ const DIMENSION_EDITABLE_FIELDS = Object.freeze([
   'order',
   'precedence',
   'parentName',
+  'role',
 ]);
 
 module.exports = {
@@ -109,6 +115,7 @@ function validatePayload(payload, { partial }) {
     fields.parentIds = readParentIds(payload.parentIds);
   }
   if (payload.tokens !== undefined) fields.tokens = readTokens(payload.tokens);
+  if (payload.code !== undefined) fields.code = readCode(payload.code);
 
   // A PATCH carrying nothing usable would answer 200 without changing anything,
   // which reads as a successful save.
@@ -225,6 +232,13 @@ function readParentName(value) {
   return value;
 }
 
+// The list it belongs to depends on the dimension's role: the service checks it.
+function readCode(value) {
+  if (value === null || value === '') return null;
+  if (typeof value !== 'string') throw invalid();
+  return value;
+}
+
 function readIsActive(value) {
   if (typeof value !== 'boolean') throw invalid();
   return value;
@@ -279,6 +293,12 @@ function validateDimensionPayload(payload, { partial }) {
   }
   if (payload.parentName !== undefined) {
     fields.parentName = readOrRefuse(readParentName, payload.parentName);
+  }
+  if (payload.role !== undefined) {
+    if (payload.role !== null && !DIMENSION_ROLES.includes(payload.role)) {
+      throw invalidDimension();
+    }
+    fields.role = payload.role;
   }
 
   if (partial && Object.keys(fields).length === 0) throw invalidDimension();
