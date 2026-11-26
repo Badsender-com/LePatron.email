@@ -12,6 +12,7 @@ const {
   DIMENSION_NAME_PATTERN,
   TaxonomyLimits,
 } = require('../../constant/taxonomy-type.js');
+const { compareDimensions } = require('../../../shared/taxonomy/sort.js');
 const { buildStandardDimensions } = require('./default-dimensions.js');
 const { resolveExistingCompanyId, scopedById } = require('./company-scope.js');
 const {
@@ -51,9 +52,12 @@ async function listDimensions({ user, groupId, lang }) {
   const companyId = await resolveExistingCompanyId(user, groupId);
   await seedStandardDimensions({ companyId, lang: lang || user?.lang });
 
-  return TaxonomyDimensions.find({ _company: companyId })
-    .sort({ order: 1, name: 1 })
-    .lean();
+  // Sorted by the comparator the screen and the editor use, so the three
+  // agree on the order. A company has 20 dimensions at most.
+  const dimensions = await TaxonomyDimensions.find({
+    _company: companyId,
+  }).lean();
+  return dimensions.sort(compareDimensions);
 }
 
 /**

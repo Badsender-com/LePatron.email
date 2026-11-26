@@ -22,6 +22,7 @@ jest.mock('../../../packages/server/utils/logger.js', () => ({
 const models = require('../../../packages/server/common/models.common.js');
 const ERROR_CODES = require('../../../packages/server/constant/error-codes.js');
 const {
+  COMPANY_A,
   adminA,
   techAdminA,
   adminB,
@@ -339,5 +340,52 @@ describe('declaring a company dimension', () => {
       message: ERROR_CODES.TAXONOMY_LIMIT_REACHED,
       details: { limit: 20 },
     });
+  });
+});
+
+describe('the order of the dimensions', () => {
+  let dimensionService;
+
+  beforeAll(() => {
+    dimensionService = require(DIMENSION_SERVICE);
+  });
+
+  // The comparator is the one the screen and the editor use
+  // (packages/shared/taxonomy/sort.js): the three agree on the order.
+  it('lists them by order, then the first declared first', async () => {
+    await dimensionService.listDimensions({ user: adminA });
+    models.TaxonomyDimensions.seed([
+      {
+        _company: COMPANY_A,
+        name: 'audience',
+        label: 'A',
+        order: 21,
+        createdAt: new Date('2026-11-02'),
+      },
+      {
+        _company: COMPANY_A,
+        name: 'brand',
+        label: 'Z',
+        order: 21,
+        createdAt: new Date('2026-11-01'),
+      },
+      {
+        _company: COMPANY_A,
+        name: 'market',
+        label: 'M',
+        order: 15,
+        createdAt: new Date('2026-11-03'),
+      },
+    ]);
+
+    const listed = await dimensionService.listDimensions({ user: adminA });
+
+    expect(listed.map((dimension) => dimension.name)).toEqual([
+      'emailType',
+      'market',
+      'trigger',
+      'brand',
+      'audience',
+    ]);
   });
 });

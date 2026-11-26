@@ -8,7 +8,11 @@ import BsTaxonomyDimensionFormDialog from '~/components/group/taxonomy-dimension
 import BsTaxonomyTriggerDimension from '~/components/group/taxonomy-trigger-dimension.vue';
 import BsTaxonomyCompanyDimension from '~/components/group/taxonomy-company-dimension.vue';
 import BsModalConfirm from '~/components/modal-confirm';
-import { taxonomyErrorFor, caseVariantOf } from '~/helpers/taxonomy.js';
+import {
+  taxonomyErrorFor,
+  caseVariantOf,
+  nextOrder,
+} from '~/helpers/taxonomy.js';
 import {
   STANDARD_DIMENSIONS,
   DIMENSIONS_PER_COMPANY,
@@ -128,6 +132,9 @@ export default {
         () =>
           this.$axios.$post(apiRoutes.taxonomyDimensionsCreate(), {
             ...payload,
+            // After the last one, rather than all at 0 and listed
+            // before the standard dimensions.
+            order: nextOrder(this.dimensions),
             groupId: this.groupId,
           }),
         'taxonomy.dimensions.created',

@@ -13,6 +13,7 @@ import {
   RESERVED_DIMENSION_NAMES,
   TAXONOMY_LIMITS,
 } from '../../shared/taxonomy/constants.js';
+import { compareDimensions } from '../../shared/taxonomy/sort.js';
 
 /**
  * The two standard dimensions, in the order the screen lists them, and the
@@ -22,11 +23,6 @@ import {
 export { STANDARD_DIMENSIONS };
 
 export const DIMENSIONS_PER_COMPANY = TAXONOMY_LIMITS.DIMENSIONS_PER_COMPANY;
-
-const STANDARD_ORDER = Object.freeze([
-  STANDARD_DIMENSIONS.EMAIL_TYPE,
-  STANDARD_DIMENSIONS.TRIGGER,
-]);
 
 /**
  * The trigger's two values, which are the doctrine's and not taxonomy items.
@@ -38,25 +34,17 @@ export const TRIGGER_VALUES = Object.freeze(
   )
 );
 
-const rankOf = (dimension) => {
-  const standardRank = STANDARD_ORDER.indexOf(dimension.name);
-  return standardRank === -1 ? STANDARD_ORDER.length : standardRank;
-};
-
 /**
- * The standard dimensions first, whatever their order, then the company's in
- * their declared order, then by label.
+ * The dimensions in the one order the server's listing and the editor share
+ * (packages/shared/taxonomy/sort.js): by their order, then the first declared
+ * first. The standard dimensions are seeded at 10 and 20 and a new dimension
+ * takes the next order, so they come first until the company reorders them.
  *
  * @param {Object[]} dimensions
  * @returns {Object[]} a sorted copy
  */
 export function sortDimensions(dimensions = []) {
-  return [...dimensions].sort(
-    (a, b) =>
-      rankOf(a) - rankOf(b) ||
-      (a.order || 0) - (b.order || 0) ||
-      String(a.label || '').localeCompare(String(b.label || ''))
-  );
+  return [...dimensions].sort(compareDimensions);
 }
 
 /**

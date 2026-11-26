@@ -62,10 +62,13 @@ describe('taxonomy screen: standard dimensions', () => {
     ({ sortDimensions, dimensionActions } = require(HELPERS));
   });
 
-  it('lists the email type and the trigger first, whatever their order', () => {
+  // One order for the screen, the editor and the server's listing (decision on
+  // #1361): the standard dimensions are seeded at 10 and 20 and a new dimension
+  // takes the next order, so they come first until the company reorders them.
+  it('lists the standard dimensions by their order, like any other', () => {
     expect(
       sortDimensions([MARKET, TRIGGER, BRAND, EMAIL_TYPE]).map((d) => d.name)
-    ).toEqual(['emailType', 'trigger', 'brand', 'market']);
+    ).toEqual(['brand', 'market', 'emailType', 'trigger']);
   });
 
   it('locks a standard dimension: no rename, no deactivation, no deletion', () => {
@@ -103,12 +106,18 @@ describe('taxonomy screen: company dimensions', () => {
     } = require(HELPERS));
   });
 
-  it('lists company dimensions in their declared order, then by label', () => {
-    const audience = { ...MARKET, name: 'audience', label: 'Cible' };
+  it('lists company dimensions in their declared order, then the first declared first', () => {
+    const market = { ...MARKET, createdAt: '2026-11-01T10:00:00.000Z' };
+    const audience = {
+      ...MARKET,
+      name: 'audience',
+      label: 'Cible',
+      createdAt: '2026-11-02T10:00:00.000Z',
+    };
 
     expect(
-      sortDimensions([MARKET, audience, BRAND]).map((d) => d.name)
-    ).toEqual(['brand', 'audience', 'market']);
+      sortDimensions([audience, market, BRAND]).map((d) => d.name)
+    ).toEqual(['brand', 'market', 'audience']);
   });
 
   it.each(['audience', 'emailType2', '_internal', 'Brand'])(

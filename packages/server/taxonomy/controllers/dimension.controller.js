@@ -117,5 +117,7 @@ function expose(dimension) {
     isActive: dimension.isActive,
     order: dimension.order,
     precedence: dimension.precedence,
+    // The tie-break of the order the screen and the editor share.
+    createdAt: dimension.createdAt,
   };
 }
