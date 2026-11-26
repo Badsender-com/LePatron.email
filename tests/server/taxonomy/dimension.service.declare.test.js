@@ -341,6 +341,27 @@ describe('declaring a company dimension', () => {
       details: { limit: 20 },
     });
   });
+
+  it('counts the standard dimensions against the limit even before they were ever listed', async () => {
+    // No listing first: declaring seeds them, so they still count, 2 + 18.
+    for (let i = 1; i <= 18; i += 1) {
+      await dimensionService.createDimension({
+        user: adminA,
+        payload: { name: `axis${i}`, label: `Axe ${i}` },
+      });
+    }
+
+    await expect(
+      dimensionService.createDimension({
+        user: adminA,
+        payload: { name: 'oneTooMany', label: 'De trop' },
+      })
+    ).rejects.toMatchObject({
+      status: 409,
+      message: ERROR_CODES.TAXONOMY_LIMIT_REACHED,
+      details: { limit: 20 },
+    });
+  });
 });
 
 describe('the order of the dimensions', () => {

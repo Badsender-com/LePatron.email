@@ -89,6 +89,20 @@ describe('editing, deactivating and deleting a dimension', () => {
     expect((await reload()).name).toBe('audience');
   });
 
+  it('refuses the name even unchanged: an update never carries it', async () => {
+    await expect(
+      dimensionService.updateDimension({
+        user: adminA,
+        dimensionId: idOf(audience),
+        payload: { name: 'audience', label: 'Segment' },
+      })
+    ).rejects.toMatchObject({
+      status: 400,
+      message: ERROR_CODES.DIMENSION_NAME_IS_FINAL,
+    });
+    expect((await reload()).label).toBe('Cible');
+  });
+
   it('deactivates it, keeps listing it, and reactivates it', async () => {
     await dimensionService.updateDimension({
       user: adminA,
