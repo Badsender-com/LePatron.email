@@ -13,6 +13,8 @@ const ko = require('knockout');
 const {
   hiddenTemplateOptions,
   rootPropertiesOf,
+  exposeHiddenTemplateOptions,
+  hideTemplateOptionsFedBy,
 } = require('../../packages/editor/src/js/utils/template-options.js');
 
 const COUNTRY = {
@@ -150,5 +152,42 @@ describe('the root properties of an email content', () => {
 
   it('are none before the content is loaded', () => {
     expect(rootPropertiesOf(null)).toEqual([]);
+  });
+});
+
+// What the template's option editors read on the viewModel
+// (converter/editor.js): `$root.isHiddenTemplateOption('country')`.
+describe('the hidden template options on the viewModel', () => {
+  function makeViewModel() {
+    const vm = {
+      content: ko.observable({
+        country: ko.observable('be'),
+        trigger: ko.observable(''),
+        headerVisible: ko.observable(true),
+      }),
+    };
+    exposeHiddenTemplateOptions(vm);
+    return vm;
+  }
+
+  it('hide nothing until the email settings say what they feed', () => {
+    const vm = makeViewModel();
+
+    expect(vm.isHiddenTemplateOption('country')).toBe(false);
+  });
+
+  it('hide what the email settings feed, read from the content', () => {
+    const vm = makeViewModel();
+
+    hideTemplateOptionsFedBy(vm, {
+      dimensions: [COUNTRY, AUDIENCE],
+      emailTypes: [],
+      triggers: ['adhoc', 'automated'],
+    });
+
+    expect(vm.isHiddenTemplateOption('country')).toBe(true);
+    expect(vm.isHiddenTemplateOption('trigger')).toBe(true);
+    expect(vm.isHiddenTemplateOption('headerVisible')).toBe(false);
+    expect(vm.isHiddenTemplateOption('audience')).toBe(false);
   });
 });

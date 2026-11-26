@@ -1,5 +1,6 @@
 'use strict';
 
+const ko = require('knockout');
 const {
   STANDARD_DIMENSIONS,
 } = require('../../../../shared/taxonomy/constants.js');
@@ -70,4 +71,43 @@ function rootPropertiesOf(content) {
   return Object.keys(content).filter((name) => isPublishable(content[name]));
 }
 
-module.exports = { hiddenTemplateOptions, rootPropertiesOf };
+/**
+ * Hang on the viewModel what the template's own option editors read
+ * (converter/editor.js): the hidden options, and the test each option editor
+ * runs. Empty until the email settings say what they feed, and for an
+ * opted-out company: every option stays.
+ *
+ * @param {Object} vm the editor's viewModel
+ */
+function exposeHiddenTemplateOptions(vm) {
+  vm.hiddenTemplateOptions = ko.observableArray([]);
+  vm.isHiddenTemplateOption = (name) =>
+    vm.hiddenTemplateOptions().indexOf(name) !== -1;
+}
+
+/**
+ * Hide the template options the email settings feed, read from the email's
+ * content as the editor opened it.
+ *
+ * @param {Object} vm the editor's viewModel, `content` and the
+ *   `hiddenTemplateOptions` exposeHiddenTemplateOptions hung on it
+ * @param {Object} config the email settings the server sent,
+ *   `{dimensions, emailTypes, triggers}`
+ */
+function hideTemplateOptionsFedBy(vm, config) {
+  vm.hiddenTemplateOptions(
+    hiddenTemplateOptions({
+      dimensions: config.dimensions,
+      emailTypes: config.emailTypes,
+      triggers: config.triggers,
+      templateProperties: rootPropertiesOf(vm.content && vm.content()),
+    })
+  );
+}
+
+module.exports = {
+  hiddenTemplateOptions,
+  rootPropertiesOf,
+  exposeHiddenTemplateOptions,
+  hideTemplateOptionsFedBy,
+};
