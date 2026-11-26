@@ -45,3 +45,53 @@ describe('taxonomy tab: creating a value', () => {
     expect(component.props.canCreate.default).toBe(true);
   });
 });
+
+describe('taxonomy tab: the parent values', () => {
+  const { fetchParentValues, openEditForm } = component.methods;
+
+  const nestedTab = () => {
+    let answer;
+    const $get = jest.fn(
+      () =>
+        new Promise((resolve) => {
+          answer = () => resolve({ items: [{ id: 'ca', label: 'Canada' }] });
+        })
+    );
+    const vm = {
+      parentName: 'market',
+      groupId: 'group',
+      parentValues: null,
+      fetchingParentValues: false,
+      reportError: jest.fn(),
+      $axios: { $get },
+      $refs: { formDialog: { open: jest.fn() } },
+    };
+    vm.fetchParentValues = fetchParentValues.bind(vm);
+    return { vm, $get, answer: () => answer() };
+  };
+
+  it('are not read when the tab mounts, only when a form opens', () => {
+    const fetchItems = jest.fn();
+    const vm = { fetchItems, fetchParentValues: jest.fn() };
+
+    component.mounted.call(vm);
+
+    expect(fetchItems).toHaveBeenCalled();
+    expect(vm.fetchParentValues).not.toHaveBeenCalled();
+  });
+
+  it('are read once for a double click, the form busy until they arrive', async () => {
+    const { vm, $get, answer } = nestedTab();
+
+    const first = openEditForm.call(vm, { id: 'fr' });
+    const second = openEditForm.call(vm, { id: 'fr' });
+    expect(vm.$refs.formDialog.open).toHaveBeenCalledWith({ id: 'fr' });
+    expect(vm.fetchingParentValues).toBe(true);
+    answer();
+    await Promise.all([first, second]);
+
+    expect($get).toHaveBeenCalledTimes(1);
+    expect(vm.fetchingParentValues).toBe(false);
+    expect(vm.parentValues).toEqual([{ id: 'ca', label: 'Canada' }]);
+  });
+});

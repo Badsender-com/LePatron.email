@@ -45,6 +45,9 @@ export default {
       items: [],
       // Null while the dimension hangs under nothing.
       parentValues: null,
+      // The form stays busy while they are read: nothing to submit against a
+      // list being replaced, and a second click reads nothing twice.
+      fetchingParentValues: false,
       deletingItem: null,
     };
   },
@@ -71,11 +74,9 @@ export default {
     // A super admin switching company keeps this component mounted, and would
     // otherwise keep reading the previous company's list.
     groupId: 'fetchItems',
-    parentName: 'fetchParentValues',
   },
   mounted() {
     this.fetchItems();
-    this.fetchParentValues();
   },
   methods: {
     ...mapMutations(PAGE, { showSnackbar: SHOW_SNACKBAR }),
@@ -100,14 +101,16 @@ export default {
       }
     },
 
-    // Read again before each form opens: values added to the parent since
-    // the screen loaded are offered.
+    // Read each time a form opens, and only then: values added to the parent
+    // since the screen loaded are offered.
     async fetchParentValues() {
       if (!this.parentName) {
         this.parentValues = null;
         return;
       }
+      if (this.fetchingParentValues) return;
       try {
+        this.fetchingParentValues = true;
         const response = await this.$axios.$get(
           apiRoutes.taxonomyItems(this.groupId, { type: this.parentName })
         );
@@ -115,6 +118,8 @@ export default {
       } catch (error) {
         this.parentValues = null;
         this.reportError(error);
+      } finally {
+        this.fetchingParentValues = false;
       }
     },
 
@@ -133,15 +138,16 @@ export default {
       await this.fetchItems();
     },
 
+    // Opened at once, busy until the parent values arrive.
     async openCreateForm() {
       if (!this.canCreate) return;
-      await this.fetchParentValues();
       this.$refs.formDialog.open(null, nextOrder(this.items));
+      await this.fetchParentValues();
     },
 
     async openEditForm(item) {
-      await this.fetchParentValues();
       this.$refs.formDialog.open(item);
+      await this.fetchParentValues();
     },
 
     async saveItem({ id, payload }) {
@@ -234,7 +240,7 @@ export default {
 
     <bs-taxonomy-form-dialog
       ref="formDialog"
-      :loading="saving"
+      :loading="saving || fetchingParentValues"
       :is-email-type="isEmailType"
       :parent-values="parentValues"
       :parent-label="parentLabel"
