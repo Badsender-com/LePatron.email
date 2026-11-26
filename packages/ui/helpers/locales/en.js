@@ -1902,7 +1902,7 @@ export default {
       identifierAlreadyExists:
         'This identifier is already taken in this dimension.',
       dimensionNameReserved:
-        'This name is reserved by JavaScript (like constructor or toString): a value chosen under it would be lost or misread.',
+        'This name is reserved by JavaScript (like constructor or toString) or by the editor (like theme or type): a value chosen under it would be lost, misread or would damage the email.',
       dimensionNameTooLong: 'The name cannot exceed {limit} characters.',
       invalidDimension:
         'This dimension could not be saved: check its name and its label.',

@@ -122,10 +122,12 @@ const SPELLED_OUT_PATTERN = new RegExp(
 );
 
 /**
- * Whether the name is one every JavaScript object already answers to
- * (`__proto__`, `constructor`, `toString`…, see RESERVED_DIMENSION_NAMES),
- * though a template could read it: an email's value under it would be lost,
- * or read back as an inherited function.
+ * Whether the name is reserved (RESERVED_DIMENSION_NAMES), though a template
+ * could read it: one every JavaScript object already answers to (`__proto__`,
+ * `constructor`, `toString`…), under which an email's value would be lost or
+ * read back as an inherited function; or a piece of the content the editor
+ * builds itself (`type`, `theme`, `mainBlocks`, `customStyle`), which
+ * publishing the dimension would overwrite.
  *
  * @param {*} name
  * @returns {boolean}

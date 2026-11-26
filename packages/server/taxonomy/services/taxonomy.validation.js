@@ -228,9 +228,10 @@ function readDimensionName(value) {
     error.details = { limit: TaxonomyLimits.DIMENSION_NAME };
     throw error;
   }
-  // Valid as a template property, but a name every object already answers to:
-  // a value under it would be lost (`__proto__`) or read back as an inherited
-  // function (packages/shared/taxonomy/constants.js).
+  // Valid as a template property, but a name every object already answers to,
+  // under which a value would be lost (`__proto__`) or read back as an
+  // inherited function, or a piece of the content the editor builds, which
+  // publishing the dimension would overwrite (packages/shared/taxonomy/constants.js).
   if (RESERVED_DIMENSION_NAMES.includes(value)) {
     throw new BadRequest(ERROR_CODES.DIMENSION_NAME_RESERVED);
   }

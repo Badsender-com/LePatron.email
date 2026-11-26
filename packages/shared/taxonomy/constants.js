@@ -48,9 +48,8 @@ const DIMENSION_NAME_PATTERN = /^[A-Za-z_][A-Za-z0-9_]*$/;
 //
 // Listed rather than read from Object.prototype at run time, so the server and
 // the browser refuse the same names whatever their engine adds; a test checks
-// the list still covers Object.prototype. A template option's name (`country`,
-// `bodyWidth`) stays allowed: a dimension may fill one in.
-const RESERVED_DIMENSION_NAMES = Object.freeze([
+// the list still covers Object.prototype.
+const OBJECT_PROTOTYPE_NAMES = [
   '__proto__',
   '__defineGetter__',
   '__defineSetter__',
@@ -64,7 +63,20 @@ const RESERVED_DIMENSION_NAMES = Object.freeze([
   'toString',
   'valueOf',
   'prototype',
-]);
+];
+
+// The root properties of an email's content that the editor builds itself,
+// beside the template's options: the template's name (`type`), the theme's
+// styles (`theme`), the list of blocks (`mainBlocks`), and the custom style
+// switch (`customStyle`). The editor publishes a dimension to the root property
+// of the same name (ADR-0015): under one of these, it would overwrite the
+// email's own structure. A template option's name (`country`, `bodyWidth`)
+// stays allowed: a dimension may fill one in.
+const EDITOR_CONTENT_NAMES = ['type', 'theme', 'mainBlocks', 'customStyle'];
+
+const RESERVED_DIMENSION_NAMES = Object.freeze(
+  OBJECT_PROTOTYPE_NAMES.concat(EDITOR_CONTENT_NAMES)
+);
 
 // Bounds of the editable fields, read by the Mongoose schemas, the services and
 // the forms.

@@ -1494,7 +1494,7 @@ export default {
       identifierAlreadyExists:
         'Cet identifiant est déjà pris dans cette dimension.',
       dimensionNameReserved:
-        'Ce nom est réservé par JavaScript (comme constructor ou toString) : une valeur choisie sous ce nom serait perdue ou mal relue.',
+        'Ce nom est réservé par JavaScript (comme constructor ou toString) ou par l’éditeur (comme theme ou type) : une valeur choisie sous ce nom serait perdue, mal relue ou abîmerait l’email.',
       dimensionNameTooLong: 'Le nom ne peut pas dépasser {limit} caractères.',
       invalidDimension:
         'Cette dimension n\'a pas pu être enregistrée : vérifiez son nom et son libellé.',

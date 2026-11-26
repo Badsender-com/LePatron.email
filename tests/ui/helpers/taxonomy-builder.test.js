@@ -150,6 +150,17 @@ describe('taxonomy screen: company dimensions', () => {
     }
   );
 
+  // The editor publishes a dimension to the root property of the same name:
+  // under one of these, it would overwrite the email's own structure.
+  it.each(['type', 'theme', 'mainBlocks', 'customStyle'])(
+    'flags %p as reserved, a piece of the content the editor builds',
+    (name) => {
+      const { isReservedDimensionName } = require(HELPERS);
+      expect(isValidDimensionName(name)).toBe(true);
+      expect(isReservedDimensionName(name)).toBe(true);
+    }
+  );
+
   it.each(['country', 'bodyWidth', 'audience'])(
     'leaves %p free, a template option included',
     (name) => {

@@ -114,6 +114,23 @@ describe('declaring a company dimension', () => {
     }
   );
 
+  // The editor publishes a dimension to the root property of the same name:
+  // under one of these, it would overwrite the email's own structure.
+  it.each(['type', 'theme', 'mainBlocks', 'customStyle'])(
+    'refuses %p, a piece of the content the editor builds',
+    async (name) => {
+      await expect(
+        dimensionService.createDimension({
+          user: adminA,
+          payload: { name, label: 'Réservé' },
+        })
+      ).rejects.toMatchObject({
+        status: 400,
+        message: ERROR_CODES.DIMENSION_NAME_RESERVED,
+      });
+    }
+  );
+
   // A dimension may fill in a template option (#1532).
   it.each(['country', 'bodyWidth'])(
     'accepts %p, the name of a template option',
