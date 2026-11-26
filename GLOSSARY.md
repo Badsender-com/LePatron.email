@@ -465,7 +465,7 @@ _Avoid_: Custom dimension, group dimension
 **Value**:
 One of the possibilities of a dimension: Canada, French, Newsletter. An email carries at most one value per dimension.
 _UI_: Valeur
-_Avoid_: Item, entry, option, tag (the code keeps `TaxonomyItems` and `taxonomyItemIds`)
+_Avoid_: Item, entry, option, tag (the code keeps `TaxonomyItems`, and `taxonomyItemIds` once an email carries company dimensions, #1355)
 
 **Email type**:
 The standard dimension that says what an email brings to the person receiving it. Each company names its own values, and maps each onto one of the doctrine's six types.
@@ -485,7 +485,7 @@ _Avoid_: Slug, code, key, canonical type (the code keeps `canonicalType`)
 **Availability**:
 The values of the parent dimension under which a value is offered: French is offered under Canada, Switzerland and Belgium, and nowhere else. A value with no availability is offered under all of them.
 _UI_: Disponibilité
-_Avoid_: Parent, hierarchy, dependency (the code keeps `parentIds` and `_parents`)
+_Avoid_: Parent, hierarchy, dependency (the code will keep `parentIds` and `_parents`, which arrive with #1358)
 
 **Design token**:
 A named value that a value carries and a template reads under that name: a brand's main colour as a role, not as `#ffd845`.
