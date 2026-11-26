@@ -138,6 +138,17 @@ describe('an email carries company dimensions', () => {
     });
   });
 
+  it('refuses the same value twice, whatever the case it is written in', async () => {
+    await expect(
+      metadataService.applyMetadataToMailing(newMailing(), {
+        taxonomyItemIds: [idOf(vip), idOf(vip).toUpperCase()],
+      })
+    ).rejects.toMatchObject({
+      status: 422,
+      message: ERROR_CODES.INVALID_EMAIL_METADATA,
+    });
+  });
+
   it('refuses a value of another company, as if it did not exist', async () => {
     await declare({ name: 'audience', label: 'Audience' }, adminB);
     const elsewhere = await addValue('audience', { label: 'VIP' }, adminB);

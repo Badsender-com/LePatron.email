@@ -57,13 +57,15 @@ async function validateTaxonomyItemIds(rawIds, { companyId, currentIds = [] }) {
   if (rawIds.length > TaxonomyLimits.DIMENSIONS_PER_COMPANY) throw invalid();
 
   // Strings only: a number or an object is no id, and an object would reach the
-  // query as an operator.
+  // query as an operator. Each is normalised to the id's canonical form.
   const ids = rawIds.map((rawId) => {
     if (typeof rawId !== 'string' || !mongoose.Types.ObjectId.isValid(rawId)) {
       throw invalid();
     }
-    return rawId;
+    return String(asObjectId(rawId));
   });
+  // Compared once normalised, not as sent: the same id written in two cases is
+  // still a duplicate, not a value that does not exist.
   if (new Set(ids).size !== ids.length) throw invalid();
 
   // Same refusal as for the email type: with no company, nothing to check the
