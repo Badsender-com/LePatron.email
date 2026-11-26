@@ -72,8 +72,8 @@ describe('list_changes', () => {
         at: '2026-11-18T08:00:00.000Z',
         fromVersion: '1.0',
         toVersion: '1.1',
-        releaseNote: 'Shorter subjects.',
-        changeLog: 'Two retex converged',
+        releaseNotes: 'Shorter subjects.',
+        changelog: 'Two retex converged',
         addressesRetex: [s.RETEX],
         audience: 'all',
         uri: 'lepatron://expertises/redaction.subject-line',
@@ -97,7 +97,7 @@ describe('list_changes', () => {
           change: 'created',
           fromVersion: null,
           toVersion: '1.0',
-          releaseNote: 'Read the SNDS portal.',
+          releaseNotes: 'Read the SNDS portal.',
           audience: 'platform',
         }
       );
@@ -107,8 +107,8 @@ describe('list_changes', () => {
       const { changes } = await call(await asConsultant(), WEEK);
 
       expect(changes.find((c) => c.id === 'design.gmail')).toMatchObject({
-        releaseNote: null,
-        changeLog: null,
+        releaseNotes: null,
+        changelog: null,
       });
     });
 
@@ -124,11 +124,11 @@ describe('list_changes', () => {
         '2026-11-19 updated design.gmail',
       ]);
       answer.changes.forEach((change) => {
-        expect(change).not.toHaveProperty('changeLog');
+        expect(change).not.toHaveProperty('changelog');
         expect(change).not.toHaveProperty('addressesRetex');
         expect(change).not.toHaveProperty('audience');
       });
-      expect(answer.changes[1].releaseNote).toBe('Shorter subjects.');
+      expect(answer.changes[1].releaseNotes).toBe('Shorter subjects.');
     });
 
     it('gives a user of the platform company who is no super admin the change log, not the retex', async () => {
@@ -136,7 +136,7 @@ describe('list_changes', () => {
       const { changes } = await call(client, WEEK);
       const change = changes.find((c) => c.id === 'redaction.subject-line');
 
-      expect(change.changeLog).toBe('Two retex converged');
+      expect(change.changelog).toBe('Two retex converged');
       expect(change).not.toHaveProperty('addressesRetex');
     });
 
@@ -303,6 +303,37 @@ describe('list_changes', () => {
         toVersion: '1.0',
         at: '2026-11-21T10:40:00.000Z',
         uri: 'lepatron://expertises/crm.governance',
+      });
+    });
+
+    // The release note is written for every reader: the opening brings
+    // the one of the version opened.
+    it('gives an opening the release note of the version opened', async () => {
+      const toClient = await call(await asClient(), WEEK);
+      const toPlatform = await call(await asConsultant(), {
+        ...WEEK,
+        change: ['opened'],
+      });
+
+      expect(
+        toClient.changes.find((c) => c.id === 'crm.governance')
+      ).toMatchObject({
+        change: 'created',
+        toVersion: '1.0',
+        releaseNotes: 'Audit a CRM governance.',
+      });
+      expect(
+        toClient.changes.find((c) => c.id === 'crm.governance')
+      ).not.toHaveProperty('changelog');
+      expect(
+        toPlatform.changes.find((c) => c.id === 'crm.governance')
+      ).toMatchObject({
+        change: 'opened',
+        fromVersion: null,
+        toVersion: '1.0',
+        releaseNotes: 'Audit a CRM governance.',
+        changelog: 'First version',
+        addressesRetex: [],
       });
     });
 

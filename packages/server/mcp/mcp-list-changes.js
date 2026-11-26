@@ -88,16 +88,20 @@ const CHANGE = z.object({
   at: z.string().describe('When it happened, in UTC.'),
   fromVersion: z.string().nullable().optional(),
   toVersion: z.string().nullable().optional(),
-  releaseNote: z
+  releaseNotes: z
     .string()
     .nullable()
     .optional()
-    .describe('What changes for whoever uses it; null when none was written.'),
-  changeLog: z
+    .describe(
+      'The release note of the version: what changes for whoever uses it; null when none was written.'
+    ),
+  changelog: z
     .string()
     .nullable()
     .optional()
-    .describe('For the platform company: how and why it was written.'),
+    .describe(
+      'For the platform company and a super admin: the change log, how and why the version was written.'
+    ),
   addressesRetex: z
     .array(z.string())
     .optional()
@@ -188,9 +192,14 @@ const order = (a, b) =>
 async function listChanges({ user, group }, args) {
   const period = periodOf(args);
   if (period.refused) return failure(period.refused);
+  const everyAudience = readsEveryAudience(group);
+  const consultant = isConsultant(user);
+  // The catalog is the connected company's; the change log and the retex
+  // follow the person, as a super admin reads them through any connection.
   const reader = {
-    everyAudience: readsEveryAudience(group),
-    consultant: isConsultant(user),
+    everyAudience,
+    changelog: everyAudience || consultant,
+    consultant,
   };
   const sources = SOURCES.filter((s) => !args.kind || s.kind === args.kind);
   const found = await Promise.all(sources.map(itemsOf));
@@ -230,7 +239,7 @@ function registerListChanges(server) {
     'list_changes',
     {
       title: 'List the catalog changes',
-      description: `Lists what changed in the skills and expertises this company may use, in a period: created, updated by a new version, opened to every company (to the platform company; any other company sees what is opened to it as created), withdrawn from them, the oldest first, ${MAX_CHANGES} at most. Each change gives its release note, what changes for whoever uses it, written in French. Use it to answer "what is new?": never guess a date or a reason. Only what was published is listed, never a draft.`,
+      description: `Lists what changed in the skills and expertises this company may use, in a period: created, updated by a new version, opened to every company (to the platform company; any other company sees what is opened to it as created), withdrawn from them, the oldest first, ${MAX_CHANGES} at most. Each change, an opening included, gives the release note of its version (releaseNotes), what changes for whoever uses it, written in French. Use it to answer "what is new?": never guess a date or a reason. Only what was published is listed, never a draft.`,
       inputSchema: INPUT,
       outputSchema: OUTPUT,
       annotations: READ_ONLY,

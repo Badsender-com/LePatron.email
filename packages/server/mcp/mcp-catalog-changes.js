@@ -126,28 +126,12 @@ function asWithdrawal(kind, item, { at }) {
   };
 }
 
-// An opening says the version opened, and no release note: none was
-// written for it.
-function asOpening(kind, item, found, reader) {
-  return {
-    kind,
-    id: item.id,
-    title: item.title,
-    category: item.category,
-    change: found.change,
-    at: isoOf(found.at),
-    fromVersion: null,
-    toVersion: found.version ? versionLabel(found.version) : null,
-    releaseNote: null,
-    ...(reader.everyAudience && { audience: item.audience }),
-    ...(item.uri && { uri: item.uri }),
-  };
-}
-
 /**
- * What a reader is answered of a change: a client company its release note,
- * the platform company the changelog too, a super admin the retex the
- * version addressed.
+ * What a reader is answered of a change, a publication or an opening, by
+ * the version it brings: every reader its release note, written for all of
+ * them; the platform company and a super admin through any connection its
+ * change log; a super admin the retex the version addressed. An opening
+ * brings the version opened, from none.
  */
 function asChange(kind, item, found, reader) {
   const { version, from } = found;
@@ -159,11 +143,13 @@ function asChange(kind, item, found, reader) {
     change: found.change,
     at: isoOf(found.at),
     fromVersion: from ? versionLabel(from) : null,
-    toVersion: versionLabel(version),
-    releaseNote: releaseNoteOf(version),
-    ...(reader.everyAudience && { changeLog: changeLogOf(version) }),
+    toVersion: version ? versionLabel(version) : null,
+    releaseNotes: version ? releaseNoteOf(version) : null,
+    ...(reader.changelog && {
+      changelog: version ? changeLogOf(version) : null,
+    }),
     ...(reader.consultant && {
-      addressesRetex: (version.retexIds || []).map(String),
+      addressesRetex: ((version && version.retexIds) || []).map(String),
     }),
     ...(reader.everyAudience && { audience: item.audience }),
     ...(item.uri && { uri: item.uri }),
@@ -176,7 +162,10 @@ function asChange(kind, item, found, reader) {
  * @param {'skill'|'expertise'} kind
  * @param {Object} item the stored item, with its `id` and, when the reader
  *   may read it now, its `uri`
- * @param {{ everyAudience: boolean, consultant: boolean }} reader
+ * @param {{ everyAudience: boolean, changelog: boolean, consultant: boolean }}
+ *   reader whether it sees every audience (the platform company), reads the
+ *   change log (the platform company, or a super admin), and the retex (a
+ *   super admin)
  * @param {{ since: number, until: number }} period in milliseconds, inclusive
  */
 function changesOf(kind, item, reader, { since, until }) {
@@ -190,7 +179,7 @@ function changesOf(kind, item, reader, { since, until }) {
       .map((found) =>
         found.change === 'withdrawn'
           ? asWithdrawal(kind, item, found)
-          : asOpening(kind, item, found, reader)
+          : asChange(kind, item, found, reader)
       ),
   ];
 }

@@ -29,8 +29,7 @@ describe('list_changes, as each reader sees it', () => {
   beforeEach(() => harness.seed(s.SEED));
   afterEach(() => harness.disconnect());
 
-  // Turned on by the block 3 review fixes (#1677, #1678)
-  describe.skip('a super admin connected to a client company', () => {
+  describe('a super admin connected to a client company', () => {
     it("reads the client's catalog, with the change log and the retex addressed", async () => {
       const asFrank = await listChanges(await harness.connectAs(f.FRANK), WEEK);
       const answer = await listChanges(
@@ -43,15 +42,14 @@ describe('list_changes, as each reader sees it', () => {
       expect(
         answer.changes.find((c) => c.id === 'redaction.subject-line')
       ).toMatchObject({
-        releaseNote: 'Shorter subjects.',
-        changeLog: 'Two retex converged',
+        releaseNotes: 'Shorter subjects.',
+        changelog: 'Two retex converged',
         addressesRetex: [s.RETEX],
       });
     });
   });
 
-  // Turned on by the block 3 review fixes (#1677, #1678)
-  describe.skip('the other roles of a client company', () => {
+  describe('the other roles of a client company', () => {
     it.each([
       ['a company admin', f.ERIN],
       ['a writer', f.WREN],
@@ -67,15 +65,14 @@ describe('list_changes, as each reader sees it', () => {
 
         expect(answer).toEqual(asFrank);
         answer.changes.forEach((change) => {
-          expect(change).not.toHaveProperty('changeLog');
+          expect(change).not.toHaveProperty('changelog');
           expect(change).not.toHaveProperty('addressesRetex');
         });
       }
     );
   });
 
-  // Turned on by the block 3 review fixes (#1677, #1678)
-  describe.skip('an item kept to the platform company, archived', () => {
+  describe('an item kept to the platform company, archived', () => {
     it('never shows it to a client, not even withdrawn', async () => {
       withExpertises(
         s.expertise(
