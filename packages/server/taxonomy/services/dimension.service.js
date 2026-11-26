@@ -13,7 +13,7 @@ const {
   TaxonomyLimits,
 } = require('../../constant/taxonomy-type.js');
 const { buildStandardDimensions } = require('./default-dimensions.js');
-const { resolveCompanyId, scopedById } = require('./company-scope.js');
+const { resolveExistingCompanyId, scopedById } = require('./company-scope.js');
 const {
   isObjectId,
   validateDimensionPayload,
@@ -40,14 +40,15 @@ module.exports = {
  *
  * @param {Object} params
  * @param {Object} params.user
- * @param {string} [params.groupId] company to read, super admin only
+ * @param {string} [params.groupId] company to read, super admin only: a 404
+ *   when no company has this id, rather than seeding dimensions for it
  * @param {string} [params.lang] the admin's language, for the seeded wording
  * @returns {Promise<Object[]>} in display order
  */
 async function listDimensions({ user, groupId, lang }) {
   logger.log('dimensionService:listDimensions');
 
-  const companyId = resolveCompanyId(user, groupId);
+  const companyId = await resolveExistingCompanyId(user, groupId);
   await seedStandardDimensions({ companyId, lang: lang || user?.lang });
 
   return TaxonomyDimensions.find({ _company: companyId })
@@ -67,7 +68,7 @@ async function listDimensions({ user, groupId, lang }) {
 async function createDimension({ user, groupId, payload = {} }) {
   logger.log('dimensionService:createDimension');
 
-  const companyId = resolveCompanyId(user, groupId);
+  const companyId = await resolveExistingCompanyId(user, groupId);
   const { name: rawName, confirmCaseVariant = false, ...rest } = payload;
   const name = readDimensionName(rawName);
   if (typeof confirmCaseVariant !== 'boolean') {

@@ -24,6 +24,7 @@ module.exports = {
  *
  * @apiUse taxonomyDimension
  * @apiSuccess {taxonomyDimension[]} items in display order
+ * @apiError (404) GROUP_NOT_FOUND a super admin named an id no company has
  */
 async function listDimensions(req, res) {
   const dimensions = await dimensionService.listDimensions({

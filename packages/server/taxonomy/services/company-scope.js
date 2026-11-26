@@ -1,15 +1,16 @@
 'use strict';
 
 const { Types } = require('mongoose');
-const { BadRequest, Forbidden } = require('http-errors');
+const { BadRequest, Forbidden, NotFound } = require('http-errors');
 
+const { Groups } = require('../../common/models.common.js');
 const ERROR_CODES = require('../../constant/error-codes.js');
 const permissions = require('../../account/permissions.js');
 const { selectedGroupIdOf } = require('../../account/request-scope.js');
 const { CAPABILITIES } = require('../../../shared/access/roles.js');
 const { isObjectId } = require('./taxonomy.validation.js');
 
-module.exports = { resolveCompanyId, scopedById };
+module.exports = { resolveCompanyId, resolveExistingCompanyId, scopedById };
 
 /**
  * The company every query of the taxonomy services is bounded to.
@@ -67,6 +68,32 @@ function resolveCompanyId(user, requestedGroupId) {
   }
 
   return Types.ObjectId(String(groupId));
+}
+
+/**
+ * The company, as resolveCompanyId resolves it, checked to exist: for the
+ * calls that write on the company's behalf without being asked to, like the
+ * seed of the standard dimensions on a read.
+ *
+ * Only a super admin's company is looked up. It names any id, and one that is
+ * no company would otherwise be seeded dimensions; anyone else's company is
+ * the one their session belongs to.
+ *
+ * @param {Object} user
+ * @param {string} [requestedGroupId] company named by the request
+ * @returns {Promise<ObjectId>}
+ */
+async function resolveExistingCompanyId(user, requestedGroupId) {
+  const companyId = resolveCompanyId(user, requestedGroupId);
+
+  if (
+    permissions.can(user, CAPABILITIES.PLATFORM_MANAGE) &&
+    !(await Groups.exists({ _id: companyId }))
+  ) {
+    throw new NotFound(ERROR_CODES.GROUP_NOT_FOUND);
+  }
+
+  return companyId;
 }
 
 /**
