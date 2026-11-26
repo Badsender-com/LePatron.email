@@ -3,6 +3,7 @@
 const {
   STANDARD_DIMENSIONS,
   RESERVED_DIMENSION_NAMES,
+  isTokenValue,
 } = require('../../../../shared/taxonomy/constants.js');
 
 /**
@@ -124,6 +125,9 @@ function resolveTokens(carriers, values, dimensions) {
     .forEach((carrier) => {
       Object.entries(carrier.tokens).forEach(([name, token]) => {
         if (reserved.has(name)) return;
+        // A value stored before the server checked its format: the template
+        // keeps its own rather than receive markup or CSS (ADR-0015).
+        if (!isTokenValue(token)) return;
         const previous = sources[name];
         values[name] = token;
         sources[name] = {

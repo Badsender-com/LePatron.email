@@ -379,6 +379,61 @@ describe('publishing design tokens', () => {
     expect(values.mainColorVar).toBe('#e60000');
   });
 
+  // Stored before the server checked a token's format: the template keeps its
+  // own value rather than receive markup or CSS (ADR-0015).
+  it.each([
+    ['a block of CSS', 'red} body{display:none'],
+    ['the end of a style', '</style><script>x()</script>'],
+    ['a script link', 'javascript:alert(1)'],
+    ['an import', '@import "https://example.com/x.css"'],
+    ['a CSS url', 'url(https://example.com/x.png)'],
+  ])('never publishes a token holding %s', (kind, token) => {
+    const { values, sources } = governanceValues({
+      dimensions: [
+        {
+          ...BRAND,
+          values: [
+            {
+              id: '64a0000000000000000000b3',
+              canonicalType: 'brand-c',
+              tokens: { mainColorVar: token, textColorVar: '#1a1a1a' },
+            },
+          ],
+        },
+      ],
+      selections: { brand: '64a0000000000000000000b3' },
+    });
+
+    expect(values).not.toHaveProperty('mainColorVar');
+    expect(sources).not.toHaveProperty('mainColorVar');
+    expect(values.textColorVar).toBe('#1a1a1a');
+  });
+
+  it('keeps the valid token of a lower precedence over an unsafe one', () => {
+    const { values } = governanceValues({
+      dimensions: [
+        { ...EMAIL_TYPE, precedence: 10 },
+        {
+          ...BRAND,
+          precedence: 50,
+          values: [
+            {
+              id: '64a0000000000000000000b3',
+              canonicalType: 'brand-c',
+              tokens: { mainColorVar: 'red} body{display:none' },
+            },
+          ],
+        },
+      ],
+      selections: {
+        brand: '64a0000000000000000000b3',
+        emailType: '64a0000000000000000000c1',
+      },
+    });
+
+    expect(values.mainColorVar).toBe('#e60000');
+  });
+
   it('publishes no token for a dimension the email has no value for', () => {
     const { values } = governanceValues({
       dimensions: [BRAND],

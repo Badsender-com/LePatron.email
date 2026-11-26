@@ -101,6 +101,21 @@ const TAXONOMY_LIMITS = Object.freeze({
   TOKEN_VALUE: 200,
 });
 
+// What a design token's value may not hold (ADR-0015). A template prints it
+// inside a style (`-ko-color: @_root_.mainColorVar`) or renders it as HTML: a
+// colour, a font stack, a size or a link, never markup or a block of CSS that
+// would close what it sits in. Checked by the server on save and by the editor
+// before it publishes a value stored before the check existed.
+const TOKEN_VALUE_FORBIDDEN = /[<>{};\\]|javascript:|vbscript:|expression\(|@import|url\(/i;
+
+/**
+ * @param {*} token a design token's value
+ * @returns {boolean} whether a template may receive it
+ */
+function isTokenValue(token) {
+  return typeof token === 'string' && !TOKEN_VALUE_FORBIDDEN.test(token);
+}
+
 module.exports = {
   STANDARD_DIMENSIONS,
   STANDARD_DIMENSION_NAMES,
@@ -109,4 +124,5 @@ module.exports = {
   DIMENSION_NAME_PATTERN,
   RESERVED_DIMENSION_NAMES,
   TAXONOMY_LIMITS,
+  isTokenValue,
 };

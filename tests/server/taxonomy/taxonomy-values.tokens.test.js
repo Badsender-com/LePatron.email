@@ -124,3 +124,47 @@ describe('design tokens', () => {
     }
   );
 });
+
+// A token ends up in the email's content, inside a style or an attribute: it
+// holds a value, never markup or a block of CSS that would close it.
+describe('what a token may hold', () => {
+  beforeAll(loadServices);
+
+  beforeEach(async () => {
+    await declare({ name: 'brand', label: 'Marque' });
+  });
+
+  it.each([
+    ['a colour', '#ffd845'],
+    ['a font stack', "'Helvetica Neue', Arial, sans-serif"],
+    ['a size', '16px'],
+    ['a link', 'https://example.com/logo.png?w=200&h=80'],
+  ])('accepts %s', async (kind, value) => {
+    const brand = await addValue('brand', {
+      label: 'Marque A',
+      tokens: { mainColorVar: value },
+    });
+
+    expect(plainTokens(brand.tokens).mainColorVar).toBe(value);
+  });
+
+  it.each([
+    ['a block of CSS', 'red} body{display:none'],
+    ['a declaration', 'red; background: black'],
+    ['the end of a style', '</style><script>x()</script>'],
+    ['an escape', 'red\\3b'],
+    ['a script link', 'javascript:alert(1)'],
+    ['a script link in capitals', 'JavaScript:alert(1)'],
+    ['a VBScript link', 'vbscript:msgbox(1)'],
+    ['a CSS expression', 'expression(alert(1))'],
+    ['an import', '@import "https://example.com/x.css"'],
+    ['a CSS url', 'url(https://example.com/x.png)'],
+  ])('refuses %s', async (kind, value) => {
+    await expect(
+      addValue('brand', { label: 'Marque A', tokens: { mainColorVar: value } })
+    ).rejects.toMatchObject({
+      status: 400,
+      message: ERROR_CODES.INVALID_TAXONOMY_ITEM,
+    });
+  });
+});
