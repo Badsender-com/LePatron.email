@@ -104,6 +104,64 @@ describe('list_changes, as each reader sees it', () => {
     });
   });
 
+  // A company never learns even the title of an item it never saw: no
+  // version was published while it was open to it.
+  describe('an item a client never saw', () => {
+    const SINCE_SEPTEMBER = { since: '2026-09-01', until: '2026-11-22' };
+
+    it('never shows it withdrawn when a draft never published, open to all, is archived', async () => {
+      withExpertises(
+        s.expertise(
+          'redaction.secret',
+          'Secret draft',
+          [s.version('1.0', 'DRAFT')],
+          {
+            status: 'ARCHIVED',
+            archivedAt: new Date('2026-11-19T08:00:00Z'),
+            audienceHistory: [s.archived('2026-11-19T08:00:00Z')],
+          }
+        )
+      );
+
+      const answer = await listChanges(
+        await harness.connectAs(f.FRANK),
+        SINCE_SEPTEMBER
+      );
+
+      expect(ids(answer)).not.toContain('redaction.secret');
+      expect(JSON.stringify(answer)).not.toContain('Secret draft');
+    });
+
+    it('never shows it withdrawn when it was opened and closed before its first publication', async () => {
+      withExpertises(
+        s.expertise(
+          'deliverability.internal',
+          'Internal',
+          [
+            s.version('1.0', 'ACTIVE', {
+              activatedAt: new Date('2026-11-19T08:00:00Z'),
+            }),
+          ],
+          {
+            audience: 'platform',
+            audienceHistory: [
+              s.opened('2026-11-17T08:00:00Z'),
+              s.closed('2026-11-18T08:00:00Z'),
+            ],
+          }
+        )
+      );
+
+      const answer = await listChanges(
+        await harness.connectAs(f.FRANK),
+        SINCE_SEPTEMBER
+      );
+
+      expect(ids(answer)).not.toContain('deliverability.internal');
+      expect(JSON.stringify(answer)).not.toContain('"Internal"');
+    });
+  });
+
   describe('an item withdrawn, then opened again', () => {
     it('appears to a client as created again, never opened', async () => {
       withExpertises(

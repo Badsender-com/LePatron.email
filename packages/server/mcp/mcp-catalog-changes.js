@@ -65,6 +65,12 @@ function publicationChanges(item, { everyAudience }) {
     .filter(({ at }) => everyAudience || within(spans, at));
 }
 
+// Whether a company saw the item while it was open to it: a version was
+// published before the span ended. One it never saw is never withdrawn from
+// it, so it never learns even its title.
+const seenWithin = (item, span) =>
+  publications(item).some((version) => time(version.activatedAt) < span.to);
+
 /**
  * What the platform company is told of a step of the history: a change of
  * audience while the item is not archived, an archiving, and a
@@ -82,8 +88,9 @@ function platformChangeOf({ archiving, before, after }) {
 /**
  * The openings and withdrawals a reader sees: the platform company each
  * change of audience and each archiving; another company the start of each
- * span it was open to it, as a creation, and each end: it never learns that
- * an item existed before it was opened, nor that it was opened again.
+ * span it was open to it, as a creation, and each end of a span in which it
+ * saw the item: it never learns that an item existed before it was opened,
+ * nor that it was opened again.
  */
 function audienceChanges(item, { everyAudience }) {
   if (everyAudience) {
@@ -102,7 +109,9 @@ function audienceChanges(item, { everyAudience }) {
           },
         ]
       : []),
-    ...(span.to < Infinity ? [{ change: 'withdrawn', at: span.to }] : []),
+    ...(span.to < Infinity && seenWithin(item, span)
+      ? [{ change: 'withdrawn', at: span.to }]
+      : []),
   ]);
 }
 
