@@ -1857,7 +1857,7 @@ export default {
         tokenNameRequired: 'Give this token a name, or remove the row.',
         tokenNameTooLong: 'The name cannot exceed {max} characters.',
         tokenNameReserved:
-          'This name is reserved by JavaScript, by the editor (like theme or type) or for the email’s language (locale).',
+          'This name is reserved by JavaScript, by the editor (like theme or type) or for the email’s language, which the template receives under the name locale.',
         tokenNameDuplicate: 'Two tokens have this name: keep only one.',
         tokenValueRequired: 'Give this token a value, or remove the row.',
         tokenValueTooLong: 'The value cannot exceed {max} characters.',

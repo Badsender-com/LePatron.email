@@ -367,8 +367,8 @@ describe('publishing design tokens', () => {
     expect(values.mainColorVar).toBe('#123456');
   });
 
-  // The email's language, published by the editor under `locale`: a token
-  // never shadows it (ADR-0015).
+  // Reserved for the email's language, which the template receives under
+  // `locale` (ADR-0023): a token never shadows it (ADR-0015).
   it('never publishes a token named `locale`', () => {
     const { values, sources } = governanceValues({
       dimensions: [

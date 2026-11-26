@@ -1449,7 +1449,7 @@ export default {
         tokenNameRequired: 'Donnez un nom à ce token, ou retirez la ligne.',
         tokenNameTooLong: 'Le nom ne peut pas dépasser {max} caractères.',
         tokenNameReserved:
-          'Ce nom est réservé par JavaScript, par l’éditeur (comme theme ou type) ou à la langue de l’email (locale).',
+          'Ce nom est réservé par JavaScript, par l’éditeur (comme theme ou type) ou à la langue de l’email, que le template reçoit sous le nom locale.',
         tokenNameDuplicate: 'Deux tokens portent ce nom : gardez-en un seul.',
         tokenValueRequired: 'Donnez une valeur à ce token, ou retirez la ligne.',
         tokenValueTooLong: 'La valeur ne peut pas dépasser {max} caractères.',

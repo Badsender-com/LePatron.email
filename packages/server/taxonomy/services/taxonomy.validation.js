@@ -200,8 +200,8 @@ function readTokens(value) {
     if (name.length > TaxonomyLimits.DIMENSION_NAME) throw invalid();
     // Published to the root property of the same name, like a dimension: never
     // a piece of the content the editor builds, a name every object answers
-    // to, nor what the editor publishes itself (`locale`):
-    // packages/shared/taxonomy/constants.js.
+    // to, nor `locale`, reserved for the email's language, which the template
+    // receives under that name (ADR-0023): packages/shared/taxonomy/constants.js.
     if (RESERVED_TOKEN_NAMES.includes(name)) throw invalid();
     if (typeof token !== 'string' || token.trim() === '') throw invalid();
     if (token.length > TaxonomyLimits.TOKEN_VALUE) throw invalid();

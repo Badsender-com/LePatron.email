@@ -213,7 +213,7 @@ describe('design tokens', () => {
     expect(plainTokens(brand.tokens)).toEqual({ market: '#000' });
   });
 
-  it('refuses a token named `locale`, which the editor publishes itself', async () => {
+  it("refuses a token named `locale`, reserved for the email's language", async () => {
     await expect(
       addValue('brand', { label: 'Marque A', tokens: { locale: 'fr' } })
     ).rejects.toMatchObject({

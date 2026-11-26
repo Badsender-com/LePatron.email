@@ -116,8 +116,8 @@ function governanceValues({
 function resolveTokens(carriers, values, dimensions) {
   // A token never shadows a dimension: `_root_.audience` stays the audience.
   // Nor a name a dimension may not take (a piece of the content the editor
-  // builds, a name every object answers to), nor `locale`, the email's
-  // language, which the editor publishes itself.
+  // builds, a name every object answers to), nor `locale`, reserved for the
+  // email's language, which the template receives under that name (ADR-0023).
   const reserved = new Set([
     STANDARD_DIMENSIONS.TRIGGER,
     ...RESERVED_TOKEN_NAMES,

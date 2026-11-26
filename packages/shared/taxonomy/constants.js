@@ -79,9 +79,9 @@ const RESERVED_DIMENSION_NAMES = Object.freeze(
 );
 
 // A design token is published to the root property of its own name, like a
-// dimension, so it takes none of the names above. Nor `locale`, the email's
-// language, which the editor publishes itself under that name: a token would
-// shadow it (ADR-0015).
+// dimension, so it takes none of the names above. Nor `locale`, reserved for
+// the email's language, which the template receives under that name
+// (ADR-0023): a token would shadow it (ADR-0015).
 const RESERVED_TOKEN_NAMES = Object.freeze(
   RESERVED_DIMENSION_NAMES.concat(['locale'])
 );
