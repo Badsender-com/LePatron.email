@@ -138,6 +138,120 @@ describe('editing, deactivating and deleting a dimension', () => {
     });
   });
 
+  // Deactivated, then counted, then deleted: no value created meanwhile can be
+  // left under a name nothing declares.
+  describe('while a value is being created', () => {
+    const taxonomyService = () =>
+      require('../../../packages/server/taxonomy/services/taxonomy.service.js');
+
+    // Runs `during` right after the dimension's first write by the deletion.
+    const duringDeletion = (during) => {
+      const { updateOne } = models.TaxonomyDimensions;
+      const spy = jest
+        .spyOn(models.TaxonomyDimensions, 'updateOne')
+        .mockImplementationOnce(async (...args) => {
+          const result = await updateOne(...args);
+          await during();
+          return result;
+        });
+      return spy;
+    };
+
+    afterEach(() => jest.restoreAllMocks());
+
+    it('refuses a value created once the deletion started, and deletes', async () => {
+      let creation;
+      duringDeletion(async () => {
+        creation = taxonomyService()
+          .createTaxonomyItem({
+            user: adminA,
+            type: 'audience',
+            payload: { label: 'Clients VIP' },
+          })
+          .catch((error) => error);
+        await creation;
+      });
+
+      await dimensionService.deleteDimension({
+        user: adminA,
+        dimensionId: idOf(audience),
+      });
+
+      expect(await creation).toMatchObject({
+        status: 400,
+        message: ERROR_CODES.INVALID_TAXONOMY_TYPE,
+      });
+      expect(await reload()).toBeUndefined();
+      expect(models.TaxonomyItems.all()).toHaveLength(0);
+    });
+
+    it('counts a value that landed before the count, keeps the dimension and leaves it active', async () => {
+      duringDeletion(async () => {
+        models.TaxonomyItems.seed([
+          { _company: COMPANY_A, type: 'audience', label: 'Clients VIP' },
+        ]);
+      });
+
+      await expect(
+        dimensionService.deleteDimension({
+          user: adminA,
+          dimensionId: idOf(audience),
+        })
+      ).rejects.toMatchObject({
+        status: 409,
+        message: ERROR_CODES.DIMENSION_HAS_VALUES,
+        details: { valueCount: 1 },
+      });
+      expect(await reload()).toMatchObject({ isActive: true });
+    });
+
+    it('leaves a dimension the admin had deactivated deactivated, when refused', async () => {
+      await dimensionService.updateDimension({
+        user: adminA,
+        dimensionId: idOf(audience),
+        payload: { isActive: false },
+      });
+      models.TaxonomyItems.seed([
+        { _company: COMPANY_A, type: 'audience', label: 'Clients VIP' },
+      ]);
+
+      await expect(
+        dimensionService.deleteDimension({
+          user: adminA,
+          dimensionId: idOf(audience),
+        })
+      ).rejects.toMatchObject({ status: 409 });
+      expect(await reload()).toMatchObject({ isActive: false });
+    });
+
+    it('takes back a value whose dimension was deleted while it was written', async () => {
+      const { create } = models.TaxonomyItems;
+      jest
+        .spyOn(models.TaxonomyItems, 'create')
+        .mockImplementationOnce(async (fields) => {
+          // The value passed every check; the deletion runs before it lands.
+          await dimensionService.deleteDimension({
+            user: adminA,
+            dimensionId: idOf(audience),
+          });
+          return create(fields);
+        });
+
+      await expect(
+        taxonomyService().createTaxonomyItem({
+          user: adminA,
+          type: 'audience',
+          payload: { label: 'Clients VIP' },
+        })
+      ).rejects.toMatchObject({
+        status: 400,
+        message: ERROR_CODES.INVALID_TAXONOMY_TYPE,
+      });
+      expect(await reload()).toBeUndefined();
+      expect(models.TaxonomyItems.all()).toHaveLength(0);
+    });
+  });
+
   it("refuses to delete another company's dimension, as if it did not exist", async () => {
     await expect(
       dimensionService.deleteDimension({

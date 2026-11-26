@@ -83,8 +83,9 @@ async function createTaxonomyItem({ user, groupId, type, payload = {} }) {
     throw limitReached(TaxonomyLimits.VALUES_PER_DIMENSION);
   }
 
+  let created;
   try {
-    return await TaxonomyItems.create({
+    created = await TaxonomyItems.create({
       ...fields,
       _company: companyId,
       type: taxonomyType,
@@ -99,6 +100,19 @@ async function createTaxonomyItem({ user, groupId, type, payload = {} }) {
     }
     throw error;
   }
+
+  // Read again once written: a deletion of the dimension that started after
+  // the first check has deactivated it by now (deleteDimension), and may have
+  // counted its values before this one landed. The value is taken back rather
+  // than left under a name nothing declares.
+  try {
+    await assertValueType({ companyId, type: taxonomyType, toWrite: true });
+  } catch (error) {
+    await TaxonomyItems.deleteOne({ _id: created._id, _company: companyId });
+    throw error;
+  }
+
+  return created;
 }
 
 async function updateTaxonomyItem({ user, itemId, payload = {} }) {

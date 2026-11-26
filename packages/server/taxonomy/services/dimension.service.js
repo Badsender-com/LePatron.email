@@ -148,6 +148,11 @@ async function updateDimension({ user, dimensionId, payload = {} }) {
  * Delete a dimension while it has no values. Once it has some, it is
  * deactivated instead: deleting it would leave its values, and the emails
  * carrying them, under a name nothing declares.
+ *
+ * Deactivated first, then counted, then deleted. An inactive dimension takes no
+ * new value (assertValueType), so a value created while this runs is either in
+ * the count or refused. Counting first would let one created between the count
+ * and the delete stay behind, and come back if the name were declared again.
  */
 async function deleteDimension({ user, dimensionId }) {
   logger.log('dimensionService:deleteDimension');
@@ -158,20 +163,24 @@ async function deleteDimension({ user, dimensionId }) {
     throw new Conflict(ERROR_CODES.STANDARD_DIMENSION_LOCKED);
   }
 
+  const scope = { _id: dimension._id, _company: dimension._company };
+  await TaxonomyDimensions.updateOne(scope, { $set: { isActive: false } });
+
   const valueCount = await TaxonomyItems.countDocuments({
     _company: dimension._company,
     type: dimension.name,
   });
   if (valueCount > 0) {
+    // Refused: the dimension goes back to the state the admin left it in.
+    if (dimension.isActive) {
+      await TaxonomyDimensions.updateOne(scope, { $set: { isActive: true } });
+    }
     const error = new Conflict(ERROR_CODES.DIMENSION_HAS_VALUES);
     error.details = { valueCount };
     throw error;
   }
 
-  await TaxonomyDimensions.deleteOne({
-    _id: dimension._id,
-    _company: dimension._company,
-  });
+  await TaxonomyDimensions.deleteOne(scope);
 }
 
 /**
