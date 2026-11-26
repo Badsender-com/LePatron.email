@@ -359,6 +359,27 @@ describe('nested selects', () => {
       ).toEqual({ market: 'ca' });
     });
 
+    it('keeps a narrowed combination when an unrelated dimension changes', () => {
+      // Dutch was narrowed to Belgium after this email chose Canada + Dutch.
+      expect(
+        reconcileSelections({
+          dimensions: [AUDIENCE, MARKET, LANGUAGE],
+          selections: { audience: 'vip', market: 'ca', language: 'nl' },
+          changed: ['audience'],
+        })
+      ).toEqual({ audience: 'vip', market: 'ca', language: 'nl' });
+    });
+
+    it('clears the descendants of the value changed, down to the last level', () => {
+      expect(
+        reconcileSelections({
+          dimensions: [MARKET, LANGUAGE, SCRIPT],
+          selections: { market: 'ca', language: 'nl', script: 'latin' },
+          changed: ['market'],
+        })
+      ).toEqual({ market: 'ca' });
+    });
+
     it('clears a child when its parent is emptied', () => {
       expect(
         reconcileSelections({
