@@ -94,7 +94,9 @@ describe('what the editor receives of the company dimensions, and what follows a
         'brand',
         'audience',
       ]);
-      const audience = emailMetadataConfig.dimensions[1];
+      const audience = emailMetadataConfig.dimensions.find(
+        (dimension) => dimension.name === 'audience'
+      );
       expect(audience).toMatchObject({ name: 'audience', label: 'Cible' });
       expect(audience.values.map((value) => value.label).sort()).toEqual([
         'Clients VIP',
@@ -139,7 +141,9 @@ describe('what the editor receives of the company dimensions, and what follows a
 
       const { emailMetadataConfig } = await build(newMailing());
 
-      const audience = emailMetadataConfig.dimensions[1];
+      const audience = emailMetadataConfig.dimensions.find(
+        (dimension) => dimension.name === 'audience'
+      );
       expect(
         audience.values.find((value) => value.label === 'Clients fidèles')
       ).toMatchObject({ canonicalType: 'loyal' });
@@ -165,7 +169,9 @@ describe('what the editor receives of the company dimensions, and what follows a
         'brand',
         'audience',
       ]);
-      const audience = emailMetadataConfig.dimensions[1];
+      const audience = emailMetadataConfig.dimensions.find(
+        (dimension) => dimension.name === 'audience'
+      );
       expect(audience.values.map((value) => value.label).sort()).toEqual([
         'Clients VIP',
         'Prospects',
