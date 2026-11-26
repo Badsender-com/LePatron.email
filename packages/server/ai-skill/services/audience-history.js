@@ -12,7 +12,10 @@
  * time on the same item, an expertise opened with a skill, is not lost.
  */
 
-const { SkillStatuses } = require('../constant/skill-constants.js');
+const createError = require('http-errors');
+const ERROR_CODES = require('../../constant/error-codes.js');
+const { SkillStatuses, Audiences } = require('../constant/skill-constants.js');
+const { findActiveVersion } = require('./version-helpers.js');
 
 /* eslint-disable no-param-reassign */
 function record(doc, entry) {
@@ -21,16 +24,23 @@ function record(doc, entry) {
 }
 
 /**
- * Sets an item's audience, and records the change when it is one.
+ * Sets an item's audience, and records the change when it is one. A company
+ * reads the active version only: an item never published is never opened,
+ * from the back office as from an assistant (`set_audience`).
  *
- * @param {Object} doc the item, stored or plain, saved by the caller
+ * @param {Object} doc the item, stored or plain, with its versions, saved by
+ *   the caller
  * @param {string} audience
  * @param {*} [userId] who sets it
  * @param {Date} [at] when, the same date as what is written with it
  * @returns {boolean} whether it changed
+ * @throws {HttpError} 409 SKILL_OPEN_NEVER_PUBLISHED
  */
 function setAudience(doc, audience, userId, at = new Date()) {
   if (doc.audience === audience) return false;
+  if (audience === Audiences.ALL && !findActiveVersion(doc)) {
+    throw createError(409, ERROR_CODES.SKILL_OPEN_NEVER_PUBLISHED);
+  }
   doc.audience = audience;
   record(doc, { audience, at, _by: userId || null });
   return true;

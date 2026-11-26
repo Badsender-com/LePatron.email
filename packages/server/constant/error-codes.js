@@ -206,6 +206,9 @@ module.exports = {
   SKILL_CONSUMED_EXPERTISES_TOO_MANY: 'SKILL_CONSUMED_EXPERTISES_TOO_MANY',
   SKILL_CONSUMED_EXPERTISES_NOT_FOUND: 'SKILL_CONSUMED_EXPERTISES_NOT_FOUND',
   SKILL_OPEN_EXPERTISES_INVALID: 'SKILL_OPEN_EXPERTISES_INVALID',
+  // A skill or an expertise opened to every company before any version of it
+  // was published: a company reads the active version only (ADR 0031).
+  SKILL_OPEN_NEVER_PUBLISHED: 'SKILL_OPEN_NEVER_PUBLISHED',
   // A feature skill still meant for the platform company, invoked on behalf
   // of a user of another company (ADR 0013).
   SKILL_NOT_AVAILABLE_TO_COMPANY: 'SKILL_NOT_AVAILABLE_TO_COMPANY',

@@ -2085,6 +2085,8 @@ export default {
         'Ces Expertises consommées n\'existent pas : {expertiseIds}. Retirez-les de la version.',
       SKILL_OPEN_EXPERTISES_INVALID:
         'Seules les Expertises publiées que cette version consomme et qui sont réservées à l\'entreprise plateforme s\'ouvrent avec le Skill, et seulement quand le Skill s\'ouvre à toutes les entreprises.',
+      SKILL_OPEN_NEVER_PUBLISHED:
+        'Cet élément n\'a jamais été publié : publiez une version avant de l\'ouvrir à toutes les entreprises.',
       SKILL_NOT_AVAILABLE_TO_COMPANY:
         'Cette fonctionnalité n\'est pas encore disponible pour votre entreprise.',
       SKILL_PROCEDURE_REQUIRED_TO_PUBLISH:

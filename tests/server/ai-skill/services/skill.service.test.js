@@ -233,7 +233,12 @@ describe('skill.service', () => {
     // What the publication's confirmation sends to open a skill to every
     // company (ADR 0013).
     it('patches the audience', async () => {
-      const doc = mockSkillDoc({ audience: 'platform' });
+      const doc = mockSkillDoc({
+        audience: 'platform',
+        status: 'ACTIVE',
+        activeVersion: { major: 1, minor: 0 },
+        versions: [{ versionMajor: 1, versionMinor: 0, status: 'ACTIVE' }],
+      });
       LePatronSkills.findOne.mockResolvedValue(doc);
 
       await skillService.updateSkill('generic.text', { audience: 'all' });
