@@ -40,6 +40,7 @@ async function mountModal({ isMajor = false, seed }) {
       '~/components/form/bs-textarea.vue': {},
       '~/components/ai-skill/bs-ai-open-expertises-choice.vue': {},
       '~/helpers/ai-skill-audience-change.js': audienceChange,
+      '../../../shared/ai-skill/constants.js': require('../../../packages/shared/ai-skill/constants.js'),
     },
   });
   vm.open(seed);
@@ -50,7 +51,7 @@ async function mountModal({ isMajor = false, seed }) {
 }
 
 // Turned on by #1666 (the activation modal requires both texts)
-describe.skip('activation modal requires both texts', () => {
+describe('activation modal requires both texts', () => {
   it('publishes no minor version without a release note', async () => {
     const { vm, confirm } = await mountModal({
       seed: { changelog: 'Typo', releaseNotes: '' },

@@ -8,6 +8,7 @@ const {
   AUDIENCES,
   AUDIENCE_VALUES,
   MAX_CONSUMED_EXPERTISES,
+  LEGACY_MINOR_VERSION_TEXTS,
 } = require('../../../shared/ai-skill/constants.js');
 
 const SkillCategories = Object.freeze({
@@ -43,13 +44,7 @@ const InvocationStatuses = Object.freeze({
 
 const InvocationStatusValues = Object.values(InvocationStatuses);
 
-// The generic texts a minor version used to get by default, before every
-// publication required its own (ADR 0031): recognised, never written again.
-// French, as they were stored next to the doctrine an author writes.
-const LegacyMinorVersionTexts = Object.freeze({
-  changelog: 'Correction mineure',
-  releaseNotes: 'Correction mineure sans changement de doctrine.',
-});
+const LegacyMinorVersionTexts = LEGACY_MINOR_VERSION_TEXTS;
 
 const SkillIdRegex = /^[a-z0-9._-]+$/;
 const SectionIdRegex = /^[a-z0-9-]+$/;

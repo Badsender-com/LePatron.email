@@ -2469,11 +2469,14 @@ export default {
       openToAll: 'L\'ouvrir à toutes les entreprises',
       openToAllNotice:
         'Cette fiche sera ouverte à toutes les entreprises dès sa publication.',
-      activateBodyMinor: 'Activer cette version mineure la rend immuable et change immédiatement la doctrine consommée par les fonctionnalités. Changelog et notes pré-remplis depuis le brouillon (facultatifs pour une mineure).',
+      activateBodyMinor: 'Activer cette version mineure la rend immuable et change immédiatement la doctrine consommée par les fonctionnalités. Le changelog et les notes de version sont obligatoires.',
       changelog: 'Changelog',
       changelogPlaceholder:
         'Ce qui change par rapport à la version précédente — ex. « Ajout de la règle d\'urgence, reformulation du critère de longueur »',
       releaseNotes: 'Notes de version',
+      releaseNotesHint:
+        'Ce qui change pour qui utilise cet élément, en {max} caractères au plus : chaque société qui le lit la verra.',
+      releaseNotesTooLong: 'Pas plus de {max} caractères.',
       releaseNotesPlaceholder:
         'À savoir sur cette version — ex. « Testée uniquement sur les emails promo FR ; section exceptions à valider terrain »',
       outputFormatNote:

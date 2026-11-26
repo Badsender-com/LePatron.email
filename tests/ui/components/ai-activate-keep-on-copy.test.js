@@ -58,6 +58,7 @@ function mountModal({
       '~/components/form/bs-textarea.vue': {},
       '~/components/ai-skill/bs-ai-open-expertises-choice.vue': {},
       '~/helpers/ai-skill-audience-change.js': audienceChange,
+      '../../../shared/ai-skill/constants.js': require('../../../packages/shared/ai-skill/constants.js'),
     },
   });
   vm.open({ changelog: 'c', releaseNotes: 'r' });
