@@ -12,12 +12,14 @@ const harness = require('../../helpers/mcp-harness');
 const f = require('../../helpers/mcp-fixtures');
 
 const SKILL_PUBLISHED = '2026-11-17T09:30:00.000Z';
+// A publication saves the version just after it is dated: its last change.
+const SKILL_UPDATED = '2026-11-17T09:30:00.120Z';
 const EXPERTISE_PUBLISHED = '2026-11-16T22:47:00.000Z';
 
-const publishedAt = (item, iso) => ({
+const publishedAt = (item, iso, fields = {}) => ({
   ...item,
   versions: item.versions.map((v) =>
-    v.status === 'ACTIVE' ? { ...v, activatedAt: new Date(iso) } : v
+    v.status === 'ACTIVE' ? { ...v, activatedAt: new Date(iso), ...fields } : v
   ),
 });
 
@@ -25,7 +27,9 @@ const SEED = {
   ...f.SEED,
   skills: f.SKILLS.map((skill) =>
     skill.skillId === 'redaction.subject-ideas'
-      ? publishedAt(skill, SKILL_PUBLISHED)
+      ? publishedAt(skill, SKILL_PUBLISHED, {
+          updatedAt: new Date(SKILL_UPDATED),
+        })
       : skill
   ),
   expertises: f.EXPERTISES.map((expertise) =>
@@ -93,7 +97,7 @@ describe('catalog dates and versions', () => {
       ).toContain('Version 1.0.');
     });
 
-    it('says when each skill resource was last modified, as for the expertises', async () => {
+    it('says when each skill resource was last modified, its last change rather than its publication', async () => {
       const { resources } = await (
         await harness.connectAs(f.FRANK)
       ).listResources();
@@ -101,7 +105,7 @@ describe('catalog dates and versions', () => {
         (r) => r.uri === 'lepatron://skills/redaction.subject-ideas'
       );
 
-      expect(skill.annotations).toEqual({ lastModified: SKILL_PUBLISHED });
+      expect(skill.annotations).toEqual({ lastModified: SKILL_UPDATED });
     });
 
     it('answers a draft tried in the drafts mode with no publication date', async () => {

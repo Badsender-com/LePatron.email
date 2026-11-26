@@ -33,12 +33,18 @@ const RETEX = '507f1f77bcf86cd799439e01';
 const GENERIC_NOTE = 'Correction mineure sans changement de doctrine.';
 const GENERIC_LOG = 'Correction mineure';
 
+// Ids of their own, that no other fixture gives: a prefix and four hex
+// digits, each id given once.
+const ID_PREFIX = '507f1f77bcf86cd7c4a0';
+const MAX_IDS = 0xffff;
 let count = 0;
-const nextId = () =>
-  `507f1f77bcf86cd7994398${String((count = (count % 99) + 1)).padStart(
-    2,
-    '0'
-  )}`;
+function nextId() {
+  count += 1;
+  if (count > MAX_IDS) {
+    throw new Error(`The catalog changes seed gives at most ${MAX_IDS} ids`);
+  }
+  return `${ID_PREFIX}${count.toString(16).padStart(4, '0')}`;
+}
 
 function version(label, status, fields = {}) {
   const [versionMajor, versionMinor] = label.split('.').map(Number);
@@ -85,9 +91,11 @@ function skill(skillId, title, versions, fields = {}) {
     description: `About ${title}`,
     category: skillId.split('.')[0],
     servedToAssistants: true,
-    status: 'ACTIVE',
+    status: active ? 'ACTIVE' : 'DRAFT',
     audience: 'all',
-    activeVersion: { major: active.versionMajor, minor: active.versionMinor },
+    activeVersion: active
+      ? { major: active.versionMajor, minor: active.versionMinor }
+      : { major: null, minor: 0 },
     versions: versions.map(({ body, ...v }) => ({
       nature: 'task',
       procedure: body,
