@@ -21,8 +21,9 @@
  *   (tests/server/ai-skill/models/).
  * - A query's `cursor()` yields its documents to a `for await`.
  * - `bulkWrite` takes `updateOne` operations of a `$set` only.
- * - `updateMany` takes a `$set` only; `findOneAndUpdate` a `$set`, a
- *   `$push` and an `$addToSet` (of `$each`), and answers the document before
+ * - `updateMany` takes a `$set`, and a `$push` of one value; `findOneAndUpdate`
+ *   a `$set`, a `$push` and an `$addToSet` (of `$each`), and answers the
+ *   document before
  *   the update, or after it with `{ new: true }`, or null when nothing
  *   matches. A path through `array.$` reaches the first element the filter's
  *   `$elemMatch` on that array matches, each field compared as MongoDB does
@@ -409,12 +410,14 @@ function model(records) {
       }),
     updateMany: (filter, update) =>
       Promise.resolve().then(() => {
-        const { $set, ...others } = update;
+        const { $set, $push, ...others } = update;
         if (!$set || Object.keys(others).length) {
-          throw new Error('fake MCP models: updateMany takes a $set only');
+          throw new Error(
+            'fake MCP models: updateMany takes a $set and a $push'
+          );
         }
         const found = matching(filter)();
-        found.forEach((record) => Object.assign(record, copy($set)));
+        found.forEach((record) => applyUpdate(record, { $set, $push }));
         return { n: found.length, nModified: found.length };
       }),
     aggregate: (pipeline) =>

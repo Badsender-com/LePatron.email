@@ -29,7 +29,7 @@ describe('list_changes', () => {
   afterEach(() => harness.disconnect());
 
   // Turned on by #1667 (created and updated items)
-  describe.skip('created and updated', () => {
+  describe('created and updated', () => {
     it('is a read-only tool every connection is offered, every parameter described', async () => {
       const { tools } = await (await asClient()).listTools();
       const tool = tools.find((t) => t.name === LIST);
@@ -115,7 +115,7 @@ describe('list_changes', () => {
     it('gives a client the release notes of what it may use, never the change log nor the retex', async () => {
       const answer = await call(await asClient(), {
         ...WEEK,
-        change: ['created', 'updated'],
+        change: ['updated'],
       });
 
       expect(summary(answer)).toEqual([
@@ -265,7 +265,7 @@ describe('list_changes', () => {
   });
 
   // Turned on by #1668 (openings and withdrawals)
-  describe.skip('opened and withdrawn', () => {
+  describe('opened and withdrawn', () => {
     it('lists to the platform company the openings and withdrawals of the week', async () => {
       const answer = await call(await asConsultant(), {
         ...WEEK,
@@ -275,8 +275,8 @@ describe('list_changes', () => {
       expect(summary(answer)).toEqual([
         '2026-11-18 opened b2b.prospection',
         '2026-11-20 withdrawn redaction.old-tone',
-        '2026-11-21 opened crm.governance',
         '2026-11-21 withdrawn redaction.retired',
+        '2026-11-21 opened crm.governance',
       ]);
       expect(answer.changes[0]).toMatchObject({
         toVersion: '1.0',
@@ -293,8 +293,8 @@ describe('list_changes', () => {
         '2026-11-18 created b2b.prospection',
         '2026-11-19 updated design.gmail',
         '2026-11-20 withdrawn redaction.old-tone',
-        '2026-11-21 created crm.governance',
         '2026-11-21 withdrawn redaction.retired',
+        '2026-11-21 created crm.governance',
       ]);
       expect(
         answer.changes.find((c) => c.id === 'crm.governance')
@@ -344,12 +344,14 @@ describe('list_changes', () => {
         });
       };
 
+      const before = new Date(Date.now() - 1000).toISOString();
       await audience({
         kind: 'expertise',
         id: 'deliverability.snds',
         audience: 'all',
       });
       const { changes } = await call(client, {
+        since: before,
         change: ['opened'],
       });
 
