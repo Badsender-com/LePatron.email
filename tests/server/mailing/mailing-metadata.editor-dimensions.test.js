@@ -102,6 +102,35 @@ describe('what the editor receives of the company dimensions, and what follows a
       ]);
     });
 
+    // The order the taxonomy screen shows (packages/shared/taxonomy/sort.js).
+    it('offers two dimensions of the same order the first declared first', async () => {
+      models.TaxonomyDimensions.seed([
+        {
+          _company: COMPANY_A,
+          name: 'area',
+          label: 'Zone',
+          order: 30,
+          createdAt: new Date('2026-11-02'),
+        },
+        {
+          _company: COMPANY_A,
+          name: 'zone',
+          label: 'Région',
+          order: 30,
+          createdAt: new Date('2026-11-01'),
+        },
+      ]);
+
+      const { emailMetadataConfig } = await build(newMailing());
+
+      expect(emailMetadataConfig.dimensions.map((d) => d.name)).toEqual([
+        'brand',
+        'audience',
+        'zone',
+        'area',
+      ]);
+    });
+
     it('gives each value its identifier, which the editor publishes to the template', async () => {
       await addValue('audience', {
         label: 'Clients fidèles',

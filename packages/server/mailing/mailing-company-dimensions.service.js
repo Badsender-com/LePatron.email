@@ -12,6 +12,7 @@ const {
   StandardDimensionNames,
   TaxonomyLimits,
 } = require('../constant/taxonomy-type.js');
+const { compareDimensions } = require('../../shared/taxonomy/sort.js');
 
 /**
  * The company dimensions an email carries (ADR-0032): one list of values, at most
@@ -122,7 +123,8 @@ async function assertChosenAreOffered(chosen, companyId) {
 
 /**
  * The company dimensions the editor offers a select for: the active ones, in
- * their declared order, each with its active values and the deactivated values
+ * the one order of ADR-0032 (order, then creation date: compareDimensions, the
+ * taxonomy screen's), each with its active values and the deactivated values
  * the email carries, so the select still shows what the email has. Each value
  * carries its identifier, which the editor publishes to the template.
  *
@@ -137,10 +139,10 @@ async function buildEditorDimensions({ companyId, currentIds = [] }) {
     isActive: true,
     name: { $nin: StandardDimensionNames },
   })
-    .select({ name: 1, label: 1, order: 1 })
-    .sort({ order: 1, name: 1 })
+    .select({ name: 1, label: 1, order: 1, createdAt: 1 })
     .lean();
   if (dimensions.length === 0) return [];
+  dimensions.sort(compareDimensions);
 
   const carried = (currentIds || []).map(asObjectId);
   const values = await TaxonomyItems.find({

@@ -32,7 +32,7 @@ jest.mock('../../../packages/server/common/models.common.js', () => ({
   // mailing-metadata.editor-dimensions.test.js.
   TaxonomyDimensions: {
     find: () => ({
-      select: () => ({ sort: () => ({ lean: async () => [] }) }),
+      select: () => ({ lean: async () => [] }),
     }),
   },
   Mailings: {},
