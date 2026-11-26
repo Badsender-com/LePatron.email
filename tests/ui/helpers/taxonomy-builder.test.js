@@ -157,8 +157,29 @@ describe('taxonomy screen: company dimensions', () => {
     ['  Français (Belgique) ', 'francais-belgique'],
     ['Black Friday 2026', 'black-friday-2026'],
     ['!!!', ''],
+    ['Œuvre', 'oeuvre'],
+    ['Cœur de cible', 'coeur-de-cible'],
+    ['Ægide', 'aegide'],
+    ['Straße', 'strasse'],
+    ['Ørsted Łódź', 'orsted-lodz'],
   ])('proposes the identifier of %p as %p', (label, identifier) => {
     expect(proposeIdentifier(label)).toBe(identifier);
+  });
+
+  // A label may hold 120 characters, an identifier 60: past that the server
+  // would refuse the proposal with a generic error.
+  it('cuts the identifier to the length the server accepts', () => {
+    const identifier = proposeIdentifier('Clients fidèles '.repeat(8));
+
+    expect(identifier.length).toBeLessThanOrEqual(60);
+    expect(identifier).toMatch(/^clients-fideles-clients-fideles-/);
+  });
+
+  it('never ends a cut identifier on a hyphen', () => {
+    // 59 letters, then a word: the cut lands right after the hyphen.
+    const identifier = proposeIdentifier(`${'a'.repeat(59)} suite`);
+
+    expect(identifier).toBe('a'.repeat(59));
   });
 
   it('never lets a name be renamed, and deletes only an empty dimension', () => {

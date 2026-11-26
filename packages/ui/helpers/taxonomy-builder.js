@@ -14,6 +14,7 @@ import {
   TAXONOMY_LIMITS,
 } from '../../shared/taxonomy/constants.js';
 import { compareDimensions } from '../../shared/taxonomy/sort.js';
+import { TAXONOMY_LIMITS } from './taxonomy.js';
 
 /**
  * The two standard dimensions, in the order the screen lists them, and the
@@ -97,6 +98,30 @@ export function isValidDimensionName(name) {
   return typeof name === 'string' && DIMENSION_NAME_PATTERN.test(name);
 }
 
+// Letters NFD does not split into a base letter and an accent, written as
+// they are spelled out in ASCII rather than dropped: « Œuvre » proposes
+// `oeuvre`, « Straße » `strasse`. Lower case only: the label is lowered first.
+const SPELLED_OUT = Object.freeze({
+  œ: 'oe',
+  æ: 'ae',
+  ß: 'ss',
+  ø: 'o',
+  ł: 'l',
+  đ: 'd',
+  ð: 'd',
+  þ: 'th',
+  ħ: 'h',
+  ı: 'i',
+  ĳ: 'ij',
+  ŀ: 'l',
+  ŋ: 'ng',
+  ŧ: 't',
+});
+const SPELLED_OUT_PATTERN = new RegExp(
+  `[${Object.keys(SPELLED_OUT).join('')}]`,
+  'g'
+);
+
 /**
  * Whether the name is one an email's values could not be stored under
  * (`__proto__`, `constructor`, `prototype`), though a template could read it.
@@ -110,18 +135,22 @@ export function isReservedDimensionName(name) {
 
 /**
  * The identifier proposed for a value, from its label: lower case, accents
- * dropped, words joined by hyphens. Only a proposal: the admin may change it.
+ * dropped, words joined by hyphens, cut to the identifier's length so the
+ * server never refuses a proposal. Only a proposal: the admin may change it.
  *
  * @param {string} label
  * @returns {string} empty when the label holds no letter or digit
  */
 export function proposeIdentifier(label) {
   return String(label || '')
-    .normalize('NFD')
-    .replace(/[̀-ͯ]/g, '')
     .toLowerCase()
+    .replace(SPELLED_OUT_PATTERN, (letter) => SPELLED_OUT[letter])
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
     .replace(/[^a-z0-9]+/g, '-')
-    .replace(/^-+|-+$/g, '');
+    .replace(/^-+/, '')
+    .slice(0, TAXONOMY_LIMITS.CANONICAL_TYPE)
+    .replace(/-+$/, '');
 }
 
 /**
