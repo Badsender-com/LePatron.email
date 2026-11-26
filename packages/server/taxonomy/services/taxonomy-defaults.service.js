@@ -9,7 +9,10 @@ const {
   buildDefaultEmailTypes,
   planMissingDefaultEmailTypes,
 } = require('./default-email-types.js');
-const { resolveCompanyId } = require('./taxonomy.service.js');
+const {
+  resolveCompanyId,
+  resolveExistingCompanyId,
+} = require('./company-scope.js');
 const { limitReached } = require('./taxonomy.validation.js');
 const logger = require('../../utils/logger.js');
 
@@ -130,7 +133,9 @@ async function previewMissingDefaultEmailTypes({ user, groupId, lang }) {
 async function addMissingDefaultEmailTypes({ user, groupId, lang }) {
   logger.log('taxonomyDefaultsService:addMissingDefaultEmailTypes');
 
-  const companyId = resolveCompanyId(user, groupId);
+  // Checked to exist: a super admin naming no company would otherwise have
+  // the default email types written for it.
+  const companyId = await resolveExistingCompanyId(user, groupId);
   const type = TaxonomyTypes.EMAIL_TYPE;
 
   const existing = await TaxonomyItems.find({ _company: companyId, type })

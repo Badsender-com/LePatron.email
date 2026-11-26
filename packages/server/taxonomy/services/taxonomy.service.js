@@ -13,7 +13,11 @@ const {
   validatePayload,
   limitReached,
 } = require('./taxonomy.validation.js');
-const { resolveCompanyId, scopedById } = require('./company-scope.js');
+const {
+  resolveCompanyId,
+  resolveExistingCompanyId,
+  scopedById,
+} = require('./company-scope.js');
 const { assertValueType } = require('./dimension.service.js');
 const logger = require('../../utils/logger.js');
 
@@ -50,7 +54,9 @@ async function listTaxonomyItems({ user, groupId, type, activeOnly = false }) {
 async function createTaxonomyItem({ user, groupId, type, payload = {} }) {
   logger.log('taxonomyService:createTaxonomyItem');
 
-  const companyId = resolveCompanyId(user, groupId);
+  // Checked to exist: the email type takes a value without reading any
+  // dimension, so a super admin naming no company would otherwise write one.
+  const companyId = await resolveExistingCompanyId(user, groupId);
   const taxonomyType = await assertValueType({
     companyId,
     type,

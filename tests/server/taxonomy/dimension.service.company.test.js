@@ -1,6 +1,6 @@
 'use strict';
 
-// The company a dimension request acts for (epic #1351, ADR-0032).
+// The company a taxonomy request acts for (epic #1351, ADR-0032).
 //
 // A super admin names the company; anyone else acts for their own, and naming
 // another one is refused rather than redirected. The collections are in-memory
@@ -107,5 +107,63 @@ describe('the company a dimension request acts for', () => {
       ).rejects.toMatchObject({ status: 403 });
       expect(models.TaxonomyDimensions.all()).toHaveLength(0);
     });
+  });
+});
+
+// The email type takes a value without reading any dimension, and the default
+// email types are written on the company's behalf: neither may write for an id
+// no company has.
+describe('the values a super admin writes for a company', () => {
+  const taxonomyService = require('../../../packages/server/taxonomy/services/taxonomy.service.js');
+  const defaultsService = require('../../../packages/server/taxonomy/services/taxonomy-defaults.service.js');
+
+  beforeEach(() => models.Groups.seed([{ _id: COMPANY_A, name: 'A' }]));
+
+  it('answers 404 to an email type value for an id no company has, writing nothing', async () => {
+    await expect(
+      taxonomyService.createTaxonomyItem({
+        user: superAdmin,
+        groupId: NO_COMPANY,
+        type: 'emailType',
+        payload: { label: 'Infolettre' },
+      })
+    ).rejects.toMatchObject({
+      status: 404,
+      message: ERROR_CODES.GROUP_NOT_FOUND,
+    });
+    expect(models.TaxonomyItems.all()).toHaveLength(0);
+  });
+
+  it('answers 404 to the default email types for an id no company has, writing nothing', async () => {
+    await expect(
+      defaultsService.addMissingDefaultEmailTypes({
+        user: superAdmin,
+        groupId: NO_COMPANY,
+        lang: 'fr',
+      })
+    ).rejects.toMatchObject({
+      status: 404,
+      message: ERROR_CODES.GROUP_NOT_FOUND,
+    });
+    expect(models.TaxonomyItems.all()).toHaveLength(0);
+  });
+
+  it('writes both for a company that exists', async () => {
+    await taxonomyService.createTaxonomyItem({
+      user: superAdmin,
+      groupId: COMPANY_A,
+      type: 'emailType',
+      payload: { label: 'Infolettre maison' },
+    });
+    const { created } = await defaultsService.addMissingDefaultEmailTypes({
+      user: superAdmin,
+      groupId: COMPANY_A,
+      lang: 'fr',
+    });
+
+    expect(created.length).toBeGreaterThan(0);
+    expect(
+      new Set(models.TaxonomyItems.all().map((item) => String(item._company)))
+    ).toEqual(new Set([COMPANY_A]));
   });
 });
