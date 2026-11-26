@@ -41,6 +41,7 @@ async function mountModal({ isMajor = false, seed }) {
       '~/components/ai-skill/bs-ai-open-expertises-choice.vue': {},
       '~/helpers/ai-skill-audience-change.js': audienceChange,
       '../../../shared/ai-skill/constants.js': require('../../../packages/shared/ai-skill/constants.js'),
+      '../../../shared/ai-skill/release-texts.js': require('../../../packages/shared/ai-skill/release-texts.js'),
     },
   });
   vm.open(seed);

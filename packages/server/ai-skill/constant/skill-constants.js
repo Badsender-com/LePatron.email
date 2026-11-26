@@ -8,7 +8,6 @@ const {
   AUDIENCES,
   AUDIENCE_VALUES,
   MAX_CONSUMED_EXPERTISES,
-  LEGACY_MINOR_VERSION_TEXTS,
 } = require('../../../shared/ai-skill/constants.js');
 
 const SkillCategories = Object.freeze({
@@ -44,8 +43,6 @@ const InvocationStatuses = Object.freeze({
 
 const InvocationStatusValues = Object.values(InvocationStatuses);
 
-const LegacyMinorVersionTexts = LEGACY_MINOR_VERSION_TEXTS;
-
 const SkillIdRegex = /^[a-z0-9._-]+$/;
 const SectionIdRegex = /^[a-z0-9-]+$/;
 const MaxSkillIdLength = 100;
@@ -64,7 +61,6 @@ module.exports = {
   SkillStatusValues,
   InvocationStatuses,
   InvocationStatusValues,
-  LegacyMinorVersionTexts,
   SkillIdRegex,
   SectionIdRegex,
   MaxSkillIdLength,

@@ -11,8 +11,8 @@ const {
 const {
   Audiences,
   SkillNatures,
-  LegacyMinorVersionTexts,
 } = require('../ai-skill/constant/skill-constants.js');
+const { writtenChangeLog } = require('../../shared/ai-skill/release-texts.js');
 const {
   withIdentity,
   mayWrite,
@@ -106,14 +106,14 @@ function drafted({ answer, diff, differs: changed }) {
 
 // The changelog of a draft a proposal writes into: the draft's own, then the
 // proposal's, so that what a person or an earlier proposal wrote stays. The
-// default of a new minor version says nothing, and counts as empty. Bounded,
-// so a draft proposed to again and again stays readable.
+// generic sentence an older minor draft got says nothing, and counts as
+// empty (ADR 0031). Bounded, so a draft proposed to again and again stays
+// readable.
 const MAX_DRAFT_CHANGELOG = 10000;
 
 function changelogAfter(version, changelog) {
-  const before = String(version.changelog || '').trim();
-  const said = before && before !== LegacyMinorVersionTexts.changelog;
-  const after = said ? `${before}\n${changelog}` : changelog;
+  const before = writtenChangeLog(version.changelog).trim();
+  const after = before ? `${before}\n${changelog}` : changelog;
   if (after.length > MAX_DRAFT_CHANGELOG) {
     throw createError(
       400,

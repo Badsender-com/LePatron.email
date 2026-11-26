@@ -3,16 +3,12 @@ import BsModalConfirm from '~/components/modal-confirm.vue';
 import BsTextarea from '~/components/form/bs-textarea.vue';
 import BsAiOpenExpertisesChoice from '~/components/ai-skill/bs-ai-open-expertises-choice.vue';
 import { openingPayload } from '~/helpers/ai-skill-audience-change.js';
+import { MAX_RELEASE_NOTE_LENGTH } from '../../../shared/ai-skill/constants.js';
 import {
-  MAX_RELEASE_NOTE_LENGTH,
-  LEGACY_MINOR_VERSION_TEXTS,
-} from '../../../shared/ai-skill/constants.js';
+  writtenChangeLog,
+  writtenReleaseNote,
+} from '../../../shared/ai-skill/release-texts.js';
 import { CheckCircle2 } from 'lucide-vue';
-
-// A text of the draft, unless it is the generic one a minor version used to
-// get: that one says nothing, and is left for the person to write (ADR 0031).
-const written = (text, generic) =>
-  (text || '').trim() === generic ? '' : text || '';
 
 export default {
   name: 'BsAiActivateModal',
@@ -77,17 +73,12 @@ export default {
   methods: {
     // `seed` is the DRAFT version being activated: its changelog / release
     // notes pre-fill the fields (still editable — the value confirmed here is
-    // what gets persisted at activation).
+    // what gets persisted at activation). The generic sentence of an older
+    // minor draft says nothing, and is left for the person to write (ADR 0031).
     open(seed) {
       this.payload = {
-        changelog: written(
-          seed && seed.changelog,
-          LEGACY_MINOR_VERSION_TEXTS.changelog
-        ),
-        releaseNotes: written(
-          seed && seed.releaseNotes,
-          LEGACY_MINOR_VERSION_TEXTS.releaseNotes
-        ),
+        changelog: writtenChangeLog(seed && seed.changelog),
+        releaseNotes: writtenReleaseNote(seed && seed.releaseNotes),
       };
       this.openToAll = false;
       this.openExpertiseIds = [];

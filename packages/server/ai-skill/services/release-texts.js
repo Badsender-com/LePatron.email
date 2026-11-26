@@ -9,23 +9,21 @@
  */
 
 const createError = require('http-errors');
-const { LegacyMinorVersionTexts } = require('../constant/skill-constants.js');
 const {
   MAX_RELEASE_NOTE_LENGTH,
 } = require('../../../shared/ai-skill/constants.js');
-
-const said = (text, generic) => {
-  const trimmed = String(text || '').trim();
-  return trimmed && trimmed !== generic ? trimmed : null;
-};
+const {
+  writtenReleaseNote,
+  writtenChangeLog,
+} = require('../../../shared/ai-skill/release-texts.js');
 
 /** What a version's release note says, or null when it says nothing. */
 const releaseNoteOf = (version) =>
-  said(version && version.releaseNotes, LegacyMinorVersionTexts.releaseNotes);
+  writtenReleaseNote(version && version.releaseNotes).trim() || null;
 
 /** What a version's change log says, or null when it says nothing. */
 const changeLogOf = (version) =>
-  said(version && version.changelog, LegacyMinorVersionTexts.changelog);
+  writtenChangeLog(version && version.changelog).trim() || null;
 
 /**
  * Refuses a publication whose texts are missing, or whose release note is
