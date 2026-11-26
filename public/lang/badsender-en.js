@@ -372,6 +372,8 @@ module.exports = {
   'email-metadata-error-dimension-value':
     'A chosen value is no longer available',
   'email-metadata-typology-missing': 'Deactivated email type',
+  // A deactivated value of a company dimension that the email still carries.
+  'email-metadata-dimension-value-deactivated': '__label__ (deactivated value)',
   'email-metadata-trigger': 'Trigger',
   'email-metadata-trigger-none': 'None',
   // The empty choice of a company dimension select, whatever its name.

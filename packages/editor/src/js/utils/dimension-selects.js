@@ -18,19 +18,47 @@
  *
  * A deactivated value is offered only to the email that carries it: dropping it
  * would rewrite the email's value on the next save, the same reasoning as the
- * typology's.
+ * typology's. "Carries" means the values the email opened with, not the current
+ * selection: a user who picks another value can still come back to it until
+ * they save. Its label says it is deactivated, as the typology's does.
  *
  * @param {Object} params
  * @param {Array} params.dimensions emailMetadataConfig.dimensions
  * @param {Object} params.selections dimension name → value id
- * @returns {Array<{name: string, label: string, value: string|null, options: Array<{id: string, label: string}>}>}
+ * @param {Array} [params.carriedIds] the value ids the email opened with
+ * @param {function(string): string} [params.deactivatedLabel] the label of a
+ *   deactivated value, from its own label
+ * @returns {Array<{name: string, label: string, value: string|null, options: Array<{id: string, label: string, deactivated?: boolean}>}>}
  */
-function dimensionSelects({ dimensions, selections }) {
+function dimensionSelects({
+  dimensions,
+  selections,
+  carriedIds,
+  deactivatedLabel,
+}) {
+  const carried = new Set((carriedIds || []).map(String));
+  const markDeactivated = deactivatedLabel || ((label) => label);
+
   return (dimensions || []).map((dimension) => {
     const value = (selections && selections[dimension.name]) || null;
     const options = (dimension.values || [])
-      .filter((option) => option.isActive || String(option.id) === value)
-      .map((option) => ({ id: String(option.id), label: option.label }));
+      .filter(
+        (option) =>
+          option.isActive ||
+          carried.has(String(option.id)) ||
+          // Never a select whose value is not among its options: it would show
+          // blank while the email still carries the value.
+          String(option.id) === value
+      )
+      .map((option) =>
+        option.isActive
+          ? { id: String(option.id), label: option.label }
+          : {
+              id: String(option.id),
+              label: markDeactivated(option.label),
+              deactivated: true,
+            }
+      );
 
     return {
       name: dimension.name,

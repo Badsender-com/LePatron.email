@@ -159,6 +159,9 @@ module.exports = {
           return dimensionSelects({
             dimensions: this.dimensions,
             selections: this.selections,
+            carriedIds: initialForm.taxonomyItemIds,
+            deactivatedLabel: (label) =>
+              vm.t('email-metadata-dimension-value-deactivated', { label }),
           });
         },
         // What the template reads of the email's settings (ADR-0015), recomputed

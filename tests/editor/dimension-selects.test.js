@@ -81,15 +81,58 @@ describe('selects of company dimensions', () => {
     const [carrying] = dimensionSelects({
       dimensions: [AUDIENCE],
       selections: { audience: 'old' },
+      carriedIds: ['old'],
     });
     const [other] = dimensionSelects({
       dimensions: [AUDIENCE],
       selections: {},
+      carriedIds: [],
     });
 
     expect(labels(carrying)).toEqual(['Clients VIP', 'Anciens clients']);
     expect(carrying.value).toBe('old');
     expect(labels(other)).toEqual(['Clients VIP']);
+  });
+
+  it('says a value is deactivated, as the email type does', () => {
+    const [audience] = dimensionSelects({
+      dimensions: [AUDIENCE],
+      selections: { audience: 'old' },
+      carriedIds: ['old'],
+      deactivatedLabel: (label) => `${label} (valeur désactivée)`,
+    });
+
+    expect(audience.options).toEqual([
+      { id: 'vip', label: 'Clients VIP' },
+      {
+        id: 'old',
+        label: 'Anciens clients (valeur désactivée)',
+        deactivated: true,
+      },
+    ]);
+  });
+
+  // The section builds the label from this string; a missing entry would print
+  // the key itself in the select.
+  it.each([
+    ['fr', require('../../public/lang/badsender-fr.js')],
+    ['en', require('../../public/lang/badsender-en.js')],
+  ])('has the wording of a deactivated value in %s', (_, strings) => {
+    expect(strings['email-metadata-dimension-value-deactivated']).toMatch(
+      /__label__/
+    );
+  });
+
+  it('still offers the value the email opened with once the user picked another', () => {
+    // The user moved from the deactivated value to an active one, then wants
+    // it back before saving.
+    const [audience] = dimensionSelects({
+      dimensions: [AUDIENCE],
+      selections: { audience: 'vip' },
+      carriedIds: ['old'],
+    });
+
+    expect(labels(audience)).toEqual(['Clients VIP', 'Anciens clients']);
   });
 });
 
