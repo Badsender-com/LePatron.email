@@ -29,15 +29,21 @@ function fakeTaxonomyModels() {
   // Required here rather than at the top: a jest.mock factory may only reach
   // what it requires itself.
   const { fakeCollection } = require('./fake-collection.js');
+  const SERVER = '../../packages/server';
+  // The taxonomy's own collections run on their real schemas: a test passes
+  // only on what the schema would store (trimmed labels, ids cast, the
+  // trigger refused as a value's type). The unique indexes are the schemas'.
   return {
     TaxonomyDimensions: fakeCollection({
-      defaults: { isActive: true, order: 0, precedence: 0 },
+      schema: require(`${SERVER}/taxonomy/models/dimension.schema.js`),
       unique: [['_company', 'name']],
     }),
     TaxonomyItems: fakeCollection({
-      defaults: { isActive: true, order: 0 },
+      schema: require(`${SERVER}/taxonomy/models/taxonomy.schema.js`),
       unique: [['_company', 'type', 'label']],
     }),
+    // Without its schema: `_taxonomyItems` joins it with #1355, and the tests
+    // only seed emails and count them.
     Mailings: fakeCollection(),
     Groups: fakeCollection(),
     Templates: fakeCollection(),

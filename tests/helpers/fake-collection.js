@@ -1,111 +1,73 @@
 'use strict';
 
 /**
- * A generic in-memory stand-in for one Mongoose model, for service tests.
+ * A generic in-memory stand-in for one Mongoose 5.13 model, for service tests.
  *
  * fake-listing-models.js and fake-user-models.js fake the models their tests
- * need, with the virtuals and methods of those schemas. This one fakes any model
- * with no virtual: the taxonomy acceptance tests need dimensions, values and
- * mailings that they create, update and delete through the services, not only
- * read. Filters, sort and projection are read as MongoDB reads them, by
- * fake-mongo-query.js; where the fake would answer something MongoDB would not,
- * it throws.
+ * need, with the virtuals and methods of those schemas. This one fakes any
+ * model: the taxonomy acceptance tests need dimensions, values and mailings
+ * that they create, update and delete through the services, not only read.
+ * Filters, sort and projection are read as MongoDB reads them, by
+ * fake-mongo-query.js, and updates applied by fake-mongo-update.js. Where the
+ * fake would answer something Mongoose would not, it throws: an operator, an
+ * option or a method argument it does not know is an error, never ignored.
  *
- * - **Schema stand-ins**: `defaults` fills fields on insert like a schema's
- *   `default:`; `unique` lists compound unique indexes, and a duplicate answers
- *   the MongoDB error code 11000. No other validation runs.
- * - **Documents**: a `.lean()` query answers the stored fields only. Otherwise a
- *   document has `id`, `save()`, `toObject()` and `toJSON()`, non-enumerable so a
- *   test comparing it with `toEqual` sees data. Never the stored record itself:
- *   changing a document without saving it changes nothing.
- * - **Updates**: `$set`, `$unset`, `$inc`, `$push`, `$addToSet`, `$pull` (a value
- *   or `{ $in: [...] }`), or a plain object read as `$set`. Top-level fields
- *   only, like the filters.
+ * - **Schema**: `schema` plugs a real Mongoose schema (fake-schema.js). Inserts
+ *   and `save()` cast and validate the record (enum, `trim`, ids, `required`…)
+ *   and set its timestamps; updates cast it, and validate the paths they name
+ *   with `runValidators`; documents get the schema's aliases (`group`). Without
+ *   one, `defaults` fills fields on insert like a schema's `default:`, and
+ *   nothing is cast or validated. `seed` never validates: it writes fixtures as
+ *   a direct insert in MongoDB would.
+ * - **Unique indexes**: `unique` lists compound unique indexes; a duplicate
+ *   answers the MongoDB error code 11000.
+ * - **Answers**: as Mongoose 5.13 gives them. `exists` is a boolean;
+ *   `updateOne` and `updateMany` answer `{ n, nModified, ok }`, nModified
+ *   counting the documents that actually changed (with the schema's
+ *   timestamps, every matched one: Mongoose sets `updatedAt`); `deleteOne` and `deleteMany`
+ *   answer `{ n, ok, deletedCount }`; `findOneAndUpdate` answers the document
+ *   as it was before the update unless `{ new: true }`.
+ * - **Documents**: a `.lean()` query answers the stored fields, projected;
+ *   otherwise a document of the projected fields (fake-document.js), whose
+ *   `save()` writes only the fields it changed, so a projected document saved
+ *   keeps the fields it did not load.
  */
 
 const { Types } = require('mongoose');
+
 const {
   equals,
   matches,
   sortedBy,
   projected,
 } = require('./fake-mongo-query.js');
+const { copyOf, applyUpdate } = require('./fake-mongo-update.js');
+const { fakeSchema } = require('./fake-schema.js');
+const { fakeDocument, same } = require('./fake-document.js');
 
-function copyOf(value) {
-  if (value instanceof Map) return new Map(value);
-  if (Array.isArray(value)) return value.map(copyOf);
-  if (
-    value &&
-    typeof value === 'object' &&
-    !(value instanceof Date) &&
-    !value._bsontype
-  ) {
-    return Object.fromEntries(
-      Object.entries(value).map(([key, inner]) => [key, copyOf(inner)])
-    );
-  }
-  return value;
-}
-
-function pulled(list = [], condition) {
-  const removes =
-    condition && typeof condition === 'object' && '$in' in condition
-      ? (element) => condition.$in.some((value) => equals(element, value))
-      : (element) => equals(element, condition);
-  return list.filter((element) => !removes(element));
-}
-
-const UPDATES = {
-  $set: (record, key, value) => {
-    record[key] = copyOf(value);
-  },
-  $unset: (record, key) => {
-    delete record[key];
-  },
-  $inc: (record, key, value) => {
-    record[key] = (record[key] || 0) + value;
-  },
-  $push: (record, key, value) => {
-    record[key] = [...(record[key] || []), copyOf(value)];
-  },
-  $addToSet: (record, key, value) => {
-    const list = record[key] || [];
-    if (!list.some((element) => equals(element, value))) {
-      record[key] = [...list, copyOf(value)];
+function assertOptions(method, options, supported) {
+  Object.keys(options || {}).forEach((option) => {
+    if (!supported.includes(option)) {
+      throw new Error(
+        `fake models: option ${option} of ${method} is not supported`
+      );
     }
-  },
-  $pull: (record, key, condition) => {
-    record[key] = pulled(record[key], condition);
-  },
-};
-
-function updated(record, update) {
-  const next = copyOf(record);
-  const isOperator = Object.keys(update).some((key) => key.startsWith('$'));
-  Object.entries(isOperator ? update : { $set: update }).forEach(
-    ([operator, fields]) => {
-      if (!UPDATES[operator]) {
-        throw new Error(`fake models: update ${operator} is not supported`);
-      }
-      Object.entries(fields).forEach(([key, value]) => {
-        if (key.includes('.')) {
-          throw new Error(`fake models: update of ${key} is not supported`);
-        }
-        UPDATES[operator](next, key, value);
-      });
-    }
-  );
-  return next;
+  });
 }
 
 /**
  * @param {Object} [options]
- * @param {Object} [options.defaults] fields set on insert when absent
+ * @param {import('mongoose').Schema} [options.schema] casts, validates and
+ *   gives its defaults, timestamps and aliases
+ * @param {Object} [options.defaults] without a schema, fields set on insert
+ *   when absent
  * @param {string[][]} [options.unique] compound unique indexes, eg.
  *   `[['_company', 'name']]`
  * @returns {Object} the model surface, plus `seed`, `all` and `reset` for tests
  */
-function fakeCollection({ defaults = {}, unique = [] } = {}) {
+function fakeCollection({ schema, defaults = {}, unique = [] } = {}) {
+  const plugged = fakeSchema(schema);
+  const { createdAt, updatedAt } = plugged?.timestamps || {};
   let records = [];
 
   const indexOf = (id) => records.findIndex((record) => equals(record._id, id));
@@ -134,53 +96,69 @@ function fakeCollection({ defaults = {}, unique = [] } = {}) {
     else records[index] = record;
   }
 
-  function toDocument(record) {
-    const document = copyOf(record);
-    const data = () => copyOf({ ...document });
-    Object.defineProperties(document, {
-      id: { get: () => String(document._id) },
-      save: {
-        value: async () => {
-          store(data());
-          return document;
-        },
-      },
-      toObject: { value: data },
-      toJSON: { value: () => ({ ...data(), id: document.id }) },
-      markModified: { value: () => {} },
-    });
-    return document;
+  function stamped(record, { inserted = false, timestamps = true } = {}) {
+    if (!timestamps) return record;
+    const now = new Date();
+    if (inserted && createdAt && record[createdAt] === undefined) {
+      record[createdAt] = now;
+    }
+    if (updatedAt) record[updatedAt] = now;
+    return record;
   }
 
-  // Mongoose queries are thenables with a fluent API.
-  function query(list, { single = false } = {}) {
-    let sortSpec;
-    let projection;
-    let limit;
-    let lean = false;
+  // What `save()` writes: the fields the document changed since it was read,
+  // and nothing else, like Mongoose's `$set` and `$unset` of modified paths.
+  async function saveChanges(loaded, current) {
+    const index = indexOf(current._id);
+    if (index === -1) {
+      const error = new Error(`No document found for _id ${current._id}`);
+      error.name = 'DocumentNotFoundError';
+      throw error;
+    }
+    const next = copyOf(records[index]);
+    const keys = new Set([...Object.keys(loaded), ...Object.keys(current)]);
+    keys.forEach((key) => {
+      if (current[key] === undefined) delete next[key];
+      else if (!same(current[key], loaded[key]))
+        next[key] = copyOf(current[key]);
+    });
+    const record = plugged ? await plugged.validated(next) : next;
+    store(stamped(record));
+    return record;
+  }
+
+  const toDocument = (record) =>
+    fakeDocument(record, { schema: plugged, save: saveChanges });
+
+  // Mongoose queries are thenables with a fluent API. `run` answers the
+  // records, already in their final order, once the query is awaited.
+  function query(run, { single = false, sort, projection, lean = false } = {}) {
+    const state = { sort, projection, lean, limit: undefined };
     const exec = async () => {
-      const sorted = sortedBy(sortSpec, list());
-      const kept = limit === undefined ? sorted : sorted.slice(0, limit);
-      const shaped = kept.map((record) =>
-        lean ? copyOf(projected(record, projection)) : toDocument(record)
-      );
+      const found = await run(state);
+      const kept =
+        state.limit === undefined ? found : found.slice(0, state.limit);
+      const shaped = kept.map((record) => {
+        const fields = projected(record, state.projection);
+        return state.lean ? copyOf(fields) : toDocument(fields);
+      });
       return single ? shaped[0] || null : shaped;
     };
     const chain = {
       sort: (spec) => {
-        sortSpec = spec;
+        state.sort = spec;
         return chain;
       },
       select: (spec) => {
-        projection = spec;
+        state.projection = spec;
         return chain;
       },
       limit: (count) => {
-        limit = count;
+        state.limit = count;
         return chain;
       },
-      lean: () => {
-        lean = true;
+      lean: (flag = true) => {
+        state.lean = !!flag;
         return chain;
       },
       exec,
@@ -190,61 +168,189 @@ function fakeCollection({ defaults = {}, unique = [] } = {}) {
     return chain;
   }
 
-  function insert(fields) {
-    const record = { ...copyOf(defaults), ...copyOf(fields) };
-    if (record._id === undefined) record._id = new Types.ObjectId();
+  const READ_OPTIONS = ['sort', 'limit', 'lean'];
+
+  function read(method, filter, projection, options, { single }) {
+    assertOptions(method, options, READ_OPTIONS);
+    const chain = query(({ sort }) => sortedBy(sort, matching(filter || {})), {
+      single,
+      projection,
+      sort: options?.sort,
+      lean: options?.lean,
+    });
+    if (options?.limit !== undefined) chain.limit(options.limit);
+    return chain;
+  }
+
+  function withDefaults(fields) {
+    const filled = {
+      ...copyOf(plugged ? plugged.defaultsOf() : defaults),
+      ...copyOf(fields),
+    };
+    if (filled._id === undefined) filled._id = new Types.ObjectId();
+    return filled;
+  }
+
+  async function toInsert(fields) {
+    const record = withDefaults(fields);
+    const valid = plugged
+      ? await plugged.validated(record, { defaults: true })
+      : record;
+    return stamped(valid, { inserted: true });
+  }
+
+  async function insert(fields) {
+    const record = await toInsert(fields);
     store(record);
     return toDocument(record);
   }
 
-  async function updateFirst(filter, update) {
-    const [record] = matching(filter);
-    if (!record) return null;
-    const next = updated(record, update);
-    store(next);
-    return next;
+  async function insertMany(list, options = {}) {
+    assertOptions('insertMany', options, ['ordered']);
+    const ordered = options.ordered !== false;
+    // Mongoose validates every document first: ordered, one invalid document
+    // inserts none; unordered, the invalid ones are left out.
+    const prepared = await Promise.all(
+      list.map((fields) => toInsert(fields).catch((error) => ({ error })))
+    );
+    const invalid = prepared.find((entry) => entry.error);
+    if (ordered && invalid) throw invalid.error;
+
+    const inserted = [];
+    const writeErrors = [];
+    for (const [index, record] of prepared.entries()) {
+      if (record.error) continue;
+      try {
+        store(record);
+        inserted.push(toDocument(record));
+      } catch (error) {
+        writeErrors.push({ index, code: error.code, errmsg: error.message });
+        if (ordered) break;
+      }
+    }
+    if (writeErrors.length > 0) {
+      const error = new Error(writeErrors[0].errmsg);
+      error.code = 11000;
+      error.writeErrors = writeErrors;
+      error.insertedDocs = inserted;
+      throw error;
+    }
+    return inserted;
+  }
+
+  // Apply an update to one record; answers the stored record and whether the
+  // update changed it.
+  async function updateRecord(record, update, options = {}) {
+    const { next, paths } = applyUpdate(record, update);
+    const cast = plugged
+      ? await plugged.castUpdate(next, paths, options)
+      : next;
+    const changed = !same(cast, record);
+    // Mongoose sets `updatedAt` on every update, so with timestamps an update
+    // always modifies the document, as it does against MongoDB.
+    const stored = stamped(cast, { timestamps: options.timestamps !== false });
+    store(stored);
+    return {
+      stored,
+      modified: changed || (!!updatedAt && options.timestamps !== false),
+    };
+  }
+
+  const UPDATE_OPTIONS = ['runValidators', 'timestamps'];
+
+  async function updateAll(method, filter, update, options, { many }) {
+    assertOptions(method, options, UPDATE_OPTIONS);
+    const found = many ? matching(filter) : matching(filter).slice(0, 1);
+    let nModified = 0;
+    for (const record of found) {
+      const { modified } = await updateRecord(record, update, options || {});
+      if (modified) nModified += 1;
+    }
+    return { n: found.length, nModified, ok: 1 };
+  }
+
+  function findOneAndUpdate(filter, update, options = {}) {
+    assertOptions('findOneAndUpdate', options, [
+      'new',
+      'returnOriginal',
+      'projection',
+      'fields',
+      'sort',
+      'lean',
+      ...UPDATE_OPTIONS,
+    ]);
+    const { runValidators, timestamps } = options;
+    const answersAfter =
+      options.new === true || options.returnOriginal === false;
+    return query(
+      async ({ sort }) => {
+        const [record] = sortedBy(sort, matching(filter || {}));
+        if (!record) return [];
+        const { stored } = await updateRecord(record, update, {
+          runValidators,
+          timestamps,
+        });
+        return [answersAfter ? stored : record];
+      },
+      {
+        single: true,
+        sort: options.sort,
+        projection: options.projection || options.fields,
+        lean: options.lean,
+      }
+    );
+  }
+
+  function deleted(count) {
+    return { n: count, ok: 1, deletedCount: count };
   }
 
   return {
-    find: (filter = {}, projection) =>
-      query(() => matching(filter)).select(projection),
-    findOne: (filter = {}) => query(() => matching(filter), { single: true }),
-    findById: (id) => query(() => matching({ _id: id }), { single: true }),
-    exists: async (filter = {}) => {
-      const [record] = matching(filter);
-      return record ? { _id: record._id } : null;
-    },
+    find: (filter, projection, options) =>
+      read('find', filter, projection, options, { single: false }),
+    findOne: (filter, projection, options) =>
+      read('findOne', filter, projection, options, { single: true }),
+    findById: (id, projection, options) =>
+      read(
+        'findById',
+        { _id: id === undefined ? null : id },
+        projection,
+        options,
+        {
+          single: true,
+        }
+      ),
+    exists: async (filter = {}) => matching(filter).length > 0,
     countDocuments: async (filter = {}) => matching(filter).length,
-    create: async (fields) =>
-      Array.isArray(fields) ? fields.map(insert) : insert(fields),
-    insertMany: async (list) => list.map(insert),
-    updateOne: async (filter, update) => {
-      const next = await updateFirst(filter, update);
-      return { matchedCount: next ? 1 : 0, modifiedCount: next ? 1 : 0 };
+    create: async (fields, ...rest) => {
+      if (rest.length > 0) {
+        throw new Error('fake models: create takes one document or one array');
+      }
+      if (!Array.isArray(fields)) return insert(fields);
+      const created = [];
+      for (const each of fields) created.push(await insert(each));
+      return created;
     },
-    updateMany: async (filter, update) => {
-      const found = matching(filter);
-      found.forEach((record) => store(updated(record, update)));
-      return { matchedCount: found.length, modifiedCount: found.length };
-    },
-    findOneAndUpdate: async (filter, update) => {
-      const next = await updateFirst(filter, update);
-      return next && toDocument(next);
-    },
+    insertMany,
+    updateOne: (filter, update, options) =>
+      updateAll('updateOne', filter, update, options, { many: false }),
+    updateMany: (filter, update, options) =>
+      updateAll('updateMany', filter, update, options, { many: true }),
+    findOneAndUpdate,
     deleteOne: async (filter) => {
       const [record] = matching(filter);
-      if (!record) return { deletedCount: 0 };
+      if (!record) return deleted(0);
       records.splice(indexOf(record._id), 1);
-      return { deletedCount: 1 };
+      return deleted(1);
     },
     deleteMany: async (filter = {}) => {
       const before = records.length;
       records = records.filter((record) => !matches(record, filter));
-      return { deletedCount: before - records.length };
+      return deleted(before - records.length);
     },
 
     // Test side, not part of a model.
-    seed: (list) => list.forEach(insert),
+    seed: (list) => list.forEach((fields) => store(withDefaults(fields))),
     all: () => records.map(copyOf),
     reset: () => {
       records = [];
