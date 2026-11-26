@@ -1489,6 +1489,15 @@ export default {
       labelAlreadyExists: 'Ce libellé est déjà pris dans cette dimension.',
       identifierAlreadyExists:
         'Cet identifiant est déjà pris dans cette dimension.',
+      dimensionNameReserved:
+        'Ce nom est réservé par JavaScript : les valeurs d\'un email ne pourraient pas être enregistrées sous ce nom.',
+      dimensionNameTooLong: 'Le nom ne peut pas dépasser {limit} caractères.',
+      invalidDimension:
+        'Cette dimension n\'a pas pu être enregistrée : vérifiez son nom et son libellé.',
+      standardDimensionLocked:
+        'Une dimension standard ne se désactive pas et ne se supprime pas.',
+      dimensionNotFound:
+        'Cette dimension n\'existe plus. Rechargez la page.',
       dimensionNameAlreadyExists:
         'Une dimension porte déjà ce nom, peut-être désactivée.',
       dimensionHasValues:

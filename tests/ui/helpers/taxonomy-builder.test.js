@@ -125,6 +125,23 @@ describe('taxonomy screen: company dimensions', () => {
     }
   );
 
+  it.each(['__proto__', 'constructor', 'prototype'])(
+    'flags %p as reserved, though a template could read it',
+    (name) => {
+      const { isReservedDimensionName } = require(HELPERS);
+      expect(isValidDimensionName(name)).toBe(true);
+      expect(isReservedDimensionName(name)).toBe(true);
+    }
+  );
+
+  it.each(['country', 'bodyWidth', 'audience'])(
+    'leaves %p free, a template option included',
+    (name) => {
+      const { isReservedDimensionName } = require(HELPERS);
+      expect(isReservedDimensionName(name)).toBe(false);
+    }
+  );
+
   it.each([
     ['Canada', 'canada'],
     ['Clients fidèles', 'clients-fideles'],

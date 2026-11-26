@@ -17,6 +17,7 @@ const { resolveCompanyId, scopedById } = require('./company-scope.js');
 const {
   isObjectId,
   validateDimensionPayload,
+  readDimensionName,
   limitReached,
 } = require('./taxonomy.validation.js');
 const logger = require('../../utils/logger.js');
@@ -62,10 +63,8 @@ async function createDimension({ user, groupId, payload = {} }) {
   logger.log('dimensionService:createDimension');
 
   const companyId = resolveCompanyId(user, groupId);
-  const { name, ...rest } = payload;
-  if (typeof name !== 'string' || !DIMENSION_NAME_PATTERN.test(name)) {
-    throw new BadRequest(ERROR_CODES.INVALID_DIMENSION);
-  }
+  const { name: rawName, ...rest } = payload;
+  const name = readDimensionName(rawName);
   const fields = validateDimensionPayload(rest, { partial: false });
 
   // Seeded first, so a company declaring `trigger` before ever listing its

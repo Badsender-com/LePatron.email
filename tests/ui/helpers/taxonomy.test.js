@@ -81,6 +81,32 @@ describe('taxonomyErrorFor', () => {
     expect(result.field).toBe('name');
   });
 
+  it.each([
+    ['DIMENSION_NAME_RESERVED', 'taxonomy.errors.dimensionNameReserved'],
+    ['DIMENSION_NAME_TOO_LONG', 'taxonomy.errors.dimensionNameTooLong'],
+  ])('sends %s to the name field', (code, key) => {
+    const result = taxonomyErrorFor(axiosError(code, { limit: 60 }));
+
+    expect(result.key).toBe(key);
+    expect(result.field).toBe('name');
+  });
+
+  it('names the bound of a name that is too long', () => {
+    expect(
+      taxonomyErrorFor(axiosError('DIMENSION_NAME_TOO_LONG', { limit: 60 }))
+        .params
+    ).toEqual({ limit: 60 });
+  });
+
+  // A failed save of a dimension says what went wrong, not "an error occurred".
+  it.each([
+    ['INVALID_DIMENSION', 'taxonomy.errors.invalidDimension'],
+    ['STANDARD_DIMENSION_LOCKED', 'taxonomy.errors.standardDimensionLocked'],
+    ['DIMENSION_NOT_FOUND', 'taxonomy.errors.dimensionNotFound'],
+  ])('translates %s', (code, key) => {
+    expect(taxonomyErrorFor(axiosError(code)).key).toBe(key);
+  });
+
   it('carries the value count of a dimension that cannot be deleted', () => {
     const result = taxonomyErrorFor(
       axiosError('DIMENSION_HAS_VALUES', { valueCount: 3 })

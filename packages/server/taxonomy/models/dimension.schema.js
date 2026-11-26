@@ -50,7 +50,7 @@ const TaxonomyDimensionSchema = Schema(
       type: String,
       required: [true, 'name is required'],
       set: trimOptionalString,
-      maxlength: TaxonomyLimits.CANONICAL_TYPE,
+      maxlength: TaxonomyLimits.DIMENSION_NAME,
       match: [DIMENSION_NAME_PATTERN, 'name must be a template property name'],
     },
     label: {

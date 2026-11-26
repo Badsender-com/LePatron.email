@@ -100,6 +100,46 @@ export function taxonomyErrorFor(error) {
         field: 'name',
       };
 
+    case ERROR_CODES.DIMENSION_NAME_RESERVED:
+      return {
+        key: 'taxonomy.errors.dimensionNameReserved',
+        params: {},
+        count: null,
+        field: 'name',
+      };
+
+    case ERROR_CODES.DIMENSION_NAME_TOO_LONG:
+      return {
+        key: 'taxonomy.errors.dimensionNameTooLong',
+        params: { limit: data.details?.limit },
+        count: null,
+        field: 'name',
+      };
+
+    case ERROR_CODES.INVALID_DIMENSION:
+      return {
+        key: 'taxonomy.errors.invalidDimension',
+        params: {},
+        count: null,
+        field: null,
+      };
+
+    case ERROR_CODES.STANDARD_DIMENSION_LOCKED:
+      return {
+        key: 'taxonomy.errors.standardDimensionLocked',
+        params: {},
+        count: null,
+        field: null,
+      };
+
+    case ERROR_CODES.DIMENSION_NOT_FOUND:
+      return {
+        key: 'taxonomy.errors.dimensionNotFound',
+        params: {},
+        count: null,
+        field: null,
+      };
+
     case ERROR_CODES.DIMENSION_HAS_VALUES: {
       const count = data.details?.valueCount || 0;
       return {

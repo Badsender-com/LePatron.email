@@ -1897,6 +1897,14 @@ export default {
       labelAlreadyExists: 'This label is already taken in this dimension.',
       identifierAlreadyExists:
         'This identifier is already taken in this dimension.',
+      dimensionNameReserved:
+        'This name is reserved by JavaScript: an email\'s values could not be stored under it.',
+      dimensionNameTooLong: 'The name cannot exceed {limit} characters.',
+      invalidDimension:
+        'This dimension could not be saved: check its name and its label.',
+      standardDimensionLocked:
+        'A standard dimension cannot be deactivated or deleted.',
+      dimensionNotFound: 'This dimension no longer exists. Reload the page.',
       dimensionNameAlreadyExists:
         'A dimension already has this name, perhaps a deactivated one.',
       dimensionHasValues:

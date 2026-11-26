@@ -9,6 +9,7 @@ import {
   buildDimensionPayload,
   buildNewDimensionPayload,
   isValidDimensionName,
+  isReservedDimensionName,
 } from '~/helpers/taxonomy-builder.js';
 
 export default {
@@ -35,7 +36,13 @@ export default {
   validations() {
     return {
       form: {
-        name: this.isEditing ? {} : { validName: isValidDimensionName },
+        name: this.isEditing
+          ? {}
+          : {
+              validName: isValidDimensionName,
+              notReserved: (name) => !isReservedDimensionName(name),
+              maxLength: maxLength(TAXONOMY_LIMITS.DIMENSION_NAME),
+            },
         label: { required, maxLength: maxLength(TAXONOMY_LIMITS.LABEL) },
         description: { maxLength: maxLength(TAXONOMY_LIMITS.DESCRIPTION) },
       },
@@ -48,8 +55,19 @@ export default {
     nameErrors() {
       const errors = [];
       if (this.serverNameError) errors.push(this.serverNameError);
-      if (this.$v.form.name.$dirty && !this.$v.form.name.validName) {
+      if (!this.$v.form.name.$dirty) return errors;
+      if (!this.$v.form.name.validName) {
         errors.push(this.$t('taxonomy.dimensions.form.nameInvalid'));
+      }
+      if (!this.$v.form.name.notReserved) {
+        errors.push(this.$t('taxonomy.errors.dimensionNameReserved'));
+      }
+      if (!this.$v.form.name.maxLength) {
+        errors.push(
+          this.$t('taxonomy.errors.dimensionNameTooLong', {
+            limit: TAXONOMY_LIMITS.DIMENSION_NAME,
+          })
+        );
       }
       return errors;
     },

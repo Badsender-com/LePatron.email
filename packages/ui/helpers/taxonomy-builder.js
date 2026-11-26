@@ -10,6 +10,7 @@ import {
   STANDARD_DIMENSIONS,
   EMAIL_TRIGGER_VALUES,
   DIMENSION_NAME_PATTERN,
+  RESERVED_DIMENSION_NAMES,
   TAXONOMY_LIMITS,
 } from '../../shared/taxonomy/constants.js';
 
@@ -106,6 +107,17 @@ export function buildDimensionPayload(form) {
  */
 export function isValidDimensionName(name) {
   return typeof name === 'string' && DIMENSION_NAME_PATTERN.test(name);
+}
+
+/**
+ * Whether the name is one an email's values could not be stored under
+ * (`__proto__`, `constructor`, `prototype`), though a template could read it.
+ *
+ * @param {*} name
+ * @returns {boolean}
+ */
+export function isReservedDimensionName(name) {
+  return RESERVED_DIMENSION_NAMES.includes(name);
 }
 
 /**

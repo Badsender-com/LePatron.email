@@ -91,6 +91,63 @@ describe('declaring a company dimension', () => {
     }
   );
 
+  it.each(['__proto__', 'constructor', 'prototype'])(
+    'refuses %p, which the values of an email could not be stored under',
+    async (name) => {
+      await expect(
+        dimensionService.createDimension({
+          user: adminA,
+          payload: { name, label: 'Réservé' },
+        })
+      ).rejects.toMatchObject({
+        status: 400,
+        message: ERROR_CODES.DIMENSION_NAME_RESERVED,
+      });
+    }
+  );
+
+  // A dimension may fill in a template option (#1532).
+  it.each(['country', 'bodyWidth'])(
+    'accepts %p, the name of a template option',
+    async (name) => {
+      await expect(
+        dimensionService.createDimension({
+          user: adminA,
+          payload: { name, label: 'Option' },
+        })
+      ).resolves.toMatchObject({ name });
+    }
+  );
+
+  it('refuses a name past its bound with a 400 naming it, not a 500', async () => {
+    const {
+      TaxonomyLimits,
+    } = require('../../../packages/server/constant/taxonomy-type.js');
+
+    await expect(
+      dimensionService.createDimension({
+        user: adminA,
+        payload: {
+          name: 'a'.repeat(TaxonomyLimits.DIMENSION_NAME + 1),
+          label: 'Trop long',
+        },
+      })
+    ).rejects.toMatchObject({
+      status: 400,
+      message: ERROR_CODES.DIMENSION_NAME_TOO_LONG,
+      details: { limit: TaxonomyLimits.DIMENSION_NAME },
+    });
+    await expect(
+      dimensionService.createDimension({
+        user: adminA,
+        payload: {
+          name: 'a'.repeat(TaxonomyLimits.DIMENSION_NAME),
+          label: 'Juste assez',
+        },
+      })
+    ).resolves.toMatchObject({ label: 'Juste assez' });
+  });
+
   it('refuses a dimension without a label', async () => {
     await expect(
       dimensionService.createDimension({

@@ -3,7 +3,11 @@
 const { BadRequest, Conflict } = require('http-errors');
 
 const ERROR_CODES = require('../../constant/error-codes.js');
-const { TaxonomyLimits } = require('../../constant/taxonomy-type.js');
+const {
+  TaxonomyLimits,
+  DIMENSION_NAME_PATTERN,
+  RESERVED_DIMENSION_NAMES,
+} = require('../../constant/taxonomy-type.js');
 
 // `ObjectId.isValid` returns true for ANY 12-character string, reinterpreting its
 // bytes as an id: 'companyAdmin' becomes a perfectly valid ObjectId pointing at a
@@ -36,6 +40,7 @@ module.exports = {
   isObjectId,
   validatePayload,
   validateDimensionPayload,
+  readDimensionName,
   limitReached,
   EDITABLE_FIELDS,
 };
@@ -205,4 +210,28 @@ function validateDimensionPayload(payload, { partial }) {
   if (partial && Object.keys(fields).length === 0) throw invalidDimension();
 
   return fields;
+}
+
+/**
+ * A dimension's name, as a template will read it (ADR-0015): checked here
+ * rather than left to the schema, whose refusal would answer a 500.
+ *
+ * @param {*} value
+ * @returns {string} the name
+ */
+function readDimensionName(value) {
+  if (typeof value !== 'string' || !DIMENSION_NAME_PATTERN.test(value)) {
+    throw new BadRequest(ERROR_CODES.INVALID_DIMENSION);
+  }
+  if (value.length > TaxonomyLimits.DIMENSION_NAME) {
+    const error = new BadRequest(ERROR_CODES.DIMENSION_NAME_TOO_LONG);
+    error.details = { limit: TaxonomyLimits.DIMENSION_NAME };
+    throw error;
+  }
+  // Valid as a template property, but not kept as data by the object an email
+  // stores its values in.
+  if (RESERVED_DIMENSION_NAMES.includes(value)) {
+    throw new BadRequest(ERROR_CODES.DIMENSION_NAME_RESERVED);
+  }
+  return value;
 }
