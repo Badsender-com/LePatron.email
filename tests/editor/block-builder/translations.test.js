@@ -9,6 +9,7 @@ const {
 } = require('../../../packages/editor/src/js/vue/components/block-builder-modal/element-settings.js');
 const {
   PALETTE,
+  ELEMENT_LIST_LABEL_KEYS,
 } = require('../../../packages/editor/src/js/vue/components/block-builder-modal/element-list.js');
 const {
   ROW_LABEL_KEYS,
@@ -36,7 +37,8 @@ const templateKeys = Array.from(
 const scriptKeys = ['block-builder-drop-here']
   .concat(ROW_LABEL_KEYS)
   .concat(ROW_SPACING_LABEL_KEYS)
-  .concat(ROW_LAYOUT_LABEL_KEYS);
+  .concat(ROW_LAYOUT_LABEL_KEYS)
+  .concat(ELEMENT_LIST_LABEL_KEYS);
 
 const keys = Array.from(
   new Set(

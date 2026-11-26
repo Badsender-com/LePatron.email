@@ -451,6 +451,7 @@ module.exports = {
   'block-builder-structure-thirds': 'Three equal columns',
   'block-builder-structure-quarters': 'Four equal columns',
   'block-builder-elements': 'Elements',
+  'block-builder-elements-column': 'Row __row__ · Column __column__',
   'block-builder-empty': 'No element yet. Add one to start.',
   'block-builder-desktop': 'Desktop',
   'block-builder-mobile': 'Mobile',

@@ -467,6 +467,7 @@ module.exports = {
   'block-builder-structure-thirds': 'Trois colonnes égales',
   'block-builder-structure-quarters': 'Quatre colonnes égales',
   'block-builder-elements': 'Éléments',
+  'block-builder-elements-column': 'Ligne __row__ · Colonne __column__',
   'block-builder-empty': 'Aucun élément. Ajoutez-en un pour commencer.',
   'block-builder-desktop': 'Bureau',
   'block-builder-mobile': 'Mobile',

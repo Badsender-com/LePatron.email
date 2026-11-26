@@ -27,8 +27,8 @@ const { ListboxMixin } = require('./listbox.js');
 // palette adds to.
 //
 // The component is expected to provide: `state`, `columnElements`,
-// `selectedElementId`, `selectElement`, `locateElement`, `activeColumn`
-// (selection.js) and `vm`.
+// `selectedElementId`, `selectElement`, `locateElement`, `activeColumn`,
+// `activeColumnPlace` (selection.js) and `vm`.
 
 const PALETTE = [
   { type: 'text', labelKey: 'block-builder-element-text' },
@@ -54,12 +54,38 @@ function plainTextOf(html) {
   return (text || '').replace(/\s+/g, ' ').trim();
 }
 
+// The list's own label, built in script for the variables it carries.
+const ELEMENT_LIST_LABEL_KEYS = ['block-builder-elements-column'];
+
+const columnCount = (rows) =>
+  (rows || []).reduce((count, row) => count + row.columns.length, 0);
+
 const ElementListMixin = {
   mixins: [ListboxMixin],
   data: () => ({ palette: PALETTE }),
   computed: {
     listLabelId() {
       return `bb-elements-${this._uid}`;
+    },
+
+    columnTitleId() {
+      return `bb-elements-column-${this._uid}`;
+    },
+
+    // Which column the list shows — "Row 1 · Column 2" — once the block has
+    // more than one to show. Nothing for a block of a single column, where
+    // there is no other to mistake it for.
+    columnTitle() {
+      const place = this.activeColumnPlace;
+      if (!place || columnCount(this.state.rows) < 2) return '';
+      return this.vm.t('block-builder-elements-column', place);
+    },
+
+    // The list is named by its section and, when there is one, its column.
+    listLabelledBy() {
+      return this.columnTitle
+        ? `${this.listLabelId} ${this.columnTitleId}`
+        : this.listLabelId;
     },
   },
   methods: {
@@ -264,4 +290,4 @@ const ElementListMixin = {
   },
 };
 
-module.exports = { ElementListMixin, PALETTE };
+module.exports = { ElementListMixin, PALETTE, ELEMENT_LIST_LABEL_KEYS };

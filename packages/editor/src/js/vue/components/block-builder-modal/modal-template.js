@@ -123,8 +123,9 @@ module.exports = `<modal-component
 ${STRUCTURE_TEMPLATE}
 
         <p :id="listLabelId" class="bb-modal__section">{{ vm.t('block-builder-elements') }}</p>
+        <p v-if="columnTitle" :id="columnTitleId" class="bb-modal__list-column">{{ columnTitle }}</p>
         <p v-if="columnElements.length === 0" class="bb-modal__empty">{{ vm.t('block-builder-empty') }}</p>
-        <ul v-else class="bb-modal__list" role="listbox" :aria-labelledby="listLabelId">
+        <ul v-else class="bb-modal__list" role="listbox" :aria-labelledby="listLabelledBy">
           <li
             v-for="(element, index) in columnElements"
             :key="element.id"

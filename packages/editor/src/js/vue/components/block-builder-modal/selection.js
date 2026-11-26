@@ -32,8 +32,8 @@ const {
 //
 // It calls no other mixin: everything else reads the selection from here —
 // `selectedRow` and `selectedRowIndex` for the rows panel (row-settings.js)
-// and the row actions (row-actions.js), `activeColumn` and `columnElements`
-// for the element list (element-list.js).
+// and the row actions (row-actions.js), `activeColumn`, `activeColumnPlace`
+// and `columnElements` for the element list (element-list.js).
 
 const ELEMENT = 'element';
 const ROW = 'row';
@@ -81,6 +81,19 @@ const SelectionMixin = {
       const row =
         this.rowById(this.selectedRowId) || (this.state.rows || [])[0];
       return (row && row.columns && row.columns[0]) || null;
+    },
+
+    /**
+     * Where the active column sits, counted from 1 as a user reads it:
+     * `{ row, column }`, or null when there is no column at all.
+     */
+    activeColumnPlace() {
+      const column = this.activeColumn;
+      if (!column) return null;
+      const rows = this.state.rows || [];
+      const row = rows.findIndex((each) => each.columns.includes(column));
+      if (row === -1) return null;
+      return { row: row + 1, column: rows[row].columns.indexOf(column) + 1 };
     },
 
     // The active column's own array, so a splice into it changes the
