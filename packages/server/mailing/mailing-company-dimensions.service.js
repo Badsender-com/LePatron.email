@@ -32,6 +32,11 @@ const invalid = () =>
 
 const asObjectId = (value) => mongoose.Types.ObjectId(String(value));
 
+// The usual case of a refused value: it was deactivated, or its dimension was,
+// while the email was open.
+const deactivated = () =>
+  new UnprocessableEntity(ERROR_CODES.TAXONOMY_ITEM_DEACTIVATED);
+
 /**
  * Check the values a request sends for the company dimensions.
  *
@@ -102,7 +107,7 @@ async function validateTaxonomyItemIds(rawIds, { companyId, currentIds = [] }) {
 
 async function assertChosenAreOffered(chosen, companyId) {
   if (chosen.length === 0) return;
-  if (chosen.some((item) => !item.isActive)) throw invalid();
+  if (chosen.some((item) => !item.isActive)) throw deactivated();
 
   const activeDimensions = await TaxonomyDimensions.find({
     _company: asObjectId(companyId),
@@ -112,7 +117,7 @@ async function assertChosenAreOffered(chosen, companyId) {
     .select({ name: 1 })
     .lean();
   const active = new Set(activeDimensions.map((dimension) => dimension.name));
-  if (chosen.some((item) => !active.has(item.type))) throw invalid();
+  if (chosen.some((item) => !active.has(item.type))) throw deactivated();
 }
 
 /**

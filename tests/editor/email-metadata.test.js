@@ -304,6 +304,7 @@ describe('errorKeyFor', () => {
     ['EMAIL_METADATA_DISABLED', 'email-metadata-error-disabled'],
     ['EMAIL_TYPE_NOT_FOUND', 'email-metadata-error-typology'],
     ['TAXONOMY_ITEM_NOT_FOUND', 'email-metadata-error-dimension-value'],
+    ['TAXONOMY_ITEM_DEACTIVATED', 'email-metadata-error-dimension-value'],
     ['EMAIL_TYPE_COMPANY_MISSING', 'email-metadata-error-no-company'],
     ['INVALID_EMAIL_METADATA', 'email-metadata-error-invalid'],
   ])('maps %s onto %s', (code, key) => {

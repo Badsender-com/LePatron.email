@@ -211,7 +211,7 @@ describe('an email carries company dimensions', () => {
     }
   );
 
-  it('refuses a deactivated value newly chosen', async () => {
+  it('refuses a deactivated value newly chosen, saying so', async () => {
     await taxonomyService.updateTaxonomyItem({
       user: adminA,
       itemId: idOf(vip),
@@ -224,7 +224,24 @@ describe('an email carries company dimensions', () => {
       })
     ).rejects.toMatchObject({
       status: 422,
-      message: ERROR_CODES.INVALID_EMAIL_METADATA,
+      message: ERROR_CODES.TAXONOMY_ITEM_DEACTIVATED,
+    });
+  });
+
+  it('refuses a value of a deactivated dimension newly chosen, saying so', async () => {
+    await dimensionService.updateDimension({
+      user: adminA,
+      dimensionId: idOf(await dimensionNamed('audience')),
+      payload: { isActive: false },
+    });
+
+    await expect(
+      metadataService.applyMetadataToMailing(newMailing(), {
+        taxonomyItemIds: [idOf(vip)],
+      })
+    ).rejects.toMatchObject({
+      status: 422,
+      message: ERROR_CODES.TAXONOMY_ITEM_DEACTIVATED,
     });
   });
 

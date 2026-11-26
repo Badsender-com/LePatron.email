@@ -205,7 +205,10 @@ function errorKeyFor(error) {
       return 'email-metadata-error-disabled';
     case 'EMAIL_TYPE_NOT_FOUND':
       return 'email-metadata-error-typology';
+    // A value deleted, or deactivated while the email was open: for the user,
+    // both are a value that is no longer available.
     case 'TAXONOMY_ITEM_NOT_FOUND':
+    case 'TAXONOMY_ITEM_DEACTIVATED':
       return 'email-metadata-error-dimension-value';
     case 'EMAIL_TYPE_COMPANY_MISSING':
       return 'email-metadata-error-no-company';

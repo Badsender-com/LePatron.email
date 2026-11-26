@@ -371,6 +371,10 @@ module.exports = {
 
   // TAXONOMY
   TAXONOMY_ITEM_NOT_FOUND: 'TAXONOMY_ITEM_NOT_FOUND',
+  // A value newly chosen on an email that is no longer offered: deactivated, or
+  // under a deactivated dimension. Distinct from INVALID_EMAIL_METADATA so the
+  // editor can say the value is no longer available.
+  TAXONOMY_ITEM_DEACTIVATED: 'TAXONOMY_ITEM_DEACTIVATED',
   TAXONOMY_ITEM_LABEL_ALREADY_EXISTS: 'TAXONOMY_ITEM_LABEL_ALREADY_EXISTS',
   TAXONOMY_ITEM_IN_USE: 'TAXONOMY_ITEM_IN_USE',
   TAXONOMY_ITEM_IDENTIFIER_ALREADY_EXISTS:
