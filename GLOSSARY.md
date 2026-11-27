@@ -193,6 +193,10 @@ The smallest thing a user places in a column: text, image, button, divider or sp
 _UI_: Élément
 _Avoid_: Component, widget, module
 
+**Blank element**:
+An element whose one indispensable value was never filled: a text with no words, an image with no source, a button with no label. The Block Builder draws it with its placeholder; the email does not carry it. A divider or a spacer is never blank.
+_UI_: « vide »
+
 **Preset**:
 A named set of column proportions offered in the panel (1, 2×50, 66/34, 34/66, 33/33/34, 4×25), each adding up to 100, applied to what the gutters leave. A shortcut for writing widths, never stored as such.
 _UI_: Structure
