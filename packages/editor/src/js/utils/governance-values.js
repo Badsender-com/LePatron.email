@@ -68,7 +68,14 @@ function governanceValues({ dimensions, selections, trigger }) {
   // (ADR-0023), keeps it: its templates compare against its identifiers.
   const ownsLocale = active.some((dimension) => dimension.name === 'locale');
   if (!ownsLocale) values.locale = localeOf(active, selections);
-  values.doctrineType = doctrineTypeOf(active, selections);
+  // Same for a company dimension named `doctrineType` (ADR-0030), which the
+  // migration reports for its company to rename.
+  const ownsDoctrineType = active.some(
+    (dimension) => dimension.name === 'doctrineType'
+  );
+  if (!ownsDoctrineType) {
+    values.doctrineType = doctrineTypeOf(active, selections);
+  }
 
   return { values, sources: resolveTokens(carriers, values, dimensions) };
 }

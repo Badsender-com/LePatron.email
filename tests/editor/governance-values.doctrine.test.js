@@ -40,6 +40,25 @@ describe('governance values: doctrineType', () => {
     expect(publish(null).doctrineType).toBe('');
   });
 
+  it('leaves the name to a company dimension that held it before it was reserved', () => {
+    const {
+      governanceValues,
+    } = require('../../packages/editor/src/js/utils/governance-values.js');
+    const { values } = governanceValues({
+      dimensions: [
+        EMAIL_TYPE,
+        {
+          name: 'doctrineType',
+          isActive: true,
+          values: [{ id: 'd1', canonicalType: 'maison' }],
+        },
+      ],
+      selections: { emailType: COMMUNITY, doctrineType: 'd1' },
+    });
+
+    expect(values.doctrineType).toBe('maison');
+  });
+
   it('never lets a design token overwrite it', () => {
     const {
       governanceValues,

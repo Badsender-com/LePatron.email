@@ -249,8 +249,8 @@ describe('previewFilter', () => {
     expect(expertiseRepo.findApplicable).toHaveBeenCalledWith({
       scope: ['cta'],
       categories: ['redaction'],
-      emailType: null,
-      language: null,
+      emailType: undefined,
+      language: undefined,
       everyAudience: true,
     });
   });

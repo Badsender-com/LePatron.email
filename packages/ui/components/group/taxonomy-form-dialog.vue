@@ -10,7 +10,7 @@ import BsTextarea from '~/components/form/bs-textarea.vue';
 import BsTaxonomyFormStatus from '~/components/group/taxonomy-form-status.vue';
 import BsTaxonomyTokensField from '~/components/group/taxonomy-tokens-field.vue';
 import BsTaxonomyCodeField from '~/components/group/taxonomy-code-field.vue';
-import { TAXONOMY_LIMITS, canonicalTypeItems } from '~/helpers/taxonomy.js';
+import { TAXONOMY_LIMITS, doctrineTypeItems } from '~/helpers/taxonomy.js';
 import { proposeIdentifier } from '~/helpers/taxonomy-builder.js';
 import {
   valueFormFor,
@@ -48,6 +48,7 @@ export default {
       // The identifier saved, and whether changing it was confirmed.
       initialIdentifier: null,
       identifierConfirmed: false,
+      initialDoctrineType: undefined,
     };
   },
   validations: {
@@ -83,7 +84,7 @@ export default {
       return this.isEditing ? this.$t('global.save') : this.$t('global.create');
     },
     doctrineTypeItems() {
-      return canonicalTypeItems(null, (key) => this.$t(key));
+      return doctrineTypeItems((key) => this.$t(key));
     },
     labelErrors() {
       const errors = [];
@@ -135,6 +136,7 @@ export default {
       this.serverIdentifierError = null;
       this.identifierTouched = false;
       this.initialIdentifier = (item && item.canonicalType) || null;
+      this.initialDoctrineType = item ? item.doctrineType : undefined;
       this.identifierConfirmed = false;
       this.form = valueFormFor(item, suggestedOrder);
       this.$v.$reset();
@@ -162,6 +164,7 @@ export default {
         role: this.role,
         isNew: !this.editingId,
         isEmailType: this.isEmailType,
+        initialDoctrineType: this.initialDoctrineType,
       });
       if (this.identifierChanged) {
         payload.confirmIdentifierChange = this.identifierConfirmed;
@@ -210,17 +213,6 @@ export default {
       @blur="$v.form.description.$touch()"
     />
 
-    <bs-select
-      v-if="isEmailType"
-      v-model="form.doctrineType"
-      :label="$t('taxonomy.form.doctrineType')"
-      :items="doctrineTypeItems"
-      :placeholder="$t('taxonomy.form.doctrineTypeNone')"
-      :hint="$t('taxonomy.form.doctrineTypeHint')"
-      :disabled="loading"
-      persistent-hint
-      clearable
-    />
     <bs-text-field
       :value="form.canonicalType"
       :label="$t('taxonomy.values.form.identifier')"
@@ -239,6 +231,18 @@ export default {
       :previous="initialIdentifier"
       :next="form.canonicalType || ''"
       @keep="form.canonicalType = initialIdentifier"
+    />
+
+    <bs-select
+      v-if="isEmailType"
+      v-model="form.doctrineType"
+      :label="$t('taxonomy.form.doctrineType')"
+      :items="doctrineTypeItems"
+      :placeholder="$t('taxonomy.form.doctrineTypeNone')"
+      :hint="$t('taxonomy.form.doctrineTypeHint')"
+      :disabled="loading"
+      persistent-hint
+      clearable
     />
 
     <bs-taxonomy-code-field

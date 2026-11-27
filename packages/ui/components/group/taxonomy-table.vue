@@ -74,6 +74,11 @@ export default {
               {
                 text: this.$t('taxonomy.table.doctrineType'),
                 value: 'doctrineType',
+                // On the words shown, not on the stored key.
+                sort: (a, b) =>
+                  this.doctrineTypeLabel({ doctrineType: a }).localeCompare(
+                    this.doctrineTypeLabel({ doctrineType: b })
+                  ),
               },
             ]
           : []),
@@ -122,7 +127,7 @@ export default {
     },
     doctrineTypeLabel(item) {
       const key = canonicalTypeLabelKey(item.doctrineType);
-      return key ? this.$t(key) : item.doctrineType;
+      return key ? this.$t(key) : item.doctrineType || '';
     },
   },
 };

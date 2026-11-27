@@ -64,8 +64,9 @@ const TRIED_STATUSES = [SkillStatuses.ACTIVE, SkillStatuses.DRAFT];
  * @param {Object} filters
  * @param {string|string[]} filters.scope — REQUIRED
  * @param {string[]} filters.categories — REQUIRED, non-empty
- * @param {(string|null)} [filters.emailType] a doctrine type; `null` for an
- *   email whose type maps onto none, which loads only untargeted expertises
+ * @param {string} [filters.emailType] a doctrine type
+ * @param {boolean} [filters.untargetedOnly] only the expertises targeting no
+ *   email type: for an email whose type maps onto none (ADR-0030)
  * @param {string} [filters.language]
  * @param {string|ObjectId} [filters.groupId] the id of the caller's company;
  *   without one, the caller is treated as a client company
@@ -107,7 +108,13 @@ async function findApplicableWithScopesInUse(filters = {}) {
 
 // The query of a match, checked: a call without a scope or a category is a
 // contract violation by the calling code.
-function applicableQuery({ scope, categories, emailType, language }) {
+function applicableQuery({
+  scope,
+  categories,
+  emailType,
+  untargetedOnly = false,
+  language,
+}) {
   // Normalised on the way in, as the write side is (services/expertise-scope):
   // the match below is a strict string equality, so `cta` must meet `CTA`.
   const scopes = normalizeScopes(scope);
@@ -130,10 +137,10 @@ function applicableQuery({ scope, categories, emailType, language }) {
     { category: { $in: categories } },
   ];
 
-  // `null` is an email whose type maps onto no doctrine type (ADR-0030): the
-  // expertises targeting a type are not for it. `undefined` says nothing of
-  // an email type, and filters nothing.
-  if (emailType === null) {
+  // An email whose type maps onto no doctrine type (ADR-0030): the expertises
+  // targeting a type are not for it. Said explicitly rather than by a `null`
+  // email type, which a stray `|| null` would turn into a filter.
+  if (untargetedOnly === true) {
     and.push({ appliesToEmailTypes: { $size: 0 } });
   } else if (emailType) {
     and.push({

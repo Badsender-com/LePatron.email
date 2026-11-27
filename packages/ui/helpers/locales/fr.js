@@ -1403,9 +1403,9 @@ export default {
         literalNotOffered:
           '{templates} compare {identifier} avec {parent}, mais {identifier} n\'est pas proposé sous {parent}.',
         emailTypeNotMapped:
-          '{value} n\'est rattachée à aucun type Badsender : elle ne charge que les expertises qui ne ciblent aucun type.',
+          '{value} n\'a pas de type Badsender : seules les expertises qui ne ciblent aucun type seront chargées.',
         doctrineLiteralUnknown:
-          '{templates} compare doctrineType à {identifier}, qui n\'est aucun des six types Badsender.',
+          '{templates} compare doctrineType à {identifier}, hors des six types Badsender.',
       },
       precedence: {
         title: 'Priorité des tokens',
@@ -1493,7 +1493,7 @@ export default {
     description:
       'Les dimensions selon lesquelles vous déclinez vos emails. La typologie et le déclenchement sont communs à toutes les entreprises : vous choisissez leurs mots, pas leur existence.',
     emailTypeHint:
-      'Vos typologies d\'email, dans vos mots. La définition que vous en donnez est ce qui compte : elle sert de référence à vos équipes, et de contexte à l\'IA. Les six typologies Badsender vous servent de socle : renommez-les, précisez-les, désactivez celles qui ne vous servent pas.',
+      'Vos typologies d\'email, dans vos mots. La définition que vous en donnez est ce qui compte : elle sert de référence à vos équipes, et de contexte à l\'IA. Les six typologies par défaut, une par type Badsender, vous servent de socle : renommez-les, précisez-les, désactivez celles qui ne vous servent pas.',
     dimensions: {
       standard: 'Standard',
       emailType: 'Typologie',
@@ -1719,7 +1719,7 @@ export default {
     },
     defaults: {
       action: 'Typologies par défaut',
-      confirmTitle: 'Ajouter les typologies Badsender manquantes',
+      confirmTitle: 'Ajouter une typologie par type Badsender manquant',
       confirmIntro:
         'Les typologies suivantes vont être créées. Vous pourrez ensuite les renommer, préciser leur définition ou les désactiver.',
       confirmNothing:

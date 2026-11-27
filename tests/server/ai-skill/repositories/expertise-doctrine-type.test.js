@@ -53,7 +53,7 @@ const matchesEmailType = (query, doc) =>
     return ors.some((or) => matchesClause(or.appliesToEmailTypes, doc));
   });
 
-const loaded = async (emailType) => {
+const loaded = async (filter) => {
   Expertises.find.mockImplementation((query) => ({
     lean: () =>
       Promise.resolve(EXPERTISES.filter((doc) => matchesEmailType(query, doc))),
@@ -62,7 +62,7 @@ const loaded = async (emailType) => {
   const found = await findApplicable({
     scope: ['redaction'],
     categories: ['writing'],
-    emailType,
+    ...filter,
   });
   return found.map((expertise) => expertise.expertiseId).sort();
 };
@@ -72,15 +72,20 @@ describe('expertises filtered by the doctrine type', () => {
   beforeEach(() => jest.clearAllMocks());
 
   it('loads the expertises of the doctrine type and those targeting none', async () => {
-    expect(await loaded('editorial')).toEqual(['any', 'editorial-only']);
+    expect(await loaded({ emailType: 'editorial' })).toEqual([
+      'any',
+      'editorial-only',
+    ]);
   });
 
   it('loads only the expertises targeting no type for an email mapped onto none', async () => {
-    expect(await loaded(null)).toEqual(['any']);
+    expect(await loaded({ untargetedOnly: true })).toEqual(['any']);
   });
 
-  it('still loads every expertise when the caller says nothing of an email type', async () => {
-    expect(await loaded(undefined)).toEqual([
+  it('still loads every expertise when the caller says nothing of an email type, a null one included', async () => {
+    // A stray `|| null` must not turn into a filter.
+    expect(await loaded({ emailType: null })).toHaveLength(3);
+    expect(await loaded({})).toEqual([
       'any',
       'editorial-only',
       'transactional-only',

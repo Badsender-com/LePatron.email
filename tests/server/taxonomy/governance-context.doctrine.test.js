@@ -83,12 +83,33 @@ describe('governance context: identifier and doctrine type of the email type', (
 
 // Turned on by #1634 (the AI reads the doctrine type of an email type)
 describe('expertises filtered by the doctrine type', () => {
-  it('gives the doctrine type of the email, the type the expertises are filtered by', async () => {
-    expect((await contextOf(COMMUNITY)).doctrineType).toBe('editorial');
+  it('filters the expertises by the doctrine type of the email type', async () => {
+    const context = await contextOf(COMMUNITY);
+
+    expect(context.doctrineType).toBe('editorial');
+    expect(context.expertiseFilter).toEqual({
+      emailType: 'editorial',
+      untargetedOnly: false,
+    });
   });
 
-  it('gives no doctrine type for an email whose type is mapped onto nothing, or which has no type', async () => {
-    expect((await contextOf(SURVEY)).doctrineType).toBeNull();
-    expect((await contextOf(null)).doctrineType).toBeNull();
+  it('asks only for the expertises targeting no type when the email type is mapped onto none', async () => {
+    const context = await contextOf(SURVEY);
+
+    expect(context.doctrineType).toBeNull();
+    expect(context.expertiseFilter).toEqual({
+      emailType: undefined,
+      untargetedOnly: true,
+    });
+  });
+
+  it('filters nothing for an email with no type', async () => {
+    const context = await contextOf(null);
+
+    expect(context.doctrineType).toBeNull();
+    expect(context.expertiseFilter).toEqual({
+      emailType: undefined,
+      untargetedOnly: false,
+    });
   });
 });

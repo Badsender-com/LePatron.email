@@ -2,10 +2,11 @@
 import { Plus } from 'lucide-vue';
 import * as apiRoutes from '~/helpers/api-routes.js';
 import { proposeIdentifier } from '~/helpers/taxonomy-builder.js';
-import { TAXONOMY_LIMITS, canonicalTypeItems } from '~/helpers/taxonomy.js';
-
-// What a template compares: the server refuses anything else (value-fields.js).
-const IDENTIFIER_PATTERN = /^[A-Za-z0-9_-]*$/;
+import {
+  IDENTIFIER_PATTERN,
+  IDENTIFIER_MAX_LENGTH,
+} from '../../../shared/taxonomy/identifier.js';
+import { TAXONOMY_LIMITS, doctrineTypeItems } from '~/helpers/taxonomy.js';
 
 /**
  * The quick-add row under a dimension's values (ADR-0026): Enter adds the
@@ -37,11 +38,15 @@ export default {
     labelLimit() {
       return TAXONOMY_LIMITS.LABEL;
     },
+    identifierLimit() {
+      return IDENTIFIER_MAX_LENGTH;
+    },
     identifierValid() {
-      return IDENTIFIER_PATTERN.test(this.identifier);
+      // Empty is valid: the value is then published under its id.
+      return !this.identifier || IDENTIFIER_PATTERN.test(this.identifier);
     },
     doctrineTypes() {
-      return canonicalTypeItems(null, (key) => this.$t(key));
+      return doctrineTypeItems((key) => this.$t(key));
     },
   },
   watch: {
@@ -107,6 +112,7 @@ export default {
       :class="{ 'taxonomy-quick-add__input--invalid': !identifierValid }"
       :aria-invalid="String(!identifierValid)"
       :disabled="saving"
+      :maxlength="identifierLimit"
       spellcheck="false"
       @input="identifierTouched = true"
     />
@@ -122,6 +128,7 @@ export default {
         v-model="doctrineType"
         class="taxonomy-quick-add__input taxonomy-quick-add__doctrine"
         :disabled="saving"
+        @keydown.enter.prevent="add"
       >
         <option value="">{{ $t('taxonomy.form.doctrineTypeNone') }}</option>
         <option

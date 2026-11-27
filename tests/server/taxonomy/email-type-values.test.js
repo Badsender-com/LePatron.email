@@ -54,7 +54,8 @@ describe('email type value: doctrine type', () => {
   it('accepts an email type mapped onto nothing', async () => {
     const value = await addValue('emailType', { label: 'Enquête' });
 
-    expect(stored(value).doctrineType || null).toBeNull();
+    // Stored as such: an absent doctrine type is one never migrated.
+    expect(stored(value).doctrineType).toBeNull();
   });
 
   it('lets two email types share a doctrine type', async () => {
@@ -94,6 +95,18 @@ describe('email type value: doctrine type', () => {
     });
   });
 
+  it('refuses even an empty doctrine type on a value of another dimension', async () => {
+    await dimensionService.createDimension({
+      user: techAdminA,
+      payload: { name: 'market', label: 'Marché' },
+    });
+    const belgium = await addValue('market', { label: 'Belgique' });
+
+    await expect(
+      editValue(belgium, { doctrineType: null })
+    ).rejects.toMatchObject({ status: 400 });
+  });
+
   it('changes or clears the doctrine type without touching the identifier', async () => {
     const value = await addValue('emailType', {
       label: 'Infolettre communauté',
@@ -105,7 +118,7 @@ describe('email type value: doctrine type', () => {
     expect(stored(value).doctrineType).toBe('promotional');
 
     await editValue(value, { doctrineType: null });
-    expect(stored(value).doctrineType || null).toBeNull();
+    expect(stored(value).doctrineType).toBeNull();
     expect(stored(value).canonicalType).toBe('com');
   });
 });

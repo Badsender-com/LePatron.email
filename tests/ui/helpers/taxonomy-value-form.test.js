@@ -53,3 +53,45 @@ describe('the body the value panel sends', () => {
     ).not.toHaveProperty('code');
   });
 });
+
+// An email type's doctrine type (ADR-0030) travels only when the admin changed
+// it: a value the migration has not reached yet has none at all, and saving its
+// label must not record it as mapped onto none.
+describe('the doctrine type the value panel sends', () => {
+  const send = (item, change = {}) =>
+    valuePayloadFrom(
+      { ...valueFormFor(item), ...change },
+      {
+        role: null,
+        isNew: !item,
+        isEmailType: true,
+        initialDoctrineType: item ? item.doctrineType : undefined,
+      }
+    );
+
+  it('sends the doctrine type of a new email type, none included', () => {
+    expect(send(null, { label: 'Enquête' }).doctrineType).toBeNull();
+    expect(
+      send(null, { label: 'Promo', doctrineType: 'promotional' }).doctrineType
+    ).toBe('promotional');
+  });
+
+  it('leaves out the doctrine type of an email type the migration has not reached', () => {
+    const payload = send(
+      { label: 'Infolettre', canonicalType: 'editorial' },
+      { label: 'Infolettre mensuelle' }
+    );
+
+    expect(payload).not.toHaveProperty('doctrineType');
+  });
+
+  it('sends a doctrine type the admin changed or cleared', () => {
+    const mapped = { label: 'Infolettre', doctrineType: 'editorial' };
+
+    expect(send(mapped, { doctrineType: 'promotional' }).doctrineType).toBe(
+      'promotional'
+    );
+    expect(send(mapped, { doctrineType: null }).doctrineType).toBeNull();
+    expect(send(mapped)).not.toHaveProperty('doctrineType');
+  });
+});

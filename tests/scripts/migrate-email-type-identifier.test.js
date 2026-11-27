@@ -170,4 +170,41 @@ describe('migrate email types: identifier', () => {
     expect(new Set(ofA).size).toBe(ofA.length);
     expect(planEmailTypeMigration({ emailTypes: first }).updates).toEqual([]);
   });
+
+  it('cuts an identifier proposed from a long label to the stored length', () => {
+    const label = `Newsletter mensuelle de la communauté ${'des passionnés '.repeat(
+      6
+    )}`;
+    const emailTypes = [
+      emailType('f1', 'company-f', label, { canonicalType: 'editorial' }),
+      emailType('f2', 'company-f', label.toUpperCase(), {
+        canonicalType: 'editorial',
+      }),
+    ];
+
+    const after = migrate(emailTypes, planEmailTypeMigration({ emailTypes }));
+
+    after.forEach((item) =>
+      expect(item.canonicalType.length).toBeLessThanOrEqual(60)
+    );
+    expect(after[1].canonicalType).toMatch(/_2$/);
+    expect(after[0].canonicalType).not.toBe(after[1].canonicalType);
+  });
+
+  it('says what an email type loses when nothing can be proposed for it', () => {
+    const plan = planEmailTypeMigration({
+      emailTypes: [
+        emailType('g1', 'company-g', '★★', { canonicalType: 'Ma typologie' }),
+      ],
+    });
+
+    expect(plan.updates).toEqual([
+      {
+        id: 'g1',
+        company: 'company-g',
+        set: { canonicalType: null, doctrineType: null },
+        was: { canonicalType: 'Ma typologie', doctrineType: undefined },
+      },
+    ]);
+  });
 });

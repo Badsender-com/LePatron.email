@@ -48,27 +48,17 @@ export function canonicalTypeLabelKey(canonicalType) {
 }
 
 /**
- * The doctrine's types offered to an email type value, named by `translate`.
+ * The doctrine types an email type may map onto (ADR-0030), named by
+ * `translate`. The server refuses any other, so no stored value falls outside.
  *
- * The server takes any string here on purpose, so a value may carry one this
- * list does not offer: an import, or a newer skills vocabulary. Left out, the
- * select finds nothing to match and falls back to its placeholder ("None"),
- * which reads as "no mapping" while the value is still there and still sent on
- * save. Shown raw, the way the table shows it.
- *
- * @param {string|null} current the value's canonical type
  * @param {Function} translate `$t`
  * @returns {Array<{value: string, text: string}>}
  */
-export function canonicalTypeItems(current, translate) {
-  const items = CANONICAL_TYPES.map((value) => ({
+export function doctrineTypeItems(translate) {
+  return CANONICAL_TYPES.map((value) => ({
     value,
     text: translate(`taxonomy.canonicalTypes.${value}`),
   }));
-  if (current && !CANONICAL_TYPES.includes(current)) {
-    items.push({ value: current, text: current });
-  }
-  return items;
 }
 
 /**

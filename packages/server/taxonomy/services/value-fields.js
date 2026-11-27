@@ -44,8 +44,14 @@ async function readValueFields({ companyId, type, payload, partial }) {
     throw new BadRequest(ERROR_CODES.INVALID_TAXONOMY_ITEM);
   }
   // The doctrine's six types classify emails, not markets or brands.
-  if (fields.doctrineType && type !== StandardDimensions.EMAIL_TYPE) {
+  const isEmailType = type === StandardDimensions.EMAIL_TYPE;
+  if (fields.doctrineType !== undefined && !isEmailType) {
     throw new BadRequest(ERROR_CODES.INVALID_TAXONOMY_ITEM);
+  }
+  // A new email type says it maps onto none: absent means "never migrated",
+  // which the migration would map from its identifier (ADR-0030).
+  if (isEmailType && !partial && fields.doctrineType === undefined) {
+    fields.doctrineType = null;
   }
   // Narrowing an availability leaves the emails using the combination as they
   // are: the server checks it again only when a request changes it (ADR-0032).

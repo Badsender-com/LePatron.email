@@ -55,13 +55,21 @@ export function valueFormFor(item, suggestedOrder = 0) {
  * @param {boolean} options.isNew a creation, which gets its place in the list
  * @param {boolean} [options.isEmailType] an email type, which carries its
  *   doctrine type (ADR-0030)
+ * @param {(string|null|undefined)} [options.initialDoctrineType] the doctrine
+ *   type as loaded: sent back only when changed, so a value the migration has
+ *   not reached yet (no doctrine type at all) is not saved as mapped onto none
  * @returns {Object} the body of the request
  */
-export function valuePayloadFrom(form, { role, isNew, isEmailType = false }) {
+export function valuePayloadFrom(
+  form,
+  { role, isNew, isEmailType = false, initialDoctrineType }
+) {
   const { order, ...payload } = buildTaxonomyPayload(form);
   if (isNew) payload.order = order;
   payload.tokens = form.tokens;
   if (role) payload.code = form.code;
-  if (isEmailType) payload.doctrineType = form.doctrineType || null;
+  const doctrineType = form.doctrineType || null;
+  const changed = isNew || doctrineType !== (initialDoctrineType || null);
+  if (isEmailType && changed) payload.doctrineType = doctrineType;
   return payload;
 }
