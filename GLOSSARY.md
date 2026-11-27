@@ -468,9 +468,14 @@ _UI_: Valeur
 _Avoid_: Item, entry, option, tag
 
 **Email type**:
-The standard dimension that says what an email brings to the person receiving it. Each company names its own values, and maps each onto one of the doctrine's six types.
+The standard dimension that says what an email brings to the person receiving it. Each company names its own values, and may map each onto a doctrine type.
 _UI_: Typologie
 _Avoid_: Category, campaign type
+
+**Doctrine type**:
+One of the six kinds of email the Badsender classification doctrine defines (editorial, promotional, service, notification, transactional, institutional), onto which a company maps its email types. Several email types of a company may share one; an email type may have none yet.
+_UI_: Type Badsender
+_Avoid_: Canonical type, category, identifier
 
 **Email trigger**:
 The standard dimension that says whether someone decided this particular send: one shot or automated. Its two values are the doctrine's, and no company adds, renames or removes one.
@@ -478,9 +483,9 @@ _UI_: Déclenchement
 _Avoid_: Send mode, scenario
 
 **Identifier**:
-The stable name of a value, which a template compares against, unlike its freely edited label.
+The stable name of a value, which a template compares against, unlike its freely edited label. An email type has one like any other value, apart from its doctrine type.
 _UI_: Identifiant
-_Avoid_: Slug, code, key, canonical type, normalised code
+_Avoid_: Slug, code, key, canonical type, normalised code, doctrine type
 
 **Availability**:
 The values of the parent dimension under which a value is offered: French is offered under Canada, Switzerland and Belgium, and nowhere else. A value with no availability is offered under all of them.
