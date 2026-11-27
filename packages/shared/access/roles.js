@@ -57,6 +57,13 @@ const CAPABILITIES = Object.freeze({
   GALLERY_MANAGE: 'gallery.manage',
   // Save a block to the company's library.
   BLOCK_LIBRARY_ADD: 'block-library.add',
+  // Compose a block in the Block Builder: its rows, columns, elements and
+  // settings, in an email or in the library. Held by the roles that edit a
+  // structure, but a capability of its own (ADR 0027): the two gestures are
+  // unrelated, and who may compose can now move alone. The texts of a composed
+  // block are content; until inline editing tells them apart, the server
+  // judges the whole block, texts included.
+  BLOCK_COMPOSE: 'block.compose',
 });
 
 const ALL_CAPABILITIES = Object.freeze(
@@ -91,6 +98,7 @@ const REGULAR_USER_CAPABILITIES = WRITER_CAPABILITIES.concat([
   C.MAILING_EDIT_STYLE,
   C.FOLDER_DELETE,
   C.BLOCK_LIBRARY_ADD,
+  C.BLOCK_COMPOSE,
 ]);
 
 const GROUP_ADMIN_CAPABILITIES = REGULAR_USER_CAPABILITIES.concat([

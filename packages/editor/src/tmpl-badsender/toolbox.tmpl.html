@@ -39,7 +39,8 @@
 
     <div data-bind="visible: $root.blocksActiveTab() === 'TEMPLATE_BLOCKS'">
       <div class="block-list" data-bind="foreach: blockDefs" style="text-align: center">
-        <div class="draggable-item" data-bind="withProperties: { templateMode: 'show' }">
+        <!-- The composed block's entry needs the right to compose, on top of its template flag -->
+        <div class="draggable-item" data-bind="withProperties: { templateMode: 'show' }, visible: $root.isOfferedInPalette($data)">
           <div class="block"
             data-bind="extdraggable: { connectClass: 'sortable-blocks-edit', data: $data, dropContainer: '#main-wysiwyg-area', dragging: $root.dragging, 'options': { handle: '.handle', distance: 10, 'appendTo': '#page' } }, click: $root.addBlock"
             style="position: relative;">

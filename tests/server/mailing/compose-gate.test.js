@@ -41,8 +41,7 @@ const save = ({ data, previousData, mayCompose }) =>
     mayCompose,
   });
 
-// Turned on by #1563 (composing is a capability of its own)
-describe.skip('the server refuses a composition from whoever may not compose', () => {
+describe('the server refuses a composition from whoever may not compose', () => {
   it('refuses a new composed block', async () => {
     await expect(
       save({ data: dataWith(composed('Bonjour')), mayCompose: false })
@@ -58,6 +57,19 @@ describe.skip('the server refuses a composition from whoever may not compose', (
 
     await expect(
       save({ data: after, previousData: before, mayCompose: false })
+    ).rejects.toMatchObject({ message: 'BLOCK_BUILDER_NOT_PERMITTED' });
+  });
+
+  // The markup is rebuilt from the state before the gate judges it: a request
+  // sending empty markup beside a real state does not pass as an empty block.
+  it('refuses a real composition sent with empty markup', async () => {
+    const block = composed('Bonjour');
+
+    await expect(
+      save({
+        data: dataWith({ ...block, builderHtml: '' }),
+        mayCompose: false,
+      })
     ).rejects.toMatchObject({ message: 'BLOCK_BUILDER_NOT_PERMITTED' });
   });
 

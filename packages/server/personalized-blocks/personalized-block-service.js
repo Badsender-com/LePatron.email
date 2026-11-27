@@ -119,13 +119,15 @@ async function getPersonalizedBlocks(groupId, templateId, searchTerm = '') {
  * markup its template does not allow. A personalized block is shared with the
  * whole company and dropped into other people's mailings, so it goes through
  * the same pipeline as the mailing save (mailing/synthetic-content-pipeline.js):
- * sizes, a composed block's markup rebuilt from its state, the template flags.
- * Loads the template only when the content holds a synthetic block.
+ * sizes, a composed block's markup rebuilt from its state, the template flags,
+ * the right to compose. Loads the template only when the content holds a
+ * synthetic block.
  */
 async function normalizeAndGuardBlockContent({
   content,
   previousContent,
   templateId,
+  mayCompose,
 }) {
   await normalizeAndGuardSyntheticContent({
     data: asModel(content),
@@ -134,6 +136,10 @@ async function normalizeAndGuardBlockContent({
       templateId
         ? Templates.findById(templateId).select(TEMPLATE_FLAG_PROJECTION).lean()
         : null,
+    // Gated like the email save (ADR 0027): a composition put in the library
+    // is inserted by others, so who may not compose may not bring one here
+    // either — even while every role that may save a block may also compose.
+    mayCompose,
   });
 }
 
@@ -180,11 +186,26 @@ async function assertTemplateInGroup(templateId, groupId) {
   if (!template) throw new NotFound(ERROR_CODES.TEMPLATE_NOT_FOUND);
 }
 
-async function addPersonalizedBlock(block, groupId, templateId, userId) {
+/**
+ * @param {Object} block name, category and content
+ * @param {string} groupId
+ * @param {string} templateId
+ * @param {string} userId
+ * @param {Object} [options]
+ * @param {boolean} [options.mayCompose] whether the author holds
+ *   `block.compose`; anything but `true` refuses a composition
+ */
+async function addPersonalizedBlock(
+  block,
+  groupId,
+  templateId,
+  userId,
+  { mayCompose } = {}
+) {
   assertObjectIds(groupId, templateId);
   await assertTemplateInGroup(templateId, groupId);
   const content = withoutBlockInformation(block.content);
-  await normalizeAndGuardBlockContent({ content, templateId });
+  await normalizeAndGuardBlockContent({ content, templateId, mayCompose });
 
   const newBlock = await PersonalizedBlocks.create({
     ...block,
@@ -198,7 +219,19 @@ async function addPersonalizedBlock(block, groupId, templateId, userId) {
   return newBlock;
 }
 
-async function updatePersonalizedBlock(id, groupId, updatedBlock) {
+/**
+ * @param {string} id
+ * @param {string} groupId
+ * @param {Object} updatedBlock name, category and content, any of them
+ * @param {Object} [options]
+ * @param {boolean} [options.mayCompose] see addPersonalizedBlock
+ */
+async function updatePersonalizedBlock(
+  id,
+  groupId,
+  updatedBlock,
+  { mayCompose } = {}
+) {
   assertObjectIds(id, groupId);
   const changes = updatableOf(updatedBlock);
   if ('content' in changes) {
@@ -216,6 +249,7 @@ async function updatePersonalizedBlock(id, groupId, updatedBlock) {
       content: changes.content,
       previousContent: existing.content,
       templateId: existing._template,
+      mayCompose,
     });
   }
 
