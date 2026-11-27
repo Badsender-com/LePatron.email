@@ -41,7 +41,8 @@ describe('what the block stores carries none of it', () => {
   });
 
   it('writes that same markup through the accessor', async () => {
-    const { modal } = await openModal(['text']);
+    // A divider: an untouched text is blank, and a blank element is not sent.
+    const { modal } = await openModal(['divider']);
     const written = [];
     modal.accessor = (next) => {
       if (next !== undefined) written.push(next);

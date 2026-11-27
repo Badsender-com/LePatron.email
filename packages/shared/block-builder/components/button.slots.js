@@ -24,7 +24,9 @@
 
 module.exports = {
   slots: {
-    label: { context: 'TEXT', default: '' },
+    // Required: a button with no label is not sent (../manifest.js
+    // requiredOf).
+    label: { context: 'TEXT', default: '', required: true },
     href: { context: 'URL', default: '', fallback: '#' },
     backgroundColor: { context: 'COLOR', default: '#000000' },
     color: { context: 'COLOR', default: '#ffffff' },

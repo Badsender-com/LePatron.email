@@ -39,6 +39,15 @@ A row of several columns lays out the 600 px of the block (`BLOCK_WIDTH`) as col
 
 **Setting it.** Under the presets, the panel draws the block as a bar of columns and gutters. Between two pieces, a handle: a slider for the keyboard (arrows 1 px, Shift 10 px), dragged with the pointer otherwise, it widens the piece on its left at the expense of its right neighbour, so the total stays 600. A number field per piece sets it to the pixel, the next column giving the room, so typing a column's width never eats the gutter beside it. A zero gutter keeps a few pixels on the bar so both its handles can be grabbed, and a drag that starts on two handles at one spot opens the gutter when it goes right.
 
+## Generator 1.1.0: the block's width, and blank elements
+
+Two changes to what every composed block renders, so the generator goes from 1.0.0 to 1.1.0: a block written before is rebuilt when it is reapplied, and the modal says so on reopening (`rebuildsMarkup`). The markup of a block nobody reopens stays as it was stored.
+
+- **The block holds to the width it is laid out for.** Its outer table is `width="600" align="center"`, styled `width:600px;max-width:100%`; it was 100% wide. A template's block slot can be wider than its content (800 px, each native block centring its own 600 px table): the block spread over the whole slot, its halves became 400 px wide, and it lined up with nothing around it. The attribute is what Outlook on Windows reads, the `max-width` lets every other client shrink it to a phone. Nothing inside the outer table changes. The block's background stays on that table, so it covers the 600 px of the block, as the modal shows it, not the template's whole slot.
+- **A blank element is not sent.** Each element's manifest declares the slot that makes it something (`required`: a text's words, an image's source, a button's label). Blank in that slot, the element renders nothing outside the preview, where it is still drawn as its starter, there to be filled; the element list marks it « vide » and a status under the preview counts them. A column holding only blank elements is an empty column, for the markup and the stylesheet alike, and a block holding nothing else renders nothing. Considered: giving new elements real default words, which then ship unnoticed in a client's email, and refusing to apply a block with a blank element, which blocks an author who means to fill it later. A blank element stays in the state, so nothing the author placed is lost.
+
+The reference markup produced before columns (`flat-render-reference.json`) is not rewritten: its tests apply these two changes to it, and nothing else.
+
 ## The MARKUP context
 
 Every slot of a compiled component declares the escaping context its value goes through. **MARKUP is the only context that escapes nothing.** It exists because a column cell has to contain the rendered HTML of its elements, and escaped markup is destroyed markup.

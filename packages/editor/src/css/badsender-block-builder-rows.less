@@ -15,6 +15,24 @@
   // one look rather than two spellings of it that drift.
   &__row {
     .bb-pickable();
+    // Two lines at most rather than one cut short: the name says the row's
+    // structure and how many elements it holds before the first one's words.
+    // Its whole name is its tooltip.
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+    white-space: normal;
+    line-height: 1.35;
+    // The bottom room as a border, not padding: overflow is cut at the
+    // padding's edge, and a third line showed through the padding.
+    padding-bottom: 0;
+    border-bottom: 0.4375rem solid transparent;
+
+    // The row of the selected element: where the user is working, marked
+    // more lightly than a selected row.
+    &--current {
+      box-shadow: inset 3px 0 0 @bs-accent-color;
+    }
   }
 
   // The selected row's actions are the element's bar (`__actions` and
@@ -61,7 +79,8 @@
     display: flex;
     align-items: stretch;
     gap: 2px;
-    width: 3rem;
+    // Six on one line of the 300px panel, where five fitted and one wrapped.
+    width: 2.625rem;
     height: 1.5rem;
     padding: 2px;
     cursor: pointer;

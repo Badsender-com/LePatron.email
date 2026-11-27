@@ -155,7 +155,7 @@ describe('the selection cannot be written around the selectors', () => {
 
     modal.selectRow(row.id);
 
-    expect(modal.selection).toEqual({ kind: 'row', id: row.id });
+    expect(modal.selection).toEqual({ kind: 'row', id: row.id, column: 0 });
     expect(
       Object.getOwnPropertyDescriptor(modal.$options.computed, 'selectedRowId')
     ).toBeDefined();

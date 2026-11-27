@@ -8,7 +8,7 @@
 //
 // It is read by the component and by nothing else; every binding it names lives
 // there or in one of its mixins.
-const STRUCTURE_TEMPLATE = require('./structure-template.js');
+const SETTINGS_PANEL_TEMPLATE = require('./settings-panel-template.js');
 
 module.exports = `<modal-component
   ref="modalRef"
@@ -34,6 +34,7 @@ module.exports = `<modal-component
     <div class="bb-modal__layout">
       <div class="bb-modal__column bb-modal__column--left">
         <p class="bb-modal__section">{{ vm.t('block-builder-add') }}</p>
+        <div class="bb-modal__palette">
         <div
           v-for="item in palette"
           :key="item.type"
@@ -48,6 +49,7 @@ module.exports = `<modal-component
           @click="addElement(item.type)"
           @keydown="onPaletteKeydown($event, item.type)"
           @keyup="onPaletteKeyup($event, item.type)">+ {{ vm.t(item.labelKey) }}</div>
+        </div>
 
         <p class="bb-modal__section">{{ vm.t('block-builder-rows') }}</p>
         <div
@@ -70,8 +72,10 @@ module.exports = `<modal-component
               class="bb-modal__row"
               :class="{
                 'bb-modal__row--on': row.id === selectedRowId,
+                'bb-modal__row--current': isCurrentRow(row),
                 'bb-modal__row--drop-before': index === rowDropIndex
               }"
+              :title="rowLabel(row, index)"
               draggable="true"
               :aria-keyshortcuts="rowMoveShortcuts"
               @click="selectRow(row.id)"
@@ -81,37 +85,6 @@ module.exports = `<modal-component
               @dragend="handleDragEnd">{{ rowLabel(row, index) }}</li>
           </ul>
         </div>
-        <div v-if="selectedRow" class="bb-modal__actions bb-modal__row-actions">
-          <button
-            ref="rowMoveUp"
-            type="button"
-            class="bb-modal__action"
-            :disabled="!canMoveRow(-1)"
-            :title="vm.t('block-builder-move-row-up')"
-            :aria-label="vm.t('block-builder-move-row-up')"
-            @click.prevent="onRowMoveClick(-1)">↑</button>
-          <button
-            ref="rowMoveDown"
-            type="button"
-            class="bb-modal__action"
-            :disabled="!canMoveRow(1)"
-            :title="vm.t('block-builder-move-row-down')"
-            :aria-label="vm.t('block-builder-move-row-down')"
-            @click.prevent="onRowMoveClick(1)">↓</button>
-          <button
-            type="button"
-            class="bb-modal__action"
-            :disabled="rowLimitReached"
-            :title="rowLimitReached ? vm.t('block-builder-row-limit', { max: maxRows }) : vm.t('block-builder-duplicate-row')"
-            :aria-label="vm.t('block-builder-duplicate-row')"
-            @click.prevent="duplicateSelectedRow">⧉</button>
-          <button
-            type="button"
-            class="bb-modal__action bb-modal__action--destructive"
-            :title="vm.t('block-builder-delete-row')"
-            :aria-label="vm.t('block-builder-delete-row')"
-            @click.prevent="onRowDeleteClick">✕</button>
-        </div>
         <button
           ref="addRowButton"
           type="button"
@@ -120,7 +93,6 @@ module.exports = `<modal-component
           :title="rowLimitReached ? vm.t('block-builder-row-limit', { max: maxRows }) : null"
           @click.prevent="addRow">{{ addRowLabel }}</button>
 
-${STRUCTURE_TEMPLATE}
 
         <p :id="listLabelId" class="bb-modal__section">{{ vm.t('block-builder-elements') }}</p>
         <p v-if="columnTitle" :id="columnTitleId" class="bb-modal__list-column">{{ columnTitle }}</p>
@@ -182,11 +154,12 @@ ${STRUCTURE_TEMPLATE}
             sandbox="allow-same-origin"
             :title="vm.t('block-builder-preview-title')"></iframe>
         </div>
+        <p class="bb-modal__blank" role="status">{{ blankNotice }}</p>
         <p class="bb-modal__hint">{{ vm.t('block-builder-preview-hint') }}</p>
       </div>
 
       <div class="bb-modal__column bb-modal__column--right">
-        <element-settings :element="selected" :labels="settingsLabels" @change="applySetting" @pick-image="pickImage" />
+${SETTINGS_PANEL_TEMPLATE}
       </div>
     </div>
   </div>

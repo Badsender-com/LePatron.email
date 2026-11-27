@@ -4,7 +4,8 @@
 
 module.exports = {
   slots: {
-    content: { context: 'RICH_TEXT', default: '' },
+    // Required: a text with no words is not sent (../manifest.js requiredOf).
+    content: { context: 'RICH_TEXT', default: '', required: true },
     align: { context: 'ATTR', default: 'left' },
     fontFamily: {
       context: 'CSS_VALUE',

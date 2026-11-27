@@ -20,6 +20,9 @@ const {
   parseState,
 } = require('../../../packages/shared/block-builder/state.js');
 const fixtures = require('./fixtures/flat-render-reference.json');
+// Since generator 1.1.0 a block holds to its width and a blank element is not
+// sent: applied to the reference rather than written into it.
+const { renderedNow } = require('./block-width.js');
 
 describe('a block stored before columns renders as it did', () => {
   it('covers every element, in both modes', () => {
@@ -41,7 +44,7 @@ describe('a block stored before columns renders as it did', () => {
     '%s',
     (_name, fixture) => {
       expect(generate(parseState(fixture.state), fixture.options)).toBe(
-        fixture.html
+        renderedNow(fixture)
       );
     }
   );

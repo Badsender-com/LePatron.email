@@ -16,6 +16,7 @@ const {
   emptyLabelKeyFor,
   paletteLabelKeyFor,
   paletteIconFor,
+  templateLabel,
 } = require('./ext/synthetic-blocks/block-state.js');
 const {
   stripEmptySyntheticBlocks,
@@ -204,8 +205,10 @@ function initializeEditor(content, blockDefs, thumbPathConverter, galleryUrl) {
   // currently called by editor.html to translate template-defined keys (label, help, descriptions)
   // the editor always uses the "template" category for that strings.
   // you can override this method as you like in order to provide translation or change the strings in any way.
+  // The synthetic blocks' own labels are LePatron's, in English: they are
+  // read in the user's language (ext/synthetic-blocks/block-state.js).
   viewModel.ut = function (category, key) {
-    return key;
+    return templateLabel(viewModel.t, key);
   };
 
   viewModel.templatePath = thumbPathConverter;

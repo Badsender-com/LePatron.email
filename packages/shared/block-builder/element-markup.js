@@ -76,9 +76,28 @@ function definitionOf(element) {
 }
 
 /**
+ * Whether an element is blank: the slot that makes it something — a text's
+ * words, an image's source, a button's label, `required` in its manifest — is
+ * empty. A blank element renders nothing in an email, only its starter in the
+ * preview (resolveElement): the user never filled it, and an empty pill or an
+ * `<img src="">` is not something to send. A divider or a spacer, with no
+ * such slot, is never blank; nor is an element that is nothing (definitionOf).
+ *
+ * @param {*} element one entry of a column's `elements`
+ * @returns {boolean}
+ */
+function isBlankElement(element) {
+  const definition = definitionOf(element);
+  if (!definition?.required) return false;
+  const values = { ...definition.defaults, ...element };
+  return isBlankRichText(values[definition.required]);
+}
+
+/**
  * Everything about one element, worked out once: its type, its values merged
  * with the defaults, its starter, and from those its markup and its chrome.
- * Null when the element is nothing (see definitionOf).
+ * Null when the element is nothing (see definitionOf), or blank outside the
+ * preview (see isBlankElement).
  *
  * @param {Object} element one entry of a column's `elements`
  * @param {Object} [options] see generate
@@ -92,6 +111,8 @@ function resolveElement(element, options, containerWidth) {
 
   const values = { ...definition.defaults, ...element };
   const starter = starterValues(definition.type, values, options);
+  // Blank and not drawn as a starter: nothing, as an unknown element is.
+  if (!starter && isBlankElement(element)) return null;
   const shown = starter || values;
   // What Outlook reads is a width attribute, not a style: an element that
   // writes one in px is told how much room its column has. See image.js.
@@ -160,6 +181,7 @@ function generateElement(element, options) {
 
 module.exports = {
   definitionOf,
+  isBlankElement,
   resolveElement,
   renderElement,
   elementAttributes,

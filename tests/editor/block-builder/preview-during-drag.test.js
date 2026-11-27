@@ -12,6 +12,7 @@ const Vue = require('vue/dist/vue.common');
 
 const {
   openModal,
+  fillBlanks,
   unmountAll,
   layOutRows,
   rowsOf,
@@ -147,6 +148,8 @@ describe('none of the drag chrome reaches the block', () => {
     expect(dropLineOf(doc)).not.toBeNull();
 
     dropAt(doc, 90);
+    // A blank element is not sent: filled, so there is markup to read.
+    fillBlanks(modal);
     modal.handleApply();
 
     const written = markup();

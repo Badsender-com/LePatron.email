@@ -28,6 +28,7 @@ const {
   COLUMN_CHROME_CLASS,
 } = require('./row-markup.js');
 const { escapeForContext, COLOR, PX } = require('./slot-contexts.js');
+const { BLOCK_WIDTH } = require('./row-layout.js');
 const {
   flatRowOf,
   singleColumnRows,
@@ -43,7 +44,9 @@ const STATE_VERSION = 2;
 // Bumped when a template changes in a way that alters rendered output. A block
 // whose stored `gen` is behind can be offered an update; it is never updated
 // on its own.
-const GENERATOR_VERSION = '1.0.0';
+//   1.1.0 — the block holds to its width, centred, rather than 100%; a
+//   blank element (see isBlankElement) renders nothing.
+const GENERATOR_VERSION = '1.1.0';
 
 const DEFAULT_BLOCK = {
   backgroundColor: 'transparent',
@@ -139,10 +142,16 @@ function generate(state, options) {
   const paddingTop = escapeForContext(block.paddingTop, PX, 0);
   const paddingBottom = escapeForContext(block.paddingBottom, PX, 0);
 
+  // Held to the width it is laid out for (BLOCK_WIDTH, the px its rows are
+  // counted in), centred: a template's block slot can be wider than its
+  // content — each native block centring its own table in it — and a block at
+  // 100% spread over all of it, its columns wider than set. The attribute is
+  // what Outlook on Windows reads; `max-width:100%` lets every other client
+  // shrink it to a phone.
   return (
-    '<table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%"' +
-    ` bgcolor="${background}"` +
-    ` style="background-color:${background};">` +
+    '<table role="presentation" cellpadding="0" cellspacing="0" border="0"' +
+    ` width="${BLOCK_WIDTH}" align="center" bgcolor="${background}"` +
+    ` style="width:${BLOCK_WIDTH}px;max-width:100%;background-color:${background};">` +
     '<tr>' +
     `<td style="padding:${paddingTop}px 0 ${paddingBottom}px 0;">` +
     body +

@@ -63,6 +63,7 @@ const ROW_LABEL_KEYS = [
   'block-builder-elements-folded-one',
   'block-builder-row-limit',
   'block-builder-row-limit-reached',
+  'block-builder-row-more',
 ];
 
 const sameWidths = (a, b) =>
@@ -178,11 +179,20 @@ const RowSettingsMixin = {
         first ? '' : '-empty',
         count === 1 ? '-one' : '',
       ].join('');
+      // The elements after the first are counted, or a row of a text, an
+      // image and a button reads as a text alone — right after the first's
+      // type, before its words, so a name cut at two lines still says it.
+      const others = elementsOf([row]).length - 1;
+      const more =
+        others > 0 ? ` ${this.vm.t('block-builder-row-more', { count: others })}` : '';
       // `vm.t` substitutes through String#replace, which reads `$&` and its
       // kind in the replacement: doubled, the user's own `$` shows as typed.
-      const label = first ? this.labelFor(first).replace(/\$/g, '$$$$') : '';
+      const label = first
+        ? this.labelFor(first, more).replace(/\$/g, '$$$$')
+        : '';
       return this.vm.t(key, { n: index + 1, count, first: label });
     },
+
 
     rowTabIndex(index) {
       return this.listboxTabIndex(index, this.selectedRowIndex);

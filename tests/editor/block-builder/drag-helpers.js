@@ -202,11 +202,31 @@ const nextTask = () => new Promise((resolve) => setTimeout(resolve, 0));
 /** The insertion line, or null when none is drawn. */
 const dropLineOf = (doc) => doc.getElementById(DROP_LINE_ID);
 
+// What fills an element that is blank otherwise — and a blank element is not
+// sent (isBlankElement): a test that reads what Apply writes fills them first.
+const FILLED = {
+  text: { content: 'Bonjour' },
+  image: { src: 'https://example.test/a.png' },
+  button: { label: 'Acheter' },
+};
+
+/** Fills every blank text, image and button of the composition. */
+function fillBlanks(modal) {
+  modal.state.rows.forEach((row) =>
+    row.columns.forEach((column) =>
+      column.elements.forEach((element) =>
+        Object.assign(element, FILLED[element.type] || {})
+      )
+    )
+  );
+}
+
 /** The element types currently composed, in order. */
 const typesOf = (modal) => modal.columnElements.map((element) => element.type);
 
 module.exports = {
   openModal,
+  fillBlanks,
   unmountAll,
   transfer,
   rowsOf,

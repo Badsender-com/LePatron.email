@@ -6,7 +6,11 @@
 // components/column.vue), compiled like every element: what this module does
 // is decide which variant each cell takes and what goes in it.
 
-const { resolveElement, definitionOf } = require('./element-markup.js');
+const {
+  resolveElement,
+  definitionOf,
+  isBlankElement,
+} = require('./element-markup.js');
 const { escapeForContext, ATTR } = require('./slot-contexts.js');
 const {
   stackClassFor,
@@ -119,9 +123,11 @@ function columnsOf(row) {
 }
 
 /**
- * Whether a column holds nothing to render. The same rule resolveColumn
- * applies (an element is nothing exactly when definitionOf says so), asked
- * without rendering anything.
+ * Whether a column holds nothing to render in an email. The same rule
+ * resolveColumn applies without starters (an element is nothing when
+ * definitionOf says so, or when it is blank), asked without rendering
+ * anything — so the stylesheet, which has no starters, agrees with the
+ * markup.
  *
  * @param {{elements: *}} column one entry of columnsOf
  * @returns {boolean}
@@ -129,7 +135,9 @@ function columnsOf(row) {
 function isEmptyColumn(column) {
   return !(
     Array.isArray(column.elements) &&
-    column.elements.some((element) => definitionOf(element) !== null)
+    column.elements.some(
+      (element) => definitionOf(element) !== null && !isBlankElement(element)
+    )
   );
 }
 

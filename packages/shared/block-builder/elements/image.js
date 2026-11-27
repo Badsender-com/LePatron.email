@@ -8,7 +8,7 @@
 // field would bypass that — a point for whoever wires the panel.
 
 const { defineTemplate } = require('../template.js');
-const { defaultsOf, translatableOf } = require('../manifest.js');
+const { defaultsOf, translatableOf, requiredOf } = require('../manifest.js');
 
 // Two compiled variants rather than one conditional: the engine renders slots,
 // it does not branch. An image with no link must not ship an empty `<a>`, so
@@ -72,4 +72,14 @@ function fitWidth(values, available) {
     : values;
 }
 
-module.exports = { type: 'image', render, defaults, translatable, fitWidth };
+// The slot without which it is not sent — see ../manifest.js.
+const required = requiredOf(manifest);
+
+module.exports = {
+  type: 'image',
+  render,
+  defaults,
+  translatable,
+  required,
+  fitWidth,
+};
