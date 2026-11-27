@@ -3,7 +3,7 @@ const axios = require('axios');
 const { getPersonalizedBlocks } = require('../../utils/apis');
 const debounce = require('lodash.debounce');
 const { INPUT_DEBOUNCE_DELAY_MS } = require('../../constant/blocks');
-const { toPaletteBlock } = require('./palette-block');
+const { paletteEntryOf } = require('./palette-entry.js');
 
 const PersonalizedBlocksListComponent = Vue.component(
   'PersonalizedBlocksListComponent',
@@ -60,7 +60,7 @@ const PersonalizedBlocksListComponent = Vue.component(
           })
           .then((response) => {
             this.vm.personalizedBlocks(
-              response.data?.items.map(toPaletteBlock)
+              response.data?.items.map(paletteEntryOf)
             );
             this.isLoading = false;
           })
