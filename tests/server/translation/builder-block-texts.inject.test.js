@@ -62,7 +62,7 @@ describe('writing the translation back', () => {
     });
 
     expect(data.mainBlocks.blocks[0].builderHtml).toBe(
-      '<table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" bgcolor="transparent" style="background-color:transparent;">' +
+      '<table role="presentation" cellpadding="0" cellspacing="0" border="0" width="600" align="center" bgcolor="transparent" style="width:600px;max-width:100%;background-color:transparent;">' +
         '<tr><td style="padding:0px 0 0px 0;">' +
         '<table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%">' +
         '<tr><td><table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%">' +

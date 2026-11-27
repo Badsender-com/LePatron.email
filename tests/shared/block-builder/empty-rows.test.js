@@ -25,6 +25,9 @@ const {
   singleColumnRows,
 } = require('../../../packages/shared/block-builder/composition.js');
 const fixtures = require('./fixtures/flat-render-reference.json');
+// Since generator 1.1.0 a block holds to its width: the one change on the
+// outer table, applied to the reference rather than written into it.
+const { atBlockWidth } = require('./block-width.js');
 
 const text = (id, content) => ({ id, type: 'text', content });
 const emptyRow = () => singleColumnRows()[0];
@@ -67,7 +70,7 @@ describe('a flat block with an empty row added', () => {
       state.rows.unshift(emptyRow());
 
       expect(isFlatComposition(state)).toBe(true);
-      expect(generate(state, fixture.options)).toBe(fixture.html);
+      expect(generate(state, fixture.options)).toBe(atBlockWidth(fixture.html));
     }
   );
 
@@ -150,7 +153,9 @@ describe('the preview of a composition with an empty row', () => {
       .filter((fixture) => fixture.mode === 'preview')
       .forEach((fixture) => {
         const options = { ...fixture.options, chrome: true };
-        expect(generate(parseState(fixture.state), options)).toBe(fixture.html);
+        expect(generate(parseState(fixture.state), options)).toBe(
+          atBlockWidth(fixture.html)
+        );
       });
   });
 });
