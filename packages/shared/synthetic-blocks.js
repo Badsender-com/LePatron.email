@@ -41,6 +41,8 @@ const HTML_CODE_BLOCK = Object.freeze({
   // pasted HTML to the LLM and have it rewritten.
   htmlProperty: 'htmlCode',
   stateProperty: null,
+  // Only composed blocks remember the library entry they came from (ADR 0027).
+  originProperty: null,
 
   // The property editor widget. Mosaico passes any unknown `widget:` declaration
   // straight through and looks plugin widgets up before its own
@@ -118,6 +120,15 @@ const BLOCK_BUILDER_BLOCK = Object.freeze({
   // property editor returns '' — it lives in the model without showing up in
   // the panel.
   stateProperty: 'builderState',
+
+  // The library entry the block was inserted from, empty for a block composed
+  // in the email (ADR 0027). Nothing reads it yet: it is kept so synchronised
+  // blocks and usage statistics can one day account for the blocks inserted
+  // from now on. DECLARED for the same reason as the state — the reverse pass
+  // of checkModel deletes what no definition declares, which is exactly what
+  // erases the palette's `blockInformation` at the first reopening — and never
+  // rendered, so it shows nowhere and is never exported.
+  originProperty: 'libraryOrigin',
 
   widget: 'blockBuilder',
 
