@@ -28,7 +28,7 @@ export default {
         this.$v.form.label.$touch();
         return true;
       }
-      if (field === 'canonicalType' && !this.isEmailType) {
+      if (field === 'canonicalType') {
         this.serverIdentifierError = message;
         return true;
       }

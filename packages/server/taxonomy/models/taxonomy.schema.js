@@ -73,8 +73,8 @@ const TaxonomyItemSchema = Schema(
       type: String,
       maxlength: TaxonomyLimits.DESCRIPTION,
     },
-    // Optional bridge onto the AI skills vocabulary — see
-    // constant/email-type-canonical.js for why it is not an enum here.
+    // The identifier a template compares (`_root_.market eq 'be'`), the email
+    // type's included (ADR-0030). Kept under its historical name.
     canonicalType: {
       type: String,
       set: trimOptionalString,

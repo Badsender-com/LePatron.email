@@ -9,7 +9,9 @@ const { validatePayload } = require('./taxonomy.validation.js');
 const { readAvailability } = require('./availability.js');
 const { readNormalisedCode } = require('./dimension-role.js');
 
-const IDENTIFIER_PATTERN = /^[A-Za-z0-9_-]+$/;
+const {
+  IDENTIFIER_PATTERN,
+} = require('../../../shared/taxonomy/identifier.js');
 
 /**
  * What a request may write on a value, and the checks a value's fields must
@@ -35,14 +37,10 @@ module.exports = {
  */
 async function readValueFields({ companyId, type, payload, partial }) {
   const { parentIds, ...fields } = validatePayload(payload, { partial });
-  // Outside the email type, which maps onto the doctrine's free vocabulary,
-  // the identifier is what a template compares and an adoption source names
-  // (`brand_[silo]`): letters, digits, underscores and hyphens only.
-  if (
-    fields.canonicalType &&
-    type !== StandardDimensions.EMAIL_TYPE &&
-    !IDENTIFIER_PATTERN.test(fields.canonicalType)
-  ) {
+  // The identifier is what a template compares and an adoption source names
+  // (`brand_[silo]`), the email type's included (ADR-0030): letters, digits,
+  // underscores and hyphens only.
+  if (fields.canonicalType && !IDENTIFIER_PATTERN.test(fields.canonicalType)) {
     throw new BadRequest(ERROR_CODES.INVALID_TAXONOMY_ITEM);
   }
   // The doctrine's six types classify emails, not markets or brands.
@@ -92,10 +90,8 @@ async function assertLabelIsFree({ companyId, type, label, exceptId }) {
 /**
  * One identifier per value within a dimension: a template compares against it,
  * and two values answering to the same one could not be told apart. Values with
- * no identifier are as many as needed.
- *
- * The email type is left out: there the field maps a value onto one of the
- * doctrine's six types, and several values map onto the same one.
+ * no identifier are as many as needed. The email type's included: its
+ * doctrine type, which several share, is a field of its own (ADR-0030).
  */
 async function assertIdentifierIsFree({
   companyId,
@@ -103,7 +99,7 @@ async function assertIdentifierIsFree({
   identifier,
   exceptId,
 }) {
-  if (!identifier || type === StandardDimensions.EMAIL_TYPE) return;
+  if (!identifier) return;
 
   const query = { _company: companyId, type, canonicalType: identifier };
   if (exceptId) {
