@@ -100,7 +100,7 @@ async function previewMissingDefaultEmailTypes({ user, groupId, lang }) {
     _company: companyId,
     type: TaxonomyTypes.EMAIL_TYPE,
   })
-    .select({ label: 1, canonicalType: 1 })
+    .select({ label: 1, canonicalType: 1, doctrineType: 1 })
     .lean();
 
   return planMissingDefaultEmailTypes(existing, lang);
@@ -134,7 +134,7 @@ async function addMissingDefaultEmailTypes({ user, groupId, lang }) {
   const type = TaxonomyTypes.EMAIL_TYPE;
 
   const existing = await TaxonomyItems.find({ _company: companyId, type })
-    .select({ label: 1, canonicalType: 1 })
+    .select({ label: 1, canonicalType: 1, doctrineType: 1 })
     .lean();
 
   const { toCreate, skipped } = planMissingDefaultEmailTypes(existing, lang);
