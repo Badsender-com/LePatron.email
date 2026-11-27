@@ -57,7 +57,7 @@ describe('a row’s name', () => {
     await Vue.nextTick();
 
     expect(rowOptions()[0].textContent.trim()).toBe(
-      'Ligne 1 · 2 colonnes — Bouton +1'
+      'Ligne 1 · 2 colonnes — Bouton — vide +1'
     );
   });
 

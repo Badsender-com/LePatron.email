@@ -62,7 +62,7 @@ describe('the row list', () => {
     await Vue.nextTick();
 
     expect(rowOptions().map((option) => option.textContent.trim())).toEqual([
-      'Ligne 1 · 1 colonne — Texte',
+      'Ligne 1 · 1 colonne — Texte — vide',
       'Ligne 2 · 3 colonnes — vide',
     ]);
   });
@@ -93,7 +93,7 @@ describe('the row list', () => {
     await Vue.nextTick();
 
     expect(rowOptions()[0].textContent.trim()).toBe(
-      'Ligne 1 · 2 colonnes — Bouton'
+      'Ligne 1 · 2 colonnes — Bouton — vide'
     );
   });
 

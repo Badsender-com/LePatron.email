@@ -436,6 +436,11 @@ module.exports = {
   'block-builder-move-row-down': 'Move the row down',
   'block-builder-duplicate-row': 'Duplicate the row',
   'block-builder-delete-row': 'Delete the row',
+  'block-builder-element-blank': 'empty',
+  'block-builder-blank-elements':
+    '__count__ empty elements — no text, no image or no label — will not be sent.',
+  'block-builder-blank-elements-one':
+    'An empty element — no text, no image or no label — will not be sent.',
   'block-builder-row-more': '+__count__',
   'block-builder-row-title': 'Row __n__',
   'block-builder-row-settings': 'Row settings',

@@ -9,10 +9,15 @@ const {
 const {
   singleColumnRows,
   columnAt,
+  elementsOfState,
 } = require('../../../../../../shared/block-builder/composition.js');
 const {
   moveInList,
 } = require('../../../../../../shared/block-builder/move-in-list.js');
+const {
+  isBlankElement,
+} = require('../../../../../../shared/block-builder/element-markup.js');
+const { elementLabel } = require('./element-label.js');
 const { ListboxMixin } = require('./listbox.js');
 
 // The element list: what can be added, and what has been — adding, selecting,
@@ -43,19 +48,12 @@ const defaultsFor = (type) => {
   return definition ? { ...definition.defaults } : {};
 };
 
-// A text element's words as a reader sees them: tags dropped and character
-// references decoded — TinyMCE writes `&nbsp;`, which showed as such in the
-// list. Parsed in an inert document, which runs and loads nothing.
-function plainTextOf(html) {
-  const text =
-    typeof DOMParser === 'undefined'
-      ? html.replace(/<[^>]*>/g, '')
-      : new DOMParser().parseFromString(html, 'text/html').body.textContent;
-  return (text || '').replace(/\s+/g, ' ').trim();
-}
-
 // The list's own label, built in script for the variables it carries.
-const ELEMENT_LIST_LABEL_KEYS = ['block-builder-elements-column'];
+const ELEMENT_LIST_LABEL_KEYS = [
+  'block-builder-elements-column',
+  'block-builder-blank-elements',
+  'block-builder-blank-elements-one',
+];
 
 const columnCount = (rows) =>
   (rows || []).reduce((count, row) => count + row.columns.length, 0);
@@ -81,6 +79,16 @@ const ElementListMixin = {
       return this.vm.t('block-builder-elements-column', place);
     },
 
+    // How many elements will not be sent, said under the preview: a block of
+    // starters looks done there, and applies as nothing.
+    blankNotice() {
+      const count = elementsOfState(this.state).filter(isBlankElement).length;
+      if (count === 0) return '';
+      return count === 1
+        ? this.vm.t('block-builder-blank-elements-one')
+        : this.vm.t('block-builder-blank-elements', { count });
+    },
+
     // The list is named by its section and, when there is one, its column.
     listLabelledBy() {
       return this.columnTitle
@@ -92,15 +100,7 @@ const ElementListMixin = {
     labelFor(element) {
       const entry = PALETTE.find((item) => item.type === element.type);
       const name = entry ? this.vm.t(entry.labelKey) : element.type;
-      if (element.type === 'text' && element.content) {
-        // The first words, so a list of five texts is still readable.
-        const plain = plainTextOf(element.content);
-        if (plain) return `${name} — ${plain.slice(0, 28)}`;
-      }
-      if (element.type === 'button' && element.label) {
-        return `${name} — ${element.label.slice(0, 28)}`;
-      }
-      return name;
+      return elementLabel(element, name, this.vm.t('block-builder-element-blank'));
     },
 
     // Clicking a palette entry adds right after the selected element, in its

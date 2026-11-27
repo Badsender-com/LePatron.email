@@ -451,6 +451,11 @@ module.exports = {
   'block-builder-move-row-down': 'Descendre la ligne',
   'block-builder-duplicate-row': 'Dupliquer la ligne',
   'block-builder-delete-row': 'Supprimer la ligne',
+  'block-builder-element-blank': 'vide',
+  'block-builder-blank-elements':
+    '__count__ éléments vides — sans texte, sans image ou sans libellé — ne seront pas envoyés.',
+  'block-builder-blank-elements-one':
+    'Un élément vide — sans texte, sans image ou sans libellé — ne sera pas envoyé.',
   'block-builder-row-more': '+__count__',
   'block-builder-row-title': 'Ligne __n__',
   'block-builder-row-settings': 'Régler la ligne',

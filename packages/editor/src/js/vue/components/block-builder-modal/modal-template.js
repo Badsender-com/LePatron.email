@@ -154,6 +154,7 @@ module.exports = `<modal-component
             sandbox="allow-same-origin"
             :title="vm.t('block-builder-preview-title')"></iframe>
         </div>
+        <p class="bb-modal__blank" role="status">{{ blankNotice }}</p>
         <p class="bb-modal__hint">{{ vm.t('block-builder-preview-hint') }}</p>
       </div>
 

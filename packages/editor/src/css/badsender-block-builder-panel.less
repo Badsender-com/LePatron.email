@@ -77,4 +77,15 @@
       outline-offset: 1px;
     }
   }
+
+  // How many elements will not be sent, under the preview. Always in the DOM,
+  // empty until there is something to say, like the folded notice.
+  &__blank:not(:empty) {
+    margin: 0.5rem 0 0;
+    padding: 0.375rem 0.625rem;
+    font-size: 0.75rem;
+    color: rgba(0, 0, 0, 0.78);
+    background: #fff8e1;
+    border-left: 3px solid #f9a825;
+  }
 }
