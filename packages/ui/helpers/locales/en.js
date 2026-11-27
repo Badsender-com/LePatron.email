@@ -1810,6 +1810,8 @@ export default {
           '{templates} compares {identifier}, which no value carries.',
         literalNotOffered:
           '{templates} compares {identifier} with {parent}, but {identifier} is not offered under {parent}.',
+        doctrineLiteralUnknown:
+          '{templates} compares doctrineType with {identifier}, which is none of the six Badsender types.',
       },
       precedence: {
         title: 'Token precedence',

@@ -30,7 +30,7 @@ const publish = (emailTypeId) => {
 };
 
 // Turned on by #1636 (the template receives the doctrine type as doctrineType)
-describe.skip('governance values: doctrineType', () => {
+describe('governance values: doctrineType', () => {
   it('publishes the doctrine type of the email type', () => {
     expect(publish(COMMUNITY).doctrineType).toBe('editorial');
   });

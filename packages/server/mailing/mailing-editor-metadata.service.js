@@ -106,6 +106,7 @@ async function buildEditorMetadata({ mailing, group }) {
         .select({
           label: 1,
           canonicalType: 1,
+          doctrineType: 1,
           order: 1,
           description: 1,
           tokens: 1,
@@ -159,6 +160,8 @@ async function buildEditorMetadata({ mailing, group }) {
         id: item._id,
         label: item.label,
         canonicalType: item.canonicalType,
+        // Published to the template as `doctrineType` (ADR-0030).
+        doctrineType: item.doctrineType || null,
         description: item.description,
         tokens: item.tokens || {},
       })),

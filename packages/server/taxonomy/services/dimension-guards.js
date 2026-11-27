@@ -31,9 +31,9 @@ module.exports = {
   assertValueType,
 };
 
-// Published by the application to every template (ADR-0023): a dimension of
-// that name would shadow it.
-const RESERVED_NAMES = Object.freeze(['locale']);
+// Published by the application to every template (ADR-0023, ADR-0030): a
+// dimension of that name would shadow it.
+const RESERVED_NAMES = Object.freeze(['locale', 'doctrineType']);
 
 /**
  * A name a template can read (ADR-0015), and not one the application publishes.

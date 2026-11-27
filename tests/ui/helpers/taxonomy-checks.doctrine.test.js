@@ -41,7 +41,7 @@ describe.skip('points to check: email type not mapped', () => {
 });
 
 // Turned on by #1636 (the template receives the doctrine type as doctrineType)
-describe.skip('points to check: doctrineType literal outside the doctrine', () => {
+describe('points to check: doctrineType literal outside the doctrine', () => {
   it('names the literals a template compares doctrineType with, outside the doctrine', () => {
     const points = check({
       values: [emailType('com', { doctrineType: 'editorial' })],

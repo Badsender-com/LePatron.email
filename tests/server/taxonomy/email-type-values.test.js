@@ -182,7 +182,7 @@ describe.skip('email type value: identifier', () => {
 });
 
 // Turned on by #1636 (the template receives the doctrine type as doctrineType)
-describe.skip('doctrineType is a reserved name', () => {
+describe('doctrineType is a reserved name', () => {
   it('refuses a company dimension named doctrineType', async () => {
     await expect(
       dimensionService.createDimension({
