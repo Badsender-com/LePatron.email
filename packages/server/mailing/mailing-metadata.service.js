@@ -47,7 +47,7 @@ module.exports = {
   applyMetadataToMailing,
   normalizePlannedSendDate,
   buildEditorMetadata,
-  findCanonicalEmailType,
+  findDoctrineEmailType,
   clearCompanyScopedMetadata,
   MAX_SUBJECT_LENGTH,
   ALLOWED_METADATA_KEYS,
@@ -295,19 +295,20 @@ function clearCompanyScopedMetadata(mailing) {
 }
 
 /**
- * The email type of a mailing in the vocabulary of the AI skills, or null.
- *
- * A company names its typologies as it likes; expertises are filtered on the
- * canonical type each typology maps to. Null when the mailing has no typology,
- * or one that maps to nothing: the caller then asks for every email type.
- *
- * @param {Object} mailing a Mailings document
- * @returns {Promise<string|null>}
+ * The doctrine type a mailing's email type maps onto (ADR-0030), the vocabulary
+ * of the expertises: a type mapped onto none asks for the untargeted ones only,
+ * no email type filters nothing.
+ * @returns {Promise<{emailType: (string|undefined), untargetedOnly: boolean}>}
  */
-async function findCanonicalEmailType(mailing) {
-  if (!mailing?._emailType) return null;
+async function findDoctrineEmailType(mailing) {
+  if (!mailing?._emailType)
+    return { emailType: undefined, untargetedOnly: false };
   const item = await TaxonomyItems.findById(mailing._emailType)
-    .select({ canonicalType: 1 })
+    .select({ doctrineType: 1 })
     .lean();
-  return item?.canonicalType || null;
+  if (!item) return { emailType: undefined, untargetedOnly: false };
+  return {
+    emailType: item.doctrineType || undefined,
+    untargetedOnly: !item.doctrineType,
+  };
 }

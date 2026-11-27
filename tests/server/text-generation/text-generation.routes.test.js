@@ -25,7 +25,7 @@ jest.mock('../../../packages/server/mailing/mailing.service', () => ({
   assertUserCanEditMailing: jest.fn(),
 }));
 jest.mock('../../../packages/server/mailing/mailing-metadata.service', () => ({
-  findCanonicalEmailType: jest.fn(),
+  findDoctrineEmailType: jest.fn(),
   // The limit saving the subject applies: a proposal past it is dropped.
   MAX_SUBJECT_LENGTH: jest.requireActual(
     '../../../packages/server/mailing/mailing-metadata.service'
@@ -198,9 +198,10 @@ function loadModules() {
     _company: 'g1',
   });
   mailingService.assertUserCanEditMailing.mockResolvedValue();
-  mailingMetadataService.findCanonicalEmailType.mockResolvedValue(
-    'promotional'
-  );
+  mailingMetadataService.findDoctrineEmailType.mockResolvedValue({
+    emailType: 'promotional',
+    untargetedOnly: false,
+  });
   findApplicable.mockResolvedValue(EXPERTISE);
 }
 
@@ -322,11 +323,31 @@ describe('text generation: POST /api/text-generation/subject', () => {
     });
 
     it('asks without an email type when the mailing has none', async () => {
-      mailingMetadataService.findCanonicalEmailType.mockResolvedValue(null);
+      mailingMetadataService.findDoctrineEmailType.mockResolvedValue({
+        emailType: undefined,
+        untargetedOnly: false,
+      });
       await request(makeApp()).post('/api/text-generation/subject').send(body);
       expect(findApplicable).toHaveBeenCalledWith({
         scope: 'subject',
         categories: ['redaction', 'deliverability'],
+        groupId: 'g1',
+      });
+      expect(invoke.mock.calls[0][0].input).not.toHaveProperty('emailType');
+    });
+
+    // ADR-0030: the expertises targeting a doctrine type are not for an email
+    // whose type maps onto none.
+    it('asks only the untargeted expertises when the email type maps onto no doctrine type', async () => {
+      mailingMetadataService.findDoctrineEmailType.mockResolvedValue({
+        emailType: undefined,
+        untargetedOnly: true,
+      });
+      await request(makeApp()).post('/api/text-generation/subject').send(body);
+      expect(findApplicable).toHaveBeenCalledWith({
+        scope: 'subject',
+        categories: ['redaction', 'deliverability'],
+        untargetedOnly: true,
         groupId: 'g1',
       });
       expect(invoke.mock.calls[0][0].input).not.toHaveProperty('emailType');

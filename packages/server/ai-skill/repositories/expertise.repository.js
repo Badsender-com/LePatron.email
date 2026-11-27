@@ -64,7 +64,8 @@ const TRIED_STATUSES = [SkillStatuses.ACTIVE, SkillStatuses.DRAFT];
  * @param {Object} filters
  * @param {string|string[]} filters.scope — REQUIRED
  * @param {string[]} filters.categories — REQUIRED, non-empty
- * @param {string} [filters.emailType]
+ * @param {(string|null)} [filters.emailType] a doctrine type; `null` for an
+ *   email whose type maps onto none, which loads only untargeted expertises
  * @param {string} [filters.language]
  * @param {string|ObjectId} [filters.groupId] the id of the caller's company;
  *   without one, the caller is treated as a client company
@@ -129,7 +130,12 @@ function applicableQuery({ scope, categories, emailType, language }) {
     { category: { $in: categories } },
   ];
 
-  if (emailType) {
+  // `null` is an email whose type maps onto no doctrine type (ADR-0030): the
+  // expertises targeting a type are not for it. `undefined` says nothing of
+  // an email type, and filters nothing.
+  if (emailType === null) {
+    and.push({ appliesToEmailTypes: { $size: 0 } });
+  } else if (emailType) {
     and.push({
       $or: [
         { appliesToEmailTypes: emailType },

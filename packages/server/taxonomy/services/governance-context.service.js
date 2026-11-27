@@ -40,7 +40,8 @@ const isStandard = (dimension) =>
  *   `trigger` and `_taxonomyItems`
  * @param {string} [params.lang] the reader's language, for the trigger's words
  * @returns {Promise<{dimensions: Object[], missing: string[], language:
- *   (string|null), locale: (string|null), text: string}>}
+ *   (string|null), locale: (string|null), doctrineType: (string|null), text:
+ *   string}>}
  *   `dimensions` is what the email says, standard dimensions first then in the
  *   declared order; `missing` names the active dimensions the email leaves empty,
  *   so a caller may ask for them rather than write without them.
@@ -83,6 +84,10 @@ async function buildGovernanceContext({ mailing, lang }) {
     // company calls its values: what the AI writes in.
     language: emailLocale.language,
     locale: emailLocale.locale,
+    // The doctrine type of the email's type (ADR-0030), the vocabulary the
+    // expertises are written against: `null` asks for those targeting none.
+    doctrineType:
+      values.get(StandardDimensions.EMAIL_TYPE)?.doctrineType || null,
     text: renderGovernanceContext({
       dimensions,
       localeLine: localeLine(emailLocale, lang),
@@ -98,7 +103,9 @@ async function buildGovernanceContext({ mailing, lang }) {
 function renderGovernanceContext({ dimensions, localeLine: line = null }) {
   const sections = (dimensions || []).map((dimension) =>
     [
-      `### ${dimension.label} : ${dimension.value.label}`,
+      `### ${dimension.label} : ${dimension.value.label}${
+        dimension.value.doctrineType ? ` (${dimension.value.doctrineType})` : ''
+      }`,
       dimension.description,
       dimension.value.description,
     ]
@@ -186,7 +193,13 @@ async function valuesOf(mailing, companyId) {
     _id: { $in: ids },
     _company: companyId,
   })
-    .select({ type: 1, label: 1, canonicalType: 1, description: 1 })
+    .select({
+      type: 1,
+      label: 1,
+      canonicalType: 1,
+      doctrineType: 1,
+      description: 1,
+    })
     .lean();
 
   // The email type travels in its own field: a value of that dimension in the
@@ -198,6 +211,7 @@ async function valuesOf(mailing, companyId) {
     byName.set(item.type, {
       label: item.label,
       identifier: item.canonicalType || null,
+      ...(isEmailType && { doctrineType: item.doctrineType || null }),
       description: item.description || null,
     });
     return byName;
