@@ -97,10 +97,16 @@ const ElementListMixin = {
     },
   },
   methods: {
-    labelFor(element) {
+    // `suffix` follows the type's name, before what tells the element apart:
+    // the row list puts there how many more elements the row holds.
+    labelFor(element, suffix = '') {
       const entry = PALETTE.find((item) => item.type === element.type);
       const name = entry ? this.vm.t(entry.labelKey) : element.type;
-      return elementLabel(element, name, this.vm.t('block-builder-element-blank'));
+      return elementLabel(
+        element,
+        `${name}${suffix}`,
+        this.vm.t('block-builder-element-blank')
+      );
     },
 
     // Clicking a palette entry adds right after the selected element, in its

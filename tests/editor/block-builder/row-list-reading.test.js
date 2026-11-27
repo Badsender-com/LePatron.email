@@ -38,13 +38,13 @@ const rowOptions = () =>
 afterEach(unmountAll);
 
 describe('a row’s name', () => {
-  it('counts the elements after the first', async () => {
+  it('counts the elements after the first, right after its type', async () => {
     const modal = await openWith(['text', 'image', 'button']);
     modal.state.rows[0].columns[0].elements[0].content = '<p>Bonjour</p>';
     await Vue.nextTick();
 
     expect(rowOptions()[0].textContent.trim()).toBe(
-      'Ligne 1 · 1 colonne — Texte — Bonjour +2'
+      'Ligne 1 · 1 colonne — Texte +2 — Bonjour'
     );
   });
 
@@ -57,7 +57,7 @@ describe('a row’s name', () => {
     await Vue.nextTick();
 
     expect(rowOptions()[0].textContent.trim()).toBe(
-      'Ligne 1 · 2 colonnes — Bouton — vide +1'
+      'Ligne 1 · 2 colonnes — Bouton +1 — vide'
     );
   });
 
