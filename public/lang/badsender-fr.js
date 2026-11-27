@@ -451,6 +451,7 @@ module.exports = {
   'block-builder-move-row-down': 'Descendre la ligne',
   'block-builder-duplicate-row': 'Dupliquer la ligne',
   'block-builder-delete-row': 'Supprimer la ligne',
+  'block-builder-row-more': '+__count__',
   'block-builder-row-title': 'Ligne __n__',
   'block-builder-row-settings': 'Régler la ligne',
   'block-builder-add-into': 'Ajouter dans',

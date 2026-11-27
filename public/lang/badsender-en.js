@@ -436,6 +436,7 @@ module.exports = {
   'block-builder-move-row-down': 'Move the row down',
   'block-builder-duplicate-row': 'Duplicate the row',
   'block-builder-delete-row': 'Delete the row',
+  'block-builder-row-more': '+__count__',
   'block-builder-row-title': 'Row __n__',
   'block-builder-row-settings': 'Row settings',
   'block-builder-add-into': 'Add into',

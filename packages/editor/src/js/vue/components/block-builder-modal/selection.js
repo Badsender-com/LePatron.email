@@ -142,6 +142,15 @@ const SelectionMixin = {
       this.selection = id ? { kind: ELEMENT, id } : null;
     },
 
+    // The row the selected element sits in, marked in the list while the
+    // element — not the row — is selected: the list keeps showing where the
+    // user is working.
+    isCurrentRow(row) {
+      if (!this.selectedElementId) return false;
+      const place = this.locateElement(this.selectedElementId);
+      return Boolean(place) && place.row === row;
+    },
+
     /** Selects a row, with its first column, or nothing when `id` is empty. */
     selectRow(id) {
       this.selectColumn(id, 0);

@@ -70,8 +70,10 @@ module.exports = `<modal-component
               class="bb-modal__row"
               :class="{
                 'bb-modal__row--on': row.id === selectedRowId,
+                'bb-modal__row--current': isCurrentRow(row),
                 'bb-modal__row--drop-before': index === rowDropIndex
               }"
+              :title="rowLabel(row, index)"
               draggable="true"
               :aria-keyshortcuts="rowMoveShortcuts"
               @click="selectRow(row.id)"

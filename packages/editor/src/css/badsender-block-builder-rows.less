@@ -15,6 +15,12 @@
   // one look rather than two spellings of it that drift.
   &__row {
     .bb-pickable();
+
+    // The row of the selected element: where the user is working, marked
+    // more lightly than a selected row.
+    &--current {
+      box-shadow: inset 3px 0 0 @bs-accent-color;
+    }
   }
 
   // The selected row's actions are the element's bar (`__actions` and
