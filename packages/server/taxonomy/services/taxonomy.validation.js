@@ -4,6 +4,9 @@ const { BadRequest, Conflict } = require('http-errors');
 
 const ERROR_CODES = require('../../constant/error-codes.js');
 const {
+  EmailTypeCanonicalValues,
+} = require('../../constant/email-type-canonical.js');
+const {
   TaxonomyLimits,
   DIMENSION_NAME_PATTERN,
 } = require('../../constant/taxonomy-type.js');
@@ -21,6 +24,9 @@ const EDITABLE_FIELDS = Object.freeze([
   'label',
   'description',
   'canonicalType',
+  // An email type's doctrine type (ADR-0030), checked against its dimension by
+  // the service.
+  'doctrineType',
   'isActive',
   'order',
   // The availability: the parent values a value is offered under.
@@ -96,6 +102,9 @@ function validatePayload(payload, { partial }) {
   if (payload.canonicalType !== undefined) {
     fields.canonicalType = readCanonicalType(payload.canonicalType);
   }
+  if (payload.doctrineType !== undefined) {
+    fields.doctrineType = readDoctrineType(payload.doctrineType);
+  }
   if (payload.isActive !== undefined) {
     fields.isActive = readIsActive(payload.isActive);
   }
@@ -167,6 +176,17 @@ function readCanonicalType(value) {
   // the AI skills, which already accept a free value and fall back on the raw
   // string. See constant/email-type-canonical.js.
   return canonicalType;
+}
+
+/**
+ * @returns {string|null} one of the six doctrine types, or `null` for an email
+ *   type mapped onto none: stored as such, so the migration never maps again a
+ *   value an admin left unmapped.
+ */
+function readDoctrineType(value) {
+  if (value === null || value === '') return null;
+  if (!EmailTypeCanonicalValues.includes(value)) throw invalid();
+  return value;
 }
 
 /**

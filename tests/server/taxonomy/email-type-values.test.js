@@ -41,7 +41,7 @@ beforeEach(() => {
 });
 
 // Turned on by #1633 (the doctrine type of an email type is a field of its own)
-describe.skip('email type value: doctrine type', () => {
+describe('email type value: doctrine type', () => {
   it('stores the doctrine type an email type is mapped onto', async () => {
     const value = await addValue('emailType', {
       label: 'Infolettre communauté',

@@ -16,6 +16,7 @@ export function valueFormFor(item, suggestedOrder = 0) {
       label: '',
       description: '',
       canonicalType: null,
+      doctrineType: null,
       isActive: true,
       order: suggestedOrder,
       parentIds: [],
@@ -29,6 +30,7 @@ export function valueFormFor(item, suggestedOrder = 0) {
     label: item.label || '',
     description: item.description || '',
     canonicalType: item.canonicalType || null,
+    doctrineType: item.doctrineType || null,
     isActive: item.isActive !== false,
     order: typeof item.order === 'number' ? item.order : 0,
     parentIds: (item._parents || []).map(String),
@@ -51,12 +53,15 @@ export function valueFormFor(item, suggestedOrder = 0) {
  * @param {string|null} options.role the dimension's role: its values carry a
  *   code
  * @param {boolean} options.isNew a creation, which gets its place in the list
+ * @param {boolean} [options.isEmailType] an email type, which carries its
+ *   doctrine type (ADR-0030)
  * @returns {Object} the body of the request
  */
-export function valuePayloadFrom(form, { role, isNew }) {
+export function valuePayloadFrom(form, { role, isNew, isEmailType = false }) {
   const { order, ...payload } = buildTaxonomyPayload(form);
   if (isNew) payload.order = order;
   payload.tokens = form.tokens;
   if (role) payload.code = form.code;
+  if (isEmailType) payload.doctrineType = form.doctrineType || null;
   return payload;
 }

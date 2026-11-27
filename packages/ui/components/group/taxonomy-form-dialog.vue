@@ -84,8 +84,8 @@ export default {
     submitLabel() {
       return this.isEditing ? this.$t('global.save') : this.$t('global.create');
     },
-    canonicalTypeItems() {
-      return canonicalTypeItems(this.form.canonicalType, (key) => this.$t(key));
+    doctrineTypeItems() {
+      return canonicalTypeItems(null, (key) => this.$t(key));
     },
     labelErrors() {
       const errors = [];
@@ -163,6 +163,7 @@ export default {
       const payload = valuePayloadFrom(this.form, {
         role: this.role,
         isNew: !this.editingId,
+        isEmailType: this.isEmailType,
       });
       if (this.identifierChanged) {
         payload.confirmIdentifierChange = this.identifierConfirmed;
@@ -213,12 +214,13 @@ export default {
 
     <bs-select
       v-if="isEmailType"
-      v-model="form.canonicalType"
-      :label="$t('taxonomy.form.canonicalType')"
-      :items="canonicalTypeItems"
-      :placeholder="$t('taxonomy.form.canonicalTypePlaceholder')"
-      :hint="$t('taxonomy.form.canonicalTypeHint')"
+      v-model="form.doctrineType"
+      :label="$t('taxonomy.form.doctrineType')"
+      :items="doctrineTypeItems"
+      :placeholder="$t('taxonomy.form.doctrineTypeNone')"
+      :hint="$t('taxonomy.form.doctrineTypeHint')"
       :disabled="loading"
+      persistent-hint
       clearable
     />
     <bs-text-field

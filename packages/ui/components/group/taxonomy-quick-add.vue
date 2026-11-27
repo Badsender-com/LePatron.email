@@ -2,7 +2,7 @@
 import { Plus } from 'lucide-vue';
 import * as apiRoutes from '~/helpers/api-routes.js';
 import { proposeIdentifier } from '~/helpers/taxonomy-builder.js';
-import { TAXONOMY_LIMITS } from '~/helpers/taxonomy.js';
+import { TAXONOMY_LIMITS, canonicalTypeItems } from '~/helpers/taxonomy.js';
 
 // What a template compares: the server refuses anything else (value-fields.js).
 const IDENTIFIER_PATTERN = /^[A-Za-z0-9_-]*$/;
@@ -12,8 +12,9 @@ const IDENTIFIER_PATTERN = /^[A-Za-z0-9_-]*$/;
  * value, offered everywhere, and keeps the cursor in the label for the next
  * one. Its identifier is proposed from the label and can be written instead,
  * the one an existing template already compares (`bel_fr`); once written, it
- * no longer follows the label. The rest is set in the value's panel. Emits
- * `added` and `error`.
+ * no longer follows the label. An email type also takes its doctrine type
+ * here (ADR-0030), so a whole list is built without opening a panel. The rest
+ * is set in the value's panel. Emits `added` and `error`.
  */
 export default {
   name: 'BsTaxonomyQuickAdd',
@@ -28,6 +29,7 @@ export default {
       label: '',
       identifier: '',
       identifierTouched: false,
+      doctrineType: '',
       saving: false,
     };
   },
@@ -37,6 +39,9 @@ export default {
     },
     identifierValid() {
       return IDENTIFIER_PATTERN.test(this.identifier);
+    },
+    doctrineTypes() {
+      return canonicalTypeItems(null, (key) => this.$t(key));
     },
   },
   watch: {
@@ -54,6 +59,7 @@ export default {
         await this.$axios.$post(apiRoutes.taxonomyItemsCreate(), {
           label,
           ...(this.identifier ? { canonicalType: this.identifier } : {}),
+          ...(this.doctrineType ? { doctrineType: this.doctrineType } : {}),
           order: this.nextOrder,
           type: this.dimensionName,
           groupId: this.$route.params.groupId,
@@ -61,6 +67,7 @@ export default {
         this.label = '';
         this.identifier = '';
         this.identifierTouched = false;
+        this.doctrineType = '';
         this.$emit('added');
       } catch (error) {
         this.$emit('error', error);
@@ -104,6 +111,29 @@ export default {
         spellcheck="false"
         @input="identifierTouched = true"
       />
+    </template>
+    <template v-if="isEmailType">
+      <label
+        class="taxonomy-quick-add__hint"
+        :for="`quick-add-${dimensionName}-doctrine`"
+      >
+        {{ $t('taxonomy.form.doctrineType') }}
+      </label>
+      <select
+        :id="`quick-add-${dimensionName}-doctrine`"
+        v-model="doctrineType"
+        class="taxonomy-quick-add__input taxonomy-quick-add__doctrine"
+        :disabled="saving"
+      >
+        <option value="">{{ $t('taxonomy.form.doctrineTypeNone') }}</option>
+        <option
+          v-for="option in doctrineTypes"
+          :key="option.value"
+          :value="option.value"
+        >
+          {{ option.text }}
+        </option>
+      </select>
     </template>
     <v-btn
       type="submit"
@@ -150,6 +180,10 @@ export default {
   &__identifier {
     flex: 0 1 180px;
     font-family: monospace;
+  }
+
+  &__doctrine {
+    flex: 0 1 200px;
   }
 
   &__input--invalid {

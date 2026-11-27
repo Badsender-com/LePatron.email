@@ -45,6 +45,10 @@ async function readValueFields({ companyId, type, payload, partial }) {
   ) {
     throw new BadRequest(ERROR_CODES.INVALID_TAXONOMY_ITEM);
   }
+  // The doctrine's six types classify emails, not markets or brands.
+  if (fields.doctrineType && type !== StandardDimensions.EMAIL_TYPE) {
+    throw new BadRequest(ERROR_CODES.INVALID_TAXONOMY_ITEM);
+  }
   // Narrowing an availability leaves the emails using the combination as they
   // are: the server checks it again only when a request changes it (ADR-0032).
   if (parentIds !== undefined) {

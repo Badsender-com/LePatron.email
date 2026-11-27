@@ -2041,6 +2041,7 @@ export default {
       label: 'Label',
       description: 'Definition',
       canonicalType: 'AI mapping',
+      doctrineType: 'Badsender type',
       order: 'Order',
       isActive: 'Status',
     },
@@ -2068,6 +2069,10 @@ export default {
       descriptionTooLong: 'The definition cannot exceed {max} characters',
       canonicalType: 'Matching AI email type',
       canonicalTypePlaceholder: 'None',
+      doctrineType: 'Badsender type',
+      doctrineTypeNone: 'None',
+      doctrineTypeHint:
+        'Optional. One of the six types of the Badsender doctrine: it loads the right expertises whatever the email type is called, and the template receives it as doctrineType.',
       canonicalTypeHint:
         'Optional. Bridges onto the AI vocabulary, so the right expertise loads whatever name you chose.',
       order: 'Order',
