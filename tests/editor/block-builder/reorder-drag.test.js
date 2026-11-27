@@ -23,6 +23,7 @@
 const {
   openModal,
   unmountAll,
+  fillBlanks,
   rowsOf,
   layOutRows,
   fireIn,
@@ -61,6 +62,8 @@ describe('a rendered row can be picked up', () => {
     await nextTask();
     moveTo(doc, 10);
     expect(typesOf(modal)).toEqual(['image', 'text', 'button']);
+    // A blank element is not sent: filled, so there is markup to read.
+    fillBlanks(modal);
 
     modal.handleApply();
 

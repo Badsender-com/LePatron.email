@@ -16,7 +16,7 @@
 // Mobile dans l'en-tête de l'édition — les colonnes s'empilent réellement
 // dans l'aperçu, pas seulement en théorie."
 
-const { openModal, unmountAll } = require('./drag-helpers.js');
+const { openModal, fillBlanks, unmountAll } = require('./drag-helpers.js');
 const {
   DERIVED_STYLE_ID,
 } = require('../../../packages/editor/src/js/vue/components/block-builder-modal/preview-surface.js');
@@ -47,6 +47,8 @@ const derivedSheet = (doc) => {
 /** Splits the single row into two halves, as the structure panel would. */
 async function twoColumns() {
   const opened = await openModal(['text', 'button']);
+  // Filled: a blank element is not sent, and its column would not stack.
+  fillBlanks(opened.modal);
   const [row] = opened.modal.state.rows;
   opened.modal.setRowWidths(row.id, [50, 50]);
   opened.modal.renderPreview();

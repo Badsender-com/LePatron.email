@@ -38,9 +38,16 @@ describe('renderElement', () => {
   // included — which is what makes it droppable into a column cell at all: a
   // table inside a `<td>` is valid, a bare `<tr>` is not. What this ticket
   // removes is the row `generateElement` added AROUND that table.
+  // Filled: a blank one is not sent (isBlankElement).
+  const FILLED = {
+    text: { content: 'Bonjour' },
+    image: { src: 'https://example.test/a.png' },
+    button: { label: 'Acheter' },
+  };
+
   it('renders a self-contained element, not a loose row', () => {
     ['text', 'image', 'button', 'divider', 'spacer'].forEach((type) => {
-      const markup = renderElement({ id: 'e1', type });
+      const markup = renderElement({ id: 'e1', type, ...FILLED[type] });
 
       expect(markup).not.toMatch(/^<tr\b/);
       expect(markup).toMatch(/^<(table|a|img|div)\b/);
@@ -108,13 +115,17 @@ describe('elementAttributes', () => {
 });
 
 describe('generateElement', () => {
-  // The rule for "nothing" is the type, never what was typed: a text left
-  // empty is still an element, keeps its row, and is still there to select.
-  it('keeps the row of a known element with nothing typed in it', () => {
-    const html = generateElement(text({ content: '' }), { elementIds: true });
+  // In the preview, a text left empty is still an element: drawn as its
+  // starter, it keeps its row and is still there to select. In an email it is
+  // not sent (blank-elements.test.js).
+  it('keeps the row of a known element with nothing typed in it, in the preview', () => {
+    const html = generateElement(text({ content: '' }), {
+      elementIds: true,
+      starters: { text: { key: 'content', text: 'Votre texte' } },
+    });
 
     expect(html).toMatch(
-      new RegExp(`^<tr><td ${ELEMENT_ATTRIBUTE}="e1"><table`)
+      new RegExp(`^<tr><td ${ELEMENT_ATTRIBUTE}="e1"[^>]*><table`)
     );
     expect(html).toMatch(/<\/table><\/td><\/tr>$/);
   });

@@ -4,7 +4,7 @@
 // components/button.vue; see index.js for how it gets here.
 
 const { defineTemplate } = require('../template.js');
-const { defaultsOf, translatableOf } = require('../manifest.js');
+const { defaultsOf, translatableOf, requiredOf } = require('../manifest.js');
 
 const render = defineTemplate(
   require('../components/button.compiled.js').default
@@ -18,4 +18,7 @@ const defaults = defaultsOf(manifest);
 // What a translation may rewrite — see ../manifest.js.
 const translatable = translatableOf(manifest);
 
-module.exports = { type: 'button', render, defaults, translatable };
+// The slot without which it is not sent — see ../manifest.js.
+const required = requiredOf(manifest);
+
+module.exports = { type: 'button', render, defaults, translatable, required };

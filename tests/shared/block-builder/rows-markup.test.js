@@ -84,12 +84,14 @@ describe('an empty column', () => {
     expect(cell).toContain('font-size:0');
   });
 
-  it('is not a column holding a text left blank', () => {
+  // A blank element is not sent (isBlankElement): a column holding nothing
+  // else is as empty as one holding nothing, and keeps its cell the same way.
+  it('is a column holding only a text left blank', () => {
     const [, cell] = cellsOf(
       generateRow(row([50, [text('a')]], [50, [text('b', '')]]))
     );
 
-    expect(cell).not.toContain('font-size:0');
+    expect(cell).toContain('font-size:0');
   });
 });
 

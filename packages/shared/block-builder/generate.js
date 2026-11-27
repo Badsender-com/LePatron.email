@@ -44,7 +44,8 @@ const STATE_VERSION = 2;
 // Bumped when a template changes in a way that alters rendered output. A block
 // whose stored `gen` is behind can be offered an update; it is never updated
 // on its own.
-//   1.1.0 — the block holds to its width, centred, rather than 100%.
+//   1.1.0 — the block holds to its width, centred, rather than 100%; a
+//   blank element (see isBlankElement) renders nothing.
 const GENERATOR_VERSION = '1.1.0';
 
 const DEFAULT_BLOCK = {

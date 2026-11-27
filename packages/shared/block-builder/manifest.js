@@ -61,4 +61,26 @@ function translatableOf(manifest) {
   });
 }
 
-module.exports = { fallbackOf, defaultsOf, translatableOf };
+/**
+ * The slot that makes an element something, or null: a text's words, an
+ * image's source, a button's label. Blank, the element renders nothing in an
+ * email (see isBlankElement in ../element-markup.js). Declared `required` in
+ * the manifest; at most one per element.
+ *
+ * @param {{slots: Object}} manifest
+ * @returns {string|null} a slot name
+ */
+function requiredOf(manifest) {
+  const names = Object.keys(manifest.slots).filter(
+    (name) => manifest.slots[name].required === true
+  );
+  if (names.length > 1) {
+    throw new Error(
+      `block-builder: a manifest declares ${names.length} required slots ` +
+        `(${names.join(', ')}); an element is blank by one slot at most.`
+    );
+  }
+  return names[0] || null;
+}
+
+module.exports = { fallbackOf, defaultsOf, translatableOf, requiredOf };

@@ -125,7 +125,11 @@ describe('an empty element still takes room in the preview', () => {
 
 describe('the starter never reaches the block', () => {
   it('applies an untouched text, image and dropped button without starters', async () => {
-    const { modal, doc, markup } = await openModal(['text', 'image']);
+    const { modal, doc, markup } = await openModal([
+      'text',
+      'image',
+      'divider',
+    ]);
     layOutRows(doc, 100);
     startPaletteDrag('button');
     dropAt(doc, 190);

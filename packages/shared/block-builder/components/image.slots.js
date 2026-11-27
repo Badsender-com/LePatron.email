@@ -4,7 +4,9 @@
 
 module.exports = {
   slots: {
-    src: { context: 'URL', default: '' },
+    // Required: an image with no source is not sent (../manifest.js
+    // requiredOf).
+    src: { context: 'URL', default: '', required: true },
     // Prose a reader (or a screen reader) sees, unlike `align`: translated
     // with the rest of the block. See ../manifest.js translatableOf.
     alt: { context: 'ATTR', default: '', translatable: true },
