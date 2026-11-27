@@ -18,7 +18,8 @@ const {
 // The selection also decides where the modal works: the ACTIVE COLUMN, the one
 // the palette adds to and the element list shows.
 //   - an element is selected: its column;
-//   - a row is selected: its first column;
+//   - a row is selected: the column chosen with it (selectColumn), its first
+//     one unless one was chosen;
 //   - nothing is: the first column of the first row.
 // It is derived, never stored, so a column that disappears — a structure
 // changed, a row removed — cannot leave the modal pointing at it: the next
@@ -40,7 +41,9 @@ const ROW = 'row';
 
 const SelectionMixin = {
   data: () => ({
-    // `{ kind: 'element' | 'row', id }`, or null when nothing is selected.
+    // `{ kind: 'element', id }`, `{ kind: 'row', id, column }` — `column`
+    // the index of the column chosen in it — or null when nothing is
+    // selected.
     selection: null,
   }),
 
@@ -78,9 +81,24 @@ const SelectionMixin = {
       const place = this.locateElement(this.selectedElementId);
       if (place) return place.column;
 
-      const row =
-        this.rowById(this.selectedRowId) || (this.state.rows || [])[0];
-      return (row && row.columns && row.columns[0]) || null;
+      const row = this.rowById(this.selectedRowId);
+      if (row && row.columns) {
+        // A column chosen and since gone falls back on the first one.
+        return row.columns[this.selection.column] || row.columns[0] || null;
+      }
+      const [first] = this.state.rows || [];
+      return (first && first.columns && first.columns[0]) || null;
+    },
+
+    /**
+     * The chosen column, as `{ rowId, index }`, while a row is selected;
+     * null otherwise — an element's own column is not chosen, it follows.
+     */
+    chosenColumn() {
+      const row = this.rowById(this.selectedRowId);
+      if (!row || !row.columns) return null;
+      const index = row.columns.indexOf(this.activeColumn);
+      return index === -1 ? null : { rowId: row.id, index };
     },
 
     /**
@@ -124,9 +142,22 @@ const SelectionMixin = {
       this.selection = id ? { kind: ELEMENT, id } : null;
     },
 
-    /** Selects a row, or nothing when `id` is empty. */
+    /** Selects a row, with its first column, or nothing when `id` is empty. */
     selectRow(id) {
-      this.selection = id ? { kind: ROW, id } : null;
+      this.selectColumn(id, 0);
+    },
+
+    /**
+     * Selects a row with one of its columns: the one the palette adds to and
+     * the element list shows. Nothing when `rowId` is empty.
+     *
+     * @param {string} rowId
+     * @param {number} index the column, from 0
+     */
+    selectColumn(rowId, index) {
+      this.selection = rowId
+        ? { kind: ROW, id: rowId, column: Number.isInteger(index) ? index : 0 }
+        : null;
     },
 
     /**
@@ -136,7 +167,7 @@ const SelectionMixin = {
      * @param {{kind: string, id: string}|null} saved
      */
     restoreSelection(saved) {
-      if (saved && saved.kind === ROW) this.selectRow(saved.id);
+      if (saved && saved.kind === ROW) this.selectColumn(saved.id, saved.column);
       else this.selectElement(saved ? saved.id : null);
     },
   },

@@ -25,6 +25,11 @@ const MOVING_CLASS = 'lp-bb-moving';
 // The column a drop would land in, while something is dragged over it.
 const COLUMN_TARGET_CLASS = `${COLUMN_CHROME_CLASS}--target`;
 
+// The column chosen with the selected row: where the palette adds
+// (selection.js). Marked the way a selected element is, so the user sees where
+// a click on the palette will land before clicking.
+const ACTIVE_COLUMN_CLASS = `${COLUMN_CHROME_CLASS}--active`;
+
 // The insertion line: one element over the whole preview, placed at the edge
 // the drop would land on (drag-surface.js), in pixels.
 const DROP_LINE_ID = 'lp-bb-drop-line';
@@ -129,6 +134,10 @@ const PREVIEW_DOCUMENT = [
   `.${COLUMN_CHROME_CLASS}:empty,`,
   `body.${DRAGGING_CLASS} .${COLUMN_CHROME_CLASS}{`,
   'outline:1px dashed #757575;outline-offset:-1px;}',
+  // A column is clicked to choose it, empty or not.
+  `.${COLUMN_CHROME_CLASS}{cursor:pointer;}`,
+  `.${ACTIVE_COLUMN_CLASS},.${ACTIVE_COLUMN_CLASS}:empty{`,
+  'outline:2px solid #00acdc;outline-offset:-2px;}',
   `body.${DRAGGING_CLASS} .${COLUMN_TARGET_CLASS}{`,
   'outline:2px solid #265090;outline-offset:-2px;}',
   '</style></head><body></body></html>',
@@ -139,6 +148,7 @@ module.exports = {
   DRAGGING_CLASS,
   MOVING_CLASS,
   COLUMN_TARGET_CLASS,
+  ACTIVE_COLUMN_CLASS,
   DROP_LINE_ID,
   DERIVED_STYLE_ID,
   DROP_LINE_HEIGHT,

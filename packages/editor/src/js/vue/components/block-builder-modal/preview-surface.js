@@ -12,6 +12,7 @@ const {
   DRAGGING_CLASS,
   MOVING_CLASS,
   COLUMN_TARGET_CLASS,
+  ACTIVE_COLUMN_CLASS,
   DROP_LINE_ID,
   DERIVED_STYLE_ID,
   DROP_LINE_HEIGHT,
@@ -36,7 +37,7 @@ const {
 // though scripts inside it cannot run.
 //
 // The component is expected to provide: `state`, `locateElement`,
-// `selectElement`, `selectedElementId`, `isEmpty`, `previewMarkup`, `vm`,
+// `selectElement`, `selectedElementId`, `selectColumn`, `isEmpty`, `previewMarkup`, `vm`,
 // `previewWidth` and `mobileWidth`, and a `previewFrame` ref.
 //
 // It knows nothing of the drag. What the drag needs from it is public and
@@ -44,7 +45,9 @@ const {
 // document and to dress the elements of each render; freezeRender / thawRender,
 // to keep them still under the cursor; previewElementFromEvent, to name the
 // element under it. The document itself, its class names and those events
-// live in preview-document.js; this module re-exports them.
+// live in preview-document.js; this module re-exports them. Choosing a column
+// by clicking it is column-choice.js, which this one asks
+// (`previewColumnFromEvent`, `applyColumnHighlight`).
 
 
 const PreviewSurfaceMixin = {
@@ -211,8 +214,16 @@ const PreviewSurfaceMixin = {
       event.preventDefault();
 
       const node = this.previewElementFromEvent(event);
-      if (node) this.selectElement(node.getAttribute(ELEMENT_ATTRIBUTE));
+      if (node) {
+        this.selectElement(node.getAttribute(ELEMENT_ATTRIBUTE));
+        return;
+      }
+      // Anywhere else in a column — an empty one, or the blank under a short
+      // one — chooses that column, so the palette adds there.
+      const column = this.previewColumnFromEvent(event);
+      if (column) this.selectColumn(column.rowId, column.index);
     },
+
 
     // The rendered element an event happened in, or null: for the click above
     // and the drag (drag-surface.js) alike. `closest` walks up from whatever
@@ -241,11 +252,13 @@ const PreviewSurfaceMixin = {
     // (see state.js), and there are at most a handful of elements.
     applySelectionHighlight() {
       const frame = this.$refs.previewFrame;
-      this.previewElements(frame && frame.contentDocument).forEach((node) => {
+      const doc = frame && frame.contentDocument;
+      this.previewElements(doc).forEach((node) => {
         const selected =
           node.getAttribute(ELEMENT_ATTRIBUTE) === this.selectedElementId;
         node.classList.toggle(SELECTED_CLASS, selected);
       });
+      this.applyColumnHighlight(doc);
     },
   },
 };
@@ -259,6 +272,7 @@ module.exports = {
   DROP_LINE_HEIGHT,
   MOVING_CLASS,
   COLUMN_TARGET_CLASS,
+  ACTIVE_COLUMN_CLASS,
   EMPTY_DROP_ID,
   PREVIEW_READY_EVENT,
   PREVIEW_RENDERED_EVENT,
