@@ -187,9 +187,11 @@
 
   // The preview must not inherit the editor's own styling: it shows what the
   // email will look like, not what the editor looks like.
+  // As tall as the stage, stretched rather than sized: a `min-height` of its
+  // own outgrew the stage by a few px and gave it a scrollbar for nothing.
   &__frame {
-    height: 100%;
-    min-height: 50vh;
+    align-self: stretch;
+    min-height: 0;
     background: #fff;
     border: none;
   }
