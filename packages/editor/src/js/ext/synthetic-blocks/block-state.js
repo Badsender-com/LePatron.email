@@ -88,6 +88,22 @@ function emptyLabelKeyFor(block) {
 }
 
 /**
+ * A label of the editing panel, as `viewModel.ut` hands it: a synthetic
+ * block's own label in the user's language, through its palette key; any
+ * other label as the template wrote it. The synthetic blocks are declared by
+ * LePatron, in English (block-types.js), and their panel read so in a French
+ * editor.
+ *
+ * @param {Function} t the editor's translation
+ * @param {string} key the label
+ * @returns {string}
+ */
+function templateLabel(t, key) {
+  const descriptor = SYNTHETIC_BLOCKS.find((block) => block.label === key);
+  return descriptor ? t(descriptor.paletteLabelKey) : key;
+}
+
+/**
  * The i18n key of a synthetic block's palette entry, or ''.
  *
  * @param {Object} block
@@ -134,5 +150,6 @@ module.exports = {
   emptyLabelKeyFor,
   paletteLabelKeyFor,
   paletteIconFor,
+  templateLabel,
   SYNTHETIC_BLOCKS,
 };
