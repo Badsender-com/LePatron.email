@@ -24,7 +24,7 @@ const check = ({ values, templates = [] }) => {
 };
 
 // Turned on by #1637 (an email type mapped onto no doctrine type is a point to check)
-describe.skip('points to check: email type not mapped', () => {
+describe('points to check: email type not mapped', () => {
   it('names each active email type mapped onto no doctrine type', () => {
     const points = check({
       values: [

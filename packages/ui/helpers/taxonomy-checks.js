@@ -15,6 +15,8 @@
  * - `literalNotOffered`: a template compares a child literal together with a
  *   parent literal (`market eq 'ca' and language eq 'fr'`), and the value
  *   carrying the child literal is not offered under that parent value;
+ * - `emailTypeNotMapped`: an active email type mapped onto no doctrine type
+ *   (ADR-0030), which loads only the expertises targeting none;
  * - `doctrineLiteralUnknown`: the literals a template compares `doctrineType`
  *   against that are none of the doctrine's six types (ADR-0030), on the
  *   email type: one point per template.
@@ -64,6 +66,17 @@ export function pointsToCheck({
     const own = of(dimension.name);
     if (!own.length)
       points.push({ kind: 'noValue', dimension: dimension.name });
+    if (dimension.name === STANDARD_DIMENSIONS.EMAIL_TYPE) {
+      own
+        .filter((value) => !value.doctrineType)
+        .forEach((value) =>
+          points.push({
+            kind: 'emailTypeNotMapped',
+            dimension: dimension.name,
+            valueId: String(value.id),
+          })
+        );
+    }
     if (dimension.role) {
       own
         .filter((value) => !value.code)

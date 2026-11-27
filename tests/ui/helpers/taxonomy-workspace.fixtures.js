@@ -67,7 +67,9 @@ const DIMENSIONS = [
 ];
 
 const VALUES = [
-  value('et-newsletter', 'emailType', 'Newsletter'),
+  value('et-newsletter', 'emailType', 'Newsletter', {
+    doctrineType: 'editorial',
+  }),
   value('mk-fr', 'market', 'France', { code: 'FR', order: 1 }),
   value('mk-be', 'market', 'Belgique', { code: 'BE', order: 2 }),
   value('mk-ch', 'market', 'Suisse', { code: 'CH', order: 3 }),
