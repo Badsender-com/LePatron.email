@@ -34,6 +34,7 @@ module.exports = `<modal-component
     <div class="bb-modal__layout">
       <div class="bb-modal__column bb-modal__column--left">
         <p class="bb-modal__section">{{ vm.t('block-builder-add') }}</p>
+        <div class="bb-modal__palette">
         <div
           v-for="item in palette"
           :key="item.type"
@@ -48,6 +49,7 @@ module.exports = `<modal-component
           @click="addElement(item.type)"
           @keydown="onPaletteKeydown($event, item.type)"
           @keyup="onPaletteKeyup($event, item.type)">+ {{ vm.t(item.labelKey) }}</div>
+        </div>
 
         <p class="bb-modal__section">{{ vm.t('block-builder-rows') }}</p>
         <div
