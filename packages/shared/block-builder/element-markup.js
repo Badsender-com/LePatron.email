@@ -88,7 +88,7 @@ function definitionOf(element) {
  */
 function isBlankElement(element) {
   const definition = definitionOf(element);
-  if (!definition || !definition.required) return false;
+  if (!definition?.required) return false;
   const values = { ...definition.defaults, ...element };
   return isBlankRichText(values[definition.required]);
 }
